@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+# Compiled python scripts
+*.pyc
+
+# Emacs backup files
+*~
