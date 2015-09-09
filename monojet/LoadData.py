@@ -8,7 +8,7 @@ lumi = 1.0
 
 ######################################################
 
-dataDir = "/afs/cern.ch/work/z/zdemirag/work/run2/monojet/monojet13TeV/slimmer/eos/cms/store/user/zdemirag/nero_skim/"
+dataDir = "/data/blue/dmdata/V0001/miniaod2nero/monojet/"
 
 physics_processes = {
         'Zll': { 'label':'Z#rightarrow ll',
