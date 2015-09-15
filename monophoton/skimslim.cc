@@ -15,7 +15,7 @@
 #include <iostream>
 
 void
-skimslim(TTree* _input, TFile* _outputFile)
+skimslim(TTree* _cutTree, TTree* _input, TFile* _outputFile)
 {
   bool isMC(_input->GetBranch("mcWeight") != 0);
 
@@ -49,22 +49,23 @@ skimslim(TTree* _input, TFile* _outputFile)
   if (isMC)
     mc.setBranchAddresses(_input);
 
+  _cutTree->SetBranchStatus("*", 0);
+  _cutTree->SetBranchStatus("lepP4", 1);
+  _cutTree->SetBranchStatus("lepSelBits", 1);
+  _cutTree->SetBranchStatus("photonP4", 1);
+
+  leptons.setBranchAddresses(_cutTree);
+  photons.setBranchAddresses(_cutTree);
+
   long iEntry(0);
-  while (_input->GetEntry(iEntry++) > 0) {
-    if (iEntry % 10000 == 0)
-      std::cout << iEntry << " events" << std::endl;
-
-    // unsigned iL(0);
-    // for (; iL != leptons.size(); ++iL) {
-    //   if ((leptons.passSelection(iL, BareLeptons::LepLoose)))
-    //     break;
-    // }
-    // if (iL != leptons.size())
-    //   continue;
-    if (leptons.p4->GetEntries() != 0)
+  while (_cutTree->GetEntry(iEntry++) > 0) {
+    unsigned iL(0);
+    for (; iL != leptons.size(); ++iL) {
+      if ((leptons.passSelection(iL, BareLeptons::LepLoose)))
+        break;
+    }
+    if (iL != leptons.size())
       continue;
-
-    std::cout << "pass lepton veto" << std::endl;
 
     unsigned nLoose(0);
     unsigned iMedium(-1);
@@ -72,19 +73,19 @@ skimslim(TTree* _input, TFile* _outputFile)
       if (photons.pt(iP) < 15.)
         continue;
       ++nLoose;
-      if (photons.pt(iP) > 180. && photons.mediumid->at(iP) == 1)
+
+      //      if (photons.pt(iP) > 180. && photons.mediumid->at(iP) == 1)
+      if (photons.pt(iP) > 180.)
         iMedium = iP;
     }
 
     if (nLoose > 1)
       continue;
 
-    std::cout << "pass photon veto" << std::endl;
-
     if (iMedium > photons.size())
       continue;
 
-    std::cout << "pass photon req" << std::endl;
+    _input->GetEntry(iEntry - 1);
 
     output->Fill();
   }
