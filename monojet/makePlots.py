@@ -20,7 +20,10 @@ lumi = 40.02
 
 def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False):
 
-    folder = 'test'
+    folder = 'output'
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
     yield_Zll = {}
     yield_dic = {}
     yield_Wln = {}
