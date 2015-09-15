@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-OUTPUTDIR='/scratch5/yiiyama/monojet'
+OUTPUTDIR='/data/blue/zdemirag/monojet13TeV/slim/V0001'
 
 import os
 import sys
+import glob
 import shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)
@@ -55,3 +56,11 @@ print ''
 
 shutil.copy('monojet_' + sample + '.root', OUTPUTDIR + '/')
 os.remove('monojet_' + sample + '.root')
+#clean up
+for f in glob.glob('*.so'):
+    os.remove(f)
+for f in glob.glob('*.d'):
+    os.remove(f)
+for f in glob.glob('*.pcm'):
+    os.remove(f)
+
