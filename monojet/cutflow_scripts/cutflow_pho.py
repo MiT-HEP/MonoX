@@ -97,8 +97,8 @@ for ientry in range(0,n_entries):
              if (dRj > 0.4): 
                new_jetPt.push_back(input_tree.jetP4[j].Pt())
                #print j, input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
-               new_jetTightId.push_back(input_tree.jetMonojetId[j])
-               new_jetSecondId.push_back(input_tree.jetMonojetIdLoose[j])
+               new_jetTightId.push_back(bool(input_tree.jetMonojetId[j]) is True)
+               new_jetSecondId.push_back(bool(input_tree.jetMonojetIdLoose[j]) is True)
                new_jetPhi.push_back(input_tree.jetP4[j].Phi())
 
   dphi = -10000.
