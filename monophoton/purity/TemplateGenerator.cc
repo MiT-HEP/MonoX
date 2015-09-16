@@ -51,7 +51,7 @@ public:
   TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool recreate = false);
   ~TemplateGenerator() {}
 
-  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, PhotonLocation _loc);
+  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id);
   void writeSkim();
   void setTemplateBinning(int nBins, double xmin, double xmax);
   TH1D* makeTemplate(char const* name, char const* expr);
@@ -98,17 +98,17 @@ TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char 
 }
 
 void
-TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, PhotonLocation _loc)
+TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id)
 {
   if (skimTree_->GetListOfBranches()->GetEntries() != 0)
     throw std::runtime_error("Skim already exists.");
 
   simpletree::Event event;
   event.setAddress(*_input);
-  event.book(*skimTree_);
+  event.book(*skimTree_, {&event.run, &event.lumi, &event.event, &event.weight, &event.rho, &event.npv});
 
-  simpletree::PhotonCollection selectedPhotons;
-  selectedPhotons.book(*skimTree_, "selPhotons");
+  simpletree::PhotonCollection selectedPhotons("selPhotons");
+  selectedPhotons.book(*skimTree_);
 
   Float_t cut_hOverE[2][3] = {
     {0.05,0.05,0.05},
@@ -159,15 +159,19 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Photo
 
       // barrel photons
       if (TMath::Abs(photons[iP].eta) < 1.5) {
-	if (!(_loc == kBarrel)) {
+	/*
+	  if (!(_loc == kBarrel)) {
 	  PassSel = false;
 	  continue;
 	}
+	*/
+	
 	// baseline photon selection
 	if (photons[iP].hOverE < cut_hOverE[kBarrel][_id]) PassCut[kHOverE] = true;
 	if (photons[iP].chIso < cut_chIso[kBarrel][_id]) PassCut[kChIso] = true;
 	if (photons[iP].nhIso < (cut_nhIso[0][kBarrel][_id]+TMath::Exp(cut_nhIso[1][kBarrel][_id]*photons[iP].pt + cut_nhIso[2][kBarrel][_id]))) PassCut[kNhIso] = true;
 	if (photons[iP].phIso < (cut_phIso[0][kBarrel][_id] + cut_phIso[1][kBarrel][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
+	if (photons[iP].csafeVeto) continue;
 
 	// real vs fake selection
 	if (tType_ == kPhoton) {
@@ -179,6 +183,8 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Photo
 	  for (unsigned iC(0); iC < nFakeVars; iC++) {
 	    if (iC == _fakevar) {
 	      if (PassCut[iC]) PassSel = false;
+	      // picking out chIso as fakevar
+	      if (photons[iP].chIso > cut_chIso[kBarrel][kTight]) PassSel = true;
 	    }
 	    else { 
 	      if (!PassCut[iC]) PassSel = false;
@@ -189,15 +195,19 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Photo
 
       // endcap photons (loose selection)
       else {
+	/*
 	if (!(_loc == kEndcap)) {
 	  PassSel = false;
 	  continue;
 	}
+	*/
+	
 	// baseline photon selection
 	if (photons[iP].hOverE < cut_hOverE[kEndcap][_id]) PassCut[kHOverE] = true;
 	if (photons[iP].chIso < cut_chIso[kEndcap][_id]) PassCut[kChIso] = true;
 	if (photons[iP].nhIso < (cut_nhIso[0][kEndcap][_id]+TMath::Exp(cut_nhIso[1][kEndcap][_id]*photons[iP].pt + cut_nhIso[2][kEndcap][_id]))) PassCut[kNhIso] = true;
 	if (photons[iP].phIso < (cut_phIso[0][kEndcap][_id] + cut_phIso[1][kEndcap][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
+	if (photons[iP].csafeVeto) continue;
 
 	// real vs fake selection
 	if (tType_ == kPhoton) {
@@ -209,6 +219,8 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Photo
 	  for (unsigned iC(0); iC < nFakeVars; iC++) {
 	    if (iC == _fakevar) {
 	      if (PassCut[iC]) PassSel = false;
+	      // picking out chIso as fakevar
+	      if (photons[iP].chIso > cut_chIso[kEndcap][kTight]) PassSel = true;
 	    }
 	    else { 
 	      if (!PassCut[iC]) PassSel = false;

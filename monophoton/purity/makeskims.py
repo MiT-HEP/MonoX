@@ -35,24 +35,3 @@ for skim in xrange(0,5):
 
     generator.fillSkim(inputTree, ROOT.kChIso, ROOT.kLoose)
     generator.writeSkim()
-'''
-generator.setTemplateBinning(40, 0., 0.02)
-tempH = generator.makeTemplate('barrel_inclusive', '') 
-# 'TMath::Abs(selPhotons.eta) < 1.5')
-
-x = ROOT.RooRealVar('sieie', '#sigma_{i#etai#eta}', 0., 0.02)
-
-temp = ROOT.RooDataHist('temp_'+templateTypes[templateType]+'_'+locations[location]+'_'+photonIds[photonId]+'_'+fakevars[fakevar], 'template_'+templateTypes[templateType]+'_'+locations[location]+'_'+photonIds[photonId]+'_'+fakevars[fakevar], ROOT.RooArgList(x), tempH)
-                
-outfile.cd()
-temp.Write()
-
-canvas = ROOT.TCanvas()
-frame = x.frame()
-temp.plotOn(frame)
-
-frame.Draw()
-
-canvas.SaveAs('template_'+templateTypes[templateType]+'_'+locations[location]+'_'+photonIds[photonId]+'_'+fakevars[fakevar]+'_inclusive.pdf')
-'''
-sys.stdin.readline()
