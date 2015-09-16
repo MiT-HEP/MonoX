@@ -2,29 +2,50 @@
 
 import sys
 import os
+from argparse import ArgumentParser
+import json
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-sample = sys.argv[1]
+argParser = ArgumentParser(description = 'Skim & slim')
+argParser.add_argument('sample', metavar = 'SAMPLE', help = 'Sample to skim.')
+argParser.add_argument('--json', '-j', metavar = 'FILE', dest = 'json', help = 'JSON file.')
 
-cutTree = ROOT.TChain('nero/events')
-eventsTree = ROOT.TChain('nero/events')
-allTree = ROOT.TChain('nero/all')
-with open('sourceFiles/' + sample + '.txt') as sourceList:
-    for line in sourceList:
-        if not line.strip().startswith('#'):
-            cutTree.Add(line.strip())
-            eventsTree.Add(line.strip())
-            allTree.Add(line.strip())
+args = argParser.parse_args()
+sys.argv = []
 
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src')
-ROOT.gSystem.Load('libNeroProducerCore.so')
-ROOT.gROOT.LoadMacro(os.path.dirname(os.path.realpath(__file__)) + '/skimslim.cc+')
+thisdir = os.path.dirname(os.path.realpath(__file__))
 
-outputFile = ROOT.TFile.Open('/scratch5/yiiyama/monophoton/' + sample + '.root', 'recreate')
-ROOT.skimslim(cutTree, eventsTree, outputFile)
+if args.sample == 'all':
+    samples = []
+    for slist in os.listdir(thisdir + '/sourceFiles'):
+        samples.append(slist.replace('.txt', ''))
+else:
+    samples = [args.sample]
 
-outputFile.cd()
-allTree.CloneTree()
+ROOT.gSystem.AddIncludePath('-I/home/yiiyama/src')
+ROOT.gSystem.Load('/home/yiiyama/src/NeroProducer/Core/bin/libBare.so')
+ROOT.gROOT.LoadMacro(thisdir + '/skimslim.cc+')
 
-outputFile.Write()
+skimmer = ROOT.Skimmer()
+
+if args.json:
+    with open(args.json) as source:
+        goodlumis = json.loads(source.read())
+
+    for run, lumiranges in goodlumis.items():
+        for lumirange in lumiranges:
+            lumirange[1] += 1
+            for lumi in range(*tuple(lumirange)):
+                skimmer.addGoodLumi(int(run), lumi)
+
+for sample in samples:
+    print sample
+
+    with open('sourceFiles/' + sample + '.txt') as sourceList:
+        for line in sourceList:
+            if not line.strip().startswith('#'):
+                skimmer.addInputPath(line.strip())
+    
+    outputFile = ROOT.TFile.Open('/data/blue/yiiyama/monophoton/' + sample + '.root', 'recreate')
+    skimmer.run(outputFile)
