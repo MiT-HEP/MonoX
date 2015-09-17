@@ -65,7 +65,7 @@ for ientry in range(0,n_entries):
 
   dphi = -10000.
   
-  if(input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0] and input_tree.jetMonojetIdLoose[1]) : # and input_tree.jetPuId() > -0.62) : 
+  if(input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0]==1 and input_tree.jetMonojetIdLoose[1]==1) : # and input_tree.jetPuId() > -0.62) : 
     dphi = deltaPhi( input_tree.jetP4[0].Phi(),input_tree.jetP4[1].Phi() )
   else:
      if (input_tree.jetP4.GetEntriesFast() < 2):
@@ -73,9 +73,9 @@ for ientry in range(0,n_entries):
      else:
        dphi = -10000.
 
-  if (input_tree.jetP4.GetEntriesFast() > 0 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0]):
+  if (input_tree.jetP4.GetEntriesFast() > 0 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0]==1):
     n_jet += 1
-    if (input_tree.jetP4.GetEntriesFast() == 1 or (input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetMonojetIdLoose[1])):
+    if (input_tree.jetP4.GetEntriesFast() == 1 or (input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetMonojetIdLoose[1]==1 )):
       n_2ndjet += 1
       if( fabs(dphi) < 2.5  or dphi == -99.999 ):
         n_dphi += 1
@@ -104,8 +104,8 @@ for ientry in range(0,n_entries):
 
   new_jetPt = std.vector('double')()
   new_jetPhi = std.vector('double')()
-  new_jetTightId = std.vector('bool')()
-  new_jetSecondId = std.vector('bool')()
+  new_jetTightId = std.vector('int')()
+  new_jetSecondId = std.vector('int')()
   new_jetPt.clear()
   new_jetPhi.clear()
   new_jetTightId.clear()
@@ -120,7 +120,7 @@ for ientry in range(0,n_entries):
     for i in range (0,input_tree.lepP4.GetEntriesFast()):
       if (fabs(input_tree.lepPdgId[i]) == 11 ):
         foundEl = True
-      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepTightId[i] ):
+      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepSelBits[i]  & (0x1 << 5) != 0 ):
                 
         foundTightMu = True
         new_tightMuPt.push_back(input_tree.lepP4[i].Pt())
@@ -137,8 +137,11 @@ for ientry in range(0,n_entries):
              dRj = deltaR(input_tree.lepP4[i].Phi(),input_tree.lepP4[i].Eta(),input_tree.jetP4[j].Phi(),input_tree.jetP4[j].Eta())
              if (dRj > 0.4): 
                new_jetPt.push_back(input_tree.jetP4[j].Pt())
-               new_jetTightId.push_back(input_tree.jetMonojetId[j])
-               new_jetSecondId.push_back(input_tree.jetMonojetIdLoose[j])
+
+               #print input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
+
+               new_jetTightId.push_back(int(input_tree.jetMonojetId[j] is True))
+               new_jetSecondId.push_back(int(input_tree.jetMonojetIdLoose[j] is True))
                new_jetPhi.push_back(input_tree.jetP4[j].Phi())
 
   dphi_cr = -10000.
