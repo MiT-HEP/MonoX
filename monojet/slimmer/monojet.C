@@ -49,10 +49,6 @@ void monojet::Begin(TTree *tree)
    tree->SetBranchStatus("triggerFired",1);
 
    eventstree = tree->CloneTree(0);
-   cleanJet = new TClonesArray("TLorentzVector",20);
-   cleanTau = new TClonesArray("TLorentzVector",20);
-   eventstree->SetBranchAddress("jetP4", cleanJet);
-   eventstree->SetBranchAddress("tauP4", cleanTau);
 
    //Setting up new tree
    tm = new TreeManager("type", "Monojet signal Tree" /*, histoFile*/);
@@ -102,13 +98,16 @@ Bool_t monojet::Process(Long64_t entry)
     jetMonojetId_clean.clear();
     std::vector<bool>  jetMonojetIdLoose_clean;
     jetMonojetIdLoose_clean.clear();
-    //std::vector<float> jetPuId_clean; 
-    //jetPuId_clean.clear();
+    std::vector<float> jetPuId_clean; 
+    jetPuId_clean.clear();
 
     std::vector<float>  tauId_clean;
     tauId_clean.clear();
     std::vector<float>  tauIso_clean;
     tauIso_clean.clear();
+
+    cleanJet = new TClonesArray("TLorentzVector",20);
+    cleanTau = new TClonesArray("TLorentzVector",20);
 
     cleanJet->Clear();
     cleanTau->Clear();
@@ -118,11 +117,8 @@ Bool_t monojet::Process(Long64_t entry)
     // ********* Leptons ********** //
     for(int lepton = 0; lepton < lepP4->GetEntries(); lepton++){
         TLorentzVector* Lepton = (TLorentzVector*) lepP4->At(lepton);
+
         // check if this is a tight lep, and check the overlap
-
-        //iso_1 = divide(input_tree.lepIso[0],input_tree.lepP4[0].Pt())
-        //if (input_tree.lepTightId[0]==0 or iso_1 > 0.12): continue
-
         if (Lepton->Pt() > 20. && ((*lepSelBits)[lepton] & (0x1 << 4)) != 0){
             n_tightlep +=1;
             
@@ -134,7 +130,7 @@ Bool_t monojet::Process(Long64_t entry)
                     new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
                     jetMonojetId_clean.push_back((*jetMonojetId)[j]);
                     jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
-                    //jetPuId_clean.push_back((*jetPuId)[j]);
+                    jetPuId_clean.push_back((*jetPuId)[j]);
                 }
             }
             //check overlap with taus
@@ -220,7 +216,7 @@ Bool_t monojet::Process(Long64_t entry)
         tauP4 = cleanTau;
         *jetMonojetId = jetMonojetId_clean;
         *jetMonojetIdLoose = jetMonojetIdLoose_clean;
-        //*jetPuId = jetPuId_clean;
+        *jetPuId = jetPuId_clean;
         *tauId = tauId_clean;
         *tauIso = tauIso_clean;
 	*(TLorentzVector*)((*metP4)[0]) = fakeMET;

@@ -42,9 +42,6 @@ else:
 
 #initialize 
 n_jet=0; n_met=0; n_njet=0; n_nlep=0; n_ntau=0; n_npho=0; n_dphi=0;n_2ndjet=0;
-n_mu_tight=0; n_mt=0; n_fakemet=0;
-
-n_jet_cr_sm=0; n_2ndjet_cr_sm=0; n_dphi_cr_sm=0; n_njet_cr_sm=0;  n_nlep_cr_sm=0; n_ntau_cr_sm=0; n_npho_cr_sm=0; n_mu_tight_cr_sm=0; n_mt_cr_sm=0;n_fakemet_cr_sm=0;
 
 # Check the number of entries in the tree
 n_entries = input_tree.GetEntriesFast()
