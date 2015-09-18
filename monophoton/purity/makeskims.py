@@ -27,9 +27,9 @@ for skim in xrange(0,5):
     for f in os.listdir(sourcedirs[skim]):
         print 'Adding file: ', str(f)
         inputTree.Add(sourcedirs[skim] + '/' + f)
-        break
+        # break
 
-    outname = '/scratch5/ballen/hist/Skim'+skims[skim]+'.root'
+    outname = '/scratch5/ballen/hist/purity/Skim'+skims[skim]+'.root'
     print 'Saving skim to:', outname
     generator = ROOT.TemplateGenerator(templateTypes[skim], ROOT.kSigmaIetaIeta, outname, True)
 

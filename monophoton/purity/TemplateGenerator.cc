@@ -105,7 +105,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id)
 
   simpletree::Event event;
   event.setAddress(*_input);
-  event.book(*skimTree_, {&event.run, &event.lumi, &event.event, &event.weight, &event.rho, &event.npv});
+  event.book(*skimTree_, {&event.run, &event.lumi, &event.event, &event.weight, &event.rho, &event.npv,&event.ntau,&event.jets,&event.electrons,&event.muons,&event.t1Met});
 
   simpletree::PhotonCollection selectedPhotons("selPhotons");
   selectedPhotons.book(*skimTree_);
