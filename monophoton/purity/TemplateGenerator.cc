@@ -51,7 +51,7 @@ public:
   TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool recreate = false);
   ~TemplateGenerator() {}
 
-  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id);
+  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec);
   void writeSkim();
   void setTemplateBinning(int nBins, double xmin, double xmax);
   TH1D* makeTemplate(char const* name, char const* expr);
@@ -98,14 +98,14 @@ TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char 
 }
 
 void
-TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id)
+TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec)
 {
   if (skimTree_->GetListOfBranches()->GetEntries() != 0)
     throw std::runtime_error("Skim already exists.");
 
   simpletree::Event event;
   event.setAddress(*_input);
-  event.book(*skimTree_, {&event.run, &event.lumi, &event.event, &event.weight, &event.rho, &event.npv,&event.ntau,&event.jets,&event.electrons,&event.muons,&event.t1Met});
+  event.book(*skimTree_, {"run", "lumi", "event", "weight", "rho", "npv", "ntau", "jets", "electrons" , "muons", "t1Met"});
 
   simpletree::PhotonCollection selectedPhotons("selPhotons");
   selectedPhotons.book(*skimTree_);
@@ -137,10 +137,17 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id)
       {0.0041,0.0041,0.0041} }
   };
 
+  Double_t nEvents =  _input->GetEntries();
+  Double_t eventWeight;
+  if (_xsec < 0) eventWeight = 1;
+  else eventWeight = _xsec / nEvents; 
+
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
     if (iEntry % 10000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
+
+    event.weight = eventWeight;
 
     selectedPhotons.clear();
     unsigned iSel(0);
@@ -149,7 +156,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id)
     Bool_t PassSel;
       
     auto& photons(event.photons);
-    for (unsigned iP(0); iP != photons.size; ++iP) {
+    for (unsigned iP(0); iP != photons.size(); ++iP) {
       // apply photon selection for the background
       
       PassSel = true;
