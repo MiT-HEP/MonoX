@@ -97,8 +97,8 @@ for ientry in range(0,n_entries):
              if (dRj > 0.4): 
                new_jetPt.push_back(input_tree.jetP4[j].Pt())
                #print j, input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
-               new_jetTightId.push_back(bool(input_tree.jetMonojetId[j]) is True)
-               new_jetSecondId.push_back(bool(input_tree.jetMonojetIdLoose[j]) is True)
+               new_jetTightId.push_back(input_tree.jetMonojetId[j])
+               new_jetSecondId.push_back(input_tree.jetMonojetIdLoose[j])
                new_jetPhi.push_back(input_tree.jetP4[j].Phi())
 
   dphi = -10000.
@@ -138,9 +138,3 @@ print 'INFO - Photon Control Region Cut Flow Chart: '
 print 'INFO - Full     '+ str(n_entries)
 print 'INFO - NPh Cut  '+ str(n_pho)
 print 'INFO - Jet Cut  '+ str(n_jet)
-print 'INFO - 2_j Cut  '+ str(n_2ndjet)
-print 'INFO - Phi Cut  '+ str(n_dphi)
-print 'INFO - NJet Cut '+ str(n_njet)
-print 'INFO - NLep Cut '+ str(n_nlep)
-print 'INFO - NTau Cut '+ str(n_ntau)
-print 'INFO - NMet Cut '+ str(n_fakemet)

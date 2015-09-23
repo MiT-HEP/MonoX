@@ -91,6 +91,7 @@ for ientry in range(0,n_entries):
                   n_npho += 1
                   
 
+
 ### Control Region Calculations ##########
   
 
@@ -119,26 +120,23 @@ for ientry in range(0,n_entries):
     for i in range (0,input_tree.lepP4.GetEntriesFast()):
       if (fabs(input_tree.lepPdgId[i]) == 11 ):
         foundEl = True
-      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepTightId[i] and (input_tree.lepIso[i]/input_tree.lepP4[i].Pt()) < 0.12):
+      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepTightId[i] ):
+                
         foundTightMu = True
         new_tightMuPt.push_back(input_tree.lepP4[i].Pt())
         MT = transverseMass(input_tree.lepP4[i].Pt(), input_tree.lepP4[i].Phi(),input_tree.metP4[0].Energy(),input_tree.metP4[0].Phi())
         fakeMET = input_tree.metP4[0].Energy() +  input_tree.lepPfPt[i]
-
-        #check for overlapping taus
         if(input_tree.tauP4.GetEntriesFast() > 0):
           for t in range(0,input_tree.tauP4.GetEntriesFast()):
             dRt = deltaR(input_tree.lepP4[i].Phi(),input_tree.lepP4[i].Eta(),input_tree.tauP4[t].Phi(),input_tree.tauP4[t].Eta())
             if (dRt > 0.4):
               new_tauPt.push_back(input_tree.tauP4[t].Pt())
 
-        #check for overlapping jets
         if(input_tree.jetP4.GetEntriesFast() > 0):
            for j in range(0,input_tree.jetP4.GetEntriesFast()):
              dRj = deltaR(input_tree.lepP4[i].Phi(),input_tree.lepP4[i].Eta(),input_tree.jetP4[j].Phi(),input_tree.jetP4[j].Eta())
              if (dRj > 0.4): 
                new_jetPt.push_back(input_tree.jetP4[j].Pt())
-               #print j, input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
                new_jetTightId.push_back(input_tree.jetMonojetId[j])
                new_jetSecondId.push_back(input_tree.jetMonojetIdLoose[j])
                new_jetPhi.push_back(input_tree.jetP4[j].Phi())
@@ -156,7 +154,7 @@ for ientry in range(0,n_entries):
 
   if(foundTightMu and new_tightMuPt.size()==1):
     n_mu_tight_cr_sm += 1
-    print input_tree.runNum,":",input_tree.lumiNum,":",input_tree.eventNum
+
     if(new_jetPt.size() > 0 and new_jetPt[0]>110. and new_jetTightId[0]):
       n_jet_cr_sm += 1
       if(new_jetPt.size() == 1 or (new_jetPt.size() > 1 and new_jetSecondId[1]) ):
@@ -177,6 +175,8 @@ for ientry in range(0,n_entries):
                       n_mt_cr_sm += 1
                       if(fakeMET > 200):
                         n_fakemet_cr_sm +=1
+
+
 
 print 'INFO - Signal Cut Flow Chart: '
 print 'INFO - Full     '+ str(n_entries)
