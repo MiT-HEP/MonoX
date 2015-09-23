@@ -4,7 +4,7 @@ from ROOT import *
 #ROOT.gROOT.SetBatch(True)
 
 # Fitting function
-def FitTemplates(name,var,cut,datahist,sigtemp,bkgtemp):
+def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     nEvents = datahist.sumEntries()
     sigpdf = RooHistPdf('sig', 'sig', RooArgSet(var), sigtemp, 2)
     bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(var), bkgtemp, 2)
@@ -16,12 +16,13 @@ def FitTemplates(name,var,cut,datahist,sigtemp,bkgtemp):
     canvas = TCanvas()
 
     frame = var.frame()
-    
+    frame.SetTitle(title)
+
     datahist.plotOn(frame, RooFit.Name("data"))
     model.plotOn(frame, RooFit.Name("Fit"))
     # model.paramOn(frame)
-    model.plotOn(frame, RooFit.Components('bkg'),RooFit.LineStyle(kDashed),RooFit.LineColor(kGreen))
-    model.plotOn(frame, RooFit.Components('sig'),RooFit.LineStyle(kDashed),RooFit.LineColor(kRed))
+    model.plotOn(frame, RooFit.Components('bkg'),RooFit.Name("fake"),RooFit.LineStyle(kDashed),RooFit.LineColor(kGreen))
+    model.plotOn(frame, RooFit.Components('sig'),RooFit.Name("real"),RooFit.LineStyle(kDashed),RooFit.LineColor(kRed))
     #sigpdf.plotOn(frame, RooFit.Name("signal"))
     #bkgpdf.plotOn(frame, RooFit.Name("fake"))
     
@@ -40,7 +41,18 @@ def FitTemplates(name,var,cut,datahist,sigtemp,bkgtemp):
     purity = float(nReal) / float(nReal + nFake)
     print "Purity of Photons is:", purity
     
-    
+    text = TText() #0.8,0.7,"Purity: "+str(round(purity,4)))
+    text.DrawTextNDC(0.6,0.8,"Purity: "+str(round(purity,4)))
+
+    leg = TLegend(0.6,0.6,0.85,0.75 );
+    leg.SetFillColor(kWhite);
+    leg.SetTextSize(0.03);
+    # leg.SetHeader("templates LOWER<p_{T}<UPPER");
+    leg.AddEntry(frame.findObject("data"), "data", "P");
+    leg.AddEntry(frame.findObject("Fit"), "real+fake fit to data", "L");
+    leg.AddEntry(frame.findObject("real"), "real", "L"); # model_Norm[sieie]_Comp[sig]
+    leg.AddEntry(frame.findObject("fake"), "fake", "L"); # model_Norm[sieie]_Comp[bkg]
+    leg.Draw();
 
     canvas.SaveAs(name+'.pdf')
     canvas.SetLogy()
@@ -60,13 +72,13 @@ gROOT.LoadMacro(TemplateGeneratorPath)
 # Template info
 # Wlike
 #'''
-skims = [ ('TempSignal','TempSignal',kPhoton) # (selection name, skim file to read from, template type)
-          ,('TempBkgdData','TempBkgdData',kBackground)
-          ,('TempBkgdMc','TempBkgdMc',kBackground)
-          ,('FitData','FitData',kPhoton)
-          ,('FitMc','FitMc',kPhoton)
-          ,('McTruthSignal','FitMc',kPhoton)
-          ,('McTruthBkgd','FitMc',kBackground) ]
+skims = [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
+          ,('TempBkgdData','TempBkgdData',kBackground,'Background Template from Data')
+          ,('TempBkgdMc','TempBkgdMc',kBackground,'Background Template from MC')
+          ,('FitData','FitData',kPhoton,'Fit Template from Data')
+          ,('FitMc','FitMc',kPhoton,'Fit Template from MC')
+          ,('McTruthSignal','FitMc',kPhoton,'Signal Template from MC Truth')
+          ,('McTruthBkgd','FitMc',kBackground,'Background Template from MC Truth') ]
 '''
 skims = [ ( 'TempSignalGJets','TempSignalGJets',kPhoton)
           ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground)
@@ -183,21 +195,27 @@ for sel in sels:
         frame = sieie.frame()
         temp.plotOn(frame)
         
+        frame.SetTitle(skims[skim][3])
+
         frame.Draw()
         
         canvas.SaveAs(tempname+'.pdf')
 
 
     # Fit for data
+    dataTitle = "Photon Purity in SingleMuon DataSet"
     # (dataReal,dataFake) = FitTemplates("purity_data_"+sel, sieie, cutSieie, templates[3], templates[0], templates[1])
-    dataPurity = FitTemplates("purity_data_"+sel, sieie, cutSieie, templates[3], templates[0], templates[1])
+    dataPurity = FitTemplates("purity_data_"+sel, dataTitle,  sieie, cutSieie, templates[3], templates[0], templates[1])
+    
     # Fit for MC
+    mcTitle = "Photon Purity in WJets Monte Carlo"
     # (mcReal, mcFake) = FitTemplates("purity_mc_"+sel, sieie, cutSieie, templates[4], templates[0], templates[2])
-    mcPurity = FitTemplates("purity_mc_"+sel, sieie, cutSieie, templates[4], templates[0], templates[2])
+    mcPurity = FitTemplates("purity_mc_"+sel, mcTitle, sieie, cutSieie, templates[4], templates[0], templates[2])
 
     # Fit for MC truth
+    truthTitle = "Photon Purity in WJets MC Truth"
     # (truthReal, truthFake) = FitTemplates("purity_mcTruth_"+sel, sieie, cutSieie, templates[4], templates[5], templates[6])
-    truthPurity = FitTemplates("purity_mcTruth_"+sel, sieie, cutSieie, templates[4], templates[5], templates[6])
+    truthPurity = FitTemplates("purity_mcTruth_"+sel, truthTitle, sieie, cutSieie, templates[4], templates[5], templates[6])
 
     # Calculate purity and print results
     '''
