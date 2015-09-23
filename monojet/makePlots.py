@@ -3,7 +3,8 @@
 import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import array
-from LoadData import *
+#from LoadData import *
+from LoadMonoPhoton import *
 from ROOT import *
 from math import *
 from tdrStyle import *
@@ -37,7 +38,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     h1 = {}
 
     Variables = {}    
-    cut_standard= build_selection(channel,10) ### Fix this back to 200 ###
+    cut_standard= build_selection(channel,100) ### Fix this back to 200 ###
     print "INFO Channel is: ", channel, " variable is: ", var, " Selection is: ", cut_standard,"\n"
     print 'INFO time is:', datetime.datetime.fromtimestamp( time.time())
 
@@ -175,7 +176,8 @@ arguments['jetpt']  = ['jetpt','jet1.pt()',17,150,1000,'Events/50 GeV','Leading 
 arguments['njets']  = ['njets','njets',3,1,4,'Events','Number of Jets',True]
 
 #channel_list = ['signal']
-channel_list  = ['signal','Wln','Zll']
+#channel_list  = ['signal','Wln','Zll']
+channel_list  = ['monophoton']
 #channel_list  = ['Zll']
 #variable_list = ['met','jetpt','njets','metRaw','genmet']
 processes     = []
