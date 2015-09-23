@@ -16,7 +16,9 @@ gROOT.LoadMacro("functions.C+");
 
 print "Starting Plotting Be Patient!"
 
-lumi = 40.02
+lumi = 15.480
+
+cut_goodruns = "(runNum == 1 || (runNum == 254231 && (lumiNum >=1 && lumiNum <= 24)) || (runNum == 254232 && (lumiNum >= 1 && lumiNum <= 81)) || (runNum == 254790 && ((lumiNum == 90) || (lumiNum >= 93 && lumiNum <= 630) || (lumiNum >= 633 && lumiNum <= 697) || (lumiNum >= 701 && lumiNum <= 715) || (lumiNum >= 719 && lumiNum <= 784))) || (runNum == 254852 && (lumiNum >= 47 && lumiNum <= 94)) || (runNum == 254879 && ((lumiNum == 52) || (lumiNum >= 54 && lumiNum <= 140))) || (runNum == 254906 && (lumiNum >= 1 && lumiNum <= 75)) || (runNum == 254907 && (lumiNum >= 1 && lumiNum <=52)))"
 
 def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False):
 
@@ -35,7 +37,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     h1 = {}
 
     Variables = {}    
-    cut_standard= build_selection(channel,200)
+    cut_standard= build_selection(channel,10) ### Fix this back to 200 ###
     print "INFO Channel is: ", channel, " variable is: ", var, " Selection is: ", cut_standard,"\n"
     print 'INFO time is:', datetime.datetime.fromtimestamp( time.time())
 
@@ -55,7 +57,9 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         print physics_processes[Type]['files'][0]
         f[Type] = ROOT.TFile(physics_processes[Type]['files'][0],"read")
         h1[Type] = f[Type].Get("htotal")
-        total =  h1[Type].GetBinContent(1)
+        tempTree = f[Type].Get("all")
+        tempTree.GetEntry(0)
+        total = h1[Type].GetBinContent(1)/abs(tempTree.mcWeight)
         f[Type].Close()
         
         input_tree   = makeTrees(Type,"events",channel)
@@ -66,7 +70,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         # this is the scale using the total number of effective events
         scale = 1.0;
         scale = float(lumi)*physics_processes[Type]['xsec']/total
-        #print "type: ", Type, "weight", w, "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
+        
+        print "type: ", Type, "weight", w, "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
 
         if Type.startswith('QCD') or Type.startswith('Zll') or \
         Type.startswith('others') or Type.startswith('Wlv') or \
@@ -88,7 +93,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
                         
         if Type.startswith("data"):
             Variables[Type].SetMarkerStyle(20)
-            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + " && triggerFired[0]==1)*mcWeight*"+str(w), "goff")
+            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + "&&" + cut_goodruns + " )*mcWeight*"+str(w), "goff")
         
         yield_dic[Type] = round(Variables[Type].Integral(),3)
 
@@ -97,8 +102,6 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     #added.Write()
             
     print 'INFO - Drawing the Legend', datetime.datetime.fromtimestamp( time.time())
-
-
 
     legend = TLegend(.60,.60,.92,.92)
     for process in  ordered_physics_processes:
@@ -165,7 +168,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
 arguments = {}
 #                = [var, bin, low, high, yaxis, xaxis, setLog]
-arguments['met']    = ['met','metP4[0].Pt()',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]
+arguments['met']    = ['met','metP4.Pt()',18,100,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]   ### Fix this back to 16,200,1000 ###
 arguments['metRaw'] = ['metRaw','metRaw',16,200,1000,'Events/50 GeV','Raw E_{T}^{miss} [GeV]',True]
 arguments['genmet'] = ['genmet','genmet',16,200,1000,'Events/50 GeV','Generated E_{T}^{miss} [GeV]',True]
 arguments['jetpt']  = ['jetpt','jet1.pt()',17,150,1000,'Events/50 GeV','Leading Jet P_{T} [GeV]',True]

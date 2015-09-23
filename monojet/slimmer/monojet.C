@@ -85,7 +85,7 @@ Bool_t monojet::Process(Long64_t entry)
     //cout << "Processing event number: " << entry << endl;
 
     // To make the processing fast, apply a very looose selection
-    if (((TLorentzVector*)((*metP4)[0]))->Pt() < 40. or jetP4->GetEntries() < 1) return kTRUE;
+    if (jetP4->GetEntries() < 1) return kTRUE;
 
     //this is the type tree
     tm->SetValue("run",runNum);
@@ -119,7 +119,7 @@ Bool_t monojet::Process(Long64_t entry)
         TLorentzVector* Lepton = (TLorentzVector*) lepP4->At(lepton);
 
         // check if this is a tight lep, and check the overlap
-        if (Lepton->Pt() > 20. && ((*lepSelBits)[lepton] & (0x1 << 4)) != 0){
+        if (Lepton->Pt() > 20. && ((*lepSelBits)[lepton] & (0x1 << 5)) != 0){
             n_tightlep +=1;
             
             //check overlap with jets
@@ -196,7 +196,6 @@ Bool_t monojet::Process(Long64_t entry)
     // type tree
 
     int type_event = -1;
-
 
     // forcing all regions to be orthogonal wrt to each other
     if (((TLorentzVector*)((*metP4)[0]))->Pt() > 100. && 
