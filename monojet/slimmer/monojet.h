@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sat Aug 15 11:47:51 2015 by ROOT version 5.34/32
+// Tue Sep 15 17:09:55 2015 by ROOT version 5.34/32
 // from TTree events/events
-// found on file: nero_dy.root
+// found on file: /data/blue/dmdata/V0001/bambu2nero/common/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3/nero_0000.root
 //////////////////////////////////////////////////////////
 
 #ifndef monojet_h
@@ -51,12 +51,10 @@ using namespace std;
 class monojet : public TSelector {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
-    
-    TreeManager* tm;
+   TreeManager    *tm;
+   TTree          *clonetree;
+   TTree          *eventstree;
 
-    TTree *clonetree;
-    TTree *eventstree;
-    
    // Declaration of leaf types
    Int_t           isRealData;
    Int_t           runNum;
@@ -78,24 +76,38 @@ public :
    vector<bool>    *jetMonojetIdLoose;
    vector<float>   *jetQ;
    vector<float>   *jetQnoPU;
-   TClonesArray    *fatjetP4;
-   vector<float>   *fatjetRawPt;
-   vector<int>     *fatjetFlavour;
-   vector<float>   *fatjetTau1;
-   vector<float>   *fatjetTau2;
-   vector<float>   *fatjetTau3;
-   vector<float>   *fatjetTrimmedMass;
-   vector<float>   *fatjetPrunedMass;
-   vector<float>   *fatjetFilteredMass;
-   vector<float>   *fatjetSoftdropMass;
+   TClonesArray    *fatjetak8P4;
+   vector<float>   *fatjetak8RawPt;
+   vector<int>     *fatjetak8Flavour;
+   vector<float>   *fatjetak8Tau1;
+   vector<float>   *fatjetak8Tau2;
+   vector<float>   *fatjetak8Tau3;
+   vector<float>   *fatjetak8TrimmedMass;
+   vector<float>   *fatjetak8PrunedMass;
+   vector<float>   *fatjetak8FilteredMass;
+   vector<float>   *fatjetak8SoftdropMass;
    TClonesArray    *ak8_subjet;
    vector<int>     *ak8jet_hasSubjet;
    vector<float>   *ak8subjet_btag;
-   vector<float>   *fatjetHbb;
+   vector<float>   *fatjetak8Hbb;
+   TClonesArray    *fatjetca15P4;
+   vector<float>   *fatjetca15RawPt;
+   vector<int>     *fatjetca15Flavour;
+   vector<float>   *fatjetca15Tau1;
+   vector<float>   *fatjetca15Tau2;
+   vector<float>   *fatjetca15Tau3;
+   vector<float>   *fatjetca15TrimmedMass;
+   vector<float>   *fatjetca15PrunedMass;
+   vector<float>   *fatjetca15FilteredMass;
+   vector<float>   *fatjetca15SoftdropMass;
+   TClonesArray    *ca15_subjet;
+   vector<int>     *ca15jet_hasSubjet;
+   vector<float>   *ca15subjet_btag;
+   vector<float>   *fatjetca15Hbb;
    TClonesArray    *lepP4;
    vector<int>     *lepPdgId;
    vector<float>   *lepIso;
-   vector<unsigned> *lepSelBits;
+   vector<unsigned int> *lepSelBits;
    vector<float>   *lepPfPt;
    vector<float>   *lepChIso;
    vector<float>   *lepNhIso;
@@ -107,9 +119,10 @@ public :
    TClonesArray    *metP4_GEN;
    TLorentzVector  *metNoMu;
    TLorentzVector  *pfMet_e3p0;
-   TLorentzVector  *metChargedHadron;
-   TLorentzVector  *metNeutralHadron;
-   TLorentzVector  *metNeutralEM;
+   TLorentzVector  *trackMet;
+   Float_t         caloMet_Pt;
+   Float_t         caloMet_Phi;
+   Float_t         caloMet_SumEt;
    TClonesArray    *genP4;
    TClonesArray    *genjetP4;
    vector<int>     *genPdgId;
@@ -171,20 +184,34 @@ public :
    TBranch        *b_jetMonojetIdLoose;   //!
    TBranch        *b_jetQ;   //!
    TBranch        *b_jetQnoPU;   //!
-   TBranch        *b_fatjetP4;   //!
-   TBranch        *b_fatjetRawPt;   //!
-   TBranch        *b_fatjetFlavour;   //!
-   TBranch        *b_fatjetTau1;   //!
-   TBranch        *b_fatjetTau2;   //!
-   TBranch        *b_fatjetTau3;   //!
-   TBranch        *b_fatjetTrimmedMass;   //!
-   TBranch        *b_fatjetPrunedMass;   //!
-   TBranch        *b_fatjetFilteredMass;   //!
-   TBranch        *b_fatjetSoftdropMass;   //!
+   TBranch        *b_fatjetak8P4;   //!
+   TBranch        *b_fatjetak8RawPt;   //!
+   TBranch        *b_fatjetak8Flavour;   //!
+   TBranch        *b_fatjetak8Tau1;   //!
+   TBranch        *b_fatjetak8Tau2;   //!
+   TBranch        *b_fatjetak8Tau3;   //!
+   TBranch        *b_fatjetak8TrimmedMass;   //!
+   TBranch        *b_fatjetak8PrunedMass;   //!
+   TBranch        *b_fatjetak8FilteredMass;   //!
+   TBranch        *b_fatjetak8SoftdropMass;   //!
    TBranch        *b_ak8_subjet;   //!
    TBranch        *b_ak8jet_hasSubjet;   //!
    TBranch        *b_ak8subjet_btag;   //!
-   TBranch        *b_fatjetHbb;   //!
+   TBranch        *b_fatjetak8Hbb;   //!
+   TBranch        *b_fatjetca15P4;   //!
+   TBranch        *b_fatjetca15RawPt;   //!
+   TBranch        *b_fatjetca15Flavour;   //!
+   TBranch        *b_fatjetca15Tau1;   //!
+   TBranch        *b_fatjetca15Tau2;   //!
+   TBranch        *b_fatjetca15Tau3;   //!
+   TBranch        *b_fatjetca15TrimmedMass;   //!
+   TBranch        *b_fatjetca15PrunedMass;   //!
+   TBranch        *b_fatjetca15FilteredMass;   //!
+   TBranch        *b_fatjetca15SoftdropMass;   //!
+   TBranch        *b_ca15_subjet;   //!
+   TBranch        *b_ca15jet_hasSubjet;   //!
+   TBranch        *b_ca15subjet_btag;   //!
+   TBranch        *b_fatjetca15Hbb;   //!
    TBranch        *b_lepP4;   //!
    TBranch        *b_lepPdgId;   //!
    TBranch        *b_lepIso;   //!
@@ -200,9 +227,10 @@ public :
    TBranch        *b_metP4_GEN;   //!
    TBranch        *b_metNoMu;   //!
    TBranch        *b_pfMet_e3p0;   //!
-   TBranch        *b_metChargedHadron;   //!
-   TBranch        *b_metNeutralHadron;   //!
-   TBranch        *b_metNeutralEM;   //!
+   TBranch        *b_trackMet;   //!
+   TBranch        *b_caloMet_Pt;   //!
+   TBranch        *b_caloMet_Phi;   //!
+   TBranch        *b_caloMet_SumEt;   //!
    TBranch        *b_genP4;   //!
    TBranch        *b_genjetP4;   //!
    TBranch        *b_genPdgId;   //!
@@ -243,17 +271,20 @@ public :
    TBranch        *b_triggerPhotons;   //!
    TBranch        *b_npv;   //!
 
-    TFile        *histoFile;
-    float        unskimmedEvents;
-    float        unskimmedEventsTotal;
-    int          fileCount;
-    TTree        *thisTree;
-    TFile        *file0;
-    TH1F         *h1_numOfEvents;
-    TVector3     *pvPosition;
-    float        weight;
-    
-    
+   TFile         *histoFile;
+   float         unskimmedEvents;
+   float         unskimmedEventsTotal;
+   int           fileCount;
+   TTree         *thisTree;
+   TFile         *file0;
+   TH1F          *h1_numOfEvents;
+   TVector3      *pvPosition;
+   float         weight;
+   TString       suffix_{""};
+   TClonesArray  *cleanJet{0};
+   TClonesArray  *cleanTau{0};
+
+
    monojet(TTree * /*tree*/ =0) : fChain(0) { }
    virtual ~monojet() { }
    virtual Int_t   Version() const { return 2; }
@@ -275,11 +306,6 @@ public :
    float deltaPhi(float phi1, float phi2);
    float transverseMass(float lepPt, float lepPhi, float met,  float metPhi);
 
- private:
-   TString suffix_{""};
-   TClonesArray* cleanJet{0};
-   TClonesArray* cleanTau{0};
-
    ClassDef(monojet,0);
 };
 
@@ -295,7 +321,7 @@ void monojet::Init(TTree *tree)
    // code, but the routine can be extended by the user if needed.
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
-    
+
    // Set object pointer
    jetP4 = 0;
    jetRawPt = 0;
@@ -312,20 +338,34 @@ void monojet::Init(TTree *tree)
    jetMonojetIdLoose = 0;
    jetQ = 0;
    jetQnoPU = 0;
-   fatjetP4 = 0;
-   fatjetRawPt = 0;
-   fatjetFlavour = 0;
-   fatjetTau1 = 0;
-   fatjetTau2 = 0;
-   fatjetTau3 = 0;
-   fatjetTrimmedMass = 0;
-   fatjetPrunedMass = 0;
-   fatjetFilteredMass = 0;
-   fatjetSoftdropMass = 0;
+   fatjetak8P4 = 0;
+   fatjetak8RawPt = 0;
+   fatjetak8Flavour = 0;
+   fatjetak8Tau1 = 0;
+   fatjetak8Tau2 = 0;
+   fatjetak8Tau3 = 0;
+   fatjetak8TrimmedMass = 0;
+   fatjetak8PrunedMass = 0;
+   fatjetak8FilteredMass = 0;
+   fatjetak8SoftdropMass = 0;
    ak8_subjet = 0;
    ak8jet_hasSubjet = 0;
    ak8subjet_btag = 0;
-   fatjetHbb = 0;
+   fatjetak8Hbb = 0;
+   fatjetca15P4 = 0;
+   fatjetca15RawPt = 0;
+   fatjetca15Flavour = 0;
+   fatjetca15Tau1 = 0;
+   fatjetca15Tau2 = 0;
+   fatjetca15Tau3 = 0;
+   fatjetca15TrimmedMass = 0;
+   fatjetca15PrunedMass = 0;
+   fatjetca15FilteredMass = 0;
+   fatjetca15SoftdropMass = 0;
+   ca15_subjet = 0;
+   ca15jet_hasSubjet = 0;
+   ca15subjet_btag = 0;
+   fatjetca15Hbb = 0;
    lepP4 = 0;
    lepPdgId = 0;
    lepIso = 0;
@@ -341,9 +381,7 @@ void monojet::Init(TTree *tree)
    metP4_GEN = 0;
    metNoMu = 0;
    pfMet_e3p0 = 0;
-   metChargedHadron = 0;
-   metNeutralHadron = 0;
-   metNeutralEM = 0;
+   trackMet = 0;
    genP4 = 0;
    genjetP4 = 0;
    genPdgId = 0;
@@ -397,20 +435,34 @@ void monojet::Init(TTree *tree)
    fChain->SetBranchAddress("jetMonojetIdLoose", &jetMonojetIdLoose, &b_jetMonojetIdLoose);
    fChain->SetBranchAddress("jetQ", &jetQ, &b_jetQ);
    fChain->SetBranchAddress("jetQnoPU", &jetQnoPU, &b_jetQnoPU);
-   fChain->SetBranchAddress("fatjetP4", &fatjetP4, &b_fatjetP4);
-   fChain->SetBranchAddress("fatjetRawPt", &fatjetRawPt, &b_fatjetRawPt);
-   fChain->SetBranchAddress("fatjetFlavour", &fatjetFlavour, &b_fatjetFlavour);
-   fChain->SetBranchAddress("fatjetTau1", &fatjetTau1, &b_fatjetTau1);
-   fChain->SetBranchAddress("fatjetTau2", &fatjetTau2, &b_fatjetTau2);
-   fChain->SetBranchAddress("fatjetTau3", &fatjetTau3, &b_fatjetTau3);
-   fChain->SetBranchAddress("fatjetTrimmedMass", &fatjetTrimmedMass, &b_fatjetTrimmedMass);
-   fChain->SetBranchAddress("fatjetPrunedMass", &fatjetPrunedMass, &b_fatjetPrunedMass);
-   fChain->SetBranchAddress("fatjetFilteredMass", &fatjetFilteredMass, &b_fatjetFilteredMass);
-   fChain->SetBranchAddress("fatjetSoftdropMass", &fatjetSoftdropMass, &b_fatjetSoftdropMass);
+   fChain->SetBranchAddress("fatjetak8P4", &fatjetak8P4, &b_fatjetak8P4);
+   fChain->SetBranchAddress("fatjetak8RawPt", &fatjetak8RawPt, &b_fatjetak8RawPt);
+   fChain->SetBranchAddress("fatjetak8Flavour", &fatjetak8Flavour, &b_fatjetak8Flavour);
+   fChain->SetBranchAddress("fatjetak8Tau1", &fatjetak8Tau1, &b_fatjetak8Tau1);
+   fChain->SetBranchAddress("fatjetak8Tau2", &fatjetak8Tau2, &b_fatjetak8Tau2);
+   fChain->SetBranchAddress("fatjetak8Tau3", &fatjetak8Tau3, &b_fatjetak8Tau3);
+   fChain->SetBranchAddress("fatjetak8TrimmedMass", &fatjetak8TrimmedMass, &b_fatjetak8TrimmedMass);
+   fChain->SetBranchAddress("fatjetak8PrunedMass", &fatjetak8PrunedMass, &b_fatjetak8PrunedMass);
+   fChain->SetBranchAddress("fatjetak8FilteredMass", &fatjetak8FilteredMass, &b_fatjetak8FilteredMass);
+   fChain->SetBranchAddress("fatjetak8SoftdropMass", &fatjetak8SoftdropMass, &b_fatjetak8SoftdropMass);
    fChain->SetBranchAddress("ak8_subjet", &ak8_subjet, &b_ak8_subjet);
    fChain->SetBranchAddress("ak8jet_hasSubjet", &ak8jet_hasSubjet, &b_ak8jet_hasSubjet);
    fChain->SetBranchAddress("ak8subjet_btag", &ak8subjet_btag, &b_ak8subjet_btag);
-   fChain->SetBranchAddress("fatjetHbb", &fatjetHbb, &b_fatjetHbb);
+   fChain->SetBranchAddress("fatjetak8Hbb", &fatjetak8Hbb, &b_fatjetak8Hbb);
+   fChain->SetBranchAddress("fatjetca15P4", &fatjetca15P4, &b_fatjetca15P4);
+   fChain->SetBranchAddress("fatjetca15RawPt", &fatjetca15RawPt, &b_fatjetca15RawPt);
+   fChain->SetBranchAddress("fatjetca15Flavour", &fatjetca15Flavour, &b_fatjetca15Flavour);
+   fChain->SetBranchAddress("fatjetca15Tau1", &fatjetca15Tau1, &b_fatjetca15Tau1);
+   fChain->SetBranchAddress("fatjetca15Tau2", &fatjetca15Tau2, &b_fatjetca15Tau2);
+   fChain->SetBranchAddress("fatjetca15Tau3", &fatjetca15Tau3, &b_fatjetca15Tau3);
+   fChain->SetBranchAddress("fatjetca15TrimmedMass", &fatjetca15TrimmedMass, &b_fatjetca15TrimmedMass);
+   fChain->SetBranchAddress("fatjetca15PrunedMass", &fatjetca15PrunedMass, &b_fatjetca15PrunedMass);
+   fChain->SetBranchAddress("fatjetca15FilteredMass", &fatjetca15FilteredMass, &b_fatjetca15FilteredMass);
+   fChain->SetBranchAddress("fatjetca15SoftdropMass", &fatjetca15SoftdropMass, &b_fatjetca15SoftdropMass);
+   fChain->SetBranchAddress("ca15_subjet", &ca15_subjet, &b_ca15_subjet);
+   fChain->SetBranchAddress("ca15jet_hasSubjet", &ca15jet_hasSubjet, &b_ca15jet_hasSubjet);
+   fChain->SetBranchAddress("ca15subjet_btag", &ca15subjet_btag, &b_ca15subjet_btag);
+   fChain->SetBranchAddress("fatjetca15Hbb", &fatjetca15Hbb, &b_fatjetca15Hbb);
    fChain->SetBranchAddress("lepP4", &lepP4, &b_lepP4);
    fChain->SetBranchAddress("lepPdgId", &lepPdgId, &b_lepPdgId);
    fChain->SetBranchAddress("lepIso", &lepIso, &b_lepIso);
@@ -426,9 +478,10 @@ void monojet::Init(TTree *tree)
    fChain->SetBranchAddress("metP4_GEN", &metP4_GEN, &b_metP4_GEN);
    fChain->SetBranchAddress("metNoMu", &metNoMu, &b_metNoMu);
    fChain->SetBranchAddress("pfMet_e3p0", &pfMet_e3p0, &b_pfMet_e3p0);
-   fChain->SetBranchAddress("metChargedHadron", &metChargedHadron, &b_metChargedHadron);
-   fChain->SetBranchAddress("metNeutralHadron", &metNeutralHadron, &b_metNeutralHadron);
-   fChain->SetBranchAddress("metNeutralEM", &metNeutralEM, &b_metNeutralEM);
+   fChain->SetBranchAddress("trackMet", &trackMet, &b_trackMet);
+   fChain->SetBranchAddress("caloMet_Pt", &caloMet_Pt, &b_caloMet_Pt);
+   fChain->SetBranchAddress("caloMet_Phi", &caloMet_Phi, &b_caloMet_Phi);
+   fChain->SetBranchAddress("caloMet_SumEt", &caloMet_SumEt, &b_caloMet_SumEt);
    fChain->SetBranchAddress("genP4", &genP4, &b_genP4);
    fChain->SetBranchAddress("genjetP4", &genjetP4, &b_genjetP4);
    fChain->SetBranchAddress("genPdgId", &genPdgId, &b_genPdgId);
@@ -477,7 +530,7 @@ Bool_t monojet::Notify()
    // is started when using PROOF. It is normally not necessary to make changes
    // to the generated code, but the routine can be extended by the
    // user if needed. The return value is currently not used.
-    
+
    return kTRUE;
 }
 

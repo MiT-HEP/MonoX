@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-OUTPUTDIR='/scratch5/yiiyama/monojet'
+OUTPUTDIR='/afs/cern.ch/work/d/dabercro/public/Winter15/monojet'
 
 import os
 import sys
+import glob
 import shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)

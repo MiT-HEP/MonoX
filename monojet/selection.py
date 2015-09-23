@@ -11,7 +11,7 @@ def build_selection(selection,bin0):
         'jet multiplicity':['@jetP4.size()<3',selections],
         'deltaPhi':['deltaPhi(jetP4[0].Phi(),metP4[0].Phi())>0.4',selections],
         #'trigger':['(triggerFired[0]==1 || triggerFired[1]==1)',selections],
-        'lepton veto':['@lepP4.size()==0',['signal']],
+        'lepton veto':['(@lepP4.size()==0 || lepP4[0].Pt() < 10)',['signal']],
         'extra stuff veto':['@photonP4.size()==0&&@tauP4.size()==0',selections], 
 
         #** Control Regions

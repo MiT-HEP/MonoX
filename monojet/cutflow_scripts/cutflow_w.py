@@ -63,18 +63,38 @@ for ientry in range(0,n_entries):
   #print deltaPhi(input_tree.jetP4[0].Phi(),input_tree.jetP4[1].Phi() )
   #print 'INFO ------------------------ Event '+str(ientry)+' ------------------------ '
 
-  dphi = -10000.
-  
-  if(input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0] and input_tree.jetMonojetIdLoose[1]) : # and input_tree.jetPuId() > -0.62) : 
-    dphi = deltaPhi( input_tree.jetP4[0].Phi(),input_tree.jetP4[1].Phi() )
-  else:
-     if (input_tree.jetP4.GetEntriesFast() < 2):
-       dphi= -99.999
-     else:
-       dphi = -10000.
-
-                  
-
+#<<<<<<< HEAD:monojet/cutflow_scripts/cutflow2.py
+#  dphi = -10000.
+#  
+#  if(input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0]==1 and input_tree.jetMonojetIdLoose[1]==1) : # and input_tree.jetPuId() > -0.62) : 
+#    dphi = deltaPhi( input_tree.jetP4[0].Phi(),input_tree.jetP4[1].Phi() )
+#  else:
+#     if (input_tree.jetP4.GetEntriesFast() < 2):
+#       dphi= -99.999
+#     else:
+#       dphi = -10000.
+#
+#  if (input_tree.jetP4.GetEntriesFast() > 0 and input_tree.jetP4[0].Pt() > 110 and input_tree.jetMonojetId[0]==1):
+#    n_jet += 1
+#    if (input_tree.jetP4.GetEntriesFast() == 1 or (input_tree.jetP4.GetEntriesFast() > 1 and input_tree.jetMonojetIdLoose[1]==1 )):
+#      n_2ndjet += 1
+#      if( fabs(dphi) < 2.5  or dphi == -99.999 ):
+#        n_dphi += 1
+#        if(input_tree.metP4[0].Energy() > 200 ):  
+#          n_met += 1
+#          if(input_tree.jetP4.GetEntriesFast() < 3): 
+#            n_njet += 1
+#            if(input_tree.lepP4.GetEntriesFast() < 1): 
+#              n_nlep += 1
+#              if(input_tree.tauP4.GetEntriesFast() < 1): 
+#                n_ntau += 1
+#                if(input_tree.photonP4.GetEntriesFast() < 1):
+#                  n_npho += 1
+#                  
+#
+#
+#=======
+#>>>>>>> zeynep/master:monojet/cutflow_scripts/cutflow_w.py
 ### Control Region Calculations ##########
   
 
@@ -84,12 +104,11 @@ for ientry in range(0,n_entries):
   foundTightMu = False
   foundEl = False
   overlap = False
-  total_mu = 0
 
   new_jetPt = std.vector('double')()
   new_jetPhi = std.vector('double')()
-  new_jetTightId = std.vector('bool')()
-  new_jetSecondId = std.vector('bool')()
+  new_jetTightId = std.vector('int')()
+  new_jetSecondId = std.vector('int')()
   new_jetPt.clear()
   new_jetPhi.clear()
   new_jetTightId.clear()
@@ -104,17 +123,16 @@ for ientry in range(0,n_entries):
     for i in range (0,input_tree.lepP4.GetEntriesFast()):
       if (fabs(input_tree.lepPdgId[i]) == 11 ):
         foundEl = True
-      if (fabs(input_tree.lepPdgId[i]) == 13):
-        total_mu += 1
-      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepTightId[i] and divide(input_tree.lepIso[i],input_tree.lepP4[i].Pt()) < 0.12 ):
-        #print input_tree.lepIso[i],input_tree.lepP4[i].Pt(),divide(input_tree.lepIso[i],input_tree.lepP4[i].Pt())
+#<<<<<<< HEAD:monojet/cutflow_scripts/cutflow2.py
+      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepSelBits[i]  & (0x1 << 5) != 0 ):
+                
+#=======
+#      if (fabs(input_tree.lepPdgId[i]) == 13 and input_tree.lepP4[i].Pt() > 20. and input_tree.lepSelBits[i] & (0x1 << 4) !=0 and (input_tree.lepIso[i]/input_tree.lepP4[i].Pt()) < 0.12):
+#>>>>>>> zeynep/master:monojet/cutflow_scripts/cutflow_w.py
         foundTightMu = True
         new_tightMuPt.push_back(input_tree.lepP4[i].Pt())
-        MT = transverseMass(input_tree.lepPfPt[i], input_tree.lepP4[i].Phi(),input_tree.metP4[0].Energy(),input_tree.metP4[0].Phi())
-        #MT = transverseMass(input_tree.lepP4[i].Pt(), input_tree.lepP4[i].Phi(),input_tree.metP4[0].Energy(),input_tree.metP4[0].Phi())
-        #fakeMET = input_tree.metP4[0].Energy() +  input_tree.lepPfPt[i]
-        fakeMET = vectorSumPt(input_tree.metP4[0].Pt(), input_tree.metP4[0].Phi(),input_tree.lepPfPt[i], input_tree.lepP4[i].Phi())
-
+        MT = transverseMass(input_tree.lepP4[i].Pt(), input_tree.lepP4[i].Phi(),input_tree.metP4[0].Energy(),input_tree.metP4[0].Phi())
+        fakeMET = input_tree.metP4[0].Energy() +  input_tree.lepPfPt[i]
 
         #check for overlapping taus
         if(input_tree.tauP4.GetEntriesFast() > 0):
@@ -129,9 +147,11 @@ for ientry in range(0,n_entries):
              dRj = deltaR(input_tree.lepP4[i].Phi(),input_tree.lepP4[i].Eta(),input_tree.jetP4[j].Phi(),input_tree.jetP4[j].Eta())
              if (dRj > 0.4): 
                new_jetPt.push_back(input_tree.jetP4[j].Pt())
-               #print j, input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
-               new_jetTightId.push_back(input_tree.jetMonojetId[j])
-               new_jetSecondId.push_back(input_tree.jetMonojetIdLoose[j])
+
+               #print input_tree.jetMonojetId[j], input_tree.jetMonojetIdLoose[j]
+
+               new_jetTightId.push_back(int(input_tree.jetMonojetId[j] is True))
+               new_jetSecondId.push_back(int(input_tree.jetMonojetIdLoose[j] is True))
                new_jetPhi.push_back(input_tree.jetP4[j].Phi())
 
   dphi_cr = -10000.
@@ -145,42 +165,30 @@ for ientry in range(0,n_entries):
        dphi_cr = -10000.
 
 
-  if(input_tree.eventNum==47623):
-    print new_jetPt.size(), new_jetPt[0], new_jetPt[1], new_jetSecondId[1], dphi_cr
-    print new_jetPt[2]
-
-  if(foundTightMu and new_tightMuPt.size()==1 and total_mu == 1):
+  if(foundTightMu and new_tightMuPt.size()==1):
     n_mu_tight_cr_sm += 1
-    #print input_tree.runNum,":",input_tree.lumiNum,":",input_tree.eventNum
     if(new_jetPt.size() > 0 and new_jetPt[0]>110. and new_jetTightId[0]):
       n_jet_cr_sm += 1
-      #print input_tree.runNum,":",input_tree.lumiNum,":",input_tree.eventNum
       if(new_jetPt.size() == 1 or (new_jetPt.size() > 1 and new_jetSecondId[1]) ):
         n_2ndjet_cr_sm += 1
         if( fabs(dphi_cr) < 2.5  or dphi_cr == -99.999 ):
           n_dphi_cr_sm += 1
-          if(new_jetPt.size() < 3):
-          
-          #if(input_tree.jetP4.GetEntriesFast() < 3): 
+          if(input_tree.jetP4.GetEntriesFast() < 3): 
             n_njet_cr_sm += 1
-            #print input_tree.runNum,":",input_tree.lumiNum,":",input_tree.eventNum
             if( not foundEl ): 
               n_nlep_cr_sm += 1
               if( new_tauPt.size() < 1 ):
                 n_ntau_cr_sm += 1
                 if(input_tree.photonP4.GetEntriesFast() < 1):
                   n_npho_cr_sm += 1
-                  if(MT > 50):
-                    n_mt_cr_sm += 1
-                    if(fakeMET > 200):
-                      n_fakemet_cr_sm +=1
-                      #print input_tree.runNum,":",input_tree.lumiNum,":",input_tree.eventNum
-
-
+                  if(foundTightMu):
+                    n_mu_tight_cr_sm += 1
+                    if(MT > 50):
+                      n_mt_cr_sm += 1
+                      if(fakeMET > 200):
+                        n_fakemet_cr_sm +=1
 
 print " -> Control Region <- "
-
-
                   
 print 'INFO - Single Mu Control Region Cut Flow Chart: '
 print 'INFO - Full     '+ str(n_entries)
