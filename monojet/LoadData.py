@@ -6,17 +6,20 @@ colors = defineColors()
 
 lumi = 1.0
 
+channel_list  = ['signal','Wln','Zll']
+
+
 ######################################################
 
 #dataDir = "/data/blue/dmdata/V0001/miniaod2nero/monojet/"
-dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/monojet/"
+dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/monojetData/"
 
 physics_processes = {
         'Zll': { 'label':'Z#rightarrow ll',
                  'color' : colors.keys()[0],
                  'ordering': 1,                  
                  'xsec' : 6025.2,
-                 'files':[dataDir+'monojet_DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root',],
+                 'files':[dataDir+'monojet_DY.root',],
                  },
         'Zvv_ht100': { 'label':'Z#rightarrow#nu#nu',
                        'color' : colors.keys()[4],
@@ -51,13 +54,13 @@ physics_processes = {
                  #'color': ROOT.kYellow+2,
                  'ordering': 3,                  
                  'xsec' : 61526.7,
-                 'files':[dataDir+'monojet_WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root',],
+                 'files':[dataDir+'monojet_WJetsToLNu.root',],
                  },
         'others': { 'label':'top',
                     'color' : colors.keys()[1],
                     'ordering': 2,                  
                     'xsec' : 831.76,
-                    'files':[dataDir+'monojet_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root',],
+                    'files':[dataDir+'monojet_TTJets.root',],
                     },
         #   'QCD': { 'label':'QCD',
         #	    'color' : colors.keys()[3],
