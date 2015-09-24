@@ -6,6 +6,9 @@ colors = defineColors()
 
 lumi = 1.0
 
+channel_list  = ['signal','Wln','Zll']
+
+
 ######################################################
 
 #dataDir = "/data/blue/dmdata/V0001/miniaod2nero/monojet/"

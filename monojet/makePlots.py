@@ -5,7 +5,7 @@ from multiprocessing import Process
 from array import array
 #from LoadData import *
 from LoadElectron import *
-from LoadMonoPhoton import *
+#from LoadMonoPhoton import *
 from ROOT import *
 from math import *
 from tdrStyle import *
@@ -24,7 +24,7 @@ cut_goodruns = "(runNum == 1 || (runNum == 254231 && (lumiNum >=1 && lumiNum <= 
 
 def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False):
 
-    folder = 'output'
+    folder = '/afs/cern.ch/user/d/dabercro/www/MonoJet'
     if not os.path.exists(folder):
         os.mkdir(folder)
 
@@ -164,6 +164,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     f1.Draw("same")
 
     c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.pdf')
+    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.png')
+    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.C')
 
     del Variables
     del var
@@ -183,7 +185,7 @@ arguments['njets']  = ['njets','njets',3,1,4,'Events','Number of Jets',True]
 #channel_list = ['signal']
 #channel_list  = ['signal','Wln','Zll']
 #channel_list  = ['Wen','Zee']
-channel_list  = ['monophoton']
+#channel_list  = ['monophoton']
 #channel_list  = ['Zll']
 #variable_list = ['met','jetpt','njets','metRaw','genmet']
 processes     = []

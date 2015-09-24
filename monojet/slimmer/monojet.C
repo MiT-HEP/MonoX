@@ -95,6 +95,8 @@ Bool_t monojet::Process(Long64_t entry)
   
   float dR = 0.;
   
+  cleaningVecs.clear();
+
   lepPdgId_clean.clear();
   lepIso_clean.clear();
   lepSelBits_clean.clear();
@@ -150,53 +152,43 @@ Bool_t monojet::Process(Long64_t entry)
     }
     if (Lepton->Pt() > 20. && ((*lepSelBits)[lepton] & 32) == 32){
       n_tightlep +=1;
-      
-      //check overlap with jets
-      for(int j = 0; j < jetP4->GetEntries(); j++){
-        TLorentzVector* Jet = (TLorentzVector*) jetP4->At(j);
-        dR = deltaR(Lepton,Jet);
-        if (dR > dR_cut) {
-          new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
-          jetMonojetId_clean.push_back((*jetMonojetId)[j]);
-          jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
-          jetPuId_clean.push_back((*jetPuId)[j]);
-        }
-      }
-      //check overlap with taus
-      for(int tau = 0; tau < tauP4->GetEntries(); tau++){
-        TLorentzVector* Tau = (TLorentzVector*) tauP4->At(tau);
-        dR = deltaR(Lepton,Tau);
-        if (dR > dR_cut) new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
-        tauId_clean.push_back((*tauId)[tau]);
-        tauIso_clean.push_back((*tauIso)[tau]);
-      } // tau overlap
-    } // tight lepton selection
+      cleaningVecs.push_back(Lepton);
+    }
   }//lepton loop
 
   // ********* Leptons ********** //
   for (Int_t iPhoton = 0; iPhoton < photonP4->GetEntries(); iPhoton++) {
     TLorentzVector* tempPhoton = (TLorentzVector*) photonP4->At(iPhoton);
 
-    if (tempPhoton->Pt() > 175 && (*photonTightId)[iPhoton] == 1) {
-      for(int j = 0; j < jetP4->GetEntries(); j++){
-        TLorentzVector* Jet = (TLorentzVector*) jetP4->At(j);
-        dR = deltaR(tempPhoton,Jet);
-        if (dR > dR_cut) {
-          new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
-          jetMonojetId_clean.push_back((*jetMonojetId)[j]);
-          jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
-          jetPuId_clean.push_back((*jetPuId)[j]);
-        }
-      }
-      for(int tau = 0; tau < tauP4->GetEntries(); tau++){
-        TLorentzVector* Tau = (TLorentzVector*) tauP4->At(tau);
-        dR = deltaR(tempPhoton,Tau);
-        if (dR > dR_cut) new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
-        tauId_clean.push_back((*tauId)[tau]);
-        tauIso_clean.push_back((*tauIso)[tau]);
-      } // tau overlap
-    }
+    if (tempPhoton->Pt() > 175 && (*photonTightId)[iPhoton] == 1)
+      cleaningVecs.push_back(tempPhoton);
   }
+
+  for (UInt_t iVec = 0; iVec < cleaningVecs.size(); iVec++) {
+
+    TLorentzVector *theVec = cleaningVecs[iVec];
+
+    //check overlap with jets
+    for(int j = 0; j < jetP4->GetEntries(); j++){
+      TLorentzVector* Jet = (TLorentzVector*) jetP4->At(j);
+      dR = deltaR(theVec,Jet);
+      if (dR > dR_cut) {
+        new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
+        jetMonojetId_clean.push_back((*jetMonojetId)[j]);
+        jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
+        jetPuId_clean.push_back((*jetPuId)[j]);
+      }
+    }
+    //check overlap with taus
+    for(int tau = 0; tau < tauP4->GetEntries(); tau++){
+      TLorentzVector* Tau = (TLorentzVector*) tauP4->At(tau);
+      dR = deltaR(theVec,Tau);
+      if (dR > dR_cut) new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
+      tauId_clean.push_back((*tauId)[tau]);
+      tauIso_clean.push_back((*tauIso)[tau]);
+    } // tau overlap
+  }
+
   
   tm->SetValue("n_tightlep",n_tightlep);
   tm->SetValue("n_looselep",n_looselep);
@@ -283,6 +275,17 @@ Bool_t monojet::Process(Long64_t entry)
     *tauId = tauId_clean;
     *tauIso = tauIso_clean;
   }
+
+  *lepPdgId = lepPdgId_clean;
+  *lepIso = lepIso_clean;
+  *lepSelBits = lepSelBits_clean;
+  *lepPfPt = lepPfPt_clean;
+  *lepChIso = lepChIso_clean;
+  *lepNhIso = lepNhIso_clean;
+  *lepPhoIso = lepPhoIso_clean;
+  *lepPuIso = lepPuIso_clean;
+
+  lepP4 = cleanLep;
   
   // final skim
   if (((TLorentzVector*)((*metP4)[0]))->Pt() < 100. || type_event == -1) 

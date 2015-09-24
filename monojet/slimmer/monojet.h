@@ -285,6 +285,8 @@ public :
    TClonesArray  *cleanTau{0};
    TClonesArray  *cleanLep{0};
 
+   std::vector<TLorentzVector*> cleaningVecs;
+
    std::vector<int>     lepPdgId_clean;
    std::vector<float>   lepIso_clean;
    std::vector<unsigned int> lepSelBits_clean;
