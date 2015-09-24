@@ -164,31 +164,38 @@ Bool_t monojet::Process(Long64_t entry)
       cleaningVecs.push_back(tempPhoton);
   }
 
-  for (UInt_t iVec = 0; iVec < cleaningVecs.size(); iVec++) {
-
-    TLorentzVector *theVec = cleaningVecs[iVec];
-
-    //check overlap with jets
-    for(int j = 0; j < jetP4->GetEntries(); j++){
-      TLorentzVector* Jet = (TLorentzVector*) jetP4->At(j);
+  //check overlap with jets
+  for(int j = 0; j < jetP4->GetEntries(); j++){
+    TLorentzVector* Jet = (TLorentzVector*) jetP4->At(j);
+    bool foundMatch = false;
+    for (UInt_t iVec = 0; iVec < cleaningVecs.size(); iVec++) {
+      TLorentzVector *theVec = cleaningVecs[iVec];
+      
       dR = deltaR(theVec,Jet);
-      if (dR > dR_cut) {
-        new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
-        jetMonojetId_clean.push_back((*jetMonojetId)[j]);
-        jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
-        jetPuId_clean.push_back((*jetPuId)[j]);
-      }
+      if (dR < dR_cut)
+        foundMatch = true;
     }
-    //check overlap with taus
-    for(int tau = 0; tau < tauP4->GetEntries(); tau++){
-      TLorentzVector* Tau = (TLorentzVector*) tauP4->At(tau);
-      dR = deltaR(theVec,Tau);
-      if (dR > dR_cut) new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
-      tauId_clean.push_back((*tauId)[tau]);
-      tauIso_clean.push_back((*tauIso)[tau]);
-    } // tau overlap
+    new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
+    jetMonojetId_clean.push_back((*jetMonojetId)[j]);
+    jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
+    jetPuId_clean.push_back((*jetPuId)[j]);
   }
 
+  //check overlap with taus
+  for(int tau = 0; tau < tauP4->GetEntries(); tau++){
+    TLorentzVector* Tau = (TLorentzVector*) tauP4->At(tau);
+    bool foundMatch = false;
+    for (UInt_t iVec = 0; iVec < cleaningVecs.size(); iVec++) {
+      TLorentzVector *theVec = cleaningVecs[iVec];
+      
+      dR = deltaR(theVec,Tau);
+      if (dR < dR_cut)
+        foundMatch = true;
+    }
+    new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
+    tauId_clean.push_back((*tauId)[tau]);
+    tauIso_clean.push_back((*tauIso)[tau]);
+  }
   
   tm->SetValue("n_tightlep",n_tightlep);
   tm->SetValue("n_looselep",n_looselep);
