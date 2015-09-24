@@ -1,13 +1,20 @@
 import os
 import sys
 from ROOT import *
+from selections import *
 #ROOT.gROOT.SetBatch(True)
+
+gSystem.Load('libMitFlatDataFormats.so')
+gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
+gROOT.LoadMacro(TemplateGeneratorPath)
+
 
 # Fitting function
 def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     nEvents = datahist.sumEntries()
-    sigpdf = RooHistPdf('sig', 'sig', RooArgSet(var), sigtemp, 2)
-    bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(var), bkgtemp, 2)
+    sigpdf = RooHistPdf('sig', 'sig', RooArgSet(var), sigtemp) #, 2)
+    bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(var), bkgtemp) #, 2)
     nsig = RooRealVar('nsig', 'nsig', nEvents/2, 0., nEvents*1.5)
     nbkg = RooRealVar('nbkg', 'nbkg', nEvents/2, 0., nEvents*1.5)
     model = RooAddPdf("model", "model", RooArgList(sigpdf, bkgpdf), RooArgList(nsig, nbkg))
@@ -38,11 +45,19 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     # Calculate purity and print results
     print "Number of Real photons passing selection:", nReal
     print "Number of Fake photons passing selection:", nFake
-    purity = float(nReal) / float(nReal + nFake)
+    nTotal = nReal + nFake;
+    purity = float(nReal) / float(nTotal)
     print "Purity of Photons is:", purity
     
-    text = TText() #0.8,0.7,"Purity: "+str(round(purity,4)))
-    text.DrawTextNDC(0.6,0.8,"Purity: "+str(round(purity,4)))
+    upper = TEfficiency.ClopperPearson(int(nTotal),int(nReal),0.6827,True)
+    lower = TEfficiency.ClopperPearson(int(nTotal),int(nReal),0.6827,False)
+
+    upSig = upper - purity;
+    downSig = purity - lower;
+    aveSig = float(upSig + downSig) / 2.0;
+
+    text = TLatex() #0.8,0.7,"Purity: "+str(round(purity,4)))
+    text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,4))+'#pm'+str(round(aveSig,4))) # '+'+str(round(upSig,4))+'-'+str(round(downSig,4)))
 
     leg = TLegend(0.6,0.6,0.85,0.75 );
     leg.SetFillColor(kWhite);
@@ -64,111 +79,32 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     # purity = nsig / nEvents
     # return (nReal,nFake)
 
-gSystem.Load('libMitFlatDataFormats.so')
-gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
-TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
-gROOT.LoadMacro(TemplateGeneratorPath)
-
 # Template info
-# Wlike
-#'''
-skims = [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
-          ,('TempBkgdData','TempBkgdData',kBackground,'Background Template from Data')
-          ,('TempBkgdMc','TempBkgdMc',kBackground,'Background Template from MC')
-          ,('FitData','FitData',kPhoton,'Fit Template from Data')
-          ,('FitMc','FitMc',kPhoton,'Fit Template from MC')
-          ,('McTruthSignal','FitMc',kPhoton,'Signal Template from MC Truth')
-          ,('McTruthBkgd','FitMc',kBackground,'Background Template from MC Truth') ]
-'''
-skims = [ ( 'TempSignalGJets','TempSignalGJets',kPhoton)
-          ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground)
-          ,('TempBkgdGJets','TempBkgdGJets',kBackground)
-          ,('FitSinglePhoton','FitSinglePhoton',kPhoton)
-          ,('FitGJets','TempSignalGJets',kPhoton)
-          ,('GJetsTruthSignal','TempSignalGJets',kPhoton)
-          ,('GJetsTruthBkgd','TempSignalGJets',kBackground) ] 
-'''
-# Additional selections to apply
-cutEventWeight = '(weight) *'
+Measurement = { "Wlike_sieie" : [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
+                                  ,('TempBkgdData','TempBkgdData',kBackground,'Background Template from Data')
+                                  ,('TempBkgdMc','TempBkgdMc',kBackground,'Background Template from MC')
+                                  ,('FitData','FitData',kPhoton,'Fit Template from Data')
+                                  ,('FitMc','FitMc',kPhoton,'Fit Template from MC')
+                                  ,('McTruthSignal','FitMc',kPhoton,'Signal Template from MC Truth')
+                                  ,('McTruthBkgd','FitMc',kBackground,'Background Template from MC Truth') ]
+                ,"Monophoton_sieie" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton)
+                                        ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground)
+                                        ,('TempBkgdGJets','TempBkgdGJets',kBackground)
+                                        ,('FitSinglePhoton','FitSinglePhoton',kPhoton)
+                                        ,('FitGJets','TempSignalGJets',kPhoton)
+                                        ,('GJetsTruthSignal','TempSignalGJets',kPhoton)
+                                        ,('GJetsTruthBkgd','TempSignalGJets',kBackground) ] 
+                ,"CompGammaE_phIso" : [ ( 'TempSignalWgPhotons','TempSignalWgPhotons',kPhoton)
+                                     ,('TempSignalWgElectrons','TempSignalWgElectrons',kElectron) ] }
 
-cutBarrel = '(TMath::Abs(selPhotons.eta) < 1.5)'
-cutEndcap = '((TMath::Abs(selPhotons.eta) > 1.5) && (TMath::Abs(SelPhotons.eta) < 2.4))'
-cutEoverH = '(selPhotons.hOverE < 0.05)'
-
-cutChIsoBarrelVLoose = '(selPhotons.chIso < 4.44)'
-
-cutSieieBarrelMedium = '(selPhotons.sieie < 0.0100)'
-cutChIsoBarrelMedium = '(selPhotons.chIso < 1.31)'
-cutNhIsoBarrelMedium = '(selPhotons.nhIso < (0.60 + TMath::Exp(0.0044*selPhotons.pt+0.5809)))'
-cutPhIsoBarrelMedium = '(selPhotons.phIso < (1.33 + 0.0043*selPhotons.pt))'
-cutSelBarrelMedium = '('+cutBarrel+' && '+cutEoverH+' && '+cutNhIsoBarrelMedium+' && '+cutPhIsoBarrelMedium+')'
-
-cutMatchedToReal = '((TMath::Abs(selPhotons.matchedGen) == 22) && (!selPhotons.hadDecay))' 
-cutMatchedToHadDecay = '((TMath::Abs(selPhotons.matchedGen) == 22) && (selPhotons.hadDecay))'
-
-cutPhotonPt = [ ('PhotonPt20to60', '((selPhotons.pt > 20) && (selPhotons.pt < 60) )')
-                ,('PhotonPt60to100', '((selPhotons.pt > 60) && (selPhotons.pt < 100) )')
-                #    ,('PhotonPt100toInf', '((selPhotons.pt > 100))') ]
-                ,('PhotonPt100to140', '((selPhotons.pt > 100) && (selPhotons.pt < 140) )')
-                ,('PhotonPt140to180', '((selPhotons.pt > 140) && (selPhotons.pt < 180) )')
-                ,('PhotonPt180toInf', '((selPhotons.pt > 180) )') ]
-
-cutSingleMuon = '(muons.size == 1)'
-cutElectronVeto = '(electrons.size == 0)'
-cutTauVeto = '(ntau == 0)'
-cutMet20 = '(t1Met.met > 20)'
-cutWlike = '('+cutSingleMuon+' && '+cutElectronVeto+' && '+cutTauVeto+' && '+cutMet20+')'
-
-selections = { 'medium_barrel_inclusive' : [ 
-        cutEventWeight+'('+cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && !'+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && !'+cutChIsoBarrelMedium+' && !'+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay+')' ]
-               ,'medium_barrel_Wlike' : [ 
-        cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelMedium+' && !'+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay+')' ]
-               ,'vloose_barrel_Wlike' : [ 
-        cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose+' && !'+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-        ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay+')'  ] }
-
-for cut in cutPhotonPt:
-    cuts = [ cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && !'+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && !'+cutChIsoBarrelMedium+' && !'+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay+')' ]
-    selections['medium_barrel_Wlike_'+cut[0]] = cuts
-
-for cut in cutPhotonPt:
-    cuts = [ cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && !'+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && !'+cutChIsoBarrelMedium+' && !'+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal+')'
-             ,cutEventWeight+'('+cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay+')' ]
-    selections['medium_barrel_'+cut[0]] = cuts
+Variables = { "sieie"  : (RooRealVar('sieie', '#sigma_{i#etai#eta}', 0., 0.02),0.0100,kSigmaIetaIeta)
+              ,"phIso" : (RooRealVar('phIso', 'Ph Iso (GeV)', 0., 0.02),1.33,kPhotonIsolation) } # cut is actually a function of pT
 
 # Make templates from skims
-sieie = RooRealVar('sieie', '#sigma_{i#etai#eta}', 0., 0.02)
-cutSieie = 0.0100
-# sel = 'vloose_barrel_Wlike'
-# sels = ['medium_barrel_'+cut[0] for cut in cutPhotonPt]
+varName = 'sieie'
+var = Variables[varName]
+skims = Measurement["Wlike_sieie"]
+#sels = ['medium_barrel_'+cut[0] for cut in cutPhotonPt]
 sels = ['medium_barrel_Wlike'] #PhotonPt180toInf']
 purities = [[],[],[],[]]
 for sel in sels:
@@ -178,7 +114,7 @@ for sel in sels:
         
         inname = '/scratch5/ballen/hist/purity/simpletree3/Skim'+skims[skim][1]+'_Wlike.root'
         print 'Making template from:', inname
-        generator = TemplateGenerator(skims[skim][2], kSigmaIetaIeta, inname)
+        generator = TemplateGenerator(skims[skim][2], var[2], inname)
         generator.setTemplateBinning(40, 0., 0.02)
         
         print 'Applying selection:', sel
@@ -186,13 +122,13 @@ for sel in sels:
         tempH = generator.makeTemplate(sel, selections[sel][skim])
         
         tempname = 'template_'+skims[skim][0]+'_'+sel
-        temp = RooDataHist(tempname, tempname, RooArgList(sieie), tempH)
+        temp = RooDataHist(tempname, tempname, RooArgList(var[0]), tempH)
         
         # temp.Write()
         templates.append(temp)
         
         canvas = TCanvas()
-        frame = sieie.frame()
+        frame = var[0].frame()
         temp.plotOn(frame)
         
         frame.SetTitle(skims[skim][3])
@@ -204,18 +140,18 @@ for sel in sels:
 
     # Fit for data
     dataTitle = "Photon Purity in SingleMuon DataSet"
-    # (dataReal,dataFake) = FitTemplates("purity_data_"+sel, sieie, cutSieie, templates[3], templates[0], templates[1])
-    dataPurity = FitTemplates("purity_data_"+sel, dataTitle,  sieie, cutSieie, templates[3], templates[0], templates[1])
+    # (dataReal,dataFake) = FitTemplates("purity_data_"+sel, var[0], var[1], templates[3], templates[0], templates[1])
+    dataPurity = FitTemplates("purity_data_"+sel, dataTitle,  var[0], var[1], templates[3], templates[0], templates[1])
     
     # Fit for MC
     mcTitle = "Photon Purity in WJets Monte Carlo"
-    # (mcReal, mcFake) = FitTemplates("purity_mc_"+sel, sieie, cutSieie, templates[4], templates[0], templates[2])
-    mcPurity = FitTemplates("purity_mc_"+sel, mcTitle, sieie, cutSieie, templates[4], templates[0], templates[2])
+    # (mcReal, mcFake) = FitTemplates("purity_mc_"+sel, var[0], var[1], templates[4], templates[0], templates[2])
+    mcPurity = FitTemplates("purity_mc_"+sel, mcTitle, var[0], var[1], templates[4], templates[0], templates[2])
 
     # Fit for MC truth
     truthTitle = "Photon Purity in WJets MC Truth"
-    # (truthReal, truthFake) = FitTemplates("purity_mcTruth_"+sel, sieie, cutSieie, templates[4], templates[5], templates[6])
-    truthPurity = FitTemplates("purity_mcTruth_"+sel, truthTitle, sieie, cutSieie, templates[4], templates[5], templates[6])
+    # (truthReal, truthFake) = FitTemplates("purity_mcTruth_"+sel, var[0], var[1], templates[4], templates[5], templates[6])
+    truthPurity = FitTemplates("purity_mcTruth_"+sel, truthTitle, var[0], var[1], templates[4], templates[5], templates[6])
 
     # Calculate purity and print results
     '''
@@ -242,8 +178,8 @@ for sel in sels:
     print "Purity of Photons in truthFit is:", truthPurity
     purities[2].append(truthPurity)
     
-    truthReal = templates[5].sumEntries('sieie < 0.0100')
-    truthTotal = templates[4].sumEntries('sieie < 0.0100')
+    truthReal = templates[5].sumEntries(varName+' < '+str(var[1]))
+    truthTotal = templates[4].sumEntries(varName+' < '+str(var[1]))
     print "Number of Real photons passing selection in mcTruth:", truthReal
     print "Number of Total photons passing selection in mcTruth:", truthTotal
     truthPurity = float(truthReal) / float(truthTotal)

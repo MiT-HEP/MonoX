@@ -16,11 +16,13 @@
 enum TemplateType {
   kPhoton,
   kBackground,
+  kElectron,
   nTemplateTypes
 };
 
 enum TemplateVar {
   kSigmaIetaIeta,
+  kPhotonIsolation,
   nTemplateVars
 };
 
@@ -29,7 +31,7 @@ enum FakeVar {
   kNhIso,
   kPhIso,
   kHOverE,
-  // kSieie,
+  kSieie,
   nFakeVars
 };
 
@@ -136,110 +138,174 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     { {0.0043,0.0043,0.0043},
       {0.0041,0.0041,0.0041} }
   };
-
-  Double_t nEvents =  _input->GetEntries();
+  
+  
   Double_t eventWeight;
   if (_xsec < 0) eventWeight = 1;
-  else eventWeight = _xsec / nEvents; 
+  else {
+    TH1D* hWeight = new TH1D("hWeight","Sum of Weights", 1, 0.0, 1.0);
+    _input->Draw("0.5>>hWeight","weight","goff");
+    Double_t nEvents =  hWeight->GetBinContent(1);
+    Double_t lumi = 8.1;
+    eventWeight = _xsec * lumi / nEvents; 
+  }
 
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
     if (iEntry % 10000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
 
-    event.weight = eventWeight;
+    event.weight *= eventWeight;
 
     selectedPhotons.clear();
     unsigned iSel(0);
 
-    Bool_t PassCut[nFakeVars];
-    Bool_t PassSel;
-      
     auto& photons(event.photons);
-    for (unsigned iP(0); iP != photons.size(); ++iP) {
+    auto& electrons(event.electrons);
+    
+    UInt_t kObject = 0; // 0 = photon
+    UInt_t nObjects = photons.size();
+    
+    if (tType_ == kElectron) {
+      kObject = 1; // 1 = electron
+      nObjects = electrons.size();
+    }
+
+    Float_t* hOverE[2] = {
+      event.photons.data.hOverE,
+      event.electrons.data.hOverE
+    };
+
+    Float_t* sieie[2] = {
+      event.photons.data.sieie,
+      event.electrons.data.sieie
+    };
+    
+    Float_t* chIso[2] = {
+      event.photons.data.chIso,
+      event.electrons.data.chIsoPh
+    };
+
+    Float_t* nhIso[2] = {
+      event.photons.data.nhIso,
+      event.electrons.data.nhIsoPh
+    };
+
+    Float_t* phIso[2] = {
+      event.photons.data.phIso,
+      event.electrons.data.phIsoPh
+    };
+
+
+    for (unsigned iP(0); iP != nObjects; ++iP) {
       // apply photon selection for the background
-      
-      PassSel = true;
+    
+      Bool_t PassCut[nFakeVars];
+      Bool_t PassSel = true;
       for (unsigned iC(0); iC < nFakeVars; iC++) {
 	PassCut[iC] = false;
       }
 
       // barrel photons
-      if (TMath::Abs(photons[iP].eta) < 1.5) {
-	/*
-	  if (!(_loc == kBarrel)) {
-	  PassSel = false;
-	  continue;
-	}
-	*/
-	
-	// baseline photon selection
-	if (photons[iP].hOverE < cut_hOverE[kBarrel][_id]) PassCut[kHOverE] = true;
-	if (photons[iP].chIso < cut_chIso[kBarrel][_id]) PassCut[kChIso] = true;
-	if (photons[iP].nhIso < (cut_nhIso[0][kBarrel][_id]+TMath::Exp(cut_nhIso[1][kBarrel][_id]*photons[iP].pt + cut_nhIso[2][kBarrel][_id]))) PassCut[kNhIso] = true;
-	if (photons[iP].phIso < (cut_phIso[0][kBarrel][_id] + cut_phIso[1][kBarrel][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
+      UInt_t kLocation;
+      if (TMath::Abs(photons[iP].eta) < 1.5) kLocation = kBarrel;
+      else kLocation = kEndcap;
+		
+      // baseline photon selection
+      if (hOverE[kObject][iP] < cut_hOverE[kLocation][_id]) PassCut[kHOverE] = true;
+      if (chIso[kObject][iP] < cut_chIso[kLocation][_id]) PassCut[kChIso] = true;
+      if (nhIso[kObject][iP] < (cut_nhIso[0][kLocation][_id]+TMath::Exp(cut_nhIso[1][kLocation][_id]*photons[iP].pt + cut_nhIso[2][kLocation][_id]))) PassCut[kNhIso] = true;
+      if (tVar_ == kPhotonIsolation) PassCut[kPhIso] = true;
+      else {
+	if (phIso[kObject][iP] < (cut_phIso[0][kLocation][_id] + cut_phIso[1][kLocation][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
+      }
+      if (tVar_ == kSigmaIetaIeta) PassCut[kSieie] = true;
+      else {
+	if (sieie[kObject][iP] < cut_sieie[kLocation][_id]) PassCut[kSieie] = true;
+      }
+      if (tType_ != kElectron) {
 	if (photons[iP].csafeVeto) continue;
-
-	// real vs fake selection
-	if (tType_ == kPhoton) {
-	  for (unsigned iC(0); iC < nFakeVars; iC++) {
-	    if (!PassCut[iC]) PassSel = false;
-	  }
-	}
-	else if (tType_ == kBackground) {
-	  for (unsigned iC(0); iC < nFakeVars; iC++) {
-	    if (iC == _fakevar) {
-	      if (PassCut[iC]) PassSel = false;
-	      // picking out chIso as fakevar
-	      if (photons[iP].chIso > cut_chIso[kBarrel][kTight]) PassSel = true;
-	    }
-	    else { 
-	      if (!PassCut[iC]) PassSel = false;
-	    }
-	  }
+      }
+      
+      // real vs fake selection
+      if (tType_ == kPhoton) {
+	for (unsigned iC(0); iC < nFakeVars; iC++) {
+	  if (!PassCut[iC]) PassSel = false;
 	}
       }
-
-      // endcap photons (loose selection)
-      else {
-	/*
-	if (!(_loc == kEndcap)) {
-	  PassSel = false;
-	  continue;
-	}
-	*/
-	
-	// baseline photon selection
-	if (photons[iP].hOverE < cut_hOverE[kEndcap][_id]) PassCut[kHOverE] = true;
-	if (photons[iP].chIso < cut_chIso[kEndcap][_id]) PassCut[kChIso] = true;
-	if (photons[iP].nhIso < (cut_nhIso[0][kEndcap][_id]+TMath::Exp(cut_nhIso[1][kEndcap][_id]*photons[iP].pt + cut_nhIso[2][kEndcap][_id]))) PassCut[kNhIso] = true;
-	if (photons[iP].phIso < (cut_phIso[0][kEndcap][_id] + cut_phIso[1][kEndcap][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
-	if (photons[iP].csafeVeto) continue;
-
-	// real vs fake selection
-	if (tType_ == kPhoton) {
-	  for (unsigned iC(0); iC < nFakeVars; iC++) {
-	    if (!PassCut[iC]) PassSel = false;
+      else if (tType_ == kBackground) {
+	for (unsigned iC(0); iC < nFakeVars; iC++) {
+	  if (iC == _fakevar) {
+	    if (PassCut[iC]) PassSel = false;
+	    if (_fakevar == kChIso) {
+	      if (chIso[kObject][iP] > cut_chIso[kLocation][kTight]) PassSel = true;
+	    }
+	    else if (_fakevar == kNhIso) {
+	      if (nhIso[kObject][iP] > (cut_nhIso[0][kLocation][kTight]+TMath::Exp(cut_nhIso[1][kLocation][kTight]*photons[iP].pt + cut_nhIso[2][kLocation][kTight]))) PassSel = true;
+	    }
+	    else if (_fakevar == kPhIso) {
+	      if (phIso[kObject][iP] > (cut_phIso[0][kLocation][kTight] + cut_phIso[1][kLocation][kTight]*photons[iP].pt)) PassSel = true;
+	    }
+	    else if (_fakevar == kHOverE) {
+	      if (hOverE[kObject][iP] > cut_hOverE[kLocation][kTight]) PassSel = true;
+	    }
+	    else if (_fakevar == kSieie) {
+	      if (sieie[kObject][iP] > cut_sieie[kLocation][kTight]) PassSel = true;
+	    }
 	  }
-	}
-	else if (tType_ == kBackground) {
-	  for (unsigned iC(0); iC < nFakeVars; iC++) {
-	    if (iC == _fakevar) {
-	      if (PassCut[iC]) PassSel = false;
-	      // picking out chIso as fakevar
-	      if (photons[iP].chIso > cut_chIso[kEndcap][kTight]) PassSel = true;
-	    }
-	    else { 
-	      if (!PassCut[iC]) PassSel = false;
-	    }
+	  else { 
+	    if (!PassCut[iC]) PassSel = false;
 	  }
 	}
       }
       
       if (!PassSel) continue;
-
+    
       selectedPhotons.resize(iSel + 1);
-      selectedPhotons[iSel] = photons[iP];
+      simpletree::Photon& selected(selectedPhotons[iSel]);
+      
+      if (tType_ == kElectron) {
+	selected.pt = electrons[iP].pt;
+	selected.eta = electrons[iP].eta;
+	selected.phi = electrons[iP].phi;    
+	selected.chIso = electrons[iP].chIsoPh; 
+	selected.nhIso = electrons[iP].nhIsoPh;
+	selected.phIso = electrons[iP].phIsoPh;
+	selected.sieie = electrons[iP].sieie;
+	selected.hOverE = electrons[iP].hOverE;
+	selected.matchedGen = electrons[iP].matchedGen;
+	selected.hadDecay = electrons[iP].hadDecay;
+	selected.pixelVeto = true;
+	selected.csafeVeto = true;
+	/*
+	selected.loose = -1;
+	selected.medium = -1;
+	selected.tight = -1;
+	selected.matchHLT120 = -1;
+	selected.matchHLT165HE10 = electrons[iP].matchHLT165HE10;
+	selected.matchHLT175 = electrons[iP].matchHLT175;
+	*/
+      }
+      else {
+	selected.pt = photons[iP].pt;
+	selected.eta = photons[iP].eta;
+	selected.phi = photons[iP].phi;    
+	selected.chIso = photons[iP].chIso; 
+	selected.nhIso = photons[iP].nhIso;
+	selected.phIso = photons[iP].phIso;
+	selected.sieie = photons[iP].sieie;
+	selected.hOverE = photons[iP].hOverE;
+	selected.matchedGen = photons[iP].matchedGen;
+	selected.hadDecay = photons[iP].hadDecay;
+	selected.pixelVeto = photons[iP].pixelVeto;
+	selected.csafeVeto = photons[iP].csafeVeto;
+	selected.loose = photons[iP].loose;
+	selected.medium = photons[iP].medium;
+	selected.tight = photons[iP].tight;
+	selected.matchHLT120 = photons[iP].matchHLT120;
+	selected.matchHLT165HE10 = photons[iP].matchHLT165HE10;
+	selected.matchHLT175 = photons[iP].matchHLT175;
+      } 
       ++iSel;
     }
  
@@ -275,6 +341,8 @@ TemplateGenerator::makeTemplate(char const* _name, char const* _expr)
   TString var;
   if (tVar_ == kSigmaIetaIeta)
     var = "sieie";
+  else if (tVar_ == kPhotonIsolation)
+    var = "phIso";
 
   TString weight("weight");
   if (std::strlen(_expr) != 0) {
