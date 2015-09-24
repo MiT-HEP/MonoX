@@ -4,6 +4,7 @@ import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import array
 #from LoadData import *
+from LoadElectron import *
 from LoadMonoPhoton import *
 from ROOT import *
 from math import *
@@ -181,6 +182,7 @@ arguments['njets']  = ['njets','njets',3,1,4,'Events','Number of Jets',True]
 
 #channel_list = ['signal']
 #channel_list  = ['signal','Wln','Zll']
+#channel_list  = ['Wen','Zee']
 channel_list  = ['monophoton']
 #channel_list  = ['Zll']
 #variable_list = ['met','jetpt','njets','metRaw','genmet']
