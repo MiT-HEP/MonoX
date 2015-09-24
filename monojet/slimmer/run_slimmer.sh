@@ -3,18 +3,29 @@
 inFiles=$1
 fresh=$2
 
-for fileName in `cat $inFiles`; do
-    fileName="${fileName%.*}"
-    echo $fileName
-    if [ -f "monojet_$fileName.root" -o "$fresh" = "fresh" ]; then
-        if [ "$fresh" = "taketurns" ]; then
-            ./slimmer.py $fileName
-        else
-            ./slimmer.py $fileName &
+if [ ! -f $inFiles.running ]; then
+
+    touch $inFiles.running
+
+    for fileName in `cat $inFiles`; do
+        fileName="${fileName%.*}"
+        echo $fileName
+        if [ -f "monojet_$fileName.root" -o "$fresh" = "fresh" ]; then
+            if [ "$fresh" = "taketurns" ]; then
+                ./slimmer.py $fileName
+            else
+                ./slimmer.py $fileName &
+            fi
         fi
-    fi
-done
+    done
 
-wait
+    wait
 
-echo "Finished with "$inFiles"!"
+    rm $inFiles.running
+    echo "Finished with "$inFiles"!"
+
+else
+
+    echo "Already running on "$inFiles"..."
+
+fi

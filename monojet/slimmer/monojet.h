@@ -284,6 +284,7 @@ public :
    TClonesArray  *cleanJet{0};
    TClonesArray  *cleanTau{0};
    TClonesArray  *cleanLep{0};
+   TClonesArray  *cleanPho{0};
 
    std::vector<TLorentzVector*> cleaningVecs;
 

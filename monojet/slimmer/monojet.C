@@ -116,10 +116,12 @@ Bool_t monojet::Process(Long64_t entry)
   cleanLep = new TClonesArray("TLorentzVector",20);
   cleanJet = new TClonesArray("TLorentzVector",20);
   cleanTau = new TClonesArray("TLorentzVector",20);
+  cleanPho = new TClonesArray("TLorentzVector",20);
   
   cleanLep->Clear();
   cleanJet->Clear();
   cleanTau->Clear();
+  cleanPho->Clear();
   
   int n_tightlep = 0;
   int n_looselep = 0;
@@ -172,9 +174,13 @@ Bool_t monojet::Process(Long64_t entry)
       TLorentzVector *theVec = cleaningVecs[iVec];
       
       dR = deltaR(theVec,Jet);
-      if (dR < dR_cut)
+      if (dR < dR_cut) {
         foundMatch = true;
+        break;
+      }
     }
+    if (foundMatch)
+      continue;
     new ( (*cleanJet)[cleanJet->GetEntriesFast()]) TLorentzVector(Jet->Px(), Jet->Py(), Jet->Pz(), Jet->Energy());
     jetMonojetId_clean.push_back((*jetMonojetId)[j]);
     jetMonojetIdLoose_clean.push_back((*jetMonojetIdLoose)[j]);
@@ -189,9 +195,13 @@ Bool_t monojet::Process(Long64_t entry)
       TLorentzVector *theVec = cleaningVecs[iVec];
       
       dR = deltaR(theVec,Tau);
-      if (dR < dR_cut)
+      if (dR < dR_cut) {
         foundMatch = true;
+        break;
+      }
     }
+    if (foundMatch)
+      continue;
     new ( (*cleanTau)[cleanTau->GetEntriesFast()]) TLorentzVector(Tau->Px(), Tau->Py(), Tau->Pz(), Tau->Energy());
     tauId_clean.push_back((*tauId)[tau]);
     tauIso_clean.push_back((*tauIso)[tau]);
@@ -255,13 +265,32 @@ Bool_t monojet::Process(Long64_t entry)
   // type tree
   
   int type_event = -1;
-  
+
+  for (int iPho = 0; iPho < photonP4->GetEntries(); iPho++) {
+    TLorentzVector* Photon = (TLorentzVector*) photonP4->At(iPho);
+    bool foundMatch = false;
+    for (int iVec = 0; iVec < cleanLep->GetEntries(); iVec++) {
+      if (abs(lepPdgId_clean[iVec]) != 11)
+        continue;
+      
+      TLorentzVector *theVec = (TLorentzVector*) cleanLep->At(iVec);
+      dR = deltaR(theVec,Photon);
+      if (dR < dR_cut) {
+        foundMatch = true;
+        break;
+      }
+    }
+    if (foundMatch)
+      continue;
+    new ( (*cleanPho)[cleanPho->GetEntriesFast()]) TLorentzVector(Photon->Px(), Photon->Py(), Photon->Pz(), Photon->Energy());
+  }
+
   // forcing all regions to be orthogonal wrt to each other
   if (n_looselep == 0 && photonP4->GetEntries() == 0 && ((TLorentzVector*)((*metP4)[0]))->Pt() > 100. && jetP4->GetEntries() > 0) 
     type_event=0;
-  else if (n_looselep == 1 && n_looselep == 1 && photonP4->GetEntries() == 0) 
+  else if (n_looselep == 1 && n_looselep == 1 && cleanPho->GetEntries() == 0) 
     type_event=1;
-  else if (n_looselep == 2 && n_tightlep > 0 && photonP4->GetEntries() == 0) 
+  else if (n_looselep == 2 && n_tightlep > 0 && cleanPho->GetEntries() == 0) 
     type_event=2;
   else if (n_looselep == 0 && photonP4->GetEntries() == 1 && (*photonTightId)[0] == 1) 
     type_event = 3;
@@ -293,6 +322,7 @@ Bool_t monojet::Process(Long64_t entry)
   *lepPuIso = lepPuIso_clean;
 
   lepP4 = cleanLep;
+  photonP4 = cleanPho;
   
   // final skim
   if (((TLorentzVector*)((*metP4)[0]))->Pt() < 100. || type_event == -1) 
