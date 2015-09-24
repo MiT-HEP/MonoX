@@ -34,3 +34,8 @@
 
 # Emacs backup files
 *~
+
+datacard*.txt
+*.root
+*.pdf
+._*
