@@ -76,10 +76,11 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
         if Type.startswith('QCD') or Type.startswith('Zll') or \
         Type.startswith('others') or Type.startswith('Wlv') or \
-        Type.startswith('Zvv'):
+        Type.startswith('Zvv') or Type.startswith('GJets'):
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
             Variables[Type].SetLineColor(physics_processes[Type]['color'])
             makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w),"goff")
+            print "integral: " + str(Variables[Type].Integral())
             Variables[Type].Scale(scale)
             #print "Type: ", Type, "Total Events:", scale* Variables[Type].GetEntries() , "scale", scale, "raw events", Variables[Type].GetEntries()
             stack.Add(Variables[Type],"hist")
@@ -94,7 +95,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
                         
         if Type.startswith("data"):
             Variables[Type].SetMarkerStyle(20)
-            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + "&&" + cut_goodruns + " )*mcWeight*"+str(w), "goff")
+            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + "&&" + cut_goodruns + ")*mcWeight*"+str(w), "goff")
         
         yield_dic[Type] = round(Variables[Type].Integral(),3)
 
@@ -105,13 +106,16 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     print 'INFO - Drawing the Legend', datetime.datetime.fromtimestamp( time.time())
 
     legend = TLegend(.60,.60,.92,.92)
+    lastAdded = ''
     for process in  ordered_physics_processes:
         Variables[process].SetTitle(process)
         #Variables[process].Write()
-        if process is not 'data' and process is not 'Zvv_ht200' and process is not 'Zvv_ht400' and process is not 'Zvv_ht600': 
-            legend . AddEntry(Variables[process],physics_processes[process]['label'] , "f")
-        if process is 'data':
-            legend . AddEntry(Variables[process],physics_processes[process]['label'] , "p")
+        if physics_processes[process]['label'] != lastAdded:
+            lastAdded = physics_processes[process]['label']
+            if process is not 'data' and process is not 'Zvv_ht200' and process is not 'Zvv_ht400' and process is not 'Zvv_ht600': 
+                legend . AddEntry(Variables[process],physics_processes[process]['label'] , "f")
+            if process is 'data':
+                legend . AddEntry(Variables[process],physics_processes[process]['label'] , "p")
 
     c4 = TCanvas("c4","c4", 900, 1000)
     c4.SetBottomMargin(0.3)
@@ -169,7 +173,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
 arguments = {}
 #                = [var, bin, low, high, yaxis, xaxis, setLog]
-arguments['met']    = ['met','metP4.Pt()',18,100,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]   ### Fix this back to 16,200,1000 ###
+arguments['met']    = ['met','metP4.Pt()',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]   ### Fix this back to 16,200,1000 ###
 arguments['metRaw'] = ['metRaw','metRaw',16,200,1000,'Events/50 GeV','Raw E_{T}^{miss} [GeV]',True]
 arguments['genmet'] = ['genmet','genmet',16,200,1000,'Events/50 GeV','Generated E_{T}^{miss} [GeV]',True]
 arguments['jetpt']  = ['jetpt','jet1.pt()',17,150,1000,'Events/50 GeV','Leading Jet P_{T} [GeV]',True]

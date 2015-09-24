@@ -9,7 +9,7 @@ lumi = 1.0
 ######################################################
 
 #dataDir = "/data/blue/dmdata/V0001/miniaod2nero/monojet/"
-dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/monojet/"
+dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/monojetData/"
 
 physics_processes = {
         'Zll': { 'label':'Z#rightarrow ll',

@@ -283,7 +283,21 @@ public :
    TString       suffix_{""};
    TClonesArray  *cleanJet{0};
    TClonesArray  *cleanTau{0};
+   TClonesArray  *cleanLep{0};
 
+   std::vector<int>     lepPdgId_clean;
+   std::vector<float>   lepIso_clean;
+   std::vector<unsigned int> lepSelBits_clean;
+   std::vector<float>   lepPfPt_clean;
+   std::vector<float>   lepChIso_clean;
+   std::vector<float>   lepNhIso_clean;
+   std::vector<float>   lepPhoIso_clean;
+   std::vector<float>   lepPuIso_clean;
+   std::vector<bool>  jetMonojetId_clean;
+   std::vector<bool>  jetMonojetIdLoose_clean;
+   std::vector<float> jetPuId_clean; 
+   std::vector<float>  tauId_clean;
+   std::vector<float>  tauIso_clean;
 
    monojet(TTree * /*tree*/ =0) : fChain(0) { }
    virtual ~monojet() { }
