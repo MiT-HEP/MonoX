@@ -1,14 +1,8 @@
 import os
 import sys
 from ROOT import *
-from selections import *
+from selections import Measurement, Selections, Variables, Version
 #ROOT.gROOT.SetBatch(True)
-
-gSystem.Load('libMitFlatDataFormats.so')
-gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
-TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
-gROOT.LoadMacro(TemplateGeneratorPath)
-
 
 # Fitting function
 def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
@@ -80,30 +74,11 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     # return (nReal,nFake)
 
 # Template info
-Measurement = { "Wlike_sieie" : [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
-                                  ,('TempBkgdData','TempBkgdData',kBackground,'Background Template from Data')
-                                  ,('TempBkgdMc','TempBkgdMc',kBackground,'Background Template from MC')
-                                  ,('FitData','FitData',kPhoton,'Fit Template from Data')
-                                  ,('FitMc','FitMc',kPhoton,'Fit Template from MC')
-                                  ,('McTruthSignal','FitMc',kPhoton,'Signal Template from MC Truth')
-                                  ,('McTruthBkgd','FitMc',kBackground,'Background Template from MC Truth') ]
-                ,"Monophoton_sieie" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton)
-                                        ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground)
-                                        ,('TempBkgdGJets','TempBkgdGJets',kBackground)
-                                        ,('FitSinglePhoton','FitSinglePhoton',kPhoton)
-                                        ,('FitGJets','TempSignalGJets',kPhoton)
-                                        ,('GJetsTruthSignal','TempSignalGJets',kPhoton)
-                                        ,('GJetsTruthBkgd','TempSignalGJets',kBackground) ] 
-                ,"CompGammaE_phIso" : [ ( 'TempSignalWgPhotons','TempSignalWgPhotons',kPhoton)
-                                     ,('TempSignalWgElectrons','TempSignalWgElectrons',kElectron) ] }
-
-Variables = { "sieie"  : (RooRealVar('sieie', '#sigma_{i#etai#eta}', 0., 0.02),0.0100,kSigmaIetaIeta)
-              ,"phIso" : (RooRealVar('phIso', 'Ph Iso (GeV)', 0., 0.02),1.33,kPhotonIsolation) } # cut is actually a function of pT
 
 # Make templates from skims
 varName = 'sieie'
 var = Variables[varName]
-skims = Measurement["Wlike_sieie"]
+skims = Measurement["Wlike_sieie_new"]
 #sels = ['medium_barrel_'+cut[0] for cut in cutPhotonPt]
 sels = ['medium_barrel_Wlike'] #PhotonPt180toInf']
 purities = [[],[],[],[]]
@@ -112,23 +87,23 @@ for sel in sels:
     for skim in xrange(0,len(skims)):
         print '\nStarting template:', skims[skim][0]
         
-        inname = '/scratch5/ballen/hist/purity/simpletree3/Skim'+skims[skim][1]+'_Wlike.root'
+        inname = os.path.join('/scratch5/ballen/hist/purity',Version,varName,'Skim'+skims[skim][1]+'.root')
         print 'Making template from:', inname
-        generator = TemplateGenerator(skims[skim][2], var[2], inname)
+        generator = TemplateGenerator(skims[skim][2], var[0], inname)
         generator.setTemplateBinning(40, 0., 0.02)
         
         print 'Applying selection:', sel
-        print selections[sel][skim], '\n'
-        tempH = generator.makeTemplate(sel, selections[sel][skim])
+        print Selections[sel][skim], '\n'
+        tempH = generator.makeTemplate(sel, Selections[sel][skim])
         
         tempname = 'template_'+skims[skim][0]+'_'+sel
-        temp = RooDataHist(tempname, tempname, RooArgList(var[0]), tempH)
+        temp = RooDataHist(tempname, tempname, RooArgList(var[3]), tempH)
         
         # temp.Write()
         templates.append(temp)
         
         canvas = TCanvas()
-        frame = var[0].frame()
+        frame = var[3].frame()
         temp.plotOn(frame)
         
         frame.SetTitle(skims[skim][3])
@@ -140,18 +115,18 @@ for sel in sels:
 
     # Fit for data
     dataTitle = "Photon Purity in SingleMuon DataSet"
-    # (dataReal,dataFake) = FitTemplates("purity_data_"+sel, var[0], var[1], templates[3], templates[0], templates[1])
-    dataPurity = FitTemplates("purity_data_"+sel, dataTitle,  var[0], var[1], templates[3], templates[0], templates[1])
+    # (dataReal,dataFake) = FitTemplates("purity_data_"+sel, var[3], var[4], templates[3], templates[0], templates[1])
+    dataPurity = FitTemplates("purity_data_"+sel, dataTitle,  var[3], var[4], templates[3], templates[0], templates[1])
     
     # Fit for MC
     mcTitle = "Photon Purity in WJets Monte Carlo"
-    # (mcReal, mcFake) = FitTemplates("purity_mc_"+sel, var[0], var[1], templates[4], templates[0], templates[2])
-    mcPurity = FitTemplates("purity_mc_"+sel, mcTitle, var[0], var[1], templates[4], templates[0], templates[2])
+    # (mcReal, mcFake) = FitTemplates("purity_mc_"+sel, var[3], var[4], templates[4], templates[0], templates[2])
+    mcPurity = FitTemplates("purity_mc_"+sel, mcTitle, var[3], var[4], templates[4], templates[0], templates[2])
 
     # Fit for MC truth
     truthTitle = "Photon Purity in WJets MC Truth"
-    # (truthReal, truthFake) = FitTemplates("purity_mcTruth_"+sel, var[0], var[1], templates[4], templates[5], templates[6])
-    truthPurity = FitTemplates("purity_mcTruth_"+sel, truthTitle, var[0], var[1], templates[4], templates[5], templates[6])
+    # (truthReal, truthFake) = FitTemplates("purity_mcTruth_"+sel, var[3], var[4], templates[4], templates[5], templates[6])
+    truthPurity = FitTemplates("purity_mcTruth_"+sel, truthTitle, var[3], var[4], templates[4], templates[5], templates[6])
 
     # Calculate purity and print results
     '''
@@ -178,8 +153,8 @@ for sel in sels:
     print "Purity of Photons in truthFit is:", truthPurity
     purities[2].append(truthPurity)
     
-    truthReal = templates[5].sumEntries(varName+' < '+str(var[1]))
-    truthTotal = templates[4].sumEntries(varName+' < '+str(var[1]))
+    truthReal = templates[5].sumEntries(varName+' < '+str(var[4]))
+    truthTotal = templates[4].sumEntries(varName+' < '+str(var[4]))
     print "Number of Real photons passing selection in mcTruth:", truthReal
     print "Number of Total photons passing selection in mcTruth:", truthTotal
     truthPurity = float(truthReal) / float(truthTotal)

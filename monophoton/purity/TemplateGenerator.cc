@@ -50,7 +50,7 @@ enum PhotonLocation {
 
 class TemplateGenerator {
 public:
-  TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool recreate = false);
+  TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool write = false);
   ~TemplateGenerator() {}
 
   void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec);
@@ -69,7 +69,7 @@ private:
   TTree* skimTree_{0};
 };
 
-TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char const* _fileName, bool _recreate/* = false*/) :
+TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char const* _fileName, bool _write/* = false*/) :
   tType_(_type),
   tVar_(_var),
   nBins_(40),
@@ -83,7 +83,7 @@ TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char 
   fs.close();
 
   TFile* file = 0;
-  if (_recreate || !exists)
+  if (_write)
     file = TFile::Open(_fileName, "recreate");
   else
     file = TFile::Open(_fileName);
@@ -91,7 +91,7 @@ TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char 
   if (!file || file->IsZombie())
     throw std::runtime_error(std::string("File ") + _fileName + " could not be opened.");
 
-  if (_recreate || !exists) {
+  if (_write) {
     file->cd();
     skimTree_ = new TTree("skimmedEvents", "template skim");
   }
