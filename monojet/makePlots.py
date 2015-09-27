@@ -3,8 +3,8 @@
 import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import array
-#from LoadData import *
-from LoadElectron import *
+from LoadData import *
+#from LoadElectron import *
 #from LoadMonoPhoton import *
 from ROOT import *
 from math import *
@@ -44,8 +44,10 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     print 'INFO time is:', datetime.datetime.fromtimestamp( time.time())
 
     reordered_physics_processes = []
-    if channel == 'Zll': reordered_physics_processes = reversed(ordered_physics_processes)
-    else: reordered_physics_processes = ordered_physics_processes
+    if channel == 'Zll' or channel == 'Zee': 
+        reordered_physics_processes = reversed(ordered_physics_processes)
+    else: 
+        reordered_physics_processes = ordered_physics_processes
  
     for Type in reordered_physics_processes:
         # Create the Histograms
@@ -77,7 +79,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
         if Type.startswith('QCD') or Type.startswith('Zll') or \
         Type.startswith('others') or Type.startswith('Wlv') or \
-        Type.startswith('Zvv') or Type.startswith('GJets'):
+        Type.startswith('Zvv') or Type.startswith('GJets') or \
+        Type.startswith('Zee') or Type.startswith('Wev'):
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
             Variables[Type].SetLineColor(physics_processes[Type]['color'])
             makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w),"goff")

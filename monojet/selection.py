@@ -8,12 +8,12 @@ def build_selection(selection,bin0):
         #'leading jet eta':['abs(jetP4[0].Eta())<2.4',selections],
         'jet cleaning':['jetMonojetId[0]==1',selections],
         #'trailing jet':['(jetP4[1].Pt() < 30 || deltaPhi(jetP4[0].Phi(),jetP4[1].Phi())<2)',selections],
-        'jet multiplicity':['@jetP4.size()<3',selections],
+#        'jet multiplicity':['@jetP4.size()<3',selections],
         'deltaPhi':['deltaPhi(jetP4[0].Phi(),metP4[0].Phi())>0.4',selections],
         #'trigger':['(triggerFired[0]==1 || triggerFired[1]==1)',selections],
         'lepton veto':['n_tightlep==0',['signal']],
         'pho veto':['@photonP4.size()==0',['signal','Zll','Wln']], 
-        'tau veto':['@tauP4.size()==0',selections], 
+#        'tau veto':['@tauP4.size()==0',selections], 
 
         #** Control Regions
         'leading lep ID': ['n_tightlep==1',['Wln','Zll']],
