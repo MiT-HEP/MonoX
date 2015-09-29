@@ -6,7 +6,7 @@ colors = defineColors()
 
 lumi = 1.0
 
-channel_list  = ['monophoton']
+channel_list  = ['gjets']
 
 ######################################################
 
@@ -82,13 +82,13 @@ physics_processes = {
                  'files':[dataDir+'monojet_WJetsToLNu.root',],
                  },
         'signal_higgs': { 'label':'Higgs',
-                          'color' : 7,
+                          'color' : 5,
                           'ordering': 6,
                           'xsec' : 0.0,
                           'files':[dataDir+'monojet_SinglePhoton_Run2015C.root',],
                           },
         'data': { 'label':'data',
-                  'color': 6,
+                  'color': 4,
                   'ordering': 2,    
                   'xsec' : 1.0,
                   'files':[dataDir+'monojet_SinglePhoton_Run2015C.root',],
@@ -109,6 +109,8 @@ def makeTrees(process,tree,channel):
 	for sample in  physics_processes[process]['files']:
 		Trees[process].Add(sample)
 		Trees[process].AddFriend("type",sample)
+                if process.startswith('GJets'):
+                        Trees[process].AddFriend("nloTree",sample)
 		#print process, sample
 	return Trees[process]
 

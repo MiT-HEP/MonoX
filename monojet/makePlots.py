@@ -3,9 +3,9 @@
 import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import array
-from LoadData import *
+#from LoadData import *
 #from LoadElectron import *
-#from LoadMonoPhoton import *
+from LoadGJets import *
 from ROOT import *
 from math import *
 from tdrStyle import *
@@ -24,7 +24,7 @@ cut_goodruns = "(runNum == 1 || (runNum == 254231 && (lumiNum >=1 && lumiNum <= 
 
 def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False):
 
-    folder = '/afs/cern.ch/user/d/dabercro/www/MonoJet'
+    folder = '/afs/cern.ch/user/d/dabercro/www/MonoJet_avecMET'
     if not os.path.exists(folder):
         os.mkdir(folder)
 
@@ -39,7 +39,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     h1 = {}
 
     Variables = {}    
-    cut_standard= build_selection(channel,100) ### Fix this back to 200 ###
+    cut_standard= build_selection(channel,200) ### Fix this back to 200 ###
     print "INFO Channel is: ", channel, " variable is: ", var, " Selection is: ", cut_standard,"\n"
     print 'INFO time is:', datetime.datetime.fromtimestamp( time.time())
 
@@ -83,7 +83,10 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         Type.startswith('Zee') or Type.startswith('Wev'):
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
             Variables[Type].SetLineColor(physics_processes[Type]['color'])
-            makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w),"goff")
+            if Type.startswith('GJets'):
+                makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*nloFactor*" +str(w),"goff")
+            else:
+                makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w),"goff")
             print "integral: " + str(Variables[Type].Integral())
             Variables[Type].Scale(scale)
             #print "Type: ", Type, "Total Events:", scale* Variables[Type].GetEntries() , "scale", scale, "raw events", Variables[Type].GetEntries()
@@ -130,6 +133,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     if setLog:
         c4.SetLogy()
         stack.SetMaximum( stack.GetMaximum()  +  1000*stack.GetMaximum() )
+    else:
+        stack.SetMaximum( stack.GetMaximum()  +  stack.GetMaximum() )
     
     stack.Draw()
     stack.GetYaxis().SetTitle(ylabel)
@@ -179,7 +184,10 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
 arguments = {}
 #                = [var, bin, low, high, yaxis, xaxis, setLog]
-arguments['met']    = ['met','metP4.Pt()',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]   ### Fix this back to 16,200,1000 ###
+arguments['met']    = ['met','metP4.Pt()',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]
+arguments['phoPt']  = ['phoPt','photonP4.Pt()',16,200,1000,'Events/50 GeV','p_{T}^{#gamma} [GeV]',True]
+arguments['phoEta'] = ['phoEta','photonP4.Eta()',40,-3.0,3.0,'Events/50 GeV','#eta',False]
+arguments['phoPhi'] = ['phoPhi','photonP4.Phi()',40,-4.0,4.0,'Events/50 GeV','#phi',False]
 arguments['metRaw'] = ['metRaw','metRaw',16,200,1000,'Events/50 GeV','Raw E_{T}^{miss} [GeV]',True]
 arguments['genmet'] = ['genmet','genmet',16,200,1000,'Events/50 GeV','Generated E_{T}^{miss} [GeV]',True]
 arguments['jetpt']  = ['jetpt','jet1.pt()',17,150,1000,'Events/50 GeV','Leading Jet P_{T} [GeV]',True]
@@ -188,12 +196,13 @@ arguments['njets']  = ['njets','njets',3,1,4,'Events','Number of Jets',True]
 #channel_list = ['signal']
 #channel_list  = ['signal','Wln','Zll']
 #channel_list  = ['Wen','Zee']
-#channel_list  = ['monophoton']
 #channel_list  = ['Zll']
 #variable_list = ['met','jetpt','njets','metRaw','genmet']
 processes     = []
 
-variable_list = ['met']
+#variable_list = ['met']
+variable_list = ['met','phoPt','phoEta','phoPhi']
+#variable_list = ['phoPt','phoEta','phoPhi']
 
 start_time = time.time()
 

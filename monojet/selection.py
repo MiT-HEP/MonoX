@@ -1,6 +1,6 @@
 def build_selection(selection,bin0):
 
-    selections = ['signal','Zll','Wln','monophoton','Zee','Wen']
+    selections = ['signal','Zll','Wln','gjets','Zee','Wen']
 
     snippets = {
         #** monojet
@@ -23,7 +23,7 @@ def build_selection(selection,bin0):
         #'dilepPt':['vectorSumPt(lepP4[0].Pt(),lepP4[0].Phi(),lepP4[1].Pt(),lepP4[2].Phi())>100',['Zll']],
         'Wln':['@lepP4.size()==1 && abs((lepPdgId)[0])==13 && mt > 50.',['Wln']],
         'Wen':['@lepP4.size()==1 && abs((lepPdgId)[0])==11 && mt > 50.',['Wen']],
-        'monophoton':['photonP4[0].Pt() > 175 && abs(photonP4[0].Eta()) < 2.5 && n_looselep == 0 && @photonP4.size() == 1 && photonTightId[0] == 1',['monophoton']]
+        'gjets':['photonP4[0].Pt() > 175 && abs(photonP4[0].Eta()) < 2.5 && n_looselep == 0 && @photonP4.size() == 1 && photonTightId[0] == 1',['gjets']]
         }
 
     selectionString = ''
