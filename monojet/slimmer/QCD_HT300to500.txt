@@ -1,4 +1,0 @@
-QCD_HT300to500_1.txt
-QCD_HT300to500_2.txt
-QCD_HT300to500_3.txt
-QCD_HT300to500_4.txt
