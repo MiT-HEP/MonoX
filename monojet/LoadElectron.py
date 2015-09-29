@@ -6,8 +6,7 @@ colors = defineColors()
 
 lumi = 1.0
 
-channel_list  = ['signal','Wln','Zll']
-
+channel_list  = ['Wen','Zee']
 
 ######################################################
 
@@ -15,7 +14,7 @@ channel_list  = ['signal','Wln','Zll']
 dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/monojetData/"
 
 physics_processes = {
-        'Zll': { 'label':'Z#rightarrow ll',
+        'Zee': { 'label':'Z#rightarrow ee',
                  'color' : colors.keys()[0],
                  'ordering': 1,                  
                  'xsec' : 6025.2,
@@ -49,7 +48,7 @@ physics_processes = {
                        'xsec' : 4.20,
                        'files':[dataDir+'monojet_ZZJetsToNuNu_TH-600ToInf.root',],
                        },
-        'Wlv': { 'label':'W#rightarrow  l#nu',
+        'Wev': { 'label':'W#rightarrow  l#nu',
              'color' : colors.keys()[2],
                  #'color': ROOT.kYellow+2,
                  'ordering': 3,                  
@@ -72,13 +71,13 @@ physics_processes = {
                           'color' : 1,
                           'ordering': 6,
                           'xsec' : 0.0,
-                          'files':[dataDir+'monojet_MET_Run2015C.root',],
+                          'files':[dataDir+'monojet_SingleElectron_Run2015C.root',],
                           },
         'data': { 'label':'data',
                   'color': 1,
                   'ordering': 5,    
                   'xsec' : 1.0,
-                  'files':[dataDir+'monojet_MET_Run2015C.root',],
+                  'files':[dataDir+'monojet_SingleElectron_Run2015C.root',],
                   }
         }
 

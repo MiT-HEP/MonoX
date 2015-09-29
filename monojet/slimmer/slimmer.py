@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-OUTPUTDIR='/afs/cern.ch/work/d/dabercro/public/Winter15/monojet'
+OUTPUTDIR='/afs/cern.ch/work/d/dabercro/public/Winter15/monojetData'
 
 import os
 import sys
