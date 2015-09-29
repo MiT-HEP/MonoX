@@ -1,4 +1,0 @@
-TTJets_1.txt
-TTJets_2.txt
-TTJets_3.txt
-TTJets_4.txt
