@@ -1,4 +1,0 @@
-DY_5.txt
-DY_6.txt
-DY_7.txt
-DY_8.txt
