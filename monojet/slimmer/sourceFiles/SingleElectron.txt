@@ -1,8 +1,0 @@
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0000.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0001.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0002.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0003.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0004.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0005.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0006.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/SingleElectron+Run2015C-PromptReco-v1+AOD/nero_0007.root

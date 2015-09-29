@@ -1,3 +1,0 @@
-root://eoscms.cern.ch//store/user/yiiyama/nero/MET+Run2015B-PromptReco-v1+AOD/nero_0000.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/MET+Run2015B-PromptReco-v1+AOD/nero_0001.root
-root://eoscms.cern.ch//store/user/yiiyama/nero/MET+Run2015B-PromptReco-v1+AOD/nero_0002.root

@@ -1,5 +1,0 @@
-GJets_HT-100To200.txt
-GJets_HT-200To400.txt
-GJets_HT-400To600.txt
-GJets_HT-40To100.txt
-GJets_HT-600ToInf.txt
