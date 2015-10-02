@@ -53,7 +53,7 @@ public:
   TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool write = false);
   ~TemplateGenerator() {}
 
-  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec);
+  void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec, Double_t _lumi);
   void writeSkim();
   void setTemplateBinning(int nBins, double xmin, double xmax);
   TH1D* makeTemplate(char const* name, char const* expr);
@@ -100,7 +100,7 @@ TemplateGenerator::TemplateGenerator(TemplateType _type, TemplateVar _var, char 
 }
 
 void
-TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec)
+TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec, Double_t _lumi)
 {
   if (skimTree_->GetListOfBranches()->GetEntries() != 0)
     throw std::runtime_error("Skim already exists.");
@@ -111,34 +111,6 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 
   simpletree::PhotonCollection selectedPhotons("selPhotons");
   selectedPhotons.book(*skimTree_);
-
-  Float_t cut_hOverE[2][3] = {
-    {0.05,0.05,0.05},
-    {0.05,0.05,0.05}
-  };
-  Float_t cut_sieie[2][3] = {
-    {0.0103,0.0100,0.100},
-    {0.0277,0.0267,0.0267}
-  };
-  Float_t cut_chIso[2][3] = {
-    {2.44,1.31,0.91},
-    {1.84,1.25,0.65}
-  };
-  Float_t cut_nhIso[3][2][3] = {
-    { {2.57,0.60,0.33},
-      {4.00,1.65,0.93} },
-    { {0.0044,0.0044,0.0044},
-      {0.0040,0.0040,0.0040} },
-    { {0.5809,0.5809,0.5809},
-      {0.9402,0.9402,0.9402} }
-  };
-  Float_t cut_phIso[2][2][3] = {
-    { {1.92,1.33,0.61},
-      {2.15,1.02,0.54} },
-    { {0.0043,0.0043,0.0043},
-      {0.0041,0.0041,0.0041} }
-  };
-  
   
   Double_t eventWeight;
   if (_xsec < 0) eventWeight = 1;
@@ -146,9 +118,11 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     TH1D* hWeight = new TH1D("hWeight","Sum of Weights", 1, 0.0, 1.0);
     _input->Draw("0.5>>hWeight","weight","goff");
     Double_t nEvents =  hWeight->GetBinContent(1);
-    Double_t lumi = 8.1;
-    eventWeight = _xsec * lumi / nEvents; 
+    eventWeight = _xsec * _lumi / nEvents; 
   }
+
+  Long_t pass[20]{};
+  
 
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
@@ -170,36 +144,14 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
       kObject = 1; // 1 = electron
       nObjects = electrons.size();
     }
-
-    Float_t* hOverE[2] = {
-      event.photons.data.hOverE,
-      event.electrons.data.hOverE
-    };
-
-    Float_t* sieie[2] = {
-      event.photons.data.sieie,
-      event.electrons.data.sieie
-    };
-    
-    Float_t* chIso[2] = {
-      event.photons.data.chIso,
-      event.electrons.data.chIsoPh
-    };
-
-    Float_t* nhIso[2] = {
-      event.photons.data.nhIso,
-      event.electrons.data.nhIsoPh
-    };
-
-    Float_t* phIso[2] = {
-      event.photons.data.phIso,
-      event.electrons.data.phIsoPh
-    };
-
+    Float_t* eta[2] = { event.photons.data.eta, event.electrons.data.eta };
+    Float_t* hOverE[2] = { event.photons.data.hOverE, event.electrons.data.hOverE };
+    Float_t* sieie[2] = { event.photons.data.sieie, event.electrons.data.sieie };
+    Float_t* chIso[2] = { event.photons.data.chIso, event.electrons.data.chIsoPh };
+    Float_t* nhIso[2] = { event.photons.data.nhIso, event.electrons.data.nhIsoPh };
+    Float_t* phIso[2] = { event.photons.data.phIso, event.electrons.data.phIsoPh };
 
     for (unsigned iP(0); iP != nObjects; ++iP) {
-      // apply photon selection for the background
-    
       Bool_t PassCut[nFakeVars];
       Bool_t PassSel = true;
       for (unsigned iC(0); iC < nFakeVars; iC++) {
@@ -208,53 +160,98 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 
       // barrel photons
       UInt_t kLocation;
-      if (TMath::Abs(photons[iP].eta) < 1.5) kLocation = kBarrel;
+      if (TMath::Abs(eta[kObject][iP]) < 1.5) kLocation = kBarrel;
       else kLocation = kEndcap;
 		
+      
+      pass[0]++;
+
       // baseline photon selection
-      if (hOverE[kObject][iP] < cut_hOverE[kLocation][_id]) PassCut[kHOverE] = true;
-      if (chIso[kObject][iP] < cut_chIso[kLocation][_id]) PassCut[kChIso] = true;
-      if (nhIso[kObject][iP] < (cut_nhIso[0][kLocation][_id]+TMath::Exp(cut_nhIso[1][kLocation][_id]*photons[iP].pt + cut_nhIso[2][kLocation][_id]))) PassCut[kNhIso] = true;
-      if (tVar_ == kPhotonIsolation) PassCut[kPhIso] = true;
-      else {
-	if (phIso[kObject][iP] < (cut_phIso[0][kLocation][_id] + cut_phIso[1][kLocation][_id]*photons[iP].pt)) PassCut[kPhIso] = true;
+      if (hOverE[kObject][iP] < simpletree::Photon::hOverECuts[kLocation][_id]) {
+	PassCut[kHOverE] = true;
       }
-      if (tVar_ == kSigmaIetaIeta) PassCut[kSieie] = true;
+      if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
+	PassCut[kChIso] = true;
+      }
+      if (nhIso[kObject][iP] < simpletree::Photon::nhIsoCuts[kLocation][_id]) { 
+	PassCut[kNhIso] = true;
+      }
+      if (tVar_ == kPhotonIsolation) {
+	PassCut[kPhIso] = true;
+      }
       else {
-	if (sieie[kObject][iP] < cut_sieie[kLocation][_id]) PassCut[kSieie] = true;
+	if (phIso[kObject][iP] < simpletree::Photon::phIsoCuts[kLocation][_id]) {
+	  PassCut[kPhIso] = true;
+	}
+      }
+      if (tVar_ == kSigmaIetaIeta) {
+	PassCut[kSieie] = true;
+      }
+      else {
+	if (sieie[kObject][iP] < simpletree::Photon::sieieCuts[kLocation][_id]) {
+	  PassCut[kSieie] = true;
+	}
       }
       if (tType_ != kElectron) {
-	if (photons[iP].csafeVeto) continue;
+	if (!photons[iP].csafeVeto) continue; // !veto for v5 and beyond
       }
-      
+      pass[1]++;
+
       // real vs fake selection
       if (tType_ == kPhoton) {
 	for (unsigned iC(0); iC < nFakeVars; iC++) {
-	  if (!PassCut[iC]) PassSel = false;
+	  if (!PassCut[iC]) {
+	    PassSel = false;
+	    break;
+	  }
+	  else pass[iC+2]++;
 	}
       }
+      
       else if (tType_ == kBackground) {
 	for (unsigned iC(0); iC < nFakeVars; iC++) {
 	  if (iC == _fakevar) {
 	    if (PassCut[iC]) PassSel = false;
+	    else pass[iC]++;
+	    
 	    if (_fakevar == kChIso) {
-	      if (chIso[kObject][iP] > cut_chIso[kLocation][kTight]) PassSel = true;
+	      if (chIso[kObject][iP] > simpletree::Photon::chIsoCuts[kLocation][kTight]) {
+		PassSel = true;
+		pass[7]++;
+	      }
 	    }
 	    else if (_fakevar == kNhIso) {
-	      if (nhIso[kObject][iP] > (cut_nhIso[0][kLocation][kTight]+TMath::Exp(cut_nhIso[1][kLocation][kTight]*photons[iP].pt + cut_nhIso[2][kLocation][kTight]))) PassSel = true;
+	      if (nhIso[kObject][iP] > simpletree::Photon::nhIsoCuts[kLocation][kTight]) {
+		PassSel = true;
+		pass[8]++;
+	      }
 	    }
 	    else if (_fakevar == kPhIso) {
-	      if (phIso[kObject][iP] > (cut_phIso[0][kLocation][kTight] + cut_phIso[1][kLocation][kTight]*photons[iP].pt)) PassSel = true;
+	      if (phIso[kObject][iP] > simpletree::Photon::chIsoCuts[kLocation][kTight]) {
+		PassSel = true;
+		pass[9]++;
+	      }
 	    }
 	    else if (_fakevar == kHOverE) {
-	      if (hOverE[kObject][iP] > cut_hOverE[kLocation][kTight]) PassSel = true;
+	      if (hOverE[kObject][iP] > simpletree::Photon::hOverECuts[kLocation][kTight]) {
+		PassSel = true;
+		pass[10]++;
+	      }
 	    }
 	    else if (_fakevar == kSieie) {
-	      if (sieie[kObject][iP] > cut_sieie[kLocation][kTight]) PassSel = true;
+	      if (sieie[kObject][iP] > simpletree::Photon::sieieCuts[kLocation][kTight]) {
+		PassSel = true;
+		pass[11]++;
+	      }
 	    }
 	  }
+	  
 	  else { 
-	    if (!PassCut[iC]) PassSel = false;
+	    if (!PassCut[iC]) {
+	      PassSel = false;
+	      break;
+	    }
+	    else pass[iC+2]++;
 	  }
 	}
       }
@@ -274,17 +271,10 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	selected.sieie = electrons[iP].sieie;
 	selected.hOverE = electrons[iP].hOverE;
 	selected.matchedGen = electrons[iP].matchedGen;
+	// selected.isEB = electrons[iP].isEB;
 	selected.hadDecay = electrons[iP].hadDecay;
 	selected.pixelVeto = true;
 	selected.csafeVeto = true;
-	/*
-	selected.loose = -1;
-	selected.medium = -1;
-	selected.tight = -1;
-	selected.matchHLT120 = -1;
-	selected.matchHLT165HE10 = electrons[iP].matchHLT165HE10;
-	selected.matchHLT175 = electrons[iP].matchHLT175;
-	*/
       }
       else {
 	selected.pt = photons[iP].pt;
@@ -295,7 +285,9 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	selected.phIso = photons[iP].phIso;
 	selected.sieie = photons[iP].sieie;
 	selected.hOverE = photons[iP].hOverE;
+	selected.drParton = photons[iP].drParton;
 	selected.matchedGen = photons[iP].matchedGen;
+	selected.isEB = photons[iP].isEB;
 	selected.hadDecay = photons[iP].hadDecay;
 	selected.pixelVeto = photons[iP].pixelVeto;
 	selected.csafeVeto = photons[iP].csafeVeto;
@@ -303,14 +295,20 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	selected.medium = photons[iP].medium;
 	selected.tight = photons[iP].tight;
 	selected.matchHLT120 = photons[iP].matchHLT120;
+	selected.matchHLT135MET100 = photons[iP].matchHLT135MET100;
 	selected.matchHLT165HE10 = photons[iP].matchHLT165HE10;
 	selected.matchHLT175 = photons[iP].matchHLT175;
       } 
       ++iSel;
     }
- 
+      
     if (iSel != 0)
       skimTree_->Fill();
+  }
+
+  TString passing[12] = {"Total: ", "csafeVeto: ", "chIso: ", "nhIso: ", "phIso: ", "hOverE: ", "sieie: ", "chIso SB: ", "nhIso SB: ", "phIso SB: ", "hOverE SB: ", "sieie SB: "};
+  for (UInt_t iPass = 0; iPass < 12; iPass++) {
+    std::cout << passing[iPass] << pass[iPass] << std::endl;
   }
 }
 

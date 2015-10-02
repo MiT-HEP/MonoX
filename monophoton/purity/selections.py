@@ -1,21 +1,48 @@
 import os
+import ROOT
+
+Version = 'simpletree5'
+
+ROOT.gSystem.Load('libMitFlatDataFormats.so')
+ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
+ROOT.gROOT.LoadMacro(TemplateGeneratorPath)
+
+hOverECuts  = [[]] * 2
+sieieCuts = [[]] * 2
+chIsoCuts = [[]] * 2
+nhIsoCuts = [[]] * 2
+phIsoCuts = [[]] * 2
+
+ROOT.gROOT.ProcessLine("double cut;")
+for iLoc in xrange(0,2):
+    for iCut in xrange(0,3):
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::hOverECuts["+str(iLoc)+"]["+str(iCut)+"];")
+        print ROOT.cut
+        hOverECuts[iLoc].append(ROOT.cut)
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::sieieCuts["+str(iLoc)+"]["+str(iCut)+"];")
+        print ROOT.cut
+        sieieCuts[iLoc].append(ROOT.cut)
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::chIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
+        print ROOT.cut
+        chIsoCuts[iLoc].append(ROOT.cut)
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
+        print ROOT.cut
+        nhIsoCuts[iLoc].append(ROOT.cut)
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
+        print ROOT.cut
+        phIsoCuts[iLoc].append(ROOT.cut)
+
 from ROOT import *
 
-gSystem.Load('libMitFlatDataFormats.so')
-gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
-TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
-gROOT.LoadMacro(TemplateGeneratorPath)
-
 # nTuple location
-Version = 'simpletree4'
 ntupledir = '/scratch5/yiiyama/hist/'+Version+'/t2mit/filefi/042/'
 
-# Plot output location
-
-
 # Variables and associated properties
-Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose,RooRealVar('sieie', '#sigma_{i#etai#eta}', 0., 0.02),0.0100) # (variable to fit to, sideband variable, selection)
-             ,"phIso" : (kPhotonIsolation,kSieie,kLoose,RooRealVar('phIso', 'Ph Iso (GeV)', 0., 0.02),1.33) } # cut is actually a function of pT) }
+# variable Enum, sideband Enum, selection Enum, roofit variable, cut for purity
+# [0][1] = barrel medium
+Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose,RooRealVar('sieie', '#sigma_{i#etai#eta}', 0.004, 0.016), 24, sieieCuts[0][1]) # simpletree.Photon.sieieCuts[0][1])
+             ,"phIso" : (kPhotonIsolation,kSieie,kLoose,RooRealVar('phIso', 'Ph Iso (GeV)', 0., 10.0), 100, phIsoCuts[0][1]) } # simpletree.Photon.phIsoCuts[0][1]) } 
 
 # Samples for skimming
 Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
@@ -24,41 +51,48 @@ Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGTo
                          ,('FitSingleMuon',kPhoton,-1,ntupledir+'SingleMuon+Run2015C-PromptReco-v1+AOD')
                          ,('FitWJetsToLNu',kPhoton,60290,ntupledir+'WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM' ) ]
             
-            ,"Monophoton" : [ ( 'TempSignalGJetsHt040to100',kPhoton,23080,ntupledir+'GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempSignalGJetsHt100to200',kPhoton,9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempSignalGJetsHt200to400',kPhoton,2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempSignalGJetsHt400to600',kPhoton,273,ntupledir+'GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempSignalGJetsHt600toInf',kPhoton,94.5,ntupledir+'GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempBkgdSinglePhoton',kBackground,-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD')               
-                              ,('TempBkgdQCDHt200to300',kBackground,1735000,ntupledir+'QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
-                              ,('TempBkgdQCDHt300to500',kBackground,366800,ntupledir+'QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
-                              ,('TempBkgdQCDHt500to700',kBackground,29370,ntupledir+'QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempBkgdQCDHt700to1000',kBackground,6524,ntupledir+'QCD_HT700to1000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                              ,('TempBkgdQCDHt1000to1500',kBackground,1064,ntupledir+'QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
-                              ,('FitSinglePhoton',kPhoton,-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD') ]
+            ,"Monophoton" : [ ( 'TempSignalGJets',kPhoton, [ 
+                ( 'TempSignalGJetsHt040to100',23080,ntupledir+'GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempSignalGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempSignalGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempSignalGJetsHt400to600',273,ntupledir+'GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempSignalGJetsHt600toInf',94.5,ntupledir+'GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] )
+                              ,('TempBkgdSinglePhoton',kBackground, [ 
+                ( 'TempBkgdSinglePhotonD',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')               
+                #,('TempBkgdSinglePhotonC',-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD') 
+                ] )
+                              ,('TempBkgdQCD',kBackground, [ 
+                ( 'TempBkgdQCDHt200to300',1735000,ntupledir+'QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
+                ,('TempBkgdQCDHt300to500',366800,ntupledir+'QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
+                ,('TempBkgdQCDHt500to700',29370,ntupledir+'QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempBkgdQCDHt700to1000',6524,ntupledir+'QCD_HT700to1000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempBkgdQCDHt1000to1500',1064,ntupledir+'QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM') ] )
+                              ,('FitSinglePhoton',kPhoton, [ 
+                ( 'FitSinglePhotonD',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')
+                #,('FitSinglePhotonC',-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD') 
+                ] ) ]
             
             ,"ElectronIso" : [ ( 'TempSignalWgPhotons',kPhoton,-1,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
                                ,('TempSignalWgElectrons',kElectron,-1,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] }
-
-# Names for plots for Purity Calculation
-PlotNames = { "Wlike" : ("Photon Purity in SingleMuon DataSet","Photon Purity in WJets Monte Carlo","Photon Purity in WJets MC Truth")
-              ,"Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Purity in #gamma+jets and QCD MC","Photon Purity in #gamma+jets and QCD MC Truth") }
                
 # Function for making templates!
-def TemplateMaker(_var,_skim,_sel,_selName,_skimDir,_plotDir):
+def HistExtractor(_var,_skim,_sel,_skimDir):
     print '\nStarting template:', _skim[0]
         
-    inName = os.path.join(_skimDir,'Skim'+_skim[1]+'.root')
+    inName = os.path.join(_skimDir,_skim[1]+'.root')
     print 'Making template from:', inName
     generator = TemplateGenerator(_skim[2], _var[0], inName)
-    generator.setTemplateBinning(40, 0., 0.02)
+    generator.setTemplateBinning(_var[4], _var[3].getMin(), _var[3].getMax())
     
-    print 'Applying selection:', _selName
+    print 'Applying selection:'
     print _sel, '\n'
-    tempH = generator.makeTemplate(_skim[3], _sel)
+    tempH = generator.makeTemplate(_skim[0], _sel)
+
+    return tempH
         
+def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
     tempname = 'template_'+_skim[0]+'_'+_selName
-    temp = RooDataHist(tempname, tempname, RooArgList(_var[3]), tempH)
+    temp = RooDataHist(tempname, tempname, RooArgList(_var[3]), _hist)
     
     canvas = TCanvas()
     frame = _var[3].frame()
@@ -119,7 +153,7 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     aveSig = float(upSig + downSig) / 2.0;
 
     text = TLatex() #0.8,0.7,"Purity: "+str(round(purity,4)))
-    text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,2))+'#pm'+str(round(aveSig,2))) 
+    text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
 
     leg = TLegend(0.6,0.6,0.85,0.75 );
     leg.SetFillColor(kWhite);
@@ -137,6 +171,9 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
 
     return (purity, aveSig)
 
+# Names for plots for Purity Calculation
+PlotNames = { "Wlike" : ("Photon Purity in SingleMuon DataSet","Photon Purity in WJets Monte Carlo","Photon Purity in WJets MC Truth")
+              ,"Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Purity in #gamma+jets and QCD MC","Photon Purity in #gamma+jets and QCD MC Truth","Photon Purity in SinglePhoton DataSet using Low chIso Sideband","Photon Purity in SinglePhoton DataSet using Medium chIso Sideband","Photon Purity in SinglePhoton DataSet using High chIso Sideband") }
              
 # Skims for Purity Calculation
 Measurement = { "Wlike_old" : [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
@@ -155,36 +192,64 @@ Measurement = { "Wlike_old" : [ ('TempSignal','TempSignal',kPhoton,'Signal Templ
                              ,('WJetsTruthBkgd','FitWJetsToLNu',kBackground,r'Background Template from W+jets#rightarrowl#nu MC Truth') ]
                 ,"Monophoton" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton,r'Signal Template from #gamma+jets MC')
                                   ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground,'Background Template from SinglePhoton Data')
-                                  ,('TempBkgdQCD','TempBkgdQCD',kBackground,'Background Template from QCD MC')
+                                  ,('TempBkgdGJetsQCD','FitGJetsQCD',kBackground,'Background Template from QCD MC')
                                   ,('FitSinglePhoton','FitSinglePhoton',kPhoton,'Fit Template from SinglePhoton Data')
                                   ,('FitGJetsQCD','FitGJetsQCD',kPhoton,r'Fit Template from #gamma+jets and QCD MC')
                                   ,('GJetsQCDTruthSignal','FitGJetsQCD',kPhoton,r'Signal Template from #gamma+jets and QCD MC Truth')
-                                  ,('GJetsQCDTruthBkgd','FitGJetsQCD',kBackground,r'Background Template from #gamma+jets and QCD MC Truth') ] 
-                ,"MonophotonBkgdComp" : [ ( 'BackCompTotQCD','TempBkgdQCD',kBackground,'Total Background from QCD MC')
-                                          ,('BackCompTruQCD','TempBkgdQCD',kBackground,'True Photon Background from QCD MC')
-                                          ,('BackCompHadQCD','TempBkgdQCD',kBackground,'Hadron Decay Background from QCD MC')
-                                          ,('BackCompMisQCD','TempBkgdQCD',kBackground,"Mis-Reco'd Background from QCD MC") ]
+                                  ,('GJetsQCDTruthBkgd','FitGJetsQCD',kBackground,r'Background Template from #gamma+jets and QCD MC Truth') 
+                                  ,('TempBkgdSinglePhotonSbLow','TempBkgdSinglePhoton',kBackground,'Low SideBand Background Template from SinglePhoton Data')
+                                  ,('TempBkgdSinglePhotonSbMed','TempBkgdSinglePhoton',kBackground,'Medium SideBand Background Template from SinglePhoton Data') 
+                                  ,('TempBkgdSinglePhotonSbHii','TempBkgdSinglePhoton',kBackground,'High SideBand Background Template from SinglePhoton Data')
+                                  ,('TempBkgdGJetsQCDSbLow','FitGJetsQCD',kBackground,'Low SideBand Background Template from #gamma+jets and QCD MC')
+                                  ,('TempBkgdGJetsQCDSbMed','FitGJetsQCD',kBackground,'Medium SideBand Background Template from #gamma+jets and QCD MC') 
+                                  ,('TempBkgdGJetsQCDSbHii','FitGJetsQCD',kBackground,'High SideBand Background Template from #gamma+jets and QCD MC') ] 
+                ,"MonophotonBkgdComp" : [ ( 'BackCompTotal','FitGJetsQCD',kBackground,'Total Background from QCD MC')
+                                          ,('BackCompTrue','FitGJetsQCD',kBackground,'True Photons in Sideband from QCD MC')
+                                          ,('BackCompFake','FitGJetsQCD',kBackground,"Fake Photons in Sideband from QCD MC") ]
                 ,"CompGammaE" : [ ( 'TempSignalWgPhotons','TempSignalWgPhotons',kPhoton)
                                   ,('TempSignalWgElectrons','TempSignalWgElectrons',kElectron) ] }
 
 # Selections for Purity Calculation
-cutEventWeight = '(weight) *'
+locationSels = []
+locationSels.append('(TMath::Abs(selPhotons.eta) < 1.5)')
+locationSels.append('((TMath::Abs(selPhotons.eta) > 1.5) && (TMath::Abs(SelPhotons.eta) < 2.4))')
 
-cutBarrel = '(TMath::Abs(selPhotons.eta) < 1.5)'
-cutEndcap = '((TMath::Abs(selPhotons.eta) > 1.5) && (TMath::Abs(SelPhotons.eta) < 2.4))'
-cutEoverH = '(selPhotons.hOverE < 0.05)'
+hOverESels  = [[]] * 2
+sieieSels = [[]] * 2
+chIsoSels = [[]] * 2
+nhIsoSels = [[]] * 2
+phIsoSels = [[]] * 2
+SigmaIetaIetaSels = [[]] * 2
+PhotonIsolationSels = [[]] * 2
+PogSels = [[]] *2
+
+for iLoc in xrange(0,2):
+    for iSel in xrange(0,3):
+        hOverESel = '(selPhotons.hOverE < '+str(hOverECuts[iLoc][iSel])+')'
+        sieieSel = '(selPhotons.sieie < '+str(sieieCuts[iLoc][iSel])+')'
+        chIsoSel = '(selPhotons.chIso < '+str(chIsoCuts[iLoc][iSel])+')'
+        nhIsoSel = '(selPhotons.nhIso < '+str(nhIsoCuts[iLoc][iSel])+')'
+        phIsoSel = '(selPhotons.phIso < '+str(phIsoCuts[iLoc][iSel])+')'
+        hOverESels[iLoc].append(hOverESel)
+        sieieSels[iLoc].append(sieieSel)
+        chIsoSels[iLoc].append(chIsoSel)
+        nhIsoSels[iLoc].append(nhIsoSel)
+        phIsoSels[iLoc].append(phIsoSel)
+        SigmaIetaIetaSel = '('+locationSels[iLoc]+' && '+hOverESel+' && '+nhIsoSel+' && '+phIsoSel+')'
+        PhotonIsolationSel = '('+locationSels[iLoc]+' && '+hOverESel+' && '+chIsoSel+' && '+nhIsoSel+')'
+        SigmaIetaIetaSels[iLoc].append(SigmaIetaIetaSel)
+        PhotonIsolationSels[iLoc].append(PhotonIsolationSel)
 
 cutChIsoBarrelVLoose = '(selPhotons.chIso < 4.44)'
-
-cutSieieBarrelMedium = '(selPhotons.sieie < 0.0100)'
-cutChIsoBarrelMedium = '(selPhotons.chIso < 1.31)'
-cutNhIsoBarrelMedium = '(selPhotons.nhIso < (0.60 + TMath::Exp(0.0044*selPhotons.pt+0.5809)))'
-cutPhIsoBarrelMedium = '(selPhotons.phIso < (1.33 + 0.0043*selPhotons.pt))'
-cutSelBarrelMedium = '('+cutBarrel+' && '+cutEoverH+' && '+cutNhIsoBarrelMedium+' && '+cutPhIsoBarrelMedium+')'
+cutChIsoBarrelSLoose = '(selPhotons.chIso < 8.44)'
+        
+cutIsLoose = '(selPhotons.loose)'
+cutIsMedium = '(selPhotons.medium)'
+cutIsTight = '(selPhotons.tight)'
 
 cutMatchedToPhoton = '(TMath::Abs(selPhotons.matchedGen) == 22)'
-cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay))' 
-cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
+cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPhotons.drParton > 0.5))' 
+# cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
 
 cutPhotonPt = [ ('PhotonPt20to60', '((selPhotons.pt > 20) && (selPhotons.pt < 60) )')
                 ,('PhotonPt60to100', '((selPhotons.pt > 60) && (selPhotons.pt < 100) )')
@@ -200,52 +265,71 @@ cutMet20 = '(t1Met.met > 20)'
 cutWlike = '('+cutSingleMuon+' && '+cutElectronVeto+' && '+cutTauVeto+' && '+cutMet20+')'
 
 Selections = { 'medium_barrel_inclusive' : [ 
-        cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && !'+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && !'+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && '+cutChIsoBarrelMedium+' && !'+cutMatchedToReal ]
+        SigmaIetaIetaSels[0][1]+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && !'+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && !'+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && '+chIsoSels[0][1]+' && !'+cutMatchedToReal ]
                ,'medium_barrel_Wlike' : [ 
-        cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && !'+cutMatchedToReal ]
+        SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && !'+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && !'+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && !'+cutMatchedToReal ]
                ,'vloose_barrel_Wlike' : [ 
-        cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
-        ,cutSelBarrelMedium+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-        ,cutSelBarrelMedium+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && !'+cutMatchedToReal  ] }
+        SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+        ,SigmaIetaIetaSels[0][1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && !'+cutMatchedToReal  ] }
 
 for cut in cutPhotonPt:
-    cuts = [ cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && !'+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && !'+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutWlike+' && '+cutChIsoBarrelMedium+' && !'+cutMatchedToReal ]
+    cuts = [ SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && !'+chIsoSels[0][1]
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && !'+chIsoSels[0][1]
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && '+chIsoSels[0][1]
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+cutWlike+' && !'+chIsoSels[0][1]+' && !'+cutMatchedToReal ]
     Selections['medium_barrel_Wlike_'+cut[0]] = cuts
 
 for cut in cutPhotonPt:
-    cuts = [ cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-             ,cutSelBarrelMedium+' && '+cut[1]+' && !'+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && !'+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-             ,cutSelBarrelMedium+' && '+cut[1]+' && '+cutChIsoBarrelMedium+' && !'+cutMatchedToReal ]
+    cuts = [ SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelVLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelVLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+chIsoSels[0][1]
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+chIsoSels[0][1]
+             #,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+chIsoSels[0][1]+' && '+cutMatchedToReal
+             #,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && '+chIsoSels[0][1]+' && !'+cutMatchedToReal
+             ,locationSels[0]+' && '+cutIsMedium+' && '+cut[1]+' && '+cutMatchedToReal
+             ,locationSels[0]+' && '+cutIsMedium+' && '+cut[1]+' && !'+cutMatchedToReal
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+chIsoSels[0][1]+' && '+cutChIsoBarrelVLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelSLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+chIsoSels[0][1]+' && '+cutChIsoBarrelVLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose
+             ,SigmaIetaIetaSels[0][1]+' && '+cut[1]+' && !'+cutChIsoBarrelSLoose ]
     Selections['medium_barrel_'+cut[0]] = cuts
 
-Selections['MonophotonBkgdComp'] = [ cutSelBarrelMedium+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelMedium
-                                     ,cutSelBarrelMedium+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelMedium+' && '+cutMatchedToReal
-                                     ,cutSelBarrelMedium+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelMedium+' && '+cutMatchedToHadDecay
-                                     ,cutSelBarrelMedium+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelMedium+' && !'+cutMatchedToPhoton ]
+Selections['MonophotonBkgdCompLow'] = [ SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+chIsoSels[0][1]+' && '+cutChIsoBarrelVLoose
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+chIsoSels[0][1]+' && '+cutChIsoBarrelVLoose+' && '+cutMatchedToReal
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+chIsoSels[0][1]+' && '+cutChIsoBarrelVLoose+' && !'+cutMatchedToReal ]
+
+Selections['MonophotonBkgdCompMed'] = [ SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose+' && '+cutMatchedToReal
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose+' && !'+cutMatchedToReal ]
+
+Selections['MonophotonBkgdCompHigh'] = [ SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelSLoose
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelSLoose+' && '+cutMatchedToReal
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelSLoose+' && !'+cutMatchedToReal ]
+
+Selections['MonophotonBkgdCompReal'] = [ SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose+' && '+cutMatchedToReal
+                                        ,SigmaIetaIetaSels[0][1]+' && '+cutPhotonPt[-1][1]+' && !'+cutChIsoBarrelVLoose+' && !'+cutMatchedToReal ]
 
