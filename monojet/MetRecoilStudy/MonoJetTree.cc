@@ -13,7 +13,10 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet1Pt",&jet1Pt,"jet1Pt/F");
   t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
   t->Branch("jet1Phi",&jet1Phi,"jet1Phi/F");
-  t->Branch("jet1dRmet",&jet1dRmet,"jet1dRmet/F");
+  t->Branch("jet1M",&jet1M,"jet1M/F");
+  t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
+  t->Branch("jet1DPhiUZ",&jet1DPhiUZ,"jet1DPhiUZ/F");
+  t->Branch("jet1DPhiUPho",&jet1DPhiUPho,"jet1DPhiUPho/F");
   t->Branch("n_jets",&n_jets,"n_jets/I");
   t->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
   t->Branch("lep1Eta",&lep1Eta,"lep1Eta/F");
@@ -44,10 +47,6 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("u_paraZ",&u_paraZ,"u_paraZ/F");
   t->Branch("u_magZ",&u_magZ,"u_magZ/F");
   t->Branch("u_phiZ",&u_phiZ,"u_phiZ/F");
-  t->Branch("u_perpW",&u_perpW,"u_perpW/F");
-  t->Branch("u_paraW",&u_paraW,"u_paraW/F");
-  t->Branch("u_magW",&u_magW,"u_magW/F");
-  t->Branch("u_phiW",&u_phiW,"u_phiW/F");
   t->Branch("u_perpPho",&u_perpPho,"u_perpPho/F");
   t->Branch("u_paraPho",&u_paraPho,"u_paraPho/F");
   t->Branch("u_magPho",&u_magPho,"u_magPho/F");
@@ -74,7 +73,10 @@ MonoJetTree::Reset()
   jet1Pt = 0;
   jet1Eta = 0;
   jet1Phi = 0;
-  jet1dRmet = 0;
+  jet1M = 0;
+  jet1DPhiMet = 0;
+  jet1DPhiUZ = 0;
+  jet1DPhiUPho = 0;
   n_jets = 0;
   lep1Pt = 0;
   lep1Eta = 0;
@@ -105,10 +107,6 @@ MonoJetTree::Reset()
   u_paraZ = 0;
   u_magZ = 0;
   u_phiZ = 0;
-  u_perpW = 0;
-  u_paraW = 0;
-  u_magW = 0;
-  u_phiW = 0;
   u_perpPho = 0;
   u_paraPho = 0;
   u_magPho = 0;

@@ -39,11 +39,13 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   Int_t nentries = inTreeFetch->GetEntriesFast();
 
-  std::vector<TLorentzVector*> cleaningVecs;
+  std::vector<TLorentzVector*> leptonVecs;
+  std::vector<TLorentzVector*> photonVecs;
 
   for (Int_t iEntry = 0; iEntry < nentries; iEntry++) {
 
-    cleaningVecs.resize(0);
+    leptonVecs.resize(0);
+    photonVecs.resize(0);
 
     if (iEntry % 10000 == 0)
       std::cout << "Processing events: ... " << float(iEntry)/float(nentries)*100 << "%" << std::endl;
@@ -66,7 +68,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       TLorentzVector* tempLepton = (TLorentzVector*) inTree->lepP4->At(iLepton);
 
       if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 8) == 8) {
-        cleaningVecs.push_back(tempLepton);
+        leptonVecs.push_back(tempLepton);
         outTree->n_looselep++;
         if (outTree->n_looselep == 1) {
           outTree->lep1Pt    = tempLepton->Pt();
@@ -83,9 +85,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32) {
           outTree->n_tightlep +=1;
           if (outTree->n_looselep == 1)
-            outTree->lep1isTight = 1;
+            outTree->lep1IsTight = 1;
           else if (outTree->n_looselep == 2)
-            outTree->lep2isTight = 2;
+            outTree->lep2IsTight = 2;
         }
       }
     }
@@ -111,52 +113,78 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->mt = transverseMass(outTree->lep1Pt,outTree->lep1Phi,outTree->met,outTree->metPhi);
 
     for (Int_t iPhoton = 0; iPhoton < inTree->photonP4->GetEntries(); iPhoton++) {
-      TLorentzVector* tempPhoton = (TLorentzVector*) inTree->lepP4->At(iPhoton);
+      TLorentzVector* tempPhoton = (TLorentzVector*) inTree->photonP4->At(iPhoton);
 
-      if (tempPhoton->Pt() > 10. && ((*(inTree->lepSelBits))[iPhoton] & 8) == 8) {
-        cleaningVecs.push_back(tempPhoton);
-        outTree->n_looselep++;
-        if (outTree->n_looselep == 1) {
-          outTree->lep1Pt    = tempLepton->Pt();
-          outTree->lep1Eta   = tempLepton->Eta();
-          outTree->lep1Phi   = tempLepton->Phi();
-          outTree->lep1PdgId = (*(inTree->lepPdgId))[iLepton];
-        }          
-        else if (outTree->n_looselep == 2) {
-          outTree->lep2Pt    = tempLepton->Pt();
-          outTree->lep2Eta   = tempLepton->Eta();
-          outTree->lep2Phi   = tempLepton->Phi();
-          outTree->lep2PdgId = (*(inTree->lepPdgId))[iLepton];
-        }          
-        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32) {
-          outTree->n_tightlep +=1;
-          if (outTree->n_looselep == 1)
-            outTree->lep1isTight = 1;
-          else if (outTree->n_looselep == 2)
-            outTree->lep2isTight = 2;
-        }
+      Bool_t match = false;
+
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < 0.1)
+          match = true;
+      }
+
+      if (match)
+        continue;
+
+      outTree->n_loosepho++;
+      photonVecs.push_back(tempPhoton);
+
+      if (tempPhoton->Pt() > 175 && (*(inTree->photonTightId))[iPhoton] == 1)
+        outTree->n_tightpho++;
+
+      if (outTree->n_loosepho == 1) {
+        outTree->photonPt  = tempPhoton->Pt();
+        outTree->photonEta = tempPhoton->Eta();
+        outTree->photonPhi = tempPhoton->Phi();
+        if (outTree->n_tightpho == 1)
+          outTree->photonIsTight = 1;
+
+        vec1.SetPtEtaPhiM(outTree->photonPt,0,outTree->photonPhi,0);
+        vec2.SetPtEtaPhiM(outTree->met,0,outTree->metPhi,0);
+        vec3 = vec1 + vec2;
+        
+        outTree->u_magPho  = vec3.Pt();
+        outTree->u_phiPho  = vec3.Phi();
+        outTree->u_perpPho = uPerp(outTree->u_magPho,outTree->u_phiPho,outTree->photonPhi);
+        outTree->u_paraPho = uPara(outTree->u_magPho,outTree->u_phiPho,outTree->photonPhi);
       }
     }
-  // float photonPt;
-  // float photonEta;
-  // float photonPhi;
-  // int   photonIsTight;
-  // int   n_tightpho;
-  // int   n_loosepho;
 
-  // float u_perpPho;
-  // float u_paraPho;
-  // float u_magPho;
-  // float u_phiPho;
+    for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
+      TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
 
-  // float jet1Pt;
-  // float jet1Eta;
-  // float jet1Phi;
-  // float jet1dRmet;
-  // int   n_jets;
+      Bool_t match = false;
 
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < 0.1)
+          match = true;
+      }
+
+      if (match)
+        continue;
+
+      for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+        if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < 0.1)
+          match = true;
+      }
+
+      if (match)
+        continue;
+
+      outTree->n_jets++;
+
+      if (outTree->n_jets == 1) {
+        outTree->jet1Pt  = tempJet->Pt();
+        outTree->jet1Eta = tempJet->Eta();
+        outTree->jet1Phi = tempJet->Phi();
+        outTree->jet1M   = tempJet->M();
+
+        outTree->jet1DPhiMet  = deltaPhi(outTree->jet1Phi,outTree->metPhi);
+        outTree->jet1DPhiUZ   = deltaPhi(outTree->jet1Phi,outTree->u_phiZ);
+        outTree->jet1DPhiUPho = deltaPhi(outTree->jet1Phi,outTree->u_phiPho);
+      }
+    }    
     outTree->triggerFired = inTree->triggerFired;
-
+    
     outTree->Fill();
   }
 

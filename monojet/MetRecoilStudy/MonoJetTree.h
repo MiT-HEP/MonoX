@@ -16,7 +16,10 @@ public:
   float jet1Pt;
   float jet1Eta;
   float jet1Phi;
-  float jet1dRmet;
+  float jet1M;
+  float jet1DPhiMet;
+  float jet1DPhiUZ;
+  float jet1DPhiUPho;
   int   n_jets;
   float lep1Pt;
   float lep1Eta;
@@ -47,10 +50,6 @@ public:
   float u_paraZ;
   float u_magZ;
   float u_phiZ;
-  float u_perpW;
-  float u_paraW;
-  float u_magW;
-  float u_phiW;
   float u_perpPho;
   float u_paraPho;
   float u_magPho;
