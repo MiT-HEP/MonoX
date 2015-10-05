@@ -19,6 +19,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
   t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
   t->Branch("jet1DPhiUZ",&jet1DPhiUZ,"jet1DPhiUZ/F");
+  t->Branch("jet1DPhiUW",&jet1DPhiUW,"jet1DPhiUW/F");
   t->Branch("jet1DPhiUPho",&jet1DPhiUPho,"jet1DPhiUPho/F");
   t->Branch("jet2Pt",&jet2Pt,"jet2Pt/F");
   t->Branch("jet2Eta",&jet2Eta,"jet2Eta/F");
@@ -29,6 +30,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
   t->Branch("jet2DPhiMet",&jet2DPhiMet,"jet2DPhiMet/F");
   t->Branch("jet2DPhiUZ",&jet2DPhiUZ,"jet2DPhiUZ/F");
+  t->Branch("jet2DPhiUW",&jet2DPhiUW,"jet2DPhiUW/F");
   t->Branch("jet2DPhiUPho",&jet2DPhiUPho,"jet2DPhiUPho/F");
   t->Branch("n_jets",&n_jets,"n_jets/I");
   t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
@@ -65,6 +67,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("u_paraZ",&u_paraZ,"u_paraZ/F");
   t->Branch("u_magZ",&u_magZ,"u_magZ/F");
   t->Branch("u_phiZ",&u_phiZ,"u_phiZ/F");
+  t->Branch("u_magW",&u_magW,"u_magW/F");
+  t->Branch("u_phiW",&u_phiW,"u_phiW/F");
   t->Branch("u_perpPho",&u_perpPho,"u_perpPho/F");
   t->Branch("u_paraPho",&u_paraPho,"u_paraPho/F");
   t->Branch("u_magPho",&u_magPho,"u_magPho/F");
@@ -97,6 +101,7 @@ MonoJetTree::Reset()
   jet1isLooseMonoJetId = -1;
   jet1DPhiMet = -1;
   jet1DPhiUZ = -1;
+  jet1DPhiUW = -1;
   jet1DPhiUPho = -1;
   jet2Pt = -5;
   jet2Eta = -5;
@@ -107,6 +112,7 @@ MonoJetTree::Reset()
   jet2isLooseMonoJetId = -1;
   jet2DPhiMet = -1;
   jet2DPhiUZ = -1;
+  jet2DPhiUW = -1;
   jet2DPhiUPho = -1;
   n_jets = 0;
   dPhi_j1j2 = -1;
@@ -143,6 +149,8 @@ MonoJetTree::Reset()
   u_paraZ = -5;
   u_magZ = -5;
   u_phiZ = -5;
+  u_magW = -5;
+  u_phiW = -5;
   u_perpPho = -5;
   u_paraPho = -5;
   u_magPho = -5;

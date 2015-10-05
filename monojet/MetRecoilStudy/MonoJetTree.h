@@ -22,6 +22,7 @@ public:
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
   float jet1DPhiUZ;
+  float jet1DPhiUW;
   float jet1DPhiUPho;
   float jet2Pt;
   float jet2Eta;
@@ -32,6 +33,7 @@ public:
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
   float jet2DPhiUZ;
+  float jet2DPhiUW;
   float jet2DPhiUPho;
   int   n_jets;
   float dPhi_j1j2;
@@ -68,6 +70,8 @@ public:
   float u_paraZ;
   float u_magZ;
   float u_phiZ;
+  float u_magW;
+  float u_phiW;
   float u_perpPho;
   float u_paraPho;
   float u_magPho;
