@@ -18,9 +18,24 @@ cp $macroDir/functions.h .
 cp $macroDir/NeroSlimmer.cc .
 cp $macroDir/runSlimmer.py .
 
+RUNNING=0
+FIRST=1
 for file in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls $eosDir/$subDir`; do
-    ./runSlimmer.py root://eoscms/$eosDir/$subDir/$file $file
+    if [ "$FIRST" -eq 1 ]; then
+        ./runSlimmer.py root://eoscms/$eosDir/$subDir/$file $file
+    else
+        ./runSlimmer.py root://eoscms/$eosDir/$subDir/$file $file &
+        RUNNING=$((RUNNING+1))
+        if [ "$RUNNING" -eq 4 ]; then
+            wait
+            RUNNING=0
+        fi
+    fi
 done
+
+if [ "$RUNNING" -gt 0 ]; then
+    wait
+fi
 
 hadd $subDir.root *.root
 cp $subDir.root $outFile

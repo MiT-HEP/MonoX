@@ -4,12 +4,12 @@ def build_selection(selection,bin0):
 
     snippets = {
         #** monojet
-        'leading jet pT':['jetP4[0].Pt()>110.',selections],
+        'leading jet pT':['jet1Pt>110.',selections],
         #'leading jet eta':['abs(jetP4[0].Eta())<2.4',selections],
-        'jet cleaning':['jetMonojetId[0]==1',selections],
+        'jet cleaning':['jet1isMonoJetId==1',selections],
         #'trailing jet':['(jetP4[1].Pt() < 30 || deltaPhi(jetP4[0].Phi(),jetP4[1].Phi())<2)',selections],
-#        'jet multiplicity':['@jetP4.size()<3',selections],
-        'deltaPhi':['deltaPhi(jetP4[0].Phi(),metP4[0].Phi())>0.4',selections],
+        'jet multiplicity':['n_jets<4',selections],
+        'deltaPhi':['jet1DPhiMet>0.4',['signal','Wln','Wen']],
         #'trigger':['(triggerFired[0]==1 || triggerFired[1]==1)',selections],
         'lepton veto':['n_looselep==0',['signal','gjets']],
         'pho veto':['@photonP4.size()==0',['signal','Zll','Wln','Zee','Wen']], 

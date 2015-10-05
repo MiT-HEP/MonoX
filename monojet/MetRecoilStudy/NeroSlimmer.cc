@@ -67,7 +67,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iLepton = 0; iLepton < inTree->lepP4->GetEntries(); iLepton++) {
       TLorentzVector* tempLepton = (TLorentzVector*) inTree->lepP4->At(iLepton);
 
-      if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 8) == 8) {
+      if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16) {
         leptonVecs.push_back(tempLepton);
         outTree->n_looselep++;
         if (outTree->n_looselep == 1) {
@@ -75,30 +75,44 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep1Eta   = tempLepton->Eta();
           outTree->lep1Phi   = tempLepton->Phi();
           outTree->lep1PdgId = (*(inTree->lepPdgId))[iLepton];
+          outTree->lep1IsMedium = 0;
+          outTree->lep1IsTight  = 0;
         }          
         else if (outTree->n_looselep == 2) {
           outTree->lep2Pt    = tempLepton->Pt();
           outTree->lep2Eta   = tempLepton->Eta();
           outTree->lep2Phi   = tempLepton->Phi();
           outTree->lep2PdgId = (*(inTree->lepPdgId))[iLepton];
+          outTree->lep2IsMedium = 0;
+          outTree->lep2IsTight  = 0;
         }          
-        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16) {
+        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32) {
           outTree->n_mediumlep +=1;
           if (outTree->n_looselep == 1)
             outTree->lep1IsMedium = 1;
           else if (outTree->n_looselep == 2)
-            outTree->lep2IsMedium = 2;
+            outTree->lep2IsMedium = 1;
         }
-        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32) {
+        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 64) == 64) {
           outTree->n_tightlep +=1;
           if (outTree->n_looselep == 1)
             outTree->lep1IsTight = 1;
           else if (outTree->n_looselep == 2)
-            outTree->lep2IsTight = 2;
+            outTree->lep2IsTight = 1;
         }
       }
     }
     
+    if (outTree->n_looselep > 0) {
+      vec1.SetPtEtaPhiM(outTree->lep1Pt,0.,outTree->lep1Phi,0);
+      vec2.SetPtEtaPhiM(outTree->met,0,outTree->metPhi,0);
+      vec3 = vec1 + vec2;
+
+      outTree->mt     = vec3.M();
+      outTree->u_magW = vec3.Pt();
+      outTree->u_phiW = vec3.Phi();
+    }
+
     if (outTree->n_looselep > 1) {
       vec1.SetPtEtaPhiM(outTree->lep1Pt,outTree->lep1Eta,outTree->lep1Phi,0);
       vec2.SetPtEtaPhiM(outTree->lep2Pt,outTree->lep2Eta,outTree->lep2Phi,0);
@@ -116,8 +130,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->u_perpZ = uPerp(outTree->u_magZ,outTree->u_phiZ,outTree->dilep_phi);
       outTree->u_paraZ = uPara(outTree->u_magZ,outTree->u_phiZ,outTree->dilep_phi);
     }
-    if (outTree->n_looselep > 0)
-      outTree->mt = transverseMass(outTree->lep1Pt,outTree->lep1Phi,outTree->met,outTree->metPhi);
 
     for (Int_t iPhoton = 0; iPhoton < inTree->photonP4->GetEntries(); iPhoton++) {
       TLorentzVector* tempPhoton = (TLorentzVector*) inTree->photonP4->At(iPhoton);
