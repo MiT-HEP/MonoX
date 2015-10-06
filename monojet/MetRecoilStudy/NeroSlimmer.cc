@@ -12,6 +12,8 @@
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
+  Float_t dROverlap = 0.4;
+
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
   NeroTree *inTree        = new NeroTree(inTreeFetch);
@@ -55,6 +57,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     outTree->runNum   = inTree->runNum;
     outTree->lumiNum  = inTree->lumiNum;
     outTree->eventNum = inTree->eventNum;
+    outTree->rho      = inTree->rho;
+    outTree->npv      = inTree->npv;
 
     if (inTree->mcWeight < 0)
       outTree->mcWeight = -1;
@@ -137,8 +141,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       Bool_t match = false;
 
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < 0.1)
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < dROverlap) {
           match = true;
+          break;
+        }
       }
       
       if (match)
@@ -174,16 +180,20 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       Bool_t match = false;
 
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < 0.1)
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
           match = true;
+          break;
+        }
       }
 
       if (match)
         continue;
 
       for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
-        if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < 0.1)
+        if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
           match = true;
+          break;
+        }
       }
 
       if (match)
@@ -223,9 +233,36 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->dPhi_j1j2 = deltaPhi(outTree->jet1Phi,outTree->jet2Phi);
         outTree->dR_j1j2   = deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->jet2Phi,outTree->jet2Eta);
       }
+
+      else if (outTree->n_jets == 3) {
+        outTree->jet3Pt  = tempJet->Pt();
+        outTree->jet3Eta = tempJet->Eta();
+        outTree->jet3Phi = tempJet->Phi();
+        outTree->jet3M   = tempJet->M();
+
+        outTree->jet3PuId             = (*(inTree->jetPuId))[iJet];
+        outTree->jet3isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
+        outTree->jet3isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
+      }
     }    
     outTree->triggerFired = inTree->triggerFired;
     
+    for (Int_t iTau = 0; iTau < inTree->tauP4->GetEntries(); iTau++) {
+      TLorentzVector* tempTau = (TLorentzVector*) inTree->tauP4->At(iTau);
+      
+      Bool_t match = false;
+
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempTau->Phi(),tempTau->Eta()) < dROverlap) {
+          match = true;
+          break;
+        }
+      }
+
+      if (!match)
+        outTree->n_tau++;
+    }
+
     outTree->Fill();
   }
 
@@ -233,5 +270,4 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   outFile->Close();
   inFile->Close();
-
 }

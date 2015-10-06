@@ -10,6 +10,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("runNum",&runNum,"runNum/I");
   t->Branch("lumiNum",&lumiNum,"lumiNum/I");
   t->Branch("eventNum",&eventNum,"eventNum/I");
+  t->Branch("rho",&rho,"rho/F");
+  t->Branch("npv",&npv,"npv/I");
   t->Branch("jet1Pt",&jet1Pt,"jet1Pt/F");
   t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
   t->Branch("jet1Phi",&jet1Phi,"jet1Phi/F");
@@ -32,6 +34,13 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet2DPhiUZ",&jet2DPhiUZ,"jet2DPhiUZ/F");
   t->Branch("jet2DPhiUW",&jet2DPhiUW,"jet2DPhiUW/F");
   t->Branch("jet2DPhiUPho",&jet2DPhiUPho,"jet2DPhiUPho/F");
+  t->Branch("jet3Pt",&jet3Pt,"jet3Pt/F");
+  t->Branch("jet3Eta",&jet3Eta,"jet3Eta/F");
+  t->Branch("jet3Phi",&jet3Phi,"jet3Phi/F");
+  t->Branch("jet3M",&jet3M,"jet3M/F");
+  t->Branch("jet3PuId",&jet3PuId,"jet3PuId/F");
+  t->Branch("jet3isMonoJetId",&jet3isMonoJetId,"jet3isMonoJetId/I");
+  t->Branch("jet3isLooseMonoJetId",&jet3isLooseMonoJetId,"jet3isLooseMonoJetId/I");
   t->Branch("n_jets",&n_jets,"n_jets/I");
   t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
   t->Branch("dR_j1j2",&dR_j1j2,"dR_j1j2/F");
@@ -63,6 +72,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("n_loosepho",&n_loosepho,"n_loosepho/I");
   t->Branch("met",&met,"met/F");
   t->Branch("metPhi",&metPhi,"metPhi/F");
+  t->Branch("n_tau",&n_tau,"n_tau/I");
   t->Branch("u_perpZ",&u_perpZ,"u_perpZ/F");
   t->Branch("u_paraZ",&u_paraZ,"u_paraZ/F");
   t->Branch("u_magZ",&u_magZ,"u_magZ/F");
@@ -92,6 +102,8 @@ MonoJetTree::Reset()
   runNum = 0;
   lumiNum = 0;
   eventNum = 0;
+  rho = 0;
+  npv = 0;
   jet1Pt = -5;
   jet1Eta = -5;
   jet1Phi = -5;
@@ -114,6 +126,13 @@ MonoJetTree::Reset()
   jet2DPhiUZ = -1;
   jet2DPhiUW = -1;
   jet2DPhiUPho = -1;
+  jet3Pt = -5;
+  jet3Eta = -5;
+  jet3Phi = -5;
+  jet3M = -5;
+  jet3PuId = -1;
+  jet3isMonoJetId = -1;
+  jet3isLooseMonoJetId = -1;
   n_jets = 0;
   dPhi_j1j2 = -1;
   dR_j1j2 = -1;
@@ -145,6 +164,7 @@ MonoJetTree::Reset()
   n_loosepho = 0;
   met = -5;
   metPhi = -5;
+  n_tau = 0;
   u_perpZ = -5;
   u_paraZ = -5;
   u_magZ = -5;

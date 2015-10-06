@@ -13,6 +13,8 @@ public:
   int   runNum;
   int   lumiNum;
   int   eventNum;
+  float rho;
+  int   npv;
   float jet1Pt;
   float jet1Eta;
   float jet1Phi;
@@ -35,6 +37,13 @@ public:
   float jet2DPhiUZ;
   float jet2DPhiUW;
   float jet2DPhiUPho;
+  float jet3Pt;
+  float jet3Eta;
+  float jet3Phi;
+  float jet3M;
+  float jet3PuId;
+  int   jet3isMonoJetId;
+  int   jet3isLooseMonoJetId;
   int   n_jets;
   float dPhi_j1j2;
   float dR_j1j2;
@@ -66,6 +75,7 @@ public:
   int   n_loosepho;
   float met;
   float metPhi;
+  int   n_tau;
   float u_perpZ;
   float u_paraZ;
   float u_magZ;
