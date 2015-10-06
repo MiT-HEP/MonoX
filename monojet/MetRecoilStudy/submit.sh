@@ -28,14 +28,12 @@ if [ MonoJetTree.txt -nt MonoJetTree.h ]; then
     ./makeTree.sh
 fi
 
-haddFile=$lfsOut/myHadd.sh
-haddSkimmed=$lfsOut/skimmed/myHadd.sh
+haddFile=$lfsOut/myHadd.txt
+haddSkimmed=$lfsOut/skimmed/myHadd.txt
 
 > $haddFile
-chmod +x $haddFile
 
 > $haddSkimmed
-chmod +x $haddSkimmed
 
 ranOnFile=0
 
@@ -76,6 +74,7 @@ done
 
 if [ "$ranOnFile" -eq 0 ]; then
     cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
-#    $lfsOut/./myHadd.sh
+    echo "Skimmed files merged!"
+    cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
     echo "All files merged!"
 fi

@@ -44,8 +44,10 @@ def skim(inQueue):
             ##
             outTree = inTree.CopyTree(cut)
             outFile.WriteTObject(outTree,"events")
+            outFile.WriteTObject(inFile.htotal.Clone())
             outFile.Close()
             inFile.Close()
+            print "Finished " + inFileName
         except:
             print "Worker finished..."
             running = False
