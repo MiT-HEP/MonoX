@@ -126,6 +126,7 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
   TF1 *subFit1  = new TF1("fit1","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
   TF1 *subFit2  = new TF1("fit2","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
 
+  fitLoose->SetLineColor(kGreen);
   fitFunc->SetLineColor(kBlue);
 
   fitLoose->SetParLimits(0,0,1e8);
@@ -177,6 +178,7 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
       if (fDumpingFits) {
         TString dumpName;
         dumpName.Form("DumpFit_%d",fNumFitDumps);
+        fitLoose->Draw("SAME");
 	subFit1->SetParameter(0,fitFunc->GetParameter(3));
 	subFit1->SetParameter(1,fitFunc->GetParameter(0));
 	subFit1->SetParameter(2,fitFunc->GetParameter(1));
@@ -188,9 +190,53 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
         tempCanvas->SaveAs(dumpName+".png");
         fNumFitDumps++;
       }
-      tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitFunc->GetParameter(ParamNumber));
-      if (fIncludeErrorBars)
-        tempGraph->SetPointError(i1,0,fitFunc->GetParError(ParamNumber));
+      // This is where we do the tricky parameter fetching stuff!!
+      if (ParamNumber == 0) {
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitFunc->GetParameter(0));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,fitFunc->GetParError(0));
+      }
+      else if (ParamNumber == 1) {
+        Int_t sigWanted = 0;
+        if (fitFunc->GetParameter(1) < fitFunc->GetParameter(2))
+          sigWanted = 1;
+        else
+          sigWanted = 2;
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitFunc->GetParameter(sigWanted));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,fitFunc->GetParError(sigWanted));
+      }
+      else if (ParamNumber == 2) {
+        Int_t sigWanted = 0;
+        if (fitFunc->GetParameter(1) > fitFunc->GetParameter(2))
+          sigWanted = 1;
+        else
+          sigWanted = 2;
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitFunc->GetParameter(sigWanted));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,fitFunc->GetParError(sigWanted));
+      }
+      else if (ParamNumber == 3) {
+        Float_t weight1 = 0.;
+        Float_t weight2 = 0.;
+
+        weight1 = fitFunc->GetParameter(3)/sqrt(fitFunc->GetParameter(1));
+        weight2 = fitFunc->GetParameter(4)/sqrt(fitFunc->GetParameter(2));
+
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),(weight1 * fitFunc->GetParameter(1) + weight2 * fitFunc->GetParameter(2))/(weight1 + weight2));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,sqrt(pow(weight1 * fitFunc->GetParError(1),2) + pow(weight2 * fitFunc->GetParError(2),2))/(weight1 + weight2));
+      }
+      else if (ParamNumber == 4) {
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitLoose->GetParameter(1));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,fitLoose->GetParError(1));
+      }
+      else if (ParamNumber == 5) {
+        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitLoose->GetParameter(2));
+        if (fIncludeErrorBars)
+          tempGraph->SetPointError(i1,0,fitLoose->GetParError(2));
+      }
       delete tempCanvas;
     }
     theGraphs.push_back(tempGraph);

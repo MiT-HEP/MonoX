@@ -11,7 +11,9 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-datadir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+#datadir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
+goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
 
 MetFile        = ROOT.TFile(datadir + "monojet_MET+Run2015D.root")
 SingleElecFile = ROOT.TFile(datadir + "monojet_SingleElectron+Run2015D.root")
@@ -60,15 +62,15 @@ plotter.AddExprX("dilep_pt")
 plotter.AddExprX("photonPt")
 plotter.AddExprX("photonPt")
 
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpPho")
-plotter.AddExpr("u_perpPho")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_paraPho + photonPt")
 
 plotter.SetDumpingFits(True)
-fits = plotter.MakeFitGraphs(8,100,500,50,-100.0,100.0,2)
+fits = plotter.MakeFitGraphs(8,100,500,50,-100.0,100.0,5)
 
 plotter.MakeCanvas("UPerp",fits,"","Boson p_{T} [GeV]","#sigma_{u_{#perp}}",0,60)
 
