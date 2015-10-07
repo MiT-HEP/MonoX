@@ -2,11 +2,16 @@
 
 import ROOT
 import tdrStyle
-from MitAna.TreeMod.bambu import mithep, analysis
+
+ROOT.gROOT.LoadMacro('PlotBase.cc+')
+ROOT.gROOT.LoadMacro('PlotHists.cc+')
+ROOT.gROOT.LoadMacro('PlotResolution.cc+')
 
 tdrStyle.setTDRStyle()
 
-datadir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
+ROOT.gROOT.SetBatch(True)
+
+datadir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
 
 MetFile        = ROOT.TFile(datadir + "monojet_MET+Run2015D.root")
 SingleElecFile = ROOT.TFile(datadir + "monojet_SingleElectron+Run2015D.root")
@@ -19,15 +24,12 @@ SingleElecTree = SingleElecFile.Get("events")
 SinglePhoTree  = SinglePhoFile.Get("events")
 DYTree         = DYFile.Get("events")
 GJetsTree      = GJetsFile.Get("events")
-print GJetsTree
 GJetsTree.AddFriend(GJetsFile.Get("nloTree"))
 
-#plotter = mithep.PlotRecoil()
-plotter = mithep.PlotResolution()
+plotter = ROOT.PlotResolution()
 plotter.SetIncludeErrorBars(True)
 
-plotter.SetParameterLimits(0,0,1e8)
-plotter.SetParameterLimits(1,-20,20)
+plotter.SetParameterLimits(1,5,60)
 plotter.SetParameterLimits(2,5,60)
 
 plotter.AddTree(MetTree)
@@ -66,8 +68,7 @@ plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpPho")
 
 plotter.SetDumpingFits(True)
-fits = plotter.MakeFitGraphs(10,0,500,50,-100.0,100.0,2)
-#plotter.MakeCanvas(50,-100,100,"test","","","")
+fits = plotter.MakeFitGraphs(8,100,500,50,-100.0,100.0,2)
 
 plotter.MakeCanvas("UPerp",fits,"","Boson p_{T} [GeV]","#sigma_{u_{#perp}}",0,60)
 

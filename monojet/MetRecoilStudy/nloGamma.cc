@@ -11,7 +11,7 @@
 
 void nloGamma (TString filename, Float_t xsec) {
 
-  TFile *histFile = new TFile("/afs/cern.ch/user/y/yiiyama/public/kfactor.root");
+  TFile *histFile = new TFile("kfactor.root");
   TH1F *NLOhist   = (TH1F*) histFile->FindObjectAny("pho_pt");
 
   TFile *file = new TFile(filename,"UPDATE");

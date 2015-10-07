@@ -38,5 +38,6 @@
 datacard*.txt
 *.root
 *.pdf
+*.png
 ._*
 *.txt.*

@@ -121,11 +121,22 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
   TGraphErrors *tempGraph;
   std::vector<TGraphErrors*> theGraphs;
 
-  TF1 *fitFunc = new TF1("func","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
+  TF1 *fitLoose = new TF1("loose","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
+  TF1 *fitFunc  = new TF1("func","[3]*TMath::Gaus(x,[0],[1]) + [4]*TMath::Gaus(x,[0],[2])",MinY,MaxY);
+  TF1 *subFit1  = new TF1("fit1","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
+  TF1 *subFit2  = new TF1("fit2","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
 
-  fitFunc->SetParLimits(0,0,1e8);
-  fitFunc->SetParLimits(1,MinY,MaxY);
+  fitFunc->SetLineColor(kBlue);
+
+  fitLoose->SetParLimits(0,0,1e8);
+  fitLoose->SetParLimits(1,MinY,MaxY);
+  fitLoose->SetParLimits(2,0,MaxY-MinY);
+
+  fitFunc->SetParLimits(0,MinY,MaxY);
+  fitFunc->SetParLimits(1,0,MaxY-MinY);
   fitFunc->SetParLimits(2,0,MaxY-MinY);
+  fitFunc->SetParLimits(3,0,1e8);
+  fitFunc->SetParLimits(4,0,1e8);
 
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
@@ -153,17 +164,34 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
 
     for (Int_t i1 = 0; i1 < NumXBins; i1++) {
       TCanvas *tempCanvas = new TCanvas();
-      fitFunc->SetParameters(1.,(MaxY + MinY)/2,(MaxY - MinY)/4);
+      fitLoose->SetParameter(0,10);
+      fitLoose->SetParameter(1,0);
+      fitLoose->SetParameter(2,30);
+      tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"","",MinY,MaxY);
+      fitFunc->SetParameter(0,fitLoose->GetParameter(1));
+      fitFunc->SetParameter(1,fitLoose->GetParameter(2));
+      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 1.2);
+      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.7);
+      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * 0.3);
       tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"","",MinY,MaxY);
       if (fDumpingFits) {
         TString dumpName;
         dumpName.Form("DumpFit_%d",fNumFitDumps);
+	subFit1->SetParameter(0,fitFunc->GetParameter(3));
+	subFit1->SetParameter(1,fitFunc->GetParameter(0));
+	subFit1->SetParameter(2,fitFunc->GetParameter(1));
+	subFit1->Draw("SAME");
+	subFit2->SetParameter(0,fitFunc->GetParameter(4));
+	subFit2->SetParameter(1,fitFunc->GetParameter(0));
+	subFit2->SetParameter(2,fitFunc->GetParameter(2));
+	subFit2->Draw("SAME");
         tempCanvas->SaveAs(dumpName+".png");
         fNumFitDumps++;
       }
       tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinCenter(i1+1),fitFunc->GetParameter(ParamNumber));
       if (fIncludeErrorBars)
         tempGraph->SetPointError(i1,0,fitFunc->GetParError(ParamNumber));
+      delete tempCanvas;
     }
     theGraphs.push_back(tempGraph);
     delete tempHist;
