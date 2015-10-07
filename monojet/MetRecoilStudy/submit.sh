@@ -3,7 +3,7 @@
 fresh=$1
 
 filesPerJob=13
-numProc=4
+numProc=6
 
 outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
@@ -73,8 +73,8 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 done
 
 if [ "$ranOnFile" -eq 0 ]; then
-    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
-    echo "Skimmed files merged!"
+#    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
+#    echo "Skimmed files merged!"
     cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
     echo "All files merged!"
 fi

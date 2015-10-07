@@ -26,28 +26,32 @@ def skim(inQueue):
             inFileName = inQueue.get(True,2)
             print "About to process " + inFileName
             inFile  = ROOT.TFile(inDir + "/" + inFileName)
-            outFile = ROOT.TFile(outDir + "/" + inFileName,"RECREATE")
-            if "Run201" in inFileName:
-                goodRunFilter = goodlumi.makeGoodLumiFilter(GoodRunsFile)
-                tempInTree = inFile.events
-                inTree = tempInTree.CloneTree(0)
-                for entry in range(tempInTree.GetEntriesFast()):
-                    tempInTree.GetEntry(entry)
-                    if goodRunFilter.isGoodLumi(tempInTree.runNum,tempInTree.lumiNum):
-                        inTree.Fill()
+            if not os.path.isfile(outDir + "/" + inFileName):
+                outFile = ROOT.TFile(outDir + "/" + inFileName,"RECREATE")
+                if "Run201" in inFileName:
+                    goodRunFilter = goodlumi.makeGoodLumiFilter(GoodRunsFile)
+                    tempInTree = inFile.events
+                    inTree = tempInTree.CloneTree(0)
+                    for entry in range(tempInTree.GetEntriesFast()):
+                        tempInTree.GetEntry(entry)
+                        if goodRunFilter.isGoodLumi(tempInTree.runNum,tempInTree.lumiNum):
+                            inTree.Fill()
+                    ##
+                    cut = "(" + AllCut + ")&&(" + TriggerCut + ")"
                 ##
-                cut = "(" + AllCut + ")&&(" + TriggerCut + ")"
+                else:
+                    inTree = inFile.Get("events")
+                    cut = AllCut
+                ##
+                outTree = inTree.CopyTree(cut)
+                outFile.WriteTObject(outTree,"events")
+                outFile.WriteTObject(inFile.htotal.Clone())
+                outFile.Close()
+                inFile.Close()
+                print "Finished " + inFileName
             ##
             else:
-                inTree = inFile.Get("events")
-                cut = AllCut
-            ##
-            outTree = inTree.CopyTree(cut)
-            outFile.WriteTObject(outTree,"events")
-            outFile.WriteTObject(inFile.htotal.Clone())
-            outFile.Close()
-            inFile.Close()
-            print "Finished " + inFileName
+                print inFileName + " already processed!"
         except:
             print "Worker finished..."
             running = False

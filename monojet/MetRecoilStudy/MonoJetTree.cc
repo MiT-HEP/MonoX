@@ -78,6 +78,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("dilep_phi",&dilep_phi,"dilep_phi/F");
   t->Branch("dilep_m",&dilep_m,"dilep_m/F");
   t->Branch("mt",&mt,"mt/F");
+  t->Branch("genW_pt",&genW_pt,"genW_pt/F");
+  t->Branch("genW_phi",&genW_phi,"genW_phi/F");
   t->Branch("n_tightlep",&n_tightlep,"n_tightlep/I");
   t->Branch("n_mediumlep",&n_mediumlep,"n_mediumlep/I");
   t->Branch("n_looselep",&n_looselep,"n_looselep/I");
@@ -96,6 +98,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("u_paraZ",&u_paraZ,"u_paraZ/F");
   t->Branch("u_magZ",&u_magZ,"u_magZ/F");
   t->Branch("u_phiZ",&u_phiZ,"u_phiZ/F");
+  t->Branch("u_perpW",&u_perpW,"u_perpW/F");
+  t->Branch("u_paraW",&u_paraW,"u_paraW/F");
   t->Branch("u_magW",&u_magW,"u_magW/F");
   t->Branch("u_phiW",&u_phiW,"u_phiW/F");
   t->Branch("u_perpPho",&u_perpPho,"u_perpPho/F");
@@ -189,6 +193,8 @@ MonoJetTree::Reset()
   dilep_phi = -5;
   dilep_m = -5;
   mt = -5;
+  genW_pt = -5;
+  genW_phi = -5;
   n_tightlep = 0;
   n_mediumlep = 0;
   n_looselep = 0;
@@ -207,6 +213,8 @@ MonoJetTree::Reset()
   u_paraZ = 0;
   u_magZ = -5;
   u_phiZ = -5;
+  u_perpW = 0;
+  u_paraW = 0;
   u_magW = -5;
   u_phiW = -5;
   u_perpPho = 0;

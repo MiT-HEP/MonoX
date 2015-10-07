@@ -115,6 +115,17 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->mt     = vec3.M();
       outTree->u_magW = vec3.Pt();
       outTree->u_phiW = vec3.Phi();
+
+      TLorentzVector* genMET = (TLorentzVector*) inTree->metP4_GEN->At(0);
+
+      vec2.SetPtEtaPhiM(genMET->Pt(),0,genMET->Phi(),0);
+      vec3 = vec1 + vec2;
+
+      outTree->genW_pt  = vec3.Pt();
+      outTree->genW_phi = vec3.Phi();
+
+      outTree->u_perpW = uPerp(outTree->u_magW,outTree->u_phiW,outTree->genW_phi);
+      outTree->u_paraW = uPara(outTree->u_magW,outTree->u_phiW,outTree->genW_phi);
     }
 
     if (outTree->n_looselep > 1) {

@@ -1,8 +1,8 @@
 #! /bin/bash
 
-#inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees'
+inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_151007'
 #inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
-inDir='/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed'
+#inDir='/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed'
 
 cp $inDir/monojet_GJets_HT-* .
 

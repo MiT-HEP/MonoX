@@ -81,6 +81,8 @@ public:
   float dilep_phi;
   float dilep_m;
   float mt;
+  float genW_pt;
+  float genW_phi;
   int   n_tightlep;
   int   n_mediumlep;
   int   n_looselep;
@@ -99,6 +101,8 @@ public:
   float u_paraZ;
   float u_magZ;
   float u_phiZ;
+  float u_perpW;
+  float u_paraW;
   float u_magW;
   float u_phiW;
   float u_perpPho;
