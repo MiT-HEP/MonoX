@@ -10,8 +10,8 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = sys.argv[2]
-outDir = sys.argv[3]
+inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/"
+outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/skimmed/"
 
 GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
 AllCut = "n_looselep < 3 && n_loosepho < 2 && n_jets > 0 && jet1Pt > 40 && (met > 50 || u_magZ > 50 || u_magW > 50 || u_magPho > 50)"

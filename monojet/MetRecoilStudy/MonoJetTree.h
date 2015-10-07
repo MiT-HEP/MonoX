@@ -23,6 +23,7 @@ public:
   int   jet1isMonoJetId;
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
+  float jet1DPhiTrueMet;
   float jet1DPhiUZ;
   float jet1DPhiUW;
   float jet1DPhiUPho;
@@ -34,6 +35,7 @@ public:
   int   jet2isMonoJetId;
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
+  float jet2DPhiTrueMet;
   float jet2DPhiUZ;
   float jet2DPhiUW;
   float jet2DPhiUPho;
@@ -44,6 +46,21 @@ public:
   float jet3PuId;
   int   jet3isMonoJetId;
   int   jet3isLooseMonoJetId;
+  int   n_cleanedjets;
+  float leadingjetPt;
+  float leadingjetEta;
+  float leadingjetPhi;
+  float leadingjetM;
+  float leadingjetPuId;
+  int   leadingjetisMonoJetId;
+  int   leadingjetisLooseMonoJetId;
+  float trailingjetPt;
+  float trailingjetEta;
+  float trailingjetPhi;
+  float trailingjetM;
+  float trailingjetPuId;
+  int   trailingjetisMonoJetId;
+  int   trailingjetisLooseMonoJetId;
   int   n_jets;
   float dPhi_j1j2;
   float dR_j1j2;
@@ -75,6 +92,8 @@ public:
   int   n_loosepho;
   float met;
   float metPhi;
+  float trueMet;
+  float trueMetPhi;
   int   n_tau;
   float u_perpZ;
   float u_paraZ;

@@ -46,13 +46,5 @@ if [ "$RUNNING" -gt 0 ]; then
     wait
 fi
 
-mkdir skimmed
-
-cp $macroDir/FlatSlimmer.py .
-./FlatSlimmer.py $NCORES `pwd` `pwd`/skimmed
-
 hadd $subDir.root *.root
 cp $subDir.root $outFile
-
-hadd skimmedOut.root skimmed/*.root
-cp skimmedOut.root `echo $outFile | sed 's/monojet/skimmed\/monojet/'`
