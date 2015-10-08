@@ -11,12 +11,12 @@ def build_selection(selection,bin0):
 #        'jet multiplicity':['@jetP4.size()<3',selections],
         'deltaPhi':['deltaPhi(jetP4[0].Phi(),metP4[0].Phi())>0.4',selections],
         #'trigger':['(triggerFired[0]==1 || triggerFired[1]==1)',selections],
-        'lepton veto':['n_tightlep==0',['signal']],
-        'pho veto':['@photonP4.size()==0',['signal','Zll','Wln']], 
+        'lepton veto':['n_looselep==0',['signal','gjets']],
+        'pho veto':['@photonP4.size()==0',['signal','Zll','Wln','Zee','Wen']], 
 #        'tau veto':['@tauP4.size()==0',selections], 
 
         #** Control Regions
-        'leading lep ID': ['n_tightlep==1',['Wln','Zll']],
+        'leading lep ID': ['n_tightlep==1',['Wln','Zll','Wen']],
         #'leading muon Iso': ['lep1IsIsolated',['Wln']],
         'Zmm':['n_looselep == 2 && n_tightlep > 0 && ((((lepPdgId)[0]*(lepPdgId)[1])== -169 && abs(vectorSumMass(lepP4[0].Px(),lepP4[0].Py(),lepP4[0].Pz(),lepP4[1].Px(),lepP4[1].Py(),lepP4[1].Pz())-91)<30))',['Zll']],
         'Zee':['n_looselep == 2 && n_tightlep > 0 && ((((lepPdgId)[0]*(lepPdgId)[1])== -121 && abs(vectorSumMass(lepP4[0].Px(),lepP4[0].Py(),lepP4[0].Pz(),lepP4[1].Px(),lepP4[1].Py(),lepP4[1].Pz())-91)<30))',['Zee']],
