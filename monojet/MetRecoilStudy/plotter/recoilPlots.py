@@ -12,17 +12,15 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-datadir  = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
-goodRuns = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
-#datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_pastthepointoftryingimadyingbreed/"
-#goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
 SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton+Run2015D.root")
-DYFile         = ROOT.TFile(datadir + "monojet_DYJetsToLL_M-50.root")
-GJetsFile      = ROOT.TFile(datadir + "monojet_GJets.root")
-WJetsFile      = ROOT.TFile(datadir + "monojet_WJetsToLNu.root")
+DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
+GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
+WJetsFile      = ROOT.TFile(sampledir + "monojet_WJetsToLNu.root")
 
 MuonTree       = MuonFile.Get("events")
 SingleElecTree = SingleElecFile.Get("events")

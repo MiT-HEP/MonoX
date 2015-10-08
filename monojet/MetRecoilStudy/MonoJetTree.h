@@ -1,8 +1,9 @@
-#ifndef MITCROMBIE_MONOJET_MONOJETTREE_H
-#define MITCROMBIE_MONOJET_MONOJETTREE_H
+#ifndef MITCROMBIE__TREE_H
+#define MITCROMBIE__TREE_H
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TLorentzVector.h"
 
 class MonoJetTree
 {
@@ -111,6 +112,7 @@ public:
   float u_phiPho;
   float mcWeight;
   std::vector<int>*   triggerFired;
+  std::vector<TLorentzVector*>* test;
 
   TTree  *ReturnTree()                { return t;                            }
   void    Fill()                      { t->Fill(); Reset();                  }

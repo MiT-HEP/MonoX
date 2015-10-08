@@ -50,7 +50,7 @@ class PlotResolution : public PlotBase
   std::vector<Double_t>      fParamLows;          // Low values of these parameters
   std::vector<Double_t>      fParamHighs;         // High values of these parameters
   
-  TString                    fInExprX;            // X Expression should be constant
+  TString                    fInExprX;
   std::vector<TString>       fInExprXs;
   
   Bool_t                     fDumpingFits;        // Bool used to dump .png files if you want to check fits

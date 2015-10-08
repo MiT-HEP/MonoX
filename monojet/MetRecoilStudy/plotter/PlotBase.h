@@ -15,7 +15,7 @@ class PlotBase
   void                   SetCanvasName            ( TString name )                                { fCanvasName = name;          }
   
   void                   AddLine                  ( TTree *tree, TString cut, TString expr );  // Each line has a potentially different
-  //   tree, weight, and expression.
+                                                                                               //   tree, weight, and expression.
   void                   SetDefaultTree           ( TTree *tree )                                 { fDefaultTree = tree;         }
   void                   SetDefaultWeight         ( TString cut )                                 { fDefaultCut = cut;           }
   void                   SetDefaultExpr           ( TString expr )                                { fDefaultExpr = expr;         }
@@ -25,6 +25,7 @@ class PlotBase
   void                   AddWeight                ( TString cut )                                 { fInCuts.push_back(cut);      }
   void                   AddExpr                  ( TString expr )                                { fInExpr.push_back(expr);     }
   void                   ResetExpr                ()                                              { fInExpr.resize(0);           }
+  // Two parts at once. Only use if the other part of a line already has a default set.
   void                   AddTreeWeight            ( TTree *tree, TString cut );           // These are used to set multiple values at
   void                   AddTreeExpr              ( TTree *tree, TString expr );          //  the same time. It may be simpler to
   void                   AddWeightExpr            ( TString cut, TString expr );          //  just set single variables for most users.

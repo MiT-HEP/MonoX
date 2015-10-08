@@ -108,6 +108,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("u_phiPho",&u_phiPho,"u_phiPho/F");
   t->Branch("mcWeight",&mcWeight,"mcWeight/F");
   t->Branch("triggerFired",&triggerFired);
+  t->Branch("test",&test);
 
   Reset();
 }
@@ -223,4 +224,5 @@ MonoJetTree::Reset()
   u_phiPho = -5;
   mcWeight = 0;
   triggerFired = 0;
+  test = 0;
 }
