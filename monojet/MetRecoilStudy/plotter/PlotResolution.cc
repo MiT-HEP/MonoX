@@ -120,6 +120,8 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   TProfile *tempProfile;
 
   TGraphErrors *tempGraph[6];
+  for (Int_t init = 0; init < 6; init++)
+    fFits[init].resize(0);
 
   TF1 *fitLoose = new TF1("loose","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
   TF1 *fitFunc  = new TF1("func","[3]*TMath::Gaus(x,[0],[1]) + [4]*TMath::Gaus(x,[0],[2])",MinY,MaxY);
@@ -174,9 +176,9 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
       tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"","",MinY,MaxY);
       fitFunc->SetParameter(0,fitLoose->GetParameter(1));
       fitFunc->SetParameter(1,fitLoose->GetParameter(2));
-      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 0.6);
-      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.7);
-      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * 0.3);
+      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 0.4);
+      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.9);
+      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * 0.2);
       tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"","",MinY,MaxY);
       if (fDumpingFits) {
         TString dumpName;
@@ -268,7 +270,7 @@ PlotResolution::MakeCanvas(std::vector<TGraphErrors*> theGraphs,
                            Double_t YMin, Double_t YMax, Bool_t logY)
 {
   UInt_t NumPlots = theGraphs.size();
-  TCanvas *theCanvas = new TCanvas(fCanvasName,fCanvasName);
+  TCanvas *theCanvas = new TCanvas("temp","temp");
   theCanvas->SetTitle(CanvasTitle+";"+XLabel+";"+YLabel);
   TLegend *theLegend = new TLegend(l1,l2,l3,l4);
   theLegend->SetBorderSize(fLegendBorderSize);
