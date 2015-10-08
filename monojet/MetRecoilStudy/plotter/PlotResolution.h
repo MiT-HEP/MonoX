@@ -23,6 +23,10 @@ class PlotResolution : public PlotBase
   std::vector<TGraphErrors*>   GetRatioToLine          ( std::vector<TGraphErrors*> InGraphs, TGraphErrors *RatioGraph );
   std::vector<TGraphErrors*>   GetRatioToLines         ( std::vector<TGraphErrors*> InGraphs, std::vector<TGraphErrors*> RatioGraphs );
   
+  std::vector<TGraphErrors*>   MakeFitGraphs           ( Int_t NumXBins, Double_t *XBins,               // This does the fitting
+                                                         Int_t NumYBins, Double_t MinY, Double_t MaxY,  // Specify which parameter of a Gaussian
+                                                         Int_t ParamNumber = 1 );                       //   that you want to plot
+
   std::vector<TGraphErrors*>   MakeFitGraphs           ( Int_t NumXBins, Double_t MinX, Double_t MaxX,  // This does the fitting
                                                          Int_t NumYBins, Double_t MinY, Double_t MaxY,  // Specify which parameter of a Gaussian
                                                          Int_t ParamNumber = 1 );                       //   that you want to plot

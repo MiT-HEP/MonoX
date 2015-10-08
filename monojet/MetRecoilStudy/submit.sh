@@ -3,9 +3,9 @@
 fresh=$1
 
 filesPerJob=13
-numProc=6
+numProc=4
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_pastthepointoftryingimadyingbreed'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
 eosDir='/store/user/yiiyama/transfer'
 skimmedDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
@@ -65,16 +65,16 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
-            bsub -q 1nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc
+#            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc
             echo Making: $outFile
-            ranOnFile=1
+#            ranOnFile=1
         fi
     done
 done
 
-if [ "$ranOnFile" -eq 0 ]; then
-#    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
-#    echo "Skimmed files merged!"
-    cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
-    echo "All files merged!"
-fi
+#if [ "$ranOnFile" -eq 0 ]; then
+    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
+    echo "Skimmed files merged!"
+#    cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
+#    echo "All files merged!"
+#fi
