@@ -176,9 +176,9 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
       tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"","",MinY,MaxY);
       fitFunc->SetParameter(0,fitLoose->GetParameter(1));
       fitFunc->SetParameter(1,fitLoose->GetParameter(2));
-      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 0.6);
-      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.7);
-      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * 0.3);
+      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 0.4);
+      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.9);
+      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * 0.2);
       tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"","",MinY,MaxY);
       if (fDumpingFits) {
         TString dumpName;

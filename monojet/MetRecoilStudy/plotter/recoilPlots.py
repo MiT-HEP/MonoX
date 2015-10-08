@@ -35,8 +35,8 @@ WJetsTree      = WJetsFile.Get("events")
 plotter = ROOT.PlotResolution()
 plotter.SetIncludeErrorBars(True)
 
-plotter.SetParameterLimits(1,5,40)
-plotter.SetParameterLimits(2,5,40)
+plotter.SetParameterLimits(1,5,30)
+plotter.SetParameterLimits(2,5,30)
 
 plotter.AddTree(MuonTree)
 plotter.AddTree(DYTree)
@@ -57,9 +57,11 @@ plotter.AddLegendEntry("Z#mu#mu",2)
 muonSelection = "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0)"
 elecSelection = "((lep1PdgId*lep2PdgId == -121) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0)"
 phoSelection  = "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
+#skimSelection = "(n_looselep < 3 && n_loosepho < 2 && n_jets > 0 && jet1Pt > 40 && (met > 50 || u_magZ > 50 || u_magW > 50 || u_magPho > 50))"
+skimSelection = "(1 == 1)"
 
-plotter.AddWeight(muonSelection)
-plotter.AddWeight(muonSelection + " * mcWeight")
+plotter.AddWeight(muonSelection + "&&" + skimSelection)
+plotter.AddWeight(muonSelection + "&&" + skimSelection + " * mcWeight")
 #plotter.AddWeight(elecSelection)
 #plotter.AddWeight(elecSelection + " * mcWeight")
 #plotter.AddWeight(phoSelection)
