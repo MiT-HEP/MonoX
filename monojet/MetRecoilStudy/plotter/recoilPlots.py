@@ -12,9 +12,10 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-#datadir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
-datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_pastthepointoftryingimadyingbreed/"
-goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+datadir  = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+goodRuns = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+#datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_pastthepointoftryingimadyingbreed/"
+#goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -92,10 +93,13 @@ plotter.AddExpr("u_paraZ + dilep_pt")
 xArray = [20,40,60,100,150,500]
 
 plotter.SetDumpingFits(True)
-mu_u1 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,0)
-sig1_u1 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,1)
-sig2_u1 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,2)
-sig3_u1 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,3)
+
+plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0)
+
+mu_u1   = plotter.FitGraph(0)
+sig1_u1 = plotter.FitGraph(1)
+sig2_u1 = plotter.FitGraph(2)
+sig3_u1 = plotter.FitGraph(3)
 
 plotter.ResetExpr()
 plotter.AddExpr("u_perpZ")
@@ -106,10 +110,12 @@ plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpW")
 
-mu_u2 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,0)
-sig1_u2 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,1)
-sig2_u2 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,2)
-sig3_u2 = plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0,3)
+plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),50,-100.0,100.0)
+
+mu_u2   = plotter.FitGraph(0)
+sig1_u2 = plotter.FitGraph(1)
+sig2_u2 = plotter.FitGraph(2)
+sig3_u2 = plotter.FitGraph(3)
 
 # Zmm data
 # Zmm

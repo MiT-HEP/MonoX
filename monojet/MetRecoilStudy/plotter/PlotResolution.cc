@@ -1,6 +1,7 @@
 #include <iostream>
 #include "TF1.h"
 #include "TH2D.h"
+#include "TProfile.h"
 #include "TLegend.h"
 
 #include "PlotResolution.h"
@@ -88,10 +89,9 @@ PlotResolution::GetRatioToPoint(std::vector<TGraphErrors*> InGraphs, Double_t Ra
 }
 
 //--------------------------------------------------------------------
-std::vector<TGraphErrors*>
+void
 PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
-                              Int_t NumYBins, Double_t MinY, Double_t MaxY,
-                              Int_t ParamNumber)
+                              Int_t NumYBins, Double_t MinY, Double_t MaxY)
 {
   UInt_t NumPlots = 0;
 
@@ -117,9 +117,9 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   TString inExpr = fDefaultExpr;
 
   TH2D *tempHist;
+  TProfile *tempProfile;
 
-  TGraphErrors *tempGraph;
-  std::vector<TGraphErrors*> theGraphs;
+  TGraphErrors *tempGraph[6];
 
   TF1 *fitLoose = new TF1("loose","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
   TF1 *fitFunc  = new TF1("func","[3]*TMath::Gaus(x,[0],[1]) + [4]*TMath::Gaus(x,[0],[2])",MinY,MaxY);
@@ -159,9 +159,12 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
     TString tempName;
     tempName.Form("Hist_%d",fPlotCounter);
     fPlotCounter++;
-    tempHist = new TH2D(tempName,tempName,NumXBins,XBins,NumYBins,MinY,MaxY);
+    tempHist    = new TH2D(tempName,tempName,NumXBins,XBins,NumYBins,MinY,MaxY);
+    tempProfile = new TProfile(tempName+"prof",tempName+"prof",NumXBins,XBins);
     inTree->Draw(inExpr+":"+fInExprX+">>"+tempName,inCut);
-    tempGraph = new TGraphErrors(NumXBins);
+    inTree->Draw(fInExprX+":"+fInExprX+">>"+tempName+"prof",inCut);
+    for (Int_t init = 0; init < 6; init++)
+      tempGraph[init] = new TGraphErrors(NumXBins);
 
     for (Int_t i1 = 0; i1 < NumXBins; i1++) {
       TCanvas *tempCanvas = new TCanvas();
@@ -194,73 +197,68 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
         tempCanvas->SaveAs(dumpName+".C");
         fNumFitDumps++;
       }
-      // This is where we do the tricky parameter fetching stuff!!
-      if (ParamNumber == 0) {
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),fitFunc->GetParameter(0));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,fitFunc->GetParError(0));
-      }
-      else if (ParamNumber == 1) {
-        Int_t sigWanted = 0;
-        if (fitFunc->GetParameter(1) < fitFunc->GetParameter(2))
-          sigWanted = 1;
-        else
-          sigWanted = 2;
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),fitFunc->GetParameter(sigWanted));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,fitFunc->GetParError(sigWanted));
-      }
-      else if (ParamNumber == 2) {
-        Int_t sigWanted = 0;
-        if (fitFunc->GetParameter(1) > fitFunc->GetParameter(2))
-          sigWanted = 1;
-        else
-          sigWanted = 2;
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),fitFunc->GetParameter(sigWanted));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,fitFunc->GetParError(sigWanted));
-      }
-      else if (ParamNumber == 3) {
-        Float_t weight1 = 0.;
-        Float_t weight2 = 0.;
 
-        weight1 = fitFunc->GetParameter(3)/sqrt(fitFunc->GetParameter(1));
-        weight2 = fitFunc->GetParameter(4)/sqrt(fitFunc->GetParameter(2));
+      Double_t xValue = tempProfile->GetBinContent(i1+1);
+      Double_t xError = tempProfile->GetBinError(i1+1);
 
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),(weight1 * fitFunc->GetParameter(1) + weight2 * fitFunc->GetParameter(2))/(weight1 + weight2));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,sqrt(pow(weight1 * fitFunc->GetParError(1),2) + pow(weight2 * fitFunc->GetParError(2),2))/(weight1 + weight2));
-      }
-      else if (ParamNumber == 4) {
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),fitLoose->GetParameter(1));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,fitLoose->GetParError(1));
-      }
-      else if (ParamNumber == 5) {
-        tempGraph->SetPoint(i1,tempHist->GetXaxis()->GetBinLowEdge(i1+1),fitLoose->GetParameter(2));
-        if (fIncludeErrorBars)
-          tempGraph->SetPointError(i1,0,fitLoose->GetParError(2));
-      }
+      tempGraph[0]->SetPoint(i1,xValue,fitFunc->GetParameter(0));
+      if (fIncludeErrorBars)
+	tempGraph[0]->SetPointError(i1,xError,fitFunc->GetParError(0));
+
+      Int_t sigWanted = 0;
+      if (fitFunc->GetParameter(1) < fitFunc->GetParameter(2))
+	sigWanted = 1;
+      else
+	sigWanted = 2;
+      tempGraph[1]->SetPoint(i1,xValue,fitFunc->GetParameter(sigWanted));
+      if (fIncludeErrorBars)
+	tempGraph[1]->SetPointError(i1,xError,fitFunc->GetParError(sigWanted));
+
+      if (fitFunc->GetParameter(1) > fitFunc->GetParameter(2))
+	sigWanted = 1;
+      else
+	sigWanted = 2;
+      tempGraph[2]->SetPoint(i1,xValue,fitFunc->GetParameter(sigWanted));
+      if (fIncludeErrorBars)
+	tempGraph[2]->SetPointError(i1,xError,fitFunc->GetParError(sigWanted));
+
+      Float_t weight1 = 0.;
+      Float_t weight2 = 0.;
+      
+      weight1 = fitFunc->GetParameter(3)/sqrt(fitFunc->GetParameter(1));
+      weight2 = fitFunc->GetParameter(4)/sqrt(fitFunc->GetParameter(2));
+      
+      tempGraph[3]->SetPoint(i1,xValue,(weight1 * fitFunc->GetParameter(1) + weight2 * fitFunc->GetParameter(2))/(weight1 + weight2));
+      if (fIncludeErrorBars)
+	tempGraph[3]->SetPointError(i1,xError,sqrt(pow(weight1 * fitFunc->GetParError(1),2) + pow(weight2 * fitFunc->GetParError(2),2))/(weight1 + weight2));
+      
+      tempGraph[4]->SetPoint(i1,xValue,fitLoose->GetParameter(1));
+      if (fIncludeErrorBars)
+	tempGraph[4]->SetPointError(i1,xError,fitLoose->GetParError(1));
+      
+      tempGraph[5]->SetPoint(i1,xValue,fitLoose->GetParameter(2));
+      if (fIncludeErrorBars)
+	tempGraph[5]->SetPointError(i1,xError,fitLoose->GetParError(2));
+      
       delete tempCanvas;
     }
-    theGraphs.push_back(tempGraph);
+    for (Int_t iPlot = 0; iPlot < 6; iPlot++)
+      fFits[iPlot].push_back(tempGraph[iPlot]);
     delete tempHist;
   }
-  return theGraphs;
 }
 
 //--------------------------------------------------------------------
-std::vector<TGraphErrors*>
+void
 PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t MinX, Double_t MaxX,
-                              Int_t NumYBins, Double_t MinY, Double_t MaxY,
-                              Int_t ParamNumber)
+                              Int_t NumYBins, Double_t MinY, Double_t MaxY)
 {
   Double_t binWidth = (MaxX - MinX)/NumXBins;
   Double_t XBins[NumXBins+1];
   for (Int_t i0 = 0; i0 < NumXBins + 1; i0++)
     XBins[i0] = MinX + i0 * binWidth;
 
-  return MakeFitGraphs(NumXBins,XBins,NumYBins,MinY,MaxY,ParamNumber);
+  MakeFitGraphs(NumXBins,XBins,NumYBins,MinY,MaxY);
 }
 
 //--------------------------------------------------------------------
