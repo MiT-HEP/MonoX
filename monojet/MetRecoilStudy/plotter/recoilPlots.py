@@ -12,10 +12,10 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-datadir  = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
-goodRuns = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
-#datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees_pastthepointoftryingimadyingbreed/"
-#goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+#datadir  = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+#goodRuns = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmed/"
+datadir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
+goodRuns = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -138,7 +138,7 @@ linFunc = ROOT.TF1("fitter","[0]+[1]*x",0,500)
 
 #############################################################
 
-fitFile = ROOT.TFile("fitResults_1.root","RECREATE")
+fitFile = ROOT.TFile("fitResults.root","RECREATE")
 for i1 in range(len(processes)):
     for i0 in range(len(fitVectors)):
         if i0 % muFreq == 0:

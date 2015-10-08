@@ -120,6 +120,8 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   TProfile *tempProfile;
 
   TGraphErrors *tempGraph[6];
+  for (Int_t init = 0; init < 6; init++)
+    fFits[init].resize(0);
 
   TF1 *fitLoose = new TF1("loose","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
   TF1 *fitFunc  = new TF1("func","[3]*TMath::Gaus(x,[0],[1]) + [4]*TMath::Gaus(x,[0],[2])",MinY,MaxY);
@@ -268,7 +270,7 @@ PlotResolution::MakeCanvas(std::vector<TGraphErrors*> theGraphs,
                            Double_t YMin, Double_t YMax, Bool_t logY)
 {
   UInt_t NumPlots = theGraphs.size();
-  TCanvas *theCanvas = new TCanvas(fCanvasName,fCanvasName);
+  TCanvas *theCanvas = new TCanvas("temp","temp");
   theCanvas->SetTitle(CanvasTitle+";"+XLabel+";"+YLabel);
   TLegend *theLegend = new TLegend(l1,l2,l3,l4);
   theLegend->SetBorderSize(fLegendBorderSize);
