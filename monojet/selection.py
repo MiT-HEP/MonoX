@@ -16,7 +16,7 @@ def build_selection(selection,bin0):
 #        'tau veto':['@tauP4.size()==0',selections], 
 
         #** Control Regions
-        'leading lep ID': ['n_tightlep==1',['Wln','Zll','Wen','Wee']],
+        'leading lep ID': ['n_tightlep==1',['Wln','Zll','Wen']],
         #'leading muon Iso': ['lep1IsIsolated',['Wln']],
         'Zmm':['n_looselep == 2 && n_tightlep > 0 && ((((lepPdgId)[0]*(lepPdgId)[1])== -169 && abs(vectorSumMass(lepP4[0].Px(),lepP4[0].Py(),lepP4[0].Pz(),lepP4[1].Px(),lepP4[1].Py(),lepP4[1].Pz())-91)<30))',['Zll']],
         'Zee':['n_looselep == 2 && n_tightlep > 0 && ((((lepPdgId)[0]*(lepPdgId)[1])== -121 && abs(vectorSumMass(lepP4[0].Px(),lepP4[0].Py(),lepP4[0].Pz(),lepP4[1].Px(),lepP4[1].Py(),lepP4[1].Pz())-91)<30))',['Zee']],
