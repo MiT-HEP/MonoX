@@ -1,9 +1,8 @@
-#ifndef MITCROMBIE__TREE_H
-#define MITCROMBIE__TREE_H
+#ifndef MITCROMBIE_MONOJET_MONOJETTREE_H
+#define MITCROMBIE_MONOJET_MONOJETTREE_H
 
 #include "TFile.h"
 #include "TTree.h"
-#include "TLorentzVector.h"
 
 class MonoJetTree
 {
@@ -40,13 +39,6 @@ public:
   float jet2DPhiUZ;
   float jet2DPhiUW;
   float jet2DPhiUPho;
-  float jet3Pt;
-  float jet3Eta;
-  float jet3Phi;
-  float jet3M;
-  float jet3PuId;
-  int   jet3isMonoJetId;
-  int   jet3isLooseMonoJetId;
   int   n_cleanedjets;
   float leadingjetPt;
   float leadingjetEta;
@@ -55,16 +47,9 @@ public:
   float leadingjetPuId;
   int   leadingjetisMonoJetId;
   int   leadingjetisLooseMonoJetId;
-  float trailingjetPt;
-  float trailingjetEta;
-  float trailingjetPhi;
-  float trailingjetM;
-  float trailingjetPuId;
-  int   trailingjetisMonoJetId;
-  int   trailingjetisLooseMonoJetId;
   int   n_jets;
   float dPhi_j1j2;
-  float dR_j1j2;
+  float minJetDPhi;
   float lep1Pt;
   float lep1Eta;
   float lep1Phi;
@@ -82,8 +67,6 @@ public:
   float dilep_phi;
   float dilep_m;
   float mt;
-  float genW_pt;
-  float genW_phi;
   int   n_tightlep;
   int   n_mediumlep;
   int   n_looselep;
@@ -93,17 +76,15 @@ public:
   int   photonIsTight;
   int   n_tightpho;
   int   n_loosepho;
+  int   n_tau;
   float met;
   float metPhi;
   float trueMet;
   float trueMetPhi;
-  int   n_tau;
   float u_perpZ;
   float u_paraZ;
   float u_magZ;
   float u_phiZ;
-  float u_perpW;
-  float u_paraW;
   float u_magW;
   float u_phiW;
   float u_perpPho;
@@ -112,7 +93,13 @@ public:
   float u_phiPho;
   float mcWeight;
   std::vector<int>*   triggerFired;
-  std::vector<TLorentzVector*>* test;
+  float genBos_pt;
+  float genBos_eta;
+  float genBos_phi;
+  float genBos_m;
+  int   genBos_PdgId;
+  float u_perpGen;
+  float u_paraGen;
 
   TTree  *ReturnTree()                { return t;                            }
   void    Fill()                      { t->Fill(); Reset();                  }

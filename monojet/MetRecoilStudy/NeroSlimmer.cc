@@ -44,6 +44,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   std::vector<TLorentzVector*> leptonVecs;
   std::vector<TLorentzVector*> photonVecs;
 
+  std::vector<TLorentzVector*> jetVecs;
+
   for (Int_t iEntry = 0; iEntry < nentries; iEntry++) {
 
     leptonVecs.resize(0);
@@ -115,17 +117,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->mt     = vec3.M();
       outTree->u_magW = vec3.Pt();
       outTree->u_phiW = vec3.Phi();
-
-      TLorentzVector* genMET = (TLorentzVector*) inTree->metP4_GEN->At(0);
-
-      vec2.SetPtEtaPhiM(genMET->Pt(),0,genMET->Phi(),0);
-      vec3 = vec1 + vec2;
-
-      outTree->genW_pt  = vec3.Pt();
-      outTree->genW_phi = vec3.Phi();
-
-      outTree->u_perpW = uPerp(outTree->u_magW,outTree->u_phiW,outTree->genW_phi);
-      outTree->u_paraW = uPara(outTree->u_magW,outTree->u_phiW,outTree->genW_phi);
     }
 
     if (outTree->n_looselep > 1) {
@@ -208,7 +199,11 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
 
+      if (tempJet->Pt() < 30.0)
+        continue;
+
       outTree->n_jets++;
+      jetVecs.push_back(tempJet);
 
       if (outTree->n_jets == 1) {
         outTree->leadingjetPt  = tempJet->Pt();
@@ -219,16 +214,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->leadingjetPuId             = (*(inTree->jetPuId))[iJet];
         outTree->leadingjetisMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->leadingjetisLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
-      }
-      else if (outTree->n_jets == 2) {
-        outTree->trailingjetPt  = tempJet->Pt();
-        outTree->trailingjetEta = tempJet->Eta();
-        outTree->trailingjetPhi = tempJet->Phi();
-        outTree->trailingjetM   = tempJet->M();
-
-        outTree->trailingjetPuId             = (*(inTree->jetPuId))[iJet];
-        outTree->trailingjetisMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-        outTree->trailingjetisLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
       }
 
       Bool_t match = false;
@@ -289,20 +274,17 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->jet2DPhiUPho    = abs(deltaPhi(outTree->jet2Phi,outTree->u_phiPho));
 
         outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
-        outTree->dR_j1j2   = deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->jet2Phi,outTree->jet2Eta);
-      }
-
-      else if (outTree->n_cleanedjets == 3) {
-        outTree->jet3Pt  = tempJet->Pt();
-        outTree->jet3Eta = tempJet->Eta();
-        outTree->jet3Phi = tempJet->Phi();
-        outTree->jet3M   = tempJet->M();
-
-        outTree->jet3PuId             = (*(inTree->jetPuId))[iJet];
-        outTree->jet3isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-        outTree->jet3isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
       }
     }    
+
+    for (Int_t iLead = 0; iLead < outTree->n_jets; iLead++) {
+      for (Int_t iJet = iLead + 1; iJet < outTree->n_jets; iJet++) {
+        Double_t checkDPhi = abs(deltaPhi(jetVecs[iLead]->Phi(),jetVecs[iJet]->Phi()));
+        if (checkDPhi < outTree->minJetDPhi)
+          outTree->minJetDPhi = checkDPhi;
+      }
+    }
+
     outTree->triggerFired = inTree->triggerFired;
     
     for (Int_t iTau = 0; iTau < inTree->tauP4->GetEntries(); iTau++) {
@@ -319,6 +301,40 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (!match)
         outTree->n_tau++;
+    }
+
+    TLorentzVector *saveGenVec;
+
+    for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
+      TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
+      Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
+      Bool_t thisOne = false;
+      if ((checkPdgId == 23 || checkPdgId == 24) ) {
+        if ((abs(outTree->genBos_PdgId) == 23 || abs(outTree->genBos_PdgId) == 24) && tempGen->Pt() < outTree->genBos_pt)
+          continue;
+        thisOne = true;
+      }
+      else if (abs(outTree->genBos_PdgId) != 23 && abs(outTree->genBos_PdgId) != 24 && 
+               checkPdgId == 22 && tempGen->Pt() > outTree->genBos_pt)
+        thisOne = true;
+      
+      if (thisOne) {
+        outTree->genBos_pt = tempGen->Pt();
+        saveGenVec = tempGen;
+        outTree->genBos_PdgId = (*(inTree->genPdgId))[iGen];
+      }
+    }
+
+    if (outTree->genBos_PdgId != 0) {
+      outTree->genBos_eta = saveGenVec->Eta();
+      outTree->genBos_phi = saveGenVec->Phi();
+      outTree->genBos_m   = saveGenVec->M();
+
+      vec1.SetPtEtaPhiM(outTree->trueMet,0,outTree->trueMetPhi,0);
+      vec2 = vec1 + *saveGenVec;
+
+      outTree->u_perpGen = uPerp(vec2.Pt(),vec2.Phi(),outTree->genBos_phi);
+      outTree->u_paraGen = uPara(vec2.Pt(),vec2.Phi(),outTree->genBos_phi);
     }
 
     outTree->Fill();
