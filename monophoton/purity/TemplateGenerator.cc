@@ -55,6 +55,7 @@ public:
 
   void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec, Double_t _lumi);
   void writeSkim();
+  void closeFile();
   void setTemplateBinning(int nBins, double xmin, double xmax);
   TH1D* makeTemplate(char const* name, char const* expr);
 
@@ -118,7 +119,9 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     TH1D* hWeight = new TH1D("hWeight","Sum of Weights", 1, 0.0, 1.0);
     _input->Draw("0.5>>hWeight","weight","goff");
     Double_t nEvents =  hWeight->GetBinContent(1);
+    printf("Calculating event weight to be: %f * %f / %f \n", _xsec, _lumi, nEvents);
     eventWeight = _xsec * _lumi / nEvents; 
+    printf("Event weight is: %f \n", eventWeight);
   }
 
   Long_t pass[20]{};
@@ -318,6 +321,13 @@ TemplateGenerator::writeSkim()
   auto* file = skimTree_->GetCurrentFile();
   file->cd();
   skimTree_->Write();
+}
+
+void
+TemplateGenerator::closeFile()
+{
+  auto* file = skimTree_->GetCurrentFile();
+  file->Close();
 }
 
 void

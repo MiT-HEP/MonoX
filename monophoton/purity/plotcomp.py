@@ -9,16 +9,17 @@ varName = 'sieie'
 var = Variables[varName]
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-skimDir  = os.path.join(versDir,'Skims/tmp')
-plotDir = os.path.join(versDir,'Plots/tmp')
+skimDir  = os.path.join(versDir,'Skims')
+plotDir = os.path.join(versDir,'Plots')
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
 skimName = "MonophotonBkgdComp"
 skims = Measurement[skimName] 
-regions = ["Low","Med","High","Real"]
+regions = ["low", "med","high","real"]
 # regions = ["Real"]
-selKeys = [skimName+region for region in regions]
+selName = "barrel_medium_PhotonPt180toInf"
+selKeys = [selName+"_"+region for region in regions]
 
 histInfo = [ ('total','Total',0,kBlack,'P')
              ,('true','True Photons',1001,kBlue,'F')
@@ -67,3 +68,16 @@ for selKey,region in zip(selKeys,regions):
 
     outName = os.path.join(plotDir,'composition_'+selKey+'.pdf')
     canvas.SaveAs(outName)
+
+    truthTotal = histograms[0].Integral(1,12)
+    truthReal = histograms[1].Integral(1,12)
+    truthFake = histograms[2].Integral(1,12)
+    print "Number of Total photons passing selection:", truthTotal
+    print "Number of Real photons passing selection:", truthReal
+    print "Number of Fake photons passing selection:", truthFake
+
+    truthPurity = float(truthReal) / float(truthTotal)
+    print "Purity of Photons using Real / Total:", truthPurity
+
+    truthPurity = float(truthReal) / float(truthReal + truthFake)
+    print "Purity of Photons using Real / (Real + Fake):", truthPurity
