@@ -14,10 +14,11 @@
 using namespace std;
 using namespace TMath;
 
-void applyRecoilCorrections(TString fileListPath, TString correctionFilePath, TString inName, TString outName, int offset=0, int toRun=-1) {
+void applyRecoilCorrections(TString fileListPath, TString correctionFilePath, TString inName, TString outName, bool single, int offset=0, int toRun=-1) {
 
   // setup recoil corrector
   RecoilCorrector *rc = new RecoilCorrector();
+  rc->SetSingleGaus(single);
   TFile *fCorrections = new TFile(correctionFilePath);
   rc->SetInputName(inName);
   rc->SetOutputName(outName);
@@ -52,6 +53,8 @@ void applyRecoilCorrections(TString fileListPath, TString correctionFilePath, TS
 	    float bosonpt,bosonphi,lep1pt,lep1phi,lep2pt,lep2phi;
 	    int nLep, lep1Good,lep2Good; // - medium?
 	    
+	    // tIn->SetBranchAddress("dilep_pt",&bosonpt);
+	    // tIn->SetBranchAddress("dilep_phi",&bosonphi);
 	    tIn->SetBranchAddress("dilep_pt",&bosonpt);
 	    tIn->SetBranchAddress("dilep_phi",&bosonphi);
 	    tIn->SetBranchAddress("lep1Pt",&lep1pt);
@@ -75,7 +78,7 @@ void applyRecoilCorrections(TString fileListPath, TString correctionFilePath, TS
 	          lepVec += tmpVec;
 	        }
 	      }
-        if (bosonpt<0 || bosonpt>400) {
+        if (bosonpt<0 || bosonpt>1000) {
           u1 = -999;
           u2 = -998;
           met_smeared = -5;

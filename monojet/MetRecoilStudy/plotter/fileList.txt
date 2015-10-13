@@ -1,1 +1,0 @@
-/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/monojet_GJets.root

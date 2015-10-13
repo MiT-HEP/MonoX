@@ -12,7 +12,10 @@
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
-  Float_t dROverlap = 0.4;
+  Float_t dROverlap  = 0.4;
+  Float_t bCutLoose  = 0.423;
+  Float_t bCutMedium = 0.814;
+  Float_t bCutTight  = 0.941;
 
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
@@ -199,6 +202,13 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
 
+      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutTight)
+        outTree->n_bjetsTight++;
+      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutMedium)
+        outTree->n_bjetsMedium++;
+      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutLoose)
+        outTree->n_bjetsLoose++;
+
       if (tempJet->Pt() < 30.0)
         continue;
 
@@ -211,6 +221,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->leadingjetPhi = tempJet->Phi();
         outTree->leadingjetM   = tempJet->M();
 
+        outTree->leadingjetBTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->leadingjetPuId             = (*(inTree->jetPuId))[iJet];
         outTree->leadingjetisMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->leadingjetisLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
@@ -246,6 +257,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->jet1Phi = tempJet->Phi();
         outTree->jet1M   = tempJet->M();
 
+        outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
         outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
@@ -263,6 +275,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->jet2Phi = tempJet->Phi();
         outTree->jet2M   = tempJet->M();
 
+        outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
         outTree->jet2isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->jet2isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];

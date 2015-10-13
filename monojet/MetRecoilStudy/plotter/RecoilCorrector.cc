@@ -1,7 +1,8 @@
 #include "RecoilCorrector.h"
 #include "TVector2.h"
 
-RecoilCorrector::RecoilCorrector()
+RecoilCorrector::RecoilCorrector() :
+  fSingleGaus(false)
 {
   rng = new TRandom3();
   inName = "Zmm";
@@ -19,6 +20,8 @@ RecoilCorrector::~RecoilCorrector() {
       delete covSigma2[iU][iR];
     if (covSigma[iU][iR])
       delete covSigma[iU][iR];
+    if (covSigmaSingle[iU][iR])
+      delete covSigmaSingle[iU][iR];
    }
   } 
 
@@ -55,6 +58,12 @@ void RecoilCorrector::SetFitResult(TF1 *f, TMatrixDSym *cov, RecoilType rType, U
       if (!xxSigma)
         xxSigma = new double[covSigma[uType][rType]->GetNrows()];
       break;
+    case kSigmaSingle:
+      fsigmaSingle[uType][rType] = f;
+      covSigmaSingle[uType][rType] =  (TMatrixDSym*)cov->Clone();
+      if (!xxSigmaSingle)
+        xxSigmaSingle = new double[covSigmaSingle[uType][rType]->GetNrows()];
+      break;
   }
 }
 
@@ -66,7 +75,7 @@ void RecoilCorrector::LoadAllFits(TFile *fIn) {
   fprintf(stderr,"RecoilCorrector::LoadAllFits: Careful not to close %s until you are done with RecoilCorrector.\n",fIn->GetName());
   for (unsigned int iR=0; iR!=3; ++iR) {
     for (int iU=0; iU!=2; ++iU) {
-      fitBaseName = TString::Format("U%i_%s",iU+1,recoilNames[iR].Data());
+      fitBaseName = TString::Format("u%i_%s",iU+1,recoilNames[iR].Data());
       fprintf(stderr,"loading %s\n",fitBaseName.Data()); 
       
       f = (TF1*)fIn->Get("fcn_mu_"+fitBaseName);
@@ -84,6 +93,10 @@ void RecoilCorrector::LoadAllFits(TFile *fIn) {
       f = (TF1*)fIn->Get("fcn_sig3_"+fitBaseName);
       cov = (TMatrixDSym*)fIn->Get("cov_sig3_"+fitBaseName);
       SetFitResult(f,cov,(RecoilType)iR,(UType)iU,kSigma);      
+
+      f = (TF1*)fIn->Get("fcn_sig_"+fitBaseName);
+      cov = (TMatrixDSym*)fIn->Get("cov_sig_"+fitBaseName);
+      SetFitResult(f,cov,(RecoilType)iR,(UType)iU,kSigmaSingle);      
     } // loop over u1 u2
   } // loop over recoil types
 }
@@ -108,6 +121,10 @@ double RecoilCorrector::GetError(double x,RecoilType r,UType u,Parameter p) cons
       cov = covSigma[u][r];
       xx = xxSigma;
       break;
+    case kSigmaSingle:
+      cov = covSigmaSingle[u][r];
+      xx = xxSigmaSingle;
+      break;
   }
 
   unsigned int dim = cov->GetNrows(); 
@@ -126,7 +143,6 @@ double RecoilCorrector::GetError(double x,RecoilType r,UType u,Parameter p) cons
   return error;
 }
 
-
 void RecoilCorrector::ComputeU(float genpt, float &u1, float &u2, float nsigma/*=0*/) const {
   
   // first compute u1
@@ -135,6 +151,7 @@ void RecoilCorrector::ComputeU(float genpt, float &u1, float &u2, float nsigma/*
   double sigma1 = fsigma1[kU1][kDataIn]->Eval(genpt) * fsigma1[kU1][kMCOut]->Eval(genpt) / fsigma1[kU1][kMCIn]->Eval(genpt);
   double sigma2 = fsigma2[kU1][kDataIn]->Eval(genpt) * fsigma2[kU1][kMCOut]->Eval(genpt) / fsigma2[kU1][kMCIn]->Eval(genpt);
   double sigma  = fsigma[kU1][kDataIn]->Eval(genpt)  * fsigma[kU1][kMCOut]->Eval(genpt)  / fsigma[kU1][kMCIn]->Eval(genpt);
+  double sigmaSingle  = fsigmaSingle[kU1][kDataIn]->Eval(genpt)  * fsigmaSingle[kU1][kMCOut]->Eval(genpt)  / fsigmaSingle[kU1][kMCIn]->Eval(genpt);
 
   // a la error propogation used in w/z analaysis
   // TODO: improve to treat parameters independently
@@ -144,30 +161,37 @@ void RecoilCorrector::ComputeU(float genpt, float &u1, float &u2, float nsigma/*
     sigma1 += nsigma * GetError(genpt,kMCOut,kU1,kSigma1) * fsigma1[kU1][kDataIn]->Eval(genpt) / fsigma1[kU1][kMCIn]->Eval(genpt); 
     sigma2 += nsigma * GetError(genpt,kMCOut,kU1,kSigma2) * fsigma2[kU1][kDataIn]->Eval(genpt) / fsigma2[kU1][kMCIn]->Eval(genpt);
     sigma  += nsigma * GetError(genpt,kMCOut,kU1,kSigma)  * fsigma[kU1][kDataIn]->Eval(genpt)  / fsigma[kU1][kMCIn]->Eval(genpt);
+    sigmaSingle  += nsigma * GetError(genpt,kMCOut,kU1,kSigmaSingle)  * fsigmaSingle[kU1][kDataIn]->Eval(genpt)  / fsigmaSingle[kU1][kMCIn]->Eval(genpt);
   }
 
   double frac = (sigma-sigma2)/(sigma1-sigma2);
 
-  u1 = (((rng->Uniform(0,1)<frac) ? rng->Gaus(mu,sigma1) : rng->Gaus(mu,sigma2)));
-  //u1 = rng->Gaus(mu,sigma);
+  if (fSingleGaus)
+    u1 = rng->Gaus(mu,sigmaSingle);
+  else
+    u1 = (((rng->Uniform(0,1)<frac) ? rng->Gaus(mu,sigma1) : rng->Gaus(mu,sigma2)));
 
   // now compute u2
   mu     = fmu[kU2][kDataIn]->Eval(genpt)     * fmu[kU2][kMCOut]->Eval(genpt)     / fmu[kU2][kMCIn]->Eval(genpt);
   sigma1 = fsigma1[kU2][kDataIn]->Eval(genpt) * fsigma1[kU2][kMCOut]->Eval(genpt) / fsigma1[kU2][kMCIn]->Eval(genpt);
   sigma2 = fsigma2[kU2][kDataIn]->Eval(genpt) * fsigma2[kU2][kMCOut]->Eval(genpt) / fsigma2[kU2][kMCIn]->Eval(genpt);
   sigma  = fsigma[kU2][kDataIn]->Eval(genpt)  * fsigma[kU2][kMCOut]->Eval(genpt)  / fsigma[kU2][kMCIn]->Eval(genpt);
+  sigmaSingle  = fsigmaSingle[kU2][kDataIn]->Eval(genpt)  * fsigmaSingle[kU2][kMCOut]->Eval(genpt)  / fsigmaSingle[kU2][kMCIn]->Eval(genpt);
   
   if (nsigma != 0.) {
     mu     += nsigma * GetError(genpt,kMCOut,kU2,kMu)     * fmu[kU2][kDataIn]->Eval(genpt)     / fmu[kU2][kMCIn]->Eval(genpt);
     sigma1 += nsigma * GetError(genpt,kMCOut,kU2,kSigma1) * fsigma1[kU2][kDataIn]->Eval(genpt) / fsigma1[kU2][kMCIn]->Eval(genpt); 
     sigma2 += nsigma * GetError(genpt,kMCOut,kU2,kSigma2) * fsigma2[kU2][kDataIn]->Eval(genpt) / fsigma2[kU2][kMCIn]->Eval(genpt);
     sigma  += nsigma * GetError(genpt,kMCOut,kU2,kSigma)  * fsigma[kU2][kDataIn]->Eval(genpt)  / fsigma[kU2][kMCIn]->Eval(genpt);
+    sigmaSingle  += nsigma * GetError(genpt,kMCOut,kU2,kSigmaSingle)  * fsigmaSingle[kU2][kDataIn]->Eval(genpt)  / fsigmaSingle[kU2][kMCIn]->Eval(genpt);
   }
 
   frac = (sigma-sigma2)/(sigma1-sigma2);
 
-  //u2 = rng->Gaus(mu,sigma);
-  u2 = (rng->Uniform(0,1)<frac) ? rng->Gaus(mu,sigma1) : rng->Gaus(mu,sigma2);
+  if (fSingleGaus)
+    u2 = rng->Gaus(mu,sigmaSingle);
+  else
+    u2 = (rng->Uniform(0,1)<frac) ? rng->Gaus(mu,sigma1) : rng->Gaus(mu,sigma2);
 }
 
 void RecoilCorrector::CorrectMET(float genpt,float genphi,float leppt,float lepphi,float& met,float& metphi, float nsigma, float u1, float u2) const {

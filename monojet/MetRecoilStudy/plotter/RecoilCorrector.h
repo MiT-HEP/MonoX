@@ -45,7 +45,8 @@ public:
     kMu,
     kSigma1,
     kSigma2,
-    kSigma
+    kSigma,
+    kSigmaSingle
   };
 
   // initialize
@@ -62,11 +63,15 @@ public:
   void ComputeU(float genpt,float& u1,float& u2, float nsigma=0) const;
   void CorrectMET(float genpt,float genphi,float leppt,float lepphi,float& met,float& metphi, float nsigma=0, float u1=-999, float u2=-999) const;
 
+  void SetSingleGaus (bool single) { fSingleGaus = single; }
+
 protected:
   // unsigned int nMuParams;
   // unsigned int nSigma1Params;
   // unsigned int nSigma2Params;
   // unsigned int nSigmaParams;
+
+  Bool_t fSingleGaus;
 
   CorrectionType fCorrectionType;
 
@@ -76,12 +81,14 @@ protected:
   TF1 *fsigma1[2][3]; // sigma1
   TF1 *fsigma2[2][3]; // sigma2
   TF1 *fsigma[2][3]; // sigma
+  TF1 *fsigmaSingle[2][3];
 
   // directly store covariance matrices instead of fit results
   TMatrixDSym *covMu[2][3];
   TMatrixDSym *covSigma1[2][3];
   TMatrixDSym *covSigma2[2][3];
   TMatrixDSym *covSigma[2][3];
+  TMatrixDSym *covSigmaSingle[2][3];
 
   TRandom3 *rng;
 
@@ -90,6 +97,7 @@ protected:
   double *xxSigma1{0};
   double *xxSigma2{0};
   double *xxSigma{0};
+  double *xxSigmaSingle{0};
 
   TString inName;
   TString outName;

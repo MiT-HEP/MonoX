@@ -16,6 +16,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
   t->Branch("jet1Phi",&jet1Phi,"jet1Phi/F");
   t->Branch("jet1M",&jet1M,"jet1M/F");
+  t->Branch("jet1BTag",&jet1BTag,"jet1BTag/F");
   t->Branch("jet1PuId",&jet1PuId,"jet1PuId/F");
   t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
   t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
@@ -28,6 +29,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet2Eta",&jet2Eta,"jet2Eta/F");
   t->Branch("jet2Phi",&jet2Phi,"jet2Phi/F");
   t->Branch("jet2M",&jet2M,"jet2M/F");
+  t->Branch("jet2BTag",&jet2BTag,"jet2BTag/F");
   t->Branch("jet2PuId",&jet2PuId,"jet2PuId/F");
   t->Branch("jet2isMonoJetId",&jet2isMonoJetId,"jet2isMonoJetId/I");
   t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
@@ -41,10 +43,14 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("leadingjetEta",&leadingjetEta,"leadingjetEta/F");
   t->Branch("leadingjetPhi",&leadingjetPhi,"leadingjetPhi/F");
   t->Branch("leadingjetM",&leadingjetM,"leadingjetM/F");
+  t->Branch("leadingjetBTag",&leadingjetBTag,"leadingjetBTag/F");
   t->Branch("leadingjetPuId",&leadingjetPuId,"leadingjetPuId/F");
   t->Branch("leadingjetisMonoJetId",&leadingjetisMonoJetId,"leadingjetisMonoJetId/I");
   t->Branch("leadingjetisLooseMonoJetId",&leadingjetisLooseMonoJetId,"leadingjetisLooseMonoJetId/I");
   t->Branch("n_jets",&n_jets,"n_jets/I");
+  t->Branch("n_bjetsLoose",&n_bjetsLoose,"n_bjetsLoose/I");
+  t->Branch("n_bjetsMedium",&n_bjetsMedium,"n_bjetsMedium/I");
+  t->Branch("n_bjetsTight",&n_bjetsTight,"n_bjetsTight/I");
   t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
   t->Branch("minJetDPhi",&minJetDPhi,"minJetDPhi/F");
   t->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
@@ -120,6 +126,7 @@ MonoJetTree::Reset()
   jet1Eta = -7;
   jet1Phi = -5;
   jet1M = -5;
+  jet1BTag = -1;
   jet1PuId = -2;
   jet1isMonoJetId = -1;
   jet1isLooseMonoJetId = -1;
@@ -132,6 +139,7 @@ MonoJetTree::Reset()
   jet2Eta = -7;
   jet2Phi = -5;
   jet2M = -5;
+  jet2BTag = -1;
   jet2PuId = -2;
   jet2isMonoJetId = -1;
   jet2isLooseMonoJetId = -1;
@@ -145,10 +153,14 @@ MonoJetTree::Reset()
   leadingjetEta = -7;
   leadingjetPhi = -5;
   leadingjetM = -5;
+  leadingjetBTag = -1;
   leadingjetPuId = -2;
   leadingjetisMonoJetId = -1;
   leadingjetisLooseMonoJetId = -1;
   n_jets = 0;
+  n_bjetsLoose = 0;
+  n_bjetsMedium = 0;
+  n_bjetsTight = 0;
   dPhi_j1j2 = -1;
   minJetDPhi = 5;
   lep1Pt = -5;
