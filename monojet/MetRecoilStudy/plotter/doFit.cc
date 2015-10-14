@@ -7,8 +7,8 @@
 
 void doFit() {
 
-  // TFile *file = new TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/monojet_DYJetsToLL_M-50.root");
-  TFile *file = new TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/monojet_SingleMuon+Run2015D.root");
+  TFile *file = new TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/monojet_DYJetsToLL_M-50.root");
+  // TFile *file = new TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/monojet_SingleMuon+Run2015D.root");
   TTree *tree = (TTree*) file->Get("events");
 
   TH2D *hist = new TH2D("test","test",100,15,1000,100,-150,150);
@@ -29,7 +29,7 @@ void doFit() {
   fitA->SetParLimits(7,-5,5);
   fitA->SetParLimits(10,-5,5);
 
-  hist->Fit(fitA,"LE");
+  hist->Fit(fitA,"MLE");
 
   TFile *results = new TFile("fitTest.root","RECREATE");
 
