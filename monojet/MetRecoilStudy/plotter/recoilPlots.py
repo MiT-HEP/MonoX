@@ -36,11 +36,10 @@ fitBin = 150.0
 
 xArray = [10,20,40,60,80,100,150,300,1000]
 
-plotter.SetFractionLimit(0.05)
-
 plotter.SetParameterLimits(0,-50,50)
 plotter.SetParameterLimits(1,5,60)
-plotter.SetParameterLimits(2,5,60)
+plotter.SetParameterLimits(2,5,100)
+plotter.SetParameterLimits(3,0.6,1)
 
 #fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*x*x",0,1000)
 fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*log(x)",0,1000)
@@ -75,11 +74,13 @@ plotter.AddLegendEntry("Z#mu#mu",2)
 plotter.AddLegendEntry("Zee Data",3)
 plotter.AddLegendEntry("Zee",4)
 plotter.AddLegendEntry("#gamma+jets Data",7)
-plotter.AddLegendEntry("#gamma+jets",8)
+plotter.AddLegendEntry("#gamma+jets",6)
 #plotter.AddLegendEntry("W+jets",7)
 
-muonSelection = allSelections + "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 15 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 30 && n_bjetsLoose == 0)"
-elecSelection = allSelections + "((lep1PdgId*lep2PdgId == -121) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && n_bjetsLoose == 0)"
+lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 15 && "
+
+muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
+elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
 phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
@@ -143,7 +144,7 @@ processes.append('MC_Zee')
 processes.append('Data_gjets')
 processes.append('MC_gjets')
 
-colors = [1,2,3,4,7,8]
+colors = [1,2,3,4,7,6]
 
 fitVectors = [mu_u1,sig1_u1,sig2_u1,sig3_u1,sig_u1,mu_u2,sig1_u2,sig2_u2,sig3_u2,sig_u2]
 fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','sig2_u2','sig3_u2','sig_u2']
@@ -166,16 +167,21 @@ for i1 in range(len(processes)):
 ##
 fitFile.Close()
 
-plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,100)
-plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
-plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
-plotter.MakeCanvas("upara_sig3",sig3_u1,"","Boson p_{T} [GeV]","#sigma_{3,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
+plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
+plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,60)
+plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,50)
+plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
+plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,120)
+plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
+plotter.MakeCanvas("upara_sig3",sig3_u1,"","Boson p_{T} [GeV]","#sigma_{3,u_{#parallel}+p_{T}^{#gamma/Z}}",0,60)
 plotter.MakeCanvas("upara_singleSig",sig_u1,"","Boson p_{T} [GeV]","#sigma_{u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
 
 plotter.MakeCanvas("uperp_mu",mu_u2,"","Boson p_{T} [GeV]","#mu_{u_{#perp}}",-10,10)
-plotter.MakeCanvas("uperp_sig1",sig1_u2,"","Boson p_{T} [GeV]","#sigma_{1,u_{#perp}}",0,100)
-plotter.MakeCanvas("uperp_sig2",sig2_u2,"","Boson p_{T} [GeV]","#sigma_{2,u_{#perp}}",0,100)
-plotter.MakeCanvas("uperp_sig3",sig3_u2,"","Boson p_{T} [GeV]","#sigma_{3,u_{#perp}}",0,100)
+plotter.MakeCanvas("uperp_sig1",sig1_u2,"","Boson p_{T} [GeV]","#sigma_{1,u_{#perp}}",0,40)
+plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
+plotter.MakeCanvas("uperp_sig2",sig2_u2,"","Boson p_{T} [GeV]","#sigma_{2,u_{#perp}}",0,60)
+plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
+plotter.MakeCanvas("uperp_sig3",sig3_u2,"","Boson p_{T} [GeV]","#sigma_{3,u_{#perp}}",0,40)
 plotter.MakeCanvas("uperp_singleSig",sig_u2,"","Boson p_{T} [GeV]","#sigma_{u_{#perp}}",0,100)
 
 del plotter

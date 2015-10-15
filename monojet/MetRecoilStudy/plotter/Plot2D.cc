@@ -4,6 +4,7 @@
 #include "TF2.h"
 #include "TF1.h"
 #include "TH2D.h"
+#include "TH1D.h"
 #include "TProfile.h"
 #include "TLegend.h"
 
@@ -119,10 +120,12 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   TString inExpr = fDefaultExpr;
 
   TH2D *tempHist;
+  // TH2D *shitHist;
+  // TH1D *ptHist;
 
   Double_t params[5] = {0,0,30,0,0};
 
-  TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,6);
+  TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,4);
 
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
@@ -154,7 +157,17 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
     tempHist = new TH2D(tempName,tempName,NumXBins,XBins,NumYBins,MinY,MaxY);
     tempHist->Sumw2();
     TCanvas *tempCanvas = new TCanvas();
-    inTree->Draw(inExpr+":"+fInExprX+">>"+tempName,inCut);
+    inTree->Draw(inExpr+":"+fInExprX+">>"+tempName,inCut,"COLZ");
+    // ptHist = tempHist->ProjectionX(tempName+"_fuck");
+    // shitHist = new TH2D(tempName+"_shit",tempName+"_shit",NumXBins,XBins,NumYBins,MinY,MaxY);
+    // for (Int_t iXBin = 0; iXBin < NumXBins; iXBin++){
+    //   for (Int_t iYBin = 0; iYBin < NumYBins; iYBin++){
+    //     shitHist->SetBinContent(iXBin+1,iYBin+1,ptHist->GetBinContent(iXBin+1));
+    //   }      
+    // }
+
+    // tempHist->Divide(shitHist);
+
     fitFunc->SetParameters(params);
     tempHist->Fit(fitFunc,"MLE");
 

@@ -16,8 +16,6 @@ class PlotResolution : public PlotBase
   void                         AddExprX                ( TString expr )                                 { fInExprXs.push_back(expr);   }
   void                         SetParameterLimits      ( Int_t param, Double_t low, Double_t high );
 
-  void                         SetFractionLimit        ( Float_t frac );
-  
   // These were used to get response corrected plots
   // Can probably use them for ratio plots in the future
   // These tools should also be moved to a utils or something. They don't require an object.
@@ -45,8 +43,6 @@ class PlotResolution : public PlotBase
   void                         SetDumpingFits          ( Bool_t dump )                                  { fDumpingFits = dump;         }
   
  private:
-
-  Float_t                    fFractionLimit;
 
   std::vector<TGraphErrors*> fFits[6];
   
