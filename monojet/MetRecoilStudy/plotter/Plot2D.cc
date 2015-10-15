@@ -122,7 +122,7 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
 
   Double_t params[5] = {0,0,30,0,0};
 
-  TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,6);
+  TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,5);
 
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
