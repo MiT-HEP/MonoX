@@ -20,7 +20,6 @@ SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
 SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton+Run2015D.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
 GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
-WJetsFile      = ROOT.TFile(sampledir + "monojet_WJetsToLNu.root")
 
 MuonTree       = MuonFile.Get("events")
 SingleElecTree = SingleElecFile.Get("events")
@@ -28,7 +27,6 @@ SinglePhoTree  = SinglePhoFile.Get("events")
 DYTree         = DYFile.Get("events")
 GJetsTree      = GJetsFile.Get("events")
 GJetsTree.AddFriend(GJetsFile.Get("nloTree"))
-WJetsTree      = WJetsFile.Get("events")
 
 plotter = ROOT.PlotResolution()
 
@@ -37,6 +35,7 @@ plotter = ROOT.PlotResolution()
 fitBin = 150.0
 
 xArray = [10,20,40,60,80,100,150,300,1000]
+
 plotter.SetFractionLimit(0.05)
 
 plotter.SetParameterLimits(0,-50,50)
@@ -65,46 +64,46 @@ plotter.SetIncludeErrorBars(True)
 
 plotter.AddTree(MuonTree)
 plotter.AddTree(DYTree)
-#plotter.AddTree(SingleElecTree)
-#plotter.AddTree(DYTree)
-#plotter.AddTree(SinglePhoTree)
-#plotter.AddTree(GJetsTree)
+plotter.AddTree(SingleElecTree)
+plotter.AddTree(DYTree)
+plotter.AddTree(SinglePhoTree)
+plotter.AddTree(GJetsTree)
 #plotter.AddTree(WJetsTree)
 
 plotter.AddLegendEntry("Z#mu#mu Data",1)
 plotter.AddLegendEntry("Z#mu#mu",2)
-#plotter.AddLegendEntry("Zee Data",3)
-#plotter.AddLegendEntry("Zee",4)
-#plotter.AddLegendEntry("#gamma+jets Data",3)
-#plotter.AddLegendEntry("#gamma+jets",4)
+plotter.AddLegendEntry("Zee Data",3)
+plotter.AddLegendEntry("Zee",4)
+plotter.AddLegendEntry("#gamma+jets Data",7)
+plotter.AddLegendEntry("#gamma+jets",8)
 #plotter.AddLegendEntry("W+jets",7)
 
-muonSelection = allSelections + "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 15 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 30)"
-elecSelection = allSelections + "((lep1PdgId*lep2PdgId == -121) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0)"
+muonSelection = allSelections + "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 15 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 30 && n_bjetsLoose == 0)"
+elecSelection = allSelections + "((lep1PdgId*lep2PdgId == -121) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && n_bjetsLoose == 0)"
 phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
 plotter.AddWeight(muonSelection + " * mcWeight")
-#plotter.AddWeight(elecSelection)
-#plotter.AddWeight(elecSelection + " * mcWeight")
-#plotter.AddWeight(phoSelection)
-#plotter.AddWeight(phoSelection + " * nloFactor * XSecWeight")
+plotter.AddWeight(elecSelection)
+plotter.AddWeight(elecSelection + " * mcWeight")
+plotter.AddWeight(phoSelection)
+plotter.AddWeight(phoSelection + " * nloFactor * XSecWeight")
 #plotter.AddWeight("(abs(lep1PdgId) == 13 && n_tightlep == 1 && n_looselep == 1 && n_tau == 0 && mt > 50)")
 
 plotter.AddExprX("dilep_pt")
 plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("photonPt")
-#plotter.AddExprX("photonPt")
+plotter.AddExprX("dilep_pt")
+plotter.AddExprX("dilep_pt")
+plotter.AddExprX("photonPt")
+plotter.AddExprX("photonPt")
 #plotter.AddExprX("genW_pt")
 
 plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraPho + photonPt")
-#plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_paraPho + photonPt")
 #plotter.AddExpr("u_paraW + genW_pt")
 
 plotter.SetDumpingFits(True)
@@ -121,10 +120,10 @@ sig_u1 = plotter.FitGraph(5)
 plotter.ResetExpr()
 plotter.AddExpr("u_perpZ")
 plotter.AddExpr("u_perpZ")
-#plotter.AddExpr("u_perpZ")
-#plotter.AddExpr("u_perpZ")
-#plotter.AddExpr("u_perpPho")
-#plotter.AddExpr("u_perpPho")
+plotter.AddExpr("u_perpZ")
+plotter.AddExpr("u_perpZ")
+plotter.AddExpr("u_perpPho")
+plotter.AddExpr("u_perpPho")
 #plotter.AddExpr("u_perpW")
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
@@ -139,10 +138,12 @@ sig_u2 = plotter.FitGraph(5)
 processes = []
 processes.append('Data_Zmm')
 processes.append('MC_Zmm')
-#processes.append('Data_gjets')
-#processes.append('MC_gjets')
+processes.append('Data_Zee')
+processes.append('MC_Zee')
+processes.append('Data_gjets')
+processes.append('MC_gjets')
 
-colors = [1,2]
+colors = [1,2,3,4,7,8]
 
 fitVectors = [mu_u1,sig1_u1,sig2_u1,sig3_u1,sig_u1,mu_u2,sig1_u2,sig2_u2,sig3_u2,sig_u2]
 fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','sig2_u2','sig3_u2','sig_u2']
@@ -184,4 +185,3 @@ SingleElecFile.Close()
 SinglePhoFile.Close()
 DYFile.Close()
 GJetsFile.Close()
-WJetsFile.Close()
