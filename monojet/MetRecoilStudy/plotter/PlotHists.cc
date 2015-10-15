@@ -73,6 +73,20 @@ PlotHists::MakeHists(Int_t NumXBins, Double_t MinX, Double_t MaxX)
 }
 
 //--------------------------------------------------------------------
+std::vector<TH1D*>
+PlotHists::MakeHists(Int_t NumXBins, Double_t MinX, Double_t MaxX, Int_t DataNum)
+{
+  std::vector<TH1D*> theHists = MakeHists(NumXBins,MinX,MaxX);
+  Float_t DataInt = theHists[DataNum]->Integral();
+  for (UInt_t iHist = 0; iHist < theHists.size(); iHist++)
+    theHists[iHist]->Scale(DataInt/theHists[iHist]->Integral());
+
+  theHists[DataNum]->SetMarkerStyle(8);
+  theHists[DataNum]->Sumw2();
+  return theHists;
+}
+
+//--------------------------------------------------------------------
 TCanvas*
 PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
                       TString CanvasTitle, TString XLabel, TString YLabel,
@@ -91,7 +105,10 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     theHists[i0]->SetLineWidth(fLineWidths[i0]);
     theHists[i0]->SetLineStyle(fLineStyles[i0]);
     theHists[i0]->SetLineColor(fLineColors[i0]);
-    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"l");
+    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"lp");
+
+    std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
+    std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;
 
     Double_t checkMax = 0;
     if (fNormalizedHists)
@@ -111,9 +128,10 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
       theHists[i0]->DrawNormalized("same");
   }
   else {
-    theHists[plotFirst]->Draw();
-    for (UInt_t i0 = 0; i0 < NumPlots; i0++)
-      theHists[i0]->Draw("same");
+    theHists[plotFirst]->Draw("hist");
+    for (UInt_t i0 = 0; i0 < NumPlots; i0++) {
+      theHists[i0]->Draw("same,hist");
+    }
   }
 
   theLegend->Draw();
@@ -147,6 +165,25 @@ PlotHists::MakeCanvas(Int_t NumXBins, Double_t *XBins, TString FileBase,
 void
 PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
                       TString CanvasTitle, TString XLabel, TString YLabel,
+                      Int_t DataNum, Bool_t logY)
+{
+  std::vector<TH1D*> hists = MakeHists(NumXBins,MinX,MaxX,DataNum);
+  TCanvas *theCanvas = MakeCanvas(hists,CanvasTitle,
+                                  XLabel,YLabel,logY);
+
+  theCanvas->SaveAs(FileBase+".C");
+  theCanvas->SaveAs(FileBase+".png");
+  theCanvas->SaveAs(FileBase+".pdf");
+
+  delete theCanvas;
+  for (UInt_t i0 = 0; i0 < hists.size(); i0++)
+    delete hists[i0];
+}
+
+//--------------------------------------------------------------------
+void
+PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
+                      TString CanvasTitle, TString XLabel, TString YLabel,
                       Bool_t logY)
 {
   Double_t binWidth = (MaxX - MinX)/NumXBins;
@@ -154,5 +191,31 @@ PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString File
   for (Int_t i0 = 0; i0 < NumXBins + 1; i0++)
     XBins[i0] = MinX + i0 * binWidth;
 
+
   MakeCanvas(NumXBins,XBins,FileBase,CanvasTitle,XLabel,YLabel,logY);
+}
+//--------------------------------------------------------------------
+void
+PlotHists::MakeRatio(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
+                     TString CanvasTitle, TString XLabel, TString YLabel,
+                     Int_t DataNum )
+{
+  std::vector<TH1D*> hists = MakeHists(NumXBins,MinX,MaxX,DataNum);
+  TH1D *tempHist = (TH1D*) hists[DataNum]->Clone("ValueHolder");
+  for (UInt_t iHists = 0; iHists < hists.size(); iHists++) {
+    hists[iHists]->Divide(tempHist);
+  }
+
+  TCanvas *theCanvas = MakeCanvas(hists,CanvasTitle,
+                                  XLabel,YLabel,false);
+
+  theCanvas->SaveAs(FileBase+".C");
+  theCanvas->SaveAs(FileBase+".png");
+  theCanvas->SaveAs(FileBase+".pdf");
+
+  delete theCanvas;
+  for (UInt_t i0 = 0; i0 < hists.size(); i0++)
+    delete hists[i0];
+
+  delete tempHist;
 }

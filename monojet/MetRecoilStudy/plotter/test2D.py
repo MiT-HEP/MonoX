@@ -12,8 +12,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-sampledir = "/Users/dabercro/GradSchool/Winter15/flatTrees/"
-goodRuns  = "/Users/dabercro/GradSchool/Winter15/GoodRuns/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -61,8 +61,10 @@ plotter.AddName("Zee_MC")
 plotter.AddName("gjets_Data")
 plotter.AddName("gjets_MC")
 
-muonSelection = allSelections + "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 15 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 30)"
-elecSelection = allSelections + "((lep1PdgId*lep2PdgId == -121) && abs(dilep_m - 91) < 30 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0)"
+lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 15 && "
+
+muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
+elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
 phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
@@ -86,7 +88,7 @@ plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraPho + photonPt")
 plotter.AddExpr("u_paraPho + photonPt")
 
-plotter.MakeFitGraphs(200,10,1010,300,-1*fitBin,fitBin)
+plotter.MakeFitGraphs(100,10,1010,300,-1*fitBin,fitBin)
 
 plotter.ResetExpr()
 plotter.AddExpr("u_perpZ")
@@ -97,7 +99,7 @@ plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpW")
 
-plotter.MakeFitGraphs(200,10,1010,300,-1*fitBin,fitBin)
+plotter.MakeFitGraphs(100,10,1010,300,-1*fitBin,fitBin)
 
 del plotter
 

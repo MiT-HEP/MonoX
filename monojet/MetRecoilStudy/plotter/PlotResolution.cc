@@ -10,7 +10,6 @@ ClassImp(PlotResolution)
 
 //--------------------------------------------------------------------
 PlotResolution::PlotResolution() :
-  fFractionLimit(0),
   fInExprX(""),
   fDumpingFits(false),
   fNumFitDumps(0)
@@ -32,18 +31,6 @@ PlotResolution::SetParameterLimits(Int_t param, Double_t low, Double_t high)
   fParams.push_back(param);
   fParamLows.push_back(low);
   fParamHighs.push_back(high);
-}
-
-//--------------------------------------------------------------------
-void
-PlotResolution::SetFractionLimit(Float_t frac)
-{
-  if (frac < 0 || frac > 1)
-    std::cout << "Fractions must be between 0 and 1!" << std::endl;
-  else if (frac > 0.5)
-    fFractionLimit = 1 - frac;
-  else
-    fFractionLimit = frac;
 }
 
 //--------------------------------------------------------------------
@@ -136,11 +123,9 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
     fFits[init].resize(0);
 
   TF1 *fitLoose = new TF1("loose","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
-  TF1 *fitFunc  = new TF1("func","[3]*TMath::Gaus(x,[0],[1]) + [4]*[3]*[1]/[2]*TMath::Gaus(x,[0],[2])",MinY,MaxY);
+  TF1 *fitFunc  = new TF1("func","[4]*([3]/[1]*TMath::Gaus(x,[0],[1]) + (1 - [3])/[2]*TMath::Gaus(x,[0],[2]))",MinY,MaxY);
   TF1 *subFit1  = new TF1("fit1","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
   TF1 *subFit2  = new TF1("fit2","[0]*TMath::Gaus(x,[1],[2])",MinY,MaxY);
-
-  fitFunc->SetParLimits(4,fFractionLimit/(1-fFractionLimit),(1-fFractionLimit)/fFractionLimit);
 
   fitLoose->SetLineColor(kGreen);
   fitFunc->SetLineColor(kBlue);
@@ -152,7 +137,8 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   fitFunc->SetParLimits(0,MinY,MaxY);
   fitFunc->SetParLimits(1,0,MaxY-MinY);
   fitFunc->SetParLimits(2,0,MaxY-MinY);
-  fitFunc->SetParLimits(3,0,1e8);
+  fitFunc->SetParLimits(3,0,1);
+  fitFunc->SetParLimits(4,0,1e8);
 
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
@@ -174,7 +160,7 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
     TString tempName;
     tempName.Form("Hist_%d",fPlotCounter);
     fPlotCounter++;
-    tempHist    = new TH2D(tempName,tempName,NumXBins,XBins,NumYBins,MinY,MaxY);
+    tempHist = new TH2D(tempName,tempName,NumXBins,XBins,NumYBins,MinY,MaxY);
     tempHist->Sumw2();
     tempProfile = new TProfile(tempName+"prof",tempName+"prof",NumXBins,XBins);
     inTree->Draw(inExpr+":"+fInExprX+">>"+tempName,inCut);
@@ -195,24 +181,24 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
       fitLoose->SetParameter(0,10);
       fitLoose->SetParameter(1,0);
       fitLoose->SetParameter(2,30);
-      tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"LE","",MinY,MaxY);
+      tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"MLE","",MinY,MaxY);
       fitFunc->SetParameter(0,fitLoose->GetParameter(1));
       fitFunc->SetParameter(1,fitLoose->GetParameter(2));
-      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 0.8);
-      fitFunc->SetParameter(3,fitLoose->GetParameter(0) * 0.6);
-      fitFunc->SetParameter(4,0.8);
-      tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"LE","",MinY,MaxY);
+      fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 2);
+      fitFunc->SetParameter(3,0.8);
+      fitFunc->SetParameter(4,fitLoose->GetParameter(0) * fitLoose->GetParameter(2));
+      tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"MLE","",MinY,MaxY);
       if (fDumpingFits) {
         TString dumpName;
         Int_t lower = XBins[i1];
         Int_t upper = XBins[i1 + 1];
         dumpName.Form("DumpFit_%04d_%dTo%d",fNumFitDumps,lower,upper);
         fitLoose->Draw("SAME");
-	subFit1->SetParameter(0,fitFunc->GetParameter(3));
+	subFit1->SetParameter(0,fitFunc->GetParameter(4) * fitFunc->GetParameter(3) / fitFunc->GetParameter(1));
 	subFit1->SetParameter(1,fitFunc->GetParameter(0));
 	subFit1->SetParameter(2,fitFunc->GetParameter(1));
 	subFit1->Draw("SAME");
-	subFit2->SetParameter(0,fitFunc->GetParameter(4)*fitFunc->GetParameter(3)*fitFunc->GetParameter(1)/fitFunc->GetParameter(2));
+	subFit2->SetParameter(0,fitFunc->GetParameter(4) * (1 - fitFunc->GetParameter(3)) / fitFunc->GetParameter(2));
 	subFit2->SetParameter(1,fitFunc->GetParameter(0));
 	subFit2->SetParameter(2,fitFunc->GetParameter(2));
 	subFit2->Draw("SAME");
@@ -246,15 +232,14 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
       if (fIncludeErrorBars)
 	tempGraph[2]->SetPointError(i1,xError,fitFunc->GetParError(sigWanted));
 
-      Float_t weight1 = 0.5;
-      Float_t weight2 = 0.5;
+      Float_t weight1 = fitFunc->GetParameter(3);
+      Float_t weight2 = 1 - weight1;
+      Float_t weightErr = fitFunc->GetParError(3);
       
-      weight1 = 1.0;
-      weight2 = fitFunc->GetParameter(4);
-      
-      tempGraph[3]->SetPoint(i1,xValue,(weight1 * fitFunc->GetParameter(1) + weight2 * fitFunc->GetParameter(2))/(weight1 + weight2));
+      tempGraph[3]->SetPoint(i1,xValue,(weight1 * fitFunc->GetParameter(1) + weight2 * fitFunc->GetParameter(2)));
       if (fIncludeErrorBars)
-	tempGraph[3]->SetPointError(i1,xError,sqrt(pow(weight1 * fitFunc->GetParError(1),2) + pow(weight2 * fitFunc->GetParError(2),2))/(weight1 + weight2));
+	tempGraph[3]->SetPointError(i1,xError,sqrt(pow(weight1 * fitFunc->GetParError(1),2) + pow(weight2 * fitFunc->GetParError(2),2) + 
+                                                   pow(weightErr * (fitFunc->GetParameter(1) - fitFunc->GetParameter(2)),2)));
       
       tempGraph[4]->SetPoint(i1,xValue,fitLoose->GetParameter(1));
       if (fIncludeErrorBars)
