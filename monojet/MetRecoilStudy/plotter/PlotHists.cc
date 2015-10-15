@@ -134,11 +134,6 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     }
   }
 
-  TH1D *shitHist = (TH1D*) theHists[2]->Clone("shit");
-  shitHist->SetFillStyle(3004);
-  shitHist->SetFillColor(kBlack);
-  shitHist->Draw("e2same");
-
   theLegend->Draw();
   if (logY)
     theCanvas->SetLogy();

@@ -157,10 +157,10 @@ for i1 in range(len(processes)):
     fitFunc.SetLineColor(colors[i1])
     for i0 in range(len(fitVectors)):
         if i0 % muFreq == 0:
-            fitResult = fitVectors[i0][i1].Fit(linFunc,"SO")
+            fitResult = fitVectors[i0][i1].Fit(linFunc,"SON")
             fitFile.WriteTObject(linFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         else:
-            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SO")
+            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SON")
             fitFile.WriteTObject(fitFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         ##
         fitFile.WriteTObject(fitResult.GetCovarianceMatrix().Clone("cov_"+fitNames[i0]+"_"+processes[i1]),"cov_"+fitNames[i0]+"_"+processes[i1])

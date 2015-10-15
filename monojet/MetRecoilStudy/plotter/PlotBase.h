@@ -25,6 +25,7 @@ class PlotBase
   void                   AddWeight                ( TString cut )                                 { fInCuts.push_back(cut);      }
   void                   AddExpr                  ( TString expr )                                { fInExpr.push_back(expr);     }
   void                   ResetExpr                ()                                              { fInExpr.resize(0);           }
+  void                   ResetWeight              ()                                              { fInCuts.resize(0);           }
   // Two parts at once. Only use if the other part of a line already has a default set.
   void                   AddTreeWeight            ( TTree *tree, TString cut );           // These are used to set multiple values at
   void                   AddTreeExpr              ( TTree *tree, TString expr );          //  the same time. It may be simpler to
