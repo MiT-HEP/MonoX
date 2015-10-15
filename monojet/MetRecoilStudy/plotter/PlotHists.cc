@@ -78,8 +78,10 @@ PlotHists::MakeHists(Int_t NumXBins, Double_t MinX, Double_t MaxX, Int_t DataNum
 {
   std::vector<TH1D*> theHists = MakeHists(NumXBins,MinX,MaxX);
   Float_t DataInt = theHists[DataNum]->Integral();
-  for (UInt_t iHist = 0; iHist < theHists.size(); iHist++)
+  for (UInt_t iHist = 0; iHist < theHists.size(); iHist++) {
     theHists[iHist]->Scale(DataInt/theHists[iHist]->Integral());
+    std::cout << "chi2 test: " << fLegendEntries[iHist] << " " << theHists[DataNum]->Chi2Test(theHists[iHist],"UW") << std::endl;
+  }
 
   theHists[DataNum]->SetMarkerStyle(8);
   theHists[DataNum]->Sumw2();
@@ -109,6 +111,13 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
 
     std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
     std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;
+
+    for (UInt_t i1 = 0; i1 < NumPlots; i1++) {
+      if (i1 == i0)
+        continue;
+      std::cout << "Test with " << fLegendEntries[i1] << " KS: " << theHists[i0]->KolmogorovTest(theHists[i1]);
+      std::cout << " AD: " << theHists[i0]->AndersonDarlingTest(theHists[i1]) << std::endl;
+    }
 
     Double_t checkMax = 0;
     if (fNormalizedHists)
