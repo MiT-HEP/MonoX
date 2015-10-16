@@ -5,10 +5,11 @@ fresh=$1
 filesPerJob=13
 numProc=2
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV2'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
 eosDir='/store/user/yiiyama/transfer'
-skimmedDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
+#eosDir='/store/user/yiiyama/nerov3topup'
+skimmedDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV2'
 
 if [ ! -d $outDir ]; then
     mkdir $outDir
