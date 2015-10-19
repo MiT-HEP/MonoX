@@ -12,6 +12,37 @@
 #include "MonoJetTree.h"
 #include "NeroTree.h"
 
+enum IsoType {
+  kIsoLoose = 0,
+  kIsoMedium,
+  kIsoTight  
+};
+
+Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, IsoType isoType) {
+
+  Float_t isoCut = 0.;
+
+  if (abs(lepPdgId) == 13) {
+    isoCut = (isoType == kIsoTight) ? 0.12 : 0.20;
+  }
+  else {
+    switch (isoType) {
+    case kIsoLoose:
+      isoCut = (fabs(lepEta) <= 1.479) ? 0.0893 : 0.121;
+      break;
+    case kIsoMedium:
+      isoCut = (fabs(lepEta) <= 1.479) ? 0.0766 : 0.0678;
+      break;
+    case kIsoTight:
+      isoCut = (fabs(lepEta) <= 1.479) ? 0.0354 : 0.0646;
+      break;
+    default:
+      break;
+  }
+
+  return (lepIso/lepPt) < isoCut;
+}
+
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
   TFile *elecSFFile  = new TFile("scalefactors_ele.root");
@@ -41,9 +72,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Float_t maxKPt = 500;
 
   Float_t dROverlap  = 0.4;
-  Float_t bCutLoose  = 0.423;
-  Float_t bCutMedium = 0.814;
-  Float_t bCutTight  = 0.941;
+  Float_t bCutLoose  = 0.605;
+  Float_t bCutMedium = 0.89;
+  Float_t bCutTight  = 0.97;
 
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
@@ -111,7 +142,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iLepton = 0; iLepton < inTree->lepP4->GetEntries(); iLepton++) {
       TLorentzVector* tempLepton = (TLorentzVector*) inTree->lepP4->At(iLepton);
       
-      if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16) {
+      if ((fabs(tempLepton->Eta()) > 2.5) ||
+          (fabs(tempLepton->Eta()) > 2.4 && fabs((*(inTree->lepPdgId))[iLepton]) == 13))
+        continue;
+
+      if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16 &&
+          PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoLoose)) {
         outTree->n_looselep++;
         if (outTree->n_looselep == 1) {
           outTree->lep1Pt    = tempLepton->Pt();
@@ -120,6 +156,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep1PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep1IsMedium = 0;
           outTree->lep1IsTight  = 0;
+          outTree->lep1Iso = (*(inTree->lepIso))[iLepton];
           
           outTree->lep1DPhiMet  = abs(deltaPhi(outTree->lep1Phi,outTree->trueMetPhi));
         }          
@@ -130,21 +167,26 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep2PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep2IsMedium = 0;
           outTree->lep2IsTight  = 0;
+          outTree->lep2Iso = (*(inTree->lepIso))[iLepton];
         }          
-        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32) {
+        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32 &&
+            PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoMedium)) {
           outTree->n_mediumlep +=1;
+
           if (outTree->n_looselep == 1)
             outTree->lep1IsMedium = 1;
           else if (outTree->n_looselep == 2)
             outTree->lep2IsMedium = 1;
-        }
-        if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 64) == 64) {
-          leptonVecs.push_back(tempLepton);
-          outTree->n_tightlep +=1;
-          if (outTree->n_looselep == 1)
-            outTree->lep1IsTight = 1;
-          else if (outTree->n_looselep == 2)
-            outTree->lep2IsTight = 1;
+
+          if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 64) == 64 &&
+              PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoTight)) {
+            leptonVecs.push_back(tempLepton);
+            outTree->n_tightlep +=1;
+            if (outTree->n_looselep == 1)
+              outTree->lep1IsTight = 1;
+            else if (outTree->n_looselep == 2)
+              outTree->lep2IsTight = 1;
+          }
         }
       }
     }
@@ -244,6 +286,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iPhoton = 0; iPhoton < inTree->photonP4->GetEntries(); iPhoton++) {
       TLorentzVector* tempPhoton = (TLorentzVector*) inTree->photonP4->At(iPhoton);
       
+      if (tempPhoton->Pt() < 15. || fabs(tempPhoton->Eta()) > 2.5)
+        continue;
+
       Bool_t match = false;
       
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
@@ -313,7 +358,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutLoose)
         outTree->n_bjetsLoose++;
       
-      if (tempJet->Pt() < 30.0)
+      if (tempJet->Pt() < 30.0 || fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
         continue;
       
       outTree->n_jets++;
@@ -404,6 +449,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     
     for (Int_t iTau = 0; iTau < inTree->tauP4->GetEntries(); iTau++) {
       TLorentzVector* tempTau = (TLorentzVector*) inTree->tauP4->At(iTau);
+
+      if (tempTau->Pt() < 18. || fabs(tempTau->Eta()) > 2.3)
+        continue;
       
       Bool_t match = false;
       
