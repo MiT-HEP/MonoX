@@ -16,7 +16,7 @@ allSelections = "(jet1isMonoJetId == 1) && "
 metBin = ["100","1000"]
 
 MCFile   = ROOT.TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/forSid/monojet_DY.root")
-dataFile = ROOT.TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/monojet_SingleMuon+Run2015D.root")
+dataFile = ROOT.TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/topped/monojet_SingleMuon+Run2015D.root")
 #MCFile   = ROOT.TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/monojet_GJets.root")
 #dataFile = ROOT.TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/monojet_SinglePhoton+Run2015D.root")
 
@@ -55,9 +55,9 @@ plotter.AddExpr("u_magZ")
 plotter.AddExpr("sqrt(u1*u1 + u2*u2)")
 plotter.AddExpr("u_magZ")
 
-plotter.MakeCanvas(20,100,500,"~/www/somePlots_"+time.strftime("%y%m%d")+"/2_"+metBin[0]+"to"+metBin[1],"","|U|","Events/20 GeV",2,True)
-plotter.SetLegendLimits(0.15,0.6,0.6,0.85)
-plotter.MakeRatio(20,100,500,"~/www/somePlots_"+time.strftime("%y%m%d")+"/3_"+metBin[0]+"to"+metBin[1],"","|U|","Ratio",2)
+#plotter.MakeCanvas(20,100,500,"~/www/somePlots_"+time.strftime("%y%m%d")+"/2_"+metBin[0]+"to"+metBin[1],"","|U|","Events/20 GeV",2,True)
+#plotter.SetLegendLimits(0.15,0.6,0.6,0.85)
+#plotter.MakeRatio(20,100,500,"~/www/somePlots_"+time.strftime("%y%m%d")+"/3_"+metBin[0]+"to"+metBin[1],"","|U|","Ratio",2)
 
 plotter.ResetExpr()
 plotter.AddExpr("trueMet")

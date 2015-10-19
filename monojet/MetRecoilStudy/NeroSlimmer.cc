@@ -38,8 +38,8 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
       break;
     default:
       break;
+    }
   }
-
   return (lepIso/lepPt) < isoCut;
 }
 
@@ -156,7 +156,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep1PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep1IsMedium = 0;
           outTree->lep1IsTight  = 0;
-          outTree->lep1Iso = (*(inTree->lepIso))[iLepton];
+          outTree->lep1RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep1Pt;
           
           outTree->lep1DPhiMet  = abs(deltaPhi(outTree->lep1Phi,outTree->trueMetPhi));
         }          
@@ -167,7 +167,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep2PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep2IsMedium = 0;
           outTree->lep2IsTight  = 0;
-          outTree->lep2Iso = (*(inTree->lepIso))[iLepton];
+          outTree->lep2RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep2Pt;
         }          
         if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32 &&
             PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoMedium)) {
@@ -351,6 +351,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
       
+      if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
+        continue;
+
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutTight)
         outTree->n_bjetsTight++;
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutMedium)
@@ -358,11 +361,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutLoose)
         outTree->n_bjetsLoose++;
       
-      if (tempJet->Pt() < 30.0 || fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
+      if (tempJet->Pt() < 30.0) 
         continue;
       
       outTree->n_jets++;
-      jetVecs.push_back(tempJet);
       
       if (outTree->n_jets == 1) {
         outTree->leadingjetPt  = tempJet->Pt();
@@ -399,6 +401,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       
       outTree->n_cleanedjets++;
+      jetVecs.push_back(tempJet);
       
       if (outTree->n_cleanedjets == 1) {
         outTree->jet1Pt  = tempJet->Pt();
@@ -438,11 +441,29 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
       }
     }
+
+    Double_t checkDPhi = 5.0;
     
-    for (Int_t iLead = 0; iLead < outTree->n_jets; iLead++) {
-      Double_t checkDPhi = abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->trueMetPhi));
+    for (Int_t iLead = 0; iLead < outTree->n_cleanedjets; iLead++) {
+      checkDPhi = (outTree->met > 0) ? abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->metPhi)) : 5;
       if (checkDPhi < outTree->minJetMetDPhi)
         outTree->minJetMetDPhi = checkDPhi;
+
+      checkDPhi = (outTree->trueMet > 0) ? abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->trueMetPhi)) : 5;
+      if (checkDPhi < outTree->minJetTrueMetDPhi)
+        outTree->minJetTrueMetDPhi = checkDPhi;
+
+      checkDPhi = (outTree->u_magZ > 0) ? abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->u_phiZ)) : 5;
+      if (checkDPhi < outTree->minJetUZDPhi)
+        outTree->minJetUZDPhi = checkDPhi;
+
+      checkDPhi = (outTree->u_magW > 0) ? abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->u_phiW)) : 5;
+      if (checkDPhi < outTree->minJetUWDPhi)
+        outTree->minJetUWDPhi = checkDPhi;
+
+      checkDPhi = (outTree->u_magPho > 0) ? abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->u_phiPho)) : 5;
+      if (checkDPhi < outTree->minJetUPhoDPhi)
+        outTree->minJetUPhoDPhi = checkDPhi;
     }
     
     outTree->triggerFired = inTree->triggerFired;

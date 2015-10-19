@@ -65,7 +65,7 @@ lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau 
 
 muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
 elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
-phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
+phoSelection  = allSelections + "(n_tightpho != 0 && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
 plotter.AddWeight(muonSelection + " * mcWeight")
