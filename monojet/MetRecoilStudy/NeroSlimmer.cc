@@ -179,7 +179,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
             outTree->lep2IsMedium = 1;
 
           if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 64) == 64 &&
-              PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoTight)) {
+              PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoTight) &&
+              (abs((*(inTree->lepPdgId))[iLepton]) == 13 || tempLepton->Pt() > 40.)) {
             leptonVecs.push_back(tempLepton);
             outTree->n_tightlep +=1;
             if (outTree->n_looselep == 1)
@@ -374,6 +375,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         
         outTree->leadingjetBTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->leadingjetPuId             = (*(inTree->jetPuId))[iJet];
+        /////        outTree->leadingjetisMonoJetIdNew   = /////
         outTree->leadingjetisMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->leadingjetisLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
       }
@@ -411,6 +413,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         
         outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
+        /////        outTree->jet1isMonoJetIdNew   = /////
         outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
         
@@ -429,6 +432,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         
         outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
         outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
+        /////        outTree->jet2isMonoJetIdNew   = /////
         outTree->jet2isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
         outTree->jet2isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
         
