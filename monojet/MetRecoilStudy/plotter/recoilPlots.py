@@ -12,8 +12,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
-goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -26,7 +26,6 @@ SingleElecTree = SingleElecFile.Get("events")
 SinglePhoTree  = SinglePhoFile.Get("events")
 DYTree         = DYFile.Get("events")
 GJetsTree      = GJetsFile.Get("events")
-GJetsTree.AddFriend(GJetsFile.Get("nloTree"))
 
 plotter = ROOT.PlotResolution()
 
@@ -34,7 +33,7 @@ plotter = ROOT.PlotResolution()
 
 fitBin = 150.0
 
-xArray = [10,20,40,60,80,100,150,300,1000]
+xArray = [20,40,60,80,100,150,300,1000]
 
 plotter.SetParameterLimits(0,-50,50)
 plotter.SetParameterLimits(1,5,60)
@@ -50,7 +49,7 @@ fitFunc.SetParLimits(1,0,2)
 fitFunc.SetParLimits(2,-5,5)
 #fitFunc.SetParLimits(3,-0.005,0.01)
 
-allSelections = "(jet1isMonoJetId == 1) && "
+allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
 #allSelections = "(jet1Pt > 30) && "
 
 #####################################
@@ -71,13 +70,13 @@ plotter.AddTree(GJetsTree)
 
 plotter.AddLegendEntry("Z#mu#mu Data",1)
 plotter.AddLegendEntry("Z#mu#mu",2)
-plotter.AddLegendEntry("Zee Data",3)
+plotter.AddLegendEntry("Zee Data",418)
 plotter.AddLegendEntry("Zee",4)
-plotter.AddLegendEntry("#gamma+jets Data",7)
+plotter.AddLegendEntry("#gamma+jets Data",433)
 plotter.AddLegendEntry("#gamma+jets",6)
 #plotter.AddLegendEntry("W+jets",7)
 
-lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 15 && "
+lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 30 && n_bjetsMedium == 0 && "
 
 muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
 elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
@@ -127,7 +126,7 @@ plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpPho")
 #plotter.AddExpr("u_perpW")
 
-plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
+#plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
 
 mu_u2   = plotter.FitGraph(0)
 sig1_u2 = plotter.FitGraph(1)
@@ -168,7 +167,7 @@ for i1 in range(len(processes)):
 fitFile.Close()
 
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
-plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,60)
+plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-10,60)
 plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,50)
 plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
 plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,120)

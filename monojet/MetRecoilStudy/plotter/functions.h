@@ -44,24 +44,24 @@ float vectorSum3Pt(float pt1, float phi1, float pt2, float phi2,float pt3, float
 	       pow(pt1*sin(phi1) + pt2*sin(phi2) + pt3*sin(phi3),2) );
 }
 
-float vectorSumMass(float pt1, float phi1, float eta1, float pt2, float phi2, float eta2) {
+float vectorSumMass(float pt1, float eta1, float phi1, float pt2, float eta2, float phi2) {
   TLorentzVector vec1;
   TLorentzVector vec2;
   TLorentzVector vec3;
-  vec1.SetPtEtaPhiM(pt1,phi1,eta1,0);
-  vec2.SetPtEtaPhiM(pt2,phi2,eta2,0);
+  vec1.SetPtEtaPhiM(pt1,eta1,phi1,0);
+  vec2.SetPtEtaPhiM(pt2,eta2,phi2,0);
   vec3 = vec1 + vec2;
   return vec3.M();
 }
 
-float vectorSumEta(float pt1, float phi1, float eta1, float pt2, float phi2, float eta2) {
+float vectorSumEta(float pt1, float eta1, float phi1, float pt2, float eta2, float phi2) {
   TLorentzVector vec1;
   TLorentzVector vec2;
   TLorentzVector vec3;
-  vec1.SetPtEtaPhiM(pt1,phi1,eta1,0);
-  vec2.SetPtEtaPhiM(pt2,phi2,eta2,0);
+  vec1.SetPtEtaPhiM(pt1,eta1,phi1,0);
+  vec2.SetPtEtaPhiM(pt2,eta2,phi2,0);
   vec3 = vec1 + vec2;
-  return vec3.Eta();
+  return vec3.Phi();
 }
 
 float transverseMass(float lepPt, float lepPhi, float met,  float metPhi) {

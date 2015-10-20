@@ -12,8 +12,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
-goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -34,7 +34,7 @@ plotter = ROOT.Plot2D()
 
 fitBin = 150.0
 
-allSelections = "(jet1isMonoJetId == 1) && "
+allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
 
 #####################################
 
@@ -61,11 +61,11 @@ plotter.AddName("Zee_MC")
 plotter.AddName("gjets_Data")
 plotter.AddName("gjets_MC")
 
-lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 15 && "
+lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 30 && n_bjetsMedium == 0 "
 
 muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
 elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
-phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
+phoSelection  = allSelections + "(n_tightpho != 0 && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
 plotter.AddWeight(muonSelection + " * mcWeight")

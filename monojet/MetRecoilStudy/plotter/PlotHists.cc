@@ -137,9 +137,9 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
       theHists[i0]->DrawNormalized("same");
   }
   else {
-    theHists[plotFirst]->Draw("hist");
+    theHists[plotFirst]->Draw();
     for (UInt_t i0 = 0; i0 < NumPlots; i0++) {
-      theHists[i0]->Draw("same,hist");
+      theHists[i0]->Draw("same");
     }
   }
 

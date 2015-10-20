@@ -3,7 +3,7 @@
 #inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
 inDir='/Users/dabercro/GradSchool/Winter15/flatTrees'
 
-if [ -d $inDir/gjetsBak ]; then
+if [ ! -d $inDir/gjetsBak ]; then
     cp $inDir/monojet_GJets_HT-* .
     mkdir $inDir/gjetsBak
     mv $inDir/monojet_GJets_HT-* $inDir/gjetsBak/.
