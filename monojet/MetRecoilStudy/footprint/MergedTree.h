@@ -82,6 +82,8 @@ public:
   float trueMetPhi;
   float u_perp;
   float u_para;
+  float boson_pt;
+  float boson_phi;
   std::vector<int>*   triggerFired;
   bool  correctEvent;
 

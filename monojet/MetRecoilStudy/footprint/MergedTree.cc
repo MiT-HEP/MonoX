@@ -79,6 +79,8 @@ MergedTree::MergedTree(const char *name)
   t->Branch("trueMetPhi",&trueMetPhi,"trueMetPhi/F");
   t->Branch("u_perp",&u_perp,"u_perp/F");
   t->Branch("u_para",&u_para,"u_para/F");
+  t->Branch("boson_pt",&boson_pt,"boson_pt/F");
+  t->Branch("boson_phi",&boson_phi,"boson_phi/F");
   t->Branch("triggerFired",&triggerFired);
   t->Branch("correctEvent",&correctEvent,"correctEvent/O");
 
@@ -167,6 +169,8 @@ MergedTree::Reset()
   trueMetPhi = -5;
   u_perp = 0;
   u_para = 0;
+  boson_pt = -5;
+  boson_phi = -5;
   triggerFired = 0;
   correctEvent = 0;
 }

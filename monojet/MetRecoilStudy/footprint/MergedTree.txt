@@ -70,5 +70,7 @@ trueMet/F=-5
 trueMetPhi/F=-5
 u_perp/F=0
 u_para/F=0
+boson_pt/F=-5
+boson_phi/F=-5
 triggerFired/VI=0
 correctEvent/O=0

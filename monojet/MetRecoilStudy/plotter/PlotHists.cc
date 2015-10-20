@@ -38,6 +38,7 @@ PlotHists::MakeHists(Int_t NumXBins, Double_t *XBins)
   TString inExpr = fDefaultExpr;
 
   TH1D *tempHist;
+
   std::vector<TH1D*> theHists;
 
   for (UInt_t i0 = 0; i0 < NumPlots; i0++) {
@@ -53,6 +54,8 @@ PlotHists::MakeHists(Int_t NumXBins, Double_t *XBins)
     tempName.Form("Hist_%d",fPlotCounter);
     fPlotCounter++;
     tempHist = new TH1D(tempName,tempName,NumXBins,XBins);
+    if (fIncludeErrorBars)
+      tempHist->Sumw2();
     inTree->Draw(inExpr+">>"+tempName,inCut);
 
     theHists.push_back(tempHist);
