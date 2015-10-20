@@ -107,7 +107,7 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     theHists[i0]->SetLineWidth(fLineWidths[i0]);
     theHists[i0]->SetLineStyle(fLineStyles[i0]);
     theHists[i0]->SetLineColor(fLineColors[i0]);
-    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"lp");
+    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"l");
 
     std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
     std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;

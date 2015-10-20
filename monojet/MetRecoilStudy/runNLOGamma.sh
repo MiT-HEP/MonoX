@@ -1,6 +1,7 @@
 #! /bin/bash
 
-inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
+#inDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
+inDir='/Users/dabercro/GradSchool/Winter15/flatTrees'
 
 if [ -d $inDir/gjetsBak ]; then
     cp $inDir/monojet_GJets_HT-* .
