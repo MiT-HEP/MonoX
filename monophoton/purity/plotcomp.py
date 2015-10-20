@@ -33,7 +33,7 @@ for selKey,region in zip(selKeys,regions):
     leg.SetTextSize(0.03);
     
     for skim,sel,info in zip(skims,Selections[selKey],histInfo):
-        hist = HistExtractor(var,skim,sel,skimDir)
+        hist = HistExtractor(var[0],var[3][loc],skim,sel,skimDir,False)
         print hist.GetSumOfWeights()
         hist.Draw()
         #sys.stdin.readline()

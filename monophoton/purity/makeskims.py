@@ -12,8 +12,18 @@ outDir = os.path.join('/scratch5/ballen/hist/purity/',Version,varName,'Skims/tmp
 if not os.path.exists(outDir):
     os.makedirs(outDir)
     
-skims = Regions["Monophoton"]  #["Wgamma"]
-lumi = 85.2
+skims = Regions["Monophoton"]
+
+lumi = -1.0
+try:
+    print "Luminosity is: ", sys.argv[1]
+except IndexError:
+    print "Please provide a luminosity in 1/pb."
+    print "Use the follow syntax:"
+    print "python $PATH/makeskims.py LUMI"
+    sys.exit()
+else:
+    lumi = float(sys.argv[1])
 
 for skim in skims:
     print 'Starting skim:', skim[0]

@@ -1,4 +1,5 @@
 import os
+import array
 import ROOT
 
 Version = 'simpletree5'
@@ -8,30 +9,39 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/Data
 TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
 ROOT.gROOT.LoadMacro(TemplateGeneratorPath)
 
-hOverECuts  = [[]] * 2
-sieieCuts = [[]] * 2
-chIsoCuts = [[]] * 2
-nhIsoCuts = [[]] * 2
-phIsoCuts = [[]] * 2
+Locations = [ 'barrel', 'endcap' ]
+PhotonIds = [ 'loose', 'medium', 'tight' ]
+
+hOverECuts = {}
+sieieCuts = {}
+chIsoCuts = {}
+nhIsoCuts = {}
+phIsoCuts = {}
 
 ROOT.gROOT.ProcessLine("double cut;")
-for iLoc in xrange(0,2):
-    for iCut in xrange(0,3):
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::hOverECuts["+str(iLoc)+"]["+str(iCut)+"];")
-        # print ROOT.cut
-        hOverECuts[iLoc].append(ROOT.cut)
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::sieieCuts["+str(iLoc)+"]["+str(iCut)+"];")
-        # print ROOT.cut
-        sieieCuts[iLoc].append(ROOT.cut)
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::chIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
-        # print ROOT.cut
-        chIsoCuts[iLoc].append(ROOT.cut)
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
-        # print ROOT.cut
-        nhIsoCuts[iLoc].append(ROOT.cut)
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(iLoc)+"]["+str(iCut)+"];")
-        # print ROOT.cut
-        phIsoCuts[iLoc].append(ROOT.cut)
+for loc in Locations:
+    hOverECuts[loc] = {}
+    sieieCuts[loc] = {}
+    chIsoCuts[loc] = {}
+    nhIsoCuts[loc] = {}
+    phIsoCuts[loc] = {}
+    
+    for pid in PhotonIds:
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::hOverECuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        # print "hOverE", loc, pid, ROOT.cut
+        hOverECuts[loc][pid] = ROOT.cut
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::sieieCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        # print "sieie", loc, pid, ROOT.cut
+        sieieCuts[loc][pid] = ROOT.cut
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::chIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        # print "chIso", loc, pid, ROOT.cut
+        chIsoCuts[loc][pid] = ROOT.cut
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        # print "nhIso", loc, pid, ROOT.cut
+        nhIsoCuts[loc][pid] = ROOT.cut
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        # print "phIso", loc, pid, ROOT.cut
+        phIsoCuts[loc][pid] = ROOT.cut
 
 from ROOT import *
 
@@ -39,10 +49,16 @@ from ROOT import *
 ntupledir = '/scratch5/yiiyama/hist/'+Version+'/t2mit/filefi/042/'
 
 # Variables and associated properties
-# variable Enum, sideband Enum, selection Enum, roofit variable, cut for purity
-# [0][1] = barrel medium
-Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose,RooRealVar('sieie', '#sigma_{i#etai#eta}', 0.004, 0.016), 24, sieieCuts[0][1]) # simpletree.Photon.sieieCuts[0][1])
-             ,"phIso" : (kPhotonIsolation,kSieie,kLoose,RooRealVar('phIso', 'Ph Iso (GeV)', 0., 10.0), 100, phIsoCuts[0][1]) } # simpletree.Photon.phIsoCuts[0][1]) } 
+# variable Enum, sideband Enum, selection Enum, roofit variable ( region : roofit variable, nbins, variable binning), cut dict for purity
+Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose, { "barrel"  : (RooRealVar('sieie', '#sigma_{i#etai#eta}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
+                                                          ,"endcap" : (RooRealVar('sieie', '#sigma_{i#etai#eta}', 0.016, 0.040), 48, [0.016,0.030,0.040] ) } 
+                          , sieieCuts )
+              ,"sieieScaled"  : (kSigmaIetaIetaScaled,kChIso,kLoose, { "barrel"  : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
+                                                                       ,"endcap" : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.016, 0.040), 48, [0.016,0.030,0.040] ) } 
+                           , sieieCuts )
+              ,"phIso" : (kPhotonIsolation,kSieie,kLoose, { "barrel"  : (RooRealVar('phIso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] )
+                                                            ,"endcap" : (RooRealVar('phIso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] ) } 
+                          , phIsoCuts ) } 
 
 # Samples for skimming
 Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
@@ -88,13 +104,16 @@ Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGTo
                                ,('TempSignalWgElectrons',kElectron,-1,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] }
                
 # Function for making templates!
-def HistExtractor(_var,_skim,_sel,_skimDir):
+def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
     print '\nStarting template:', _skim[0]
         
     inName = os.path.join(_skimDir,_skim[1]+'.root')
     print 'Making template from:', inName
-    generator = TemplateGenerator(_skim[2], _var[0], inName)
-    generator.setTemplateBinning(_var[4], _var[3].getMin(), _var[3].getMax())
+    generator = TemplateGenerator(_skim[2], _temp, inName)
+    if _varBins:
+        generator.setTemplateBinning((len(_var[2])-1),array.array('d', _var[2]))
+    else:
+        generator.setTemplateBinning(_var[1], _var[0].getMin(), _var[0].getMax())
     
     print 'Applying selection:'
     print _sel, '\n'
@@ -103,11 +122,12 @@ def HistExtractor(_var,_skim,_sel,_skimDir):
     return tempH
         
 def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
+    print _selName
     tempname = 'template_'+_skim[0]+'_'+_selName
-    temp = RooDataHist(tempname, tempname, RooArgList(_var[3]), _hist)
+    temp = RooDataHist(tempname, tempname, RooArgList(_var[0]), _hist)
     
     canvas = TCanvas()
-    frame = _var[3].frame()
+    frame = _var[0].frame()
     temp.plotOn(frame)
         
     print _skim[3]
@@ -120,24 +140,29 @@ def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
     canvas.SaveAs(outName+'.png')
     canvas.SaveAs(outName+'.C')
 
+    canvas.SetLogy()
+    canvas.SaveAs(outName+'_Logy.pdf')
+    canvas.SaveAs(outName+'_Logy.png')
+    canvas.SaveAs(outName+'_Logy.C')
+
     return temp
 
 # Fitting function
-def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
-    nEvents = datahist.sumEntries()
-    sigpdf = RooHistPdf('sig', 'sig', RooArgSet(var), sigtemp) #, 2)
-    bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(var), bkgtemp) #, 2)
+def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
+    nEvents = _datahist.sumEntries()
+    sigpdf = RooHistPdf('sig', 'sig', RooArgSet(_var), _sigtemp) #, 2)
+    bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(_var), _bkgtemp) #, 2)
     nsig = RooRealVar('nsig', 'nsig', nEvents/2, 0., nEvents*1.5)
     nbkg = RooRealVar('nbkg', 'nbkg', nEvents/2, 0., nEvents*1.5)
     model = RooAddPdf("model", "model", RooArgList(sigpdf, bkgpdf), RooArgList(nsig, nbkg))
-    model.fitTo(datahist) # , Extended(True), Minimizer("Minuit2", "migrad"))
+    model.fitTo(_datahist) # , Extended(True), Minimizer("Minuit2", "migrad"))
     
     canvas = TCanvas()
 
-    frame = var.frame()
-    frame.SetTitle(title)
+    frame = _var.frame()
+    frame.SetTitle(_title)
 
-    datahist.plotOn(frame, RooFit.Name("data"))
+    _datahist.plotOn(frame, RooFit.Name("data"))
     model.plotOn(frame, RooFit.Name("Fit"))
     model.plotOn(frame, RooFit.Components('bkg'),RooFit.Name("fake"),RooFit.LineStyle(kDashed),RooFit.LineColor(kGreen))
     model.plotOn(frame, RooFit.Components('sig'),RooFit.Name("real"),RooFit.LineStyle(kDashed),RooFit.LineColor(kRed))
@@ -145,10 +170,10 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     
     frame.Draw("goff")
     
-    var.setRange("selection",0.0,cut)
+    _var.setRange("selection",0.0,_cut)
     
-    fReal = float(sigpdf.createIntegral(RooArgSet(var), "selection").getVal()) / float(sigpdf.createIntegral(RooArgSet(var)).getVal())
-    fFake = float(bkgpdf.createIntegral(RooArgSet(var), "selection").getVal()) / float(bkgpdf.createIntegral(RooArgSet(var)).getVal())
+    fReal = float(sigpdf.createIntegral(RooArgSet(_var), "selection").getVal()) / float(sigpdf.createIntegral(RooArgSet(_var)).getVal())
+    fFake = float(bkgpdf.createIntegral(RooArgSet(_var), "selection").getVal()) / float(bkgpdf.createIntegral(RooArgSet(_var)).getVal())
     nReal = fReal * nsig.getVal()
     nFake = fFake * nbkg.getVal()
 
@@ -166,7 +191,7 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     downSig = purity - lower;
     aveSig = float(upSig + downSig) / 2.0;
 
-    text = TLatex() #0.8,0.7,"Purity: "+str(round(purity,4)))
+    text = TLatex()
     text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
 
     leg = TLegend(0.6,0.6,0.85,0.75 );
@@ -175,22 +200,25 @@ def FitTemplates(name,title,var,cut,datahist,sigtemp,bkgtemp):
     # leg.SetHeader("templates LOWER<p_{T}<UPPER");
     leg.AddEntry(frame.findObject("data"), "data", "P");
     leg.AddEntry(frame.findObject("Fit"), "real+fake fit to data", "L");
-    leg.AddEntry(frame.findObject("real"), "real", "L"); # model_Norm[sieie]_Comp[sig]
-    leg.AddEntry(frame.findObject("fake"), "fake", "L"); # model_Norm[sieie]_Comp[bkg]
+    leg.AddEntry(frame.findObject("real"), "real", "L");
+    leg.AddEntry(frame.findObject("fake"), "fake", "L");
     leg.Draw();
 
-    canvas.SaveAs(name+'.pdf')
-    canvas.SaveAs(name+'.png')
-    canvas.SaveAs(name+'.C')
+    canvas.SaveAs(_name+'.pdf')
+    canvas.SaveAs(_name+'.png')
+    canvas.SaveAs(_name+'.C')
     
-    # canvas.SetLogy()
-    # canvas.SaveAs(name+'_Logy.pdf')
+    canvas.SetLogy()
+    canvas.SaveAs(_name+'_Logy.pdf')
+    canvas.SaveAs(_name+'_Logy.png')
+    canvas.SaveAs(_name+'_Logy.C')
 
     return (purity, aveSig)
 
 # Names for plots for Purity Calculation
 PlotNames = { "Wlike" : ("Photon Purity in SingleMuon DataSet","Photon Purity in WJets Monte Carlo","Photon Purity in WJets MC Truth")
-              ,"Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Purity in #gamma+jets and QCD MC","Photon Purity in #gamma+jets and QCD MC Truth","Photon Purity in SinglePhoton DataSet using Low chIso Sideband","Photon Purity in SinglePhoton DataSet using Medium chIso Sideband","Photon Purity in SinglePhoton DataSet using High chIso Sideband","Photon Purity in Low Sideband Region in SinglePhoton Dataset") }
+              ,"Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Purity in #gamma+jets and QCD MC")
+              ,"MonophotonBkgdComp" : ("Sideband Signal Contamination in SinglePhoton DataSet", "Sideband Signal Contamination in #gamma+jets and QCD MC") }
              
 # Skims for Purity Calculation
 Measurement = { "Wlike_old" : [ ('TempSignal','TempSignal',kPhoton,'Signal Template from MC') # (selection name, skim file to read from, template type, template title)
@@ -210,53 +238,62 @@ Measurement = { "Wlike_old" : [ ('TempSignal','TempSignal',kPhoton,'Signal Templ
                 ,"Monophoton" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton,r'Signal Template from #gamma+jets MC')
                                   ,('FitSinglePhoton','FitSinglePhoton',kPhoton,'Fit Template from SinglePhoton Data')
                                   ,('FitGJetsQCD','FitGJetsQCD',kPhoton,r'Fit Template from #gamma+jets and QCD MC')
-                                  ,('GJetsQCDTruthSignal','TempSignalGJets',kPhoton,r'Truth Signal from #gamma+jets MC Truth')
-                                  ,('GJetsQCDTruthBkgd','FitQCD',kBackground,r'Truth Background from QCD MC Truth') 
+                                  ,('GJetsQCDTruthSignal','FitGJetsQCD',kPhoton,r'Truth Signal from #gamma+jets MC Truth')
+                                  ,('GJetsQCDTruthBkgd','FitGJetsQCD',kBackground,r'Truth Background from QCD MC Truth') 
                                   ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground,'Background Template from SinglePhoton Data')
-                                  #,('TempBkgdSinglePhotonSbLow','TempBkgdSinglePhoton',kBackground,'Low SideBand Background Template from SinglePhoton Data')
-                                  #,('TempBkgdSinglePhotonSbMed','TempBkgdSinglePhoton',kBackground,'Medium SideBand Background Template from SinglePhoton Data') 
-                                  #,('TempBkgdSinglePhotonSbHii','TempBkgdSinglePhoton',kBackground,'High SideBand Background Template from SinglePhoton Data')
-                                  ,('TempBkgdGJetsQCD','TempBkgdGJetsQCD',kBackground,'Background Template from QCD MC')
-                                  #,('TempBkgdGJetsQCDSbLow','FitGJetsQCD',kBackground,'Low SideBand Background Template from #gamma+jets and QCD MC')
-                                  #,('TempBkgdGJetsQCDSbMed','FitGJetsQCD',kBackground,'Medium SideBand Background Template from #gamma+jets and QCD MC') 
-                                  #,('TempBkgdGJetsQCDSbHii','FitGJetsQCD',kBackground,'High SideBand Background Template from #gamma+jets and QCD MC') 
-                                  ] 
-                ,"MonophotonBkgdComp" : [ ( 'BackCompTotal','FitGJetsQCD',kBackground,'Total Background from QCD MC')
+                                  ,('TempBkgdGJetsQCD','TempBkgdGJetsQCD',kBackground,'Background Template from QCD MC') ]
+                ,"MonophotonBkgdComp" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton,r'Signal Template from #gamma+jets MC')
+                                  ,('FitSinglePhoton','TempBkgdSinglePhoton',kPhoton,'Fit Template from SinglePhoton Data')
+                                  ,('FitGJetsQCD','TempBkgdGJetsQCD',kPhoton,r'Fit Template from #gamma+jets and QCD MC')
+                                  ,('GJetsQCDTruthSignal','TempBkgdGJetsQCD',kPhoton,r'Truth Signal from #gamma+jets MC Truth')
+                                  ,('GJetsQCDTruthBkgd','TempBkgdGJetsQCD',kBackground,r'Truth Background from QCD MC Truth') 
+                                  ,('TempBkgdSinglePhoton','TempBkgdSinglePhoton',kBackground,'Background Template from SinglePhoton Data')
+                                  ,('TempBkgdGJetsQCD','TempBkgdGJetsQCD',kBackground,'Background Template from QCD MC') ]
+                ,"MonophotonBkgdCompOld" : [ ( 'BackCompTotal','FitGJetsQCD',kBackground,'Total Background from QCD MC')
                                           ,('BackCompTrue','FitGJetsQCD',kBackground,'True Photons in Sideband from QCD MC')
                                           ,('BackCompFake','FitGJetsQCD',kBackground,"Fake Photons in Sideband from QCD MC") ]
                 ,"CompGammaE" : [ ( 'TempSignalWgPhotons','TempSignalWgPhotons',kPhoton)
                                   ,('TempSignalWgElectrons','TempSignalWgElectrons',kElectron) ] }
 
 # Selections for Purity Calculation
-locationSels = []
-locationSels.append('(TMath::Abs(selPhotons.eta) < 1.5)')
-locationSels.append('((TMath::Abs(selPhotons.eta) > 1.5) && (TMath::Abs(SelPhotons.eta) < 2.4))')
+locationSels = {}
+locationSels["barrel"] = '(TMath::Abs(selPhotons.eta) < 1.5)'
+locationSels["endcap"] = '((TMath::Abs(selPhotons.eta) > 1.5) && (TMath::Abs(selPhotons.eta) < 2.4))'
 
-hOverESels  = [[]] * 2
-sieieSels = [[]] * 2
-chIsoSels = [[]] * 2
-nhIsoSels = [[]] * 2
-phIsoSels = [[]] * 2
-SigmaIetaIetaSels = [[]] * 2
-PhotonIsolationSels = [[]] * 2
-PogSels = [[]] *2
+hOverESels = {} 
+sieieSels = {} 
+chIsoSels = {}
+nhIsoSels = {}
+phIsoSels = {}
+SigmaIetaIetaSels = {}
+PhotonIsolationSels = {}
 
-for iLoc in xrange(0,2):
-    for iSel in xrange(0,3):
-        hOverESel = '(selPhotons.hOverE < '+str(hOverECuts[iLoc][iSel])+')'
-        sieieSel = '(selPhotons.sieie < '+str(sieieCuts[iLoc][iSel])+')'
-        chIsoSel = '(selPhotons.chIso < '+str(chIsoCuts[iLoc][iSel])+')'
-        nhIsoSel = '(selPhotons.nhIso < '+str(nhIsoCuts[iLoc][iSel])+')'
-        phIsoSel = '(selPhotons.phIso < '+str(phIsoCuts[iLoc][iSel])+')'
-        hOverESels[iLoc].append(hOverESel)
-        sieieSels[iLoc].append(sieieSel)
-        chIsoSels[iLoc].append(chIsoSel)
-        nhIsoSels[iLoc].append(nhIsoSel)
-        phIsoSels[iLoc].append(phIsoSel)
-        SigmaIetaIetaSel = '('+locationSels[iLoc]+' && '+hOverESel+' && '+nhIsoSel+' && '+phIsoSel+')'
-        PhotonIsolationSel = '('+locationSels[iLoc]+' && '+hOverESel+' && '+chIsoSel+' && '+nhIsoSel+')'
-        SigmaIetaIetaSels[iLoc].append(SigmaIetaIetaSel)
-        PhotonIsolationSels[iLoc].append(PhotonIsolationSel)
+for loc in Locations:
+    hOverESels[loc] = {}
+    sieieSels[loc] = {}
+    chIsoSels[loc] = {}
+    nhIsoSels[loc] = {}
+    phIsoSels[loc] = {}
+    SigmaIetaIetaSels[loc] = {}
+    PhotonIsolationSels[loc] = {}
+    
+    for pid in PhotonIds:
+        hOverESel = '(selPhotons.hOverE < '+str(hOverECuts[loc][pid])+')'
+        sieieSel = '(selPhotons.sieie < '+str(sieieCuts[loc][pid])+')'
+        sieieSelWeighted = '( (0.891832 * selPhotons.sieie + 0.0009133) < '+str(sieieCuts[loc][pid])+')'
+        chIsoSel = '(selPhotons.chIso < '+str(chIsoCuts[loc][pid])+')'
+        nhIsoSel = '(selPhotons.nhIso < '+str(nhIsoCuts[loc][pid])+')'
+        phIsoSel = '(selPhotons.phIso < '+str(phIsoCuts[loc][pid])+')'
+        hOverESels[loc][pid] = hOverESel 
+        sieieSels[loc][pid] = sieieSel
+        chIsoSels[loc][pid] = chIsoSel
+        nhIsoSels[loc][pid] = nhIsoSel
+        phIsoSels[loc][pid] = phIsoSel
+        SigmaIetaIetaSel = '('+locationSels[loc]+' && '+hOverESel+' && '+nhIsoSel+' && '+phIsoSel+')'
+        PhotonIsolationSel = '('+locationSels[loc]+' && '+hOverESel+' && '+chIsoSel+' && '+nhIsoSel+')'
+        # print loc, pid, SigmaIetaIetaSel, chIsoSel
+        SigmaIetaIetaSels[loc][pid] = SigmaIetaIetaSel
+        PhotonIsolationSels[loc][pid] = PhotonIsolationSel
 
 cutChIsoBarrelVLoose = '(selPhotons.chIso < 4.44)'
 cutChIsoBarrelSLoose = '(selPhotons.chIso < 8.44)'
@@ -270,7 +307,7 @@ cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPho
 # cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
 
 cutPhotonPtLow = range(20,220,40)
-cutPhotonPtHigh = [150]+range(200,301,50)+[500] # [150, 200, 300, 400] #range(150,351,100) # 
+cutPhotonPtHigh = range(150,351,100) #  # [150]+range(200,301,50)+[500] # [150, 200, 300, 400] #
 PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
                  + [ ('PhotonPt'+str(low)+'to'+str(high), '((selPhotons.pt > '+str(low)+') && (selPhotons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
                  + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
@@ -295,16 +332,15 @@ cutMet20 = '(t1Met.met > 20)'
 cutWlike = '('+cutSingleMuon+' && '+cutElectronVeto+' && '+cutTauVeto+' && '+cutMet20+')'
 
 Selections = { }
-Locations = [ 'barrel', 'endcap' ]
-PhotonIds = [ 'loose', 'medium', 'tight' ]
 
-for iLoc in xrange(0,2):
-    for iSel in xrange(0,3):
+for loc in Locations:
+    for pid in PhotonIds:
         for ChIsoSbSel in ChIsoSbSels:
-            sigSel = SigmaIetaIetaSels[iLoc][iSel]+' && '+chIsoSels[iLoc][iSel]
-            sbSel = SigmaIetaIetaSels[iLoc][iSel]+' && '+ChIsoSbSel[1]
+            sigSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSels[loc][pid]
+            sbCompSel = SigmaIetaIetaSels[loc][pid]+' && '+ChIsoSbSels[0][1] # FOR SIDEBAND COMPOSITION ONLY
+            sbSel = SigmaIetaIetaSels[loc][pid]+' && '+ChIsoSbSel[1]
             
-            Selections[Locations[iLoc]+'_'+PhotonIds[iSel]+'_inclusive'] = [ 
+            Selections[loc+'_'+pid+'_inclusive'] = [ 
                 sigSel+' && '+cutMatchedToReal
                 ,sbSel
                 ,sbSel
@@ -313,7 +349,7 @@ for iLoc in xrange(0,2):
                 ,sigSel+' && '+cutMatchedToReal
                 ,sigSel+' && !'+cutMatchedToReal ]
                
-            Selections[Locations[iLoc]+'_'+PhotonIds[iSel]+'_Wlike'] = [ 
+            Selections[loc+'_'+pid+'_Wlike'] = [ 
                 sigSel+' && '+cutWlike+' && '+cutMatchedToReal
                 ,sbSel+' && '+cutWlike
                 ,sbSel+' && '+cutWlike
@@ -322,7 +358,7 @@ for iLoc in xrange(0,2):
                 ,sigSel+' && '+cutWlike+' && '+cutMatchedToReal
                 ,sigSel+' && '+cutWlike+' && !'+cutMatchedToReal ]
             
-            Selections[Locations[iLoc]+'_'+PhotonIds[iSel]+'_Wlike_vloose'] = [ 
+            Selections[loc+'_'+pid+'_Wlike_vloose'] = [ 
                 sigSel+' && '+cutWlike+' && '+cutMatchedToReal
                 ,sbSel+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
                 ,sbSel+' && '+cutWlike+' && !'+cutChIsoBarrelVLoose
@@ -336,19 +372,27 @@ for iLoc in xrange(0,2):
             sigSels = [ sigSel+' && '+cutMatchedToReal
                         ,sigSel
                         ,sigSel
-                        ,sigSel # +' && '+cutMatchedToReal
-                        ,sigSel # +' && !'+cutMatchedToReal
+                        ,sigSel+' && '+cutMatchedToReal
+                        ,sigSel+' && !'+cutMatchedToReal
                         ]
-            
+            '''
+            sigSels = [ sigSel+' && '+cutMatchedToReal # FOR SIDEBAND COMPOSITION ONLY
+                        ,sbCompSel
+                        ,sbCompSel
+                        ,sbCompSel+' && '+cutMatchedToReal
+                        ,sbCompSel+' && !'+cutMatchedToReal
+                        ]
+            '''
+
             sbSels = [ sbSel+' && !'+cutChIsoBarrelVLoose
                        ,sbSel+' && '+cutChIsoBarrelVLoose
                        ,sbSel+' && !'+cutChIsoBarrelVLoose+' && '+cutChIsoBarrelSLoose
                        ,sbSel+' && !'+cutChIsoBarrelSLoose ]
             
-            bkgSels = [ sbSel, sbSel]
+            bkgSels = [ sbSel, sbSel ]
 
-            baseSels = sigSels+bkgSels  # +sbSels+sbSels
-            baseKey = Locations[iLoc]+'_'+PhotonIds[iSel]+'_'+ChIsoSbSel[0]
+            baseSels = sigSels+bkgSels
+            baseKey = loc+'_'+pid+'_'+ChIsoSbSel[0]
             
             compNames = [ 'real', 'low', 'med', 'high' ]
             compMatch = ['',' && '+cutMatchedToReal,' && !'+cutMatchedToReal]
@@ -369,6 +413,7 @@ for iLoc in xrange(0,2):
             
                     compSels = [sbSel+' && '+ptCut[1]+' && '+metCut[1]+sel for sel in compMatch]
                     compKey = metKey+'_comp'
+
                     Selections[compKey] = compSels
                 
             for cut in PhotonPtSels[1]:
@@ -379,4 +424,4 @@ for iLoc in xrange(0,2):
                          ,sigSel+' && '+cut[1]+' && '+cutWlike
                          ,sigSel+' && '+cut[1]+' && '+cutWlike+' && '+cutMatchedToReal
                          ,sigSel+' && '+cut[1]+' && '+cutWlike+' && !'+cutMatchedToReal ]
-                Selections[Locations[iLoc]+'_'+PhotonIds[iSel]+'_'+cut[0]+'_Wlike'] = cuts
+                Selections[loc+'_'+pid+'_'+cut[0]+'_Wlike'] = cuts

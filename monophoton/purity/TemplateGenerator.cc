@@ -22,6 +22,7 @@ enum TemplateType {
 
 enum TemplateVar {
   kSigmaIetaIeta,
+  kSigmaIetaIetaScaled,
   kPhotonIsolation,
   nTemplateVars
 };
@@ -51,12 +52,13 @@ enum PhotonLocation {
 class TemplateGenerator {
 public:
   TemplateGenerator(TemplateType, TemplateVar, char const* fileName, bool write = false);
-  ~TemplateGenerator() {}
+  ~TemplateGenerator() { delete [] binEdges_; }
 
   void fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Double_t _xsec, Double_t _lumi);
   void writeSkim();
   void closeFile();
-  void setTemplateBinning(int nBins, double xmin, double xmax);
+  void setTemplateBinning(int _nBins, double _xmin, double _xmax);
+  void setTemplateBinning(int _nBins, double* _binEdges);
   TH1D* makeTemplate(char const* name, char const* expr);
 
 private:
@@ -66,6 +68,7 @@ private:
   int nBins_;
   double xmin_;
   double xmax_;
+  double* binEdges_ = NULL;
 
   TTree* skimTree_{0};
 };
@@ -187,7 +190,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	  PassCut[kPhIso] = true;
 	}
       }
-      if (tVar_ == kSigmaIetaIeta) {
+      if ( (tVar_ == kSigmaIetaIeta) || (tVar_ == kSigmaIetaIetaScaled) ) {
 	PassCut[kSieie] = true;
       }
       else {
@@ -338,19 +341,42 @@ TemplateGenerator::setTemplateBinning(int _nBins, double _xmin, double _xmax)
   xmax_ = _xmax;
 }
 
+void
+TemplateGenerator::setTemplateBinning(int _nBins, double* _binEdges)
+{
+  nBins_ = _nBins;
+  delete [] binEdges_;
+  binEdges_ = new double[_nBins];
+  for(int iBin = 0; !(iBin >  nBins_); iBin++) {
+    binEdges_[iBin] = _binEdges[iBin];
+    // std::cout << "Bin Edge " << iBin << " is " << binEdges_[iBin] << std::endl;
+  }
+}
+
 TH1D*
 TemplateGenerator::makeTemplate(char const* _name, char const* _expr)
 {
   auto* gd = gDirectory;
   skimTree_->GetCurrentFile()->cd();
-  auto* tmp = new TH1D(_name, "", nBins_, xmin_, xmax_);
+  TH1D* tmp = NULL;
+  if (binEdges_) {
+    tmp = new TH1D(_name, "", nBins_, binEdges_);
+    for (int iBin = 0; !(iBin > tmp->GetNbinsX()+1); iBin++) {
+      // std::cout << "Bin Edge " << iBin << " is " << tmp->GetXaxis()->GetBinLowEdge(iBin) << " " << tmp->GetXaxis()->GetBinUpEdge(iBin) << std::endl;
+    }
+  }
+  else {
+    tmp = new TH1D(_name, "", nBins_, xmin_, xmax_);
+  }
   tmp->Sumw2();
 
   TString var;
   if (tVar_ == kSigmaIetaIeta)
-    var = "sieie";
+    var = "selPhotons.sieie";
   else if (tVar_ == kPhotonIsolation)
-    var = "phIso";
+    var = "selPhotons.phIso";
+  else if (tVar_ == kSigmaIetaIetaScaled)
+    var = "0.891832 * selPhotons.sieie + 0.0009133";
 
   TString weight("weight");
   if (std::strlen(_expr) != 0) {
@@ -359,7 +385,7 @@ TemplateGenerator::makeTemplate(char const* _name, char const* _expr)
     weight += ")";
   }
 
-  skimTree_->Draw("selPhotons." + var + ">>" + TString(_name), weight, "goff");
+  skimTree_->Draw(var + ">>" + TString(_name), weight, "goff");
 
   gd->cd();
 
