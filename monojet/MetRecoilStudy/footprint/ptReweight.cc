@@ -9,7 +9,7 @@ void ptReweight(TString inFileName, TString ptName, TString theCut) {
   TFile *corrections = new TFile("monojet_SingleMuon+Run2015D.root");
   TTree *zPtTree = (TTree*) corrections->Get("events");
 
-  Int_t numBins = 300;
+  Int_t numBins = 120;
   Float_t lower = 0.;
   Float_t upper = 600.;
 

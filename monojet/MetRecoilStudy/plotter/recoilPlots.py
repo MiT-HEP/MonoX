@@ -12,12 +12,19 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
-goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
+#sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+#goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
+sampledir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmedV3/"
+goodRuns  = "/Users/dabercro/GradSchool/Winter15/GoodRunsV3/"
 
-MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
-SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
-SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton+Run2015D.root")
+#MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
+#SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
+#SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton+Run2015D.root")
+#DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
+#GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
+MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon.root")
+SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron.root")
+SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
 GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
 
@@ -30,6 +37,8 @@ GJetsTree      = GJetsFile.Get("events")
 plotter = ROOT.PlotResolution()
 
 #####################################
+
+plotter.SetDumpingFits(False)
 
 fitBin = 150.0
 
@@ -49,8 +58,8 @@ fitFunc.SetParLimits(1,0,2)
 fitFunc.SetParLimits(2,-5,5)
 #fitFunc.SetParLimits(3,-0.005,0.01)
 
-allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
-#allSelections = "(jet1Pt > 30) && "
+#allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
+allSelections = "(jet1isMonoJetId == 1) && "
 
 #####################################
 fitFunc.SetLineStyle(2)
@@ -79,24 +88,22 @@ plotter.AddLegendEntry("#gamma+jets",6)
 lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 30 && n_bjetsMedium == 0 && "
 
 muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
-elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
-phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau == 0)"
+elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121 && n_tightlep == 2)"
+phoSelection  = allSelections + "((photonIsTight == 1 || (photonPt < 175 && n_loosepho != 0)) && n_looselep == 0 && n_tau == 0)"
 
 plotter.AddWeight(muonSelection)
-plotter.AddWeight(muonSelection + " * mcWeight")
+plotter.AddWeight(muonSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight")
 plotter.AddWeight(elecSelection)
-plotter.AddWeight(elecSelection + " * mcWeight")
+plotter.AddWeight(elecSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight")
 plotter.AddWeight(phoSelection)
-plotter.AddWeight(phoSelection + " * nloFactor * XSecWeight")
-#plotter.AddWeight("(abs(lep1PdgId) == 13 && n_tightlep == 1 && n_looselep == 1 && n_tau == 0 && mt > 50)")
+plotter.AddWeight(phoSelection + " && (genBos_PdgId == 22) * kfactor * XSecWeight * npvWeight")
 
 plotter.AddExprX("dilep_pt")
+plotter.AddExprX("genBos_pt")
 plotter.AddExprX("dilep_pt")
-plotter.AddExprX("dilep_pt")
-plotter.AddExprX("dilep_pt")
+plotter.AddExprX("genBos_pt")
 plotter.AddExprX("photonPt")
-plotter.AddExprX("photonPt")
-#plotter.AddExprX("genW_pt")
+plotter.AddExprX("genBos_pt")
 
 plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraZ + dilep_pt")
@@ -104,9 +111,6 @@ plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraPho + photonPt")
 plotter.AddExpr("u_paraPho + photonPt")
-#plotter.AddExpr("u_paraW + genW_pt")
-
-plotter.SetDumpingFits(True)
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-1*fitBin,fitBin)
 
@@ -124,9 +128,8 @@ plotter.AddExpr("u_perpZ")
 plotter.AddExpr("u_perpZ")
 plotter.AddExpr("u_perpPho")
 plotter.AddExpr("u_perpPho")
-#plotter.AddExpr("u_perpW")
 
-#plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
+plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
 
 mu_u2   = plotter.FitGraph(0)
 sig1_u2 = plotter.FitGraph(1)
@@ -143,7 +146,7 @@ processes.append('MC_Zee')
 processes.append('Data_gjets')
 processes.append('MC_gjets')
 
-colors = [1,2,3,4,7,6]
+colors = [1,2,418,4,433,6]
 
 fitVectors = [mu_u1,sig1_u1,sig2_u1,sig3_u1,sig_u1,mu_u2,sig1_u2,sig2_u2,sig3_u2,sig_u2]
 fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','sig2_u2','sig3_u2','sig_u2']
@@ -156,10 +159,10 @@ for i1 in range(len(processes)):
     fitFunc.SetLineColor(colors[i1])
     for i0 in range(len(fitVectors)):
         if i0 % muFreq == 0:
-            fitResult = fitVectors[i0][i1].Fit(linFunc,"SON")
+            fitResult = fitVectors[i0][i1].Fit(linFunc,"SO")
             fitFile.WriteTObject(linFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         else:
-            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SON")
+            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SO")
             fitFile.WriteTObject(fitFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         ##
         fitFile.WriteTObject(fitResult.GetCovarianceMatrix().Clone("cov_"+fitNames[i0]+"_"+processes[i1]),"cov_"+fitNames[i0]+"_"+processes[i1])
@@ -167,7 +170,7 @@ for i1 in range(len(processes)):
 fitFile.Close()
 
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
-plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-10,60)
+plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,50)
 plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,50)
 plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
 plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,120)

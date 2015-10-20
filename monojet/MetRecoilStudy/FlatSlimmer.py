@@ -10,12 +10,14 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3/"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+#inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3/"
+#outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+inDir  = "/Users/dabercro/GradSchool/Winter15/flatTreesV3/"
+outDir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmedV3/"
 
 #GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
 GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = "n_looselep < 3 && n_loosepho < 2"
+cut = "((n_looselep == 2 && n_loosepho == 0 && n_loosepho == 0 && n_bjetsMedium == 0) || (n_loosepho != 0 && n_looselep == 0)) && jet1isMonoJetId == 1"
 
 #######################################################################
 

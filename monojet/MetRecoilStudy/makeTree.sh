@@ -1,9 +1,9 @@
 #! /bin/bash
 
-package=MonoJet
+package=Merged
 
 outFileBase=$package\Tree
-def=${package^^}
+def=`echo $package | tr "[a-z]" "[A-Z]"`
 
 inVarsFile=$outFileBase.txt
 h=$outFileBase.h
