@@ -21,6 +21,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet1M",&jet1M,"jet1M/F");
   t->Branch("jet1BTag",&jet1BTag,"jet1BTag/F");
   t->Branch("jet1PuId",&jet1PuId,"jet1PuId/F");
+  t->Branch("jet1isMonoJetIdNew",&jet1isMonoJetIdNew,"jet1isMonoJetIdNew/I");
   t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
   t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
   t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
@@ -34,6 +35,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet2M",&jet2M,"jet2M/F");
   t->Branch("jet2BTag",&jet2BTag,"jet2BTag/F");
   t->Branch("jet2PuId",&jet2PuId,"jet2PuId/F");
+  t->Branch("jet2isMonoJetIdNew",&jet2isMonoJetIdNew,"jet2isMonoJetIdNew/I");
   t->Branch("jet2isMonoJetId",&jet2isMonoJetId,"jet2isMonoJetId/I");
   t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
   t->Branch("jet2DPhiMet",&jet2DPhiMet,"jet2DPhiMet/F");
@@ -48,6 +50,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("leadingjetM",&leadingjetM,"leadingjetM/F");
   t->Branch("leadingjetBTag",&leadingjetBTag,"leadingjetBTag/F");
   t->Branch("leadingjetPuId",&leadingjetPuId,"leadingjetPuId/F");
+  t->Branch("leadingjetisMonoJetIdNew",&leadingjetisMonoJetIdNew,"leadingjetisMonoJetIdNew/I");
   t->Branch("leadingjetisMonoJetId",&leadingjetisMonoJetId,"leadingjetisMonoJetId/I");
   t->Branch("leadingjetisLooseMonoJetId",&leadingjetisLooseMonoJetId,"leadingjetisLooseMonoJetId/I");
   t->Branch("n_jets",&n_jets,"n_jets/I");
@@ -141,6 +144,7 @@ MonoJetTree::Reset()
   jet1M = -5;
   jet1BTag = -1;
   jet1PuId = -2;
+  jet1isMonoJetIdNew = -1;
   jet1isMonoJetId = -1;
   jet1isLooseMonoJetId = -1;
   jet1DPhiMet = -1;
@@ -154,6 +158,7 @@ MonoJetTree::Reset()
   jet2M = -5;
   jet2BTag = -1;
   jet2PuId = -2;
+  jet2isMonoJetIdNew = -1;
   jet2isMonoJetId = -1;
   jet2isLooseMonoJetId = -1;
   jet2DPhiMet = -1;
@@ -168,6 +173,7 @@ MonoJetTree::Reset()
   leadingjetM = -5;
   leadingjetBTag = -1;
   leadingjetPuId = -2;
+  leadingjetisMonoJetIdNew = -1;
   leadingjetisMonoJetId = -1;
   leadingjetisLooseMonoJetId = -1;
   n_jets = 0;

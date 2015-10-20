@@ -12,7 +12,7 @@
 
 void xsecWeights (TString filename = "monojet_POWHEG_DMS_NNPDF30_13TeV_Pseudoscalar_500_1.root", Float_t xsec = 3.172) {
 
-  TString dir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/";
+  TString dir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3/";
 
   TFile *file = new TFile(dir + filename,"UPDATE");
   TTree *tree = (TTree*) file->FindObjectAny("events");

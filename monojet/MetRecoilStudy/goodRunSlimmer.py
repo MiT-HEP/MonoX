@@ -10,10 +10,13 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV2/"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV2/"
+#inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3/"
+#outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
+inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/"
+outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/skimmed/"
 
-GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+#GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258714_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
 
 #######################################################################
 

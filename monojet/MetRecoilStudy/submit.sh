@@ -2,8 +2,8 @@
 
 fresh=$1
 
-filesPerJob=13
-numProc=2
+filesPerJob=8
+numProc=1
 
 outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV3'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'

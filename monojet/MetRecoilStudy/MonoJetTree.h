@@ -24,6 +24,7 @@ public:
   float jet1M;
   float jet1BTag;
   float jet1PuId;
+  int   jet1isMonoJetIdNew;
   int   jet1isMonoJetId;
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
@@ -37,6 +38,7 @@ public:
   float jet2M;
   float jet2BTag;
   float jet2PuId;
+  int   jet2isMonoJetIdNew;
   int   jet2isMonoJetId;
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
@@ -51,6 +53,7 @@ public:
   float leadingjetM;
   float leadingjetBTag;
   float leadingjetPuId;
+  int   leadingjetisMonoJetIdNew;
   int   leadingjetisMonoJetId;
   int   leadingjetisLooseMonoJetId;
   int   n_jets;

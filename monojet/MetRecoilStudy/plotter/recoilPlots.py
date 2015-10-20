@@ -12,8 +12,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
-goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
 
 MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
 SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
@@ -26,7 +26,6 @@ SingleElecTree = SingleElecFile.Get("events")
 SinglePhoTree  = SinglePhoFile.Get("events")
 DYTree         = DYFile.Get("events")
 GJetsTree      = GJetsFile.Get("events")
-GJetsTree.AddFriend(GJetsFile.Get("nloTree"))
 
 plotter = ROOT.PlotResolution()
 
@@ -34,7 +33,7 @@ plotter = ROOT.PlotResolution()
 
 fitBin = 150.0
 
-xArray = [10,20,40,60,80,100,150,300,1000]
+xArray = [20,40,60,80,100,150,300,1000]
 
 plotter.SetParameterLimits(0,-50,50)
 plotter.SetParameterLimits(1,5,60)
@@ -50,7 +49,7 @@ fitFunc.SetParLimits(1,0,2)
 fitFunc.SetParLimits(2,-5,5)
 #fitFunc.SetParLimits(3,-0.005,0.01)
 
-allSelections = "(jet1isMonoJetId == 1) && "
+allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
 #allSelections = "(jet1Pt > 30) && "
 
 #####################################
@@ -63,21 +62,21 @@ plotter.SetIncludeErrorBars(True)
 
 plotter.AddTree(MuonTree)
 plotter.AddTree(DYTree)
-#plotter.AddTree(SingleElecTree)
-#plotter.AddTree(DYTree)
-#plotter.AddTree(SinglePhoTree)
-#plotter.AddTree(GJetsTree)
+plotter.AddTree(SingleElecTree)
+plotter.AddTree(DYTree)
+plotter.AddTree(SinglePhoTree)
+plotter.AddTree(GJetsTree)
 #plotter.AddTree(WJetsTree)
 
 plotter.AddLegendEntry("Z#mu#mu Data",1)
 plotter.AddLegendEntry("Z#mu#mu",2)
-#plotter.AddLegendEntry("Zee Data",418)
-#plotter.AddLegendEntry("Zee",4)
-#plotter.AddLegendEntry("#gamma+jets Data",433)
-#plotter.AddLegendEntry("#gamma+jets",6)
+plotter.AddLegendEntry("Zee Data",418)
+plotter.AddLegendEntry("Zee",4)
+plotter.AddLegendEntry("#gamma+jets Data",433)
+plotter.AddLegendEntry("#gamma+jets",6)
 #plotter.AddLegendEntry("W+jets",7)
 
-lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 15 && "
+lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 30 && n_bjetsMedium == 0 && "
 
 muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
 elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
@@ -85,26 +84,26 @@ phoSelection  = allSelections + "(n_loosepho != 0 && n_looselep == 0 && n_tau ==
 
 plotter.AddWeight(muonSelection)
 plotter.AddWeight(muonSelection + " * mcWeight")
-#plotter.AddWeight(elecSelection)
-#plotter.AddWeight(elecSelection + " * mcWeight")
-#plotter.AddWeight(phoSelection)
-#plotter.AddWeight(phoSelection + " * nloFactor * XSecWeight")
+plotter.AddWeight(elecSelection)
+plotter.AddWeight(elecSelection + " * mcWeight")
+plotter.AddWeight(phoSelection)
+plotter.AddWeight(phoSelection + " * nloFactor * XSecWeight")
 #plotter.AddWeight("(abs(lep1PdgId) == 13 && n_tightlep == 1 && n_looselep == 1 && n_tau == 0 && mt > 50)")
 
 plotter.AddExprX("dilep_pt")
 plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("dilep_pt")
-#plotter.AddExprX("photonPt")
-#plotter.AddExprX("photonPt")
+plotter.AddExprX("dilep_pt")
+plotter.AddExprX("dilep_pt")
+plotter.AddExprX("photonPt")
+plotter.AddExprX("photonPt")
 #plotter.AddExprX("genW_pt")
 
 plotter.AddExpr("u_paraZ + dilep_pt")
 plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraZ + dilep_pt")
-#plotter.AddExpr("u_paraPho + photonPt")
-#plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraZ + dilep_pt")
+plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_paraPho + photonPt")
 #plotter.AddExpr("u_paraW + genW_pt")
 
 plotter.SetDumpingFits(True)
@@ -139,10 +138,10 @@ sig_u2 = plotter.FitGraph(5)
 processes = []
 processes.append('Data_Zmm')
 processes.append('MC_Zmm')
-#processes.append('Data_Zee')
-#processes.append('MC_Zee')
-#processes.append('Data_gjets')
-#processes.append('MC_gjets')
+processes.append('Data_Zee')
+processes.append('MC_Zee')
+processes.append('Data_gjets')
+processes.append('MC_gjets')
 
 colors = [1,2,3,4,7,6]
 
