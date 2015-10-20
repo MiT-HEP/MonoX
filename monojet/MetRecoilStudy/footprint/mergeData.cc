@@ -8,7 +8,7 @@
 
 void mergeData() {
 
-  float metSwitch = 225.;
+  float metSwitch = 200.;
 
   TFile *corrections = new TFile("fitTest_0.root");
   TF1 *ZmmFunc   = (TF1*) corrections->Get("mu_Zmm_Data");
@@ -97,11 +97,11 @@ void mergeData() {
     mergedTree->met = gjetReader->u_magPho;
     mergedTree->metPhi = gjetReader->u_phiPho;
 
-    mergedTree->boson_pt = gjetReader->photonPt;
-    mergedTree->boson_phi = gjetReader->photonPhi;
+    mergedTree->boson_pt = mergedTree->photonPt;
+    mergedTree->boson_phi = mergedTree->photonPhi;
     mergedTree->triggerFired = gjetReader->triggerFired;
 
-    if (mergedTree->photonPt > metSwitch)
+    if (mergedTree->boson_pt > metSwitch)
       mergedTree->correctEvent = true;
     else
       mergedTree->correctEvent = false;
@@ -185,11 +185,11 @@ void mergeData() {
     mergedTree->trueMetPhi = muonReader->trueMetPhi;
     mergedTree->u_perp = muonReader->u_perpZ;
     mergedTree->u_para = muonReader->u_paraZ;
-    mergedTree->boson_pt = gjetReader->dilep_pt;
-    mergedTree->boson_phi = gjetReader->dilep_phi;
+    mergedTree->boson_pt = mergedTree->dilep_pt;
+    mergedTree->boson_phi = mergedTree->dilep_phi;
     mergedTree->triggerFired = muonReader->triggerFired;
 
-    if (mergedTree->dilep_pt <= metSwitch)
+    if (mergedTree->boson_pt <= metSwitch)
       mergedTree->correctEvent = true;
     else
       mergedTree->correctEvent = false;
