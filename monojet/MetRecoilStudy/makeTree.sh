@@ -1,6 +1,6 @@
 #! /bin/bash
 
-package=Merged
+package=MonoJet
 
 outFileBase=$package\Tree
 def=`echo $package | tr "[a-z]" "[A-Z]"`

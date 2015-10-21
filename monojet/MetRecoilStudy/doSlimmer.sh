@@ -23,6 +23,7 @@ cp $macroDir/kfactor.root .
 cp $macroDir/puWeights_13TeV_25ns.root .
 cp $macroDir/scalefactors_ele.root .
 cp $macroDir/scalefactors_mu.root .
+cp $macroDir/fitTest_0.root .
 
 cp "${outFile%.*}".txt . 
 
