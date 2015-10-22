@@ -23,6 +23,7 @@ enum TemplateType {
 enum TemplateVar {
   kSigmaIetaIeta,
   kSigmaIetaIetaScaled,
+  kChargedHadronIsolation,
   kPhotonIsolation,
   nTemplateVars
 };
@@ -176,8 +177,13 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
       if (hOverE[kObject][iP] < simpletree::Photon::hOverECuts[kLocation][_id]) {
 	PassCut[kHOverE] = true;
       }
-      if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
+      if (tVar_ == kChargedHadronIsolation) {
 	PassCut[kChIso] = true;
+      }
+      else {
+	if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
+	  PassCut[kChIso] = true;
+	}
       }
       if (nhIso[kObject][iP] < simpletree::Photon::nhIsoCuts[kLocation][_id]) { 
 	PassCut[kNhIso] = true;
@@ -190,7 +196,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	  PassCut[kPhIso] = true;
 	}
       }
-      if ( (tVar_ == kSigmaIetaIeta) || (tVar_ == kSigmaIetaIetaScaled) ) {
+      if ( (tVar_ == kSigmaIetaIeta) || (tVar_ == kSigmaIetaIetaScaled) || (tVar_ == kChargedHadronIsolation) ) {
 	PassCut[kSieie] = true;
       }
       else {
@@ -377,6 +383,8 @@ TemplateGenerator::makeTemplate(char const* _name, char const* _expr)
     var = "selPhotons.phIso";
   else if (tVar_ == kSigmaIetaIetaScaled)
     var = "0.891832 * selPhotons.sieie + 0.0009133";
+  else if (tVar_ == kChargedHadronIsolation)
+    var = "selPhotons.chIso";
 
   TString weight("weight");
   if (std::strlen(_expr) != 0) {

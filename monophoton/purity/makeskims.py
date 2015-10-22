@@ -5,14 +5,15 @@ from ROOT import *
 from selections import Regions, Variables, Version
 gROOT.SetBatch(True)
 
-varName = 'sieie'
+varName = 'chiso' # 'sieie'
 var = Variables[varName]
+skims = Regions["ShapeChIso"] # "Monophoton"]
 
 outDir = os.path.join('/scratch5/ballen/hist/purity/',Version,varName,'Skims/tmp')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
     
-skims = Regions["Monophoton"]
+
 
 lumi = -1.0
 try:
