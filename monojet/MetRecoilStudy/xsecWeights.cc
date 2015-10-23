@@ -10,9 +10,7 @@
 #include "TLorentzVector.h"
 #include "TClonesArray.h"
 
-void xsecWeights (TString filename = "monojet_POWHEG_DMS_NNPDF30_13TeV_Pseudoscalar_500_1.root", Float_t xsec = 3.172) {
-
-  TString dir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/";
+void xsecWeights (TString dir, TString filename = "monojet_POWHEG_DMS_NNPDF30_13TeV_Pseudoscalar_500_1.root", Float_t xsec = 3.172) {
 
   TFile *file = new TFile(dir + filename,"UPDATE");
   TTree *tree = (TTree*) file->FindObjectAny("events");

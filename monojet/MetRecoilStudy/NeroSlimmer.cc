@@ -363,7 +363,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         //// If there's no leptons, define recoil quantities ////
 
         if (outTree->n_looselep == 0) {
-          vec1.SetPtEtaPhiM(outTree->photonPt,0,outTree->photonPhi,0);
+          vec1.SetPtEtaPhiM(outTree->photonPtRaw,0,outTree->photonPhi,0);
           vec2.SetPtEtaPhiM(outTree->trueMet,0,outTree->trueMetPhi,0);
           vec3 = vec1 + vec2;
         

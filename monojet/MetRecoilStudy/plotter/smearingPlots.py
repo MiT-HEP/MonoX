@@ -12,10 +12,10 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/correctionsFiles/"
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
+dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
 
-DataFile       = ROOT.TFile(dataDir + "mergedData.root")
+DataFile       = ROOT.TFile(dataDir + "monojet_Merged.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
 ZToNuNuFile    = ROOT.TFile(sampledir + "monojet_DYJetsToNuNu.root")
 GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
@@ -90,20 +90,25 @@ WSelection      = allSelections + "(n_looselep == 1 && n_tightlep == 1 && n_loos
 phoSelection    = allSelections + "((photonIsTight == 1 || (photonPt < 175 && n_loosepho != 0)) && n_looselep == 0 && n_tau == 0)"
 signalSelection = allSelections + "(n_looselep == 0 && n_loosepho == 0 && n_tau == 0)"
 
-plotter.AddLegendEntry("Merged Data Boson",1)
-plotter.AddLegendEntry("Merged Data Jet",1)
-plotter.AddLegendEntry("DY to #ell#ell",1)
-plotter.AddLegendEntry("Z to #nu#nu",1)
-plotter.AddLegendEntry("#gamma + jets",1)
-plotter.AddLegendEntry("tt",1)
-plotter.AddLegendEntry("W to #ell#nu",1)
-plotter.AddLegendEntry("WW",1)
-plotter.AddLegendEntry("WZ",1)
-plotter.AddLegendEntry("ZZ",1)
-plotter.AddLegendEntry("QCD",1)
+colors = [1,2,3,4,5,6,7,8,9,46,28,38,30]
+entries = []
+entries.append("Merged Data Boson")
+entries.append("Merged Data Jet")
+entries.append("DY to #ell#ell")
+entries.append("Z to #nu#nu")
+entries.append("#gamma + jets")
+entries.append("tt")
+entries.append("W to #ell#nu")
+entries.append("WW")
+entries.append("WZ")
+entries.append("ZZ")
+entries.append("QCD")
 
-plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "boson_pt > 200)) && correctEvent")
-plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "boson_pt > 200)) && correctEvent")
+for index in range(len(entries)):
+    plotter.AddLegendEntry(entries[index],colors[index])
+
+plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
+plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
 plotter.AddWeight(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
 plotter.AddWeight(signalSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
 plotter.AddWeight(phoSelection + " && (genBos_PdgId == 22) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
@@ -125,15 +130,15 @@ plotter.AddExprX("genBos_pt")
 plotter.AddExprX("genBos_pt")
 plotter.AddExprX("jet1Pt")
 
-plotter.AddExpr("boson_pt + u_paraZ")
-plotter.AddExpr("jet1Pt + u_paraZ")
-plotter.AddExpr("dilep_pt + u_paraZ")
+plotter.AddExpr("boson_pt + u_para")
+plotter.AddExpr("jet1Pt + u_para")
+plotter.AddExpr("boson_pt + u_para")
 plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("photonPt + u_paraPho")
+plotter.AddExpr("boson_pt + u_para")
 plotter.AddExpr("genBos_pt + u_paraGen")
 plotter.AddExpr("genBos_pt + u_paraGen")
 plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("dilep_pt + u_paraZ")
+plotter.AddExpr("boson_pt + u_para")
 plotter.AddExpr("jet1Pt + u_paraGen")
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-1*fitBin,fitBin)
@@ -146,15 +151,15 @@ sig3_u1 = plotter.FitGraph(3)
 sig_u1 = plotter.FitGraph(5)
 
 plotter.ResetExpr()
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
 plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perpPho")
+plotter.AddExpr("u_perp")
 plotter.AddExpr("u_perpGen")
 plotter.AddExpr("u_perpGen")
 plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perpZ")
+plotter.AddExpr("u_perp")
 plotter.AddExpr("u_perpGen")
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
@@ -179,8 +184,6 @@ processes.append('MC_WW')
 processes.append('MC_WZ')
 processes.append('MC_ZZ')
 processes.append('MC_QCD')
-
-colors = [1,1,1,1,1,1,1,1,1,1,1,1,1]
 
 fitVectors = [mu_u1,sig1_u1,sig2_u1,sig3_u1,sig_u1,mu_u2,sig1_u2,sig2_u2,sig3_u2,sig_u2]
 fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','sig2_u2','sig3_u2','sig_u2']
