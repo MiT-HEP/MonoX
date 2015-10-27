@@ -12,7 +12,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+#dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns_/"
 sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
 
 DataFile       = ROOT.TFile(dataDir + "monojet_Merged.root")
@@ -64,19 +65,35 @@ fitFunc.SetParLimits(2,-5,5)
 #allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
 allSelections = "(jet1isMonoJetId == 1) && "
 
+skipThese = []
+
 #####################################
 
-plotter.AddTree(DataTree)
-plotter.AddTree(DataTree)
-plotter.AddTree(DYTree)
-plotter.AddTree(ZToNuNuTree)
-plotter.AddTree(GJetsTree)
-plotter.AddTree(TTTree)
-plotter.AddTree(WJetsToLNuTree)
-plotter.AddTree(WWTree)
-plotter.AddTree(WZTree)
-plotter.AddTree(ZZTree)
-plotter.AddTree(QCDTree)
+entries = []
+entries.append("Merged Data Boson")  #  0
+entries.append("Merged Data Jet")    #  1
+entries.append("DY to #ell#ell")     #  2
+entries.append("Z to #nu#nu")        #  3
+entries.append("#gamma + jets")      #  4
+entries.append("tt")                 #  5
+entries.append("W to #ell#nu")       #  6
+entries.append("WW")                 #  7
+entries.append("WZ")                 #  8
+entries.append("ZZ")                 #  9
+entries.append("QCD")                # 10
+
+trees = []
+trees.append(DataTree)
+trees.append(DataTree)
+trees.append(DYTree)
+trees.append(ZToNuNuTree)
+trees.append(GJetsTree)
+trees.append(TTTree)
+trees.append(WJetsToLNuTree)
+trees.append(WWTree)
+trees.append(WZTree)
+trees.append(ZZTree)
+trees.append(QCDTree)
 
 fitFunc.SetLineStyle(2)
 linFunc.SetLineStyle(2)
@@ -91,55 +108,52 @@ phoSelection    = allSelections + "((photonIsTight == 1 || (photonPt < 175 && n_
 signalSelection = allSelections + "(n_looselep == 0 && n_loosepho == 0 && n_tau == 0)"
 
 colors = [1,2,3,4,5,6,7,8,9,46,28,38,30]
-entries = []
-entries.append("Merged Data Boson")
-entries.append("Merged Data Jet")
-entries.append("DY to #ell#ell")
-entries.append("Z to #nu#nu")
-entries.append("#gamma + jets")
-entries.append("tt")
-entries.append("W to #ell#nu")
-entries.append("WW")
-entries.append("WZ")
-entries.append("ZZ")
-entries.append("QCD")
+
+weights = []
+weights.append("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
+weights.append("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
+weights.append(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(signalSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(phoSelection + " && (genBos_PdgId == 22) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+weights.append(signalSelection + " * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
+
+xExprs = []
+xExprs.append("boson_pt")
+xExprs.append("jet1Pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
+xExprs.append("jet1Pt")
+
+Exprs = []
+Exprs.append("boson_pt + u_para")
+Exprs.append("jet1Pt + u_para")
+Exprs.append("boson_pt + u_para")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("boson_pt + u_para")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("boson_pt + u_para")
+Exprs.append("jet1Pt + u_paraGen")
 
 for index in range(len(entries)):
+    if index in skipThese:
+        continue
     plotter.AddLegendEntry(entries[index],colors[index])
-
-plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
-plotter.AddWeight("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
-plotter.AddWeight(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(signalSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(phoSelection + " && (genBos_PdgId == 22) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(WSelection + " && (abs(genBos_PdgId) == 24) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-plotter.AddWeight(signalSelection + " * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
-
-plotter.AddExprX("boson_pt")
-plotter.AddExprX("jet1Pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("genBos_pt")
-plotter.AddExprX("jet1Pt")
-
-plotter.AddExpr("boson_pt + u_para")
-plotter.AddExpr("jet1Pt + u_para")
-plotter.AddExpr("boson_pt + u_para")
-plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("boson_pt + u_para")
-plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("genBos_pt + u_paraGen")
-plotter.AddExpr("boson_pt + u_para")
-plotter.AddExpr("jet1Pt + u_paraGen")
+    plotter.AddTree(trees[index])
+    plotter.AddWeight(weights[index])
+    plotter.AddExprX(xExprs[index])
+    plotter.AddExpr(Exprs[index])
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-1*fitBin,fitBin)
 
@@ -150,17 +164,24 @@ sig3_u1 = plotter.FitGraph(3)
 
 sig_u1 = plotter.FitGraph(5)
 
+Exprs = []
+Exprs.append("u_perp")
+Exprs.append("u_perp")
+Exprs.append("u_perp")
+Exprs.append("u_perpGen")
+Exprs.append("u_perp")
+Exprs.append("u_perpGen")
+Exprs.append("u_perpGen")
+Exprs.append("u_perpGen")
+Exprs.append("u_perp")
+Exprs.append("u_perpGen")
+
 plotter.ResetExpr()
-plotter.AddExpr("u_perp")
-plotter.AddExpr("u_perp")
-plotter.AddExpr("u_perp")
-plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perp")
-plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perpGen")
-plotter.AddExpr("u_perp")
-plotter.AddExpr("u_perpGen")
+
+for index in range(len(entries)):
+    if index in skipThese:
+        continue
+    plotter.AddExpr(Exprs[index])
 
 plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
 
@@ -171,19 +192,25 @@ sig3_u2 = plotter.FitGraph(3)
 
 sig_u2 = plotter.FitGraph(5)
 
-processes = []
+processes1 = []
 
-processes.append('Data_Bos')
-processes.append('Data_Jet')
-processes.append('MC_Zll')
-processes.append('MC_Znn')
-processes.append('MC_gjets')
-processes.append('MC_tt')
-processes.append('MC_Wln')
-processes.append('MC_WW')
-processes.append('MC_WZ')
-processes.append('MC_ZZ')
-processes.append('MC_QCD')
+processes1.append('Data_Bos')
+processes1.append('Data_Jet')
+processes1.append('MC_Zll')
+processes1.append('MC_Znn')
+processes1.append('MC_gjets')
+processes1.append('MC_tt')
+processes1.append('MC_Wln')
+processes1.append('MC_WW')
+processes1.append('MC_WZ')
+processes1.append('MC_ZZ')
+processes1.append('MC_QCD')
+
+processes = []
+for i1 in range(len(processes1)):
+    if i1 in skipThese:
+        continue
+    processes.append(processes1[i1])
 
 fitVectors = [mu_u1,sig1_u1,sig2_u1,sig3_u1,sig_u1,mu_u2,sig1_u2,sig2_u2,sig3_u2,sig_u2]
 fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','sig2_u2','sig3_u2','sig_u2']

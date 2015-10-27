@@ -95,9 +95,13 @@ PlotHists::MakeHists(Int_t NumXBins, Double_t MinX, Double_t MaxX, Int_t DataNum
 TCanvas*
 PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
                       TString CanvasTitle, TString XLabel, TString YLabel,
-                      Bool_t logY)
+                      Bool_t logY, Int_t ratPlot)
 {
   gStyle->SetOptStat(0);
+
+  Float_t fontSize  = 0.04;
+  Float_t ratioFrac = 0.7;
+
   UInt_t NumPlots = theHists.size();
   TCanvas *theCanvas = new TCanvas(fCanvasName,fCanvasName);
   theCanvas->SetTitle(CanvasTitle+";"+XLabel+";"+YLabel);
@@ -110,7 +114,7 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     theHists[i0]->SetLineWidth(fLineWidths[i0]);
     theHists[i0]->SetLineStyle(fLineStyles[i0]);
     theHists[i0]->SetLineColor(fLineColors[i0]);
-    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"l");
+    theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"lp");
 
     std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
     std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;
@@ -133,6 +137,19 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
       plotFirst = i0;
     }
   }
+
+  if (ratPlot != -1) {
+    TPad *pad1 = new TPad("pad1", "pad1", 0, 1.0 - ratioFrac, 1, 1.0);
+    pad1->SetBottomMargin(0.025);
+    pad1->Draw();
+    pad1->cd();
+    for (UInt_t i0 = 0; i0 < NumPlots; i0++) {
+      theHists[i0]->GetYaxis()->SetTitleSize(fontSize/ratioFrac);
+      theHists[i0]->GetYaxis()->SetLabelSize(fontSize/ratioFrac);
+      theHists[i0]->GetXaxis()->SetTitleSize(0);
+      theHists[i0]->GetXaxis()->SetLabelSize(0);
+    }
+  }
   
   if (fNormalizedHists) {
     theHists[plotFirst]->DrawNormalized();
@@ -150,6 +167,42 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
   if (logY)
     theCanvas->SetLogy();
 
+  if (ratPlot != -1) {
+    theCanvas->cd();
+    TPad *pad2 = new TPad("pad2", "pad2", 0, 0, 1, 1 - ratioFrac);
+    pad2->SetTopMargin(0.035);
+    pad2->SetBottomMargin(0.4);
+    pad2->Draw();
+    pad2->cd();
+
+    TH1D *tempHist = (TH1D*) theHists[ratPlot]->Clone("ValueHolder");
+    tempHist->
+    TH1D *newHist  = (TH1D*) theHists[ratPlot]->Clone();
+    newHist->Divide(tempHist);
+    newHist->SetTitle(CanvasTitle+";"+XLabel+";Ratio");
+    newHist->GetXaxis()->SetTitleSize(fontSize/(1 - ratioFrac));
+    newHist->GetYaxis()->SetTitleSize(fontSize/(1 - ratioFrac));
+    newHist->GetXaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
+    newHist->GetYaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
+    newHist->GetXaxis()->SetTitleOffset(1.1);
+    newHist->GetYaxis()->SetTitleOffset((1 - ratioFrac)/ratioFrac);
+    newHist->Draw();
+    for (UInt_t iHists = 0; iHists < theHists.size(); iHists++) {
+      if (int(iHists) == ratPlot)
+        continue;
+      newHist = (TH1D*) theHists[iHists]->Clone();
+      newHist->SetTitle(CanvasTitle+";"+XLabel+";Ratio");
+      newHist->GetXaxis()->SetTitleSize(fontSize/(1 - ratioFrac));
+      newHist->GetYaxis()->SetTitleSize(fontSize/(1 - ratioFrac));
+      newHist->GetXaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
+      newHist->GetYaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
+      newHist->GetXaxis()->SetTitleOffset(1.1);
+      newHist->GetYaxis()->SetTitleOffset((1 - ratioFrac)/ratioFrac);
+      newHist->Divide(tempHist);
+      newHist->Draw("same,hist");
+    }
+  }
+  
   return theCanvas;
 }
 
@@ -157,11 +210,11 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
 void
 PlotHists::MakeCanvas(Int_t NumXBins, Double_t *XBins, TString FileBase,
                       TString CanvasTitle, TString XLabel, TString YLabel,
-                      Bool_t logY)
+                      Bool_t logY, Int_t ratPlot)
 {
   std::vector<TH1D*> hists = MakeHists(NumXBins,XBins);
   TCanvas *theCanvas = MakeCanvas(hists,CanvasTitle,
-                                  XLabel,YLabel,logY);
+                                  XLabel,YLabel,logY,ratPlot);
 
   theCanvas->SaveAs(FileBase+".C");
   theCanvas->SaveAs(FileBase+".png");
@@ -177,11 +230,11 @@ PlotHists::MakeCanvas(Int_t NumXBins, Double_t *XBins, TString FileBase,
 void
 PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
                       TString CanvasTitle, TString XLabel, TString YLabel,
-                      Int_t DataNum, Bool_t logY)
+                      Int_t DataNum, Bool_t logY, Int_t ratPlot)
 {
   std::vector<TH1D*> hists = MakeHists(NumXBins,MinX,MaxX,DataNum);
   TCanvas *theCanvas = MakeCanvas(hists,CanvasTitle,
-                                  XLabel,YLabel,logY);
+                                  XLabel,YLabel,logY,ratPlot);
 
   theCanvas->SaveAs(FileBase+".C");
   theCanvas->SaveAs(FileBase+".png");
@@ -196,7 +249,7 @@ PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString File
 void
 PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
                       TString CanvasTitle, TString XLabel, TString YLabel,
-                      Bool_t logY)
+                      Bool_t logY, Int_t ratPlot)
 {
   Double_t binWidth = (MaxX - MinX)/NumXBins;
   Double_t XBins[NumXBins+1];
@@ -204,13 +257,13 @@ PlotHists::MakeCanvas(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString File
     XBins[i0] = MinX + i0 * binWidth;
 
 
-  MakeCanvas(NumXBins,XBins,FileBase,CanvasTitle,XLabel,YLabel,logY);
+  MakeCanvas(NumXBins,XBins,FileBase,CanvasTitle,XLabel,YLabel,logY,ratPlot);
 }
 //--------------------------------------------------------------------
 void
 PlotHists::MakeRatio(Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
                      TString CanvasTitle, TString XLabel, TString YLabel,
-                     Int_t DataNum )
+                     Int_t DataNum)
 {
   std::vector<TH1D*> hists = MakeHists(NumXBins,MinX,MaxX,DataNum);
   TH1D *tempHist = (TH1D*) hists[DataNum]->Clone("ValueHolder");

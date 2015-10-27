@@ -46,8 +46,6 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
-  Float_t mergePtCut = 205.0;
-
   TFile *phoCorrections = new TFile("fitTest_0.root");
   TF1 *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
   TF1 *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
@@ -527,64 +525,79 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     
     //// Now look for generator information ////
 
-    TLorentzVector saveGenVec;
-
-    saveGenVec.SetPtEtaPhiM(0,0,0,0);
-
-    Bool_t isFound = false;
-
-    for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
-      TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
-      Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
-
-      if (checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22)
-        continue;
-
-      //// Look for two leptons here ////
-      if (outTree->lep2Pt > 0 && outTree->lep1PdgId + outTree->lep2PdgId == 0 && checkPdgId % 2 == 1) {
-        if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep1Phi,outTree->lep1Eta) < dRGenMatch ||
-            deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep2Phi,outTree->lep2Eta) < dRGenMatch) {
-          if (saveGenVec.Pt() > 5) {
-            outTree->genBos_PdgId = 23;
-            saveGenVec = saveGenVec + *tempGen;
-            break;
-          }
-          else
-            saveGenVec = *tempGen;
-        }
-      }
-      //// Look for W here ////
-      else if (outTree->lep1Pt > 0 && checkPdgId % 2 == 1) {
-        if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep1Phi,outTree->lep1Eta) < dRGenMatch) {
-          TLorentzVector *genMet = (TLorentzVector*) inTree->metP4_GEN->At(0);
-          saveGenVec = *tempGen + *genMet;
-          outTree->genBos_PdgId = (outTree->lep1PdgId < 0) ? 24 : -24;
-          break;
-        }
-      }
-      //// Look for photon here ////
-      else if (outTree->photonPt > 0 && checkPdgId == 22) {
-        if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
-          saveGenVec = *tempGen;
-          outTree->genBos_PdgId = 22;
-        }        
-      }
-    }
-
-    if (outTree->genBos_PdgId != 0) {
-      outTree->genBos_pt  = saveGenVec.Pt();
-      outTree->genBos_phi = saveGenVec.Phi();
+    if (inTree->metP4_GEN->GetEntries() > 0) {
+      TLorentzVector *genMet = (TLorentzVector*) inTree->metP4_GEN->At(0);
+      outTree->genMet = genMet->Pt();
+      outTree->genMetPhi = genMet->Phi();
       
-      outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
-      outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
+      TLorentzVector saveGenVec;
+      
+      saveGenVec.SetPtEtaPhiM(0,0,0,0);
+      
+      Bool_t isFound = false;
+      
+      for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
+        TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
+        Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
+        
+        if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(outTree->boson_pt < 0 && (checkPdgId == 23 || checkPdgId == 24)))
+          continue;
+        
+        //// Look for two leptons here ////
+        if (outTree->n_looselep > 1) {
+          if (outTree->lep2Pt > 0 && outTree->lep1PdgId + outTree->lep2PdgId == 0 && checkPdgId % 2 == 1) {
+            if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep1Phi,outTree->lep1Eta) < dRGenMatch ||
+                deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep2Phi,outTree->lep2Eta) < dRGenMatch) {
+              if (saveGenVec.Pt() > 5) {
+                outTree->genBos_PdgId = 23;
+                saveGenVec = saveGenVec + *tempGen;
+                break;
+              }
+              else
+                saveGenVec = *tempGen;
+            }
+          }
+        }
+        //// Look for W here ////
+        else if (outTree->n_looselep == 1) {
+          if (outTree->lep1Pt > 0 && checkPdgId % 2 == 1) {
+            if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep1Phi,outTree->lep1Eta) < dRGenMatch) {
+              saveGenVec = *tempGen + *genMet;
+              outTree->genBos_PdgId = (outTree->lep1PdgId < 0) ? 24 : -24;
+              break;
+            }
+          }
+        }
+        //// Look for photon here ////
+        else if (outTree->n_loosepho > 0) {
+          if (outTree->photonPt > 0 && checkPdgId == 22) {
+            if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
+              saveGenVec = *tempGen;
+              outTree->genBos_PdgId = 22;
+            }        
+          }
+        }
+        //// Look for Z to nunu here or perhaps a W with missed lepton ////
+        else if (checkPdgId == 23 || checkPdgId == 24) {
+          if ((tempGen->Pt() > outTree->genBos_pt && !(checkPdgId == 24 && outTree->genBos_PdgId == 23)) || (abs(outTree->genBos_PdgId) == 24 && checkPdgId == 23)) {
+            saveGenVec = *tempGen;
+            outTree->genBos_PdgId = abs((*(inTree->genPdgId))[iGen]);
+          }
+        }
+      }
+      
+      if (outTree->genBos_PdgId != 0) {
+        outTree->genBos_pt  = saveGenVec.Pt();
+        outTree->genBos_phi = saveGenVec.Phi();
+        
+        outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
+        outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
+      }
+      
+      if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt)
+        outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
     }
-
-    if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt)
-      outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
     
-    if ((outTree->n_looselep == 2 && outTree->boson_pt < mergePtCut) || (outTree->n_looselep == 0 && outTree->boson_pt >= mergePtCut))
-      outTree->correctEvent = true;
-
     outTree->Fill();
   }
   

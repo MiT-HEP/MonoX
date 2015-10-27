@@ -99,7 +99,6 @@ public:
   float kfactor;
   float u_perpGen;
   float u_paraGen;
-  bool  correctEvent;
 
   TTree  *ReturnTree()                { return t;                            }
   void    Fill()                      { t->Fill(); Reset();                  }

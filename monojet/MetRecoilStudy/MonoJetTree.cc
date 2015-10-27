@@ -96,7 +96,6 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("kfactor",&kfactor,"kfactor/F");
   t->Branch("u_perpGen",&u_perpGen,"u_perpGen/F");
   t->Branch("u_paraGen",&u_paraGen,"u_paraGen/F");
-  t->Branch("correctEvent",&correctEvent,"correctEvent/O");
 
   Reset();
 }
@@ -200,5 +199,4 @@ MonoJetTree::Reset()
   kfactor = 1;
   u_perpGen = 0;
   u_paraGen = 0;
-  correctEvent = 0;
 }

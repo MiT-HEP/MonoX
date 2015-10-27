@@ -87,4 +87,3 @@ genMetPhi/F=-5
 kfactor/F=1
 u_perpGen/F=0
 u_paraGen/F=0
-correctEvent/O=0
