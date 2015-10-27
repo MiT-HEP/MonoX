@@ -10,11 +10,12 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut/skimmed/"
+inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV4/"
+outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
 
-GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = "n_looselep < 3 && n_loosepho < 2 && n_jets > 0 && jet1Pt > 40 && (met > 50 || u_magZ > 50 || u_magW > 50 || u_magPho > 50)"
+#GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+cut = "((((n_looselep == 1 || n_looselep == 2) && n_loosepho == 0 && n_tightlep > 0 && n_bjetsMedium == 0) || (n_loosepho != 0 && n_looselep == 0)) && jet1isMonoJetId == 1 && n_tau == 0 && (dilep_pt < 0 || abs(dilep_m - 91) < 30))"
 
 #######################################################################
 
@@ -58,7 +59,7 @@ theQueue     = Queue()
 theProcesses = []
 
 for inFileName in os.listdir(inDir):
-    if inFileName.endswith(".root"):
+    if inFileName.endswith(".root") and not "OLD" in inFileName:
         theQueue.put(inFileName)
 ##
 
