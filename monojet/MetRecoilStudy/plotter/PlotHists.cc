@@ -176,7 +176,9 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     pad2->cd();
 
     TH1D *tempHist = (TH1D*) theHists[ratPlot]->Clone("ValueHolder");
-    tempHist->
+    for (Int_t iBin = 0; iBin < tempHist->GetXaxis()->GetNbins(); ++iBin)
+      tempHist->SetBinError(iBin + 1, 0);
+
     TH1D *newHist  = (TH1D*) theHists[ratPlot]->Clone();
     newHist->Divide(tempHist);
     newHist->SetTitle(CanvasTitle+";"+XLabel+";Ratio");
