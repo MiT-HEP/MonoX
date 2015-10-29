@@ -8,7 +8,6 @@ numProc=1
 outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV4'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
 eosDir='/store/user/yiiyama/transfer'
-skimmedDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4'
 
 if [ ! -d $outDir ]; then
     mkdir $outDir
@@ -20,19 +19,13 @@ else
     rm $lfsOut/*.txt
 fi
 
-if [ ! -d $lfsOut/skimmed ]; then
-    mkdir $lfsOut/skimmed
-fi
-
 if [ MonoJetTree.txt -nt MonoJetTree.h ]; then
     ./makeTree.sh
 fi
 
 haddFile=$lfsOut/myHadd.txt
-haddSkimmed=$lfsOut/skimmed/myHadd.txt
 
 > $haddFile
-> $haddSkimmed
 
 ranOnFile=0
 
@@ -60,7 +53,6 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     rootNames=`ls $lfsOut/monojet_$bestName\_*.txt | sed 's/.txt/.root/'`
 
     echo "$outDir/monojet_$bestName.root $lfsOut/monojet_"$bestName"_*.root" >> $haddFile
-    echo "$skimmedDir/monojet_$bestName.root $lfsOut/skimmed/monojet_"$bestName"_*.root">> $haddSkimmed
 
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
@@ -72,8 +64,6 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 done
 
 if [ "$ranOnFile" -eq 0 ]; then
-#    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
-#    echo "Skimmed files merged!"
     cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
     echo "All files merged!"
 fi

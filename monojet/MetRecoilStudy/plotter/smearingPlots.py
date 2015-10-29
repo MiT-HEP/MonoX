@@ -13,8 +13,55 @@ tdrStyle.setTDRStyle()
 ROOT.gROOT.SetBatch(True)
 
 #dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
-dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRuns_/"
+dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
 sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+
+plotter = ROOT.PlotResolution()
+
+#####################################
+
+plotter.SetDumpingFits(True)
+
+fitBin = 300.0
+
+xArray = [20,40,60,80,100,150,200,220,250,300,400,600,1000]
+
+plotter.SetParameterLimits(1,5,60)
+plotter.SetParameterLimits(2,5,100)
+plotter.SetParameterLimits(3,0.6,1)
+
+#fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*x*x",0,1000)
+fitFunc = ROOT.TF1("fitter","[0]+[1]*x",0,xArray[-1])
+linFunc = ROOT.TF1("fitter","[0]+[1]*x",0,xArray[-1])
+
+#fitFunc.SetParLimits(2,-0.02,0.02)
+fitFunc.SetParLimits(1,0,2)
+fitFunc.SetParLimits(2,-5,5)
+#fitFunc.SetParLimits(3,-0.005,0.01)
+
+#allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
+allSelections = "(jet1isMonoJetId == 1) && "
+
+skipThese = [1,10]
+
+#####################################
+
+entries = []
+entries.append("Merged Data Boson")  #  0
+entries.append("Merged Data Jet")    #  1
+entries.append("DY to #mu#mu")       #  2
+entries.append("DY to ee")           #  3
+entries.append("Z to #nu#nu")        #  4
+entries.append("#gamma + jets")      #  5
+entries.append("tt")                 #  6
+entries.append("W to #mu#nu")        #  7
+entries.append("W to e#nu")          #  8
+entries.append("WW")                 #  9
+entries.append("WZ")                 # 10
+entries.append("ZZ")                 # 11
+entries.append("QCD")                # 12
+
+# Fuck everythings :) Come back to this later
 
 DataFile       = ROOT.TFile(dataDir + "monojet_Merged.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
@@ -37,50 +84,6 @@ WWTree         = WWFile.Get("events")
 WZTree         = WZFile.Get("events")
 ZZTree         = ZZFile.Get("events")
 QCDTree        = QCDFile.Get("events")
-
-plotter = ROOT.PlotResolution()
-
-#####################################
-
-plotter.SetDumpingFits(True)
-
-fitBin = 150.0
-
-xArray = [20,40,60,80,100,150,200,220,250,300,400,600,1000]
-
-plotter.SetParameterLimits(0,-50,50)
-plotter.SetParameterLimits(1,5,60)
-plotter.SetParameterLimits(2,5,100)
-plotter.SetParameterLimits(3,0.6,1)
-
-#fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*x*x",0,1000)
-fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*log(x)",0,1000)
-linFunc = ROOT.TF1("fitter","[0]+[1]*x",0,1000)
-
-#fitFunc.SetParLimits(2,-0.02,0.02)
-fitFunc.SetParLimits(1,0,2)
-fitFunc.SetParLimits(2,-5,5)
-#fitFunc.SetParLimits(3,-0.005,0.01)
-
-#allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
-allSelections = "(jet1isMonoJetId == 1) && "
-
-skipThese = []
-
-#####################################
-
-entries = []
-entries.append("Merged Data Boson")  #  0
-entries.append("Merged Data Jet")    #  1
-entries.append("DY to #ell#ell")     #  2
-entries.append("Z to #nu#nu")        #  3
-entries.append("#gamma + jets")      #  4
-entries.append("tt")                 #  5
-entries.append("W to #ell#nu")       #  6
-entries.append("WW")                 #  7
-entries.append("WZ")                 #  8
-entries.append("ZZ")                 #  9
-entries.append("QCD")                # 10
 
 trees = []
 trees.append(DataTree)
@@ -110,8 +113,8 @@ signalSelection = allSelections + "(n_looselep == 0 && n_loosepho == 0 && n_tau 
 colors = [1,2,3,4,5,6,7,8,9,46,28,38,30]
 
 weights = []
-weights.append("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
-weights.append("((" + ZSelection + " && boson_pt < 200)||(" + phoSelection + "&& boson_pt > 200)) && correctEvent")
+weights.append("((" + ZSelection + " && boson_pt < 210)||(" + phoSelection + "&& boson_pt > 210))")
+weights.append("((" + ZSelection + " && boson_pt < 210)||(" + phoSelection + "&& boson_pt > 210))")
 weights.append(ZSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
 weights.append(signalSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
 weights.append(phoSelection + " && (genBos_PdgId == 22) * leptonSF * mcWeight * npvWeight * kfactor * XSecWeight")
@@ -132,6 +135,7 @@ xExprs.append("genBos_pt")
 xExprs.append("genBos_pt")
 xExprs.append("genBos_pt")
 xExprs.append("genBos_pt")
+xExprs.append("genBos_pt")
 xExprs.append("jet1Pt")
 
 Exprs = []
@@ -139,17 +143,21 @@ Exprs.append("boson_pt + u_para")
 Exprs.append("jet1Pt + u_para")
 Exprs.append("boson_pt + u_para")
 Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("photonPtRaw + u_para")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("genBos_pt + u_paraGen")
+Exprs.append("genBos_pt + u_paraGen")
 Exprs.append("boson_pt + u_para")
-Exprs.append("genBos_pt + u_paraGen")
-Exprs.append("genBos_pt + u_paraGen")
-Exprs.append("genBos_pt + u_paraGen")
 Exprs.append("boson_pt + u_para")
 Exprs.append("jet1Pt + u_paraGen")
 
+numSkipped = 0
+
 for index in range(len(entries)):
     if index in skipThese:
+        numSkipped = numSkipped + 1
         continue
-    plotter.AddLegendEntry(entries[index],colors[index])
+    plotter.AddLegendEntry(entries[index],colors[index - numSkipped])
     plotter.AddTree(trees[index])
     plotter.AddWeight(weights[index])
     plotter.AddExprX(xExprs[index])
@@ -173,6 +181,7 @@ Exprs.append("u_perp")
 Exprs.append("u_perpGen")
 Exprs.append("u_perpGen")
 Exprs.append("u_perpGen")
+Exprs.append("u_perp")
 Exprs.append("u_perp")
 Exprs.append("u_perpGen")
 
@@ -234,21 +243,21 @@ for i1 in range(len(processes)):
 fitFile.Close()
 
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
-plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,50)
-plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,50)
+plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-20,100)
+plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
 plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
 plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,120)
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
-plotter.MakeCanvas("upara_sig3",sig3_u1,"","Boson p_{T} [GeV]","#sigma_{3,u_{#parallel}+p_{T}^{#gamma/Z}}",0,60)
+plotter.MakeCanvas("upara_sig3",sig3_u1,"","Boson p_{T} [GeV]","#sigma_{3,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
 plotter.MakeCanvas("upara_singleSig",sig_u1,"","Boson p_{T} [GeV]","#sigma_{u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
 
-plotter.MakeCanvas("uperp_mu",mu_u2,"","Boson p_{T} [GeV]","#mu_{u_{#perp}}",-10,10)
+plotter.MakeCanvas("uperp_mu",mu_u2,"","Boson p_{T} [GeV]","#mu_{u_{#perp}}",-15,15)
 plotter.MakeCanvas("uperp_sig1",sig1_u2,"","Boson p_{T} [GeV]","#sigma_{1,u_{#perp}}",0,40)
 plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
-plotter.MakeCanvas("uperp_sig2",sig2_u2,"","Boson p_{T} [GeV]","#sigma_{2,u_{#perp}}",0,60)
+plotter.MakeCanvas("uperp_sig2",sig2_u2,"","Boson p_{T} [GeV]","#sigma_{2,u_{#perp}}",0,100)
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
 plotter.MakeCanvas("uperp_sig3",sig3_u2,"","Boson p_{T} [GeV]","#sigma_{3,u_{#perp}}",0,40)
-plotter.MakeCanvas("uperp_singleSig",sig_u2,"","Boson p_{T} [GeV]","#sigma_{u_{#perp}}",0,100)
+plotter.MakeCanvas("uperp_singleSig",sig_u2,"","Boson p_{T} [GeV]","#sigma_{u_{#perp}}",0,50)
 
 del plotter
 

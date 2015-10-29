@@ -45,6 +45,8 @@ public:
   int   n_looselep;
   float leptonSF;
   float photonPt;
+  float photonPtUp;
+  float photonPtDown;
   float photonPtRaw;
   float photonEta;
   float photonPhi;

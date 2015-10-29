@@ -179,6 +179,8 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     for (Int_t iBin = 0; iBin < tempHist->GetXaxis()->GetNbins(); ++iBin)
       tempHist->SetBinError(iBin + 1, 0);
 
+    Int_t divisions = 506;
+
     TH1D *newHist  = (TH1D*) theHists[ratPlot]->Clone();
     newHist->Divide(tempHist);
     newHist->SetTitle(CanvasTitle+";"+XLabel+";Ratio");
@@ -188,6 +190,7 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     newHist->GetYaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
     newHist->GetXaxis()->SetTitleOffset(1.1);
     newHist->GetYaxis()->SetTitleOffset((1 - ratioFrac)/ratioFrac);
+    newHist->GetYaxis()->SetNdivisions(divisions);
     newHist->Draw();
     for (UInt_t iHists = 0; iHists < theHists.size(); iHists++) {
       if (int(iHists) == ratPlot)
@@ -200,6 +203,7 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
       newHist->GetYaxis()->SetLabelSize(fontSize/(1 - ratioFrac));
       newHist->GetXaxis()->SetTitleOffset(1.1);
       newHist->GetYaxis()->SetTitleOffset((1 - ratioFrac)/ratioFrac);
+      newHist->GetYaxis()->SetNdivisions(divisions);
       newHist->Divide(tempHist);
       newHist->Draw("same,hist");
     }

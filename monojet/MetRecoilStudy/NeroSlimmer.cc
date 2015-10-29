@@ -49,6 +49,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   TFile *phoCorrections = new TFile("fitTest_0.root");
   TF1 *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
   TF1 *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
+  TF1 *ZmmFuncUp   = (TF1*) phoCorrections->Get("mu_up_Zmm_Data");
+  TF1 *GJetsFuncUp = (TF1*) phoCorrections->Get("mu_up_gjets_Data");
+  TF1 *ZmmFuncDown   = (TF1*) phoCorrections->Get("mu_down_Zmm_Data");
+  TF1 *GJetsFuncDown = (TF1*) phoCorrections->Get("mu_down_gjets_Data");
 
   TFile *elecSFFile  = new TFile("scalefactors_ele.root");
   TH2D *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
@@ -323,25 +327,26 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (tempPhoton->Pt() < 15. || fabs(tempPhoton->Eta()) > 2.5)
         continue;
 
-      //// Check for overlap with leptons ////
-
-      Bool_t match = false;
-      
-      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < dROverlap) {
-          match = true;
-          break;
-        }
-      }
-      
-      if (match)
-        continue;
-      
       outTree->n_loosepho++;
       
-      //// We clean only tight leptons ////
+      //// We clean only tight photons ////
 
       if (tempPhoton->Pt() > 175 && (*(inTree->photonTightId))[iPhoton] == 1) {
+
+        //// Check for overlap with leptons ////
+
+        Bool_t match = false;
+        
+        for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < dROverlap) {
+            match = true;
+            break;
+          }
+        }
+        
+        if (match)
+          continue;
+      
         photonVecs.push_back(tempPhoton);
         outTree->n_tightpho++;
       }
@@ -349,10 +354,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       //// If it's the first photon, save the kinematics ////
 
       if (outTree->n_loosepho == 1) {
-        outTree->photonPtRaw = tempPhoton->Pt();
-        outTree->photonPt    = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
-        outTree->photonEta   = tempPhoton->Eta();
-        outTree->photonPhi   = tempPhoton->Phi();
+        outTree->photonPtRaw  = tempPhoton->Pt();
+        outTree->photonPt     = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
+        outTree->photonPtUp   = tempPhoton->Pt() + (ZmmFuncUp->Eval(outTree->photonPtRaw) - GJetsFuncDown->Eval(outTree->photonPtRaw))/(1 - ZmmFuncUp->GetParameter(1));
+        outTree->photonPtDown = tempPhoton->Pt() + (ZmmFuncDown->Eval(outTree->photonPtRaw) - GJetsFuncUp->Eval(outTree->photonPtRaw))/(1 - ZmmFuncDown->GetParameter(1));
+        outTree->photonEta    = tempPhoton->Eta();
+        outTree->photonPhi    = tempPhoton->Phi();
         if (outTree->n_tightpho == 1)
           outTree->photonIsTight = 1;
         else
@@ -411,6 +418,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       
       outTree->n_jets++;
+
+      //// Get MinDPhi with first four uncleaned jets ////
+      if (outTree->n_jets < 5)
+        jetVecs.push_back(tempJet);
       
       //// Store uncleaned jet for fun ////
 
@@ -448,10 +459,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (match)
         continue;
       
-      //// Will use all jets for min Delta Phi ////
-
       outTree->n_cleanedjets++;
-      jetVecs.push_back(tempJet);
       
       if (outTree->n_cleanedjets == 1) {
         outTree->jet1Pt  = tempJet->Pt();
@@ -558,7 +566,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
             }
           }
         }
-        //// Look for W here ////
+        //// Look for 'W' here ////
         else if (outTree->n_looselep == 1) {
           if (outTree->lep1Pt > 0 && checkPdgId % 2 == 1) {
             if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->lep1Phi,outTree->lep1Eta) < dRGenMatch) {

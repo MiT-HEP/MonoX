@@ -42,6 +42,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("n_looselep",&n_looselep,"n_looselep/I");
   t->Branch("leptonSF",&leptonSF,"leptonSF/F");
   t->Branch("photonPt",&photonPt,"photonPt/F");
+  t->Branch("photonPtUp",&photonPtUp,"photonPtUp/F");
+  t->Branch("photonPtDown",&photonPtDown,"photonPtDown/F");
   t->Branch("photonPtRaw",&photonPtRaw,"photonPtRaw/F");
   t->Branch("photonEta",&photonEta,"photonEta/F");
   t->Branch("photonPhi",&photonPhi,"photonPhi/F");
@@ -145,6 +147,8 @@ MonoJetTree::Reset()
   n_looselep = 0;
   leptonSF = 1;
   photonPt = -5;
+  photonPtUp = -5;
+  photonPtDown = -5;
   photonPtRaw = -5;
   photonEta = -7;
   photonPhi = -5;

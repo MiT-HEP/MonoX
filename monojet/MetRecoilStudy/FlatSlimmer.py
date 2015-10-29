@@ -5,6 +5,7 @@ from multiprocessing import Process, Queue
 import os
 import goodlumi
 import ROOT
+from selectionCuts import skimmingSelection
 
 #### These are all the variables the user should have to configure ####
 
@@ -15,7 +16,7 @@ outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
 
 #GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
 GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = "((((n_looselep == 1 || n_looselep == 2) && n_loosepho == 0 && n_tightlep > 0 && n_bjetsMedium == 0) || (n_loosepho != 0 && n_looselep == 0)) && jet1isMonoJetId == 1 && n_tau == 0 && (dilep_pt < 0 || abs(dilep_m - 91) < 30))"
+cut = skimmingSelection
 
 #######################################################################
 
