@@ -116,7 +116,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   std::vector<TLorentzVector*> leptonVecs;
   std::vector<TLorentzVector*> photonVecs;
-
   std::vector<TLorentzVector*> jetVecs;
   
   for (Int_t iEntry = 0; iEntry < nentries; iEntry++) {
@@ -125,6 +124,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
     leptonVecs.resize(0);
     photonVecs.resize(0);
+    jetVecs.resize(0);
     
     if (iEntry % 10000 == 0)
       std::cout << "Processing events: ... " << float(iEntry)/float(nentries)*100 << "%" << std::endl;
@@ -460,7 +460,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       
       outTree->n_cleanedjets++;
-      
+
       if (outTree->n_cleanedjets == 1) {
         outTree->jet1Pt  = tempJet->Pt();
         outTree->jet1Eta = tempJet->Eta();
@@ -500,7 +500,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
     Double_t checkDPhi = 5.0;
     
-    for (Int_t iLead = 0; iLead < outTree->n_cleanedjets; iLead++) {
+    for (UInt_t iLead = 0; iLead < jetVecs.size(); iLead++) {
       checkDPhi = abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->metPhi));
       if (checkDPhi < outTree->minJetMetDPhi)
         outTree->minJetMetDPhi = checkDPhi;

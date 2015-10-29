@@ -23,7 +23,10 @@ if sys.argv[1] == "test":
     ROOT.NeroSlimmer(
         "root://eoscms//store/user/yiiyama/transfer/MET+Run2015D-PromptReco-v3+AOD/nero_0001.root",
         "testData.root")
-
+elif sys.argv[1] == "TT":
+    ROOT.NeroSlimmer(
+        "root://eoscms//store/user/yiiyama/transfer/TTbarDMJets_pseudoscalar_Mchi-1_Mphi-100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0000.root",
+        "testTT.root")
 else:
     ROOT.NeroSlimmer(sys.argv[1],
                      sys.argv[2])

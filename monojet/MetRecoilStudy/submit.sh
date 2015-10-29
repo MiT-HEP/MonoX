@@ -5,7 +5,7 @@ fresh=$1
 filesPerJob=8
 numProc=1
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV4'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV5'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
 eosDir='/store/user/yiiyama/transfer'
 
