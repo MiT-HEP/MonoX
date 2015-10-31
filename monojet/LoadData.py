@@ -8,19 +8,7 @@ lumi = 1.0
 
 ######################################################
 
-
-#Unslimmed                                                                                                                                                      
-dataDir = "eos/cms/store/user/zdemirag/MonoJet/Full/V003/"
-#dataDir_goodrun = "eos/cms/store/user/zdemirag/MonoJet/Full/V003/"
-
-#dataDir = "/afs/cern.ch/work/z/zdemirag/work/run2/monojet13TeV/MonoX/monojet/input_slimmedV3/"
-#dataDir_goodrun = "/afs/cern.ch/work/z/zdemirag/work/run2/monojet13TeV/MonoX/monojet/input_slimmedV3/"
-
-
-dataDir_goodrun = "/afs/cern.ch/work/z/zdemirag/work/run2/monojet13TeV/MonoX/monojet/GoodRuns/"
-
-#dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees/"
-#dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed/"
+dataDir = "eos/cms/store/user/zdemirag/FrozenMonoJetSlim/"
 
 physics_processes = {
         'Zll': { 'label':'Z#rightarrow ll',
@@ -30,43 +18,11 @@ physics_processes = {
                  'xsec' : 6025.2,
                  'files':[dataDir+'monojet_DYJetsToLL_M-50.root',],
                  },
-        #'Zvv_ht100': { 'label':'Z#rightarrow#nu#nu',
-        #               'datacard':'Zvv',
-        #               'color' : colors.keys()[4],
-        #               'ordering': 4,                  
-        #               #'xsec' : 280.47,
-        #               'xsec' : 344.98,
-        #               'files':[dataDir+'monojet_ZJetsToNuNu_HT-100To200_13TeV.root',],
-        #               },
-        #'Zvv_ht200': { 'label':'Z#rightarrow#nu#nu',
-        #               'datacard':'Zvv',
-        #               'color' : colors.keys()[4],
-        #               'ordering': 4,                  
-        #               #'xsec' : 78.36,
-        #               'xsec' : 93.93,
-        #               'files':[dataDir+'monojet_ZJetsToNuNu_HT-200To400_13TeV.root',],
-        #               },
-        #'Zvv_ht400': { 'label':'Z#rightarrow#nu#nu',
-        #               'datacard':'Zvv',
-        #               'color' : colors.keys()[4],
-        #               'ordering': 4,                  
-        #               #'xsec' : 10.94,
-        #               'xsec' : 13.46,
-        #               'files':[dataDir+'monojet_ZJetsToNuNu_HT-400To600_13TeV.root',],
-        #               },
-        #'Zvv_ht600': { 'label':'Z#rightarrow#nu#nu',
-        #               'datacard':'Zvv',
-        #               'color' : colors.keys()[4],
-        #               'ordering': 4,                  
-        #               #'xsec' : 4.20,
-        #               'xsec' : 5.166,
-        #               'files':[dataDir+'monojet_ZJetsToNuNu_HT-600ToInf_13TeV.root',],
-        #               },
-        'Zvv_nlo':{ 'label':'Z#rightarrow#nu#nu', 
+        'Zvv':{ 'label':'Z#rightarrow#nu#nu', 
                     'datacard':'Zvv', 
                     'color' : colors.keys()[4], 
                     'ordering': 4,
-                    'xsec' : 15866, #2405,
+                    'xsec' : 15866, 
                     'files':[dataDir+'monojet_DYJetsToNuNu.root',], 
                 },
         'Wlv': { 'label':'W#rightarrow  l#nu',
@@ -187,7 +143,7 @@ physics_processes = {
                   'color': 1,
                   'ordering': 6,    
                   'xsec' : 1.0,
-                  'files':[dataDir_goodrun+'monojet_MET+Run2015D.root',],
+                  'files':[dataDir+'monojet_MET+Run2015D.root',],
                   }
         }
 
@@ -204,8 +160,6 @@ def makeTrees(process,tree,channel):
 	Trees[process] = TChain(tree)
 	for sample in  physics_processes[process]['files']:
 		Trees[process].Add(sample)
-		#Trees[process].AddFriend("type",sample)
-		#print process, sample
 	return Trees[process]
 
 ######################################################

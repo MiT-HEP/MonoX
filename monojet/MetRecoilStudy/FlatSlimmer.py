@@ -10,12 +10,11 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV4/"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+inDir  = "eos/cms/store/user/zdemirag/FrozenMonoJet/"
+outDir = "eos/cms/store/user/zdemirag/FrozenMonoJetSlim/"
 
-#GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = "((((n_looselep == 1 || n_looselep == 2) && n_loosepho == 0 && n_tightlep > 0 && n_bjetsMedium == 0) || (n_loosepho != 0 && n_looselep == 0)) && jet1isMonoJetId == 1 && n_tau == 0 && (dilep_pt < 0 || abs(dilep_m - 91) < 30))"
+GoodRunsFile = "/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+cut = "(met > 200)"
 
 #######################################################################
 
