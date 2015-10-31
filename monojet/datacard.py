@@ -5,7 +5,7 @@ def dump_datacard(channel,yields_dic):
     yields_slim = {}
     for process in yields_dic.keys():
         nprocess += 1
-        if process not in 'data' and process not in 'signal_higgs':
+        if process not in 'data' and process not in 'signal':
             yields_slim[process]=yields_dic[process]
             
     datacard = open('datacard_'+channel+'.txt', 'w')
@@ -25,7 +25,7 @@ def dump_datacard(channel,yields_dic):
             datacard.write('{0:20s}'.format(channel))
     datacard.write('\n')
     datacard.write('{0:40s}'.format('process'))
-    datacard.write('{0:20s}'.format('signal_higgs'))
+    datacard.write('{0:20s}'.format('signal'))
     for process in yields_slim.keys():
         datacard.write('{0:20s}'.format(process))
     datacard.write('\n')
@@ -35,7 +35,7 @@ def dump_datacard(channel,yields_dic):
         datacard.write('{0:20d}'.format(num+1))
     datacard.write('\n')
     datacard.write('{0:21s}'.format('rate'))
-    datacard.write('{0:20.3f}'.format(yields_dic['signal_higgs']))
+    datacard.write('{0:20.3f}'.format(yields_dic['signal']))
     for process in yields_slim.keys():
         datacard.write('{0:20.3f}'.format(yields_dic[process]))
     datacard.write('\n')

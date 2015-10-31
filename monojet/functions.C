@@ -11,7 +11,7 @@ float deltaPhi(float phi1, float phi2) {
 }
 
 float deltaR(float phi1, float eta1, float phi2, float eta2) {
-  return sqrt((eta2-eta1)*(eta2-eta1)+deltaPhi(phi1,phi2)*+deltaPhi(phi1,phi2));
+  return sqrt((eta2-eta1)*(eta2-eta1)+deltaPhi(phi1,phi2)*deltaPhi(phi1,phi2));
 }
 
 
@@ -54,3 +54,11 @@ float caloMet2l(float pt1, float phi1, float pt2, float phi2, float met, float m
   return sqrt( pow(pt1*cos(phi1) + pt2*cos(phi2) + met*cos(metPhi),2) +
 	       pow(pt1*sin(phi1) + pt2*sin(phi2) + met*sin(metPhi),2));
 }
+
+/*
+double nPUScaleFactor(TH1D *fhDPU, float npu){
+    double mynpu = TMath::Min(npu,(float)39.999);
+    Int_t npuxbin = fhDPU->GetXaxis()->FindBin(mynpu);
+    return fhDPU->GetBinContent(npuxbin);
+}
+*/

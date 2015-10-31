@@ -1,9 +1,9 @@
 #! /usr/bin/env python
-
 import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import array
 #from LoadData import *
+#from LoadMuon import *
 #from LoadElectron import *
 from LoadGJets import *
 from ROOT import *
@@ -13,25 +13,24 @@ from selection import build_selection
 from datacard import dump_datacard
 from pretty import plot_ratio, plot_cms
 
+import numpy as n
+
 setTDRStyle()
 gROOT.LoadMacro("functions.C+");
 
 print "Starting Plotting Be Patient!"
 
-lumi = 15.480
-
-cut_goodruns = "(runNum == 1 || (runNum == 254231 && (lumiNum >=1 && lumiNum <= 24)) || (runNum == 254232 && (lumiNum >= 1 && lumiNum <= 81)) || (runNum == 254790 && ((lumiNum == 90) || (lumiNum >= 93 && lumiNum <= 630) || (lumiNum >= 633 && lumiNum <= 697) || (lumiNum >= 701 && lumiNum <= 715) || (lumiNum >= 719 && lumiNum <= 784))) || (runNum == 254852 && (lumiNum >= 47 && lumiNum <= 94)) || (runNum == 254879 && ((lumiNum == 52) || (lumiNum >= 54 && lumiNum <= 140))) || (runNum == 254906 && (lumiNum >= 1 && lumiNum <= 75)) || (runNum == 254907 && (lumiNum >= 1 && lumiNum <=52)))"
+lumi = 209.2
+shapelimits = False
 
 def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False):
 
-    folder = '/afs/cern.ch/user/d/dabercro/www/MonoJet_avecMET'
+    folder = '/afs/cern.ch/user/z/zdemirag/www/Monojet/runD_25ns/'
     if not os.path.exists(folder):
         os.mkdir(folder)
 
-    yield_Zll = {}
     yield_dic = {}
-    yield_Wln = {}
-    yield_signal = {}
+
     stack = THStack('a', 'a')
     added = TH1D('a', 'a',bin,low,high)
     added.Sumw2()
@@ -39,72 +38,112 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     h1 = {}
 
     Variables = {}    
+    #cut_standard= build_selection(channel,0) ### Fix this back to 200 ###
     cut_standard= build_selection(channel,200) ### Fix this back to 200 ###
+
+    if var is 'met':
+        if channel is 'Zmm' or channel is 'Zee': 
+            var = 'u_magZ'
+            xlabel = 'U [GeV]'
+        if channel is 'Wmn' or channel is 'Wen': 
+            var = 'u_magW'
+            xlabel = 'U [GeV]'
+        if channel is 'gjets': 
+            var = 'u_magPho'
+            xlabel = 'U [GeV]'
     print "INFO Channel is: ", channel, " variable is: ", var, " Selection is: ", cut_standard,"\n"
     print 'INFO time is:', datetime.datetime.fromtimestamp( time.time())
 
     reordered_physics_processes = []
-    if channel == 'Zll' or channel == 'Zee': 
+    if channel == 'Zmm' or channel == 'Zee': 
         reordered_physics_processes = reversed(ordered_physics_processes)
     else: 
         reordered_physics_processes = ordered_physics_processes
+    #reordered_physics_processes = ordered_physics_processes
+
+    for Type in ordered_physics_processes:
+        yield_dic[physics_processes[Type]['datacard']] = 0
  
     for Type in reordered_physics_processes:
         # Create the Histograms
         histName = Type+'_'+name+'_'+channel
         Variables[Type] = TH1F(histName, histName, bin, low, high)
         Variables[Type].Sumw2()
+        #print "\n"
 
-        print "\n"
         # this right now breaks the tchain logic! 
         # if we have more than 1 file, this will break!!!!  
-        print physics_processes[Type]['files'][0]
+        #print physics_processes[Type]['files'][0]
         f[Type] = ROOT.TFile(physics_processes[Type]['files'][0],"read")
         h1[Type] = f[Type].Get("htotal")
-        tempTree = f[Type].Get("all")
-        tempTree.GetEntry(0)
-        total = h1[Type].GetBinContent(1)/abs(tempTree.mcWeight)
+        total = h1[Type].GetBinContent(1)
         f[Type].Close()
         
         input_tree   = makeTrees(Type,"events",channel)
         n_entries = input_tree.GetEntries()
 
         #Incase you want to apply event by event re-weighting
-        w = 1.0;
+        #w = 1.0;
+        w = '(3.57041 + -1.49846*npv + 0.515829*npv*npv + -0.0839209*npv*npv*npv + 0.00719964*npv*npv*npv*npv + -0.000354548*npv*npv*npv*npv*npv + 1.01544e-05*npv*npv*npv*npv*npv*npv + -1.58019e-07*npv*npv*npv*npv*npv*npv*npv + 1.03663e-09*npv*npv*npv*npv*npv*npv*npv*npv)'
+
+        kfactor_w = '((genBos_pt>100. && genBos_pt<650)*(-17.5061 + 0.451064*genBos_pt +  -0.00437408*genBos_pt*genBos_pt + 2.28674e-05*genBos_pt*genBos_pt*genBos_pt +  -6.9457e-08*genBos_pt*genBos_pt*genBos_pt*genBos_pt + 1.22448e-10*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt +  -1.16114e-13*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt + 4.57798e-17*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt*genBos_pt) + (genBos_pt>650)*1.4)'
+
         # this is the scale using the total number of effective events
         scale = 1.0;
         scale = float(lumi)*physics_processes[Type]['xsec']/total
         
-        print "type: ", Type, "weight", w, "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
+        #print '\n'
+        print "type: ", Type,  "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
 
-        if Type.startswith('QCD') or Type.startswith('Zll') or \
-        Type.startswith('others') or Type.startswith('Wlv') or \
-        Type.startswith('Zvv') or Type.startswith('GJets') or \
-        Type.startswith('Zee') or Type.startswith('Wev'):
+        if(shapelimits is True):
+            # WRITING OUT A TREE
+            file_out = ROOT.TFile("monojet_"+channel+".root", "update")
+            if Type is 'data':
+                selectedTree = input_tree.CopyTree( cut_standard );
+            else:
+                selectedTree = input_tree.CopyTree( cut_standard );
+
+            scale_w = n.zeros(1,dtype=float)
+            selectedTree.Branch('scale_w',scale_w,'scale_w/D')
+            
+            for i in range(selectedTree.GetEntries()):
+                selectedTree.GetEntry(i)
+                if Type is 'data':
+                    scale_w[0] = 1.0
+                else:
+                    scale_w[0] = scale
+                    
+            selectedTree.Fill()
+            selectedTree.Write(Type+"_"+channel)        
+            file_out.Close()
+
+            os.system('root -l -q -b "addMCWeight.C(\\"monojet_'+channel+'.root\\",\\"'+Type+'_'+channel+'\\")"')
+
+        if Type is not 'data' and Type is not 'signal_dm':
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
             Variables[Type].SetLineColor(physics_processes[Type]['color'])
             if Type.startswith('GJets'):
-                makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*nloFactor*" +str(w),"goff")
+                makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w)+"*"+str(kfactor_w),"goff")            
             else:
                 makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*" +str(w),"goff")
-            print "integral: " + str(Variables[Type].Integral())
             Variables[Type].Scale(scale)
-            #print "Type: ", Type, "Total Events:", scale* Variables[Type].GetEntries() , "scale", scale, "raw events", Variables[Type].GetEntries()
             stack.Add(Variables[Type],"hist")
             added.Add(Variables[Type])
 
-        if Type.startswith('signal_higgs'):
+        if Type.startswith('signal_dm'):
             Variables[Type].SetLineColor(1)
             Variables[Type].SetLineWidth(3)
             Variables[Type].SetLineStyle(8)
             makeTrees(Type,"events",channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*"+str(w),"goff")
             Variables[Type].Scale(scale)
                         
-        if Type.startswith("data"):
+        if Type.startswith('data'):
             Variables[Type].SetMarkerStyle(20)
-            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + "&&" + cut_goodruns + ")*mcWeight*"+str(w), "goff")
-        
-        yield_dic[Type] = round(Variables[Type].Integral(),3)
+            #makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + "&& triggerFired[1]==1)", "goff")
+            makeTrees(Type,"events",channel).Draw(var + " >> " + histName,  "(" + cut_standard + ")", "goff")
+
+        yield_dic[physics_processes[Type]['datacard']] += round(Variables[Type].Integral(),3)
+        #print Type, round(Variables[Type].Integral(),3), "total in: ", physics_processes[Type]['datacard'],  yield_dic[physics_processes[Type]['datacard']]
 
     dump_datacard(channel,yield_dic)
 
@@ -115,14 +154,17 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     legend = TLegend(.60,.60,.92,.92)
     lastAdded = ''
     for process in  ordered_physics_processes:
+        #print process
         Variables[process].SetTitle(process)
-        #Variables[process].Write()
         if physics_processes[process]['label'] != lastAdded:
             lastAdded = physics_processes[process]['label']
-            if process is not 'data' and process is not 'Zvv_ht200' and process is not 'Zvv_ht400' and process is not 'Zvv_ht600': 
+            if process is not 'data' and process is not 'signal_dm': 
                 legend . AddEntry(Variables[process],physics_processes[process]['label'] , "f")
             if process is 'data':
                 legend . AddEntry(Variables[process],physics_processes[process]['label'] , "p")
+            if process is 'signal_dm':
+                legend . AddEntry(Variables[process],physics_processes[process]['label'] , "l")
+
 
     c4 = TCanvas("c4","c4", 900, 1000)
     c4.SetBottomMargin(0.3)
@@ -144,7 +186,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     stack.GetXaxis().SetTitle('')
 
     Variables['data'].Draw("Esame")
-    Variables['signal_higgs'].Draw("same")
+    Variables['signal_dm'].Draw("same")
     
     legend.SetShadowColor(0);
     legend.SetFillColor(0);
@@ -171,9 +213,9 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     f1.SetLineWidth(2);
     f1.Draw("same")
 
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.pdf')
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.png')
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.C')
+    c4.SaveAs(folder+'/'+channel+'/Histo_' + name + '_'+channel+'.pdf')
+    c4.SaveAs(folder+'/'+channel+'/Histo_' + name + '_'+channel+'.png')
+    c4.SaveAs(folder+'/'+channel+'/Histo_' + name + '_'+channel+'.C')
 
     del Variables
     del var
@@ -183,26 +225,75 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     stack.IsA().Destructor( stack )
 
 arguments = {}
-#                = [var, bin, low, high, yaxis, xaxis, setLog]
-arguments['met']    = ['met','metP4.Pt()',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]
-arguments['phoPt']  = ['phoPt','photonP4.Pt()',16,200,1000,'Events/50 GeV','p_{T}^{#gamma} [GeV]',True]
-arguments['phoEta'] = ['phoEta','photonP4.Eta()',40,-3.0,3.0,'Events/50 GeV','#eta',False]
+#                   = [var, bin, low, high, yaxis, xaxis, setLog]
+arguments['met']    = ['met','met',16,200,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]
+arguments['jetpt']  = ['jetpt','jet1Pt',100,0,1000,'Events/20 GeV','Leading Jet P_{T} [GeV]',True]
+arguments['lep1Pt']  = ['lep1Pt','lep1Pt',50,0,500,'Events/10 GeV','Leading Lepton P_{T} [GeV]',True]
+arguments['lep2Pt']  = ['lep2Pt','lep2Pt',50,0,500,'Events/10 GeV','Trailing Lepton P_{T} [GeV]',True]
+arguments['lep1PdgId'] = ['lep1PdgId','lep1PdgId',40,-20,20,'Events','Leading Lepton Pdg Id',True]
+arguments['lep2PdgId'] = ['lep2PdgId','lep2PdgId',40,-20,20,'Events','Trailing Lepton Pdg Id',True]
+arguments['jet1DPhiMet'] = ['jet1DPhiMet','jet1DPhiMet',10,0,5,'Events','DeltaPhi(Jet,Met)',True]
+#arguments['minJetDPhi'] = ['minJetDPhi','minJetDPhi',50,0,5,'Events','minDeltaPhi(Jet,Met)',True]
+arguments['dPhi_j1j2'] = ['dPhi_j1j2','dPhi_j1j2',10,0,5,'Events','DeltaPhi(Jet,Jet)',True]
+
+arguments['njets']  = ['njets','n_jets',10,0,10,'Events','Number of Jets',True]
+
+arguments['n_looselep']  = ['n_looselep','n_looselep',6,0,6,'Events','Number of Loose Leptons',True]
+arguments['n_loosepho']  = ['n_loosepho','n_loosepho',6,0,6,'Events','Number of Loose Photons',True]
+arguments['n_tau']       = ['n_tau','n_tau',6,0,6,'Events','Number of Loose Taus',True]
+arguments['n_bjetsMedium']  = ['n_bjetsMedium','n_bjetsMedium',6,0,6,'Events','Number of Medium b-Jets',True]
+
+arguments['jet1Eta'] = ['jet1Eta','jet1Eta',40,-4.0,4.0,'Events','Jet #eta',False]
+
+
+arguments['npv']    = ['npv','npv',40,0,40,'Events','Number of Primary Vertex',True]
+arguments['njetsclean']  = ['njetsclean','n_cleanedjets',5,1,6,'Events','Number of Jets',True]
+
+arguments['phoPt']  = ['phoPt','photonPt',90,100,1000,'Events/10 GeV','p_{T}^{#gamma} [GeV]',True]
+arguments['phoEta'] = ['phoEta','photonEta',40,-3.0,3.0,'Events/50 GeV','#eta',False]
 arguments['phoPhi'] = ['phoPhi','photonP4.Phi()',40,-4.0,4.0,'Events/50 GeV','#phi',False]
 arguments['metRaw'] = ['metRaw','metRaw',16,200,1000,'Events/50 GeV','Raw E_{T}^{miss} [GeV]',True]
 arguments['genmet'] = ['genmet','genmet',16,200,1000,'Events/50 GeV','Generated E_{T}^{miss} [GeV]',True]
-arguments['jetpt']  = ['jetpt','jet1.pt()',17,150,1000,'Events/50 GeV','Leading Jet P_{T} [GeV]',True]
-arguments['njets']  = ['njets','njets',3,1,4,'Events','Number of Jets',True]
 
-#channel_list = ['signal']
-#channel_list  = ['signal','Wln','Zll']
+arguments['trueMet']    = ['trueMet','trueMet',50,0,1000,'Events/50 GeV','E_{T}^{miss} [GeV]',True]
+arguments['mt']     = ['mt','mt',50,0,1000,'Events/20 GeV','M_{T} [GeV]',True]
+arguments['u_magW'] = ['u_magW','u_magW',50,0,1000,'Events/20 GeV','U [GeV]',True]
+arguments['dphilep_truemet'] = ['dphilep_truemet','deltaPhi(lep1Phi,trueMetPhi)',40,0,4.0,'Events','DPhi(lep,met)',True]
+arguments['minJetMetDPhi'] = ['minJetMetDPhi','minJetMetDPhi',40,0,4.0,'Events','min DPhi(jet,met)',True]
+
+arguments['mt_new']  = ['mt_new','transverseMass(lep1Pt,lep1Phi,trueMet,trueMetPhi)',50,0,1000,'Events','M_{T} New [GeV]',True]
+
+arguments['dilep_m']  = ['dilep_m','dilep_m',75,50,200,'Events','Dilepton Mass [GeV]',True]
+arguments['dilep_pt']  = ['dilep_pt','dilep_pt',50,0,1000,'Events','Dilepton Pt [GeV]',True]
+
+arguments['dRjlep'] = ['dRjlep','deltaR(lep1Phi,lep1Eta,jet1Phi,jet1Eta)',60,0,6,'Events','DeltaR(lep1,jet)',True ]
+arguments['dRjlep2'] = ['dRjlep2','deltaR(lep2Phi,lep2Eta,jet1Phi,jet1Eta)',60,0,6,'Events','DeltaR(lep2,jet)',True ]
+
+#transverseMass(float lepPt, float lepPhi, float met,  float metPhi) 
+
+#channel_list = ['signal']#,'Wmn','Zmm']
+#channel_list  = ['Wmn','Zmm']
 #channel_list  = ['Wen','Zee']
-#channel_list  = ['Zll']
-#variable_list = ['met','jetpt','njets','metRaw','genmet']
+channel_list  = ['gjets']
+
 processes     = []
 
-#variable_list = ['met']
-variable_list = ['met','phoPt','phoEta','phoPhi']
-#variable_list = ['phoPt','phoEta','phoPhi']
+#variable_list = ['dRjlep','dRjlep2','jetpt']
+#variable_list = ['met','trueMet','mt','dphilep_truemet','lep1Pt','lep2Pt','lep1PdgId','lep2PdgId','npv','njets','n_looselep','dilep_m','dilep_pt','dRjlep','dRjlep2','jetpt']
+
+#variable_list = ['met','trueMet','npv','njets','n_looselep','jetpt','n_loosepho','n_bjetsMedium','n_tau','jet1Eta']
+#variable_list = ['met','trueMet','phoPt','phoEta','mt','npv','njets','n_looselep','minJetMetDPhi','jetpt']
+
+
+#variable_list = ['met','trueMet','phoPt','phoEta','mt','dphilep_truemet','lep1Pt','lep2Pt','lep1PdgId','lep2PdgId','npv','njets','n_looselep','dilep_m','minJetMetDPhi','jetpt']
+
+variable_list = ['met']
+
+#variable_list = ['met','mt_new','trueMet','mt','u_magW','dphilep_truemet','lep1Pt','jet1DPhiMet','npv','lep1Pt','lep2Pt','lep1PdgId','lep2PdgId','njets','jet1DPhiMet','dPhi_j1j2','n_looselep']
+
+
+#variable_list = ['met','lep1Pt','lep2Pt','lep1PdgId','lep2PdgId','njets','jet1DPhiMet','dPhi_j1j2','n_looselep']
+#variable_list = ['met','jetpt','njets','npv']
 
 start_time = time.time()
 
