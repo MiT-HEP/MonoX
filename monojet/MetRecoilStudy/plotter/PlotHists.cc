@@ -116,15 +116,15 @@ PlotHists::MakeCanvas(std::vector<TH1D*> theHists,
     theHists[i0]->SetLineColor(fLineColors[i0]);
     theLegend->AddEntry(theHists[i0],fLegendEntries[i0],"lp");
 
-    std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
-    std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;
+    // std::cout << fLegendEntries[i0] << " -> Mean: " << theHists[i0]->GetMean() << "+-" << theHists[i0]->GetMeanError();
+    // std::cout                           << " RMS: " << theHists[i0]->GetRMS() << "+-" << theHists[i0]->GetRMSError() << std::endl;
 
-    for (UInt_t i1 = 0; i1 < NumPlots; i1++) {
-      if (i1 == i0)
-        continue;
-      std::cout << "Test with " << fLegendEntries[i1] << " KS: " << theHists[i0]->KolmogorovTest(theHists[i1]);
-      std::cout << " AD: " << theHists[i0]->AndersonDarlingTest(theHists[i1]) << std::endl;
-    }
+    // for (UInt_t i1 = 0; i1 < NumPlots; i1++) {
+    //   if (i1 == i0)
+    //     continue;
+    //   std::cout << "Test with " << fLegendEntries[i1] << " KS: " << theHists[i0]->KolmogorovTest(theHists[i1]);
+    //   std::cout << " AD: " << theHists[i0]->AndersonDarlingTest(theHists[i1]) << std::endl;
+    // }
 
     Double_t checkMax = 0;
     if (fNormalizedHists)

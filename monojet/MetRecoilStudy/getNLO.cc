@@ -7,7 +7,7 @@
 
 void getNLO() {
 
-  TFile *nloFile = new TFile("/afs/cern.ch/work/d/dabercro/public/Winter15/NLOPhoton/A_13TeV_v2.root");
+  TFile *nloFile = TFile::Open("root://eoscms//eos/cms/store/cmst3/user/pharris/mc/A_13TeV/A_13TeV_v2.root");
   TTree *nloTree = (TTree*) nloFile->Get("Events");
 
   float effWeight = 0.;
@@ -29,15 +29,18 @@ void getNLO() {
       numNLO->Fill(0.0,1.0);
   }
 
+  Int_t NBins = 27;
+  Double_t Bins[28] = {40,60,80,100,120,140,160,180,200,220,240,260,280,300,340,380,420,460,500,540,580,640,700,760,820,880,940,1000};
+
   TFile *gjetsFile = TFile::Open("root://eoscms//eos/cms/store/user/zdemirag/MonoJet/Full/V003/monojet_GJets.root");
   TTree *gjetsTree = (TTree*) gjetsFile->Get("events");
-  TH1D *gjetsHist = new TH1D("phoPt","phoPt",95,50,1000);
-  gjetsTree->Draw("genBos_pt>>phoPt","(genBos_PdgId == 22) * XSecWeight");
+  TH1D *gjetsHist = new TH1D("phoPt","phoPt",NBins,Bins);
+  gjetsTree->Draw("genBos_pt>>phoPt","(genBos_PdgId == 22) * XSecWeight * (abs(genBos_eta) < 1.5)");
 
   TFile *outFile = new TFile("kfactor_aMCatNLO.root","RECREATE");
-  TH1D *outHist = new TH1D("pho_pt","pho_pt",95,50,1000);
+  TH1D *outHist = new TH1D("pho_pt","pho_pt",NBins,Bins);
 
-  nloTree->Draw("v_pt>>pho_pt","effweight/abs(effweight)");
+  nloTree->Draw("dm_pt>>pho_pt","effweight/abs(effweight)*(abs(dm_eta) < 1.5)");
   outHist->Scale(xsec/numNLO->GetBinContent(1) * 1000);
 
   outHist->Divide(gjetsHist);

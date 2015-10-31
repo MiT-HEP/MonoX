@@ -579,7 +579,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         //// Look for photon here ////
         else if (outTree->n_loosepho > 0) {
           if (outTree->photonPt > 0 && checkPdgId == 22) {
-            if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
+            // if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
+            //// Look for highest pT for kfactor reasons ////
+            if (tempGen->Pt() > outTree->genBos_pt) {
+              outTree->genBos_pt = tempGen->Pt();
               saveGenVec = *tempGen;
               outTree->genBos_PdgId = 22;
             }        
