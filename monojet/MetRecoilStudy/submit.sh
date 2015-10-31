@@ -47,6 +47,11 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     bestName="${otherName%%-Prompt*}"
 
     for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`; do
+
+        if [ "$inFile" = "nero_pilot.root" ]; then
+            continue
+        fi
+
         if [ "$fileInCount" -eq "$filesPerJob" ]; then
             fileInCount=0
             count=$((count + 1))
