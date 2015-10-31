@@ -5,11 +5,11 @@
 outFile=$3
  NCORES=$4
 
-cd /afs/cern.ch/user/d/dabercro/public/CMSSW_7_4_6/src
+cd /afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/CMSSW_7_4_6/src
 eval `scram runtime -sh`
 cd -
 
-macroDir='/afs/cern.ch/work/d/dabercro/public/Winter15/MonoX/monojet/MetRecoilStudy'
+macroDir='/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy'
 
 cp $macroDir/MonoJetTree.h .
 cp $macroDir/MonoJetTree.cc .

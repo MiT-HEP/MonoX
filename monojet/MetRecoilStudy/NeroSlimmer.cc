@@ -121,7 +121,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
     leptonVecs.resize(0);
     photonVecs.resize(0);
-    
+    jetVecs.resize(0);
+
     if (iEntry % 10000 == 0)
       std::cout << "Processing events: ... " << float(iEntry)/float(nentries)*100 << "%" << std::endl;
     
@@ -197,7 +198,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           else if (outTree->n_looselep == 2)
             outTree->lep2IsMedium = 1;
 
-          //// We are cleaning tight leptons from jets, apparently ////
+          //// We are cleaning tight leptons from jets ////
 
           if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 64) == 64 &&
               PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoTight) &&
@@ -323,24 +324,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (tempPhoton->Pt() < 15. || fabs(tempPhoton->Eta()) > 2.5)
         continue;
 
-      //// Check for overlap with leptons ////
-
-      Bool_t match = false;
-      
-      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempPhoton->Phi(),tempPhoton->Eta()) < dROverlap) {
-          match = true;
-          break;
-        }
-      }
-      
-      if (match)
-        continue;
-      
       outTree->n_loosepho++;
-      
-      //// We clean only tight leptons ////
 
+      //// Usign the tight photon collection for futher cleaning ////
       if (tempPhoton->Pt() > 175 && (*(inTree->photonTightId))[iPhoton] == 1) {
         photonVecs.push_back(tempPhoton);
         outTree->n_tightpho++;
@@ -349,28 +335,28 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       //// If it's the first photon, save the kinematics ////
 
       if (outTree->n_loosepho == 1) {
-        outTree->photonPtRaw = tempPhoton->Pt();
-        outTree->photonPt    = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
-        outTree->photonEta   = tempPhoton->Eta();
-        outTree->photonPhi   = tempPhoton->Phi();
-        if (outTree->n_tightpho == 1)
-          outTree->photonIsTight = 1;
-        else
-          outTree->photonIsTight = 0;
-        
-        //// If there's no leptons, define recoil quantities ////
+          outTree->photonPtRaw = tempPhoton->Pt();
+          outTree->photonPt    = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
+          outTree->photonEta   = tempPhoton->Eta();
+          outTree->photonPhi   = tempPhoton->Phi();
+          if (outTree->n_tightpho == 1)
+              outTree->photonIsTight = 1;
+          else
+              outTree->photonIsTight = 0;
+          
+          //// If there's no leptons, define recoil quantities ////
 
-        if (outTree->n_looselep == 0) {
-          vec1.SetPtEtaPhiM(outTree->photonPtRaw,0,outTree->photonPhi,0);
-          vec2.SetPtEtaPhiM(outTree->trueMet,0,outTree->trueMetPhi,0);
-          vec3 = vec1 + vec2;
-        
-          outTree->met     = vec3.Pt();
-          outTree->metPhi  = vec3.Phi();
-
-          outTree->boson_pt  = outTree->photonPt;
-          outTree->boson_phi = outTree->photonPhi;
-        }
+          if (outTree->n_looselep == 0) {
+              vec1.SetPtEtaPhiM(outTree->photonPtRaw,0,outTree->photonPhi,0);
+              vec2.SetPtEtaPhiM(outTree->trueMet,0,outTree->trueMetPhi,0);
+              vec3 = vec1 + vec2;
+              
+              outTree->met     = vec3.Pt();
+              outTree->metPhi  = vec3.Phi();
+              
+              outTree->boson_pt  = outTree->photonPt;
+              outTree->boson_phi = outTree->photonPhi;
+          }
       }
     }
     
@@ -385,6 +371,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
     }
 
+
+    Double_t checkDPhi = 5.0;
 
     //// Now we go on to clean jets ////
     
@@ -412,6 +400,13 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       
       outTree->n_jets++;
       
+      if (outTree->n_jets < 5){
+          //Check for delta phi from met for all jets:
+          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+          if (checkDPhi < outTree->minJetMetDPhi)
+              outTree->minJetMetDPhi = checkDPhi;
+      }
+
       //// Store uncleaned jet for fun ////
 
       if (outTree->n_jets == 1) {
@@ -454,53 +449,40 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       jetVecs.push_back(tempJet);
       
       if (outTree->n_cleanedjets == 1) {
-        outTree->jet1Pt  = tempJet->Pt();
-        outTree->jet1Eta = tempJet->Eta();
-        outTree->jet1Phi = tempJet->Phi();
-        outTree->jet1M   = tempJet->M();
-        
-        outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
-        outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
-        // outTree->jet1isMonoJetIdNew   = ????
-        outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-        outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
-        
-        outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
-        outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
+          outTree->jet1Pt  = tempJet->Pt();
+          outTree->jet1Eta = tempJet->Eta();
+          outTree->jet1Phi = tempJet->Phi();
+          outTree->jet1M   = tempJet->M();
+          
+          outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
+          outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
+          // outTree->jet1isMonoJetIdNew   = ????
+          outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
+          outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
+          
+          outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
+          outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
       }
       
       else if (outTree->n_cleanedjets == 2) {
-        outTree->jet2Pt  = tempJet->Pt();
-        outTree->jet2Eta = tempJet->Eta();
-        outTree->jet2Phi = tempJet->Phi();
-        outTree->jet2M   = tempJet->M();
-        
-        outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
-        outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
-        // outTree->jet2isMonoJetIdNew   = ????
-        outTree->jet2isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-        outTree->jet2isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
-        
-        outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
-        outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
-        
-        outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
+          outTree->jet2Pt  = tempJet->Pt();
+          outTree->jet2Eta = tempJet->Eta();
+          outTree->jet2Phi = tempJet->Phi();
+          outTree->jet2M   = tempJet->M();
+          
+          outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
+          outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
+          // outTree->jet2isMonoJetIdNew   = ????
+          outTree->jet2isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
+          outTree->jet2isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
+          
+          outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
+          outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
+          
+          outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
       }
     }
-
-    //// Now find the minimum Delta Phi from MET ////
-
-    Double_t checkDPhi = 5.0;
     
-    for (Int_t iLead = 0; iLead < outTree->n_cleanedjets; iLead++) {
-      checkDPhi = abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->metPhi));
-      if (checkDPhi < outTree->minJetMetDPhi)
-        outTree->minJetMetDPhi = checkDPhi;
-
-      checkDPhi = abs(deltaPhi(jetVecs[iLead]->Phi(),outTree->trueMetPhi));
-      if (checkDPhi < outTree->minJetTrueMetDPhi)
-        outTree->minJetTrueMetDPhi = checkDPhi;
-    }
 
     //// Now check number of non-overlapping taus ////
 
@@ -509,17 +491,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (tempTau->Pt() < 18. || fabs(tempTau->Eta()) > 2.3)
         continue;
-      
-      Bool_t match = false;
-      
-      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempTau->Phi(),tempTau->Eta()) < dROverlap) {
-          match = true;
-          break;
-        }
-      }
-      
-      if (!match)
         outTree->n_tau++;
     }
     
