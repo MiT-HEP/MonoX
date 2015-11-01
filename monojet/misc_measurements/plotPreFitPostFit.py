@@ -5,7 +5,16 @@ setTDRStyle()
 
 def plotPreFitPostFit(region):
 
+  datalab = {"singlemuon":"Wmn", "dimuon":"Zmm", "gjets":"gjets", "signal":"signal"}
+
   f_mlfit = TFile('mlfit.root','READ')
+
+  f_data = TFile("mono-x.root","READ")
+  f_data.cd("category_monojet")
+  h_data = gDirectory.Get(datalab[region]+"_data")
+  print h_data.Integral()
+
+  print h_data.Integral()
 
   channel = {"singlemuon":"1", "dimuon":"2", "gjets":"3", "signal":"4"}
   mainbkg = {"singlemuon":"wjets", "dimuon":"zll", "gjets":"gjets", "signal":"zjets"}
@@ -29,11 +38,6 @@ def plotPreFitPostFit(region):
       'zll':kRed,
       'wjets':kOrange
   }
-
-
-  c_prefit = f_mlfit.Get("ch"+channel[region]+"_prefit");
-  h_data = c_prefit.findObject("h_ch"+channel[region])
-
 
   binLowE = []
 
@@ -102,18 +106,18 @@ def plotPreFitPostFit(region):
   #latex2.SetTextAlign(11)
   #latex2.DrawLatex(0.28, 0.85, "Preliminary")          
 
-  c = TCanvas("c","c",1000,800)  
+  c = TCanvas("c","c",800,1000)  
   c.cd()
   c.SetLogy()
-  c.SetBottomMargin(0.35)
-  c.SetRightMargin(0.04)
-  c.SetTopMargin(0.07)
-  c.SetLeftMargin(0.18)
+  c.SetBottomMargin(0.3)
+  c.SetRightMargin(0.06)
+  #c.SetTopMargin(0.07)
+  #c.SetLeftMargin(0.18)
   
-  #dummy = h_all_prefit.Clone("dummy")
-  dummy = TH1F("dummy","dummy",len(binLowE)-1,array('d',binLowE))
-  for i in range(1,dummy.GetNbinsX()):
-    dummy.SetBinContent(i,0.01)
+  dummy = h_all_prefit.Clone("dummy")
+  #dummy = TH1F("dummy","dummy",len(binLowE)-1,array('d',binLowE))
+  #for i in range(1,dummy.GetNbinsX()):
+  #  dummy.SetBinContent(i,0.01)
   dummy.SetFillColor(0)
   dummy.SetLineColor(0)
   dummy.SetLineWidth(0)
@@ -123,7 +127,7 @@ def plotPreFitPostFit(region):
   dummy.GetXaxis().SetTitle("")
   dummy.GetXaxis().SetTitleSize(0)
   dummy.GetXaxis().SetLabelSize(0)
-  dummy.SetMaximum(20.0*dummy.GetMaximum())
+  dummy.SetMaximum(50*dummy.GetMaximum())
   dummy.SetMinimum(0.02)
   dummy.GetYaxis().SetTitleOffset(1.15)
   dummy.Draw()
@@ -173,9 +177,9 @@ def plotPreFitPostFit(region):
   gPad.RedrawAxis()
 
   pad = TPad("pad", "pad", 0.0, 0.0, 1.0, 1.0)
-  pad.SetTopMargin(0.65)
-  pad.SetRightMargin(0.04)
-  pad.SetLeftMargin(0.18)
+  pad.SetTopMargin(0.7)
+  pad.SetRightMargin(0.06)
+  #pad.SetLeftMargin(0.18)
   pad.SetFillColor(0)
   pad.SetGridy(1)
   pad.SetFillStyle(0)
@@ -192,11 +196,13 @@ def plotPreFitPostFit(region):
     #metave = array("d",[0.0])
     #h_data.GetPoint(i-1, metave[0], ndata[0])
 
-    ndata = h_data.GetY()[i-1]
+    #ndata = h_data.GetY()[i-1]
+    ndata = h_data.GetBinContent(i)
+    print ndata
 
     if (ndata>0.0):
-      e_data_hi = h_data.GetErrorYhigh(i-1)/ndata
-      e_data_lo = h_data.GetErrorYlow(i-1)/ndata
+      e_data_hi = h_data.GetBinError(i)/ndata
+      e_data_lo = h_data.GetBinError(i)/ndata
     else:
       e_data_hi = 0.0
       e_data_hi = 0.0
@@ -281,10 +287,13 @@ def plotPreFitPostFit(region):
   g_ratio_post.Draw("epsame")
 
 
-  c.SaveAs("prefit_postfit_"+region+".pdf")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".pdf")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".png")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".C")
 
   del c
   
-plotPreFitPostFit("singlemuon")
+#plotPreFitPostFit("singlemuon")
 #plotPreFitPostFit("dimuon")
 #plotPreFitPostFit("gjets")
+plotPreFitPostFit("signal")
