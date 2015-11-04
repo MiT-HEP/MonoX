@@ -60,7 +60,7 @@ def makevariations(channel):
 
     print binlo,binhi,1.0+h_pdfUp[bin].GetRMS(),1.0+h_pdfDn[bin].GetRMS(),scaleUp,scaleDn
   
-  f_out = TFile("qcd.root","recreate")
+  f_out = TFile(channel+"_qcd.root","recreate")
   f_out.cd()
   h_kfactor.Write()
   h_pdfUp_f.Write()
@@ -72,4 +72,4 @@ def makevariations(channel):
   
 ################################
 
-makevariations("z")
+makevariations("pho")

@@ -7,7 +7,8 @@ def plotPreFitPostFit(region):
 
   datalab = {"singlemuon":"Wmn", "dimuon":"Zmm", "gjets":"gjets", "signal":"signal"}
 
-  f_mlfit = TFile('mlfit.root','READ')
+  #f_mlfit = TFile('mlfit.root','READ')
+  f_mlfit = TFile('mlfit_wsys.root','READ')
 
   f_data = TFile("mono-x.root","READ")
   f_data.cd("category_monojet")
@@ -287,13 +288,13 @@ def plotPreFitPostFit(region):
   g_ratio_post.Draw("epsame")
 
 
-  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".pdf")
-  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".png")
-  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/prefit_postfit_"+region+".C")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/sys/prefit_postfit_"+region+".pdf")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/sys/prefit_postfit_"+region+".png")
+  c.SaveAs("/afs/cern.ch/user/z/zdemirag/www/Monojet/frozen/sys/prefit_postfit_"+region+".C")
 
   del c
   
 #plotPreFitPostFit("singlemuon")
 #plotPreFitPostFit("dimuon")
-#plotPreFitPostFit("gjets")
-plotPreFitPostFit("signal")
+plotPreFitPostFit("gjets")
+#plotPreFitPostFit("signal")
