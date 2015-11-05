@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-import sys
+import sys,os
 import ROOT
 
 ROOT.gROOT.LoadMacro('NeroTree.C+')
@@ -28,5 +28,9 @@ elif sys.argv[1] == "TT":
         "root://eoscms//store/user/yiiyama/transfer/TTbarDMJets_pseudoscalar_Mchi-1_Mphi-100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0000.root",
         "testTT.root")
 else:
-    ROOT.NeroSlimmer(sys.argv[1],
-                     sys.argv[2])
+    if not os.path.isfile(sys.argv[2]):
+        ROOT.NeroSlimmer(sys.argv[1],
+                         sys.argv[2])
+    else:
+        print sys.argv[2] + " already exists!! Skipping..."
+    
