@@ -33,7 +33,14 @@ def plotvariations(ch):
     h8.SetLineColor(8)
     h9 = f.Get(channel+"_UnCorr80scaleDown")
     h9.SetLineColor(8)
-    
+
+    f2 = TFile("atoz_ewkunc.root","READ")
+    h10 = f2.Get("a_ewkcorr_up")
+    h10.SetLineColor(40)
+    h11 = f2.Get("a_ewkcorr_down")
+    h11.SetLineColor(40)
+
+
     c4 = TCanvas("c4","c4", 900, 1000)
 
     # Add Legend                                                                                                                                                                   
@@ -43,6 +50,7 @@ def plotvariations(ch):
     legend . AddEntry(h7,"Uncorrelated Scale Up/Down","l")
     legend . AddEntry(h8,"Uncorrelated by 80% Scale Up/Down","l")
     legend . AddEntry(h4,"Pdf Up/Down","l")
+    legend . AddEntry(h10,"Ewk Up/Down","l")
     
     h1.Draw("HIST")
     h1.GetYaxis().SetTitle('Sys on the Ratio')
@@ -58,12 +66,13 @@ def plotvariations(ch):
     h7.Draw("HISTsame")
     h8.Draw("HISTsame")
     h9.Draw("HISTsame")
-    
+    h10.Draw("same")
+    h11.Draw("same")
     legend.Draw("same")
 
     c4.SaveAs(ch+"ratio_unc.root")
     c4.SaveAs(ch+"ratio_unc.pdf")
     c4.SaveAs(ch+"ratio_unc.png")
 
-plotvariations("w")
-#plotvariations("pho")
+#plotvariations("w")
+plotvariations("pho")

@@ -14,7 +14,7 @@ def makevariations(ch):
     ratio = "znlo012_over_wnlo012"
   
   infile.cd(ratio)
-  
+
   #PDF
   h_ratio    = gDirectory.Get(ratio)
   h_pdf_up   = gDirectory.Get(ratio+"_pdfUp")
@@ -52,13 +52,15 @@ def makevariations(ch):
   # 80% Correlated
   h_ratio_scale_up_uncor80 = h_central.Clone(); h_ratio_scale_up_uncor80.SetName(ratio+"_UnCorr80scaleUp")
   for b in range(h_ratio_scale_up_uncor80.GetNbinsX()): 
-    h_ratio_scale_up_uncor80.SetBinContent(b+1,h_ratio_scale_up_uncor.GetBinContent(b+1)*0.2 + h_ratio_scale_up.GetBinContent(b+1)*0.8)
+    cor_80 = ((h_ratio_scale_up_uncor.GetBinContent(b+1)*0.8) + (h_ratio_scale_up.GetBinContent(b+1)*0.2))
+    h_ratio_scale_up_uncor80.SetBinContent(b+1,cor_80)
     print b, h_ratio_scale_up_uncor.GetBinContent(b+1), h_ratio_scale_up.GetBinContent(b+1), h_ratio_scale_up_uncor80.GetBinContent(b+1)
 
   # 80% Correlated
   h_ratio_scale_down_uncor80 = h_central.Clone(); h_ratio_scale_down_uncor80.SetName(ratio+"_UnCorr80scaleDown")
   for b in range(h_ratio_scale_down_uncor80.GetNbinsX()): 
-    h_ratio_scale_down_uncor80.SetBinContent(b+1,h_ratio_scale_down_uncor.GetBinContent(b+1)*0.2 + h_ratio_scale_down.GetBinContent(b+1)*0.8)
+    cor_80 = ((h_ratio_scale_down_uncor.GetBinContent(b+1)*0.8) + (h_ratio_scale_down.GetBinContent(b+1)*0.2))
+    h_ratio_scale_down_uncor80.SetBinContent(b+1,cor_80)
     print b, h_ratio_scale_down_uncor.GetBinContent(b+1), h_ratio_scale_down.GetBinContent(b+1), h_ratio_scale_down_uncor80.GetBinContent(b+1)
 
 
@@ -78,5 +80,5 @@ def makevariations(ch):
 
 ################################
 
-#makevariations('atoz')
-makevariations('wtoz')
+makevariations('atoz')
+#makevariations('wtoz')
