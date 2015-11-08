@@ -45,6 +45,7 @@ public :
    vector<int>     *jetMotherPdgId;
    vector<int>     *jetGrMotherPdgId;
    vector<bool>    *jetMonojetId;
+   vector<int>    *jetMonojetId2015;
    vector<bool>    *jetMonojetIdLoose;
    vector<float>   *jetQ;
    vector<float>   *jetQnoPU;
@@ -99,6 +100,8 @@ public :
    vector<int>     *tauQ;
    vector<float>   *tauM;
    vector<float>   *tauIso;
+   vector<float>   *tauIsoDeltaBetaCorr;
+   vector<int>     *decayModeFinding;
    vector<int>     *triggerFired;
    vector<float>   *triggerPrescale;
    vector<int>     *triggerLeps;
@@ -125,6 +128,7 @@ public :
    TBranch        *b_jetMotherPdgId;   //!
    TBranch        *b_jetGrMotherPdgId;   //!
    TBranch        *b_jetMonojetId;   //!
+   TBranch        *b_jetMonojetId2015;   //!
    TBranch        *b_jetMonojetIdLoose;   //!
    TBranch        *b_jetQ;   //!
    TBranch        *b_jetQnoPU;   //!
@@ -179,6 +183,8 @@ public :
    TBranch        *b_tauQ;   //!
    TBranch        *b_tauM;   //!
    TBranch        *b_tauIso;   //!
+   TBranch        *b_decayModeFinding;   //!
+   TBranch        *b_tauIsoDeltaBetaCorr;   //!
    TBranch        *b_triggerFired;   //!
    TBranch        *b_triggerPrescale;   //!
    TBranch        *b_triggerLeps;   //!

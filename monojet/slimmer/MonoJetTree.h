@@ -71,6 +71,7 @@ public:
   float jet1BTag;
   float jet1PuId;
   int   jet1isMonoJetId;
+  int   jet1isMonoJetIdNew;
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
   float jet1DPhiTrueMet;
@@ -81,6 +82,7 @@ public:
   float jet2BTag;
   float jet2PuId;
   int   jet2isMonoJetId;
+  int   jet2isMonoJetIdNew;
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
   float jet2DPhiTrueMet;
@@ -97,6 +99,10 @@ public:
   float genMet;
   float genMetPhi;
   float kfactor;
+  float ewk_z;
+  float ewk_a;
+  float ewk_w;
+  float wkfactor;
   float u_perpGen;
   float u_paraGen;
 

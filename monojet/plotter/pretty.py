@@ -1,13 +1,15 @@
 from ROOT import *
 from math import *
 
-def plot_ratio(pull,data,mc,bin,xlabel):
+def plot_ratio(pull,data,mc,bin,xlabel,low,high,division):
 
     Pull = data
     #Pull.Add(mc,-1)
     Pull.GetXaxis().SetTitle(xlabel)
+    Pull.GetYaxis().SetTitleOffset(1.2)
     Pull.GetYaxis().SetTitleSize(0.04)
-    Pull.GetYaxis().SetNdivisions(5)
+    Pull.GetYaxis().SetNdivisions(division)
+    Pull.GetYaxis().SetLabelSize(0.02)
     Pull.SetMarkerStyle(20)
     Pull.SetMarkerSize(0.8)
 
@@ -28,8 +30,8 @@ def plot_ratio(pull,data,mc,bin,xlabel):
     else:
         print 'Plotting the ratio'
         Pull.Divide(mc)
-        Pull.SetMaximum(2)
-        Pull.SetMinimum(0)
+        Pull.SetMaximum(high)
+        Pull.SetMinimum(low)
         Pull.GetYaxis().SetTitle('Data/Bkg.')
         Pull.SetMarkerColor(1)
         Pull.SetLineColor(1)

@@ -6,8 +6,8 @@ filesPerJob=8
 numProc=1
 
 outDir='/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/frozenSamples'
-lfsOut='/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/lxbatchOut'
-eosDir='/store/user/yiiyama/transfer'
+lfsOut='/afs/cern.ch/work/z/zdemirag/public/forDan/lxbatchOut'
+eosDir='/store/caf/user/yiiyama/nerov3redo/'
 skimmedDir='/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/frozenSamplesSlimmed'
 
 if [ ! -d $outDir ]; then
@@ -43,8 +43,8 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 
     reasonableName="${dir%%+dmytro*}"                       # I'm just playing with string cuts here to 
     betterName="${reasonableName%%_Tune*}"                  # automatically generate shorter names for 
-    otherName="${betterName%%-madgraph*}"                   # the flat N-tuples
-    bestName="${otherName%%-Prompt*}"
+    bestName="${betterName%%-madgraph*}"                   # the flat N-tuples
+    #bestName="${otherName%%-Prompt*}"
 
     for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`; do
 
@@ -69,8 +69,9 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
-            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc
-            echo Making: $outFile
+            echo "bsub -q 1nd -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc"
+            #echo "./doSlimmer.sh $eosDir $dir $outFile $numProc"
+            #echo Making: $outFile
             ranOnFile=1
         fi
     done
@@ -80,5 +81,5 @@ if [ "$ranOnFile" -eq 0 ]; then
 #    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
 #    echo "Skimmed files merged!"
     cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
-    echo "All files merged!"
+    #echo "All files merged!"
 fi

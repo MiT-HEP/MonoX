@@ -93,7 +93,11 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
   t->Branch("genMet",&genMet,"genMet/F");
   t->Branch("genMetPhi",&genMetPhi,"genMetPhi/F");
+  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
   t->Branch("kfactor",&kfactor,"kfactor/F");
+  t->Branch("ewk_z",&ewk_z,"ewk_z/F");
+  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
+  t->Branch("ewk_a",&ewk_a,"ewk_a/F");
   t->Branch("u_perpGen",&u_perpGen,"u_perpGen/F");
   t->Branch("u_paraGen",&u_paraGen,"u_paraGen/F");
 
@@ -197,6 +201,10 @@ MonoJetTree::Reset()
   genMet = -5;
   genMetPhi = -5;
   kfactor = 1;
+  wkfactor = 1;
+  ewk_z = 1;
+  ewk_w = 1;
+  ewk_a = 1;
   u_perpGen = 0;
   u_paraGen = 0;
 }

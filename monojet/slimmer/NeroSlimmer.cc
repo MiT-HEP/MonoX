@@ -71,8 +71,25 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Int_t puMin = 1;
   Int_t puMax = 30;
 
-  TFile *kfactorFile  = new TFile("kfactor.root");
-  TH1F  *kfactorHist  = (TH1F*) kfactorFile->FindObjectAny("pho_pt");
+  //TFile *kfactorFile  = new TFile("kfactor.root");
+  //TH1F  *kfactorHist  = (TH1F*) kfactorFile->FindObjectAny("pho_pt");
+
+  TFile *kfactorFile  = new TFile("newscalefactors.root");
+  kfactorFile->cd("anlo1_over_alo");
+  TH1D  *kfactorHist  = (TH1D*) gDirectory->FindObjectAny("anlo1_over_alo");
+
+  kfactorFile->cd("wnlo012_over_wlo");
+  TH1D  *wkfactorHist  = (TH1D*) gDirectory->FindObjectAny("wnlo012_over_wlo");
+
+  kfactorFile->cd("z_ewkcorr");
+  TH1D *ewk_z_Hist = (TH1D*) gDirectory->FindObjectAny("z_ewkcorr");
+
+  kfactorFile->cd("w_ewkcorr");
+  TH1D *ewk_w_Hist = (TH1D*) gDirectory->FindObjectAny("w_ewkcorr");
+
+  kfactorFile->cd("a_ewkcorr");
+  TH1D *ewk_a_Hist = (TH1D*) gDirectory->FindObjectAny("a_ewkcorr");
+
   Float_t minKPt = 100;
   Float_t maxKPt = 1000;
 
@@ -458,6 +475,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
           // outTree->jet1isMonoJetIdNew   = ????
           outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
+          outTree->jet1isMonoJetIdNew      = (*(inTree->jetMonojetId2015))[iJet];
           outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
           
           outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
@@ -473,8 +491,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
           outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
           // outTree->jet2isMonoJetIdNew   = ????
-          outTree->jet2isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-          outTree->jet2isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
+          outTree->jet2isMonoJetId         = (*(inTree->jetMonojetId))[iJet];
+          outTree->jet2isMonoJetIdNew      = (*(inTree->jetMonojetId2015))[iJet];
+          outTree->jet2isLooseMonoJetId    = (*(inTree->jetMonojetIdLoose))[iJet];
           
           outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
           outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
@@ -490,8 +509,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       TLorentzVector* tempTau = (TLorentzVector*) inTree->tauP4->At(iTau);
 
       if (tempTau->Pt() < 18. || fabs(tempTau->Eta()) > 2.3)
-        continue;
-        outTree->n_tau++;
+          continue;
+
+      if ( (*(inTree->decayModeFinding))[iTau]   != 1 ) continue;
+      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 4) continue;
+
+      outTree->n_tau++;
     }
     
     //// Now look for generator information ////
@@ -565,8 +588,20 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
       }
       
-      if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt)
-        outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
+      if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
+          outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
+          outTree->ewk_a = ewk_a_Hist->GetBinContent(ewk_a_Hist->FindBin(outTree->genBos_pt));
+          
+      }
+
+      if (abs(outTree->genBos_PdgId) == 24 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
+          outTree->wkfactor = wkfactorHist->GetBinContent(wkfactorHist->FindBin(outTree->genBos_pt));      
+          outTree->ewk_w = ewk_w_Hist->GetBinContent(ewk_w_Hist->FindBin(outTree->genBos_pt));
+      }
+
+      if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
+          outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
+      }
     }
     
     outTree->Fill();

@@ -68,6 +68,7 @@ void NeroTree::Init(TTree *tree)
    jetMotherPdgId = 0;
    jetGrMotherPdgId = 0;
    jetMonojetId = 0;
+   jetMonojetId2015 = 0;
    jetMonojetIdLoose = 0;
    jetQ = 0;
    jetQnoPU = 0;
@@ -109,6 +110,8 @@ void NeroTree::Init(TTree *tree)
    tauQ = 0;
    tauM = 0;
    tauIso = 0;
+   decayModeFinding = 0;
+   tauIsoDeltaBetaCorr = 0;
    triggerFired = 0;
    triggerPrescale = 0;
    triggerLeps = 0;
@@ -138,6 +141,7 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("jetMotherPdgId", &jetMotherPdgId, &b_jetMotherPdgId);
    fChain->SetBranchAddress("jetGrMotherPdgId", &jetGrMotherPdgId, &b_jetGrMotherPdgId);
    fChain->SetBranchAddress("jetMonojetId", &jetMonojetId, &b_jetMonojetId);
+   fChain->SetBranchAddress("jetMonojetId2015", &jetMonojetId2015, &b_jetMonojetId2015);
    fChain->SetBranchAddress("jetMonojetIdLoose", &jetMonojetIdLoose, &b_jetMonojetIdLoose);
    fChain->SetBranchAddress("jetQ", &jetQ, &b_jetQ);
    fChain->SetBranchAddress("jetQnoPU", &jetQnoPU, &b_jetQnoPU);
@@ -192,6 +196,8 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("tauQ", &tauQ, &b_tauQ);
    fChain->SetBranchAddress("tauM", &tauM, &b_tauM);
    fChain->SetBranchAddress("tauIso", &tauIso, &b_tauIso);
+   fChain->SetBranchAddress("tauIsoDeltaBetaCorr", &tauIsoDeltaBetaCorr, &b_tauIsoDeltaBetaCorr);
+   fChain->SetBranchAddress("decayModeFinding", &decayModeFinding, &b_decayModeFinding);
    fChain->SetBranchAddress("triggerFired", &triggerFired, &b_triggerFired);
    fChain->SetBranchAddress("triggerPrescale", &triggerPrescale, &b_triggerPrescale);
    fChain->SetBranchAddress("triggerLeps", &triggerLeps, &b_triggerLeps);
