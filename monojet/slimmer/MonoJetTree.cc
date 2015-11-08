@@ -45,8 +45,8 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("photonPtRaw",&photonPtRaw,"photonPtRaw/F");
   t->Branch("photonEta",&photonEta,"photonEta/F");
   t->Branch("photonPhi",&photonPhi,"photonPhi/F");
-  t->Branch("photonIsTight",&photonIsTight,"photonIsTight/I");
-  t->Branch("n_tightpho",&n_tightpho,"n_tightpho/I");
+  t->Branch("photonIsMedium",&photonIsMedium,"photonIsMedium/I");
+  t->Branch("n_mediumpho",&n_mediumpho,"n_mediumpho/I");
   t->Branch("n_loosepho",&n_loosepho,"n_loosepho/I");
   t->Branch("met",&met,"met/F");
   t->Branch("metPhi",&metPhi,"metPhi/F");
@@ -68,6 +68,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet1BTag",&jet1BTag,"jet1BTag/F");
   t->Branch("jet1PuId",&jet1PuId,"jet1PuId/F");
   t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
+  t->Branch("jet1isMonoJetIdNew",&jet1isMonoJetIdNew,"jet1isMonoJetIdNew/I");
   t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
   t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
   t->Branch("jet1DPhiTrueMet",&jet1DPhiTrueMet,"jet1DPhiTrueMet/F");
@@ -152,8 +153,8 @@ MonoJetTree::Reset()
   photonPtRaw = -5;
   photonEta = -7;
   photonPhi = -5;
-  photonIsTight = -1;
-  n_tightpho = 0;
+  photonIsMedium = -1;
+  n_mediumpho = 0;
   n_loosepho = 0;
   met = -5;
   metPhi = -5;
@@ -175,6 +176,7 @@ MonoJetTree::Reset()
   jet1BTag = -1;
   jet1PuId = -2;
   jet1isMonoJetId = -1;
+  jet1isMonoJetIdNew = -1;
   jet1isLooseMonoJetId = -1;
   jet1DPhiMet = -1;
   jet1DPhiTrueMet = -1;

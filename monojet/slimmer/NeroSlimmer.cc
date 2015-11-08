@@ -46,19 +46,21 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
-  TFile *phoCorrections = new TFile("fitTest_0.root");
-  TF1 *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
-  TF1 *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
+    //TFile *phoCorrections = new TFile("fitTest_0.root");
+    //TF1   *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
+    //TF1   *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
 
+  /*
   TFile *elecSFFile  = new TFile("scalefactors_ele.root");
-  TH2D *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
-  TH2D *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
-  TH2D *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
+  TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
+  TH2D  *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
+  TH2D  *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
 
   TFile *muonSFFile  = new TFile("scalefactors_mu.root");
-  TH2D *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
-  TH2D *muonSFMedium = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Medium_mu");
-  TH2D *muonSFTight  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Tight_mu");
+  TH2D  *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
+  TH2D  *muonSFMedium = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Medium_mu");
+  TH2D  *muonSFTight  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Tight_mu");
+  */
 
   Float_t SFEtaMin = 0;
   Float_t SFEtaMax = 2.5;
@@ -66,14 +68,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Float_t SFPtMin = 10;
   Float_t SFPtMax = 100;
 
-  TFile *puWeightFile = new TFile("puWeights_13TeV_25ns.root");
-  TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
+  //TFile *puWeightFile = new TFile("puWeights_13TeV_25ns.root");
+  //TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
   Int_t puMin = 1;
   Int_t puMax = 30;
 
-  //TFile *kfactorFile  = new TFile("kfactor.root");
-  //TH1F  *kfactorHist  = (TH1F*) kfactorFile->FindObjectAny("pho_pt");
-
+  /*
   TFile *kfactorFile  = new TFile("newscalefactors.root");
   kfactorFile->cd("anlo1_over_alo");
   TH1D  *kfactorHist  = (TH1D*) gDirectory->FindObjectAny("anlo1_over_alo");
@@ -89,6 +89,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   kfactorFile->cd("a_ewkcorr");
   TH1D *ewk_a_Hist = (TH1D*) gDirectory->FindObjectAny("a_ewkcorr");
+  */
 
   Float_t minKPt = 100;
   Float_t maxKPt = 1000;
@@ -153,13 +154,15 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     // outTree->rho       = inTree->rho;
     outTree->npv       = inTree->npv;
 
+    /*
     if (outTree->npv < puMin)
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMin));
     else if (outTree->npv > puMax)
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMax));
     else
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(outTree->npv));
-    
+    */
+
     if (inTree->mcWeight < 0)
       outTree->mcWeight = -1;
     else
@@ -231,6 +234,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
     
+    /*
     //// Do the Scale Factor for one lepton, if there ////
 
     if (outTree->n_looselep > 0) {
@@ -296,6 +300,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->leptonSF = outTree->leptonSF * muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
       }
     }
+    */
 
     //// If there are identified leptons, we will define our recoil using them ////
 
@@ -344,22 +349,25 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_loosepho++;
 
       //// Usign the tight photon collection for futher cleaning ////
-      if (tempPhoton->Pt() > 175 && (*(inTree->photonTightId))[iPhoton] == 1) {
+      //if (tempPhoton->Pt() > 175 && (*(inTree->photonTightId))[iPhoton] == 1) {
+      //// Usign the medium photon collection for futher cleaning ////
+      if (tempPhoton->Pt() > 175 && (*(inTree->photonMediumId))[iPhoton] == 1) {
         photonVecs.push_back(tempPhoton);
-        outTree->n_tightpho++;
+        outTree->n_mediumpho++;
       }
       
       //// If it's the first photon, save the kinematics ////
 
       if (outTree->n_loosepho == 1) {
           outTree->photonPtRaw = tempPhoton->Pt();
-          outTree->photonPt    = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
+          outTree->photonPt = tempPhoton->Pt();
+          //outTree->photonPt    = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
           outTree->photonEta   = tempPhoton->Eta();
           outTree->photonPhi   = tempPhoton->Phi();
-          if (outTree->n_tightpho == 1)
-              outTree->photonIsTight = 1;
+          if (outTree->n_mediumpho == 1)
+              outTree->photonIsMedium = 1;
           else
-              outTree->photonIsTight = 0;
+              outTree->photonIsMedium = 0;
           
           //// If there's no leptons, define recoil quantities ////
 
@@ -473,7 +481,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           
           outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
           outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
-          // outTree->jet1isMonoJetIdNew   = ????
           outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
           outTree->jet1isMonoJetIdNew      = (*(inTree->jetMonojetId2015))[iJet];
           outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
@@ -588,6 +595,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
       }
       
+      /*
       if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
           outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
           outTree->ewk_a = ewk_a_Hist->GetBinContent(ewk_a_Hist->FindBin(outTree->genBos_pt));
@@ -602,6 +610,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
           outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
       }
+      */
     }
     
     outTree->Fill();
@@ -612,9 +621,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   outFile->Close();
   inFile->Close();
   
-  kfactorFile->Close();
-  puWeightFile->Close();
-
-  muonSFFile->Close();
-  elecSFFile->Close();
+  //kfactorFile->Close();
+  //puWeightFile->Close();
+  //muonSFFile->Close();
+  //elecSFFile->Close();
 }

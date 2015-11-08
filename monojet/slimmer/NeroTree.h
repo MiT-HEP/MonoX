@@ -45,7 +45,7 @@ public :
    vector<int>     *jetMotherPdgId;
    vector<int>     *jetGrMotherPdgId;
    vector<bool>    *jetMonojetId;
-   vector<int>    *jetMonojetId2015;
+   vector<bool>    *jetMonojetId2015;
    vector<bool>    *jetMonojetIdLoose;
    vector<float>   *jetQ;
    vector<float>   *jetQnoPU;
