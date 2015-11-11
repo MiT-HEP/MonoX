@@ -10,8 +10,8 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "eos/cms/store/user/zdemirag/bambu/nero/flat/v1"
-outDir = "eos/cms/store/user/zdemirag/bambu/nero/slim/v1"
+inDir  = "/tmp/zdemirag/hadd/"#"/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer"
+outDir = "/afs/cern.ch/work/z/zdemirag/public/slim_Nov9_new/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer/slim"
 
 GoodRunsFile = "/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/latest_Json_Nov4.txt"
 cut = "(met > 200)"

@@ -2,10 +2,18 @@
 
 import sys
 import ROOT
+import os.path
 
-ROOT.gROOT.LoadMacro('NeroTree.C+')
-ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
-ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
+if os.path.isfile('NeroTree_C.so') and os.path.isfile('MonoJetTree_cc.so') and os.path.isfile('NeroSlimmer_cc.so'):
+    ROOT.gROOT.LoadMacro('NeroTree_C.so')
+    ROOT.gROOT.LoadMacro('MonoJetTree_cc.so')
+    ROOT.gROOT.LoadMacro('NeroSlimmer_cc.so')
+else:
+    ROOT.gROOT.LoadMacro('NeroTree.C+')
+    ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
+    ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
+
+
 
 if sys.argv[1] == "test":
     ROOT.NeroSlimmer(

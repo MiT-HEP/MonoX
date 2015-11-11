@@ -14,7 +14,8 @@
 #include "NeroTree.h"
 
 enum IsoType {
-  kIsoLoose = 0,
+  kIsoVeto = 0,  
+  kIsoLoose,
   kIsoMedium,
   kIsoTight  
 };
@@ -28,6 +29,9 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
   }
   else {
     switch (isoType) {
+    case kIsoVeto:
+      isoCut = (fabs(lepEta) <= 1.479) ? 0.126 : 0.144;
+      break;  
     case kIsoLoose:
       isoCut = (fabs(lepEta) <= 1.479) ? 0.0893 : 0.121;
       break;
@@ -50,17 +54,18 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     //TF1   *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
     //TF1   *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
 
-  /*
-  TFile *elecSFFile  = new TFile("scalefactors_ele.root");
+  
+  TFile *elecSFFile  = new TFile("files/scalefactors_ele-2.root");
+  TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Veto_ele");
   TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
   TH2D  *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
   TH2D  *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
 
-  TFile *muonSFFile  = new TFile("scalefactors_mu.root");
+  TFile *muonSFFile  = new TFile("files/scalefactors_mu-2.root");
   TH2D  *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
   TH2D  *muonSFMedium = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Medium_mu");
   TH2D  *muonSFTight  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Tight_mu");
-  */
+  
 
   Float_t SFEtaMin = 0;
   Float_t SFEtaMax = 2.5;
@@ -73,8 +78,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Int_t puMin = 1;
   Int_t puMax = 30;
 
-  /*
-  TFile *kfactorFile  = new TFile("newscalefactors.root");
+  
+  TFile *kfactorFile  = new TFile("files/scalefactors_v3.root");
   kfactorFile->cd("anlo1_over_alo");
   TH1D  *kfactorHist  = (TH1D*) gDirectory->FindObjectAny("anlo1_over_alo");
 
@@ -89,7 +94,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   kfactorFile->cd("a_ewkcorr");
   TH1D *ewk_a_Hist = (TH1D*) gDirectory->FindObjectAny("a_ewkcorr");
-  */
+  
 
   Float_t minKPt = 100;
   Float_t maxKPt = 1000;
@@ -184,10 +189,21 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           (fabs(tempLepton->Eta()) > 2.4 && fabs((*(inTree->lepPdgId))[iLepton]) == 13))
         continue;
 
-      //// Filling lepton values based on loose cut ////
+      //// Filling lepton values based on loose cut for muons and veto cut for electrons ////
 
-      if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16 &&
-          PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoLoose)) {
+      if (tempLepton->Pt() > 10. && (
+          ( fabs((*(inTree->lepPdgId))[iLepton]) == 13 && ((*(inTree->lepSelBits))[iLepton] & 16) == 16 &&
+            PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoLoose)
+          ) ||
+          (fabs((*(inTree->lepPdgId))[iLepton]) == 11 && ((*(inTree->lepSelBits))[iLepton] & 2) == 2 &&
+            PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoVeto)
+          )  
+          )) {
+              
+
+          //if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16 &&
+          //PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoLoose)) {
+
         outTree->n_looselep++;
         if (outTree->n_looselep == 1) {
           outTree->lep1Pt    = tempLepton->Pt();
@@ -234,7 +250,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
     
-    /*
+    
     //// Do the Scale Factor for one lepton, if there ////
 
     if (outTree->n_looselep > 0) {
@@ -300,7 +316,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->leptonSF = outTree->leptonSF * muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
       }
     }
-    */
+    
 
     //// If there are identified leptons, we will define our recoil using them ////
 
@@ -519,7 +535,21 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           continue;
 
       if ( (*(inTree->decayModeFinding))[iTau]   != 1 ) continue;
-      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 4) continue;
+      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 4 ) continue;
+
+      //// Now do cleaning ////
+      
+      Bool_t match = false;
+      
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempTau->Phi(),tempTau->Eta()) < dROverlap) {
+              match = true;
+              break;
+          }
+      }
+      
+      if (match)
+        continue;
 
       outTree->n_tau++;
     }
@@ -595,7 +625,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
       }
       
-      /*
+      
       if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
           outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
           outTree->ewk_a = ewk_a_Hist->GetBinContent(ewk_a_Hist->FindBin(outTree->genBos_pt));
@@ -610,19 +640,19 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
           outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
       }
-      */
+      
     }
-    
+
     outTree->Fill();
+    
   }
-  
+
   outTree->WriteToFile(outFile);
-  
   outFile->Close();
   inFile->Close();
   
-  //kfactorFile->Close();
+  kfactorFile->Close();
   //puWeightFile->Close();
-  //muonSFFile->Close();
-  //elecSFFile->Close();
+  muonSFFile->Close();
+  elecSFFile->Close();
 }
