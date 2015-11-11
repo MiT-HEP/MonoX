@@ -8,6 +8,7 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TF1.h"
+#include "TMath.h"
 
 #include "functions.h"
 #include "MonoJetTree.h"
@@ -46,18 +47,10 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
-  TFile *phoCorrections = new TFile("fitTest_0.root");
-  TF1 *ZmmFunc   = (TF1*) phoCorrections->Get("mu_Zmm_Data");
-  TF1 *GJetsFunc = (TF1*) phoCorrections->Get("mu_gjets_Data");
-  TF1 *ZmmFuncUp   = (TF1*) phoCorrections->Get("mu_up_Zmm_Data");
-  TF1 *GJetsFuncUp = (TF1*) phoCorrections->Get("mu_up_gjets_Data");
-  TF1 *ZmmFuncDown   = (TF1*) phoCorrections->Get("mu_down_Zmm_Data");
-  TF1 *GJetsFuncDown = (TF1*) phoCorrections->Get("mu_down_gjets_Data");
-
   TFile *elecSFFile  = new TFile("scalefactors_ele.root");
-  TH2D *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
-  TH2D *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
-  TH2D *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
+  TH2D *elecSFLoose  = (TH2D*) elecSFFile->Get("factorized_scalefactors_Loose_ele");
+  TH2D *elecSFMedium = (TH2D*) elecSFFile->Get("factorized_scalefactors_Medium_ele");
+  TH2D *elecSFTight  = (TH2D*) elecSFFile->Get("factorized_scalefactors_Tight_ele");
 
   TFile *muonSFFile  = new TFile("scalefactors_mu.root");
   TH2D *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
@@ -354,12 +347,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       //// If it's the first photon, save the kinematics ////
 
       if (outTree->n_loosepho == 1) {
-        outTree->photonPtRaw  = tempPhoton->Pt();
-        outTree->photonPt     = tempPhoton->Pt() + (ZmmFunc->Eval(outTree->photonPtRaw) - GJetsFunc->Eval(outTree->photonPtRaw))/(1 - ZmmFunc->GetParameter(1));
-        outTree->photonPtUp   = tempPhoton->Pt() + (ZmmFuncUp->Eval(outTree->photonPtRaw) - GJetsFuncDown->Eval(outTree->photonPtRaw))/(1 - ZmmFuncUp->GetParameter(1));
-        outTree->photonPtDown = tempPhoton->Pt() + (ZmmFuncDown->Eval(outTree->photonPtRaw) - GJetsFuncUp->Eval(outTree->photonPtRaw))/(1 - ZmmFuncDown->GetParameter(1));
-        outTree->photonEta    = tempPhoton->Eta();
-        outTree->photonPhi    = tempPhoton->Phi();
+        outTree->photonPt  = tempPhoton->Pt();
+        outTree->photonEta = tempPhoton->Eta();
+        outTree->photonPhi = tempPhoton->Phi();
         if (outTree->n_tightpho == 1)
           outTree->photonIsTight = 1;
         else
@@ -368,7 +358,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         //// If there's no leptons, define recoil quantities ////
 
         if (outTree->n_looselep == 0) {
-          vec1.SetPtEtaPhiM(outTree->photonPtRaw,0,outTree->photonPhi,0);
+          vec1.SetPtEtaPhiM(outTree->photonPt,0,outTree->photonPhi,0);
           vec2.SetPtEtaPhiM(outTree->trueMet,0,outTree->trueMetPhi,0);
           vec3 = vec1 + vec2;
         
@@ -391,7 +381,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->u_perp = uPerp(outTree->met,outTree->metPhi,outTree->boson_phi);
       outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
     }
-
 
     //// Now we go on to clean jets ////
     

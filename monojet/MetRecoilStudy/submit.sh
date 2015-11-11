@@ -2,12 +2,12 @@
 
 fresh=$1
 
-filesPerJob=8
+filesPerJob=15
 numProc=1
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV5'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
-eosDir='/store/user/yiiyama/transfer'
+eosDir='/store/caf/user/yiiyama/nerov3redo/'
 
 if [ ! -d $outDir ]; then
     mkdir $outDir
@@ -17,6 +17,9 @@ if [ ! -d $lfsOut ]; then
     mkdir $lfsOut
 else
     rm $lfsOut/*.txt
+    if [ "$fresh" = "fresh" ]; then
+        rm $lfsOut/*.root
+    fi
 fi
 
 if [ MonoJetTree.txt -nt MonoJetTree.h ]; then
@@ -37,7 +40,8 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     reasonableName="${dir%%+dmytro*}"                       # I'm just playing with string cuts here to 
     betterName="${reasonableName%%_Tune*}"                  # automatically generate shorter names for 
     otherName="${betterName%%-madgraph*}"                   # the flat N-tuples
-    bestName="${otherName%%-Prompt*}"
+#    bestName="${otherName%%-Prompt*}"
+    bestName=$otherName
 
     for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`; do
         if [ "$fileInCount" -eq "$filesPerJob" ]; then

@@ -3,6 +3,7 @@
 import ROOT
 import tdrStyle
 from array import array
+from selectionCuts import *
 
 ROOT.gROOT.LoadMacro('PlotBase.cc+')
 #ROOT.gROOT.LoadMacro('PlotHists.cc+')
@@ -12,14 +13,14 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-#sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV3/"
-#goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/GoodRunsV3/"
-sampledir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmedV3/"
-goodRuns  = "/Users/dabercro/GradSchool/Winter15/GoodRunsV3/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
+goodRuns  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
+#sampledir = "/Users/dabercro/GradSchool/Winter15/flatTreesSkimmedV3/"
+#goodRuns  = "/Users/dabercro/GradSchool/Winter15/GoodRunsV3/"
 
-MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon.root")
-SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron.root")
-SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton.root")
+MuonFile       = ROOT.TFile(goodRuns + "monojet_SingleMuon+Run2015D.root")
+SingleElecFile = ROOT.TFile(goodRuns + "monojet_SingleElectron+Run2015D.root")
+SinglePhoFile  = ROOT.TFile(goodRuns + "monojet_SinglePhoton+Run2015D.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
 GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
 
@@ -34,6 +35,7 @@ plotter = ROOT.Plot2D()
 #####################################
 
 fitBin = 150.0
+ptCut  = 60.0
 
 allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
 
@@ -62,44 +64,38 @@ plotter.AddName("Zee_MC")
 plotter.AddName("gjets_Data")
 plotter.AddName("gjets_MC")
 
-lepSelection  = "(n_looselep == 2 && n_tightlep > 0 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20) && abs(dilep_m - 91) < 30 && n_bjetsMedium == 0 && "
-
-muonSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -169)"
-elecSelection = allSelections + lepSelection + "(lep1PdgId*lep2PdgId == -121)"
-phoSelection  = allSelections + "(photonIsTight == 1 && n_looselep == 0 && n_tau == 0)"
-
-plotter.AddWeight(muonSelection)
-plotter.AddWeight(muonSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight")
-plotter.AddWeight(elecSelection)
-plotter.AddWeight(elecSelection + " && (genBos_PdgId == 23) * leptonSF * mcWeight * npvWeight")
-plotter.AddWeight(phoSelection)
-plotter.AddWeight(phoSelection + " && (genBos_PdgId == 22) * kfactor * XSecWeight * npvWeight")
+plotter.AddWeight("(" + ZmmSelection + " && dilep_pt > " + str(ptCut) + ")")
+plotter.AddWeight("(" + ZmmSelection + " && genBos_PdgId == 23 && genBos_pt > " + str(ptCut) + ") * leptonSF * mcWeight * npvWeight")
+plotter.AddWeight("(" + ZeeSelection + " && dilep_pt > " + str(ptCut) + ")")
+plotter.AddWeight("(" + ZeeSelection + " && genBos_PdgId == 23 && genBos_pt > " + str(ptCut) + ") * leptonSF * mcWeight * npvWeight")
+plotter.AddWeight("(" + phoSelection + " && photonPtRaw > " + str(ptCut) + ")")
+plotter.AddWeight("(" + phoSelection + " && genBos_PdgId == 22 && genBos_pt > " + str(ptCut) + ") * kfactor * XSecWeight * npvWeight")
 
 plotter.AddExprX("dilep_pt")
 plotter.AddExprX("genBos_pt")
 plotter.AddExprX("dilep_pt")
 plotter.AddExprX("genBos_pt")
-plotter.AddExprX("photonPt")
+plotter.AddExprX("photonPtRaw")
 plotter.AddExprX("genBos_pt")
 
-plotter.AddExpr("u_paraZ + dilep_pt")
-plotter.AddExpr("u_paraZ + dilep_pt")
-plotter.AddExpr("u_paraZ + dilep_pt")
-plotter.AddExpr("u_paraZ + dilep_pt")
-plotter.AddExpr("u_paraPho + photonPt")
-plotter.AddExpr("u_paraPho + photonPt")
+plotter.AddExpr("u_para + dilep_pt")
+plotter.AddExpr("u_para + dilep_pt")
+plotter.AddExpr("u_para + dilep_pt")
+plotter.AddExpr("u_para + dilep_pt")
+plotter.AddExpr("u_para + photonPtRaw")
+plotter.AddExpr("u_para + photonPtRaw")
 
-plotter.MakeFitGraphs(100,10,1010,300,-1*fitBin,fitBin)
+plotter.MakeFitGraphs(100,0,1000,300,-1*fitBin,fitBin)
 
 plotter.ResetExpr()
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpZ")
-plotter.AddExpr("u_perpPho")
-plotter.AddExpr("u_perpPho")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
+plotter.AddExpr("u_perp")
 
-plotter.MakeFitGraphs(100,10,1010,300,-1*fitBin,fitBin)
+plotter.MakeFitGraphs(100,0,1000,300,-1*fitBin,fitBin)
 
 del plotter
 

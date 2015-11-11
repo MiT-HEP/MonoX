@@ -41,3 +41,5 @@ datacard*.txt
 *.png
 ._*
 *.txt.*
+
+TerminalList_*

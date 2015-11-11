@@ -11,12 +11,14 @@ from selectionCuts import skimmingSelection
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV5/"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
+#inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6/"
+inDir  = "/afs/cern.ch/work/d/dabercro/eos/cms/store/user/zdemirag/bambu/nero/flat/v1/"
+outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/forZeynep/"
 
 #GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-257599_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-258750_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = skimmingSelection
+GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-259891_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+#cut = skimmingSelection
+cut = "met > 200"
 
 #######################################################################
 

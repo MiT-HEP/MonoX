@@ -14,8 +14,8 @@ tdrStyle.setTDRStyle()
 ROOT.gROOT.SetBatch(True)
 
 #dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
-dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
+dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
 
 plotter = ROOT.PlotResolution()
 
@@ -83,6 +83,11 @@ WWTree         = WWFile.Get("events")
 WZTree         = WZFile.Get("events")
 ZZTree         = ZZFile.Get("events")
 QCDTree        = QCDFile.Get("events")
+
+if None in [DataTree,DYTree,ZToNuNuTree,GJetsTree,TTTree,WJetsToLNuTree,WWTree,WZTree,ZZTree,QCDTree]:
+    print "One or more trees not successfully gotten."
+    exit(1)
+##
 
 trees = []
 trees.append(DataTree)
