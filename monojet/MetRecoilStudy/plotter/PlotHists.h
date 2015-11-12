@@ -16,18 +16,28 @@ class PlotHists : public PlotBase
   
   std::vector<TH1D*>     MakeHists                ( Int_t NumXBins, Double_t *XBins );                   // These just return vectors of
   std::vector<TH1D*>     MakeHists                ( Int_t NumXBins, Double_t MinX, Double_t MaxX );      //   histograms for other uses
+  std::vector<TH1D*>     MakeHists                ( Int_t NumXBins, Double_t MinX, Double_t MaxX,
+                                                    Int_t DataNum );
   
   TCanvas*               MakeCanvas               ( std::vector<TH1D*> theHists,                         // Can return the canvas
                                                     TString CanvasTitle, TString XLabel, TString YLabel, //   if requested
-                                                    Bool_t logY = false );
+                                                    Bool_t logY = false, Int_t ratPlot = -1 );
   
   void                   MakeCanvas               ( Int_t NumXBins, Double_t *XBins, TString FileBase,   // Otherwise, can just write
                                                     TString CanvasTitle, TString XLabel, TString YLabel, //   .png, .pdf, and .C files
-                                                    Bool_t logY = false );
+                                                    Bool_t logY = false, Int_t ratPlot = -1 );
   
   void                   MakeCanvas               ( Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
                                                     TString CanvasTitle, TString XLabel, TString YLabel,
-                                                    Bool_t logY = false );
+                                                    Bool_t logY = false, Int_t ratPlot = -1 );
+
+  void                   MakeCanvas               ( Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
+                                                    TString CanvasTitle, TString XLabel, TString YLabel,
+                                                    Int_t DataNum, Bool_t logY, Int_t ratPlot = -1 );
+  
+  void                   MakeRatio                ( Int_t NumXBins, Double_t MinX, Double_t MaxX, TString FileBase,
+                                                    TString CanvasTitle, TString XLabel, TString YLabel,
+                                                    Int_t DataNum );
   
  private:
   

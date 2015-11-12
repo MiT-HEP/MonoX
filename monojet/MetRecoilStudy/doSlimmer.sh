@@ -19,6 +19,12 @@ cp $macroDir/functions.h .
 cp $macroDir/NeroSlimmer.cc .
 cp $macroDir/runSlimmer.py .
 
+cp $macroDir/kfactor.root .
+cp $macroDir/puWeights_13TeV_25ns.root .
+cp $macroDir/scalefactors_ele.root .
+cp $macroDir/scalefactors_mu.root .
+cp $macroDir/fitTest_0.root .
+
 cp "${outFile%.*}".txt . 
 
 echo "Using "$NCORES" cores!"
@@ -46,5 +52,5 @@ if [ "$RUNNING" -gt 0 ]; then
     wait
 fi
 
-hadd $subDir.root *.root
+hadd $subDir.root nero*.root
 cp $subDir.root $outFile

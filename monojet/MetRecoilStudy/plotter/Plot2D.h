@@ -1,20 +1,22 @@
-#ifndef MITPLOTS_PLOT_PLOTRESOLUTION_H
-#define MITPLOTS_PLOT_PLOTRESOLUTION_H
+#ifndef MITPLOTS_PLOT_PLOT2D_H
+#define MITPLOTS_PLOT_PLOT2D_H
 
 #include "TGraphErrors.h"
 #include "TCanvas.h"
 
 #include "PlotBase.h"
 
-class PlotResolution : public PlotBase
+class Plot2D : public PlotBase
 {
  public:
-  PlotResolution();
-  virtual ~PlotResolution();
+  Plot2D();
+  virtual ~Plot2D();
   
   void                         SetExprX                ( TString expr )                                 { fInExprX = expr;             }
   void                         AddExprX                ( TString expr )                                 { fInExprXs.push_back(expr);   }
   void                         SetParameterLimits      ( Int_t param, Double_t low, Double_t high );
+
+  void                         AddName                 ( TString name )                                 { fNames.push_back(name);      }
 
   // These were used to get response corrected plots
   // Can probably use them for ratio plots in the future
@@ -23,8 +25,6 @@ class PlotResolution : public PlotBase
   std::vector<TGraphErrors*>   GetRatioToLine          ( std::vector<TGraphErrors*> InGraphs, TGraphErrors *RatioGraph );
   std::vector<TGraphErrors*>   GetRatioToLines         ( std::vector<TGraphErrors*> InGraphs, std::vector<TGraphErrors*> RatioGraphs );
 
-  std::vector<TGraphErrors*>   FitGraph                ( Int_t param )                                   { return fFits[param];        }
-  
   void                         MakeFitGraphs           ( Int_t NumXBins, Double_t *XBins,               // This does the fitting
                                                          Int_t NumYBins, Double_t MinY, Double_t MaxY);
 
@@ -40,23 +40,20 @@ class PlotResolution : public PlotBase
                                                          TString CanvasTitle, TString XLabel, TString YLabel,
                                                          Double_t YMin, Double_t YMax, Bool_t logY = false);
   
-  void                         SetDumpingFits          ( Bool_t dump )                                  { fDumpingFits = dump;         }
-  
  private:
 
-  std::vector<TGraphErrors*> fFits[6];
-  
+  std::vector<TString>       fNames;
+
   std::vector<Int_t>         fParams;             // This is vector used for setting parameter limits for fits
   std::vector<Double_t>      fParamLows;          // Low values of these parameters
   std::vector<Double_t>      fParamHighs;         // High values of these parameters
   
   TString                    fInExprX;
   std::vector<TString>       fInExprXs;
+
+  Int_t                      fResult;
   
-  Bool_t                     fDumpingFits;        // Bool used to dump .png files if you want to check fits
-  Int_t                      fNumFitDumps;        // int to keep track of different number of fits
-  
-  ClassDef(PlotResolution,1)
+  ClassDef(Plot2D,1)
 };
 
 #endif

@@ -17,21 +17,49 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 argParser = ArgumentParser(description = 'Make JSON lumi list')
-argParser.add_argument('paths', metavar = 'PATH', nargs = '+', help = 'Paths to ROOT files (wildcard allowed) containing lumi list trees.')
+argParser.add_argument('paths', metavar = 'PATH', nargs = '*', help = 'Paths to ROOT files (wildcard allowed) containing lumi list trees.')
+argParser.add_argument('--mask', '-m', metavar = 'FILE', dest = 'mask', default = '', help = 'Lumi mask (e.g. Golden JSON) to apply.')
 argParser.add_argument('--out', '-o', metavar = 'FILE', dest = 'outputFile', default = 'lumis.txt', help = 'Output file name.')
+argParser.add_argument('--list', '-i', metavar = 'FILE', dest = 'listFile', default = '', help = 'File that contains the list of input files.')
+argParser.add_argument('--tree', '-t', metavar = 'NAME', dest = 'treeName', default = 'nero/all', help = 'Name of the input tree.')
+argParser.add_argument('--run-branch', '-r', metavar = 'NAME', dest = 'runBranchName', default = 'runNum', help = 'Name of the run branch.')
+argParser.add_argument('--lumi-branch', '-l', metavar = 'NAME', dest = 'lumiBranchName', default = 'lumiNum', help = 'Name of the lumi branch.')
 
 args = argParser.parse_args()
 sys.argv = []
 
-source = ROOT.TChain('nero/all')
-for path in args.paths:
-    source.Add(path)
+if args.mask:
+    try:
+        with open(args.mask) as maskFile:
+            maskJSON = eval(maskFile.read())
 
-run = array.array('i', [0])
-lumi = array.array('i', [0])
+        mask = {}
+        for runStr, lumiRanges in maskJSON.items():
+            run = int(runStr)
+            mask[run] = []
+            for begin, end in lumiRanges:
+                mask[run] += range(begin, end + 1)
+    except:
+        print 'Could not parse mask JSON', args.mask
+        sys.exit(1)
 
-source.SetBranchAddress('runNum', run)
-source.SetBranchAddress('lumiNum', lumi)
+source = ROOT.TChain(args.treeName)
+if args.listFile:
+    with open(args.listFile) as listFile:
+        for line in listFile:
+            if line.strip().startswith('#'):
+                continue
+
+            source.Add(line.strip())
+else:
+    for path in args.paths:
+        source.Add(path)
+
+runArr = array.array('i', [0])
+lumiArr = array.array('i', [0])
+
+source.SetBranchAddress(args.runBranchName, runArr)
+source.SetBranchAddress(args.lumiBranchName, lumiArr)
 
 allLumis = {}
 
@@ -39,17 +67,24 @@ iEntry = 0
 while source.GetEntry(iEntry) > 0:
     iEntry += 1
 
-    if run[0] not in allLumis:
-        allLumis[run[0]] = []
-        
-    lumis = allLumis[run[0]]
+    run = int(runArr[0])
+    lumi = int(lumiArr[0])
 
-    if lumi[0] not in lumis:
-        lumis.append(lumi[0])
+    if len(mask):
+        if run not in mask or lumi not in mask[run]:
+            continue
+
+    if run not in allLumis:
+        allLumis[run] = []
+        
+    lumis = allLumis[run]
+
+    if lumi not in lumis:
+        lumis.append(lumi)
 
 text = ''
 for run in sorted(allLumis.keys()):
-    text += '  "%d": [\n' % run
+    text += '\n  "%d": [\n' % run
 
     current = -1
     for lumi in sorted(allLumis[run]):
@@ -64,7 +99,7 @@ for run in sorted(allLumis.keys()):
         text += '    [%d, ' % current
 
     text += '%d]\n' % current
-    text += '  ],\n'
+    text += '  ],'
 
 with open(args.outputFile, 'w') as json:
-    json.write('{\n' + text[:-2] + '\n}')
+    json.write('{' + text[:-1] + '\n}')

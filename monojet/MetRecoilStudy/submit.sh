@@ -2,13 +2,12 @@
 
 fresh=$1
 
-filesPerJob=13
-numProc=2
+filesPerJob=15
+numProc=1
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTrees'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
-eosDir='/store/user/yiiyama/transfer'
-skimmedDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed'
+eosDir='/store/caf/user/yiiyama/nerov3redo/'
 
 if [ ! -d $outDir ]; then
     mkdir $outDir
@@ -18,10 +17,9 @@ if [ ! -d $lfsOut ]; then
     mkdir $lfsOut
 else
     rm $lfsOut/*.txt
-fi
-
-if [ ! -d $lfsOut/skimmed ]; then
-    mkdir $lfsOut/skimmed
+    if [ "$fresh" = "fresh" ]; then
+        rm $lfsOut/*.root
+    fi
 fi
 
 if [ MonoJetTree.txt -nt MonoJetTree.h ]; then
@@ -29,10 +27,8 @@ if [ MonoJetTree.txt -nt MonoJetTree.h ]; then
 fi
 
 haddFile=$lfsOut/myHadd.txt
-haddSkimmed=$lfsOut/skimmed/myHadd.txt
 
 > $haddFile
-> $haddSkimmed
 
 ranOnFile=0
 
@@ -44,7 +40,8 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     reasonableName="${dir%%+dmytro*}"                       # I'm just playing with string cuts here to 
     betterName="${reasonableName%%_Tune*}"                  # automatically generate shorter names for 
     otherName="${betterName%%-madgraph*}"                   # the flat N-tuples
-    bestName="${otherName%%-Prompt*}"
+#    bestName="${otherName%%-Prompt*}"
+    bestName=$otherName
 
     for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`; do
         if [ "$fileInCount" -eq "$filesPerJob" ]; then
@@ -60,7 +57,6 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     rootNames=`ls $lfsOut/monojet_$bestName\_*.txt | sed 's/.txt/.root/'`
 
     echo "$outDir/monojet_$bestName.root $lfsOut/monojet_"$bestName"_*.root" >> $haddFile
-    echo "$skimmedDir/monojet_$bestName.root $lfsOut/skimmed/monojet_"$bestName"_*.root">> $haddSkimmed
 
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
@@ -72,8 +68,6 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
 done
 
 if [ "$ranOnFile" -eq 0 ]; then
-#    cat $haddSkimmed | xargs -n2 -P6 ./haddArgs.sh 
-#    echo "Skimmed files merged!"
     cat $haddFile | xargs -n2 -P6 ./haddArgs.sh 
     echo "All files merged!"
 fi
