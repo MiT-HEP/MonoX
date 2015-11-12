@@ -14,7 +14,7 @@ numMaxProcesses = int(sys.argv[1])
 inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV7"
 outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV7"
 
-GoodRunsFile = "/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/latest_Json_Nov4.txt"
+GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260426_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
 cut = skimmingSelection
 
 #######################################################################
