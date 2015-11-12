@@ -1,15 +1,15 @@
 #! /bin/bash
 
- eosDir=$1
- subDir=$2
-outFile=$3
- NCORES=$4
+  eosDir=$1
+  subDir=$2
+ outFile=$3
+  NCORES=$4
+ cmsbase=$5
+macroDir=$6
 
-cd /afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/CMSSW_7_4_6/src
+cd $cmsbase/src
 eval `scram runtime -sh`
 cd -
-
-macroDir='/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy'
 
 cp $macroDir/MonoJetTree.h .
 cp $macroDir/MonoJetTree.cc .
@@ -19,12 +19,10 @@ cp $macroDir/functions.h .
 cp $macroDir/NeroSlimmer.cc .
 cp $macroDir/runSlimmer.py .
 
-cp $macroDir/kfactor.root .
 cp $macroDir/puWeights_13TeV_25ns.root .
-cp $macroDir/scalefactors_ele.root .
-cp $macroDir/scalefactors_mu.root .
-cp $macroDir/fitTest_0.root .
-cp $macroDir/newscalefactors.root .
+
+mkdir files
+cp $macroDir/files/*.root files/.
 
 cp "${outFile%.*}".txt . 
 

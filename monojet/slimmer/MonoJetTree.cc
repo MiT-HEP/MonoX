@@ -58,7 +58,6 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("leadingjetEta",&leadingjetEta,"leadingjetEta/F");
   t->Branch("leadingjetPhi",&leadingjetPhi,"leadingjetPhi/F");
   t->Branch("leadingjetM",&leadingjetM,"leadingjetM/F");
-  t->Branch("leadingjetisMonoJetId",&leadingjetisMonoJetId,"leadingjetisMonoJetId/I");
   t->Branch("n_jets",&n_jets,"n_jets/I");
   t->Branch("jet1Pt",&jet1Pt,"jet1Pt/F");
   t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
@@ -78,6 +77,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("jet2BTag",&jet2BTag,"jet2BTag/F");
   t->Branch("jet2PuId",&jet2PuId,"jet2PuId/F");
   t->Branch("jet2isMonoJetId",&jet2isMonoJetId,"jet2isMonoJetId/I");
+  t->Branch("jet2isMonoJetIdNew",&jet2isMonoJetIdNew,"jet2isMonoJetIdNew/I");
   t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
   t->Branch("jet2DPhiMet",&jet2DPhiMet,"jet2DPhiMet/F");
   t->Branch("jet2DPhiTrueMet",&jet2DPhiTrueMet,"jet2DPhiTrueMet/F");
@@ -93,11 +93,11 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
   t->Branch("genMet",&genMet,"genMet/F");
   t->Branch("genMetPhi",&genMetPhi,"genMetPhi/F");
-  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
   t->Branch("kfactor",&kfactor,"kfactor/F");
   t->Branch("ewk_z",&ewk_z,"ewk_z/F");
-  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
   t->Branch("ewk_a",&ewk_a,"ewk_a/F");
+  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
+  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
   t->Branch("u_perpGen",&u_perpGen,"u_perpGen/F");
   t->Branch("u_paraGen",&u_paraGen,"u_paraGen/F");
 
@@ -165,7 +165,6 @@ MonoJetTree::Reset()
   leadingjetEta = -7;
   leadingjetPhi = -5;
   leadingjetM = -5;
-  leadingjetisMonoJetId = -1;
   n_jets = 0;
   jet1Pt = -5;
   jet1Eta = -7;
@@ -185,6 +184,7 @@ MonoJetTree::Reset()
   jet2BTag = -1;
   jet2PuId = -2;
   jet2isMonoJetId = -1;
+  jet2isMonoJetIdNew = -1;
   jet2isLooseMonoJetId = -1;
   jet2DPhiMet = -1;
   jet2DPhiTrueMet = -1;
@@ -201,10 +201,10 @@ MonoJetTree::Reset()
   genMet = -5;
   genMetPhi = -5;
   kfactor = 1;
-  wkfactor = 1;
   ewk_z = 1;
-  ewk_w = 1;
   ewk_a = 1;
+  ewk_w = 1;
+  wkfactor = 1;
   u_perpGen = 0;
   u_paraGen = 0;
 }

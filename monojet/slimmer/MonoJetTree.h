@@ -61,7 +61,6 @@ public:
   float leadingjetEta;
   float leadingjetPhi;
   float leadingjetM;
-  int   leadingjetisMonoJetId;
   int   n_jets;
   float jet1Pt;
   float jet1Eta;

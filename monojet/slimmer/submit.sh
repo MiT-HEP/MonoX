@@ -7,7 +7,12 @@ numProc=1
 
 outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
-eosDir='/store/caf/user/yiiyama/nerov3redo/'
+eosDir='/store/user/yiiyama/nerov3reredo'
+
+if [ "$CMSSW_BASE" = "" ]; then
+    echo "CMSSW_BASE not set. Make sure to cmsenv someplace that you want the jobs to use"
+    exit
+fi
 
 if [ ! -d $outDir ]; then
     mkdir $outDir
@@ -65,7 +70,7 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
             echo Making: $outFile
-            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc
+            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc $CMSSW_BASE `pwd`
             ranOnFile=1
         fi
     done
