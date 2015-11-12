@@ -26,6 +26,8 @@ cp $macroDir/files/*.root files/.
 
 cp "${outFile%.*}".txt . 
 
+echo "Trying to make $outFile"
+echo ""
 echo "Using "$NCORES" cores!"
 
 RUNNING=0
@@ -52,4 +54,8 @@ if [ "$RUNNING" -gt 0 ]; then
 fi
 
 hadd $subDir.root nero*.root
+
+echo ""
+echo "Copying to $outFile"
+
 cp $subDir.root $outFile

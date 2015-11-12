@@ -11,11 +11,11 @@ from selectionCuts import skimmingSelection
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/tmp/zdemirag/hadd/"
-outDir = "/afs/cern.ch/work/z/zdemirag/public/slim_Nov9_new/"
+inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV7"
+outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV7"
 
 GoodRunsFile = "/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/latest_Json_Nov4.txt"
-cut = "(met > 200)"
+cut = skimmingSelection
 
 #######################################################################
 

@@ -22,3 +22,7 @@ monojet_ZJetsToNuNu_HT-400To600_13TeV.root                        10.71
 monojet_ZJetsToNuNu_HT-600ToInf_13TeV.root                         4.098
 monojet_ZJetsToQQ_HT600toInf_13TeV.root                            5.67
 monojet_ZZ.root                                                   16.6
+monojet_WJetsToLNu_HT-100To200.root                             1343.0
+monojet_WJetsToLNu_HT-200To400.root                              359.6
+monojet_WJetsToLNu_HT-400To600.root                               48.85
+monojet_WJetsToLNu_HT-600ToInf.root                               18.91
