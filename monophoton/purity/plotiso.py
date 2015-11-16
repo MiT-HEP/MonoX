@@ -54,7 +54,7 @@ leg = TLegend(0.625,0.45,0.875,0.85 );
 leg.SetFillColor(kWhite);
 leg.SetTextSize(0.03);
 
-for dR in arange(0.5,0.6,0.1):
+for dR in arange(0.4,0.9,0.1):
     truthSel = '( (TMath::Abs(selPhotons.matchedGen) == 22) && (!selPhotons.hadDecay) && (selPhotons.drParton > '+str(dR)+') )'
     fullSel = baseSel+' && '+truthSel
     
@@ -62,8 +62,8 @@ for dR in arange(0.5,0.6,0.1):
     hist.SetName("ShapeChIso_dR"+str(int(dR*10)))
     hist.Scale( 1. / hist.GetSumOfWeights())
 
-    hist.SetLineColor(kBlack)
-    # hist.SetLineColor(int(dR*10))
+    # hist.SetLineColor(kBlack)
+    hist.SetLineColor(int(dR*10))
     hist.SetLineWidth(2)
     hist.SetLineStyle(kDashed)
     hist.SetStats(False)

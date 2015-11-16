@@ -110,7 +110,7 @@ while(True):
     purities.append(dataPurity)
     diff = abs(dataPurity[0] - purities[-2][0] )
     print diff 
-    if ( diff < 0.005):
+    if ( diff < 0.001):
         break
     nIter += 1
     if nIter > 5:

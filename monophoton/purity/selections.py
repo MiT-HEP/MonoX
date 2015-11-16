@@ -352,8 +352,8 @@ ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3), '((selPhotons.chIs
 ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
 ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
 
-for sel in ChIsoSbSels:
-   print sel 
+#for sel in ChIsoSbSels:
+#   print sel 
 
 cutSingleMuon = '(muons.size == 1)'
 cutElectronVeto = '(electrons.size == 0)'
