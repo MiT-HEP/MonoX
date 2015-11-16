@@ -181,7 +181,8 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	PassCut[kChIso] = true;
       }
       else {
-	if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
+	// if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
+	if (chIso[kObject][iP] < 10.0) { // for doing true photon contamination removal
 	  PassCut[kChIso] = true;
 	}
       }
@@ -280,22 +281,29 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	selected.chIso = electrons[iP].chIsoPh; 
 	selected.nhIso = electrons[iP].nhIsoPh;
 	selected.phIso = electrons[iP].phIsoPh;
-	selected.sieie = electrons[iP].sieie;
+	if (tVar_ == kSigmaIetaIetaScaled) {
+	  selected.sieie = 0.891832 * photons[iP].sieie + 0.0009133;
+	} else {
+	  selected.sieie = photons[iP].sieie;
+	}
 	selected.hOverE = electrons[iP].hOverE;
 	selected.matchedGen = electrons[iP].matchedGen;
 	// selected.isEB = electrons[iP].isEB;
 	selected.hadDecay = electrons[iP].hadDecay;
 	selected.pixelVeto = true;
 	selected.csafeVeto = true;
-      }
-      else {
+      } else {
 	selected.pt = photons[iP].pt;
 	selected.eta = photons[iP].eta;
 	selected.phi = photons[iP].phi;    
 	selected.chIso = photons[iP].chIso; 
 	selected.nhIso = photons[iP].nhIso;
 	selected.phIso = photons[iP].phIso;
-	selected.sieie = photons[iP].sieie;
+	if (tVar_ == kSigmaIetaIetaScaled) {
+	  selected.sieie = 0.891832 * photons[iP].sieie + 0.0009133;
+	} else {
+	  selected.sieie = photons[iP].sieie;
+	}
 	selected.hOverE = photons[iP].hOverE;
 	selected.drParton = photons[iP].drParton;
 	selected.matchedGen = photons[iP].matchedGen;
@@ -352,7 +360,7 @@ TemplateGenerator::setTemplateBinning(int _nBins, double* _binEdges)
 {
   nBins_ = _nBins;
   delete [] binEdges_;
-  binEdges_ = new double[_nBins];
+  binEdges_ = new double[_nBins+1];
   for(int iBin = 0; !(iBin >  nBins_); iBin++) {
     binEdges_[iBin] = _binEdges[iBin];
     // std::cout << "Bin Edge " << iBin << " is " << binEdges_[iBin] << std::endl;
@@ -377,12 +385,14 @@ TemplateGenerator::makeTemplate(char const* _name, char const* _expr)
   tmp->Sumw2();
 
   TString var;
-  if (tVar_ == kSigmaIetaIeta)
+  if (tVar_ == kSigmaIetaIeta || tVar_ == kSigmaIetaIetaScaled)
     var = "selPhotons.sieie";
+  /*
+    else if (tVar_ == kSigmaIetaIetaScaled)
+    var = "0.891832 * selPhotons.sieie + 0.0009133";
+  */
   else if (tVar_ == kPhotonIsolation)
     var = "selPhotons.phIso";
-  else if (tVar_ == kSigmaIetaIetaScaled)
-    var = "0.891832 * selPhotons.sieie + 0.0009133";
   else if (tVar_ == kChargedHadronIsolation)
     var = "selPhotons.chIso";
 

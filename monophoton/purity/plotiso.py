@@ -30,12 +30,12 @@ if metSel == '(1)':
 
 varName = 'chiso'
 var = Variables[varName]
-varBins = False
+varBins = True
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = os.path.join(versDir,'Skims')
 # plotDir = os.path.join(versDir,'Plots',inputKey)
-plotDir = os.path.join('/home/ballen/public_html/cmsplots/PurityTemp',inputKey)
+plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
@@ -45,6 +45,7 @@ skim = Measurement[skimName][0]
 baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
 
 outName = os.path.join(plotDir,'chiso_'+inputKey)
+print outName+'.root'
 outFile = TFile(outName+'.root','recreate')
 
 canvas = TCanvas()
@@ -53,7 +54,7 @@ leg = TLegend(0.625,0.45,0.875,0.85 );
 leg.SetFillColor(kWhite);
 leg.SetTextSize(0.03);
 
-for dR in arange(0.1,1.1,0.1):
+for dR in arange(0.5,0.6,0.1):
     truthSel = '( (TMath::Abs(selPhotons.matchedGen) == 22) && (!selPhotons.hadDecay) && (selPhotons.drParton > '+str(dR)+') )'
     fullSel = baseSel+' && '+truthSel
     
@@ -61,7 +62,8 @@ for dR in arange(0.1,1.1,0.1):
     hist.SetName("ShapeChIso_dR"+str(int(dR*10)))
     hist.Scale( 1. / hist.GetSumOfWeights())
 
-    hist.SetLineColor(int(dR*10))
+    hist.SetLineColor(kBlack)
+    # hist.SetLineColor(int(dR*10))
     hist.SetLineWidth(2)
     hist.SetLineStyle(kDashed)
     hist.SetStats(False)

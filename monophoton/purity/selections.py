@@ -48,6 +48,8 @@ from ROOT import *
 # nTuple location
 ntupledir = '/scratch5/yiiyama/hist/'+Version+'/t2mit/filefi/042/'
 
+ChIsoSbBins = range(20,101,5)
+
 # Variables and associated properties
 # variable Enum, sideband Enum, selection Enum, roofit variable ( region : roofit variable, nbins, variable binning), cut dict for purity
 Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose, { "barrel"  : (RooRealVar('sieie', '#sigma_{i#etai#eta}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
@@ -56,8 +58,8 @@ Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose, { "barrel"  : (RooRealVa
               ,"sieieScaled"  : (kSigmaIetaIetaScaled,kChIso,kLoose, { "barrel"  : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
                                                                        ,"endcap" : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.016, 0.040), 48, [0.016,0.030,0.040] ) } 
                            , sieieCuts )
-              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 50, [0.0,1.79,3.0,5.0,7.0,9.0] )
-                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 50, [0.0,1.79,3.0,5.0,7.0,9.0] ) }
+              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,1.79]+[float(x)/10.0 for x in ChIsoSbBins] )
+                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,1.79]+[float(x)/10.0 for x in ChIsoSbBins] ) }
                           , chIsoCuts )
               ,"phiso" : (kPhotonIsolation,kSieie,kLoose, { "barrel"  : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] )
                                                             ,"endcap" : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] ) } 
@@ -130,6 +132,16 @@ def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
     return tempH
         
 def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
+    # remove negative weights
+    for bin in range(_hist.GetNbinsX()+1):
+        binContent = _hist.GetBinContent(bin)
+        if ( binContent< 0.):
+            _hist.SetBinContent(bin, 0.)
+            _hist.SetBinError(bin, 0.)
+        binErrorLow = _hist.GetBinErrorLow(bin)
+        if ( (binContent - binErrorLow) < 0.):
+            _hist.SetBinError(bin, binContent)
+
     print _selName
     tempname = 'template_'+_skim[0]+'_'+_selName
     temp = RooDataHist(tempname, tempname, RooArgList(_var[0]), _hist)
@@ -221,7 +233,7 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
     canvas.SaveAs(_name+'_Logy.png')
     canvas.SaveAs(_name+'_Logy.C')
 
-    return (purity, aveSig)
+    return (purity, aveSig, nReal, nFake)
 
 # Names for plots for Purity Calculation
 PlotNames = { "Wlike" : ("Photon Purity in SingleMuon DataSet","Photon Purity in WJets Monte Carlo","Photon Purity in WJets MC Truth")
@@ -330,8 +342,18 @@ MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))')
 MetSels = MetSels + [ ('Met'+str(low)+'to'+str(high),'((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))') for low, high in zip(cutMet,cutMet[1:]) ]
 MetSels = MetSels + [ ('Met'+str(cutMet[-1])+'toInf', '((t1Met.met > '+str(cutMet[-1])+'))') ]
 
+'''
 cutChIsoSb = range(3,11,2)
 ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(low)+') && (selPhotons.chIso < '+str(high)+'))') for low, high in zip(cutChIsoSb, cutChIsoSb[1:]) ]
+ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.0)+'))') ]
+'''
+
+# cutChIsoSb = [ float(x)/10.0 for x in chIsoBins ] 
+ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
+ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
+
+for sel in ChIsoSbSels:
+   print sel 
 
 cutSingleMuon = '(muons.size == 1)'
 cutElectronVeto = '(electrons.size == 0)'
