@@ -48,10 +48,10 @@ for plotDir in plotDirs:
                                 if tmp:
                                     match = True
                                     # pprint(tmp)
-                                    purity = float(tmp[-1].strip("(),"))
+                                    purity = ( float(tmp[-3].strip("(),")), float(tmp[-2].strip("(),")), float(tmp[-1].strip("(),")) )
                                     # uncertainty = float(tmp[-1].strip("(),"))
                                     # print purity # , uncertainty
-                                    purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = (purity) # (purity, uncertainty)
+                                    purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = purity # (purity, uncertainty)
                         if not match:
                             print "No purity found for skim:", dirName
                             purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = (1.025, 0.0)
@@ -67,7 +67,7 @@ for loc in Locations[:1]:
                     fit = plotDir[0] 
                     isoVals = np.array([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
                     #isoVals = np.arange(2.0,8.5,0.5)
-                    puritiesCalc = np.array([ 1 - value for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
+                    puritiesCalc = np.array([ 1 - value[0] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
                     #pprint(isoVals)
                     #pprint(puritiesCalc)
 

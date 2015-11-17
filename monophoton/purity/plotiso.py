@@ -3,6 +3,7 @@ import sys
 from numpy import arange
 from selections import Variables, Version, Measurement, Selections, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor
 from ROOT import *
+gROOT.SetBatch(True)
 
 loc = sys.argv[1]
 pid = sys.argv[2]
@@ -54,7 +55,9 @@ leg = TLegend(0.625,0.45,0.875,0.85 );
 leg.SetFillColor(kWhite);
 leg.SetTextSize(0.03);
 
-for dR in arange(0.4,0.9,0.1):
+colors = [kBlue, kRed, kBlack]
+
+for iC, dR in enumerate([0.8,0.4,0.5]):
     truthSel = '( (TMath::Abs(selPhotons.matchedGen) == 22) && (!selPhotons.hadDecay) && (selPhotons.drParton > '+str(dR)+') )'
     fullSel = baseSel+' && '+truthSel
     
@@ -62,8 +65,7 @@ for dR in arange(0.4,0.9,0.1):
     hist.SetName("ShapeChIso_dR"+str(int(dR*10)))
     hist.Scale( 1. / hist.GetSumOfWeights())
 
-    # hist.SetLineColor(kBlack)
-    hist.SetLineColor(int(dR*10))
+    hist.SetLineColor(colors[iC])
     hist.SetLineWidth(2)
     hist.SetLineStyle(kDashed)
     hist.SetStats(False)
