@@ -81,7 +81,8 @@ for dR in dRcuts:
     sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
     print "Fraction in sideband:", sbFrac
 
-    sigFrac = isoHist.GetBinContent(1)
+    # sigFrac = isoHist.GetBinContent(1)
+    sigFrac = isoHist.Integral(1,3)
     print "Fraction in signal:", sigFrac
     isoHists.append( (isoHist, sbFrac, sigFrac) )
 

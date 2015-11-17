@@ -6,6 +6,7 @@ from pprint import pprint
 # from ROOT import *
 import numpy as np
 import matplotlib.pyplot as plot
+import matplotlib.axes as axes
 from scipy.optimize import leastsq
 from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels
 # gROOT.SetBatch(True)
@@ -32,7 +33,7 @@ for plotDir in plotDirs:
                 purities[fit][loc][pid][ptCut[0]] = {}
                 for metCut in MetSels[:1]:
                     purities[fit][loc][pid][ptCut[0]][metCut[0]] = {}
-                    for chiso in ChIsoSbSels[:-1]:
+                    for chiso in ChIsoSbSels[2:-1]:
                         purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = {}
                         
                         dirName = loc+'_'+pid+'_'+chiso[0]+'_'+ptCut[0]+'_'+metCut[0] 
@@ -65,11 +66,14 @@ for loc in Locations[:1]:
             for metCut in MetSels[:1]:
                 for plotDir in plotDirs:
                     fit = plotDir[0] 
-                    isoVals = np.array([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
+                    isoVals = np.asarray([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
                     #isoVals = np.arange(2.0,8.5,0.5)
-                    puritiesCalc = np.array([ 1 - value[0] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
-                    #pprint(isoVals)
-                    #pprint(puritiesCalc)
+                    puritiesCalc = ( np.asarray(  [ 1 - value[0] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
+                                     ,np.asarray( [ max( abs(value[0] - value[1]), abs(value[0] - value[2])) for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
+                                     # ,np.asarray( [ 1 - value[1] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) 
+                                     # ,np.asarray( [ 1 - value[2] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
+                    pprint(isoVals)
+                    pprint(puritiesCalc)
 
                     params = [ 0.01, 10.0 ]
                     paramsInit = params
@@ -79,9 +83,24 @@ for loc in Locations[:1]:
                         return purity_
                     
                     def resFunc(_params, _iso, _purity):
-                        err = _purity - purityFunc(_params, _iso)
+                        '''
+                        pprint(_purity[0])
+                        pprint(_purity[1])
+                        sigmaUp = abs( _purity[0] - _purity[1] )
+                        pprint(sigmaUp)
+                        
+                        pprint(_purity[0])
+                        pprint(_purity[2])
+                        sigmaDown = abs( _purity[0] - _purity[2] )
+                        pprint(sigmaDown)
+
+                        sigmaMax = max( sigmaDown.any(), sigmaDown.any() )
+                        pprint(sigmaMax)
+                        '''
+                        err = ( _purity[0] - purityFunc(_params, _iso) ) / _purity[1]
                         return err
 
+                    
                     paramsFit = leastsq(resFunc, paramsInit, args=(isoVals, puritiesCalc), full_output=1, warning=True )
                     pprint(paramsFit)
 
@@ -90,7 +109,10 @@ for loc in Locations[:1]:
                     #pprint(isosFit)
                     #pprint(puritiesFit)
                     
-                    plot.plot(isoVals, puritiesCalc, 'k.', isosFit, puritiesFit, 'r-')
+                    
+                    plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='k.')
+                    # plot.plot(isoVals, puritiesCalc[0], 'k.', isosFit, puritiesFit, 'r-')
+                    plot.plot(isosFit, puritiesFit, 'r-')
                     plot.legend(['Measured', 'Fit'])
                     plot.xlim(0.,10.)
                     plot.ylim(0.00,0.10)
@@ -99,3 +121,17 @@ for loc in Locations[:1]:
                     outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0])
                     plot.savefig(outName+'.pdf', format='pdf')
                     plot.savefig(outName+'.png', format='png')
+                    
+                    '''
+                    ax = axes.Axes()                    
+                    ax.plot(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='k.', label='Measured')
+                    axes.plot(isosFit, puritiesFit, 'r-', label='Fit')
+                    ax.legend(['Measured', 'Fit'])
+                    ax.xlim(0.,10.)
+                    ax.ylim(0.00,0.10)
+                    ax.ylabel(r'Impurity')
+                    ax.xlabel(r'Charged Hadron Isolation (GeV)')
+                    outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0])
+                    ax.savefig(outName+'.pdf', format='pdf')
+                    ax.savefig(outName+'.png', format='png')
+                    '''
