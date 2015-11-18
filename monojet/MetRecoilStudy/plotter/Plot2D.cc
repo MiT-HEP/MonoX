@@ -130,7 +130,7 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
 
-  TF1 *aFunc = new TF1("muFits",lin,XBins[0],XBins[NumXBins],2);
+  TF1 *aFunc = new TF1("muFits",quad,XBins[0],XBins[NumXBins],3);
   TF1 *bFunc = new TF1("sigFits",quad,XBins[0],XBins[NumXBins],3);
 
   TString fileName;
