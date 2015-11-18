@@ -7,6 +7,9 @@
 #include "TH1D.h"
 #include "TProfile.h"
 #include "TLegend.h"
+#include "TFitResultPtr.h"
+#include "TFitResult.h"
+#include "TMatrixDSym.h"
 
 #include "Plot2D.h"
 
@@ -125,7 +128,8 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
 
   Double_t params[5] = {0,0,30,0,0};
 
-  TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,4);
+  // TF2 *fitFunc = new TF2("fit",singleFunc,XBins[0],XBins[NumXBins],MinY,MaxY,4);
+  TF1 *fitFunc = new TF1("fit","[0] + [1] * x",XBins[0],XBins[NumXBins]);
 
   for (UInt_t i0 = 0; i0 < fParams.size(); i0++)
     fitFunc->SetParLimits(fParams[i0],fParamLows[i0],fParamHighs[i0]);
@@ -169,7 +173,9 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
     // tempHist->Divide(shitHist);
 
     fitFunc->SetParameters(params);
-    tempHist->Fit(fitFunc,"MLE");
+    TFitResultPtr fitResult = tempHist->Fit(fitFunc,"MLES");
+
+    TMatrixDSym cov = fitResult->GetCovarianceMatrix();
 
     std::cout << "Finished fit!" << std::endl;
 
@@ -181,42 +187,45 @@ Plot2D::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
 
     aFunc->SetParameter(0,fitFunc->GetParameter(0));
     aFunc->SetParameter(1,fitFunc->GetParameter(1));
+    aFunc->SetParameter(2,0);
     results->WriteTObject(aFunc->Clone(TString("mu_") + fNames[i0]),TString("mu_") + fNames[i0]);
 
     std::cout << "Wrote mu." << std::endl;
 
-    bFunc->SetParameter(0,fitFunc->GetParameter(2));
-    bFunc->SetParameter(1,fitFunc->GetParameter(3));
-    bFunc->SetParameter(2,fitFunc->GetParameter(4));
-    results->WriteTObject(bFunc->Clone(TString("sig_") + fNames[i0]),TString("sig_") + fNames[i0]);
+    // bFunc->SetParameter(0,fitFunc->GetParameter(2));
+    // bFunc->SetParameter(1,fitFunc->GetParameter(3));
+    // // bFunc->SetParameter(2,fitFunc->GetParameter(4));
+    // results->WriteTObject(bFunc->Clone(TString("sig_") + fNames[i0]),TString("sig_") + fNames[i0]);
 
-    std::cout << "Wrote sig." << std::endl;
+    // std::cout << "Wrote sig." << std::endl;
 
-    aFunc->SetParameter(0,fitFunc->GetParameter(0) + fitFunc->GetParError(0));
-    aFunc->SetParameter(1,fitFunc->GetParameter(1) + fitFunc->GetParError(1));
+    aFunc->SetParameter(0,fitFunc->GetParameter(0) + cov(0,0)); // fitFunc->GetParError(0));
+    aFunc->SetParameter(1,fitFunc->GetParameter(1) + abs(cov(0,1))); // fitFunc->GetParError(1));
+    aFunc->SetParameter(2,cov(1,1));
     results->WriteTObject(aFunc->Clone(TString("mu_up_") + fNames[i0]),TString("mu_up_") + fNames[i0]);
 
     std::cout << "Wrote mu_up." << std::endl;
 
-    bFunc->SetParameter(0,fitFunc->GetParameter(2) + fitFunc->GetParError(2));
-    bFunc->SetParameter(1,fitFunc->GetParameter(3) + fitFunc->GetParError(3));
-    bFunc->SetParameter(2,fitFunc->GetParameter(4) + fitFunc->GetParError(4));
-    results->WriteTObject(bFunc->Clone(TString("sig_up_") + fNames[i0]),TString("sig_up_") + fNames[i0]);
+    // bFunc->SetParameter(0,fitFunc->GetParameter(2) + cov(2,2)); // fitFunc->GetParError(2));
+    // bFunc->SetParameter(1,fitFunc->GetParameter(3) + cov(3,3)); // fitFunc->GetParError(3));
+    // // bFunc->SetParameter(2,fitFunc->GetParameter(4) + cov(4,4)); // fitFunc->GetParError(4));
+    // results->WriteTObject(bFunc->Clone(TString("sig_up_") + fNames[i0]),TString("sig_up_") + fNames[i0]);
 
-    std::cout << "Wrote sig_up." << std::endl;
+    // std::cout << "Wrote sig_up." << std::endl;
 
-    aFunc->SetParameter(0,fitFunc->GetParameter(0) - fitFunc->GetParError(0));
-    aFunc->SetParameter(1,fitFunc->GetParameter(1) - fitFunc->GetParError(1));
+    aFunc->SetParameter(0,fitFunc->GetParameter(0) - cov(0,0)); // fitFunc->GetParError(0));
+    aFunc->SetParameter(1,fitFunc->GetParameter(1) - abs(cov(0,1))); // fitFunc->GetParError(1));
+    aFunc->SetParameter(2,-1 * cov(1,1));
     results->WriteTObject(aFunc->Clone(TString("mu_down_") + fNames[i0]),TString("mu_down_") + fNames[i0]);
 
     std::cout << "Wrote mu_down." << std::endl;
 
-    bFunc->SetParameter(0,fitFunc->GetParameter(2) - fitFunc->GetParError(2));
-    bFunc->SetParameter(1,fitFunc->GetParameter(3) - fitFunc->GetParError(3));
-    bFunc->SetParameter(2,fitFunc->GetParameter(4) - fitFunc->GetParError(4));
-    results->WriteTObject(bFunc->Clone(TString("sig_down_") + fNames[i0]),TString("sig_down_") + fNames[i0]);
+    // bFunc->SetParameter(0,fitFunc->GetParameter(2) - cov(2,2)); // fitFunc->GetParError(2));
+    // bFunc->SetParameter(1,fitFunc->GetParameter(3) - cov(3,3)); // fitFunc->GetParError(3));
+    // // bFunc->SetParameter(2,fitFunc->GetParameter(4) - cov(4,4)); // fitFunc->GetParError(4));
+    // results->WriteTObject(bFunc->Clone(TString("sig_down_") + fNames[i0]),TString("sig_down_") + fNames[i0]);
 
-    std::cout << "Wrote sig_down." << std::endl;
+    // std::cout << "Wrote sig_down." << std::endl;
   }
 
   results->Close();

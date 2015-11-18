@@ -1,31 +1,9 @@
 # Monojet analysis 13TeV studies
 
-This directory holds the skimmer & slimmer code (slimmer/monojet_TEMP.C) and the selection macro
-(makePlots.py). Its usage is briefly explained below.
+This directory holds the skimmer & slimmer code and the selection macro
+(makePlots.py). Its usage is briefly explained below and in the respective directories.
 
-The skimmer input is a nero file (preferablly from bambu). This code will drop the unnecessary
-branches, and add an other tree with some newly calculated information for the analysis.
-This will also replace some of the branches in the events tree depending which control region
-we would like to check such as met (it will become fakemet if you have 1 or 2 leptons).
-
-In the future, this code can also be used to calculate shifted / smeared collection for systematic
-uncertainty calculations.
-
-Note that, if the input file format changes, the slimmer and skimmer will have to change (at least the .h file)
-This is kind of annoying I agree.
-
-At the current implementation monojet_TEMP.C is a TSelector. There is a small script written to interface the files to it
-properly. This script is: new_simpleRunner.csh (great naming I know). The usage is:
-
-```
-./new_simpleRunner.csh sampleNAME
-```
-
-This script creates a tchain using the files specified in the sampleNAME. This sampleNAME is a txt file in the
-/sourceFiles directory. It has list of all the files and their physical locations.
-The runner script will chain "events" tree of these files and run the monojet.C on them. It also will merge the "all tree"
-and write out at the same output file at the end. It further will save a histogram to be used in the plotting step
-for the effective number of events.
+To learn about the usage of the slimmer please look at the read me file under /slimmer directory
 
 Now we are the step of the selection macro. The selection macro is the makePlots.py At the end of this script you 
 can specify the variable you would like to draw and also the channel (signal or the control regions or even all). 
