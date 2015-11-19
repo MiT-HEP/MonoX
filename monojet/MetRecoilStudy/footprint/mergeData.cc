@@ -6,7 +6,7 @@
 #include "MergedTree.h"
 #include "MonoJetReader.h"
 
-void mergeData() {
+void mergeData(TString folder) {
 
   float metSwitch = 200.;
 
@@ -18,11 +18,11 @@ void mergeData() {
   TF1 *ZmmBin   = (TF1*) binned->Get("fcn_mu_u1_Data_Zmm");
   TF1 *GJetsBin = (TF1*) binned->Get("fcn_mu_u1_Data_gjets");
 
-  TFile *muonFile = new TFile("/Users/dabercro/GradSchool/Winter15/GoodRunsV3/monojet_SingleMuon.root");
+  TFile *muonFile = new TFile(folder + "/monojet_SingleMuon.root");
   TTree *muonTree = (TTree*) muonFile->Get("events");
   MonoJetReader *muonReader = new MonoJetReader(muonTree);
 
-  TFile *gjetFile = new TFile("/Users/dabercro/GradSchool/Winter15/GoodRunsV3/monojet_SinglePhoton.root");
+  TFile *gjetFile = new TFile(folder + "/monojet_SinglePhoton.root");
   TTree *gjetTree = (TTree*) gjetFile->Get("events");
   MonoJetReader *gjetReader = new MonoJetReader(gjetTree);
 
@@ -43,7 +43,6 @@ void mergeData() {
     mergedTree->runNum = gjetReader->runNum;
     mergedTree->lumiNum = gjetReader->lumiNum;
     mergedTree->eventNum = gjetReader->eventNum;
-    mergedTree->rho = gjetReader->rho;
     mergedTree->npv = gjetReader->npv;
     mergedTree->jet1Pt = gjetReader->jet1Pt;
     mergedTree->jet1Eta = gjetReader->jet1Eta;
@@ -54,7 +53,7 @@ void mergeData() {
     mergedTree->jet1isMonoJetIdNew = gjetReader->jet1isMonoJetIdNew;
     mergedTree->jet1isMonoJetId = gjetReader->jet1isMonoJetId;
     mergedTree->jet1isLooseMonoJetId = gjetReader->jet1isLooseMonoJetId;
-    mergedTree->jet1DPhiMet = gjetReader->jet1DPhiUPho;
+    mergedTree->jet1DPhiMet = gjetReader->jet1DPhiMet;
     mergedTree->jet1DPhiTrueMet = gjetReader->jet1DPhiTrueMet;
     mergedTree->jet2Pt = gjetReader->jet2Pt;
     mergedTree->jet2Eta = gjetReader->jet2Eta;
@@ -65,7 +64,7 @@ void mergeData() {
     mergedTree->jet2isMonoJetIdNew = gjetReader->jet2isMonoJetIdNew;
     mergedTree->jet2isMonoJetId = gjetReader->jet2isMonoJetId;
     mergedTree->jet2isLooseMonoJetId = gjetReader->jet2isLooseMonoJetId;
-    mergedTree->jet2DPhiMet = gjetReader->jet2DPhiUPho;
+    mergedTree->jet2DPhiMet = gjetReader->jet2DPhiMet;
     mergedTree->jet2DPhiTrueMet = gjetReader->jet2DPhiTrueMet;
     mergedTree->n_cleanedjets = gjetReader->n_cleanedjets;
     mergedTree->n_jets = gjetReader->n_jets;
@@ -73,7 +72,7 @@ void mergeData() {
     mergedTree->n_bjetsMedium = gjetReader->n_bjetsMedium;
     mergedTree->n_bjetsTight = gjetReader->n_bjetsTight;
     mergedTree->dPhi_j1j2 = gjetReader->dPhi_j1j2;
-    mergedTree->minJetMetDPhi = gjetReader->minJetUPhoDPhi;
+    mergedTree->minJetMetDPhi = gjetReader->minJetMetDPhi;
     mergedTree->minJetTrueMetDPhi = gjetReader->minJetTrueMetDPhi;
     mergedTree->n_tightlep = gjetReader->n_tightlep;
     mergedTree->n_mediumlep = gjetReader->n_mediumlep;
@@ -85,17 +84,17 @@ void mergeData() {
 
     mergedTree->photonEta = gjetReader->photonEta;
     mergedTree->photonPhi = gjetReader->photonPhi;
-    mergedTree->photonIsTight = gjetReader->photonIsTight;
-    mergedTree->n_tightpho = gjetReader->n_tightpho;
+    mergedTree->photonIsMedium = gjetReader->photonIsMedium;
+    mergedTree->n_mediumpho = gjetReader->n_mediumpho;
     mergedTree->n_loosepho = gjetReader->n_loosepho;
     mergedTree->n_tau = gjetReader->n_tau;
     mergedTree->trueMet = gjetReader->trueMet;
     mergedTree->trueMetPhi = gjetReader->trueMetPhi;
-    mergedTree->u_perp = gjetReader->u_perpPho;
-    mergedTree->u_para = gjetReader->u_paraPho;
+    mergedTree->u_perp = gjetReader->u_perp;
+    mergedTree->u_para = gjetReader->u_para;
 
-    mergedTree->met = gjetReader->u_magPho;
-    mergedTree->metPhi = gjetReader->u_phiPho;
+    mergedTree->met = gjetReader->met;
+    mergedTree->metPhi = gjetReader->metPhi;
 
     mergedTree->boson_pt = mergedTree->photonPt;
     mergedTree->boson_phi = mergedTree->photonPhi;
@@ -122,7 +121,6 @@ void mergeData() {
     mergedTree->runNum = muonReader->runNum;
     mergedTree->lumiNum = muonReader->lumiNum;
     mergedTree->eventNum = muonReader->eventNum;
-    mergedTree->rho = muonReader->rho;
     mergedTree->npv = muonReader->npv;
     mergedTree->jet1Pt = muonReader->jet1Pt;
     mergedTree->jet1Eta = muonReader->jet1Eta;
@@ -133,7 +131,7 @@ void mergeData() {
     mergedTree->jet1isMonoJetIdNew = muonReader->jet1isMonoJetIdNew;
     mergedTree->jet1isMonoJetId = muonReader->jet1isMonoJetId;
     mergedTree->jet1isLooseMonoJetId = muonReader->jet1isLooseMonoJetId;
-    mergedTree->jet1DPhiMet = muonReader->jet1DPhiUZ;
+    mergedTree->jet1DPhiMet = muonReader->jet1DPhiMet;
     mergedTree->jet1DPhiTrueMet = muonReader->jet1DPhiTrueMet;
     mergedTree->jet2Pt = muonReader->jet2Pt;
     mergedTree->jet2Eta = muonReader->jet2Eta;
@@ -144,7 +142,7 @@ void mergeData() {
     mergedTree->jet2isMonoJetIdNew = muonReader->jet2isMonoJetIdNew;
     mergedTree->jet2isMonoJetId = muonReader->jet2isMonoJetId;
     mergedTree->jet2isLooseMonoJetId = muonReader->jet2isLooseMonoJetId;
-    mergedTree->jet2DPhiMet = muonReader->jet2DPhiUZ;
+    mergedTree->jet2DPhiMet = muonReader->jet2DPhiMet;
     mergedTree->jet2DPhiTrueMet = muonReader->jet2DPhiTrueMet;
     mergedTree->n_cleanedjets = muonReader->n_cleanedjets;
     mergedTree->n_jets = muonReader->n_jets;
@@ -152,7 +150,7 @@ void mergeData() {
     mergedTree->n_bjetsMedium = muonReader->n_bjetsMedium;
     mergedTree->n_bjetsTight = muonReader->n_bjetsTight;
     mergedTree->dPhi_j1j2 = muonReader->dPhi_j1j2;
-    mergedTree->minJetMetDPhi = muonReader->minJetUZDPhi;
+    mergedTree->minJetMetDPhi = muonReader->minJetMetDPhi;
     mergedTree->minJetTrueMetDPhi = muonReader->minJetTrueMetDPhi;
     mergedTree->lep1Pt = muonReader->lep1Pt;
     mergedTree->lep1Eta = muonReader->lep1Eta;
@@ -160,7 +158,6 @@ void mergeData() {
     mergedTree->lep1PdgId = muonReader->lep1PdgId;
     mergedTree->lep1IsTight = muonReader->lep1IsTight;
     mergedTree->lep1IsMedium = muonReader->lep1IsMedium;
-    mergedTree->lep1DPhiMet = muonReader->lep1DPhiMet;
     mergedTree->lep1RelIso = muonReader->lep1RelIso;
     mergedTree->lep2Pt = muonReader->lep2Pt;
     mergedTree->lep2Eta = muonReader->lep2Eta;
@@ -176,15 +173,15 @@ void mergeData() {
     mergedTree->n_tightlep = muonReader->n_tightlep;
     mergedTree->n_mediumlep = muonReader->n_mediumlep;
     mergedTree->n_looselep = muonReader->n_looselep;
-    mergedTree->n_tightpho = muonReader->n_tightpho;
+    mergedTree->n_mediumpho = muonReader->n_mediumpho;
     mergedTree->n_loosepho = muonReader->n_loosepho;
     mergedTree->n_tau = muonReader->n_tau;
-    mergedTree->met = muonReader->u_magZ;
-    mergedTree->metPhi = muonReader->u_phiZ;
+    mergedTree->met = muonReader->met;
+    mergedTree->metPhi = muonReader->metPhi;
     mergedTree->trueMet = muonReader->trueMet;
     mergedTree->trueMetPhi = muonReader->trueMetPhi;
-    mergedTree->u_perp = muonReader->u_perpZ;
-    mergedTree->u_para = muonReader->u_paraZ;
+    mergedTree->u_perp = muonReader->u_perp;
+    mergedTree->u_para = muonReader->u_para;
     mergedTree->boson_pt = mergedTree->dilep_pt;
     mergedTree->boson_phi = mergedTree->dilep_phi;
     mergedTree->triggerFired = muonReader->triggerFired;

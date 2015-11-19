@@ -13,9 +13,8 @@ tdrStyle.setTDRStyle()
 
 ROOT.gROOT.SetBatch(True)
 
-#dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV4/"
-dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
-sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV5/"
+dataDir   = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV7/"
+sampledir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV7/"
 
 plotter = ROOT.PlotResolution()
 
@@ -23,21 +22,26 @@ plotter = ROOT.PlotResolution()
 
 plotter.SetDumpingFits(True)
 
-fitBin = 300.0
+fitBin = 150
 
-xArray = [20,40,60,80,100,150,200,220,250,300,400,600,1000]
+xArray = [100,150,200,300,400,600,1000]
 
-plotter.SetParameterLimits(1,5,60)
-plotter.SetParameterLimits(2,5,100)
+plotter.SetParameterLimits(0,-50,50)
+plotter.SetParameterLimits(1,10,35)
+plotter.SetParameterLimits(2,30,120)
 plotter.SetParameterLimits(3,0.6,1)
+
+#plotter.SetParameterLimits(1,5,60)
+#plotter.SetParameterLimits(2,5,100)
+#plotter.SetParameterLimits(3,0.6,1)
 
 #fitFunc = ROOT.TF1("fitter","[0]+[1]*x+[2]*x*x",0,1000)
 fitFunc = ROOT.TF1("fitter","[0]+[1]*x",0,xArray[-1])
 linFunc = ROOT.TF1("fitter","[0]+[1]*x",0,xArray[-1])
 
 #fitFunc.SetParLimits(2,-0.02,0.02)
-fitFunc.SetParLimits(1,0,2)
-fitFunc.SetParLimits(2,-5,5)
+#fitFunc.SetParLimits(1,-0.1,2)
+#fitFunc.SetParLimits(2,-5,5)
 #fitFunc.SetParLimits(3,-0.005,0.01)
 
 #allSelections = "(jet1isMonoJetId == 1 && jet1Pt > 100) && "
@@ -62,7 +66,8 @@ entries.append("WZ")                 # 10
 entries.append("ZZ")                 # 11
 entries.append("QCD")                # 12
 
-DataFile       = ROOT.TFile(dataDir + "monojet_Merged.root")
+#DataFile       = ROOT.TFile(dataDir + "monojet_Merged.root")
+DataFile       = ROOT.TFile("../footprint/mergedData.root")
 DYFile         = ROOT.TFile(sampledir + "monojet_DYJetsToLL_M-50.root")
 ZToNuNuFile    = ROOT.TFile(sampledir + "monojet_DYJetsToNuNu.root")
 GJetsFile      = ROOT.TFile(sampledir + "monojet_GJets.root")
@@ -84,11 +89,6 @@ WZTree         = WZFile.Get("events")
 ZZTree         = ZZFile.Get("events")
 QCDTree        = QCDFile.Get("events")
 
-if None in [DataTree,DYTree,ZToNuNuTree,GJetsTree,TTTree,WJetsToLNuTree,WWTree,WZTree,ZZTree,QCDTree]:
-    print "One or more trees not successfully gotten."
-    exit(1)
-##
-
 trees = []
 trees.append(DataTree)
 trees.append(DataTree)
@@ -103,6 +103,14 @@ trees.append(WWTree)
 trees.append(WZTree)
 trees.append(ZZTree)
 trees.append(QCDTree)
+
+if None in trees:
+    for tree in trees:
+        print tree
+    ##
+    print "One or more trees not successfully gotten."
+    exit(1)
+##
 
 fitFunc.SetLineStyle(2)
 linFunc.SetLineStyle(2)
@@ -121,7 +129,7 @@ weights.append("((" + ZmmSelection + " && boson_pt < 210)||(" + phoSelection + "
 weights.append("(" + ZmmSelection + " && genBos_PdgId == 23)" + MCfactors)
 weights.append("(" + ZeeSelection + " && genBos_PdgId == 23)" + MCfactors)
 weights.append("(" + signalSelection + " && genBos_PdgId == 23)" + MCfactors)
-weights.append("(" + phoSelection + " && genBos_PdgId == 22)" + MCfactors)
+weights.append("(" + phoLooseSelection + " && genBos_PdgId == 22)" + MCfactors)
 weights.append("(" + singLeptonSelection + " && abs(genBos_PdgId) == 24)" + MCfactors)
 weights.append("(" + WmnSelection + " && abs(genBos_PdgId) == 24)" + MCfactors)
 weights.append("(" + WenSelection + " && abs(genBos_PdgId) == 24)" + MCfactors)
@@ -203,7 +211,7 @@ for index in range(len(entries)):
         continue
     plotter.AddExpr(Exprs[index])
 
-plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-150.0,150.0)
+plotter.MakeFitGraphs(len(xArray)-1,array('d',xArray),100,-fitBin,fitBin)
 
 mu_u2   = plotter.FitGraph(0)
 sig1_u2 = plotter.FitGraph(1)
@@ -238,24 +246,33 @@ fitNames   = ['mu_u1','sig1_u1','sig2_u1','sig3_u1','sig_u1','mu_u2','sig1_u2','
 
 ROOT.gStyle.SetOptFit(False)
 
-fitFile = ROOT.TFile("fitShit.root","RECREATE")
+chi2s = []
+
+fitFile = ROOT.TFile("SmearingFits.root","RECREATE")
 for i1 in range(len(processes)):
     linFunc.SetLineColor(colors[i1])
     fitFunc.SetLineColor(colors[i1])
+    fitFunc.SetParameter(0,20)
+    fitFunc.SetParameter(1,0)
+    fitFunc.SetParameter(2,0)
     for i0 in range(len(fitVectors)):
+        fitResult = 0
         if i0 % muFreq == 0:
-            fitResult = fitVectors[i0][i1].Fit(linFunc,"SO")
+            fitResult = fitVectors[i0][i1].Fit(linFunc,"SOQ")
             fitFile.WriteTObject(linFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         else:
-            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SO")
+            fitResult = fitVectors[i0][i1].Fit(fitFunc,"SOQ")
             fitFile.WriteTObject(fitFunc.Clone("fcn_"+fitNames[i0]+"_"+processes[i1]),"fcn_"+fitNames[i0]+"_"+processes[i1])
         ##
+        print processes[i1]
+        print fitNames[i0]
+        print 'chi2 prob ' + str(fitResult.Prob())
         fitFile.WriteTObject(fitResult.GetCovarianceMatrix().Clone("cov_"+fitNames[i0]+"_"+processes[i1]),"cov_"+fitNames[i0]+"_"+processes[i1])
 ##
 fitFile.Close()
 
 plotter.SetLegendLimits(0.15,0.7,0.45,0.9)
-plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-20,100)
+plotter.MakeCanvas("upara_mu",mu_u1,"","Boson p_{T} [GeV]","#mu_{u_{#parallel}+p_{T}^{#gamma/Z}}",-30,30)
 plotter.MakeCanvas("upara_sig1",sig1_u1,"","Boson p_{T} [GeV]","#sigma_{1,u_{#parallel}+p_{T}^{#gamma/Z}}",0,100)
 plotter.SetLegendLimits(0.6,0.15,0.9,0.35)
 plotter.MakeCanvas("upara_sig2",sig2_u1,"","Boson p_{T} [GeV]","#sigma_{2,u_{#parallel}+p_{T}^{#gamma/Z}}",0,120)
