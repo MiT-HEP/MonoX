@@ -56,7 +56,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   
   TFile *elecSFFile  = new TFile("files/scalefactors_ele-2.root");
-  TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Veto_ele");
+  TH2D  *elecSFVeto  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Veto_ele");
   TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
   TH2D  *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
   TH2D  *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
@@ -105,6 +105,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Float_t bCutMedium = 0.89;
   Float_t bCutTight  = 0.97;
 
+  TFile *outFile = new TFile(outFileName,"RECREATE");
+  MonoJetTree *outTree = new MonoJetTree("events", outFile);
+  TH1F *allHist = new TH1F("htotal","htotal",1,-1,1);
+
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
   NeroTree *inTree        = new NeroTree(inTreeFetch);
@@ -113,9 +117,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   TBranch *mcWeightBranch = allTree->GetBranch("mcWeight");
   mcWeightBranch->SetAddress(&mcWeight);
 
-  TFile *outFile = new TFile(outFileName,"RECREATE");
-  MonoJetTree *outTree = new MonoJetTree("events");
-  TH1F *allHist = new TH1F("htotal","htotal",1,-1,1);
 
   TLorentzVector vec1;
   TLorentzVector vec2;
@@ -168,10 +169,15 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(outTree->npv));
     */
 
+    /*
     if (inTree->mcWeight < 0)
       outTree->mcWeight = -1;
     else
       outTree->mcWeight = 1;
+    */
+
+
+    outTree->mcWeight = inTree->mcWeight;
 
     outTree->trueMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
     outTree->trueMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
@@ -414,13 +420,17 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
 
     Double_t checkDPhi = 5.0;
+    Double_t clean_checkDPhi = 5.0;
 
     //// Now we go on to clean jets ////
-    
+
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
       
       //// Ignore jets that are not in this region ////
+
+      if (fabs(tempJet->Eta()) > 2.5  && tempJet->Pt()>100.)
+          outTree->leadingJet_outaccp = 1;
 
       if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
         continue;
@@ -429,8 +439,17 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutTight)
         outTree->n_bjetsTight++;
+
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutMedium)
-        outTree->n_bjetsMedium++;
+      {
+          
+          float dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempJet->Phi(),tempJet->Eta());
+          float dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempJet->Phi(),tempJet->Eta());
+          if (dR_1 > 0.4 && dR_2 > 0.4){
+              outTree->n_bjetsMedium++;   
+          }
+      }
+      
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutLoose)
         outTree->n_bjetsLoose++;
       
@@ -488,6 +507,16 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       outTree->n_cleanedjets++;
       jetVecs.push_back(tempJet);
+
+      if (outTree->n_cleanedjets < 5){
+          //Check for delta phi from met for all jets:                                                                                                                           
+          clean_checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+          if (clean_checkDPhi < outTree->minJetMetDPhi_clean)
+              outTree->minJetMetDPhi_clean = clean_checkDPhi;
+      }
+
+
+
       
       if (outTree->n_cleanedjets == 1) {
           outTree->jet1Pt  = tempJet->Pt();
@@ -535,7 +564,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           continue;
 
       if ( (*(inTree->decayModeFinding))[iTau]   != 1 ) continue;
-      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 4 ) continue;
+      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3 ) continue;
 
       //// Now do cleaning ////
       
@@ -551,7 +580,14 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (match)
         continue;
 
-      outTree->n_tau++;
+      float dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempTau->Phi(),tempTau->Eta());
+      float dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempTau->Phi(),tempTau->Eta());
+      if (dR_1 > 0.4 && dR_2 > 0.4){                   
+          outTree->n_tau++;
+
+      }
+    
+    //outTree->n_tau++;
     }
     
     //// Now look for generator information ////

@@ -3,8 +3,9 @@
 ClassImp(MonoJetTree)
 
 //--------------------------------------------------------------------------------------------------
-MonoJetTree::MonoJetTree(const char *name)
+MonoJetTree::MonoJetTree(const char *name, TFile *outFile)
 { 
+  outFile->cd();
   t = new TTree(name,name);
 
   t->Branch("runNum",&runNum,"runNum/I");
@@ -55,6 +56,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("n_bjetsLoose",&n_bjetsLoose,"n_bjetsLoose/I");
   t->Branch("n_bjetsMedium",&n_bjetsMedium,"n_bjetsMedium/I");
   t->Branch("n_bjetsTight",&n_bjetsTight,"n_bjetsTight/I");
+  t->Branch("leadingJet_outaccp",&leadingJet_outaccp,"leadingJet_outaccp/I");
   t->Branch("leadingjetPt",&leadingjetPt,"leadingjetPt/F");
   t->Branch("leadingjetEta",&leadingjetEta,"leadingjetEta/F");
   t->Branch("leadingjetPhi",&leadingjetPhi,"leadingjetPhi/F");
@@ -85,6 +87,7 @@ MonoJetTree::MonoJetTree(const char *name)
   t->Branch("n_cleanedjets",&n_cleanedjets,"n_cleanedjets/I");
   t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
   t->Branch("minJetMetDPhi",&minJetMetDPhi,"minJetMetDPhi/F");
+  t->Branch("minJetMetDPhi_clean",&minJetMetDPhi_clean,"minJetMetDPhi_clean/F");
   t->Branch("minJetTrueMetDPhi",&minJetTrueMetDPhi,"minJetTrueMetDPhi/F");
   t->Branch("n_tau",&n_tau,"n_tau/I");
   t->Branch("boson_pt",&boson_pt,"boson_pt/F");
@@ -163,6 +166,7 @@ MonoJetTree::Reset()
   n_bjetsLoose = 0;
   n_bjetsMedium = 0;
   n_bjetsTight = 0;
+  leadingJet_outaccp = 0;
   leadingjetPt = -5;
   leadingjetEta = -7;
   leadingjetPhi = -5;
@@ -193,6 +197,7 @@ MonoJetTree::Reset()
   n_cleanedjets = 0;
   dPhi_j1j2 = -1;
   minJetMetDPhi = 5;
+  minJetMetDPhi_clean = 5;
   minJetTrueMetDPhi = 5;
   n_tau = 0;
   boson_pt = -5;

@@ -10,10 +10,19 @@ import ROOT
 
 numMaxProcesses = int(sys.argv[1])
 
-inDir  = "/tmp/zdemirag/hadd/"#"/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer"
-outDir = "/afs/cern.ch/work/z/zdemirag/public/slim_Nov9_new/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer/slim"
+#inDir  = "/tmp/zdemirag/flat_Nov11/"
+inDir  = "/tmp/zdemirag/nov19_flat"
 
-GoodRunsFile = "/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/latest_Json_Nov4.txt"
+#"/tmp/zdemirag/hadd/"#"/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV6/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer"
+#outDir = "/tmp/zdemirag/slim_Nov11/"
+outDir = "/tmp/zdemirag/nov19_slim/"
+
+#"/afs/cern.ch/work/z/zdemirag/public/slim_Nov9_new/" #"/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer/slim"
+
+#GoodRunsFile="/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/MetRecoilStudy/latest_Json_Nov4.txt"
+
+GoodRunsFile="/afs/cern.ch/work/z/zdemirag/work/frozen_monojet/monojet/slimmer/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
+
 cut = "(met > 200)"
 
 #######################################################################
