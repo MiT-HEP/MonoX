@@ -46,7 +46,7 @@ if metSel == '(1)':
     print 'Not applying any met selection!'
 
 ### Directory stuff so that results are saved and such
-plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey)
+plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey,'ClosureTest')
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
@@ -102,8 +102,10 @@ sbSels = [ SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+truthSel+' && '+pt
 # print sbSel
 
 # fit, signal, contamination, background
-skims = [ Measurement[skimName][1], Measurement[skimName][0], sbSkims[0], Measurement[skimName][5], sbSkims[1], Measurement[skimName][5], sbSkims[2], Measurement[skimName][5] ] 
-sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSels[0], Selections[inputKey][5], sbSels[1], Selections[inputKey][5], sbSels[2], Selections[inputKey][5] ] 
+# skims = [ Measurement[skimName][1], Measurement[skimName][0], sbSkims[0], Measurement[skimName][5], sbSkims[1], Measurement[skimName][5], sbSkims[2], Measurement[skimName][5] ] 
+skims = [ Measurement[skimName][2], Measurement[skimName][0], sbSkims[0], Measurement[skimName][6], sbSkims[1], Measurement[skimName][6], sbSkims[2], Measurement[skimName][6] ] 
+# sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSels[0], Selections[inputKey][5], sbSels[1], Selections[inputKey][5], sbSels[2], Selections[inputKey][5] ] 
+sels = [ Selections[inputKey][2], Selections[inputKey][0], sbSels[0], Selections[inputKey][6], sbSels[1], Selections[inputKey][6], sbSels[2], Selections[inputKey][6] ] 
 
 nIter = 0
 hists = []

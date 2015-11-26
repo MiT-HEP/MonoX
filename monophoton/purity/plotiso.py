@@ -36,7 +36,7 @@ varBins = True
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = os.path.join(versDir,'Skims')
 # plotDir = os.path.join(versDir,'Plots',inputKey)
-plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey)
+plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey, 'ClosureTest')
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 

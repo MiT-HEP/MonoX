@@ -52,4 +52,4 @@ for skim in skims:
 
     mergedFileName = os.path.join(outDir,skim[0]+'.root')
     subprocess.call(['hadd','-f',mergedFileName]+filesToMerge)
-    break
+    # break

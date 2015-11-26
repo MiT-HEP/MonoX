@@ -68,8 +68,8 @@ for loc in Locations[:1]:
                     fit = plotDir[0] 
                     isoVals = np.asarray([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
                     #isoVals = np.arange(2.0,8.5,0.5)
-                    puritiesCalc = ( np.asarray(  [ 1 - value[0] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
-                                     ,np.asarray( [ max( abs(value[0] - value[1]), abs(value[0] - value[2])) for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
+                    puritiesCalc = ( np.asarray(  [ (1 - value[0])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
+                                     ,np.asarray( [ (max( abs(value[0] - value[1]), abs(value[0] - value[2])))*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
                                      # ,np.asarray( [ 1 - value[1] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) 
                                      # ,np.asarray( [ 1 - value[2] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
                     pprint(isoVals)
@@ -79,24 +79,10 @@ for loc in Locations[:1]:
                     paramsInit = params
 
                     def purityFunc(_params, _iso):
-                        purity_ = _params[0] + _params[1] * _iso
+                        purity_ = _params[0] # + _params[1] * _iso
                         return purity_
                     
                     def resFunc(_params, _iso, _purity):
-                        '''
-                        pprint(_purity[0])
-                        pprint(_purity[1])
-                        sigmaUp = abs( _purity[0] - _purity[1] )
-                        pprint(sigmaUp)
-                        
-                        pprint(_purity[0])
-                        pprint(_purity[2])
-                        sigmaDown = abs( _purity[0] - _purity[2] )
-                        pprint(sigmaDown)
-
-                        sigmaMax = max( sigmaDown.any(), sigmaDown.any() )
-                        pprint(sigmaMax)
-                        '''
                         err = ( _purity[0] - purityFunc(_params, _iso) ) / _purity[1]
                         return err
 
@@ -110,28 +96,15 @@ for loc in Locations[:1]:
                     #pprint(puritiesFit)
                     
                     
-                    plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='k.')
-                    # plot.plot(isoVals, puritiesCalc[0], 'k.', isosFit, puritiesFit, 'r-')
-                    plot.plot(isosFit, puritiesFit, 'r-')
-                    plot.legend(['Measured', 'Fit'])
+                    plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
+                    plot.plot(isosFit, puritiesFit, 'r-', linewidth=2)
+                    # plot.legend(['Measured', 'Fit'])
                     plot.xlim(0.,10.)
-                    plot.ylim(0.00,0.10)
-                    plot.ylabel(r'Impurity')
-                    plot.xlabel(r'Charged Hadron Isolation (GeV)')
-                    outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0])
+                    # plot.ylim(0.02,0.08)
+                    plot.ylim(2.5,7.5)
+                    plot.tick_params(axis='both', which='major', labelsize=16)
+                    plot.ylabel(r'Impurity (%)', fontsize=24)
+                    plot.xlabel(r'Charged Hadron Isolation (GeV)', fontsize=24)
+                    outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0]+'_flat')
                     plot.savefig(outName+'.pdf', format='pdf')
                     plot.savefig(outName+'.png', format='png')
-                    
-                    '''
-                    ax = axes.Axes()                    
-                    ax.plot(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='k.', label='Measured')
-                    axes.plot(isosFit, puritiesFit, 'r-', label='Fit')
-                    ax.legend(['Measured', 'Fit'])
-                    ax.xlim(0.,10.)
-                    ax.ylim(0.00,0.10)
-                    ax.ylabel(r'Impurity')
-                    ax.xlabel(r'Charged Hadron Isolation (GeV)')
-                    outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0])
-                    ax.savefig(outName+'.pdf', format='pdf')
-                    ax.savefig(outName+'.png', format='png')
-                    '''
