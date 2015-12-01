@@ -6,8 +6,8 @@ from selections import Regions, Variables, Version
 gROOT.SetBatch(True)
 
 # varName = 'chiso' 
-# varName = 'sieie'
-varName = 'sieieScaled'
+varName = 'sieie'
+# varName = 'sieieScaled'
 var = Variables[varName]
 # skims = Regions["ShapeChIso"]
 skims = Regions["Monophoton"]
@@ -16,7 +16,6 @@ outDir = os.path.join('/scratch5/ballen/hist/purity/',Version,varName,'Skims/tmp
 if not os.path.exists(outDir):
     os.makedirs(outDir)
     
-
 
 lumi = -1.0
 try:
@@ -29,7 +28,7 @@ except IndexError:
 else:
     lumi = float(sys.argv[1])
 
-for skim in skims:
+for skim in skims[:]:
     print 'Starting skim:', skim[0]
     
     filesToMerge = []
@@ -38,9 +37,11 @@ for skim in skims:
         inputTree = TChain('events')
         
         for f in os.listdir(samp[-1]):
+            if not 'simpletree' in str(f): 
+                continue
             print 'Adding file: ', str(f)
             inputTree.Add(samp[-1] + '/' + f)
-            # break
+            break
     
         outname = os.path.join(outDir,samp[0]+'.root')
         filesToMerge.append(outname)

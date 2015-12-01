@@ -2,7 +2,7 @@ import os
 import array
 import ROOT
 
-Version = 'simpletree5'
+Version = 'simpletree9'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
@@ -327,7 +327,7 @@ cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPho
 # cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
 
 cutPhotonPtLow = range(20,220,40)
-cutPhotonPtHigh = range(150,351,100) #  # [150]+range(200,301,50)+[500] # [150, 200, 300, 400] #
+cutPhotonPtHigh = [175,200,250,300,350],# range(150,351,100) 
 PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
                  + [ ('PhotonPt'+str(low)+'to'+str(high), '((selPhotons.pt > '+str(low)+') && (selPhotons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
                  + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
