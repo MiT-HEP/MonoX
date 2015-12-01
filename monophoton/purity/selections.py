@@ -323,11 +323,12 @@ cutIsMedium = '(selPhotons.medium)'
 cutIsTight = '(selPhotons.tight)'
 
 cutMatchedToPhoton = '(TMath::Abs(selPhotons.matchedGen) == 22)'
-cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPhotons.drParton > 0.5))' 
+# cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPhotons.drParton > 0.5))' 
+cutMatchedToReal = '(selPhotons.matchedGen == -22)'
 # cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
 
 cutPhotonPtLow = range(20,220,40)
-cutPhotonPtHigh = [175,200,250,300,350],# range(150,351,100) 
+cutPhotonPtHigh = [175,200,250,300,350] # range(150,351,100) 
 PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
                  + [ ('PhotonPt'+str(low)+'to'+str(high), '((selPhotons.pt > '+str(low)+') && (selPhotons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
                  + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]

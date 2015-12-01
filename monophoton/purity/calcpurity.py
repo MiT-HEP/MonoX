@@ -11,6 +11,7 @@ pid = sys.argv[2]
 chiso = sys.argv[3]
 pt = sys.argv[4]
 met = sys.argv[5]
+shape = sys.argv[6]
 
 selKeys = []
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
@@ -18,6 +19,8 @@ try:
     Selections[inputKey]
 except KeyError:
     print "Selection inputted from command line doesn't exist. Quitting!!!"
+    print "Available selections are: "
+    for sel in Selections: print sel
     sys.exit()
 else:
     selKeys.append(inputKey)
@@ -28,12 +31,13 @@ else:
 # Make templates from skims
 varName = 'sieie'
 var = Variables[varName]
-varBins = False
+variableBins = { "Shape" : False, "TwoBin" : True }
+varBins = variableBins[shape]
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = os.path.join(versDir,'Skims')
-# plotDir = os.path.join(versDir,'Plots',inputKey)
-plotDir = os.path.join('/home/ballen/public_html/cmsplots/PurityTemp',inputKey)
+plotDir = os.path.join(versDir,'Plots',shape,inputKey)
+# plotDir = os.path.join('/home/ballen/public_html/cmsplots/PurityTemp',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
