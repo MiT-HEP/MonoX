@@ -69,8 +69,8 @@ MergedTree::MergedTree(const char *name)
   t->Branch("photonPtCheck",&photonPtCheck,"photonPtCheck/F");
   t->Branch("photonEta",&photonEta,"photonEta/F");
   t->Branch("photonPhi",&photonPhi,"photonPhi/F");
-  t->Branch("photonIsTight",&photonIsTight,"photonIsTight/I");
-  t->Branch("n_tightpho",&n_tightpho,"n_tightpho/I");
+  t->Branch("photonIsMedium",&photonIsMedium,"photonIsMedium/I");
+  t->Branch("n_mediumpho",&n_mediumpho,"n_mediumpho/I");
   t->Branch("n_loosepho",&n_loosepho,"n_loosepho/I");
   t->Branch("n_tau",&n_tau,"n_tau/I");
   t->Branch("met",&met,"met/F");
@@ -159,8 +159,8 @@ MergedTree::Reset()
   photonPtCheck = -5;
   photonEta = -7;
   photonPhi = -5;
-  photonIsTight = -1;
-  n_tightpho = 0;
+  photonIsMedium = -1;
+  n_mediumpho = 0;
   n_loosepho = 0;
   n_tau = 0;
   met = -5;

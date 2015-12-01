@@ -8,6 +8,7 @@ cat xsecArgs.txt | xargs -n2 -P6 ./xsecRunner.sh $folder
 
 hadd $folder/monojet_GJets.root $folder/monojet_GJets_HT*.root
 hadd $folder/monojet_WJetsToLNu.root $folder/monojet_WJetsToLNu_HT*.root
+hadd $folder/monojet_QCD.root $folder/monojet_QCD_HT*.root
 hadd $folder/monojet_MET.root $folder/monojet_MET+Run201*.root
 hadd $folder/monojet_SingleMuon.root $folder/monojet_SingleMuon+Run201*.root
 hadd $folder/monojet_SingleElectron.root $folder/monojet_SingleElectron+Run201*.root

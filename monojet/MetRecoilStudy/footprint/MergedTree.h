@@ -72,8 +72,8 @@ public:
   float photonPtCheck;
   float photonEta;
   float photonPhi;
-  int   photonIsTight;
-  int   n_tightpho;
+  int   photonIsMedium;
+  int   n_mediumpho;
   int   n_loosepho;
   int   n_tau;
   float met;
