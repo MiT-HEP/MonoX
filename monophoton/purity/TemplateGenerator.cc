@@ -128,20 +128,34 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     printf("Event weight is: %f \n", eventWeight);
   }
 
-  Long_t pass[20]{};
-  
+  TFile* puFile = new TFile("/scratch5/yiiyama/studies/monophoton/npv.root");
+  TH1F* hPuWeights = (TH1F*)puFile->Get("npvweight");
+  Int_t puBin = 1;
+  Float_t puWeight = 1.0;
 
+  Long_t pass[20]{};
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
     if (iEntry % 10000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
 
     event.weight *= eventWeight;
+    
+    puBin = hPuWeights->FindFixBin(event.npv);
+    // std::cout << "puBin: " << puBin << std::endl;
+    if (puBin < 1) puBin = 1;
+    if (puBin > hPuWeights->GetNbinsX()) puBin = hPuWeights->GetNbinsX();
+    // std::cout << "puBin: " << puBin << std::endl;
+    puWeight = hPuWeights->GetBinContent(puBin);
+    // std::cout << "puWeight: " << puWeight << std::endl;
+    event.weight *= puWeight;
 
     selectedPhotons.clear();
     unsigned iSel(0);
 
-    if (!event.hlt[simpletree::kPhoton165HE10].pass) continue;
+    if (_xsec < 0)
+      if (!event.hlt[simpletree::kPhoton165HE10].pass) 
+	continue;
 
     auto& photons(event.photons);
     auto& electrons(event.electrons);

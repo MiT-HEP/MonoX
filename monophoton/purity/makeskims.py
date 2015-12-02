@@ -41,7 +41,7 @@ for skim in skims[:]:
                 continue
             print 'Adding file: ', str(f)
             inputTree.Add(samp[-1] + '/' + f)
-            break
+            # break
     
         outname = os.path.join(outDir,samp[0]+'.root')
         filesToMerge.append(outname)
