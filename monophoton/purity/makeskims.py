@@ -5,14 +5,18 @@ from ROOT import *
 from selections import Regions, Variables, Version
 gROOT.SetBatch(True)
 
-varName = 'sieie'
+# varName = 'chiso' 
+# varName = 'sieie'
+varName = 'sieieScaled'
 var = Variables[varName]
+# skims = Regions["ShapeChIso"]
+skims = Regions["Monophoton"]
 
 outDir = os.path.join('/scratch5/ballen/hist/purity/',Version,varName,'Skims/tmp')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
     
-skims = Regions["Monophoton"]
+
 
 lumi = -1.0
 try:
@@ -48,3 +52,4 @@ for skim in skims:
 
     mergedFileName = os.path.join(outDir,skim[0]+'.root')
     subprocess.call(['hadd','-f',mergedFileName]+filesToMerge)
+    # break

@@ -63,11 +63,11 @@ for selKey in selKeys:
     mcPurity = FitTemplates(mcName, mcTitle, var[3][loc][0], var[4][loc][pid], templates[2], templates[0], templates[6])
 
     # Calculate purity and print results
-    print "Purity of Photons in data is:", dataPurity
-    purities[0].append(dataPurity)
+    print "Purity of Photons in data is:", dataPurity[0], dataPurity[1]
+    purities[0].append( (dataPurity[0],dataPurity[1]) )
     
-    print "Purity of Photons in mc is:", mcPurity
-    purities[1].append(mcPurity)
+    print "Purity of Photons in mc is:", mcPurity[0], mcPurity[1]
+    purities[1].append( (mcPurity[0],mcPurity[1]) )
 
     truthReal = templates[3].sumEntries(varName+' < '+str(var[4][loc][pid]))
     truthTotal = templates[2].sumEntries(varName+' < '+str(var[4][loc][pid]))
