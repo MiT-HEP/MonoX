@@ -128,18 +128,36 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     printf("Event weight is: %f \n", eventWeight);
   }
 
-  Long_t pass[20]{};
-  
+  TFile* puFile = new TFile("/scratch5/yiiyama/studies/monophoton/npv.root");
+  TH1F* hPuWeights = (TH1F*)puFile->Get("npvweight");
+  Int_t puBin = 1;
+  Float_t puWeight = 1.0;
 
+  Long_t pass[20]{};
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
     if (iEntry % 10000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
 
     event.weight *= eventWeight;
+    
+    if (_xsec > 0) {
+      puBin = hPuWeights->FindFixBin(event.npv);
+      // std::cout << "puBin: " << puBin << std::endl;
+      if (puBin < 1) puBin = 1;
+      if (puBin > hPuWeights->GetNbinsX()) puBin = hPuWeights->GetNbinsX();
+      // std::cout << "puBin: " << puBin << std::endl;
+      puWeight = hPuWeights->GetBinContent(puBin);
+      // std::cout << "puWeight: " << puWeight << std::endl;
+      event.weight *= puWeight;
+    }
 
     selectedPhotons.clear();
     unsigned iSel(0);
+
+    if (_xsec < 0)
+      if (!event.hlt[simpletree::kPhoton165HE10].pass) 
+	continue;
 
     auto& photons(event.photons);
     auto& electrons(event.electrons);
@@ -157,6 +175,8 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
     Float_t* chIso[2] = { event.photons.data.chIso, event.electrons.data.chIsoPh };
     Float_t* nhIso[2] = { event.photons.data.nhIso, event.electrons.data.nhIsoPh };
     Float_t* phIso[2] = { event.photons.data.phIso, event.electrons.data.phIsoPh };
+    Bool_t* trigger[2] = { event.photons.data.matchHLT165HE10, event.electrons.data.matchHLT165HE10Ph };
+ 
 
     for (unsigned iP(0); iP != nObjects; ++iP) {
       Bool_t PassCut[nFakeVars];
@@ -170,7 +190,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
       if (TMath::Abs(eta[kObject][iP]) < 1.5) kLocation = kBarrel;
       else kLocation = kEndcap;
 		
-      
+      // if (!trigger[kObject][iP]) continue;
       pass[0]++;
 
       // baseline photon selection
@@ -289,7 +309,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	selected.hOverE = electrons[iP].hOverE;
 	selected.matchedGen = electrons[iP].matchedGen;
 	// selected.isEB = electrons[iP].isEB;
-	selected.hadDecay = electrons[iP].hadDecay;
+	// selected.hadDecay = electrons[iP].hadDecay;
 	selected.pixelVeto = true;
 	selected.csafeVeto = true;
       } else {
@@ -305,10 +325,10 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 	  selected.sieie = photons[iP].sieie;
 	}
 	selected.hOverE = photons[iP].hOverE;
-	selected.drParton = photons[iP].drParton;
+	// selected.drParton = photons[iP].drParton;
 	selected.matchedGen = photons[iP].matchedGen;
 	selected.isEB = photons[iP].isEB;
-	selected.hadDecay = photons[iP].hadDecay;
+	// selected.hadDecay = photons[iP].hadDecay;
 	selected.pixelVeto = photons[iP].pixelVeto;
 	selected.csafeVeto = photons[iP].csafeVeto;
 	selected.loose = photons[iP].loose;

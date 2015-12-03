@@ -2,7 +2,7 @@ import os
 import array
 import ROOT
 
-Version = 'simpletree5'
+Version = 'simpletree10'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
@@ -74,12 +74,13 @@ Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGTo
             
             ,"Monophoton" : [ ( 'TempSignalGJets',kPhoton, [ 
                 ( 'TempSignalGJetsHt040to100',23080,ntupledir+'GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('TempSignalGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('TempSignalGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempSignalGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
+                ,('TempSignalGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
                 ,('TempSignalGJetsHt400to600',273,ntupledir+'GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
                 ,('TempSignalGJetsHt600toInf',94.5,ntupledir+'GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] )
                               ,('TempBkgdSinglePhoton',kBackground, [ 
-                ( 'TempBkgdSinglePhotonD',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')               
+                ( 'TempBkgdSinglePhotonDv3',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')               
+                ,('TempBkgdSinglePhotonDv4',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v4+AOD')
                 #,('TempBkgdSinglePhotonC',-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD') 
                 ] )
                               ,('TempBkgdQCD',kBackground, [ 
@@ -90,12 +91,13 @@ Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGTo
                 ,('TempBkgdQCDHt1000to1500',1064,ntupledir+'QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM') ] )
                               ,( 'TempBkgdGJets',kBackground, [ 
                 ( 'TempBkgdGJetsHt040to100',23080,ntupledir+'GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('TempBkgdGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('TempBkgdGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('TempBkgdGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
+                ,('TempBkgdGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
                 ,('TempBkgdGJetsHt400to600',273,ntupledir+'GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
                 ,('TempBkgdGJetsHt600toInf',94.5,ntupledir+'GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] )
                               ,('FitSinglePhoton',kPhoton, [ 
-                ( 'FitSinglePhotonD',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')
+                ( 'FitSinglePhotonDv3',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v3+AOD')
+                ,('FitSinglePhotonDv4',-1,ntupledir+'SinglePhoton+Run2015D-PromptReco-v4+AOD')
                 #,('FitSinglePhotonC',-1,ntupledir+'SinglePhoton+Run2015C-PromptReco-v1+AOD') 
                 ] )
                               ,('FitQCD',kPhoton, [ 
@@ -106,8 +108,8 @@ Regions = { "Wgamma" : [ ( 'TempSignalWgPhotons',kPhoton,405.271,ntupledir+'WGTo
                 ,('FitQCDHt1000to1500',1064,ntupledir+'QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM') ] ) ]
             ,"ShapeChIso" : [ ( 'ShapeChIsoGJets',kPhoton, [ 
                 ( 'ShapeChIsoGJetsHt040to100',23080,ntupledir+'GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('ShapeChIsoGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
-                ,('ShapeChIsoGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
+                ,('ShapeChIsoGJetsHt100to200',9110,ntupledir+'GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
+                ,('ShapeChIsoGJetsHt200to400',2281,ntupledir+'GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM')
                 ,('ShapeChIsoGJetsHt400to600',273,ntupledir+'GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
                 ,('ShapeChIsoGJetsHt600toInf',94.5,ntupledir+'GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM') ] ) ]
             ,"ElectronIso" : [ ( 'TempSignalWgPhotons',kPhoton,-1,ntupledir+'WGToLNuG_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM')
@@ -323,11 +325,12 @@ cutIsMedium = '(selPhotons.medium)'
 cutIsTight = '(selPhotons.tight)'
 
 cutMatchedToPhoton = '(TMath::Abs(selPhotons.matchedGen) == 22)'
-cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPhotons.drParton > 0.5))' 
+# cutMatchedToReal = '('+cutMatchedToPhoton+' && (!selPhotons.hadDecay) && (selPhotons.drParton > 0.5))' 
+cutMatchedToReal = '(selPhotons.matchedGen == -22)'
 # cutMatchedToHadDecay = '('+cutMatchedToPhoton+' && (selPhotons.hadDecay))'
 
 cutPhotonPtLow = range(20,220,40)
-cutPhotonPtHigh = range(150,351,100) #  # [150]+range(200,301,50)+[500] # [150, 200, 300, 400] #
+cutPhotonPtHigh = [175,200,250,300,350] # range(150,351,100) 
 PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
                  + [ ('PhotonPt'+str(low)+'to'+str(high), '((selPhotons.pt > '+str(low)+') && (selPhotons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
                  + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
@@ -348,9 +351,10 @@ ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(lo
 ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.0)+'))') ]
 '''
 
-ChIsoSbBins = range(10,105,5)
-ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
-ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
+# ChIsoSbBins = range(10,105,5)
+ChIsoSbBins = range(30,110,20)
+ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) ]
+# ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
 
 #for sel in ChIsoSbSels:
 #   print sel 
