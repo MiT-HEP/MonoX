@@ -5,9 +5,9 @@ fresh=$1
 filesPerJob=10
 numProc=1
 
-outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV7'
+outDir='/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesMiniAOD'
 lfsOut='/afs/cern.ch/work/d/dabercro/public/Winter15/lxbatchOut'
-eosDir='/store/user/yiiyama/nerov3reredo'
+eosDir='/store/user/dmytro/Nero/v1.1.1'
 
 if [ "$CMSSW_BASE" = "" ]; then
     echo "CMSSW_BASE not set. Make sure to cmsenv someplace that you want the jobs to use"
@@ -47,12 +47,28 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
     bestName="${betterName%%-madgraph*}"                    # the flat N-tuples
     #bestName="${otherName%%-Prompt*}"
 
-    for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`; do
-
+    fulldir=$dir
+    
+    for dir1 in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir`
+    do
+        if [ "${dir1: -3}" = "_p2" ]
+        then
+            for dir2 in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir/$dir1`
+            do
+                for dir3 in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$dir/$dir1/$dir2`
+                do
+                    fulldir=$dir/$dir1/$dir2/$dir3
+                done
+            done
+        fi
+    done
+    
+    for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select ls -1 $eosDir/$fulldir`
+    do
         if [ "$inFile" = "nero_pilot.root" ]; then
             continue
         fi
-
+        
         if [ "$fileInCount" -eq "$filesPerJob" ]; then
             fileInCount=0
             count=$((count + 1))
@@ -62,15 +78,15 @@ for dir in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.sele
         echo $inFile >> $currentConfig
         fileInCount=$((fileInCount + 1))
     done
-
+    
     rootNames=`ls $lfsOut/monojet_$bestName\_*.txt | sed 's/.txt/.root/'`
-
+    
     echo "$outDir/monojet_$bestName.root $lfsOut/monojet_"$bestName"_*.root" >> $haddFile
-
+    
     for outFile in $rootNames; do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]; then
             echo Making: $outFile
-            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir $dir $outFile $numProc $CMSSW_BASE `pwd`
+            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir/$fulldir $outFile $numProc $CMSSW_BASE `pwd`
             ranOnFile=1
         fi
     done

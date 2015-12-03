@@ -4,16 +4,9 @@ import sys,os
 import ROOT
 import os.path
 
-if os.path.isfile('NeroTree_C.so') and os.path.isfile('MonoJetTree_cc.so') and os.path.isfile('NeroSlimmer_cc.so'):
-    ROOT.gROOT.LoadMacro('NeroTree_C.so')
-    ROOT.gROOT.LoadMacro('MonoJetTree_cc.so')
-    ROOT.gROOT.LoadMacro('NeroSlimmer_cc.so')
-else:
-    ROOT.gROOT.LoadMacro('NeroTree.C+')
-    ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
-    ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
-
-
+ROOT.gROOT.LoadMacro('NeroTree.C+')
+ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
+ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
 if sys.argv[1] == "test":
     ROOT.NeroSlimmer(
@@ -35,6 +28,10 @@ elif sys.argv[1] == "TT":
     ROOT.NeroSlimmer(
         "root://eoscms//store/user/yiiyama/transfer/TTbarDMJets_pseudoscalar_Mchi-1_Mphi-100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0000.root",
         "testTT.root")
+elif sys.argv[1] == "miniAOD":
+        ROOT.NeroSlimmer(
+        "root://eoscms//store/user/dmytro/Nero/v1.1.1/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_p2/151104_133348/0000/NeroNtuples_skimmed_3.root",
+        "testMiniTT.root")
 else:
     if not os.path.isfile(sys.argv[2]):
         ROOT.NeroSlimmer(sys.argv[1],

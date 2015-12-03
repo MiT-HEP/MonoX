@@ -357,7 +357,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_loosepho++;
 
       //// Usign the medium photon collection for futher cleaning ////
-      if (tempPhoton->Pt() > 175 && (*(inTree->photonMediumId))[iPhoton] == 1) {
+      if (tempPhoton->Pt() > 175 && ((*(inTree->photonSelBits))[iPhoton] & 4) == 4) {
         photonVecs.push_back(tempPhoton);
         outTree->n_mediumpho++;
       }
@@ -504,9 +504,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           
           outTree->jet1BTag             = (*(inTree->jetBdiscr))[iJet];
           outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
-          outTree->jet1isMonoJetId      = (*(inTree->jetMonojetId))[iJet];
-          outTree->jet1isMonoJetIdNew   = (*(inTree->jetMonojetId2015))[iJet];
-          outTree->jet1isLooseMonoJetId = (*(inTree->jetMonojetIdLoose))[iJet];
+          outTree->jet1isMonoJetId      = ((*(inTree->jetSelBits))[iJet] & 256) == 256;
+          outTree->jet1isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
+          outTree->jet1isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
           outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
           outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
@@ -520,9 +520,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           
           outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
           outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
-          outTree->jet2isMonoJetId         = (*(inTree->jetMonojetId))[iJet];
-          outTree->jet2isMonoJetIdNew      = (*(inTree->jetMonojetId2015))[iJet];
-          outTree->jet2isLooseMonoJetId    = (*(inTree->jetMonojetIdLoose))[iJet];
+          outTree->jet2isMonoJetId      = ((*(inTree->jetSelBits))[iJet] & 256) == 256;
+          outTree->jet2isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
+          outTree->jet2isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
           outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
           outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
@@ -537,10 +537,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       TLorentzVector* tempTau = (TLorentzVector*) inTree->tauP4->At(iTau);
 
       if (tempTau->Pt() < 18. || fabs(tempTau->Eta()) > 2.3)
-          continue;
+        continue;
 
-      if ( (*(inTree->decayModeFinding))[iTau]   != 1 ) continue;
-      if ( (*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3 ) continue;
+      if (((*(inTree->tauSelBits))[iTau] & 3) != 3) 
+        continue;
+      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3)
+        continue;
 
       //// Now do cleaning ////
       
