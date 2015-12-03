@@ -4,13 +4,14 @@ from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
 from ROOT import *
-from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels
+from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels, cutPhotonPtHigh
 gROOT.SetBatch(True)
 
 varName = 'sieie'
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-plotDirs = [ ('shape', '/home/ballen/public_html/cmsplots/PurityShape/'), ('twobin', '/home/ballen/public_html/cmsplots/PurityTwoBin/') ]
-outDir = '/home/ballen/public_html/cmsplots/PurityComp/'
+plotDirs = [ ('shape', os.path.join(versDir,'Plots','Shape')), ('twobin', os.path.join(versDir,'Plots','TwoBin')) ]
+# outDir = '/home/ballen/public_html/cmsplots/PurityComp/'
+outDir = os.path.join(versDir,'Plots','Comp')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
@@ -67,18 +68,18 @@ for loc in Locations:
             
             purityFile.write(r"\documentclass{article}")
             purityFile.write("\n")
-            purityFile.write(r"\usepackage[paperheight=1.5in, paperwidth=6in]{geometry}")
+            purityFile.write(r"\usepackage[paperheight=1.5in, paperwidth=9.5in]{geometry}")
             purityFile.write("\n")
             purityFile.write(r"\usepackage{multirow}")
             purityFile.write("\n")
             purityFile.write(r"\begin{document}")
             purityFile.write("\n")
 
-            purityFile.write(r"\begin{tabular}{ |c|c|c|c|c| }")
+            purityFile.write(r"\begin{tabular}{ |c|c|c|c|c|c|c| }")
             purityFile.write("\n")
             purityFile.write(r"\hline")
             purityFile.write("\n")
-            purityFile.write(r"\multicolumn{5}{ |c| }{Purities for "+loc+" "+pid+" photons in "+source+r"} \\")
+            purityFile.write(r"\multicolumn{7}{ |c| }{Purities for "+loc+" "+pid+" photons in "+source+r"} \\")
             purityFile.write("\n")
             purityFile.write(r"\hline")
             purityFile.write("\n")
@@ -103,7 +104,7 @@ for loc in Locations:
             lineColors = [ kBlue, kRed ]
             lineStyles = [ kSolid, kDashed ]
             
-            bins = [150, 250, 350, 500]
+            bins = cutPhotonPtHigh+[500]
             
             for chiso in ChIsoSbSels[1:]:                
                 purityFile.write(r"\multirow{2}{*}{"+chiso[0]+"} ")
@@ -164,7 +165,7 @@ for loc in Locations:
             histograms[0][0].Draw("same")
             histograms[1][1].Draw("same")
             histograms[1][0].Draw("same")
-            line = TLine(150.,1.,500.,1.)
+            line = TLine(175.,1.,500.,1.)
             line.Draw("same")
         
             leg.Draw()

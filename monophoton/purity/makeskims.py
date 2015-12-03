@@ -29,6 +29,8 @@ else:
     lumi = float(sys.argv[1])
 
 for skim in skims[:]:
+    if not 'SinglePhoton' in skim[0]:
+        continue
     print 'Starting skim:', skim[0]
     
     filesToMerge = []

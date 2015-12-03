@@ -1,21 +1,21 @@
 #!/bin/bash
 
 jdlpath=/home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton/purity/condor/calc
-scratch=/scratch5/ballen/hist/purity/simpletree9/sieie/Plots
+scratch=/scratch5/ballen/hist/purity/simpletree10/sieie/Plots
 # scratch=/home/ballen/public_html/cmsplots/PurityTemp/
 
-shape="Shape"
-# shape="TwoBin"
-# locations="barrel endcap"
-# photonids="loose medium tight"
+# shape="Shape"
+shape="TwoBin"
+locations="barrel endcap"
+photonids="loose medium tight"
 chisosbcuts="30to50 50to70 70to90"
-# ptcuts="150to250 250to350 350toInf"
+ptcuts="175to200 200to250 250to300 300to350 350toInf"
 #metcuts="0toInf 0to100 100to250 250toInf"
 metcuts="0toInf"
 
-locations="barrel"
-photonids="medium"
-ptcuts="175toInf"
+#locations="barrel"
+#photonids="medium"
+#ptcuts="175toInf"
 
 
 for loc in $locations

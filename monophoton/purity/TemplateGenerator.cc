@@ -141,14 +141,16 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
 
     event.weight *= eventWeight;
     
-    puBin = hPuWeights->FindFixBin(event.npv);
-    // std::cout << "puBin: " << puBin << std::endl;
-    if (puBin < 1) puBin = 1;
-    if (puBin > hPuWeights->GetNbinsX()) puBin = hPuWeights->GetNbinsX();
-    // std::cout << "puBin: " << puBin << std::endl;
-    puWeight = hPuWeights->GetBinContent(puBin);
-    // std::cout << "puWeight: " << puWeight << std::endl;
-    event.weight *= puWeight;
+    if (_xsec > 0) {
+      puBin = hPuWeights->FindFixBin(event.npv);
+      // std::cout << "puBin: " << puBin << std::endl;
+      if (puBin < 1) puBin = 1;
+      if (puBin > hPuWeights->GetNbinsX()) puBin = hPuWeights->GetNbinsX();
+      // std::cout << "puBin: " << puBin << std::endl;
+      puWeight = hPuWeights->GetBinContent(puBin);
+      // std::cout << "puWeight: " << puWeight << std::endl;
+      event.weight *= puWeight;
+    }
 
     selectedPhotons.clear();
     unsigned iSel(0);
