@@ -1,8 +1,8 @@
 #!/bin/bash
 
 jdlpath=${PURITY}/condor/contam
-#scratch=/scratch5/ballen/hist/purity/simpletree5/sieie/Plots
-scratch=${CMSPLOTS}/SignalContamTemp
+scratch=/scratch5/ballen/hist/purity/simpletree10/sieie/Plots/SignalContam
+# scratch=${CMSPLOTS}/SignalContamTemp
 mkdir -p $scratch
 
 #locations="barrel endcap"
@@ -18,7 +18,7 @@ metcuts="0toInf"
 
 locations="barrel"
 photonids="medium"
-ptcuts="150toInf"
+ptcuts="175toInf"
 #metcuts="0toInf"
 
 for loc in $locations
@@ -38,3 +38,5 @@ do
 	done
     done
 done
+
+# cp -r $scratch ${CMSPLOTS}/ST10/Plots/.

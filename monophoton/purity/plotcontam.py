@@ -13,12 +13,10 @@ from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels,
 
 varName = 'sieie'
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-plotDirs = [ ('shape', '/home/ballen/public_html/cmsplots/SignalContamTemp/') ] # , ('twobin', '/home/ballen/public_html/cmsplots/SignalContamTemp/') ]
-outDir = '/home/ballen/public_html/cmsplots/SignalContamTemp/Fitting'
+plotDirs = [ ('shape', os.path.join(versDir, 'Plots', 'SignalContam')) ] 
+outDir = os.path.join(plotDirs[0][1], 'Fitting')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
-
-# sources = [ "data" ] 
 
 purities = {}
 
@@ -33,7 +31,7 @@ for plotDir in plotDirs:
                 purities[fit][loc][pid][ptCut[0]] = {}
                 for metCut in MetSels[:1]:
                     purities[fit][loc][pid][ptCut[0]][metCut[0]] = {}
-                    for chiso in ChIsoSbSels[2:-1]:
+                    for chiso in ChIsoSbSels[:]:
                         purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = {}
                         
                         dirName = loc+'_'+pid+'_'+chiso[0]+'_'+ptCut[0]+'_'+metCut[0] 
@@ -49,9 +47,9 @@ for plotDir in plotDirs:
                                 if tmp:
                                     match = True
                                     # pprint(tmp)
-                                    purity = ( float(tmp[-3].strip("(),")), float(tmp[-2].strip("(),")), float(tmp[-1].strip("(),")) )
+                                    purity = ( float(tmp[-2].strip("(),")), float(tmp[-1].strip("(),")) )
                                     # uncertainty = float(tmp[-1].strip("(),"))
-                                    # print purity # , uncertainty
+                                    print purity # , uncertainty
                                     purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = purity # (purity, uncertainty)
                         if not match:
                             print "No purity found for skim:", dirName
@@ -69,9 +67,7 @@ for loc in Locations[:1]:
                     isoVals = np.asarray([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
                     #isoVals = np.arange(2.0,8.5,0.5)
                     puritiesCalc = ( np.asarray(  [ (1 - value[0])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
-                                     ,np.asarray( [ (max( abs(value[0] - value[1]), abs(value[0] - value[2])))*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
-                                     # ,np.asarray( [ 1 - value[1] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) 
-                                     # ,np.asarray( [ 1 - value[2] for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
+                                     ,np.asarray( [ abs(value[0] - value[1])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
                     pprint(isoVals)
                     pprint(puritiesCalc)
 
@@ -97,7 +93,7 @@ for loc in Locations[:1]:
                     
                     
                     plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
-                    plot.plot(isosFit, puritiesFit, 'r-', linewidth=2)
+                    plot.plot(isosFit, puritiesFit, 'r-', linewidth=1.0)
                     # plot.legend(['Measured', 'Fit'])
                     plot.xlim(0.,10.)
                     # plot.ylim(0.02,0.08)

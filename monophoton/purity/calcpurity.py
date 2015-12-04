@@ -16,9 +16,10 @@ shape = sys.argv[6]
 selKeys = []
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 try: 
-    Selections[inputKey]
+    print Selections[inputKey]
 except KeyError:
     print "Selection inputted from command line doesn't exist. Quitting!!!"
+    print inputKey
     print "Available selections are: "
     for sel in Selections: print sel
     sys.exit()

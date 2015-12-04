@@ -4,7 +4,7 @@ from pprint import pprint
 from subprocess import Popen, PIPE
 from selections import Variables, Version, Measurement, Selections, SigmaIetaIetaSels, ChIsoSbSels, PhotonPtSels, MetSels, cutMatchedToReal, HistExtractor, HistToTemplate, PlotNames,FitTemplates
 from ROOT import *
-gROOT.SetBatch(True)\
+gROOT.SetBatch(True)
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1]
@@ -16,9 +16,12 @@ met = sys.argv[5]
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 try: 
-    Selections[inputKey]
+    print Selections[inputKey]
 except KeyError:
     print "Selection inputted from command line doesn't exist. Quitting!!!"
+    print inputKey
+    print "Available selections are: "
+    for sel in Selections: print sel
     sys.exit()
 
 chIsoSel = '(1)'
@@ -46,7 +49,11 @@ if metSel == '(1)':
     print 'Not applying any met selection!'
 
 ### Directory stuff so that results are saved and such
-plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey,'ClosureTest')
+varName = 'chiso'
+versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
+# skimDir  = os.path.join(versDir,'Skims')
+plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+# plotDir = os.path.join(os.environ['CMSPLOTS'],'ST10','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
@@ -63,10 +70,12 @@ splits = chiso.split("to")
 minIso = float(splits[0])/10.0
 maxIso = float(splits[1])/10.0
 
-dRcuts = [0.5,0.4,0.8]
+# dRcuts = [0.5,0.4,0.8]
+labels = [ 'rawmc', 'scaledmc' ] 
 isoHists = []
-for dR in dRcuts:
-    isoHist = isoFile.Get("ShapeChIso_dR"+str(int(dR*10)))
+for label in labels:
+    # isoHist = isoFile.Get("ShapeChIso_dR"+str(int(dR*10)))
+    isoHist = isoFile.Get(label)
     
     ### Get Sig and Sideband fractions
     minIsoBin = 1
@@ -92,20 +101,19 @@ var = Variables[varName]
 varBins = False
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = os.path.join(versDir,'Skims')
+plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+# plotDir = os.path.join(os.environ['CMSPLOTS'],'ST10','SignalContam',inputKey)
 skimName = "Monophoton"
 
 sbSkims = [ ('TempSidebandGJets','TempSignalGJets',kPhoton,r'Sideband Template from #gamma+jets MC')
-           ,('TempSidebandGJetsLow','TempSignalGJets',kPhoton,r'Sideband Template from #gamma+jets MC')
-           ,('TempSidebandGJetsHigh','TempSignalGJets',kPhoton,r'Sideband Template from #gamma+jets MC') ]
-truthSels = [ '( (TMath::Abs(selPhotons.matchedGen) == 22) && (!selPhotons.hadDecay) && (selPhotons.drParton > '+str(dR)+') )' for dR in dRcuts]
-sbSels = [ SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+truthSel+' && '+ptSel+' &&'+metSel for truthSel in truthSels ]
-# print sbSel
+            ,('TempSidebandGJetsScaled','TempSignalGJets',kPhoton,r'Scaled Sideband Template from #gamma+jets MC') ]
+
+truthSel =  '( selPhotons.matchedGen == -22)'
+sbSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+truthSel+' && '+ptSel+' &&'+metSel
 
 # fit, signal, contamination, background
-# skims = [ Measurement[skimName][1], Measurement[skimName][0], sbSkims[0], Measurement[skimName][5], sbSkims[1], Measurement[skimName][5], sbSkims[2], Measurement[skimName][5] ] 
-skims = [ Measurement[skimName][2], Measurement[skimName][0], sbSkims[0], Measurement[skimName][6], sbSkims[1], Measurement[skimName][6], sbSkims[2], Measurement[skimName][6] ] 
-# sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSels[0], Selections[inputKey][5], sbSels[1], Selections[inputKey][5], sbSels[2], Selections[inputKey][5] ] 
-sels = [ Selections[inputKey][2], Selections[inputKey][0], sbSels[0], Selections[inputKey][6], sbSels[1], Selections[inputKey][6], sbSels[2], Selections[inputKey][6] ] 
+skims = [ Measurement[skimName][1], Measurement[skimName][0], sbSkims[0], Measurement[skimName][5], sbSkims[1], Measurement[skimName][5] ]
+sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSel, Selections[inputKey][5], sbSel, Selections[inputKey][5] ]
 
 nIter = 0
 hists = []
@@ -120,16 +128,17 @@ purities = [ (1,1,1) ]
 sigContams = [ (1,1,1) ]
 sigContamsPass = [ (1,1,1) ]
 
-labels = ["nominal", "low", "high"]
+# labels = ["nominal", "low", "high"]
+# labels = ["nominal", "scaled"]
 while(True):
     tempPurity = []
     tempContams = []
-    for iC, dR in enumerate(dRcuts):
-        iContam = -6+2*iC
-        iBack = -5+2*iC
+    for iC, label in enumerate(labels):
+        iContam = -4+2*iC
+        iBack = -3+2*iC
         print iContam, iBack
         dataTitle = PlotNames[skimName][0]+" Iteration "+str(nIter)
-        dataName = os.path.join(plotDir,"purity_"+labels[iC]+str(int(dR*10))+"_"+"v"+str(nIter)+"_"+inputKey )
+        dataName = os.path.join(plotDir,"purity_"+label+"_"+"v"+str(nIter)+"_"+inputKey )
         dataPurity = FitTemplates(dataName, dataTitle,  var[3][loc][0], var[4][loc][pid], templates[0], templates[1], templates[iBack])
         tempPurity.append(dataPurity)
         
@@ -143,14 +152,14 @@ while(True):
 
         tempContams.append( (trueContam, trueContamPass) )
 
-    print "Signal contamination:", tempContams[0][0], tempContams[1][0], tempContams[2][0]
-    sigContams.append( (tempContams[0][0], tempContams[1][0], tempContams[2][0]) )
+    print "Signal contamination:", tempContams[0][0], tempContams[1][0] # , tempContams[2][0]
+    sigContams.append( (tempContams[0][0], tempContams[1][0]) ) # , tempContams[2][0]) )
 
-    print "Signal contamination pass:", tempContams[0][1], tempContams[1][1], tempContams[2][1]
-    sigContamsPass.append( (tempContams[0][1], tempContams[1][1], tempContams[2][1]) )
+    print "Signal contamination pass:", tempContams[0][1], tempContams[1][1] # , tempContams[2][1]
+    sigContamsPass.append( (tempContams[0][1], tempContams[1][1]) ) # , tempContams[2][1]) )
 
-    print "Purity:", tempPurity[0][0], tempPurity[1][0], tempPurity[2][0]
-    purities.append( (tempPurity[0][0], tempPurity[1][0], tempPurity[2][0]) )
+    print "Purity:", tempPurity[0][0], tempPurity[1][0] # , tempPurity[2][0]
+    purities.append( (tempPurity[0][0], tempPurity[1][0]) ) # , tempPurity[2][0]) )
     diff = abs(purities[-1][0] - purities[-2][0] )
     print diff 
     if ( diff < 0.001):
@@ -159,7 +168,7 @@ while(True):
     if nIter > 5:
         break
 
-    for iC, dR in enumerate(dRcuts):
+    for iC, label in enumerate(labels):
         nSigTrue = tempPurity[iC][2]
         nSbTrue = float(isoHists[iC][1]) / float(isoHists[iC][2]) * nSigTrue
     
@@ -171,14 +180,14 @@ while(True):
         contamHist.Scale(float(nSbTrue) / float(contamHist.GetSumOfWeights()))
         hists.append(contamHist)
 
-        contamTemp = HistToTemplate(contamHist,var[3][loc],skims[2],str(int(dR*10))+"_v"+str(nIter)+"_"+inputKey,plotDir)
+        contamTemp = HistToTemplate(contamHist,var[3][loc],skims[2],label+"_v"+str(nIter)+"_"+inputKey,plotDir)
         templates.append(contamTemp)
     
         backHist = hists[3].Clone()
         backHist.Add(contamHist, -1)
         hists.append(backHist)
 
-        backTemp = HistToTemplate(backHist,var[3][loc],skims[3],str(int(dR*10))+"_v"+str(nIter)+"_"+inputKey,plotDir)
+        backTemp = HistToTemplate(backHist,var[3][loc],skims[3],label+"_v"+str(nIter)+"_"+inputKey,plotDir)
         templates.append(backTemp)
 
 for version, (purity, contam)  in enumerate(zip(purities[1:],sigContams[1:])):
