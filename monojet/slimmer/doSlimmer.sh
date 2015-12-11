@@ -18,8 +18,6 @@ cp $macroDir/functions.h .
 cp $macroDir/NeroSlimmer.cc .
 cp $macroDir/runSlimmer.py .
 
-cp $macroDir/puWeights_13TeV_25ns.root .
-
 mkdir files
 cp $macroDir/files/*.root files/.
 

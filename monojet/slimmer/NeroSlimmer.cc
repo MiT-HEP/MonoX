@@ -68,7 +68,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Float_t SFPtMin = 10;
   Float_t SFPtMax = 100;
 
-  TFile *puWeightFile = new TFile("puWeights_13TeV_25ns.root");
+  TFile *puWeightFile = new TFile("files/puWeights_13TeV_25ns.root");
   TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
   Int_t puMin = 1;
   Int_t puMax = 30;
