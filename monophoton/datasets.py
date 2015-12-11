@@ -57,7 +57,7 @@ class SampleDefList(object):
 
 allsamples = SampleDefList()
 
-with open(os.path.dirname(__file__) + '/data/datasets.csv') as dsSource:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
     for line in dsSource:
         matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([0-9e.+-]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
         if not matches:

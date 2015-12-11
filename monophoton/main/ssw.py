@@ -4,7 +4,8 @@ import sys
 import os
 import ROOT
 
-basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 
@@ -13,8 +14,6 @@ sNames = sys.argv[1:]
 sourceDir = '/scratch5/yiiyama/hist/simpletree10/t2mit/filefi/042'
 neroInput = False
 outputDir = '/scratch5/yiiyama/studies/monophoton/skim'
-
-thisdir = os.path.realpath(os.path.dirname(__file__))
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.Load('libNeroProducerCore.so')
