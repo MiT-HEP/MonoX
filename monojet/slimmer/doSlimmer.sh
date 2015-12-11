@@ -29,15 +29,18 @@ echo "Using "$NCORES" cores!"
 
 RUNNING=0
 FIRST=1
+NUM=0
 
 for file in `cat "${outFile%.*}".txt`; do
     if [ "$FIRST" -eq 1 ]; then
-        ./runSlimmer.py root://eoscms/$eosDir/$file $file
+        ./runSlimmer.py root://eoscms/$eosDir/$file output_$NUM.root
+        NUM=$((NUM+1))
         if [ "$NCORES" -gt 1 ]; then
             FIRST=0
         fi
     else
-        ./runSlimmer.py root://eoscms/$eosDir/$file $file &
+        ./runSlimmer.py root://eoscms/$eosDir/$file output_$NUM.root &
+        NUM=$((NUM+1))
         RUNNING=$((RUNNING+1))
         if [ "$RUNNING" -eq "$NCORES" ]; then
             wait
@@ -50,7 +53,7 @@ if [ "$RUNNING" -gt 0 ]; then
     wait
 fi
 
-hadd hadded.root nero*.root
+hadd hadded.root output_*.root
 
 echo ""
 echo "Copying to $outFile"
