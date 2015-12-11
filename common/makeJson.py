@@ -28,12 +28,12 @@ argParser.add_argument('--lumi-branch', '-l', metavar = 'NAME', dest = 'lumiBran
 args = argParser.parse_args()
 sys.argv = []
 
+mask = {}
 if args.mask:
     try:
         with open(args.mask) as maskFile:
             maskJSON = eval(maskFile.read())
 
-        mask = {}
         for runStr, lumiRanges in maskJSON.items():
             run = int(runStr)
             mask[run] = []
