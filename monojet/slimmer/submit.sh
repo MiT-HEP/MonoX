@@ -25,6 +25,12 @@ then
     exit
 fi
 
+if [ ! -d bout ]
+then
+    echo "Making log output directory as ./bout"
+    mkdir bout
+fi 
+
 if [ ! -d $outDir ]
 then
     mkdir $outDir
@@ -91,7 +97,7 @@ do
         if [ ! -f $outFile -o "$fresh" = "fresh" ]
         then
             echo Making: $outFile
-            bsub -q 8nh -n $numProc -o bout/out.%J doSlimmer.sh $eosDir/$dir $outFile $numProc $CMSSW_BASE `pwd`
+            bsub -q $MonoJetLxBatchQueue -n $numProc -o bout/out.%J doSlimmer.sh $eosDir/$dir $outFile $numProc $CMSSW_BASE $PWD
             ranOnFile=1
         fi
     done
