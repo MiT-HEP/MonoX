@@ -58,10 +58,11 @@ haddFile=$lfsOut/myHadd.txt
 
 ranOnFile=0
 
+count=0
+
 for dir in `cat $dirList`
 do
 
-    count=0
     fileInCount=$filesPerJob
 
     reasonableName="${dir%%/*}"                             # I'm just playing with string cuts here to 
