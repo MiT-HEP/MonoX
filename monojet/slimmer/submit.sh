@@ -4,7 +4,7 @@ fresh=$1
 
 source config.sh
 
-filesPerJob=$MonoJetFilesPerLxbatchJob
+filesPerJob=$MonoJetFilesPerJob
 numProc=$MonoJetCoresPerLxbatchJob
 
 outDir=$MonoJetFullOutDir
@@ -58,6 +58,8 @@ haddFile=$lfsOut/myHadd.txt
 
 ranOnFile=0
 
+lastDir=''
+
 count=0
 
 for dir in `cat $dirList`
@@ -69,7 +71,14 @@ do
     betterName="${reasonableName%%_Tune*}"                  # automatically generate shorter names for 
     bestName="${betterName%%-madgraph*}"                    # the flat N-tuples
     #bestName="${otherName%%-Prompt*}"     # bestName is what's used to name ntuples
-    
+
+    if [ "$bestName" != "$lastDir" ]
+    then 
+        count=0
+        lastDir=$bestName
+        echo "$outDir/monojet_$bestName.root $lfsOut/monojet_"$bestName"_*.root" >> $haddFile
+    fi
+
     for inFile in `/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select find $eosDir/$dir`
     do
         if [ "${inFile##*_}" = "pilot.root" -o "${inFile##*.}" != "root" ]
@@ -85,23 +94,21 @@ do
             currentConfig=$lfsOut/monojet_$bestName\_$count.txt
             > $currentConfig
         fi
-        echo $inFile >> $currentConfig
+        echo $eosDir/$dir/$inFile >> $currentConfig
         fileInCount=$((fileInCount + 1))
     done
+done
+
+rootNames=`ls $lfsOut/monojet_*_*.txt | sed 's/.txt/.root/'`
     
-    rootNames=`ls $lfsOut/monojet_$bestName\_*.txt | sed 's/.txt/.root/'`
-    
-    echo "$outDir/monojet_$bestName.root $lfsOut/monojet_"$bestName"_*.root" >> $haddFile
-    
-    for outFile in $rootNames
-    do
-        if [ ! -f $outFile -o "$fresh" = "fresh" ]
-        then
-            echo Making: $outFile
-            bsub -q $MonoJetLxBatchQueue -n $numProc -o bout/out.%J doSlimmer.sh $eosDir/$dir $outFile $numProc $CMSSW_BASE $PWD
-            ranOnFile=1
-        fi
-    done
+for outFile in $rootNames
+do
+    if [ ! -f $outFile -o "$fresh" = "fresh" ]
+    then
+        echo Making: $outFile
+#        bsub -q $MonoJetLxBatchQueue -n $numProc -o bout/out.%J doSlimmer.sh $outFile $numProc $CMSSW_BASE $PWD
+        ranOnFile=1
+    fi
 done
 
 if [ "$ranOnFile" -eq 0 ]

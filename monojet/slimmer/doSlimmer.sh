@@ -1,10 +1,9 @@
 #! /bin/bash
 
-  eosDir=$1
- outFile=$2
-  NCORES=$3
- cmsbase=$4
-macroDir=$5
+ outFile=$1
+  NCORES=$2
+ cmsbase=$3
+macroDir=$4
 
 cd $cmsbase/src
 eval `scram runtime -sh`
@@ -33,13 +32,13 @@ NUM=0
 
 for file in `cat "${outFile%.*}".txt`; do
     if [ "$FIRST" -eq 1 ]; then
-        ./runSlimmer.py root://eoscms/$eosDir/$file output_$NUM.root
+        ./runSlimmer.py root://eoscms/$file output_$NUM.root
         NUM=$((NUM+1))
         if [ "$NCORES" -gt 1 ]; then
             FIRST=0
         fi
     else
-        ./runSlimmer.py root://eoscms/$eosDir/$file output_$NUM.root &
+        ./runSlimmer.py root://eoscms/$file output_$NUM.root &
         NUM=$((NUM+1))
         RUNNING=$((RUNNING+1))
         if [ "$RUNNING" -eq "$NCORES" ]; then

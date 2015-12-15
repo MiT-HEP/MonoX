@@ -18,11 +18,12 @@ export MonoJetFullOutDir=/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesM
 # This is where you will put skimmed flat ntuples if you skim farther
 export MonoJetSkimOutDir=/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmed
 
-
 # Configuring LXBATCH jobs
 # Fewer files means more, faster jobs, but dont change to resubmit
-export MonoJetFilesPerLxbatchJob=10
+export MonoJetFilesPerJob=10
 # If you really need to change to make resubmit faster, use this
 export MonoJetCoresPerLxbatchJob=1
+# This is for local slimming. Make this higher to take advantage of lxplus computers
+export MonoJetCoresPerLocalJob=6
 # Configure which queue you submit to
 export MonoJetLxBatchQueue=8nh

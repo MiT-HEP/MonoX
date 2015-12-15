@@ -13,4 +13,4 @@ phoSelection      = "(" + allSelections + "photonIsMedium == 1 && " + lepVeto + 
 phoLooseSelection = "(" + allSelections + "((photonIsMedium == 1 || (photonPt < 175 && n_loosepho != 0)) && " + lepVeto + "))"
 signalSelection   = "(" + allSelections + "(n_looselep == 0 && n_loosepho == 0 && n_tau == 0 && minJetMetDPhi > 0.4))"
 
-skimmingSelection = "((" + ZmmSelection + " || " + ZeeSelection + " || " + WmnSelection + " || " + WenSelection + " || " + signalSelection + " || " + phoLooseSelection + ") && met > 40)"
+skimmingSelection = "(" + ZmmSelection + " || " + ZeeSelection + " || " + WmnSelection + " || " + WenSelection + " || " + signalSelection + " || " + phoLooseSelection + ")"
