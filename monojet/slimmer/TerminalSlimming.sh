@@ -30,7 +30,7 @@ for inFile in `ls $outDir/monojet_*.txt`
 do
     inFile="${inFile##*/}"
     inRoot="${inFile%%.txt}"
-    if [ -f $outDir/TerminalRunning/$inFile.done -o -f $outDir/$inRoot.root ]
+    if [ -f $outDir/$inRoot.root ]
     then
         continue
     elif [ ! -f $outDir/TerminalRunning/$inFile.running ]
@@ -41,12 +41,12 @@ do
         hadd $outDir/$inRoot.root $outDir/TerminalRunning/$inRoot\_*.root
         rm $outDir/TerminalRunning/$inRoot\_*.root
         rm $outDir/TerminalRunning/$inFile.running
-        touch $outDir/TerminalRunning/$inFile.done
     fi
     running=1
 done
 
 if [ "$running" -eq 0 ]
 then
+    rmdir $outDir/TerminalRunning
     cat $outDir/myHadd.txt | xargs -n2 -P$numProc ./haddArgs.sh
 fi
