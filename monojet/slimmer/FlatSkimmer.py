@@ -2,20 +2,36 @@
 
 import sys
 from multiprocessing import Process, Queue
-import os
 import goodlumi
 import ROOT
-from selectionCuts import skimmingSelection
+
+import os
+import pprint
+import subprocess
 
 #### These are all the variables the user should have to configure ####
 
-numMaxProcesses = int(sys.argv[1])
+# Now I have them configured in the config.sh script
+command = ['bash', '-c', 'source config.sh && env']
 
-inDir  = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesV7"
-outDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/flatTreesSkimmedV7"
+proc = subprocess.Popen(command, stdout = subprocess.PIPE)
 
-GoodRunsFile = "/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON.txt"
-cut = skimmingSelection
+for line in proc.stdout:
+  (key, _, value) = line.partition("=")
+  os.environ[key] = value
+##
+
+proc.communicate()
+
+pprint.pprint(dict(os.environ))
+
+numMaxProcesses = os.environ['MonoJetCoresPerLocalJob']
+
+inDir  = os.environ['MonoJetFullOutDir']
+outDir = os.environ['MonoJetSkimOutDir']
+
+GoodRunsFile = os.environ['MonoJetGoodRunsFile']
+cut = os.environ['MonoJetSkimmingCut']
 
 #######################################################################
 
@@ -28,9 +44,10 @@ def skim(inQueue):
             inFile  = ROOT.TFile(inDir + "/" + inFileName)
             if not os.path.isfile(outDir + "/" + inFileName):
                 outFile = ROOT.TFile(outDir + "/" + inFileName,"RECREATE")
-                if "Run201" in inFileName:
+                tempInTree = inFile.events
+                tempInTree.GetEntry(0)
+                if tempInTree.runNum != 1:           # If runNum !=, then this is data
                     goodRunFilter = goodlumi.makeGoodLumiFilter(GoodRunsFile)
-                    tempInTree = inFile.events
                     inTree = tempInTree.CloneTree(0)
                     for entry in range(tempInTree.GetEntriesFast()):
                         tempInTree.GetEntry(entry)
@@ -59,7 +76,7 @@ theQueue     = Queue()
 theProcesses = []
 
 for inFileName in os.listdir(inDir):
-    if inFileName.endswith(".root") and not "OLD" in inFileName:
+    if inFileName.endswith(".root"):
         theQueue.put(inFileName)
 ##
 
