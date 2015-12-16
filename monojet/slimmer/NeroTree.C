@@ -4,16 +4,54 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 
+void NeroTree::Loop()
+{
+//   In a ROOT session, you can do:
+//      root> .L NeroTree.C
+//      root> NeroTree t
+//      root> t.GetEntry(12); // Fill t data members with entry number 12
+//      root> t.Show();       // Show values of entry 12
+//      root> t.Show(16);     // Read and show values of entry 16
+//      root> t.Loop();       // Loop on all entries
+//
+
+//     This is the loop skeleton where:
+//    jentry is the global entry number in the chain
+//    ientry is the entry number in the current Tree
+//  Note that the argument to GetEntry must be:
+//    jentry for TChain::GetEntry
+//    ientry for TTree::GetEntry and TBranch::GetEntry
+//
+//       To read only selected branches, Insert statements like:
+// METHOD1:
+//    fChain->SetBranchStatus("*",0);  // disable all branches
+//    fChain->SetBranchStatus("branchname",1);  // activate branchname
+// METHOD2: replace line
+//    fChain->GetEntry(jentry);       //read all branches
+//by  b_branchname->GetEntry(ientry); //read only this branch
+   if (fChain == 0) return;
+
+   Long64_t nentries = fChain->GetEntriesFast();
+
+   Long64_t nbytes = 0, nb = 0;
+   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+      Long64_t ientry = LoadTree(jentry);
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);   nbytes += nb;
+      // if (Cut(ientry) < 0) continue;
+   }
+}
+
 NeroTree::NeroTree(TTree *tree) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("root://eoscms.cern.ch//store/user/yiiyama/nero/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM/nero_0000.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("root://eoscms//eos/cms/store/user/dmytro/Nero/v1.1.1/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_p2/151104_133348/0000/NeroNtuples_skimmed_3.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("root://eoscms.cern.ch//store/user/yiiyama/nero/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM/nero_0000.root");
+         f = new TFile("root://eoscms//eos/cms/store/user/dmytro/Nero/v1.1.1/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_p2/151104_133348/0000/NeroNtuples_skimmed_3.root");
       }
-      TDirectory * dir = (TDirectory*)f->Get("root://eoscms.cern.ch//store/user/yiiyama/nero/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM/nero_0000.root:/nero");
+      TDirectory * dir = (TDirectory*)f->Get("root://eoscms//eos/cms/store/user/dmytro/Nero/v1.1.1/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_p2/151104_133348/0000/NeroNtuples_skimmed_3.root:/nero");
       dir->GetObject("events",tree);
 
    }
@@ -57,6 +95,7 @@ void NeroTree::Init(TTree *tree)
 
    // Set object pointer
    jetP4 = 0;
+   jetMatch = 0;
    jetRawPt = 0;
    jetBdiscr = 0;
    jetBdiscrLegacy = 0;
@@ -67,12 +106,20 @@ void NeroTree::Init(TTree *tree)
    jetMatchedPartonPdgId = 0;
    jetMotherPdgId = 0;
    jetGrMotherPdgId = 0;
-   jetMonojetId = 0;
-   jetMonojetId2015 = 0;
-   jetMonojetIdLoose = 0;
+   jetSelBits = 0;
    jetQ = 0;
    jetQnoPU = 0;
+   tauP4 = 0;
+   tauMatch = 0;
+   tauSelBits = 0;
+   tauQ = 0;
+   tauM = 0;
+   tauIso = 0;
+   tauChargedIsoPtSum = 0;
+   tauNeutralIsoPtSum = 0;
+   tauIsoDeltaBetaCorr = 0;
    lepP4 = 0;
+   lepMatch = 0;
    lepPdgId = 0;
    lepIso = 0;
    lepSelBits = 0;
@@ -81,22 +128,35 @@ void NeroTree::Init(TTree *tree)
    lepNhIso = 0;
    lepPhoIso = 0;
    lepPuIso = 0;
+   fatjetP4 = 0;
+   fatjetRawPt = 0;
+   fatjetFlavour = 0;
+   fatjetTau1 = 0;
+   fatjetTau2 = 0;
+   fatjetTau3 = 0;
+   fatjetTrimmedMass = 0;
+   fatjetPrunedMass = 0;
+   fatjetFilteredMass = 0;
+   fatjetSoftdropMass = 0;
+   ak8_subjet = 0;
+   ak8jet_hasSubjet = 0;
+   ak8subjet_btag = 0;
+   fatjetHbb = 0;
+   fatjettopMVA = 0;
    metP4 = 0;
    metPtJESUP = 0;
    metPtJESDOWN = 0;
    metP4_GEN = 0;
+   metPuppi = 0;
+   metPuppiSyst = 0;
    metNoMu = 0;
+   metNoHF = 0;
    pfMet_e3p0 = 0;
    trackMet = 0;
-   genP4 = 0;
-   genjetP4 = 0;
-   genPdgId = 0;
    photonP4 = 0;
    photonIso = 0;
    photonSieie = 0;
-   photonTightId = 0;
-   photonMediumId = 0;
-   photonLooseId = 0;
+   photonSelBits = 0;
    photonChIso = 0;
    photonChIsoRC = 0;
    photonNhIso = 0;
@@ -105,13 +165,9 @@ void NeroTree::Init(TTree *tree)
    photonPhoIsoRC = 0;
    photonPuIso = 0;
    photonPuIsoRC = 0;
-   tauP4 = 0;
-   tauId = 0;
-   tauQ = 0;
-   tauM = 0;
-   tauIso = 0;
-   decayModeFinding = 0;
-   tauIsoDeltaBetaCorr = 0;
+   genP4 = 0;
+   genjetP4 = 0;
+   genPdgId = 0;
    triggerFired = 0;
    triggerPrescale = 0;
    triggerLeps = 0;
@@ -129,7 +185,9 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("lumiNum", &lumiNum, &b_lumiNum);
    fChain->SetBranchAddress("eventNum", &eventNum, &b_eventNum);
    fChain->SetBranchAddress("rho", &rho, &b_rho);
+   fChain->SetBranchAddress("npv", &npv, &b_npv);
    fChain->SetBranchAddress("jetP4", &jetP4, &b_jetP4);
+   fChain->SetBranchAddress("jetMatch", &jetMatch, &b_jetMatch);
    fChain->SetBranchAddress("jetRawPt", &jetRawPt, &b_jetRawPt);
    fChain->SetBranchAddress("jetBdiscr", &jetBdiscr, &b_jetBdiscr);
    fChain->SetBranchAddress("jetBdiscrLegacy", &jetBdiscrLegacy, &b_jetBdiscrLegacy);
@@ -140,12 +198,20 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("jetMatchedPartonPdgId", &jetMatchedPartonPdgId, &b_jetMatchedPartonPdgId);
    fChain->SetBranchAddress("jetMotherPdgId", &jetMotherPdgId, &b_jetMotherPdgId);
    fChain->SetBranchAddress("jetGrMotherPdgId", &jetGrMotherPdgId, &b_jetGrMotherPdgId);
-   fChain->SetBranchAddress("jetMonojetId", &jetMonojetId, &b_jetMonojetId);
-   fChain->SetBranchAddress("jetMonojetId2015", &jetMonojetId2015, &b_jetMonojetId2015);
-   fChain->SetBranchAddress("jetMonojetIdLoose", &jetMonojetIdLoose, &b_jetMonojetIdLoose);
+   fChain->SetBranchAddress("jetSelBits", &jetSelBits, &b_jetSelBits);
    fChain->SetBranchAddress("jetQ", &jetQ, &b_jetQ);
    fChain->SetBranchAddress("jetQnoPU", &jetQnoPU, &b_jetQnoPU);
+   fChain->SetBranchAddress("tauP4", &tauP4, &b_tauP4);
+   fChain->SetBranchAddress("tauMatch", &tauMatch, &b_tauMatch);
+   fChain->SetBranchAddress("tauSelBits", &tauSelBits, &b_tauSelBits);
+   fChain->SetBranchAddress("tauQ", &tauQ, &b_tauQ);
+   fChain->SetBranchAddress("tauM", &tauM, &b_tauM);
+   fChain->SetBranchAddress("tauIso", &tauIso, &b_tauIso);
+   fChain->SetBranchAddress("tauChargedIsoPtSum", &tauChargedIsoPtSum, &b_tauChargedIsoPtSum);
+   fChain->SetBranchAddress("tauNeutralIsoPtSum", &tauNeutralIsoPtSum, &b_tauNeutralIsoPtSum);
+   fChain->SetBranchAddress("tauIsoDeltaBetaCorr", &tauIsoDeltaBetaCorr, &b_tauIsoDeltaBetaCorr);
    fChain->SetBranchAddress("lepP4", &lepP4, &b_lepP4);
+   fChain->SetBranchAddress("lepMatch", &lepMatch, &b_lepMatch);
    fChain->SetBranchAddress("lepPdgId", &lepPdgId, &b_lepPdgId);
    fChain->SetBranchAddress("lepIso", &lepIso, &b_lepIso);
    fChain->SetBranchAddress("lepSelBits", &lepSelBits, &b_lepSelBits);
@@ -154,16 +220,46 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("lepNhIso", &lepNhIso, &b_lepNhIso);
    fChain->SetBranchAddress("lepPhoIso", &lepPhoIso, &b_lepPhoIso);
    fChain->SetBranchAddress("lepPuIso", &lepPuIso, &b_lepPuIso);
+   fChain->SetBranchAddress("fatjetP4", &fatjetP4, &b_fatjetP4);
+   fChain->SetBranchAddress("fatjetRawPt", &fatjetRawPt, &b_fatjetRawPt);
+   fChain->SetBranchAddress("fatjetFlavour", &fatjetFlavour, &b_fatjetFlavour);
+   fChain->SetBranchAddress("fatjetTau1", &fatjetTau1, &b_fatjetTau1);
+   fChain->SetBranchAddress("fatjetTau2", &fatjetTau2, &b_fatjetTau2);
+   fChain->SetBranchAddress("fatjetTau3", &fatjetTau3, &b_fatjetTau3);
+   fChain->SetBranchAddress("fatjetTrimmedMass", &fatjetTrimmedMass, &b_fatjetTrimmedMass);
+   fChain->SetBranchAddress("fatjetPrunedMass", &fatjetPrunedMass, &b_fatjetPrunedMass);
+   fChain->SetBranchAddress("fatjetFilteredMass", &fatjetFilteredMass, &b_fatjetFilteredMass);
+   fChain->SetBranchAddress("fatjetSoftdropMass", &fatjetSoftdropMass, &b_fatjetSoftdropMass);
+   fChain->SetBranchAddress("ak8_subjet", &ak8_subjet, &b_ak8_subjet);
+   fChain->SetBranchAddress("ak8jet_hasSubjet", &ak8jet_hasSubjet, &b_ak8jet_hasSubjet);
+   fChain->SetBranchAddress("ak8subjet_btag", &ak8subjet_btag, &b_ak8subjet_btag);
+   fChain->SetBranchAddress("fatjetHbb", &fatjetHbb, &b_fatjetHbb);
+   fChain->SetBranchAddress("fatjettopMVA", &fatjettopMVA, &b_fatjettopMVA);
    fChain->SetBranchAddress("metP4", &metP4, &b_metP4);
    fChain->SetBranchAddress("metPtJESUP", &metPtJESUP, &b_metPtJESUP);
    fChain->SetBranchAddress("metPtJESDOWN", &metPtJESDOWN, &b_metPtJESDOWN);
    fChain->SetBranchAddress("metP4_GEN", &metP4_GEN, &b_metP4_GEN);
+   fChain->SetBranchAddress("metPuppi", &metPuppi, &b_metPuppi);
+   fChain->SetBranchAddress("metPuppiSyst", &metPuppiSyst, &b_metPuppiSyst);
    fChain->SetBranchAddress("metNoMu", &metNoMu, &b_metNoMu);
+   fChain->SetBranchAddress("metNoHF", &metNoHF, &b_metNoHF);
    fChain->SetBranchAddress("pfMet_e3p0", &pfMet_e3p0, &b_pfMet_e3p0);
    fChain->SetBranchAddress("trackMet", &trackMet, &b_trackMet);
    fChain->SetBranchAddress("caloMet_Pt", &caloMet_Pt, &b_caloMet_Pt);
    fChain->SetBranchAddress("caloMet_Phi", &caloMet_Phi, &b_caloMet_Phi);
    fChain->SetBranchAddress("caloMet_SumEt", &caloMet_SumEt, &b_caloMet_SumEt);
+   fChain->SetBranchAddress("photonP4", &photonP4, &b_photonP4);
+   fChain->SetBranchAddress("photonIso", &photonIso, &b_photonIso);
+   fChain->SetBranchAddress("photonSieie", &photonSieie, &b_photonSieie);
+   fChain->SetBranchAddress("photonSelBits", &photonSelBits, &b_photonSelBits);
+   fChain->SetBranchAddress("photonChIso", &photonChIso, &b_photonChIso);
+   fChain->SetBranchAddress("photonChIsoRC", &photonChIsoRC, &b_photonChIsoRC);
+   fChain->SetBranchAddress("photonNhIso", &photonNhIso, &b_photonNhIso);
+   fChain->SetBranchAddress("photonNhIsoRC", &photonNhIsoRC, &b_photonNhIsoRC);
+   fChain->SetBranchAddress("photonPhoIso", &photonPhoIso, &b_photonPhoIso);
+   fChain->SetBranchAddress("photonPhoIsoRC", &photonPhoIsoRC, &b_photonPhoIsoRC);
+   fChain->SetBranchAddress("photonPuIso", &photonPuIso, &b_photonPuIso);
+   fChain->SetBranchAddress("photonPuIsoRC", &photonPuIsoRC, &b_photonPuIsoRC);
    fChain->SetBranchAddress("genP4", &genP4, &b_genP4);
    fChain->SetBranchAddress("genjetP4", &genjetP4, &b_genjetP4);
    fChain->SetBranchAddress("genPdgId", &genPdgId, &b_genPdgId);
@@ -177,34 +273,12 @@ void NeroTree::Init(TTree *tree)
    fChain->SetBranchAddress("pdfId1", &pdfId1, &b_pdfId1);
    fChain->SetBranchAddress("pdfId2", &pdfId2, &b_pdfId2);
    fChain->SetBranchAddress("pdfScalePdf", &pdfScalePdf, &b_pdfScalePdf);
-   fChain->SetBranchAddress("photonP4", &photonP4, &b_photonP4);
-   fChain->SetBranchAddress("photonIso", &photonIso, &b_photonIso);
-   fChain->SetBranchAddress("photonSieie", &photonSieie, &b_photonSieie);
-   fChain->SetBranchAddress("photonTightId", &photonTightId, &b_photonTightId);
-   fChain->SetBranchAddress("photonMediumId", &photonMediumId, &b_photonMediumId);
-   fChain->SetBranchAddress("photonLooseId", &photonLooseId, &b_photonLooseId);
-   fChain->SetBranchAddress("photonChIso", &photonChIso, &b_photonChIso);
-   fChain->SetBranchAddress("photonChIsoRC", &photonChIsoRC, &b_photonChIsoRC);
-   fChain->SetBranchAddress("photonNhIso", &photonNhIso, &b_photonNhIso);
-   fChain->SetBranchAddress("photonNhIsoRC", &photonNhIsoRC, &b_photonNhIsoRC);
-   fChain->SetBranchAddress("photonPhoIso", &photonPhoIso, &b_photonPhoIso);
-   fChain->SetBranchAddress("photonPhoIsoRC", &photonPhoIsoRC, &b_photonPhoIsoRC);
-   fChain->SetBranchAddress("photonPuIso", &photonPuIso, &b_photonPuIso);
-   fChain->SetBranchAddress("photonPuIsoRC", &photonPuIsoRC, &b_photonPuIsoRC);
-   fChain->SetBranchAddress("tauP4", &tauP4, &b_tauP4);
-   fChain->SetBranchAddress("tauId", &tauId, &b_tauId);
-   fChain->SetBranchAddress("tauQ", &tauQ, &b_tauQ);
-   fChain->SetBranchAddress("tauM", &tauM, &b_tauM);
-   fChain->SetBranchAddress("tauIso", &tauIso, &b_tauIso);
-   fChain->SetBranchAddress("tauIsoDeltaBetaCorr", &tauIsoDeltaBetaCorr, &b_tauIsoDeltaBetaCorr);
-   fChain->SetBranchAddress("decayModeFinding", &decayModeFinding, &b_decayModeFinding);
    fChain->SetBranchAddress("triggerFired", &triggerFired, &b_triggerFired);
    fChain->SetBranchAddress("triggerPrescale", &triggerPrescale, &b_triggerPrescale);
    fChain->SetBranchAddress("triggerLeps", &triggerLeps, &b_triggerLeps);
    fChain->SetBranchAddress("triggerJets", &triggerJets, &b_triggerJets);
    fChain->SetBranchAddress("triggerTaus", &triggerTaus, &b_triggerTaus);
    fChain->SetBranchAddress("triggerPhotons", &triggerPhotons, &b_triggerPhotons);
-   fChain->SetBranchAddress("npv", &npv, &b_npv);
    Notify();
 }
 
@@ -232,42 +306,4 @@ Int_t NeroTree::Cut(Long64_t entry)
 // returns  1 if entry is accepted.
 // returns -1 otherwise.
    return 1;
-}
-
-void NeroTree::Loop()
-{
-//   In a ROOT session, you can do:
-//      root> .L NeroTree.C
-//      root> NeroTree t
-//      root> t.GetEntry(12); // Fill t data members with entry number 12
-//      root> t.Show();       // Show values of entry 12
-//      root> t.Show(16);     // Read and show values of entry 16
-//      root> t.Loop();       // Loop on all entries
-//
-
-//     This is the loop skeleton where:
-//    jentry is the global entry number in the chain
-//    ientry is the entry number in the current Tree
-//  Note that the argument to GetEntry must be:
-//    jentry for TChain::GetEntry
-//    ientry for TTree::GetEntry and TBranch::GetEntry
-//
-//       To read only selected branches, Insert statements like:
-// METHOD1:
-//    fChain->SetBranchStatus("*",0);  // disable all branches
-//    fChain->SetBranchStatus("branchname",1);  // activate branchname
-// METHOD2: replace line
-//    fChain->GetEntry(jentry);       //read all branches
-//by  b_branchname->GetEntry(ientry); //read only this branch
-   if (fChain == 0) return;
-
-   Long64_t nentries = fChain->GetEntriesFast();
-
-   Long64_t nbytes = 0, nb = 0;
-   for (Long64_t jentry=0; jentry<nentries;jentry++) {
-      Long64_t ientry = LoadTree(jentry);
-      if (ientry < 0) break;
-      nb = fChain->GetEntry(jentry);   nbytes += nb;
-      // if (Cut(ientry) < 0) continue;
-   }
 }

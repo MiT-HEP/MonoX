@@ -7,7 +7,7 @@
 class MonoJetTree
 {
 public:
-  MonoJetTree( const char *name );
+    MonoJetTree( const char *name, TFile *outFile );
   virtual ~MonoJetTree();
 
   int   runNum;
@@ -57,6 +57,7 @@ public:
   int   n_bjetsLoose;
   int   n_bjetsMedium;
   int   n_bjetsTight;
+  int   leadingJet_outaccp;
   float leadingjetPt;
   float leadingjetEta;
   float leadingjetPhi;
@@ -87,6 +88,7 @@ public:
   int   n_cleanedjets;
   float dPhi_j1j2;
   float minJetMetDPhi;
+  float minJetMetDPhi_clean;
   float minJetTrueMetDPhi;
   int   n_tau;
   float boson_pt;

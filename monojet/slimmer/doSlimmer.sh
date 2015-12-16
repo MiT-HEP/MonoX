@@ -1,11 +1,9 @@
 #! /bin/bash
 
-  eosDir=$1
-  subDir=$2
- outFile=$3
-  NCORES=$4
- cmsbase=$5
-macroDir=$6
+ outFile=$1
+  NCORES=$2
+ cmsbase=$3
+macroDir=$4
 
 cd $cmsbase/src
 eval `scram runtime -sh`
@@ -19,8 +17,6 @@ cp $macroDir/functions.h .
 cp $macroDir/NeroSlimmer.cc .
 cp $macroDir/runSlimmer.py .
 
-cp $macroDir/puWeights_13TeV_25ns.root .
-
 mkdir files
 cp $macroDir/files/*.root files/.
 
@@ -32,15 +28,18 @@ echo "Using "$NCORES" cores!"
 
 RUNNING=0
 FIRST=1
+NUM=0
 
 for file in `cat "${outFile%.*}".txt`; do
     if [ "$FIRST" -eq 1 ]; then
-        ./runSlimmer.py root://eoscms/$eosDir/$subDir/$file $file
+        ./runSlimmer.py root://eoscms/$file output_$NUM.root
+        NUM=$((NUM+1))
         if [ "$NCORES" -gt 1 ]; then
             FIRST=0
         fi
     else
-        ./runSlimmer.py root://eoscms/$eosDir/$subDir/$file $file &
+        ./runSlimmer.py root://eoscms/$file output_$NUM.root &
+        NUM=$((NUM+1))
         RUNNING=$((RUNNING+1))
         if [ "$RUNNING" -eq "$NCORES" ]; then
             wait
@@ -53,9 +52,9 @@ if [ "$RUNNING" -gt 0 ]; then
     wait
 fi
 
-hadd $subDir.root nero*.root
+hadd hadded.root output_*.root
 
 echo ""
 echo "Copying to $outFile"
 
-cp $subDir.root $outFile
+cp hadded.root $outFile
