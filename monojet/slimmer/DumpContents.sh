@@ -45,6 +45,8 @@ fi
 
 echo '' > $outDir/myHadd.txt
 
+lastDir=''
+
 for aDir in `cat $dirList`
 do
     reasonableName="${aDir%%+dmytro*}"                      # I'm just playing with string cuts here to 
@@ -62,7 +64,7 @@ do
 
     fileInCount=$filesPerJob
 
-    for inFile in `find $inDir/$aDir -name *.root`; do
+    for inFile in `find $inDir/$aDir -name '*.root'`; do
         if [ "${inFile##*_}" = "pilot.root" ]; then
             continue
         elif [ "${inFile##*.}" == "root" ]; then
