@@ -106,7 +106,7 @@ do
     if [ ! -f $outFile -o "$fresh" = "fresh" ]
     then
         echo Making: $outFile
-#        bsub -q $MonoJetLxBatchQueue -n $numProc -o bout/out.%J doSlimmer.sh $outFile $numProc $CMSSW_BASE $PWD
+        bsub -q $MonoJetLxBatchQueue -n $numProc -o bout/out.%J doSlimmer.sh $outFile $numProc $CMSSW_BASE $PWD
         ranOnFile=1
     fi
 done
