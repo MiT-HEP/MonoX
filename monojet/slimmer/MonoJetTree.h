@@ -1,5 +1,5 @@
-#ifndef MITCROMBIE_MONOJET_MONOJETTREE_H
-#define MITCROMBIE_MONOJET_MONOJETTREE_H
+#ifndef CROMBIE_MONOJETTREE_H
+#define CROMBIE_MONOJETTREE_H
 
 #include "TFile.h"
 #include "TTree.h"
@@ -7,7 +7,10 @@
 class MonoJetTree
 {
 public:
-    MonoJetTree( const char *name, TFile *outFile );
+  MonoJetTree( TTree* tree );
+  MonoJetTree( const char* name );
+  MonoJetTree( const char* name, TString outFileName );
+  MonoJetTree( const char* name, TFile* outFile );
   virtual ~MonoJetTree();
 
   int   runNum;
@@ -90,6 +93,8 @@ public:
   float minJetMetDPhi;
   float minJetMetDPhi_clean;
   float minJetTrueMetDPhi;
+  float minJetMetDPhi_withendcap;
+  float minJetTrueMetDPhi_withendcap;
   int   n_tau;
   float boson_pt;
   float boson_phi;
@@ -105,15 +110,32 @@ public:
   float wkfactor;
   float u_perpGen;
   float u_paraGen;
+  float fatjet1Pt;
+  float fatjet1Eta;
+  float fatjet1Phi;
+  float fatjet1Mass;
+  float fatjet1TrimmedM;
+  float fatjet1PrunedM;
+  float fatjet1FilteredM;
+  float fatjet1SoftDropM;
+  float fatjet1tau2;
+  float fatjet1tau1;
+  float fatjet1tau21;
+  int   fatleading;
 
-  TTree  *ReturnTree()                { return t;                            }
-  void    Fill()                      { t->Fill(); Reset();                  }
-  void    WriteToFile( TFile *file )  { file->WriteTObject(t, t->GetName()); }
+  TTree*  ReturnTree()                { return t;                             }
+  void    Fill()                      { t->Fill(); Reset();                   }
+  void    WriteToFile   ( TFile *f )  { f->WriteTObject(t, t->GetName());     }
+  void    Write()                     { fFile->WriteTObject(t, t->GetName());
+                                        fFile->Close();                       }
 
 protected:
-
-  TTree *t;
+  TFile* fFile;
+  TTree* t;
   void   Reset();
+
+private:
+  void   SetupTree();
 
   ClassDef(MonoJetTree,1)
 };

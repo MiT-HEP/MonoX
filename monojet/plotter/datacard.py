@@ -1,5 +1,8 @@
 import sys, os, string, re
 
+if not os.path.exists('datacards'):
+    os.mkdir('datacards')
+
 def dump_datacard(channel,yields_dic):
     nprocess = 0
     yields_slim = {}

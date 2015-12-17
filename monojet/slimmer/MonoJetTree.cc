@@ -3,114 +3,44 @@
 ClassImp(MonoJetTree)
 
 //--------------------------------------------------------------------------------------------------
-MonoJetTree::MonoJetTree(const char *name, TFile *outFile)
-{ 
-  outFile->cd();
+MonoJetTree::MonoJetTree(TTree* tree) :
+  fFile(0)
+{
+  t = tree;
+  SetupTree();
+}
+
+//--------------------------------------------------------------------------------------------------
+MonoJetTree::MonoJetTree(const char* name) :
+  fFile(0)
+{
   t = new TTree(name,name);
+  SetupTree();
+}
 
-  t->Branch("runNum",&runNum,"runNum/I");
-  t->Branch("lumiNum",&lumiNum,"lumiNum/I");
-  t->Branch("eventNum",&eventNum,"eventNum/I");
-  t->Branch("npv",&npv,"npv/I");
-  t->Branch("mcWeight",&mcWeight,"mcWeight/F");
-  t->Branch("npvWeight",&npvWeight,"npvWeight/F");
-  t->Branch("trueMet",&trueMet,"trueMet/F");
-  t->Branch("trueMetPhi",&trueMetPhi,"trueMetPhi/F");
-  t->Branch("triggerFired",&triggerFired);
-  t->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
-  t->Branch("lep1Eta",&lep1Eta,"lep1Eta/F");
-  t->Branch("lep1Phi",&lep1Phi,"lep1Phi/F");
-  t->Branch("lep1PdgId",&lep1PdgId,"lep1PdgId/I");
-  t->Branch("lep1IsTight",&lep1IsTight,"lep1IsTight/I");
-  t->Branch("lep1IsMedium",&lep1IsMedium,"lep1IsMedium/I");
-  t->Branch("lep1DPhiTrueMet",&lep1DPhiTrueMet,"lep1DPhiTrueMet/F");
-  t->Branch("lep1RelIso",&lep1RelIso,"lep1RelIso/F");
-  t->Branch("lep2Pt",&lep2Pt,"lep2Pt/F");
-  t->Branch("lep2Eta",&lep2Eta,"lep2Eta/F");
-  t->Branch("lep2Phi",&lep2Phi,"lep2Phi/F");
-  t->Branch("lep2PdgId",&lep2PdgId,"lep2PdgId/I");
-  t->Branch("lep2IsTight",&lep2IsTight,"lep2IsTight/I");
-  t->Branch("lep2IsMedium",&lep2IsMedium,"lep2IsMedium/I");
-  t->Branch("lep2DPhiTrueMet",&lep2DPhiTrueMet,"lep2DPhiTrueMet/F");
-  t->Branch("lep2RelIso",&lep2RelIso,"lep2RelIso/F");
-  t->Branch("dilep_pt",&dilep_pt,"dilep_pt/F");
-  t->Branch("dilep_eta",&dilep_eta,"dilep_eta/F");
-  t->Branch("dilep_phi",&dilep_phi,"dilep_phi/F");
-  t->Branch("dilep_m",&dilep_m,"dilep_m/F");
-  t->Branch("mt",&mt,"mt/F");
-  t->Branch("n_tightlep",&n_tightlep,"n_tightlep/I");
-  t->Branch("n_mediumlep",&n_mediumlep,"n_mediumlep/I");
-  t->Branch("n_looselep",&n_looselep,"n_looselep/I");
-  t->Branch("leptonSF",&leptonSF,"leptonSF/F");
-  t->Branch("photonPt",&photonPt,"photonPt/F");
-  t->Branch("photonEta",&photonEta,"photonEta/F");
-  t->Branch("photonPhi",&photonPhi,"photonPhi/F");
-  t->Branch("photonIsMedium",&photonIsMedium,"photonIsMedium/I");
-  t->Branch("n_mediumpho",&n_mediumpho,"n_mediumpho/I");
-  t->Branch("n_loosepho",&n_loosepho,"n_loosepho/I");
-  t->Branch("met",&met,"met/F");
-  t->Branch("metPhi",&metPhi,"metPhi/F");
-  t->Branch("u_perp",&u_perp,"u_perp/F");
-  t->Branch("u_para",&u_para,"u_para/F");
-  t->Branch("n_bjetsLoose",&n_bjetsLoose,"n_bjetsLoose/I");
-  t->Branch("n_bjetsMedium",&n_bjetsMedium,"n_bjetsMedium/I");
-  t->Branch("n_bjetsTight",&n_bjetsTight,"n_bjetsTight/I");
-  t->Branch("leadingJet_outaccp",&leadingJet_outaccp,"leadingJet_outaccp/I");
-  t->Branch("leadingjetPt",&leadingjetPt,"leadingjetPt/F");
-  t->Branch("leadingjetEta",&leadingjetEta,"leadingjetEta/F");
-  t->Branch("leadingjetPhi",&leadingjetPhi,"leadingjetPhi/F");
-  t->Branch("leadingjetM",&leadingjetM,"leadingjetM/F");
-  t->Branch("n_jets",&n_jets,"n_jets/I");
-  t->Branch("jet1Pt",&jet1Pt,"jet1Pt/F");
-  t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
-  t->Branch("jet1Phi",&jet1Phi,"jet1Phi/F");
-  t->Branch("jet1M",&jet1M,"jet1M/F");
-  t->Branch("jet1BTag",&jet1BTag,"jet1BTag/F");
-  t->Branch("jet1PuId",&jet1PuId,"jet1PuId/F");
-  t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
-  t->Branch("jet1isMonoJetIdNew",&jet1isMonoJetIdNew,"jet1isMonoJetIdNew/I");
-  t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
-  t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
-  t->Branch("jet1DPhiTrueMet",&jet1DPhiTrueMet,"jet1DPhiTrueMet/F");
-  t->Branch("jet2Pt",&jet2Pt,"jet2Pt/F");
-  t->Branch("jet2Eta",&jet2Eta,"jet2Eta/F");
-  t->Branch("jet2Phi",&jet2Phi,"jet2Phi/F");
-  t->Branch("jet2M",&jet2M,"jet2M/F");
-  t->Branch("jet2BTag",&jet2BTag,"jet2BTag/F");
-  t->Branch("jet2PuId",&jet2PuId,"jet2PuId/F");
-  t->Branch("jet2isMonoJetId",&jet2isMonoJetId,"jet2isMonoJetId/I");
-  t->Branch("jet2isMonoJetIdNew",&jet2isMonoJetIdNew,"jet2isMonoJetIdNew/I");
-  t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
-  t->Branch("jet2DPhiMet",&jet2DPhiMet,"jet2DPhiMet/F");
-  t->Branch("jet2DPhiTrueMet",&jet2DPhiTrueMet,"jet2DPhiTrueMet/F");
-  t->Branch("n_cleanedjets",&n_cleanedjets,"n_cleanedjets/I");
-  t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
-  t->Branch("minJetMetDPhi",&minJetMetDPhi,"minJetMetDPhi/F");
-  t->Branch("minJetMetDPhi_clean",&minJetMetDPhi_clean,"minJetMetDPhi_clean/F");
-  t->Branch("minJetTrueMetDPhi",&minJetTrueMetDPhi,"minJetTrueMetDPhi/F");
-  t->Branch("n_tau",&n_tau,"n_tau/I");
-  t->Branch("boson_pt",&boson_pt,"boson_pt/F");
-  t->Branch("boson_phi",&boson_phi,"boson_phi/F");
-  t->Branch("genBos_pt",&genBos_pt,"genBos_pt/F");
-  t->Branch("genBos_phi",&genBos_phi,"genBos_phi/F");
-  t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
-  t->Branch("genMet",&genMet,"genMet/F");
-  t->Branch("genMetPhi",&genMetPhi,"genMetPhi/F");
-  t->Branch("kfactor",&kfactor,"kfactor/F");
-  t->Branch("ewk_z",&ewk_z,"ewk_z/F");
-  t->Branch("ewk_a",&ewk_a,"ewk_a/F");
-  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
-  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
-  t->Branch("u_perpGen",&u_perpGen,"u_perpGen/F");
-  t->Branch("u_paraGen",&u_paraGen,"u_paraGen/F");
+//--------------------------------------------------------------------------------------------------
+MonoJetTree::MonoJetTree(const char* name, TString outFileName)
+{
+  fFile = new TFile(outFileName,"RECREATE");
+  fFile->cd();
+  t = new TTree(name,name);
+  SetupTree();
+}
 
-  Reset();
+//--------------------------------------------------------------------------------------------------
+MonoJetTree::MonoJetTree(const char* name, TFile* outFile)
+{
+  fFile = outFile;
+  fFile->cd();
+  t = new TTree(name,name);
+  SetupTree();
 }
 
 //--------------------------------------------------------------------------------------------------
 MonoJetTree::~MonoJetTree()
 {
   delete t;
+  delete fFile;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -197,6 +127,8 @@ MonoJetTree::Reset()
   minJetMetDPhi = 5;
   minJetMetDPhi_clean = 5;
   minJetTrueMetDPhi = 5;
+  minJetMetDPhi_withendcap = 5;
+  minJetTrueMetDPhi_withendcap = 5;
   n_tau = 0;
   boson_pt = -5;
   boson_phi = -5;
@@ -212,4 +144,133 @@ MonoJetTree::Reset()
   wkfactor = 1;
   u_perpGen = 0;
   u_paraGen = 0;
+  fatjet1Pt = -5;
+  fatjet1Eta = -7;
+  fatjet1Phi = -5;
+  fatjet1Mass = -5;
+  fatjet1TrimmedM = -5;
+  fatjet1PrunedM = -5;
+  fatjet1FilteredM = -5;
+  fatjet1SoftDropM = -5;
+  fatjet1tau2 = 0;
+  fatjet1tau1 = 0;
+  fatjet1tau21 = 1;
+  fatleading = -1;
+}
+
+//--------------------------------------------------------------------------------------------------
+void
+MonoJetTree::SetupTree()
+{
+  t->Branch("runNum",&runNum,"runNum/I");
+  t->Branch("lumiNum",&lumiNum,"lumiNum/I");
+  t->Branch("eventNum",&eventNum,"eventNum/I");
+  t->Branch("npv",&npv,"npv/I");
+  t->Branch("mcWeight",&mcWeight,"mcWeight/F");
+  t->Branch("npvWeight",&npvWeight,"npvWeight/F");
+  t->Branch("trueMet",&trueMet,"trueMet/F");
+  t->Branch("trueMetPhi",&trueMetPhi,"trueMetPhi/F");
+  t->Branch("triggerFired",&triggerFired);
+  t->Branch("lep1Pt",&lep1Pt,"lep1Pt/F");
+  t->Branch("lep1Eta",&lep1Eta,"lep1Eta/F");
+  t->Branch("lep1Phi",&lep1Phi,"lep1Phi/F");
+  t->Branch("lep1PdgId",&lep1PdgId,"lep1PdgId/I");
+  t->Branch("lep1IsTight",&lep1IsTight,"lep1IsTight/I");
+  t->Branch("lep1IsMedium",&lep1IsMedium,"lep1IsMedium/I");
+  t->Branch("lep1DPhiTrueMet",&lep1DPhiTrueMet,"lep1DPhiTrueMet/F");
+  t->Branch("lep1RelIso",&lep1RelIso,"lep1RelIso/F");
+  t->Branch("lep2Pt",&lep2Pt,"lep2Pt/F");
+  t->Branch("lep2Eta",&lep2Eta,"lep2Eta/F");
+  t->Branch("lep2Phi",&lep2Phi,"lep2Phi/F");
+  t->Branch("lep2PdgId",&lep2PdgId,"lep2PdgId/I");
+  t->Branch("lep2IsTight",&lep2IsTight,"lep2IsTight/I");
+  t->Branch("lep2IsMedium",&lep2IsMedium,"lep2IsMedium/I");
+  t->Branch("lep2DPhiTrueMet",&lep2DPhiTrueMet,"lep2DPhiTrueMet/F");
+  t->Branch("lep2RelIso",&lep2RelIso,"lep2RelIso/F");
+  t->Branch("dilep_pt",&dilep_pt,"dilep_pt/F");
+  t->Branch("dilep_eta",&dilep_eta,"dilep_eta/F");
+  t->Branch("dilep_phi",&dilep_phi,"dilep_phi/F");
+  t->Branch("dilep_m",&dilep_m,"dilep_m/F");
+  t->Branch("mt",&mt,"mt/F");
+  t->Branch("n_tightlep",&n_tightlep,"n_tightlep/I");
+  t->Branch("n_mediumlep",&n_mediumlep,"n_mediumlep/I");
+  t->Branch("n_looselep",&n_looselep,"n_looselep/I");
+  t->Branch("leptonSF",&leptonSF,"leptonSF/F");
+  t->Branch("photonPt",&photonPt,"photonPt/F");
+  t->Branch("photonEta",&photonEta,"photonEta/F");
+  t->Branch("photonPhi",&photonPhi,"photonPhi/F");
+  t->Branch("photonIsMedium",&photonIsMedium,"photonIsMedium/I");
+  t->Branch("n_mediumpho",&n_mediumpho,"n_mediumpho/I");
+  t->Branch("n_loosepho",&n_loosepho,"n_loosepho/I");
+  t->Branch("met",&met,"met/F");
+  t->Branch("metPhi",&metPhi,"metPhi/F");
+  t->Branch("u_perp",&u_perp,"u_perp/F");
+  t->Branch("u_para",&u_para,"u_para/F");
+  t->Branch("n_bjetsLoose",&n_bjetsLoose,"n_bjetsLoose/I");
+  t->Branch("n_bjetsMedium",&n_bjetsMedium,"n_bjetsMedium/I");
+  t->Branch("n_bjetsTight",&n_bjetsTight,"n_bjetsTight/I");
+  t->Branch("leadingJet_outaccp",&leadingJet_outaccp,"leadingJet_outaccp/I");
+  t->Branch("leadingjetPt",&leadingjetPt,"leadingjetPt/F");
+  t->Branch("leadingjetEta",&leadingjetEta,"leadingjetEta/F");
+  t->Branch("leadingjetPhi",&leadingjetPhi,"leadingjetPhi/F");
+  t->Branch("leadingjetM",&leadingjetM,"leadingjetM/F");
+  t->Branch("n_jets",&n_jets,"n_jets/I");
+  t->Branch("jet1Pt",&jet1Pt,"jet1Pt/F");
+  t->Branch("jet1Eta",&jet1Eta,"jet1Eta/F");
+  t->Branch("jet1Phi",&jet1Phi,"jet1Phi/F");
+  t->Branch("jet1M",&jet1M,"jet1M/F");
+  t->Branch("jet1BTag",&jet1BTag,"jet1BTag/F");
+  t->Branch("jet1PuId",&jet1PuId,"jet1PuId/F");
+  t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
+  t->Branch("jet1isMonoJetIdNew",&jet1isMonoJetIdNew,"jet1isMonoJetIdNew/I");
+  t->Branch("jet1isLooseMonoJetId",&jet1isLooseMonoJetId,"jet1isLooseMonoJetId/I");
+  t->Branch("jet1DPhiMet",&jet1DPhiMet,"jet1DPhiMet/F");
+  t->Branch("jet1DPhiTrueMet",&jet1DPhiTrueMet,"jet1DPhiTrueMet/F");
+  t->Branch("jet2Pt",&jet2Pt,"jet2Pt/F");
+  t->Branch("jet2Eta",&jet2Eta,"jet2Eta/F");
+  t->Branch("jet2Phi",&jet2Phi,"jet2Phi/F");
+  t->Branch("jet2M",&jet2M,"jet2M/F");
+  t->Branch("jet2BTag",&jet2BTag,"jet2BTag/F");
+  t->Branch("jet2PuId",&jet2PuId,"jet2PuId/F");
+  t->Branch("jet2isMonoJetId",&jet2isMonoJetId,"jet2isMonoJetId/I");
+  t->Branch("jet2isMonoJetIdNew",&jet2isMonoJetIdNew,"jet2isMonoJetIdNew/I");
+  t->Branch("jet2isLooseMonoJetId",&jet2isLooseMonoJetId,"jet2isLooseMonoJetId/I");
+  t->Branch("jet2DPhiMet",&jet2DPhiMet,"jet2DPhiMet/F");
+  t->Branch("jet2DPhiTrueMet",&jet2DPhiTrueMet,"jet2DPhiTrueMet/F");
+  t->Branch("n_cleanedjets",&n_cleanedjets,"n_cleanedjets/I");
+  t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");
+  t->Branch("minJetMetDPhi",&minJetMetDPhi,"minJetMetDPhi/F");
+  t->Branch("minJetMetDPhi_clean",&minJetMetDPhi_clean,"minJetMetDPhi_clean/F");
+  t->Branch("minJetTrueMetDPhi",&minJetTrueMetDPhi,"minJetTrueMetDPhi/F");
+  t->Branch("minJetMetDPhi_withendcap",&minJetMetDPhi_withendcap,"minJetMetDPhi_withendcap/F");
+  t->Branch("minJetTrueMetDPhi_withendcap",&minJetTrueMetDPhi_withendcap,"minJetTrueMetDPhi_withendcap/F");
+  t->Branch("n_tau",&n_tau,"n_tau/I");
+  t->Branch("boson_pt",&boson_pt,"boson_pt/F");
+  t->Branch("boson_phi",&boson_phi,"boson_phi/F");
+  t->Branch("genBos_pt",&genBos_pt,"genBos_pt/F");
+  t->Branch("genBos_phi",&genBos_phi,"genBos_phi/F");
+  t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
+  t->Branch("genMet",&genMet,"genMet/F");
+  t->Branch("genMetPhi",&genMetPhi,"genMetPhi/F");
+  t->Branch("kfactor",&kfactor,"kfactor/F");
+  t->Branch("ewk_z",&ewk_z,"ewk_z/F");
+  t->Branch("ewk_a",&ewk_a,"ewk_a/F");
+  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
+  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
+  t->Branch("u_perpGen",&u_perpGen,"u_perpGen/F");
+  t->Branch("u_paraGen",&u_paraGen,"u_paraGen/F");
+  t->Branch("fatjet1Pt",&fatjet1Pt,"fatjet1Pt/F");
+  t->Branch("fatjet1Eta",&fatjet1Eta,"fatjet1Eta/F");
+  t->Branch("fatjet1Phi",&fatjet1Phi,"fatjet1Phi/F");
+  t->Branch("fatjet1Mass",&fatjet1Mass,"fatjet1Mass/F");
+  t->Branch("fatjet1TrimmedM",&fatjet1TrimmedM,"fatjet1TrimmedM/F");
+  t->Branch("fatjet1PrunedM",&fatjet1PrunedM,"fatjet1PrunedM/F");
+  t->Branch("fatjet1FilteredM",&fatjet1FilteredM,"fatjet1FilteredM/F");
+  t->Branch("fatjet1SoftDropM",&fatjet1SoftDropM,"fatjet1SoftDropM/F");
+  t->Branch("fatjet1tau2",&fatjet1tau2,"fatjet1tau2/F");
+  t->Branch("fatjet1tau1",&fatjet1tau1,"fatjet1tau1/F");
+  t->Branch("fatjet1tau21",&fatjet1tau21,"fatjet1tau21/F");
+  t->Branch("fatleading",&fatleading,"fatleading/I");
+
+  Reset();
 }

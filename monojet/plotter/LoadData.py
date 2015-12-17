@@ -9,6 +9,8 @@ lumi = 1.0
 ######################################################
 
 dataDir = "/afs/cern.ch/work/z/zdemirag/public/slim_unblind/"
+
+# To use this, mount eos locally at eos/
 dataDir_eos = "eos/cms/store/user/zdemirag/slim_nov17_bkp/slim_Nov17/"
 
 physics_processes = {
@@ -226,72 +228,14 @@ physics_processes = {
                  'files':[dataDir_eos+'WZ_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root',],
                  },
         
-        'signal_h_ggf':{'label':'GGF Higgs (150 GeV)',
-                        'datacard':'signal',
-                        'color' : 1,
-                        'ordering': 5,
-                        'xsec' : 30.883,
-                        'files':[dataDir+'GluGlu_HToInvisible_M150_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],  
-                        },
-        'signal_h_vbf':{'label':'VBF Higgs (150 GeV)',
-                        'datacard':'signal',
-                        'color' : 1,
-                        'ordering': 5,
-                        'xsec' : 1.,
-                        'files':[dataDir+'VBF_HToInvisible_M150_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM.root'],
-                        },
-
         #991.600 fb--> 0.991 * 10 pb  
         'signal_dm_av_1_2': { 'label':'V (1 TeV)',
                           'datacard':'signal',
                           'color' : 1,
                           'ordering': 5,
                           'xsec' : 1.,
-                          'files':[dataDir+'DMV_NNPDF30_Vector_Mphi-1000_Mchi-1_gSM-0p25_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
-                          #'files':[dataDir+'DMV_NNPDF30_Axial_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
-                          #'files':[dataDir+'DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-0p25_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
+                           'files':[dataDir+'DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-0p25_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
                               },
-
-        #'signal_dm_ps_200_1' : {'label':'PS (200 GeV)',
-        #                        'datacard':'signal',
-        #                       'color' : 1,
-        #                        'ordering':5,
-        #                        'xsec' : 1.0,
-        #                        'files':[dataDir+'DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
-        #                        },
-
-        #'signal_dm_ps_200_10' : {'label':'PS (200 GeV)',
-        #                        'datacard':'signal',
-        #                        'color' : 1,
-        #                        'ordering':5,
-        #                        'xsec' : 1.0,
-        #                        'files':[dataDir+'DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
-        #                        },
-
-        #'signal_dm_ps_200_50' : {'label':'PS (200 GeV)',
-        #                        'datacard':'signal',
-        #                        'color' : 1,
-        #                        'ordering':5,
-        #                        'xsec' : 1.0,
-        #                        'files':[dataDir+'DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root'],
-        #                        },#
-
-        #'signal_dm_ps_200_100' : {'label':'PS (200 GeV)',
-        #                          'datacard':'signal',
-        #                          'color' : 1,
-        #                          'ordering':5,
-        #                          'xsec' : 1.0,
-        #                          'files':[dataDir+'DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V#9-v1+AODSIM.root'],
-        #                          },
-
-        #'signal_dm_ps_200_150' : {'label':'PS (200 GeV)',
-        #                          'datacard':'signal',
-        #                          'color' : 1,
-        #                          'ordering':5,
-        #                          'xsec' : 1.0,
-        #                          'files':[dataDir+'DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V#9-v1+AODSIM.root'],
-        #                          },               
-
 
         'data': { 'label':'Data',
                   'datacard':'data',

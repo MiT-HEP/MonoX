@@ -1,23 +1,37 @@
 #! /bin/bash
 
-package=MonoJet
+TreeName=MonoJetTree
 
-outFileBase=$package\Tree
-def=`echo $package | tr "[a-z]" "[A-Z]"`
+if [ "$TreeName" = "" ]
+then
+    echo ""
+    echo " +------------------------------------------------------------+"
+    echo " | First argument is the file <TreeName>.                     |"
+    echo " | This can be with or without the extension (it's stripped). |"
+    echo " | This script then looks for <TreeName>.txt to make a class. |"
+    echo " +------------------------------------------------------------+"
+    echo ""
+    exit
+fi
 
-inVarsFile=$outFileBase.txt
-h=$outFileBase.h
-s=$outFileBase.cc
+TreeName=${TreeName%%.*}
 
-echo "#ifndef MITCROMBIE_"$def"_"$def"TREE_H" > $h
-echo "#define MITCROMBIE_"$def"_"$def"TREE_H" >> $h
+def=`echo $TreeName | tr "[a-z]" "[A-Z]"`
+
+inVarsFile=$TreeName.txt
+h=$TreeName.h
+s=$TreeName.cc
+
+echo "#ifndef CROMBIE_"$def"_H" > $h
+echo "#define CROMBIE_"$def"_H" >> $h
 
 echo "" >> $h
 echo "#include \"TFile.h\"" >> $h
 echo "#include \"TTree.h\"" >> $h
 
 declare -a otherTypes=()
-for branch in `cat $inVarsFile`; do
+for branch in `cat $inVarsFile`
+do
     after="${branch##*/}"
     varLetter="${after%=*}"
     if [ "$varLetter" != "F" -a "$varLetter" != "I" -a "$varLetter" != "O" -a "$varLetter" != "VF" -a "$varLetter" != "VI" -a "$varLetter" != "VO" ]; then
@@ -30,19 +44,24 @@ for branch in `cat $inVarsFile`; do
     fi
 done
 
-for objType in `echo "${otherTypes[@]}" | tr ' ' '\n' | sort -u`; do
+for objType in `echo "${otherTypes[@]}" | tr ' ' '\n' | sort -u`
+do
     echo "#include \""$objType".h\"" >> $h
 done
 
 echo "" >> $h
-echo "class $outFileBase" >> $h
+echo "class $TreeName" >> $h
 echo "{" >> $h
 echo "public:" >> $h
-echo "  $outFileBase( const char *name );" >> $h
-echo "  virtual ~$outFileBase();" >> $h
+echo "  $TreeName( TTree* tree );" >> $h
+echo "  $TreeName( const char* name );" >> $h
+echo "  $TreeName( const char* name, TString outFileName );" >> $h
+echo "  $TreeName( const char* name, TFile* outFile );" >> $h
+echo "  virtual ~$TreeName();" >> $h
 echo "" >> $h
 
-for branch in `cat $inVarsFile`; do
+for branch in `cat $inVarsFile`
+do
     varType=""
     varName="${branch%/*}"
     after="${branch##*/}"
@@ -69,31 +88,98 @@ for branch in `cat $inVarsFile`; do
 done
 
 echo "" >> $h
-echo "  TTree  *ReturnTree()                { return t;                            }" >> $h
-echo "  void    Fill()                      { t->Fill(); Reset();                  }" >> $h
-echo "  void    WriteToFile( TFile *file )  { file->WriteTObject(t, t->GetName()); }" >> $h
+echo "  TTree*  ReturnTree()                { return t;                             }" >> $h
+echo "  void    Fill()                      { t->Fill(); Reset();                   }" >> $h
+echo "  void    WriteToFile   ( TFile *f )  { f->WriteTObject(t, t->GetName());     }" >> $h
+echo "  void    Write()                     { fFile->WriteTObject(t, t->GetName());"   >> $h
+echo "                                        fFile->Close();                       }" >> $h
 echo "" >> $h
 
 echo "protected:" >> $h
-echo "" >> $h
-echo "  TTree *t;" >> $h
+echo "  TFile* fFile;" >> $h
+echo "  TTree* t;" >> $h
 echo "  void   Reset();" >> $h
 echo "" >> $h
-echo "  ClassDef($outFileBase,1)" >> $h
+echo "private:" >> $h
+echo "  void   SetupTree();" >> $h
+echo "" >> $h
+echo "  ClassDef($TreeName,1)" >> $h
 echo "};" >> $h
 echo "#endif" >> $h
 
-echo "#include \"$outFileBase.h\"" > $s
+echo "#include \"$TreeName.h\"" > $s
 echo "" >> $s
-echo "ClassImp($outFileBase)" >> $s
+echo "ClassImp($TreeName)" >> $s
 echo "" >> $s
 
 echo "//--------------------------------------------------------------------------------------------------" >> $s
-echo "$outFileBase::$outFileBase(const char *name)" >> $s
-echo "{ " >> $s
-echo "  t = new TTree(name,name);" >> $s
+echo "$TreeName::$TreeName(TTree* tree) :" >> $s
+echo "  fFile(0)" >> $s
+echo "{" >> $s
+echo "  t = tree;" >> $s
+echo "  SetupTree();" >> $s
+echo "}" >> $s
 echo "" >> $s
-for branch in `cat $inVarsFile`; do
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "$TreeName::$TreeName(const char* name) :" >> $s
+echo "  fFile(0)" >> $s
+echo "{" >> $s
+echo "  t = new TTree(name,name);" >> $s
+echo "  SetupTree();" >> $s
+echo "}" >> $s
+echo "" >> $s
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "$TreeName::$TreeName(const char* name, TString outFileName)" >> $s
+echo "{" >> $s
+echo "  fFile = new TFile(outFileName,\"RECREATE\");" >> $s
+echo "  fFile->cd();" >> $s
+echo "  t = new TTree(name,name);" >> $s
+echo "  SetupTree();" >> $s
+echo "}" >> $s
+echo "" >> $s
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "$TreeName::$TreeName(const char* name, TFile* outFile)" >> $s
+echo "{" >> $s
+echo "  fFile = outFile;" >> $s
+echo "  fFile->cd();" >> $s
+echo "  t = new TTree(name,name);" >> $s
+echo "  SetupTree();" >> $s
+echo "}" >> $s
+echo "" >> $s
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "$TreeName::~$TreeName()" >> $s
+echo "{" >> $s
+echo "  delete t;" >> $s
+echo "  delete fFile;" >> $s
+echo "}" >> $s
+echo "" >> $s
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "void" >> $s
+echo "$TreeName::Reset()" >> $s
+echo "{" >> $s
+for branch in `cat $inVarsFile`
+do
+    varName="${branch%/*}"
+    after="${branch##*/}"
+    varLetter="${after%=*}"
+    varDefault="${after##*=}"
+    echo "  $varName = $varDefault;" >> $s
+done
+echo "}" >> $s
+echo "" >> $s
+
+
+echo "//--------------------------------------------------------------------------------------------------" >> $s
+echo "void" >> $s
+echo "$TreeName::SetupTree()" >> $s
+echo "{" >> $s
+for branch in `cat $inVarsFile`
+do
     varName="${branch%/*}"
     after="${branch##*/}"
     varLetter="${after%=*}"
@@ -107,24 +193,4 @@ done
 echo "" >> $s
 echo "  Reset();" >> $s
 echo "}" >> $s
-echo "" >> $s
 
-echo "//--------------------------------------------------------------------------------------------------" >> $s
-echo "$outFileBase::~$outFileBase()" >> $s
-echo "{" >> $s
-echo "  delete t;" >> $s
-echo "}" >> $s
-echo "" >> $s
-
-echo "//--------------------------------------------------------------------------------------------------" >> $s
-echo "void" >> $s
-echo "$outFileBase::Reset()" >> $s
-echo "{" >> $s
-for branch in `cat $inVarsFile`; do
-    varName="${branch%/*}"
-    after="${branch##*/}"
-    varLetter="${after%=*}"
-    varDefault="${after##*=}"
-    echo "  $varName = $varDefault;" >> $s
-done
-echo "}" >> $s

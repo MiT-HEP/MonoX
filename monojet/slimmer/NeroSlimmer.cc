@@ -408,11 +408,27 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
       
+      // Avoid overlap with veto electrons in Zee control region
+      if (abs(outTree->lep2PdgId) == 11 && 
+          (deltaR(tempJet->Phi(),tempJet->Eta(),outTree->lep1Phi,outTree->lep1Phi) < 0.4 ||
+           deltaR(tempJet->Phi(),tempJet->Eta(),outTree->lep2Phi,outTree->lep2Phi) < 0.4)) {
+        continue;
+      }
+
+      if (iJet < 5) {
+        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+        if (checkDPhi < outTree->minJetMetDPhi_withendcap)
+          outTree->minJetMetDPhi_withendcap = checkDPhi;
+        
+        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
+        if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
+          outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
+      }
+
+      if (iJet == 0 && fabs(tempJet->Eta()) > 2.5)
+        outTree->leadingJet_outaccp = 1;
+
       //// Ignore jets that are not in this region ////
-
-      if (fabs(tempJet->Eta()) > 2.5  && tempJet->Pt()>100.)
-          outTree->leadingJet_outaccp = 1;
-
       if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
         continue;
 
@@ -423,7 +439,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutMedium)
       {
-          
           float dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempJet->Phi(),tempJet->Eta());
           float dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempJet->Phi(),tempJet->Eta());
           if (dR_1 > 0.4 && dR_2 > 0.4){
@@ -657,7 +672,29 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
           outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
       }
-      
+    }
+
+    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetP4->GetEntries(); iFatJet++) {
+      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetP4->At(iFatJet);
+
+      if (iFatJet == 0) {
+        outTree->fatjet1Pt   = tempFatJet->Pt();
+        outTree->fatjet1Eta  = tempFatJet->Eta();
+        outTree->fatjet1Phi  = tempFatJet->Phi();
+        outTree->fatjet1Mass = tempFatJet->M();
+        outTree->fatjet1TrimmedM  = (*(inTree->fatjetTrimmedMass))[iFatJet];
+        outTree->fatjet1PrunedM   = (*(inTree->fatjetPrunedMass))[iFatJet];
+        outTree->fatjet1FilteredM = (*(inTree->fatjetFilteredMass))[iFatJet];
+        outTree->fatjet1SoftDropM = (*(inTree->fatjetSoftdropMass))[iFatJet];
+        outTree->fatjet1tau2  = (*(inTree->fatjetTau1))[iFatJet];
+        outTree->fatjet1tau1  = (*(inTree->fatjetTau2))[iFatJet];
+        outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
+
+        if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
+          outTree->fatleading = 1;
+        else
+          outTree->fatleading = 0;
+      }
     }
 
     outTree->Fill();

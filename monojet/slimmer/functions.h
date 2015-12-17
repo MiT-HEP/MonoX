@@ -9,7 +9,7 @@ float deltaPhi(float phi1, float phi2) {
 }
 
 float deltaR(float phi1, float eta1, float phi2, float eta2) {
-  return sqrt((eta2-eta1)*(eta2-eta1)+deltaPhi(phi1,phi2)*+deltaPhi(phi1,phi2));
+  return sqrt((eta2-eta1)*(eta2-eta1)+deltaPhi(phi1,phi2)*deltaPhi(phi1,phi2));
 }
 
 float uPerp(float met, float metPhi, float zPhi) {
