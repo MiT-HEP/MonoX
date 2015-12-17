@@ -6,26 +6,30 @@ def build_selection(selection,bin0):
         
         #** monojet
         'leading jet pT' :['jet1Pt>100.',selections],
-        'leading jet eta':['abs(jet1Eta)<2.5',selections],
-        'jet cleaning'   :['jet1isMonoJetId==1',selections],
-        'deltaPhi'       :['abs(minJetMetDPhi)>0.5',['signal']],
-        #'tau veto'       :['n_tau==0',selections], 
+        'leading jet eta':['abs(jet1Eta)<2.5',selections],        
+        'jet cleaning'   :['jet1isMonoJetIdNew==1',selections],      
+        'deltaPhi'       :['abs(minJetMetDPhi_clean)>0.5',['signal','Zmm','Wmn','Wen','gjets']],
+        #'deltaPhi'       :['abs(minJetMetDPhi_clean)>0.65',['signal','Zmm','Wmn','Wen','gjets']],
+        'tau veto'       :['n_tau==0',['signal','Zmm','Wmn','Wen','Zee']], 
         'lepton veto'    :['n_looselep==0',['signal','gjets']],
         'pho veto'       :['n_loosepho==0',['signal','Zmm','Wmn','Zee','Wen']],
         'btag veto'      :['n_bjetsMedium==0',selections],
         
+        #'bins' : ['met<250.',selections],
+        
         #** Control Regions
-        'trigger'  : ['(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)',['signal','Zmm','Wmn']],
-        #'triggerE' : ['(triggerFired[3]==1)',['Zee','Wen']],
+
+        'triggerE' : ['(triggerFired[3]==1)',['Zee','Wen']],        
         'triggerG' : ['(triggerFired[7]==1 || triggerFired[8]==1 || triggerFired[9]==1)',['gjets']],
         'leading lep ID': ['n_tightlep > 0',['Wmn','Zmm','Wen','Wee']], 
         'Zmm'  : ['n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -169)',['Zmm']],
-        'Zee'  : ['n_tightlep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -121)',['Zee']],
+        'Zee'  : ['n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -121)',['Zee']],
         'Wmn'  : ['n_looselep == 1 && abs(lep1PdgId)==13 ',['Wmn']],
         'Wen'  : ['n_looselep == 1 && abs(lep1PdgId)==11 && trueMet>40.',['Wen']],
-        'gjets': ['photonPt > 175 && abs(photonEta) < 1.47 && n_tightpho == 1',['gjets']],        
-        # If instead of 1 tight (or loose medium) lepton, you require at least 1 loose lepton, the efficency is much higher
-        #'gjets': ['photonPt > 175 && abs(photonEta) < 1.47 && n_loosepho > 0',['gjets']],        
+
+        'gjets': ['photonPt > 175 && abs(photonEta) < 1.4442 && n_mediumpho == 1 && n_loosepho == 1',['gjets']],                
+        #'excitedquark' : ['n_cleanedjets==3',['gjets']],
+        
         }
 
     selectionString = ''
