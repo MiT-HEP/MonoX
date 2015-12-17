@@ -61,7 +61,7 @@ for ientry in range(0,n_entries):
     continue
   n_npho += 1
 
-  if not (input_tree.n_tightpho == 1):
+  if not (input_tree.n_mediumpho == 1):
     continue
   if not (input_tree.photonPt > 175):
     continue

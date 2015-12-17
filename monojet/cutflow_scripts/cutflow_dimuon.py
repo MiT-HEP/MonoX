@@ -39,7 +39,7 @@ else:
 
 #initialize 
 n_njet=0; n_nmet=0; n_njetid=0; n_nlep=0; n_ntau=0; n_npho=0; n_dphi=0; n_nbjet=0;
-nleptight=0; n_nlepveto=0; n_n2lepcharge=0; n_ndilep=0; n_nleptight=0
+n_nlepveto=0; n_n2lepcharge=0; n_ndilep=0; n_nleptight=0
 
 # Check the number of entries in the tree
 n_entries = input_tree.GetEntriesFast()
@@ -62,9 +62,10 @@ for ientry in range(0,n_entries):
     continue
   n_nlep += 1
 
-  #if not (input_tree.n_tightlep > 0):
-  #  continue
-  #n_nleptight += 1
+#  if not (input_tree.n_tightlep > 0):
+  if not (input_tree.n_mediumlep > 0):
+    continue
+  n_nleptight += 1
 
   if not ((input_tree.lep1PdgId + input_tree.lep2PdgId) == 0):
     continue

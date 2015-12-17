@@ -6,7 +6,6 @@ import goodlumi
 import ROOT
 
 import os
-import pprint
 import subprocess
 
 #### These are all the variables the user should have to configure ####
@@ -18,14 +17,12 @@ proc = subprocess.Popen(command, stdout = subprocess.PIPE)
 
 for line in proc.stdout:
   (key, _, value) = line.partition("=")
-  os.environ[key] = value
+  os.environ[key] = value.rstrip('\n')
 ##
 
 proc.communicate()
 
-pprint.pprint(dict(os.environ))
-
-numMaxProcesses = os.environ['MonoJetCoresPerLocalJob']
+numMaxProcesses = int(os.environ['MonoJetCoresPerLocalJob'])
 
 inDir  = os.environ['MonoJetFullOutDir']
 outDir = os.environ['MonoJetSkimOutDir']
@@ -34,6 +31,10 @@ GoodRunsFile = os.environ['MonoJetGoodRunsFile']
 cut = os.environ['MonoJetSkimmingCut']
 
 #######################################################################
+
+if not os.path.exists(outDir):
+  os.mkdir(outDir)
+##
 
 def skim(inQueue):
     running = True
