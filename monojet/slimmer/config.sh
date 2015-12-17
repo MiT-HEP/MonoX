@@ -7,7 +7,7 @@ export MonoJetNeroEosDir=/store/user/dmytro/Nero/v1.1.1
 export MonoJetNeroRegDir=/afs/cern.ch/work/d/dabercro/eos/cms/store/user/dmytro/Nero/v1.1.1
 # If you have a list of subdirectories that you want to run on, put it here
 # If this is blank, all Nero files in all subdirectories will be run on
-export MonoJetSubDirList=metData.txt
+export MonoJetSubDirList=example.txt
 
 # This is where you will be putting files
 # This is where files will be stored temporarily while skimming over Nero
