@@ -556,7 +556,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (((*(inTree->tauSelBits))[iTau] & 3) != 3) 
         continue;
-      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3)
+      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 5)
         continue;
 
       //// Now do cleaning ////
