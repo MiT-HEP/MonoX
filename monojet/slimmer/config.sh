@@ -2,12 +2,12 @@
 
 # This is where the slimmer will look for Nero files
 # EOS logical path for using LXBATCH
-export MonoJetNeroEosDir=/store/user/dmytro/Nero/v1.1.1
+export MonoJetNeroEosDir=/store/user/amarini/Nero/v1.2/MET
 # Physical path for interactive running
-export MonoJetNeroRegDir=/afs/cern.ch/work/d/dabercro/eos/cms/store/user/dmytro/Nero/v1.1.1
+export MonoJetNeroRegDir=/afs/cern.ch/work/d/dabercro/eos/cms$MonoJetNeroEosDir
 # If you have a list of subdirectories that you want to run on, put it here
 # If this is blank, all Nero files in all subdirectories will be run on
-export MonoJetSubDirList=example.txt
+export MonoJetSubDirList=
 
 # This is where you will be putting files
 # This is where files will be stored temporarily while skimming over Nero

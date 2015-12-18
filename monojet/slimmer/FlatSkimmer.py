@@ -51,9 +51,13 @@ def skim(inQueue):
                     goodRunFilter = goodlumi.makeGoodLumiFilter(GoodRunsFile)
                     inTree = tempInTree.CloneTree(0)
                     for entry in range(tempInTree.GetEntriesFast()):
+                        if entry % 100000 == 0:
+                            print "Processing events: " + inFileName + " ... " + str(entry*100.0/tempInTree.GetEntriesFast()) + "%"
+                        ##
                         tempInTree.GetEntry(entry)
                         if goodRunFilter.isGoodLumi(tempInTree.runNum,tempInTree.lumiNum):
                             inTree.Fill()
+                        ##
                     ##
                 ##
                 else:
