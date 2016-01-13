@@ -1,8 +1,8 @@
 # Pick one of these three. 
 # Cannot run all at the same time because they open different sets of files
 
-#channel_list  = ['signal','Wmn','Zmm']
-channel_list  = ['Wen','Zee']
+channel_list  = ['signal','Wmn','Zmm']
+#channel_list  = ['Wen','Zee']
 #channel_list  = ['gjets']
 
 # This is where the plots are output

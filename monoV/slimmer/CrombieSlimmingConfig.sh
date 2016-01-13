@@ -1,6 +1,6 @@
 export CrombieFilesPerJob=10
 export CrombieNumberProcs=1
-export CrombieQueue=1nh
+export CrombieQueue=8nh
 
 export CrombieNLocalProcs=5
 
@@ -10,9 +10,9 @@ export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
 export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut
 export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut
 export CrombieDirList=SubDirList.txt
+#export CrombieDirList=TestMET.txt
 
 export CrombieSlimmerScript=runSlimmer.py
 export CrombieJobScriptList=CrombieScriptList.txt
 
-export CrombieSkimCuts="met>150&&jet1isMonoJetId==1&&jet1isMonoJetIdNew==1"
 export CrombieGoodRuns=/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions15/13TeV/Cert_246908-260627_13TeV_PromptReco_Collisions15_25ns_JSON_v2.txt
