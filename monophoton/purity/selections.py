@@ -237,6 +237,71 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
 
     return (purity, aveSig, nReal, nFake)
 
+def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,_var,_cut,_inputKey,_plotDir):
+    ''' initialHists = [ fit template, signal template, subtraction template, background template ]'''
+    nIter = 0
+    purities = [ (1,1,1,1) ]
+    sigContams = [ (1,1) ]
+    hists = list(_initialHists)
+    templates = list(_initialTemplates)
+
+    while(True):
+        print "Starting on iteration:", nIter
+
+        dataTitle = "Photon Purity in SinglePhoton DataSet Iteration "+str(nIter)
+        dataName = os.path.join(_plotDir,"purity_"+"v"+str(nIter)+"_"+_inputKey )
+        
+        print _var[0]
+        dataPurity = FitTemplates(dataName, dataTitle, _var[0], _cut, templates[0], templates[1], templates[-1])
+                
+        sbTotal = templates[3].sumEntries()
+        sbTrue = templates[-2].sumEntries()
+        trueContam = float(sbTrue) / float(sbTotal)
+
+        sbTotalPass = templates[3].sumEntries(_varName+' < '+str(_cut))
+        sbTruePass = templates[-2].sumEntries(_varName+' < '+str(_cut))
+        trueContamPass = float(sbTruePass) / float(sbTotalPass)
+        
+        print "Signal contamination:", trueContam, trueContamPass
+        sigContams.append( (trueContam, trueContamPass) ) 
+                
+        print "Purity:", dataPurity[0]
+        purities.append( dataPurity )
+        diff = abs(purities[-1][0] - purities[-2][0] )
+        print diff 
+        if ( diff < 0.001):
+            break
+        nIter += 1
+        if nIter > 10:
+            break
+        
+        nSigTrue = purities[-1][2]
+        nSbTrue = _isoRatio * nSigTrue
+            
+        print "Scaling sideband shape to", nSbTrue, "photons"
+            
+        contamHist = hists[2].Clone()
+        contamHist.Scale(float(nSbTrue) / float(contamHist.GetSumOfWeights()))
+        hists.append(contamHist)
+
+        print _var
+        contamTemp = HistToTemplate(contamHist,_var,_skims[2],"v"+str(nIter)+"_"+_inputKey,_plotDir)
+        templates.append(contamTemp)
+    
+        backHist = hists[3].Clone()
+        backHist.Add(contamHist, -1)
+        hists.append(backHist)
+
+        backTemp = HistToTemplate(backHist,_var,_skims[3],"v"+str(nIter)+"_"+_inputKey,_plotDir)
+        templates.append(backTemp)
+
+    for version, (purity, contam)  in enumerate(zip(purities[1:],sigContams[1:])):
+        print "Purity for iteration", version, "is:", purity
+        print "Signal contamination for iteration", version, "is:", contam
+    
+    return (purities[-1], sigContams[-1])
+
+
 # Names for plots for Purity Calculation
 PlotNames = { "Wlike" : ("Photon Purity in SingleMuon DataSet","Photon Purity in WJets Monte Carlo","Photon Purity in WJets MC Truth")
               ,"Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Purity in #gamma+jets and QCD MC")

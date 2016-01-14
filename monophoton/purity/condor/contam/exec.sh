@@ -12,4 +12,5 @@ cd /home/ballen/cms/cmssw/042/CMSSW_7_4_6
 eval `scram runtime -sh`
 cd -
 
-python ${CMSSW_BASE}/src/MitMonoX/monophoton/purity/signalcontam.py $LOC $SEL $CHISO $PT $MET
+# python ${CMSSW_BASE}/src/MitMonoX/monophoton/purity/signalcontam.py $LOC $SEL $CHISO $PT $MET
+python ${CMSSW_BASE}/src/MitMonoX/monophoton/purity/bkgdstats.py $LOC $SEL $CHISO $PT $MET

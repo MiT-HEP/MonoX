@@ -25,7 +25,7 @@ for plotDir in plotDirs:
     purities[fit] = {}
     for loc in Locations[:1]:
         purities[fit][loc] = {}
-        for pid in PhotonIds[1:2]:
+        for pid in PhotonIds[:3]:
             purities[fit][loc][pid] = {}
             for ptCut in PhotonPtSels[0][:1]:
                 purities[fit][loc][pid][ptCut[0]] = {}
@@ -40,17 +40,50 @@ for plotDir in plotDirs:
                         condorFile = open(condorFileName)
                     
                         match = False
+                        purity = [1, 0, 0, 0, 0]
                         for line in condorFile:
-                            if "Purity for iteration" in line:
+                            if "Nominal purity is:" in line:
                                 # print line
                                 tmp = line.split()
                                 if tmp:
                                     match = True
                                     # pprint(tmp)
-                                    purity = ( float(tmp[-2].strip("(),")), float(tmp[-1].strip("(),")) )
-                                    # uncertainty = float(tmp[-1].strip("(),"))
-                                    print purity # , uncertainty
-                                    purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = purity # (purity, uncertainty)
+                                    purity[0] = float(tmp[-1].strip("(),"))
+                                    #print purity[0]
+                            elif "Total uncertainty is:" in line:
+                                # print line
+                                tmp = line.split()
+                                if tmp:
+                                    match = True
+                                    # pprint(tmp)
+                                    purity[-1] = float(tmp[-1].strip("(),"))
+                                    #print purity
+                            elif "Method uncertainty is:" in line:
+                                # print line
+                                tmp = line.split()
+                                if tmp:
+                                    match = True
+                                    # pprint(tmp)
+                                    purity[1] = float(tmp[-1].strip("(),"))
+                                    #print purity
+                            elif "Signal shape uncertainty is:" in line: # need to add t back
+                                # print line
+                                tmp = line.split()
+                                if tmp:
+                                    match = True
+                                    # pprint(tmp)
+                                    purity[2] = float(tmp[-1].strip("(),"))
+                                    #print purity
+                            elif "Background stat uncertainty is:" in line:
+                                # print line
+                                tmp = line.split()
+                                if tmp:
+                                    match = True
+                                    # pprint(tmp)
+                                    purity[3] = float(tmp[-1].strip("(),"))
+                                    #print purity
+                        purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = purity 
+
                         if not match:
                             print "No purity found for skim:", dirName
                             purities[fit][loc][pid][ptCut[0]][metCut[0]][chiso[0]] = (1.025, 0.0)
@@ -59,7 +92,7 @@ pprint(purities)
 
 
 for loc in Locations[:1]:
-    for pid in PhotonIds[1:2]:
+    for pid in PhotonIds[:3]:
         for ptCut in PhotonPtSels[0][:1]:
             for metCut in MetSels[:1]:
                 for plotDir in plotDirs:
@@ -67,7 +100,7 @@ for loc in Locations[:1]:
                     isoVals = np.asarray([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]]) ])
                     #isoVals = np.arange(2.0,8.5,0.5)
                     puritiesCalc = ( np.asarray(  [ (1 - value[0])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
-                                     ,np.asarray( [ abs(value[0] - value[1])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
+                                     ,np.asarray( [ abs(value[-1])*100 for key, value in sorted(purities[fit][loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
                     pprint(isoVals)
                     pprint(puritiesCalc)
 
@@ -92,12 +125,13 @@ for loc in Locations[:1]:
                     #pprint(puritiesFit)
                     
                     
+                    plot.figure()
                     plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
                     plot.plot(isosFit, puritiesFit, 'r-', linewidth=1.0)
                     # plot.legend(['Measured', 'Fit'])
                     plot.xlim(0.,10.)
-                    # plot.ylim(0.02,0.08)
-                    plot.ylim(2.5,7.5)
+                    plot.ylim(0.0,10.0)
+                    # plot.ylim(2.5,7.5)
                     plot.tick_params(axis='both', which='major', labelsize=16)
                     plot.ylabel(r'Impurity (%)', fontsize=24)
                     plot.xlabel(r'Charged Hadron Isolation (GeV)', fontsize=24)
