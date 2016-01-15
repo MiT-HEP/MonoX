@@ -1,2 +1,0 @@
-slimmer.cc
-runSlimmer.py
