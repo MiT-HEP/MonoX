@@ -72,7 +72,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
   Int_t puMin = 1;
   Int_t puMax = 30;
-
   
   TFile *kfactorFile  = new TFile("files/scalefactors_v3.root");
   kfactorFile->cd("anlo1_over_alo");
@@ -110,7 +109,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   Float_t mcWeight        = 0.;
   TBranch *mcWeightBranch = allTree->GetBranch("mcWeight");
   mcWeightBranch->SetAddress(&mcWeight);
-
 
   TLorentzVector vec1;
   TLorentzVector vec2;
@@ -157,15 +155,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     else
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(outTree->npv));
 
-    /*
     if (inTree->mcWeight < 0)
       outTree->mcWeight = -1;
     else
       outTree->mcWeight = 1;
-    */
-
-
-    outTree->mcWeight = inTree->mcWeight;
 
     outTree->trueMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
     outTree->trueMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
