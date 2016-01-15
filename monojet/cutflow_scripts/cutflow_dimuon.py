@@ -58,6 +58,10 @@ for ientry in range(0,n_entries):
 
   #print 'INFO ------------------------ Event '+str(ientry)+' ------------------------ '
 
+  if not (input_tree.met > 200):
+    continue
+  n_nmet += 1
+
   if not (input_tree.n_looselep == 2):
     continue
   n_nlep += 1
@@ -79,9 +83,11 @@ for ientry in range(0,n_entries):
     continue
   n_nlepveto += 1
 
-  if not (input_tree.n_tau == 0):
-    continue
-  n_ntau += 1
+#  if not (input_tree.n_tau == 0):
+#    continue
+#  n_ntau += 1
+  if (input_tree.n_tau == 0):
+    n_ntau += 1
 
   if not (input_tree.n_loosepho == 0):
     continue
@@ -90,10 +96,6 @@ for ientry in range(0,n_entries):
   if not (input_tree.n_bjetsMedium == 0):
     continue
   n_nbjet += 1
-
-  if not (input_tree.met > 200):
-    continue
-  n_nmet += 1
 
   if not (input_tree.jet1Pt > 100):
     continue
@@ -105,6 +107,7 @@ for ientry in range(0,n_entries):
 
 print 'INFO - Single Muon Cut Flow Chart: '
 print 'INFO - Full           '+ str(n_entries)
+print 'INFO - Met Cut        '+ str(n_nmet)
 print 'INFO - NLep Loose Cut '+ str(n_nlep)
 print 'INFO - NLep Tight Cut '+ str(n_nleptight)
 print 'INFO - Charge Cut     '+ str(n_n2lepcharge)
@@ -112,6 +115,5 @@ print 'INFO - Dilep Cut      '+ str(n_ndilep)
 print 'INFO - NLep Veto Cut  '+ str(n_nlepveto)
 print 'INFO - NTau Cut       '+ str(n_ntau)
 print 'INFO - NPho Cut       '+ str(n_npho)
-print 'INFO - Met Cut        '+ str(n_nmet)
 print 'INFO - Jet Cut        '+ str(n_njet)
 print 'INFO - Jet Id Cut     '+ str(n_njetid)

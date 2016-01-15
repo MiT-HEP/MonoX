@@ -57,13 +57,17 @@ for ientry in range(0,n_entries):
 
   #print 'INFO ------------------------ Event '+str(ientry)+' ------------------------ '
 
+  if not (input_tree.trueMet > 200):
+    continue
+  n_nmet += 1
+
   if not (input_tree.n_looselep == 0):
     continue
   n_nlep += 1
 
-  if not (input_tree.n_tau == 0):
-    continue
-  n_ntau += 1
+#  if not (input_tree.n_tau == 0):
+#    continue
+#  n_ntau += 1
 
   if not (input_tree.n_loosepho == 0):
     continue
@@ -72,10 +76,6 @@ for ientry in range(0,n_entries):
   if not (input_tree.n_bjetsMedium == 0):
     continue
   n_nbjet += 1
-
-  if not (input_tree.trueMet > 200):
-    continue
-  n_nmet += 1
 
   if not (input_tree.jet1Pt > 100):
     continue
@@ -93,11 +93,11 @@ for ientry in range(0,n_entries):
   
 print 'INFO - Signal Cut Flow Chart: '
 print 'INFO - Full     '+ str(n_entries)
+print 'INFO - Met Cut  '+ str(n_nmet)
 print 'INFO - NLep Cut '+ str(n_nlep)
 print 'INFO - NTau Cut '+ str(n_ntau)
 print 'INFO - NPho Cut '+ str(n_npho)
 print 'INFO - Nbjet    '+ str(n_nbjet)
-print 'INFO - Met Cut  '+ str(n_nmet)
 print 'INFO - Jet Cut  '+ str(n_njet)
 print 'INFO - Jet Id Cut  '+ str(n_njetid)
 print 'INFO - DPhi Cut '+ str(n_nmindphi)

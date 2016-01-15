@@ -12,7 +12,7 @@
 
 #include "functions.h"
 #include "MonoJetTree.h"
-#include "NeroTree.h"
+#include "NeroTreeBambu.h"
 
 enum IsoType {
   kIsoVeto = 0,  
@@ -105,7 +105,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
-  NeroTree *inTree        = new NeroTree(inTreeFetch);
+  NeroTreeBambu *inTree   = new NeroTreeBambu(inTreeFetch);
   TTree *allTree          = (TTree*) inFile->Get("nero/all");
   Float_t mcWeight        = 0.;
   TBranch *mcWeightBranch = allTree->GetBranch("mcWeight");
@@ -351,13 +351,15 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       
       //// Set photon cuts at some pt and eta ////
 
-      if (tempPhoton->Pt() < 15. || fabs(tempPhoton->Eta()) > 2.5)
+      if (tempPhoton->Pt() < 15. || fabs(tempPhoton->Eta()) > 2.5 || 
+          // ((*(inTree->photonSelBits))[iPhoton] & 128) != 128 ||
+          ((*(inTree->photonSelBits))[iPhoton] & 8) != 8)
         continue;
 
       outTree->n_loosepho++;
 
       //// Usign the medium photon collection for futher cleaning ////
-      if (tempPhoton->Pt() > 175 && ((*(inTree->photonSelBits))[iPhoton] & 4) == 4) {
+      if (tempPhoton->Pt() > 175 && ((*(inTree->photonSelBits))[iPhoton] & 16) == 16) {
         photonVecs.push_back(tempPhoton);
         outTree->n_mediumpho++;
       }
@@ -554,9 +556,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       if (tempTau->Pt() < 18. || fabs(tempTau->Eta()) > 2.3)
         continue;
 
-      if (((*(inTree->tauSelBits))[iTau] & 3) != 3) 
+      if (((*(inTree->tauSelBits))[iTau] & 7) != 7) 
         continue;
-      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 5)
+      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3)
         continue;
 
       //// Now do cleaning ////
@@ -674,20 +676,20 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
 
-    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetP4->GetEntries(); iFatJet++) {
-      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetP4->At(iFatJet);
+    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
+      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetak8P4->At(iFatJet);
 
       if (iFatJet == 0) {
         outTree->fatjet1Pt   = tempFatJet->Pt();
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
         outTree->fatjet1Mass = tempFatJet->M();
-        outTree->fatjet1TrimmedM  = (*(inTree->fatjetTrimmedMass))[iFatJet];
-        outTree->fatjet1PrunedM   = (*(inTree->fatjetPrunedMass))[iFatJet];
-        outTree->fatjet1FilteredM = (*(inTree->fatjetFilteredMass))[iFatJet];
-        outTree->fatjet1SoftDropM = (*(inTree->fatjetSoftdropMass))[iFatJet];
-        outTree->fatjet1tau2  = (*(inTree->fatjetTau1))[iFatJet];
-        outTree->fatjet1tau1  = (*(inTree->fatjetTau2))[iFatJet];
+        outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
+        outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
+        outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
+        outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
+        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau1))[iFatJet];
+        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau2))[iFatJet];
         outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
 
         if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)

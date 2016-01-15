@@ -4,7 +4,7 @@ import sys,os
 import ROOT
 import os.path
 
-ROOT.gROOT.LoadMacro('NeroTree.C+')
+ROOT.gROOT.LoadMacro('NeroTreeBambu.C+')
 ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
 ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
