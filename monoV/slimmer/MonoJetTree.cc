@@ -51,6 +51,7 @@ MonoJetTree::Reset()
   lumiNum = 0;
   eventNum = 0;
   npv = 0;
+  rho = 0;
   mcWeight = 0;
   npvWeight = 1;
   trueMet = -5;
@@ -155,6 +156,7 @@ MonoJetTree::Reset()
   fatjet1tau2 = 0;
   fatjet1tau1 = 0;
   fatjet1tau21 = 1;
+  fatjet1overlapB = -1;
   fatleading = -1;
 }
 
@@ -164,8 +166,9 @@ MonoJetTree::SetupTree()
 {
   t->Branch("runNum",&runNum,"runNum/I");
   t->Branch("lumiNum",&lumiNum,"lumiNum/I");
-  t->Branch("eventNum",&eventNum,"eventNum/I");
+  t->Branch("eventNum",&eventNum,"eventNum/l");
   t->Branch("npv",&npv,"npv/I");
+  t->Branch("rho",&rho,"rho/F");
   t->Branch("mcWeight",&mcWeight,"mcWeight/F");
   t->Branch("npvWeight",&npvWeight,"npvWeight/F");
   t->Branch("trueMet",&trueMet,"trueMet/F");
@@ -270,6 +273,7 @@ MonoJetTree::SetupTree()
   t->Branch("fatjet1tau2",&fatjet1tau2,"fatjet1tau2/F");
   t->Branch("fatjet1tau1",&fatjet1tau1,"fatjet1tau1/F");
   t->Branch("fatjet1tau21",&fatjet1tau21,"fatjet1tau21/F");
+  t->Branch("fatjet1overlapB",&fatjet1overlapB,"fatjet1overlapB/I");
   t->Branch("fatleading",&fatleading,"fatleading/I");
 
   Reset();

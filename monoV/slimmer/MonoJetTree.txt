@@ -1,7 +1,8 @@
 runNum/I=0
 lumiNum/I=0
-eventNum/I=0
+eventNum/l=0
 npv/I=0
+rho/F=0
 mcWeight/F=0
 npvWeight/F=1
 trueMet/F=-5
@@ -106,4 +107,5 @@ fatjet1SoftDropM/F=-5
 fatjet1tau2/F=0
 fatjet1tau1/F=0
 fatjet1tau21/F=1
+fatjet1overlapB/I=-1
 fatleading/I=-1

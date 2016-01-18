@@ -147,6 +147,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     outTree->lumiNum   = inTree->lumiNum;
     outTree->eventNum  = inTree->eventNum;
     outTree->npv       = inTree->npv;
+    outTree->rho       = inTree->rho;
 
     if (outTree->npv < puMin)
       outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMin));
@@ -424,24 +425,27 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->leadingJet_outaccp = 1;
 
       //// Ignore jets that are not in this region ////
-      if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62)
+      if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62 || tempJet->Pt() < 15.0)
         continue;
 
       //// Count jets for b-tagging ////
 
-      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutTight)
-        outTree->n_bjetsTight++;
+      float dR_1 = dROverlap + 0.1;
+      float dR_2 = dROverlap + 0.1;
 
-      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutMedium) {
-        float dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempJet->Phi(),tempJet->Eta());
-        float dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempJet->Phi(),tempJet->Eta());
-        if (dR_1 > 0.4 && dR_2 > 0.4) {
+      if (outTree->lep1Pt > 0)
+        dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempJet->Phi(),tempJet->Eta());
+      if (outTree->lep2Pt > 0)
+        dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempJet->Phi(),tempJet->Eta());
+
+      if (dR_1 > dROverlap && dR_2 > dROverlap) {
+        if ((*(inTree->jetBdiscr))[iJet] > bCutTight)
+          outTree->n_bjetsTight++;
+        if ((*(inTree->jetBdiscr))[iJet] > bCutMedium)
           outTree->n_bjetsMedium++;   
-        }
+        if ((*(inTree->jetBdiscr))[iJet] > bCutLoose)
+          outTree->n_bjetsLoose++;
       }
-      
-      if (tempJet->Pt() > 15.0 && (*(inTree->jetBdiscr))[iJet] > bCutLoose)
-        outTree->n_bjetsLoose++;
       
       //// Now apply a pt cut ////
 
@@ -499,6 +503,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_cleanedjets++;
 
       if (outTree->n_cleanedjets < 5){
+
           //Check for delta phi from met for all jets:                                                                                                                           
           clean_checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (clean_checkDPhi < outTree->minJetMetDPhi_clean)
@@ -558,23 +563,25 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       Bool_t match = false;
       
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempTau->Phi(),tempTau->Eta()) < dROverlap) {
-              match = true;
-              break;
-          }
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempTau->Phi(),tempTau->Eta()) < dROverlap) {
+          match = true;
+          break;
+        }
       }
       
       if (match)
         continue;
 
-      float dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempTau->Phi(),tempTau->Eta());
-      float dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempTau->Phi(),tempTau->Eta());
-      if (dR_1 > 0.4 && dR_2 > 0.4){                   
-          outTree->n_tau++;
+      float dR_1 = dROverlap + 0.1;
+      float dR_2 = dROverlap + 0.1;
 
-      }
-    
-    //outTree->n_tau++;
+      if (outTree->lep1Pt > 0)
+        dR_1 = deltaR(outTree->lep1Phi, outTree->lep1Eta, tempTau->Phi(),tempTau->Eta());
+      if (outTree->lep2Pt > 0)
+        dR_2 = deltaR(outTree->lep2Phi, outTree->lep2Eta, tempTau->Phi(),tempTau->Eta());
+
+      if (dR_1 > dROverlap && dR_2 > dROverlap)
+        outTree->n_tau++;
     }
     
     //// Now look for generator information ////
@@ -688,6 +695,20 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->fatleading = 1;
         else
           outTree->fatleading = 0;
+
+        outTree->fatjet1overlapB = 0;
+
+        for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
+          TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
+          if (deltaR(tempJet->Phi(),tempJet->Eta(),outTree->fatjet1Phi,outTree->fatjet1Eta) < 1.2) {
+            if ((*(inTree->jetBdiscr))[iJet] > bCutTight)
+              outTree->fatjet1overlapB = 3;
+            else if ((*(inTree->jetBdiscr))[iJet] > bCutMedium && outTree->fatjet1overlapB < 2)
+              outTree->fatjet1overlapB = 2;
+            else if ((*(inTree->jetBdiscr))[iJet] > bCutLoose && outTree->fatjet1overlapB < 1)
+              outTree->fatjet1overlapB = 1;
+          }
+        }
       }
     }
 
