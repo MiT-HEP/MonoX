@@ -680,8 +680,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
         outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
         outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
-        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau1))[iFatJet];
-        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau2))[iFatJet];
+        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
+        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
         outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
 
         if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
