@@ -15,8 +15,9 @@ public:
 
   int   runNum;
   int   lumiNum;
-  int   eventNum;
+  unsigned long eventNum;
   int   npv;
+  float rho;
   float mcWeight;
   float npvWeight;
   float trueMet;
@@ -121,6 +122,7 @@ public:
   float fatjet1tau2;
   float fatjet1tau1;
   float fatjet1tau21;
+  int   fatjet1overlapB;
   int   fatleading;
 
   TTree*  ReturnTree()                { return t;                             }

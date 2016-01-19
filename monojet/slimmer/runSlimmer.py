@@ -4,14 +4,14 @@ import sys,os
 import ROOT
 import os.path
 
-ROOT.gROOT.LoadMacro('NeroTree.C+')
+ROOT.gROOT.LoadMacro('NeroTreeBambu.C+')
 ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
 ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
 if sys.argv[1] == "test":
         ROOT.NeroSlimmer(
-        "root://eoscms//store/user/dmytro/Nero/v1.1.1/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2_TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_p2/151104_133348/0000/NeroNtuples_skimmed_3.root",
-        "testMiniTT.root")
+        "root://eoscms//store/caf/user/yiiyama/nerov5/WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0038.root",
+        "test.root")
 elif sys.argv[1] == "compile":
     exit()
 else:
