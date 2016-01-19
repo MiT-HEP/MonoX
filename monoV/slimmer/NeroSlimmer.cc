@@ -455,7 +455,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_jets++;
 
       if (outTree->n_jets < 5) {
-
           // Check for delta phi from met for all jets
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (checkDPhi < outTree->minJetMetDPhi)
@@ -504,7 +503,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (outTree->n_cleanedjets < 5){
 
-          //Check for delta phi from met for all jets:                                                                                                                           
+          // Check for delta phi from met for all jets:                                                                                                                           
           clean_checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (clean_checkDPhi < outTree->minJetMetDPhi_clean)
               outTree->minJetMetDPhi_clean = clean_checkDPhi;
@@ -555,7 +554,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       if (((*(inTree->tauSelBits))[iTau] & 7) != 7) 
         continue;
-      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 3)
+      if ((*(inTree->tauIsoDeltaBetaCorr))[iTau] > 4.5)
         continue;
 
       //// Now do cleaning ////
