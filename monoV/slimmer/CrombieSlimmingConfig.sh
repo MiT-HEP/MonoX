@@ -11,7 +11,7 @@ export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
 export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut
 export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut
 #export CrombieDirList=SubDirList.txt
-#export CrombieDirList=TestMET.txt
+export CrombieDirList=TestMET.txt
 
 export CrombieSlimmerScript=runSlimmer.py
 export CrombieJobScriptList=CrombieScriptList.txt

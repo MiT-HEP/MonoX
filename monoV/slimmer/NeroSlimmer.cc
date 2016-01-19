@@ -188,9 +188,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           )  
           )) {
 
-          //if (tempLepton->Pt() > 10. && ((*(inTree->lepSelBits))[iLepton] & 16) == 16 &&
-          //PassIso(tempLepton->Pt(),tempLepton->Eta(),(*(inTree->lepIso))[iLepton],(*(inTree->lepPdgId))[iLepton],kIsoLoose)) {
-
         outTree->n_looselep++;
         if (outTree->n_looselep == 1) {
           outTree->lep1Pt    = tempLepton->Pt();
@@ -412,13 +409,33 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
 
       if (iJet < 5) {
-        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
-        if (checkDPhi < outTree->minJetMetDPhi_withendcap)
-          outTree->minJetMetDPhi_withendcap = checkDPhi;
-        
         checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
         if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
           outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
+
+        Bool_t match = false;
+      
+        for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+            match = true;
+            break;
+          }
+        }
+      
+        if (match == false) {
+          for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+            if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+              match = true;
+              break;
+            }
+          }
+        }
+
+        if (match == false) {
+          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+          if (checkDPhi < outTree->minJetMetDPhi_withendcap)
+            outTree->minJetMetDPhi_withendcap = checkDPhi;
+        }
       }
 
       if (iJet == 0 && fabs(tempJet->Eta()) > 2.5)
@@ -502,11 +519,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_cleanedjets++;
 
       if (outTree->n_cleanedjets < 5){
-
-          // Check for delta phi from met for all jets:                                                                                                                           
-          clean_checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
-          if (clean_checkDPhi < outTree->minJetMetDPhi_clean)
-              outTree->minJetMetDPhi_clean = clean_checkDPhi;
+        // Check for delta phi from met for all jets:
+        clean_checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+        if (clean_checkDPhi < outTree->minJetMetDPhi_clean)
+          outTree->minJetMetDPhi_clean = clean_checkDPhi;
       }
 
       if (outTree->n_cleanedjets == 1) {
