@@ -181,13 +181,13 @@ PlotResolution::MakeFitGraphs(Int_t NumXBins, Double_t *XBins,
       fitLoose->SetParameter(0,10);
       fitLoose->SetParameter(1,0);
       fitLoose->SetParameter(2,30);
-      tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"MLE","",MinY,MaxY);
+      tempHist->ProjectionY(tempName+"_py_loose",i1+1,i1+1)->Fit(fitLoose,"MLEQ","",MinY,MaxY);
       fitFunc->SetParameter(0,fitLoose->GetParameter(1));
       fitFunc->SetParameter(1,fitLoose->GetParameter(2));
       fitFunc->SetParameter(2,fitLoose->GetParameter(2) * 2);
       fitFunc->SetParameter(3,0.8);
       fitFunc->SetParameter(4,fitLoose->GetParameter(0) * fitLoose->GetParameter(2));
-      tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"MLE","",MinY,MaxY);
+      tempHist->ProjectionY(tempName+"_py",i1+1,i1+1)->Fit(fitFunc,"MLEQ","",MinY,MaxY);
       if (fDumpingFits) {
         TString dumpName;
         Int_t lower = XBins[i1];
@@ -276,6 +276,7 @@ PlotResolution::MakeCanvas(std::vector<TGraphErrors*> theGraphs,
                            TString CanvasTitle, TString XLabel, TString YLabel,
                            Double_t YMin, Double_t YMax, Bool_t logY)
 {
+  Int_t plotFirst = 2;
   UInt_t NumPlots = theGraphs.size();
   TCanvas *theCanvas = new TCanvas("temp","temp");
   theCanvas->SetTitle(CanvasTitle+";"+XLabel+";"+YLabel);
@@ -288,9 +289,9 @@ PlotResolution::MakeCanvas(std::vector<TGraphErrors*> theGraphs,
     theGraphs[i0]->SetLineColor(fLineColors[i0]);
     theLegend->AddEntry(theGraphs[i0],fLegendEntries[i0],"l");
   }
-  theGraphs[0]->GetYaxis()->SetRangeUser(YMin,YMax);
-  theGraphs[0]->Draw();
-  for (UInt_t i0 = 1; i0 < NumPlots; i0++)
+  theGraphs[plotFirst]->GetYaxis()->SetRangeUser(YMin,YMax);
+  theGraphs[plotFirst]->Draw();
+  for (UInt_t i0 = 0; i0 < NumPlots; i0++)
     theGraphs[i0]->Draw("same");
 
   theLegend->Draw();

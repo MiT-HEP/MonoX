@@ -13,6 +13,7 @@
 #include "RooFormulaVar.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TMath.h"
 using namespace RooFit ;
 
 void rooFitter() {
@@ -24,9 +25,11 @@ void rooFitter() {
 
   RooFormulaVar response("response","(u_paraZ+dilep_pt)",RooArgSet(u_paraZ,dilep_pt));
 
+  // RooAbsReal *log = bindFunction("log",TMath::Log,dilep_pt);
+
   // Linear function for mean
   RooRealVar mu0("mu0","mu0",-3,-50,50);
-  RooRealVar mu1("mu1","mu1",1.2,-1,1);
+  RooRealVar mu1("mu1","mu1",1.2,-10,10);
   RooPolyVar mu("mu","mu",dilep_pt,RooArgSet(mu0,mu1));
 
   // Quad function for sigma1
@@ -54,7 +57,7 @@ void rooFitter() {
   // Two Gaussians
   RooGaussian gaus1("gaus1","gaus1",response,mu,sigma1);
   RooGaussian gaus2("gaus2","gaus2",response,mu,sigma2);
-  RooAddModel twoGaus("twoGaus","twoGaus",RooArgList(gaus1,gaus2),RooArgList(frac1,frac2));
+  RooAddModel twoGaus("twoGaus","twoGaus",RooArgList(gaus1,gaus2),RooArgList(frac1));
 
   TString cut = "((lep1PdgId*lep2PdgId == -169) && abs(dilep_m - 91) < 15 && n_looselep == 2 && n_tightlep == 2 && n_loosepho == 0 && n_tau == 0 && lep2Pt > 20 && n_bjetsLoose == 0 && jet1isMonoJetId == 1)";
 
@@ -66,6 +69,9 @@ void rooFitter() {
   inData.Print();
 
   RooRealVar *VAR = (RooRealVar*) inData.addColumn(response);
+
+  dilep_pt.setBins(10);
+  RooDataHist *inDataHist = inData.binnedClone();
 
   RooPlot *plot = VAR->frame(-150,150,100);
 
