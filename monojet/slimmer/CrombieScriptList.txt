@@ -1,7 +1,5 @@
 MonoJetTree.h
 MonoJetTree.cc
-NeroTree.h
-NeroTree.C
 NeroTreeBambu.h
 NeroTreeBambu.C
 functions.h

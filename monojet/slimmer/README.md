@@ -1,3 +1,9 @@
+To download the ROOT files needed in the `files` folder, just do:
+```
+cd files
+cat downloadurls.txt | xargs wget
+```
+
 ## Installing the slimmer
 
 LXBATCH and terminal slimming tools have been made more generic and moved to 
