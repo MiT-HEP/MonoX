@@ -17,7 +17,8 @@ met = sys.argv[5]
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 try: 
-    print Selections[inputKey]
+    # print Selections[inputKey]
+    temp = Selections[inputKey]
 except KeyError:
     print "Selection inputted from command line doesn't exist. Quitting!!!"
     print inputKey
@@ -120,6 +121,7 @@ sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSel, Selections[inp
 
 # get initial templates
 
+print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
 initialHists = []
 initialTemplates = []
 for skim, sel in zip(skims,sels):
@@ -128,7 +130,7 @@ for skim, sel in zip(skims,sels):
     template = HistToTemplate(hist,var[3][loc],skim,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
 
-
+print "\n\n##############################\n######## Doing initial purity calculation ########\n##############################\n\n"
 ### Get nominal value
 nominalHists = initialHists[:4]
 nominalTemplates = initialTemplates[:4]
@@ -140,7 +142,7 @@ if not os.path.exists(nominalDir):
 
 nominalPurity = SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,nominalDir)
 
-
+print "\n\n##############################\n######## Doing ch iso dist uncertainty ########\n##############################\n\n"
 ### Get chiso dist uncertainty
 scaledHists = initialHists[:2] + initialHists[4:]
 scaledTemplates = initialTemplates[:2] + initialTemplates[4:]
@@ -153,7 +155,72 @@ scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
 scaledPurity = SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[3][loc],var[4][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 
+print "\n\n##############################\n######## Doing background stat uncertainty ########\n##############################\n\n"
+### Get background stat uncertainty
+toyPlot = TH1F("toyplot","Purity Difference from Background Template Toys", 100, -0.05, 0.05)
+toySkims = skims[:4]
+toysDir = os.path.join(plotDir,'toys')
+if not os.path.exists(toysDir):
+    os.makedirs(toysDir)
+eventsToGenerate = initialTemplates[3].sumEntries()
+varToGen = RooArgSet(var[3][loc][0])
+toyGenerator = RooHistPdf('bkg', 'bkg', varToGen, initialTemplates[3])
+#print "Expect events to generate:", toyGenerator.expectedEvents(varToGen)
+#toyGenSpec = toyGenerator.prepareMultiGen(varToGen) #,eventsToGenerate)
 
+tempCanvas = TCanvas()
+tempFrame = var[3][loc][0].frame()
+toyGenerator.plotOn(tempFrame)
+tempFrame.Draw()
+tempName = os.path.join(toysDir, 'GenDist')
+tempCanvas.SaveAs(tempName+'.pdf')
+tempCanvas.SaveAs(tempName+'.png')
+tempCanvas.SaveAs(tempName+'.C')
+
+for iToy in range(1,101):
+    print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
+    toyHists = initialHists[:3]
+    toyTemplates = initialTemplates[:3]
+    
+    toyDir = os.path.join(toysDir, 'toy'+str(iToy))
+    if not os.path.exists(toyDir):
+        os.makedirs(toyDir)
+
+    tempTemplate = toyGenerator.generateBinned(varToGen,eventsToGenerate)
+    tempCanvas = TCanvas()
+    tempFrame = var[3][loc][0].frame()
+    tempTemplate.plotOn(tempFrame)
+    tempFrame.Draw()
+    tempName = os.path.join(toyDir, 'toydist')
+    tempCanvas.SaveAs(tempName+'.pdf')
+    tempCanvas.SaveAs(tempName+'.png')
+    tempCanvas.SaveAs(tempName+'.C')
+
+    toyData = RooDataSet.Class().DynamicCast(RooAbsData.Class(), tempTemplate)
+    toyHist = toyData.createHistogram("toyhist", var[3][loc][0], RooFit.Binning(var[3][loc][1], var[3][loc][0].getMin(), var[3][loc][0].getMax() ) )
+    toyHists.append(toyHist)
+
+    toyTemplate = HistToTemplate(toyHist,var[3][loc],toySkims[3],"v0_"+inputKey,toyDir)
+    toyTemplates.append(toyTemplate)
+
+    toyPurity = SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,toyDir)
+    purityDiff = toyPurity[0][0] - nominalPurity[0][0]
+    print "Purity diff is:", purityDiff
+    toyPlot.Fill(purityDiff)
+
+bkgdUncertainty = toyPlot.GetStdDev()
+toyPlot.GetXaxis().SetTitle("Purity Difference")
+toyPlot.GetYaxis().SetTitle("# of Toys")
+
+
+toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)
+toyCanvas = TCanvas()
+toyPlot.Draw()
+toyCanvas.SaveAs(toyPlotName+'.pdf')
+toyCanvas.SaveAs(toyPlotName+'.png')
+toyCanvas.SaveAs(toyPlotName+'.C')
+
+print "\n\n##############################\n######## Doing signal shape uncertainty ########\n##############################\n\n"
 ### Get signal shape uncertainty
 twobinDir = os.path.join(plotDir,'twobin')
 if not os.path.exists(twobinDir):
@@ -173,45 +240,7 @@ twobinPurity = SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominal
 twobinUncertainty = abs( nominalPurity[0][0] - twobinPurity[0][0])
 
 
-### Get background stat uncertainty
-toyPlot = TH1F("toyplot","Purity Difference from Background Template Toys", 200, -10.0, 10.0)
-toySkims = skims[:4]
-toysDir = os.path.join(plotDir,'toys')
-if not os.path.exists(toysDir):
-    os.makedirs(toysDir)
-eventsToGenerate = initialTemplates[3].sumEntries()
-varToGen = RooArgSet(var[3][loc][0])
-toyGenerator = RooHistPdf('bkg', 'bkg', varToGen, initialTemplates[3])
-for iToy in range(1,1001):
-    toyHists = initialHists[:3]
-    toyTemplates = initialTemplates[:3]
-    
-    toyDir = os.path.join(toysDir, 'toy'+str(iToy))
-    if not os.path.exists(toyDir):
-        os.makedirs(toyDir)
-
-    tempTemplate = toyGenerator.generate(varToGen,eventsToGenerate)
-    toyData = RooDataSet.Class().DynamicCast(RooAbsData.Class(), tempTemplate)
-    toyHist = toyData.createHistogram("toyhist", var[3][loc][0], RooFit.Binning(var[3][loc][1], var[3][loc][0].getMin(), var[3][loc][0].getMax() ) )
-    toyHists.append(toyHist)
-
-    toyTemplate = HistToTemplate(toyHist,var[3][loc],toySkims[3],"v0_"+inputKey,toyDir)
-    toyTemplates.append(toyTemplate)
-
-    toyPurity = SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,toyDir)
-    purityDiff = toyPurity[0][0] - nominalPurity[0][0]
-    toyPlot.Fill(purityDiff)
-
-bkgdUncertainty = toyPlot.GetStdDev()
-toyPlot.GetXaxis().SetTitle("Purity Difference")
-toyPlot.GetYaxis().SetTitle("# of Toys")
-toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)
-toyPlot.SaveAs(toyPlotName+'.pdf')
-toyPlot.SaveAs(toyPlotName+'.png')
-toyPlot.SaveAs(toyPlotName+'.C')
-
-
-print "\n\n\n"
+print "\n\n##############################\n######## Showing results ########\n##############################\n\n"
 print "Nominal purity is:", nominalPurity[0][0]
 print "Method uncertainty is:", scaledUncertainty
 print "Signal shape uncertainty is:", twobinUncertainty

@@ -153,4 +153,4 @@ for loc in Locations:
                              ,stdout=PIPE,stderr=PIPE,cwd=outDir)
             conout = convert.communicate()
             if not conout[1] == "":
-                print conout[1]
+                print conout[1] 

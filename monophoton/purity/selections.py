@@ -416,9 +416,11 @@ ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(lo
 ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.0)+'))') ]
 '''
 
-ChIsoSbBins = range(20,105,5)
+# ChIsoSbBins = range(20,105,5)
+ChIsoSbBins = range(20,111,30)
 # ChIsoSbBins = range(30,110,20)
-ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
+# ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
+ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) ]
 # ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
 
 #for sel in ChIsoSbSels:
