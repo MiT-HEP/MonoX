@@ -207,7 +207,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep2IsMedium = 0;
           outTree->lep2IsTight  = 0;
           outTree->lep2RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep2Pt;
-          outTree->lep2DPhiTrueMet  = abs(deltaPhi(outTree->lep2Phi,outTree->trueMetPhi));
+          // outTree->lep2DPhiTrueMet  = abs(deltaPhi(outTree->lep2Phi,outTree->trueMetPhi));
         }          
 
         if (tempLepton->Pt() > 20. && ((*(inTree->lepSelBits))[iLepton] & 32) == 32 &&
@@ -388,10 +388,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->met    = outTree->trueMet;
       outTree->metPhi = outTree->trueMetPhi;
     }
-    else {
-      outTree->u_perp = uPerp(outTree->met,outTree->metPhi,outTree->boson_phi);
-      outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
-    }
+    // else {
+    //   outTree->u_perp = uPerp(outTree->met,outTree->metPhi,outTree->boson_phi);
+    //   outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
+    // }
 
     Double_t checkDPhi = 5.0;
     Double_t clean_checkDPhi = 5.0;
@@ -409,9 +409,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
 
       if (iJet < 5) {
-        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
-        if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
-          outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
+        // checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
+        // if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
+        //   outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
 
         Bool_t match = false;
       
@@ -472,10 +472,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->n_jets++;
 
       if (outTree->n_jets < 5) {
-          // Check for delta phi from met for all jets
-          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
-          if (checkDPhi < outTree->minJetMetDPhi)
-              outTree->minJetMetDPhi = checkDPhi;
+          // // Check for delta phi from met for all jets
+          // checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+          // if (checkDPhi < outTree->minJetMetDPhi)
+          //   outTree->minJetMetDPhi = checkDPhi;
 
           // Check for delta phi from true met for all jets
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
@@ -483,14 +483,14 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
             outTree->minJetTrueMetDPhi = checkDPhi;
       }
 
-      //// Store uncleaned jet for fun ////
+      // //// Store uncleaned jet for fun ////
 
-      if (outTree->n_jets == 1) {
-        outTree->leadingjetPt  = tempJet->Pt();
-        outTree->leadingjetEta = tempJet->Eta();
-        outTree->leadingjetPhi = tempJet->Phi();
-        outTree->leadingjetM   = tempJet->M();
-      }
+      // if (outTree->n_jets == 1) {
+      //   outTree->leadingjetPt  = tempJet->Pt();
+      //   outTree->leadingjetEta = tempJet->Eta();
+      //   outTree->leadingjetPhi = tempJet->Phi();
+      //   outTree->leadingjetM   = tempJet->M();
+      // }
 
       //// Now do cleaning ////
       
@@ -537,8 +537,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet1isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
           outTree->jet1isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
-          outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
-          outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
+          // outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
+          // outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
       }
       
       else if (outTree->n_cleanedjets == 2) {
@@ -547,14 +547,14 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet2Phi = tempJet->Phi();
           outTree->jet2M   = tempJet->M();
           
-          outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
-          outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
+          // outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
+          // outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
           outTree->jet2isMonoJetId      = ((*(inTree->jetSelBits))[iJet] & 256) == 256;
           outTree->jet2isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
           outTree->jet2isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
-          outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
-          outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
+          // outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
+          // outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
           
           outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
       }
@@ -698,13 +698,13 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
         outTree->fatjet1Mass = tempFatJet->M();
-        outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
+        // outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
         outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
-        outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
-        outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
-        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
-        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
-        outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
+        // outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
+        // outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
+        // outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
+        // outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
+        outTree->fatjet1tau21 = (*(inTree->fatjetak8Tau2))[iFatJet]/(*(inTree->fatjetak8Tau1))[iFatJet];
 
         if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
           outTree->fatleading = 1;
