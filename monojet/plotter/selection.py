@@ -19,8 +19,9 @@ def build_selection(selection,bin0):
         
         #** Control Regions
 
-        'triggerE' : ['(triggerFired[3]==1)',['Zee','Wen']],        
-        'triggerG' : ['(triggerFired[7]==1 || triggerFired[8]==1 || triggerFired[9]==1)',['gjets']],
+        'triggerSig' : ['(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)',['signal','Zmm','Wmn']],        
+        'triggerE' : ['(triggerFired[4]==1 || triggerFired[5]==1)',['Zee','Wen']],        
+        'triggerG' : ['(triggerFired[11]==1 || triggerFired[12]==1 || triggerFired[13]==1)',['gjets']],
         'leading lep ID': ['n_tightlep > 0',['Wmn','Zmm','Wen','Wee']], 
         'Zmm'  : ['n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -169)',['Zmm']],
         'Zee'  : ['n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -121)',['Zee']],
@@ -29,6 +30,9 @@ def build_selection(selection,bin0):
 
         'gjets': ['photonPt > 175 && abs(photonEta) < 1.4442 && n_mediumpho == 1 && n_loosepho == 1',['gjets']],                
         #'excitedquark' : ['n_cleanedjets==3',['gjets']],
+
+        # monov
+        'monoV': ['fatjet1tau21 < 0.5 && fatjet1PrunedM > 60 && fatjet1PrunedM < 110',selections],
         
         }
 

@@ -6,7 +6,7 @@ channel_list  = ['signal','Wmn','Zmm']
 #channel_list  = ['gjets']
 
 # This is where the plots are output
-folder = 'plots'
+folder = 'monoV'
 
 # This is a list of variables plotted
 variable_list = ['met']

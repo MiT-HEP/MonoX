@@ -196,8 +196,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep1PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep1IsMedium = 0;
           outTree->lep1IsTight  = 0;
-          outTree->lep1RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep1Pt;
-          outTree->lep1DPhiTrueMet  = abs(deltaPhi(outTree->lep1Phi,outTree->trueMetPhi));
+          // outTree->lep1RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep1Pt;
+          // outTree->lep1DPhiTrueMet  = abs(deltaPhi(outTree->lep1Phi,outTree->trueMetPhi));
         }          
         else if (outTree->n_looselep == 2) {
           outTree->lep2Pt    = tempLepton->Pt();
@@ -206,7 +206,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->lep2PdgId = (*(inTree->lepPdgId))[iLepton];
           outTree->lep2IsMedium = 0;
           outTree->lep2IsTight  = 0;
-          outTree->lep2RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep2Pt;
+          // outTree->lep2RelIso = (*(inTree->lepIso))[iLepton]/outTree->lep2Pt;
           // outTree->lep2DPhiTrueMet  = abs(deltaPhi(outTree->lep2Phi,outTree->trueMetPhi));
         }          
 
@@ -319,8 +319,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->met    = vec1.Pt();
       outTree->metPhi = vec1.Phi();
 
-      outTree->boson_pt  = outTree->dilep_pt;
-      outTree->boson_phi = outTree->dilep_phi;
+      // outTree->boson_pt  = outTree->dilep_pt;
+      // outTree->boson_phi = outTree->dilep_phi;
     }
     else if (outTree->n_looselep > 0) {
       vec1.SetPtEtaPhiM(outTree->lep1Pt,0.,outTree->lep1Phi,0);
@@ -331,8 +331,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->met    = vec3.Pt();
       outTree->metPhi = vec3.Phi();
 
-      outTree->boson_pt  = outTree->met;
-      outTree->boson_phi = outTree->metPhi;
+      // outTree->boson_pt  = outTree->met;
+      // outTree->boson_phi = outTree->metPhi;
     }
     
     //// Now we go on to look at photons ////
@@ -376,8 +376,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->met     = vec3.Pt();
           outTree->metPhi  = vec3.Phi();
           
-          outTree->boson_pt  = outTree->photonPt;
-          outTree->boson_phi = outTree->photonPhi;
+          // outTree->boson_pt  = outTree->photonPt;
+          // outTree->boson_phi = outTree->photonPhi;
         }
       }
     }
@@ -471,17 +471,17 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       
       outTree->n_jets++;
 
-      if (outTree->n_jets < 5) {
-          // // Check for delta phi from met for all jets
-          // checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
-          // if (checkDPhi < outTree->minJetMetDPhi)
-          //   outTree->minJetMetDPhi = checkDPhi;
+      // if (outTree->n_jets < 5) {
+      //     // Check for delta phi from met for all jets
+      //     checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
+      //     if (checkDPhi < outTree->minJetMetDPhi)
+      //       outTree->minJetMetDPhi = checkDPhi;
 
-          // Check for delta phi from true met for all jets
-          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
-          if (checkDPhi < outTree->minJetTrueMetDPhi)
-            outTree->minJetTrueMetDPhi = checkDPhi;
-      }
+      //     Check for delta phi from true met for all jets
+      //     checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
+      //     if (checkDPhi < outTree->minJetTrueMetDPhi)
+      //       outTree->minJetTrueMetDPhi = checkDPhi;
+      // }
 
       // //// Store uncleaned jet for fun ////
 
@@ -535,7 +535,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet1PuId             = (*(inTree->jetPuId))[iJet];
           outTree->jet1isMonoJetId      = ((*(inTree->jetSelBits))[iJet] & 256) == 256;
           outTree->jet1isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
-          outTree->jet1isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
+          // outTree->jet1isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
           // outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
           // outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
@@ -547,11 +547,11 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet2Phi = tempJet->Phi();
           outTree->jet2M   = tempJet->M();
           
-          // outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
-          // outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
+          outTree->jet2BTag             = (*(inTree->jetBdiscr))[iJet];
+          outTree->jet2PuId             = (*(inTree->jetPuId))[iJet];
           outTree->jet2isMonoJetId      = ((*(inTree->jetSelBits))[iJet] & 256) == 256;
           outTree->jet2isMonoJetIdNew   = ((*(inTree->jetSelBits))[iJet] & 1024) == 1024;
-          outTree->jet2isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
+          // outTree->jet2isLooseMonoJetId = ((*(inTree->jetSelBits))[iJet] & 512) == 512;
           
           // outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
           // outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
@@ -603,8 +603,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
     if (inTree->metP4_GEN->GetEntries() > 0) {
       TLorentzVector *genMet = (TLorentzVector*) inTree->metP4_GEN->At(0);
-      outTree->genMet = genMet->Pt();
-      outTree->genMetPhi = genMet->Phi();
+      // outTree->genMet = genMet->Pt();
+      // outTree->genMetPhi = genMet->Phi();
       
       TLorentzVector saveGenVec;
       
@@ -616,7 +616,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
         Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
         
-        if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(outTree->boson_pt < 0 && (checkPdgId == 23 || checkPdgId == 24)))
+        if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(checkPdgId == 23 || checkPdgId == 24))
+        // if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(outTree->boson_pt < 0 && (checkPdgId == 23 || checkPdgId == 24)))
           continue;
         
         //// Look for two leptons here ////
@@ -669,8 +670,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->genBos_pt  = saveGenVec.Pt();
         outTree->genBos_phi = saveGenVec.Phi();
         
-        outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
-        outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
+        // outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
+        // outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
       }
       
       
@@ -698,10 +699,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
         outTree->fatjet1Mass = tempFatJet->M();
-        // outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
+        outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
         outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
         // outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
-        // outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
+        outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
         // outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
         // outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
         outTree->fatjet1tau21 = (*(inTree->fatjetak8Tau2))[iFatJet]/(*(inTree->fatjetak8Tau1))[iFatJet];
