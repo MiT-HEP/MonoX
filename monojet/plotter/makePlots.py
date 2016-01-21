@@ -315,6 +315,8 @@ arguments['jet1Eta'] = ['jet1Eta','jet1Eta',40,-3.0,3.0,'Events','#eta (leading 
 arguments['ht']          = ['ht','ht',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
 arguments['ht_cleaned']  = ['ht_cleaned','ht_cleaned',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
 
+arguments['fatjet1Pt']  = ['fatjet1Pt','fatjet1Pt',20,100,1500,'Events/GeV','Fat Jet P_{T} [GeV]',True]
+
 start_time = time.time()
 
 processes     = []
