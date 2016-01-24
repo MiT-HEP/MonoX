@@ -6,7 +6,7 @@
 
 class MonoJetTree
 {
-public:
+ public:
   MonoJetTree( TTree* tree );
   MonoJetTree( const char* name );
   MonoJetTree( const char* name, TString outFileName );
@@ -99,16 +99,14 @@ public:
 
   TTree*  ReturnTree()                { return t;                             }
   void    Fill()                      { t->Fill(); Reset();                   }
+  void    Reset();
   void    WriteToFile   ( TFile *f )  { f->WriteTObject(t, t->GetName());     }
   void    Write()                     { fFile->WriteTObject(t, t->GetName());
                                         fFile->Close();                       }
 
-protected:
+ private:
   TFile* fFile;
   TTree* t;
-  void   Reset();
-
-private:
   void   SetupTree();
 
   ClassDef(MonoJetTree,1)
