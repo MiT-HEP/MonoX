@@ -1,8 +1,13 @@
 #! /usr/bin/python
 
 import Corrector
+import os
 
-Corrector.MakeApplicator('test',True,'events','test',1000000)
-Corrector.AddCorrector(Corrector.MakeCorrector('test1','npv','','files/puWeights_13TeV_25ns.root','puWeights'))
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimTest'
 
-Corrector.RunApplicator('/home/dabercro/GradSchool/Winter15/SkimV008',2)
+applicator = Corrector.MakeApplicator('test',True,'events','test',1000000)
+applicator.AddCorrector(Corrector.MakeCorrector('test1','npv','1','files/puWeights_13TeV_25ns.root','puWeights'))
+
+for fileName in os.listdir(directory):
+    applicator.ApplyCorrections(directory + "/" + fileName)
+##
