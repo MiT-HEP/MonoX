@@ -7,10 +7,10 @@ export CrombieNLocalProcs=5
 export CrombieFileBase=monojet
 export CrombieEosDir=/store/caf/user/yiiyama/nerov5
 export CrombieRegDir=/afs/cern.ch/work/d/dabercro/eos/cms$CrombieEosDir
-#export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
-export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TestOut
+export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
 export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut
 export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut
+export CrombieDirList=RemakeElectrons.txt
 
 export CrombieSlimmerScript=runSlimmer.py
 export CrombieJobScriptList=CrombieScriptList.txt
