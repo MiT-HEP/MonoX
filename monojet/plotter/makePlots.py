@@ -5,12 +5,11 @@ from array import *
 
 from config import *
 
-if ('signal' in channel_list) or ('Zmm' in channel_list) or ('Wmn' in channel_list):
-    from LoadData import *
-elif ('gjets' in channel_list):
-    from LoadGJets import *
+from LoadData import *
+if ('gjets' in channel_list):
+    physics_processes['data']['files'] = [dataDir+"monojet_SinglePhoton.root"]
 elif ('Wen' in channel_list) or ('Zee' in channel_list):
-    from LoadElectron import *
+    physics_processes['data']['files'] = [dataDir+"monojet_SingleElectron.root"]
 
 from ROOT import *
 from math import *
@@ -128,7 +127,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         scale = float(lumi)*physics_processes[Type]['xsec']/total
         
         #print '\n'
-        print "type: ", Type,  "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
+#        print "type: ", Type,  "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
 
         if Type is not 'data' and Type is not 'signal_dm' and Type is not 'signal_dm_s' and Type is not 'signal_dm_ps' and Type is not 'signal_dm_v' and Type is not 'signal_dm_av_1_2':
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
@@ -315,6 +314,8 @@ arguments['dilepEta'] = ['dilep_eta','dilep_eta',40,-3.0,3.0,'Events','#eta (ll)
 arguments['jet1Eta'] = ['jet1Eta','jet1Eta',40,-3.0,3.0,'Events','#eta (leading jet)',False]
 arguments['ht']          = ['ht','ht',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
 arguments['ht_cleaned']  = ['ht_cleaned','ht_cleaned',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
+
+arguments['fatjet1Pt']  = ['fatjet1Pt','fatjet1Pt',20,100,1500,'Events/GeV','Fat Jet P_{T} [GeV]',True]
 
 start_time = time.time()
 

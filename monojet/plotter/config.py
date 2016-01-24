@@ -1,15 +1,15 @@
 # Pick one of these three. 
 # Cannot run all at the same time because they open different sets of files
 
-channel_list  = ['signal','Wmn','Zmm']
+#channel_list  = ['signal','Wmn','Zmm']
 #channel_list  = ['Wen','Zee']
-#channel_list  = ['gjets']
+channel_list  = ['gjets']
 
 # This is where the plots are output
-folder = 'plots'
+folder = 'monoV'
 
 # This is a list of variables plotted
-variable_list = ['met']
+variable_list = ['met','fatjet1Pt']
 
 # Can be a list including any of the following:
 # 'met'
