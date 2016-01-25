@@ -50,9 +50,9 @@ outName = os.path.join(plotDir,'chiso_'+inputKey)
 print outName+'.root'
 outFile = TFile(outName+'.root','recreate')
 
-canvas = TCanvas()
-histograms = []
-leg = TLegend(0.625,0.45,0.875,0.85 );
+
+histograms = [ [], [], [] ]
+leg = TLegend(0.725,0.7,0.875,0.85 );
 leg.SetFillColor(kWhite);
 leg.SetTextSize(0.03);
 
@@ -63,7 +63,7 @@ fullSel = baseSel+' && '+truthSel
 
 raw = HistExtractor(var[0],var[3][loc],skim,fullSel,skimDir,varBins)
 raw.SetName("rawmc")
-histograms.append(raw)
+histograms[0].append(raw)
 
 nBins = len(var[3][loc][-1]) - 1
 binEdges = array('d',var[3][loc][-1])
@@ -71,65 +71,89 @@ eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels
 eSel = eSelScratch.replace("selPhotons", "probes")
 print eSel
 
-dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
-dataTree = dataFile.Get("skimmedEvents")
-dataHist = TH1F("edata","edata",nBins,binEdges)
-dataTree.Draw("probes.chIso>>edata", eSel)
-outFile.WriteTObject(dataHist)
-
 mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
 mcTree = mcFile.Get("skimmedEvents")
-mcHist = TH1F("emc","emc",nBins,binEdges)
+mcHist = TH1F("emc","",nBins,binEdges)
 mcTree.Draw("probes.chIso>>emc", eSel)
 outFile.WriteTObject(mcHist)
+histograms[1].append(mcHist)
+
+dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
+dataTree = dataFile.Get("skimmedEvents")
+dataHist = TH1F("edata","",nBins,binEdges)
+dataTree.Draw("probes.chIso>>edata", eSel)
+outFile.WriteTObject(dataHist)
+histograms[1].append(dataHist)
 
 scaled = raw.Clone("scaledmc")
-scaleHist = TH1F("escale","escale",nBins,binEdges)
+scaleHist = TH1F("escale","Data/MC Scale Factors from Electrons",nBins,binEdges)
 for iBin in range(1,scaleHist.GetNbinsX()+1):
-    ratio = dataHist.GetBinContent(iBin) / mcHist.GetBinContent(iBin)
+    dataValue = dataHist.GetBinContent(iBin)
+    dataError = dataHist.GetBinError(iBin)
+
+    mcValue = mcHist.GetBinContent(iBin)
+    mcError = mcHist.GetBinError(iBin)
+
+    ratio = dataValue / mcValue 
     scaleHist.SetBinContent(iBin, ratio)
     scaled.SetBinContent(iBin, ratio * scaled.GetBinContent(iBin))
+
+    error = ratio * ( (dataError / dataValue)**2 + (mcError / mcValue)**2 )**(0.5)
+    scaleHist.SetBinError(iBin, error)
+
 outFile.WriteTObject(scaleHist)
-histograms.append(scaled)
+histograms[0].append(scaled)
+histograms[2].append(scaleHist)
 
-for iHist, hist in enumerate(histograms[:]):
-    # pprint(hist)
-    # hist.Draw()
-    # print hist.GetSumOfWeights()
-    hist.Scale( 1. / hist.GetSumOfWeights())
+suffix = [ ("photons", "Events"), ("electrons", "Events"), ("scale", "Scale Factor") ]
 
-    hist.SetLineColor(iHist+1)
-    hist.SetLineWidth(2)
-    hist.SetLineStyle(iHist+2*iHist)
-    hist.SetStats(False)
-    
-    hist.GetXaxis().SetTitle("CH Iso (GeV)")
-    hist.GetYaxis().SetTitle("Events")
-    
-    hist.GetXaxis().SetLabelSize(0.045)
-    hist.GetXaxis().SetTitleSize(0.045)
-    hist.GetYaxis().SetLabelSize(0.045)
-    hist.GetYaxis().SetTitleSize(0.045)
-    
-    outFile.cd()
-    hist.Write()
+for iList, hlist in enumerate(histograms):
+    canvas = TCanvas()
+    for iHist, hist in enumerate(hlist):
+        if (iList < 2): 
+            hist.Scale( 1. / hist.GetSumOfWeights())
 
+        hist.SetLineColor(iHist+1)
+        hist.SetLineWidth(3)
+        if (iList < 2): 
+            hist.SetLineStyle(kDashed)
+        hist.SetStats(False)
+    
+        hist.GetXaxis().SetTitle("CH Iso (GeV)")
+        hist.GetYaxis().SetTitle(suffix[iList][1])
+        
+        hist.GetXaxis().SetLabelSize(0.045)
+        hist.GetXaxis().SetTitleSize(0.045)
+        hist.GetYaxis().SetLabelSize(0.045)
+        hist.GetYaxis().SetTitleSize(0.045)
+        
+        outFile.cd()
+        hist.Write()
+        
+        canvas.cd()
+        if (iHist == 0):
+            if (iList < 2): 
+                hist.Draw("hist")
+            else:
+                hist.Draw("")
+        else:
+            hist.Draw("samehist")
+        leg.AddEntry(hist, hist.GetName(), 'L')
+
+    outFile.Close()
     canvas.cd()
-    if (iHist == 0):
-        hist.Draw("")
-    else:
-        hist.Draw("same")
-    leg.AddEntry(hist, hist.GetName(), 'L')
+    if (iList < 2): 
+        leg.Draw()
 
-outFile.Close()
-canvas.cd()
-leg.Draw()
+    newName = outName+'_'+suffix[iList][0]
 
-canvas.SaveAs(outName+'.pdf')
-canvas.SaveAs(outName+'.png')
-canvas.SaveAs(outName+'.C')
+    canvas.SaveAs(newName+'.pdf')
+    canvas.SaveAs(newName+'.png')
+    canvas.SaveAs(newName+'.C')
+    
+    canvas.SetLogy()
+    canvas.SaveAs(newName+'_Logy.pdf')
+    canvas.SaveAs(newName+'_Logy.png')
+    canvas.SaveAs(newName+'_Logy.C')
 
-canvas.SetLogy()
-canvas.SaveAs(outName+'_Logy.pdf')
-canvas.SaveAs(outName+'_Logy.png')
-canvas.SaveAs(outName+'_Logy.C')
+    leg.Clear()

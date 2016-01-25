@@ -58,8 +58,8 @@ Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose, { "barrel"  : (RooRealVa
               ,"sieieScaled"  : (kSigmaIetaIetaScaled,kChIso,kLoose, { "barrel"  : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
                                                                        ,"endcap" : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.016, 0.040), 48, [0.016,0.030,0.040] ) } 
                            , sieieCuts )
-              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,1.31]+[float(x)/10.0 for x in ChIsoSbBins] )
-                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,1.31]+[float(x)/10.0 for x in ChIsoSbBins] ) }
+              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,chIsoCuts["barrel"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] )
+                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,chIsoCuts["endcap"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] ) }
                           , chIsoCuts )
               ,"phiso" : (kPhotonIsolation,kSieie,kLoose, { "barrel"  : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] )
                                                             ,"endcap" : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] ) } 
@@ -396,6 +396,7 @@ cutMatchedToReal = '(selPhotons.matchedGen == -22)'
 
 cutPhotonPtLow = range(20,220,40)
 cutPhotonPtHigh = [175,200,250,300,350] # range(150,351,100) 
+# cutPhotonPtHigh = [175,200,250,300,350,400,500,600] # range(150,351,100) 
 PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
                  + [ ('PhotonPt'+str(low)+'to'+str(high), '((selPhotons.pt > '+str(low)+') && (selPhotons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
                  + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((selPhotons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
@@ -416,10 +417,10 @@ ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(lo
 ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.0)+'))') ]
 '''
 
-# ChIsoSbBins = range(20,105,5)
-ChIsoSbBins = range(20,111,30)
+#ChIsoSbBins = range(20,105,5)
+#ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
 # ChIsoSbBins = range(30,110,20)
-# ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
+ChIsoSbBins = range(20,111,30)
 ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((selPhotons.chIso > '+str(float(low)/10.0)+') && (selPhotons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) ]
 # ChIsoSbSels = ChIsoSbSels + [ ('ChIso'+str(1.79)+'to'+str(3.79), '((selPhotons.chIso > '+str(1.79)+') && (selPhotons.chIso < '+str(3.79)+'))') ]
 

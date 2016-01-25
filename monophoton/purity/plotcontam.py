@@ -31,23 +31,24 @@ for loc in Locations[:1]:
                 
                 purityFileName = "purity_data_"+loc+"_"+pid+"_"+ptCut[0]+"_"+metCut[0]+"_ex.tex"
                 purityFilePath = os.path.join(outDir,purityFileName)
+                print purityFilePath
                 purityFile = open(purityFilePath, "w")
                 
                 purityFile.write(r"\documentclass{article}")
                 purityFile.write("\n")
-                purityFile.write(r"\usepackage[paperheight=2in, paperwidth=8in]{geometry}")
+                purityFile.write(r"\usepackage[paperheight=1.5in, paperwidth=8in]{geometry}")
                 purityFile.write("\n")
                 purityFile.write(r"\begin{document}")
                 purityFile.write("\n")
                 purityFile.write(r"\pagenumbering{gobble}")
                 purityFile.write("\n")
                 
-                purityFile.write(r"\begin{tabular}{ |l|l l|l l l| }")
+                purityFile.write(r"\begin{tabular}{ |l|c c|c c c| }")
                 purityFile.write("\n")
                 purityFile.write(r"\hline")
                 purityFile.write("\n")
                 ptRange = ptCut[0].strip("PhotonPt").split("to")
-                purityFile.write(r"\multicolumn{6}{ |c| }{Purities for "+loc+" "+pid+r" photons with $p_{T} \in$ ["+ptRange[0]+","+ptRange[1]+r"] GeV} \\")
+                purityFile.write(r"\multicolumn{6}{ |c| }{Impurity (\%) for "+loc+" "+pid+r" photons with $p_{T} \in$ [%s, %s] GeV} \\" % tuple(ptRange) )
                 purityFile.write("\n")
                 purityFile.write(r"\hline \hline")
                 purityFile.write("\n")
@@ -55,8 +56,8 @@ for loc in Locations[:1]:
                 purityFile.write(r"CH Iso SB & Impurity ")
                 purityFile.write(r"& Total Unc. ")
                 purityFile.write(r"& CH Iso Shape ")
-                purityFile.write(r"& Signal Shape ")
-                purityFile.write(r"& Background Shape ")
+                purityFile.write(r"& Template Shape ")
+                purityFile.write(r"& Background Stats ")
                 purityFile.write(r"\\ \hline")
                 purityFile.write("\n")
 
@@ -113,9 +114,10 @@ for loc in Locations[:1]:
                                 #print purity
                     purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]] = purity 
                         
-                    purityFile.write(chiso[0].strip("ChIso")+" ")
+                    chIsoRange = chiso[0].strip("ChIso").split("to")
+                    purityFile.write(" $[%.1f, %.1f]$ " % (float(chIsoRange[0])/10.0, float(chIsoRange[1])/10.0)) 
                     for value in purity[:1]+purity[-1:]+purity[1:-1]:
-                        purityFile.write(r" & "+str(round(value,3)))
+                        purityFile.write(r" & %.2f " % value)
                     purityFile.write(r"\\")
                     purityFile.write("\n")
 
@@ -144,7 +146,7 @@ for loc in Locations[:1]:
                 if not conout[1] == "":
                     print conout[1]
 pprint(purities)
-
+"""
 colors = ['r','b','g','m','k']
 
 for loc in Locations[:1]:
@@ -193,7 +195,7 @@ for loc in Locations[:1]:
                 outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0]+'_ex')
                 plot.savefig(outName+'.pdf', format='pdf')
                 plot.savefig(outName+'.png', format='png')
-
+"""
 
 for loc in Locations[:1]:
     for pid in PhotonIds[1:2]:
@@ -207,12 +209,16 @@ for loc in Locations[:1]:
             purityFile.write(r"\usepackage[paperheight=1.5in, paperwidth=8in]{geometry}")
             purityFile.write(r"\begin{document}")
             purityFile.write("\n")
+            purityFile.write(r"\pagenumbering{gobble}")
+            purityFile.write("\n")
 
-            purityFile.write(r"\begin{tabular}{ |r|c|c|c|c|c| }")
+            purityFile.write(r"\begin{tabular}{ |l|c c c c c| }")
+            # purityFile.write(r"\begin{tabular}{ |r|c c c c c c c c| }")
             purityFile.write("\n")
             purityFile.write(r"\hline")
             purityFile.write("\n")
-            purityFile.write(r"\multicolumn{6}{ |c| }{Purities for "+loc+" "+pid+r" photons in data} \\")
+            purityFile.write(r"\multicolumn{6}{ |c| }{Impurity (\%) for "+loc+" "+pid+r" photons in data} \\")
+            # purityFile.write(r"\multicolumn{9}{ |c| }{Purities for "+loc+" "+pid+r" photons in data} \\")
             purityFile.write("\n")
             purityFile.write(r"\hline")
             purityFile.write("\n")
@@ -220,23 +226,27 @@ for loc in Locations[:1]:
 
             purityFile.write(r"photon\ $p_{T}$ ")
             for ptCut in PhotonPtSels[0][1:]:
-                purityFile.write(r"& "+ptCut[0].strip("PhotonPt")+" ")
+                ptRange = ptCut[0].strip("PhotonPt").split("to")
+                purityFile.write("& [%s, %s] " % tuple(ptRange) )
             purityFile.write(r"\\ \hline")
             purityFile.write("\n")
 
             
             histograms = [ [], [] ]
             
-            leg = TLegend(0.625,0.65,0.875,0.85)
+            leg = TLegend(0.525,0.65,0.875,0.85)
             leg.SetFillColor(kWhite)
             leg.SetTextSize(0.045)
                 
             lineColors = [ kBlue, kBlack, kRed ]
             
             bins = [175, 200, 250, 300, 350, 500]
+            # bins = [175, 200, 250, 300, 350, 400, 500, 600, 1000]
 
             for chiso in ChIsoSbSels:                
-                purityFile.write(chiso[0]+" ")
+                chIsoRange = chiso[0].strip("ChIso").split("to")
+                chIsoLabel = " CH Iso $[%.1f, %.1f]$ " % (float(chIsoRange[0])/10.0, float(chIsoRange[1])/10.0)
+                purityFile.write(chIsoLabel)
                 
                 hists = [] 
 
@@ -246,7 +256,7 @@ for loc in Locations[:1]:
                 hists.append(himp)
 
                 herr = TH1F(chiso[0]+"err",chiso[0]+"err",(len(bins)-1),array('d',bins))
-                herr.GetYaxis().SetTitle("Percent Error on Impurity (%)")
+                herr.GetYaxis().SetTitle("Relative Error on Impurity (%)")
                 herr.SetMaximum(100.)
                 hists.append(herr)
                 
@@ -264,7 +274,7 @@ for loc in Locations[:1]:
                     hist.GetYaxis().SetLabelSize(0.045)
                     hist.GetYaxis().SetTitleSize(0.045)
 
-                leg.AddEntry(hist,chiso[0],'L')
+                leg.AddEntry(hist,chIsoLabel.replace("$",""),'L')
             
                 for ptCut in PhotonPtSels[0][1:]:
                     lowEdge = int(ptCut[0].split("t")[2])
@@ -276,22 +286,25 @@ for loc in Locations[:1]:
                     impurity = float(purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]][0])
                     uncertainty = float(purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]][-1])
                     # print binNumber, purity, uncertainty
-                    purityFile.write(r"& "+str(round(impurity,3))+r" $\pm$ "+str(round(uncertainty,3))+" ")
+                    purityFile.write(r"& %.2f $\pm$ %.2f " % (impurity, uncertainty) )
                     hists[0].SetBinContent(binNumber, impurity)
                     hists[1].SetBinContent(binNumber, uncertainty/impurity * 100)
-                                
+                    # hists[0].SetBinError(binNumber, uncertainty)
+
                 histograms[0].append(hists[0])
                 histograms[1].append(hists[1])
-                purityFile.write(r"\\ \hline")
+                purityFile.write(r"\\")
                 purityFile.write("\n")
             
+            purityFile.write(r"\hline")
+            purityFile.write("\n")
             purityFile.write(r"\end{tabular}")
             purityFile.write("\n")
             purityFile.write(r"\end{document}")
             purityFile.close()
 
             histograms[0][0].SetTitle("Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
-            histograms[1][0].SetTitle("Error on Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
+            histograms[1][0].SetTitle("Relative Error on Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
             suffix = [ "central", "error" ] 
             for hlist in histograms:
                 canvas = TCanvas()
@@ -319,3 +332,4 @@ for loc in Locations[:1]:
             conout = convert.communicate()
             if not conout[1] == "":
                 print conout[1]
+

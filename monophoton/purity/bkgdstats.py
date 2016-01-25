@@ -157,7 +157,7 @@ scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 
 print "\n\n##############################\n######## Doing background stat uncertainty ########\n##############################\n\n"
 ### Get background stat uncertainty
-toyPlot = TH1F("toyplot","Purity Difference from Background Template Toys", 100, -0.05, 0.05)
+toyPlot = TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
 toySkims = skims[:4]
 toysDir = os.path.join(plotDir,'toys')
 if not os.path.exists(toysDir):
@@ -209,8 +209,15 @@ for iToy in range(1,101):
     toyPlot.Fill(purityDiff)
 
 bkgdUncertainty = toyPlot.GetStdDev()
-toyPlot.GetXaxis().SetTitle("Purity Difference")
+toyPlot.GetXaxis().SetTitle("Impurity Difference")
 toyPlot.GetYaxis().SetTitle("# of Toys")
+
+toyPlot.SetLineWidth(3)
+                    
+toyPlot.GetXaxis().SetLabelSize(0.045)
+toyPlot.GetXaxis().SetTitleSize(0.045)
+toyPlot.GetYaxis().SetLabelSize(0.045)
+toyPlot.GetYaxis().SetTitleSize(0.045)
 
 
 toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)

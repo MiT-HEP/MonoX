@@ -14,6 +14,7 @@ chisosbcuts="20to50 50to80 80to110"
 #chisosbcuts="50to70"
 #ptcuts="350toInf"
 ptcuts="175to200 200to250 250to300 300to350 350toInf"
+#ptcuts="175to200 200to250 250to300 300to350 350to400 400to500 500to600 600toInf"
 #metcuts="0toInf 0to100 100to250 250toInf"
 metcuts="0toInf"
 
