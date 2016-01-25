@@ -1,0 +1,4 @@
+http://dabercro.web.cern.ch/dabercro/slimmerfiles_160119/puWeights_13TeV_25ns.root
+http://dabercro.web.cern.ch/dabercro/slimmerfiles_160119/scalefactors_ele-2.root
+http://dabercro.web.cern.ch/dabercro/slimmerfiles_160119/scalefactors_mu-2.root
+http://dabercro.web.cern.ch/dabercro/slimmerfiles_160119/scalefactors_v3.root
