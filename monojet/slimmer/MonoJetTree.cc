@@ -115,11 +115,6 @@ MonoJetTree::Reset()
   genBos_pt = -5;
   genBos_phi = -5;
   genBos_PdgId = 0;
-  kfactor = 1;
-  ewk_z = 1;
-  ewk_a = 1;
-  ewk_w = 1;
-  wkfactor = 1;
   fatjet1Pt = -5;
   fatjet1Eta = -7;
   fatjet1Phi = -5;
@@ -204,11 +199,6 @@ MonoJetTree::SetupTree()
   t->Branch("genBos_pt",&genBos_pt,"genBos_pt/F");
   t->Branch("genBos_phi",&genBos_phi,"genBos_phi/F");
   t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
-  t->Branch("kfactor",&kfactor,"kfactor/F");
-  t->Branch("ewk_z",&ewk_z,"ewk_z/F");
-  t->Branch("ewk_a",&ewk_a,"ewk_a/F");
-  t->Branch("ewk_w",&ewk_w,"ewk_w/F");
-  t->Branch("wkfactor",&wkfactor,"wkfactor/F");
   t->Branch("fatjet1Pt",&fatjet1Pt,"fatjet1Pt/F");
   t->Branch("fatjet1Eta",&fatjet1Eta,"fatjet1Eta/F");
   t->Branch("fatjet1Phi",&fatjet1Phi,"fatjet1Phi/F");
