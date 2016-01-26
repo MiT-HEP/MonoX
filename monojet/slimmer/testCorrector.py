@@ -3,15 +3,17 @@
 import Corrector
 import os
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimTest'
+directory = '/scratch/dabercro/Monojet_160125/'
 
-applicator = Corrector.MakeApplicator('test',True,'events','test',100000)
+applicator = Corrector.MakeApplicator('mcFactors',True,'events','corrections',100000)
 applicator.AddCorrector(Corrector.MakeCorrector('puWeight','npv','1','files/puWeights_13TeV_25ns.root','puWeights'))
-applicator.AddCorrector(Corrector.MakeCorrector('kfactor','genBos_pt','genBos_PdgId == 22','files/scalefactors_v3.root','anlo1_over_alo/anlo1_over_alo'))
-applicator.AddCorrector(Corrector.MakeCorrector('ewk_a','genBos_pt','genBos_PdgId == 22','files/scalefactors_v3.root','a_ewkcorr/a_ewkcorr'))
-applicator.AddCorrector(Corrector.MakeCorrector('ewk_z','genBos_pt','abs(genBos_PdgId) == 23 ','files/scalefactors_v3.root','z_ewkcorr/z_ewkcorr'))
-applicator.AddCorrector(Corrector.MakeCorrector('ewk_w','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v3.root','w_ewkcorr/w_ewkcorr'))
-applicator.AddCorrector(Corrector.MakeCorrector('wkfactor','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v3.root','wnlo012_over_wlo/wnlo012_over_wlo'))
+applicator.AddCorrector(Corrector.MakeCorrector('kfactor','genBos_pt','genBos_PdgId == 22','files/scalefactors_v4.root','anlo1_over_alo/anlo1_over_alo'))
+applicator.AddCorrector(Corrector.MakeCorrector('ewk_a','genBos_pt','genBos_PdgId == 22','files/scalefactors_v4.root','a_ewkcorr/a_ewkcorr'))
+applicator.AddCorrector(Corrector.MakeCorrector('ewk_z','genBos_pt','abs(genBos_PdgId) == 23 ','files/scalefactors_v4.root','z_ewkcorr/z_ewkcorr'))
+applicator.AddCorrector(Corrector.MakeCorrector('ewk_w','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v4.root','w_ewkcorr/w_ewkcorr'))
+applicator.AddCorrector(Corrector.MakeCorrector('akfactor','genBos_pt','genBos_PdgId == 22','files/scalefactors_v4.root',['anlo1/anlo1_nominal','alo/alo_nominal']))
+applicator.AddCorrector(Corrector.MakeCorrector('zkfactor','genBos_pt','abs(genBos_PdgId) == 23','files/scalefactors_v4.root',['znlo012/znlo012_nominal','zlo/zlo_nominal']))
+applicator.AddCorrector(Corrector.MakeCorrector('wkfactor','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v4.root',['wnlo012/wnlo012_nominal','wlo/wlo_nominal']))
 
 ## Loose electron
 applicator.AddCorrector(Corrector.MakeCorrector('lepton_SF',['abs(lep1Eta)','lep1Pt'],'!(lep1IsMedium || lep1IsTight) && lep1Pt > 0 && abs(lep1PdgId) == 11',
@@ -47,7 +49,5 @@ applicator.AddCorrector(Corrector.MakeCorrector('lepton_SF',['abs(lep2Eta)','lep
 applicator.AddFactorToMerge('mcWeight')
 
 for fileName in os.listdir(directory):
-    if fileName == 'monojet_ZZ.root':
-        applicator.ApplyCorrections(directory + "/" + fileName)
-    ##
+    applicator.ApplyCorrections(directory + fileName)
 ##
