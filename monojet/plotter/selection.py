@@ -5,8 +5,8 @@ def build_selection(selection,bin0):
     snippets = {
         
         #** monojet
-#        'leading jet pT' :['jet1Pt>100.',selections],
-#        'leading jet eta':['abs(jet1Eta)<2.5',selections],        
+        'leading jet pT' :['jet1Pt>100.',selections],
+        'leading jet eta':['abs(jet1Eta)<2.5',selections],        
 #        'not monoV'      :['fatjet1PrunedM < 60 || fatjet1PrunedM > 110 || fatjet1tau21 > 0.5',selections],
         # Jet ID
         'jet cleaning'   :['jet1isMonoJetIdNew==1',selections],      
@@ -34,9 +34,9 @@ def build_selection(selection,bin0):
         #'excitedquark' : ['n_cleanedjets==3',['gjets']],
 
         # monov
-        'monoV'    : ['fatjet1tau21 < 0.5 && fatjet1PrunedM > 60 && fatjet1PrunedM < 110',selections],
-        'monoVId'  : ['fatleading == 1 && fatjet1overlapB < 2',selections],
-        'monoVKin' : ['fatjet1Pt > 250 && fatjet1Eta < 2.5',selections]
+#        'monoV'    : ['fatjet1tau21 < 0.5 && fatjet1PrunedM > 60 && fatjet1PrunedM < 110',selections],
+#        'monoVId'  : ['fatleading == 1 && fatjet1overlapB < 2',selections],
+#        'monoVKin' : ['fatjet1Pt > 250 && fatjet1Eta < 2.5',selections]
         
         }
 

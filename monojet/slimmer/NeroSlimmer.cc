@@ -51,47 +51,6 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
 
 void NeroSlimmer(TString inFileName, TString outFileName) {
 
-  TFile *elecSFFile  = new TFile("files/scalefactors_ele-2.root");
-  TH2D  *elecSFVeto  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Veto_ele");
-  TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
-  TH2D  *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
-  TH2D  *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
-
-  TFile *muonSFFile  = new TFile("files/scalefactors_mu-2.root");
-  TH2D  *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
-  TH2D  *muonSFMedium = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Medium_mu");
-  TH2D  *muonSFTight  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Tight_mu");
-  
-  Float_t SFEtaMin = 0;
-  Float_t SFEtaMax = 2.5;
-
-  Float_t SFPtMin = 10;
-  Float_t SFPtMax = 100;
-
-  TFile *puWeightFile = new TFile("files/puWeights_13TeV_25ns.root");
-  TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
-  Int_t puMin = 1;
-  Int_t puMax = 30;
-  
-  TFile *kfactorFile  = new TFile("files/scalefactors_v3.root");
-  kfactorFile->cd("anlo1_over_alo");
-  TH1D  *kfactorHist  = (TH1D*) gDirectory->FindObjectAny("anlo1_over_alo");
-
-  kfactorFile->cd("wnlo012_over_wlo");
-  TH1D  *wkfactorHist  = (TH1D*) gDirectory->FindObjectAny("wnlo012_over_wlo");
-
-  kfactorFile->cd("z_ewkcorr");
-  TH1D *ewk_z_Hist = (TH1D*) gDirectory->FindObjectAny("z_ewkcorr");
-
-  kfactorFile->cd("w_ewkcorr");
-  TH1D *ewk_w_Hist = (TH1D*) gDirectory->FindObjectAny("w_ewkcorr");
-
-  kfactorFile->cd("a_ewkcorr");
-  TH1D *ewk_a_Hist = (TH1D*) gDirectory->FindObjectAny("a_ewkcorr");
-
-  Float_t minKPt = 100;
-  Float_t maxKPt = 1000;
-
   Float_t dROverlap  = 0.4;
   Float_t dRGenMatch = 0.2;
   Float_t bCutLoose  = 0.605;
@@ -148,13 +107,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     outTree->eventNum  = inTree->eventNum;
     outTree->npv       = inTree->npv;
     outTree->rho       = inTree->rho;
-
-    if (outTree->npv < puMin)
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMin));
-    else if (outTree->npv > puMax)
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMax));
-    else
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(outTree->npv));
 
     if (inTree->mcWeight < 0)
       outTree->mcWeight = -1;
@@ -236,72 +188,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
     
-    //// Do the Scale Factor for one lepton, if there ////
-
-    if (outTree->n_looselep > 0) {
-      Double_t theEta = fabs(outTree->lep1Eta);
-      if (theEta > SFEtaMax)
-        theEta = SFEtaMax;
-      else if (theEta > SFEtaMin)
-        theEta = SFEtaMin;
-
-      Double_t thePt  = outTree->lep1Pt;
-      if (thePt > SFPtMax)
-        thePt = SFPtMax;
-      else if (thePt > SFPtMin)
-        thePt = SFPtMin;
-
-      if (abs(outTree->lep1PdgId) == 11) {
-        if (outTree->lep1IsTight)
-          outTree->leptonSF = elecSFTight->GetBinContent(elecSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep1IsMedium)
-          outTree->leptonSF = elecSFMedium->GetBinContent(elecSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = elecSFLoose->GetBinContent(elecSFLoose->FindBin(theEta,thePt));
-      }
-      else {
-        if (outTree->lep1IsTight)
-          outTree->leptonSF = muonSFTight->GetBinContent(muonSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep1IsMedium)
-          outTree->leptonSF = muonSFMedium->GetBinContent(muonSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
-      }
-    }
-
-    //// Do the Scale Factor for the second lepton, if there ////
-    
-    if (outTree->n_looselep > 1) {
-      Double_t theEta = fabs(outTree->lep2Eta);
-      if (theEta > SFEtaMax)
-        theEta = SFEtaMax;
-      else if (theEta > SFEtaMin)
-        theEta = SFEtaMin;
-
-      Double_t thePt  = outTree->lep2Pt;
-      if (thePt > SFPtMax)
-        thePt = SFPtMax;
-      else if (thePt > SFPtMin)
-        thePt = SFPtMin;
-
-      if (abs(outTree->lep2PdgId) == 11) {
-        if (outTree->lep2IsTight)
-          outTree->leptonSF = outTree->leptonSF * elecSFTight->GetBinContent(elecSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep2IsMedium)
-          outTree->leptonSF = outTree->leptonSF * elecSFMedium->GetBinContent(elecSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = outTree->leptonSF * elecSFLoose->GetBinContent(elecSFLoose->FindBin(theEta,thePt));
-      }
-      else {
-        if (outTree->lep2IsTight)
-          outTree->leptonSF = outTree->leptonSF * muonSFTight->GetBinContent(muonSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep2IsMedium)
-          outTree->leptonSF = outTree->leptonSF * muonSFMedium->GetBinContent(muonSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = outTree->leptonSF * muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
-      }
-    }
-
     //// If there are identified leptons, we will define our recoil using them ////
 
     if (outTree->n_looselep > 1) {
@@ -665,30 +551,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           }
         }
       }
-      
-      if (outTree->genBos_PdgId != 0) {
-        outTree->genBos_pt  = saveGenVec.Pt();
-        outTree->genBos_phi = saveGenVec.Phi();
-        
-        // outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
-        // outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
-      }
-      
-      
-      if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
-          outTree->ewk_a = ewk_a_Hist->GetBinContent(ewk_a_Hist->FindBin(outTree->genBos_pt));
-          
-      }
-
-      if (abs(outTree->genBos_PdgId) == 24 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->wkfactor = wkfactorHist->GetBinContent(wkfactorHist->FindBin(outTree->genBos_pt));      
-          outTree->ewk_w = ewk_w_Hist->GetBinContent(ewk_w_Hist->FindBin(outTree->genBos_pt));
-      }
-
-      if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
-      }
     }
 
     for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
@@ -735,9 +597,4 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   outTree->WriteToFile(outFile);
   outFile->Close();
   inFile->Close();
-  
-  kfactorFile->Close();
-  puWeightFile->Close();
-  muonSFFile->Close();
-  elecSFFile->Close();
 }

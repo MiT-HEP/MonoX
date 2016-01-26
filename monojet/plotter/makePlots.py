@@ -325,6 +325,7 @@ arguments['ht_cleaned']  = ['ht_cleaned','ht_cleaned',20,0,2000,'Events/GeV','H_
 
 arguments['fatjet1Pt']    = ['fatjet1Pt','fatjet1Pt',20,100,1500,'Events/GeV','Fat Jet P_{T} [GeV]',True]
 arguments['fatjet1PrunedM'] = ['fatjet1PrunedM','fatjet1PrunedM',30,0,200,'Events/GeV','m_{pruned} [GeV]',True]
+arguments['fatjet1SoftDropM'] = ['fatjet1SoftDropM','fatjet1SoftDropM',30,0,200,'Events/GeV','m_{SB} [GeV]',True]
 arguments['fatjet1tau21'] = ['fatjet1tau21','fatjet1tau21',20,0.0,1.0,'Events/bin','#tau_{2}/#tau_{1}',True]
 
 start_time = time.time()

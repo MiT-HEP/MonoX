@@ -81,11 +81,6 @@ class MonoJetTree
   float genBos_pt;
   float genBos_phi;
   int   genBos_PdgId;
-  float kfactor;
-  float ewk_z;
-  float ewk_a;
-  float ewk_w;
-  float wkfactor;
   float fatjet1Pt;
   float fatjet1Eta;
   float fatjet1Phi;
