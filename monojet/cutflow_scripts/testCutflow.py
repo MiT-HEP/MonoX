@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-import ROOT
+from ROOT import TFile
 from CutflowMaker import cutflowMaker
 import os, sys
 
@@ -29,6 +29,6 @@ inputFile = ROOT.TFile(inputName)
 cutflowMaker.SetTree(inputFile.events)
 
 cutflowMaker.PrintCutflow()
-cutflowMaker.MakePlot(outputFolder +"/test")
+#cutflowMaker.MakePlot(outputFolder +"/test")
 
 inputFile.Close()
