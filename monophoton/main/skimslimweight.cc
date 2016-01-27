@@ -319,8 +319,8 @@ EventProcessor::vetoTaus(simpletree::Event const& _event)
 
     unsigned iM(0);
     for (; iM != _event.muons.size(); ++iM) {
-      auto& electron(_event.muons[iM]);
-      if (electron.loose && deltaR2(tau, electron) < 0.16)
+      auto& muon(_event.muons[iM]);
+      if (muon.loose && deltaR2(tau, muon) < 0.16)
         break;
     }
     if (iM != _event.muons.size())

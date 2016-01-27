@@ -13,7 +13,7 @@ sNames = sys.argv[1:]
 
 sourceDir = '/scratch5/yiiyama/hist/simpletree10/t2mit/filefi/042'
 neroInput = False
-outputDir = '/scratch5/yiiyama/studies/monophoton/skim'
+outputDir = '/scratch5/ballen/hist/monophoton/skim'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.Load('libNeroProducerCore.so')
@@ -210,8 +210,10 @@ npvweight = npvSource.Get('npvweight')
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
 
-gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
-gidscale = gidSource.Get('scalefactor')
+# gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
+# gidscale = gidSource.Get('scalefactor')
+gidscale = ROOT.TH1F('scalefactor','fake scale factor',1,0.,1000.)
+gidscale.SetBinContent(1, 1.0)
 
 if len(sNames) != 0 and sNames[0] == 'all':
     sNames = generators.keys()
