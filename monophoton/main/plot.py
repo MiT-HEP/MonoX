@@ -36,15 +36,15 @@ cutHighMet = 't1Met.met > '+str(cutMet)
 if region == 'monoph':
     defsel = 'monoph'
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
-    sigGroups = [GroupSpec('add5-1', ['add5-1'], ROOT.kGreen + 4)]
+    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
         ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'wlnu', 'dy-50'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('qcd', GroupSpec('QCD', ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], ROOT.TColor.GetColor(0xff, 0x44, 0x55))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
-        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
-        ('znunu', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
+        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
+        ('zg', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
     ]
     
     variables = {
@@ -57,6 +57,8 @@ if region == 'monoph':
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', 't1Met.met > 40.', (20, -math.pi, math.pi)),
         'dPhiPhoMetHighMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cutHighMet, (20, -math.pi, math.pi)),
         'metPhiHighMet': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutHighMet, (20, -math.pi, math.pi)),
+        'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', '', (40, 0., math.pi)),
+        'dPhiJetMetHighMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutHighMet, (40, 0., math.pi)),
         'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
     }
 
@@ -172,7 +174,9 @@ else:
     print 'Unknown region', region
     sys.exit(0)
 
-sensitive = {'monoph': ['met','metHighMet','phoPtHighMet']}
+countDef = VariableDef('N_{cand}', '', '0.5', 't1Met.met > %f && photons.pt[0] > %f' % (140., 175.), (1, 0., 1.))
+
+sensitive = {'monoph': ['met', 'metHighMet', 'phoPtHighMet']}
 blind = 5
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
@@ -197,7 +201,7 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     hist = ROOT.TH1D(varname + '-' + sampledef.name, '', nbins, arr)
 
     cut = vardef.cut
-    if isSensitive and blind != 1:
+    if isSensitive and blind > 1:
         if cut:
             cut += ' && event % {blind} == 0'.format(blind = blind)
         else:
@@ -250,15 +254,6 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
     return hist
 
-def highMetYield(hist):
-    s = 0.
-    iBin = hist.GetXaxis().FindFixBin(240.)
-    while iBin < hist.GetNbinsX():
-        s += hist.GetBinContent(iBin) * hist.GetXaxis().GetBinWidth(iBin)
-        iBin += 1
-
-    s += hist.GetBinContent(hist.GetNbinsX())
-    return s
 
 for varname, vardef in variables.items():
     isSensitive = region in sensitive and varname in sensitive[region]
@@ -271,9 +266,6 @@ for varname, vardef in variables.items():
     canvas.Clear(full = True)
     canvas.legend.setPosition(0.6, 0.6, 0.92, 0.92)
 
-    if varname == 'met':
-        counts = {}
-
     for gName, group in bkgGroups:
         idx = -1
         for sName in group.samples:
@@ -284,26 +276,12 @@ for varname, vardef in variables.items():
                 selection = defsel
 
             hist = getHist(allsamples[sName], selection, varname, vardef)
-#            simpleCanvas.Clear()
-#            simpleCanvas.cd()
-#            hist.Draw()
-#            simpleCanvas.printWeb('monophoton', sName)
 
             for iX in range(1, hist.GetNbinsX() + 1):
                 if hist.GetBinContent(iX) < 0.:
                     hist.SetBinContent(iX, 0.)
 
-            if varname == 'met':
-                if gName == 'efake':
-                    counts['efake'] = highMetYield(hist)
-                elif gName == 'hfake':
-                    counts['hfake'] = highMetYield(hist)
-                else:
-                    if 'mc' not in counts:
-                        counts['mc'] = 0.
-                    counts['mc'] += highMetYield(hist)
-
-            if isSensitive and blind != 1:
+            if isSensitive and blind > 1:
                 hist.Scale(1. / blind)
 
             idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
@@ -313,14 +291,10 @@ for varname, vardef in variables.items():
             idx = -1
             for sName in sGroup.samples:
                 hist = getHist(allsamples[sName], defsel, varname, vardef)
-                counts[sName] = highMetYield(hist)
-                if blind != 1:
+                if blind > 1:
                     hist.Scale(1. / blind)
 
                 idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
-
-    if varname == 'met':
-        print counts
 
     for sName in obs.samples:
         hist = getHist(allsamples[sName], defsel, varname, vardef, isSensitive)
@@ -331,3 +305,46 @@ for varname, vardef in variables.items():
 
     canvas.printWeb('monophoton/' + region, varname)
     canvas.printWeb('monophoton/' + region, varname + '-linear', logy = False)
+
+counts = {}
+for gName, group in bkgGroups:
+    counts[gName] = 0.
+    for sName in group.samples:
+        if type(sName) is tuple:
+            selection = sName[1]
+            sName = sName[0]
+        else:
+            selection = defsel
+
+        hist = getHist(allsamples[sName], selection, 'count', countDef)
+        counts[gName] += hist.GetBinContent(1) / blind
+
+if region == 'monoph':
+    for sGroup in sigGroups:
+        for sName in sGroup.samples:
+            hist = getHist(allsamples[sName], defsel, 'count', countDef)
+            counts[sName] = hist.GetBinContent(1) / blind
+
+counts['obs'] = 0.
+for sName in obs.samples:
+    hist = getHist(allsamples[sName], defsel, 'count', countDef, isSensitive = True)
+    counts['obs'] += hist.GetBinContent(1)
+
+bkgTotal = 0.
+print ''
+for gName, group in reversed(bkgGroups):
+    bkgTotal += counts[gName]
+    print '%+10s  %.1f' % (gName, counts[gName])
+
+print '---------------------'
+print '%+10s  %.1f' % ('bkg', bkgTotal)
+
+print '====================='
+
+if region == 'monoph':
+    for sGroup in sigGroups:
+        for sName in sGroup.samples:
+            print '%+10s  %.1f' % (sName, counts[sName])
+
+print '====================='
+print '%+10s  %.1f' % ('obs', counts['obs'])

@@ -2,6 +2,61 @@
 
 #include "TString.h"
 
+#include <fstream>
+#include <string>
+#include <cstdlib>
+#include <map>
+#include <set>
+
+class EventList {
+ public:
+  void addSource(char const*);
+  bool inList(simpletree::Event const&) const;
+
+ private:
+  typedef std::set<unsigned> EventContainer;
+  typedef std::map<unsigned, EventContainer> LumiContainer;
+  typedef std::map<unsigned, LumiContainer> RunContainer;
+  RunContainer list_{};
+  RunContainer::const_iterator rEnd_{};
+};
+
+void
+EventList::addSource(char const* _path)
+{
+  std::ifstream input(_path);
+  std::string line;
+
+  while (true) {
+    std::getline(input, line);
+    if (!input.good())
+      break;
+
+    unsigned run(std::atoi(line.substr(0, line.find(":")).c_str()));
+    unsigned lumi(std::atoi(line.substr(line.find(":") + 1, line.rfind(":")).c_str()));
+    unsigned event(std::atoi(line.substr(line.rfind(":") + 1).c_str()));
+
+    list_[run][lumi].insert(event);
+  }
+
+  rEnd_ = list_.end();
+}
+
+bool
+EventList::inList(simpletree::Event const& _event) const
+{
+  auto rItr(list_.find(_event.run));
+  if (rItr == rEnd_)
+    return false;
+
+  auto lItr(rItr->second.find(_event.lumi));
+  if (lItr == rItr->second.end())
+    return false;
+
+  auto eItr(lItr->second.find(_event.event));
+  return eItr != lItr->second.end();
+}
+
 class EventProcessor {
  public:
   EventProcessor(double _weightNorm = 1., char const* _name = "EventProcessor") : weightNorm_(_weightNorm), name_(_name) {}
@@ -15,10 +70,12 @@ class EventProcessor {
   virtual bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&);
   virtual bool cleanJets(simpletree::Event const&, simpletree::Event&);
   virtual void calculateMet(simpletree::Event const&, simpletree::Event&);
+  virtual bool selectMet(simpletree::Event const&, simpletree::Event&);
   virtual void calculateWeight(simpletree::Event const&, simpletree::Event&);
   virtual bool prepareOutput(simpletree::Event const&, simpletree::Event&) { bool ready(outReady_); outReady_ = false; return ready; }
 
   void setMinPhotonPt(double _m) { minPhotonPt_ = _m; }
+  void setEventList(EventList const* _l) { eventList_ = _l; }
 
   TString const& getName() const { return name_; }
 
@@ -30,6 +87,18 @@ class EventProcessor {
   double minPhotonPt_{175.};
   bool outReady_{false};
   std::vector<unsigned> photonPtOrder_{};
+  EventList const* eventList_{0};
+};
+
+class ListedEventProcessor : public EventProcessor {
+  // For beam halo control region; inverted event list filter
+
+ public:
+  ListedEventProcessor() {}
+  ListedEventProcessor(double _weightNorm = 1., char const* _name = "ListedEventProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~ListedEventProcessor() {}
+
+  bool beginEvent(simpletree::Event const&) override;
 };
 
 class GenProcessor : public virtual EventProcessor {
@@ -111,8 +180,11 @@ class WenuProxyProcessor : public virtual EventProcessor {
   bool vetoElectrons(simpletree::Event const&, simpletree::Event&) override;
   bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
 
+  void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
+
  protected:
   std::vector<std::pair<bool, simpletree::LorentzVectorM>> hardElectrons_;
+  double weightErr_;
 };
 
 class ZeeProxyProcessor : public virtual EventProcessor {
@@ -128,8 +200,11 @@ class ZeeProxyProcessor : public virtual EventProcessor {
   bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
   bool prepareOutput(simpletree::Event const&, simpletree::Event&) override;
 
+  void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
+
  protected:
   std::vector<std::pair<unsigned, unsigned>> egPairs_;
+  double weightErr_;
 };
 
 class LeptonProcessor : public virtual EventProcessor {
@@ -164,16 +239,33 @@ class GenLeptonProcessor : public LeptonProcessor, public GenProcessor {
   bool passTrigger(simpletree::Event const&) override { return true; }
 };
 
-class HadronProxyProcessor : public virtual EventProcessor {
+class EMObjectProcessor : public virtual EventProcessor {
   // Require exactly 1 hadron-proxy photon object
-
  public:
-  HadronProxyProcessor(double _weightNorm, char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name) {}
+  EMObjectProcessor() {}
+  EMObjectProcessor(double _weightNorm, char const* _name = "EMObjectProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~EMObjectProcessor() {}
+
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
+};
+
+class EMPlusJetProcessor : public EMObjectProcessor {
+  // Require >= 1 jet and 1 hadron-proxy photon object
+ public:
+  EMPlusJetProcessor(char const* _name = "EMPlusJetProcessor") : EventProcessor(1., _name), EMObjectProcessor() {}
+  ~EMPlusJetProcessor() {}
+
+  bool cleanJets(simpletree::Event const&, simpletree::Event&) override;
+};
+  
+class HadronProxyProcessor : public EMObjectProcessor {
+  // Require exactly 1 hadron-proxy photon object
+ public:
+ HadronProxyProcessor(double _weightNorm, char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name), EMObjectProcessor() {}
   ~HadronProxyProcessor() {}
 
   void setReweight(TH1* _rwgt) { reweight_ = _rwgt; }
 
-  bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
   void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
 
  protected:

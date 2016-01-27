@@ -24,7 +24,17 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/NeroProducer
 ROOT.gROOT.LoadMacro(thisdir + '/skimslimweight.cc+')
 
 def makeEventProcessor(sample):
+    global badEventsList
+
     proc = ROOT.EventProcessor()
+    proc.setEventList(badEventsList)
+    return proc
+
+def makeListedEventProcessor(sample):
+    global badEventsList
+
+    proc = ROOT.ListedEventProcessor()
+    proc.setEventList(badEventsList)
     return proc
 
 def makeGenProcessor(sample, cls = ROOT.GenProcessor):
@@ -106,10 +116,17 @@ def makeGenOppFlavorProcessor(sample):
     return proc
 
 def makeWenuProxyProcessor(sample):
-    return ROOT.WenuProxyProcessor(0.023)
+    global eleproxyweight
+
+    proc = ROOT.WenuProxyProcessor(eleproxyweight.GetY()[4])
+    proc.setWeightErr(eleproxyweight.GetErrorY(4))
+    return proc
 
 def makeZeeProxyProcessor(sample):
-    proc = ROOT.ZeeProxyProcessor(0.023)
+    global eleproxyweight
+
+    proc = ROOT.ZeeProxyProcessor(eleproxyweight.GetY()[4])
+    proc.setWeightErr(eleproxyweight.GetErrorY(4))
     proc.setMinPhotonPt(60.)
     return proc
 
@@ -120,13 +137,8 @@ def makeHadronProxyProcessor(sample):
     proc.setReweight(hadproxyweight)
     return proc
 
-def makeHadronRawProxyProcessor(sample):
-    # very very preliminary numbers:
-    # 1021 sph-c events
-    #  * (1 - purity 0.7ish)
-    # / 251 sph-c-hfake events
-#    return ROOT.HadronProxyProcessor(1021. * 0.3 / 251.)
-    return ROOT.HadronProxyProcessor(1.)
+def makeEMPlusJetProcessor(sample):
+    return ROOT.EMPlusJetProcessor()
 
 def makeGenWlnuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
@@ -147,8 +159,8 @@ def makeGenHadronProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenHadronProcessor)
 
 generators = {
-    'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakeraw': makeHadronRawProxyProcessor},
-    'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakeraw': makeHadronRawProxyProcessor},
+    'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor},
+    'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
@@ -157,7 +169,7 @@ generators = {
     'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor},
     'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor},
-    'znng': {'monoph':makeGenProcessor},
+    'znng-130': {'monoph':makeGenProcessor},
     'dy-50': {'monoph': makeGenProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
@@ -210,13 +222,22 @@ npvweight = npvSource.Get('npvweight')
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
 
-# gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
-# gidscale = gidSource.Get('scalefactor')
-gidscale = ROOT.TH1F('scalefactor','fake scale factor',1,0.,1000.)
-gidscale.SetBinContent(1, 1.0)
+eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
+eleproxyweight = eleproxySource.Get('fraction')
 
-if len(sNames) != 0 and sNames[0] == 'all':
-    sNames = generators.keys()
+gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
+gidscale = gidSource.Get('scalefactor')
+
+badEventsList = ROOT.EventList()
+badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_csc2015.txt')
+badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_ecalscn1043093.txt')
+
+if len(sNames) != 0:
+    if sNames[0] == 'all':
+        sNames = generators.keys()
+    elif sNames[0] == 'list':
+        print ' '.join(sorted(generators.keys()))
+        sys.exit(0)
 
 skimmer = ROOT.SkimSlimWeight()
 
@@ -235,8 +256,15 @@ for name in sampleNames:
     skimmer.reset()
 
     tree = ROOT.TChain('events')
-    tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
 
+# TEMPORARY
+    if 'sph' in name:
+        print 'Using simpletree10a for sph'
+        tree.Add(sourceDir.replace('10', '10a') + '/' + sample.directory + '/simpletree_*.root')
+    else:
+        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+# TEMPORARY
+ 
     for pname, gen in generators[name].items():
         processor = gen(sample)
         skimmer.addProcessor(pname, processor)

@@ -45,7 +45,7 @@ def makeAxis(axis, a1, a2, b, vmin = 0., vmax = 1., ndiv = 205, font = 42, log =
     gaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset(axis))
     gaxis.SetTitleSize(0.048)
     gaxis.SetLabelSize(0.042)
-    gaxis.SetTickLength(0.)
+    gaxis.SetTickSize(0.)
 
     return gaxis
 
@@ -297,7 +297,16 @@ class SimpleCanvas(object):
         self._objects.append(pave)
 
     def Clear(self, full = False):
-        self.canvas.Clear()
+        name = self.canvas.GetName()
+        title = self.canvas.GetTitle()
+        ROOT.gROOT.GetListOfCanvases().Remove(self.canvas)
+        self.canvas = None
+        self.canvas = ROOT.TCanvas(name, title, 600, 600)
+        self.canvas.SetTopMargin(0.08)
+        self.canvas.SetRightMargin(0.05)
+        self.canvas.SetBottomMargin(0.12)
+        self.canvas.SetLeftMargin(0.15)
+
         self.minimum = -1.
 
         if full:
@@ -407,9 +416,8 @@ class SimpleCanvas(object):
         if not os.path.isdir(webdir):
             os.makedirs(webdir)
 
-        self.canvas.Draw()
-        self.canvas.Print(webdir + '/' + name + '.png', 'png')
         self.canvas.Print(webdir + '/' + name + '.pdf', 'pdf')
+        self.canvas.Print(webdir + '/' + name + '.png', 'png')
 
 
 class RatioCanvas(SimpleCanvas):
@@ -466,6 +474,14 @@ class RatioCanvas(SimpleCanvas):
     def Update(self, hList = [], rList = [], logy = None):
         if logy is not None:
             self.plotPad.SetLogy(logy)
+            if logy:
+                self.yaxis.SetOption('G')
+            else:
+                self.yaxis.SetOption('')
+
+            self.yaxis.SetWmin(self.plotPad.PadtoY(self.plotPad.GetUymin()))
+            self.yaxis.SetWmax(self.plotPad.PadtoY(self.plotPad.GetUymax()))
+            self.yaxis.Draw()
             self.canvas.Update()
 
         if not self._needUpdate:
@@ -745,6 +761,16 @@ class DataMCCanvas(RatioCanvas):
     def Update(self, logy = None):
         if logy is not None:
             self.plotPad.SetLogy(logy)
+
+            if logy:
+                self.yaxis.SetOption('G')
+            else:
+                self.yaxis.SetOption('')
+
+            self.yaxis.SetTickSize(0.)
+            self.yaxis.SetWmin(self.plotPad.PadtoY(self.plotPad.GetUymin()))
+            self.yaxis.SetWmax(self.plotPad.PadtoY(self.plotPad.GetUymax()))
+            self.yaxis.Draw()
             self.canvas.Update()
 
         if not self._needUpdate:
