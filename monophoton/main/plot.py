@@ -14,7 +14,7 @@ from datasets import allsamples
 
 ROOT.gROOT.SetBatch(True)
 
-sourceDir = '/scratch5/yiiyama/studies/monophoton/skim'
+sourceDir = '/scratch5/ballen/hist/monophoton/skim'
 
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
@@ -29,6 +29,9 @@ class VariableDef(object):
 
 
 region = sys.argv[1]
+
+cutMet = 200
+cutHighMet = 't1Met.met > '+str(cutMet)
 
 if region == 'monoph':
     defsel = 'monoph'
@@ -45,17 +48,17 @@ if region == 'monoph':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(4)] + [320., 400., 500.], overflow = True),
-        'metPiVeto': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', 't1Met.phi > -2.4', [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(4)] + [320., 400., 500.], overflow = True),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [175.] + [180. + 10. * x for x in range(12)] + [300. + 40. * x for x in range(6)], overflow = True),
-        'phoPtHighMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', 't1Met.met > 140.', [175.] + [180. + 10. * x for x in range(12)] + [300. + 40. * x for x in range(6)], overflow = True),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'metHighMet': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
+        'phoPtHighMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutHighMet, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', '', (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', '', (20, -math.pi, math.pi)),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', 't1Met.met > 40.', (20, -math.pi, math.pi)),
-        'dPhiPhoMetHighMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', 't1Met.met > 140.', (20, -math.pi, math.pi)),
-        'metPhiHighMet': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', 't1Met.met > 140.', (20, -math.pi, math.pi)),
+        'dPhiPhoMetHighMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cutHighMet, (20, -math.pi, math.pi)),
+        'metPhiHighMet': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutHighMet, (20, -math.pi, math.pi)),
         'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', '', (40, 0., math.pi)),
-        'dPhiJetMetHighMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', 't1Met.met > 140.', (40, 0., math.pi)),
+        'dPhiJetMetHighMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutHighMet, (40, 0., math.pi)),
         'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
     }
 
@@ -173,12 +176,13 @@ else:
 
 countDef = VariableDef('N_{cand}', '', '0.5', 't1Met.met > %f && photons.pt[0] > %f' % (140., 175.), (1, 0., 1.))
 
-sensitive = {'monoph': ['met', 'phoPtHighMet', 'metPiVeto']}
-blind = 1
+sensitive = {'monoph': ['met', 'metHighMet', 'phoPtHighMet']}
+blind = 5
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
 
-canvas = DataMCCanvas(lumi = lumi)
+normalCanvas = DataMCCanvas(lumi = lumi)
+sensitiveCanvas = DataMCCanvas(lumi = lumi / blind)
 simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
@@ -252,10 +256,15 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
 
 for varname, vardef in variables.items():
+    isSensitive = region in sensitive and varname in sensitive[region]
+
+    if isSensitive:
+        canvas = sensitiveCanvas
+    else:
+        canvas = normalCanvas
+
     canvas.Clear(full = True)
     canvas.legend.setPosition(0.6, 0.6, 0.92, 0.92)
-
-    isSensitive = region in sensitive and varname in sensitive[region]
 
     for gName, group in bkgGroups:
         idx = -1
@@ -294,8 +303,8 @@ for varname, vardef in variables.items():
     canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
     canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
 
-    canvas.printWeb('monophoton_' + region, varname)
-    canvas.printWeb('monophoton_' + region, varname + '-linear', logy = False)
+    canvas.printWeb('monophoton/' + region, varname)
+    canvas.printWeb('monophoton/' + region, varname + '-linear', logy = False)
 
 counts = {}
 for gName, group in bkgGroups:
