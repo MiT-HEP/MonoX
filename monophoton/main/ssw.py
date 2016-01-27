@@ -13,7 +13,7 @@ sNames = sys.argv[1:]
 
 sourceDir = '/scratch5/yiiyama/hist/simpletree10/t2mit/filefi/042'
 neroInput = False
-outputDir = '/scratch5/yiiyama/studies/monophoton/skim'
+outputDir = '/scratch5/ballen/hist/monophoton/skim'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.Load('libNeroProducerCore.so')
