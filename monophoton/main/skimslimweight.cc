@@ -170,7 +170,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
     if (pass == 0)
       continue;
-
+    
     for (unsigned iP(0); iP != nP; ++iP) {
       if ((pass & (1 << iP)) == 0)
         continue;
@@ -182,7 +182,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       else
         ++cut[iP];
     }
-
+    
     if (pass == 0)
       continue;
 
@@ -214,15 +214,15 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
         processors_[iP].second->calculateMet(event, outEvents[iP]);
 
+	outEvents[iP].jets.clear();
+        processors_[iP].second->cleanJets(event, outEvents[iP]);
+
         if (!processors_[iP].second->selectMet(event, outEvents[iP])) {
           cutTrees[iP]->Fill();
           continue;
         }
         else
           ++cut[iP];
-
-        outEvents[iP].jets.clear();
-        processors_[iP].second->cleanJets(event, outEvents[iP]);
 
         processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
@@ -364,6 +364,9 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
 bool
 EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
+  float dPhiJetMet = 5.;
+  float dPhiJetMetMin = 5.;
+
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
@@ -392,7 +395,14 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
       continue;
 
     _outEvent.jets.push_back(jet);
+
+    if (iJ > 3)
+      continue;
+
+    dPhiJetMet = TMath::Abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)); 
+    dPhiJetMetMin = TMath::Min(dPhiJetMetMin, dPhiJetMet);
   }
+  _outEvent.t1Met.dPhiJetMetMin = dPhiJetMetMin;
 
   return _outEvent.jets.size() != 0;
 }
@@ -406,7 +416,16 @@ EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event&
 bool
 EventProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  return std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.;
+  
+  if (!(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
+    return false;
+
+  /*
+  if (!(_outEvent.t1Met.dPhiJetMetMin > 0.2))
+    return false;
+  */
+
+  return true;
 }
 
 void

@@ -40,7 +40,7 @@ if region == 'monoph':
     bkgGroups = [
         ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'wlnu', 'dy-50'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
-        ('qcd', GroupSpec('QCD', ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], ROOT.TColor.GetColor(0xff, 0x44, 0x55))),
+        # ('qcd', GroupSpec('QCD', ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], ROOT.TColor.GetColor(0xff, 0x44, 0x55))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
         ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
@@ -59,6 +59,8 @@ if region == 'monoph':
         'metPhiHighMet': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutHighMet, (20, -math.pi, math.pi)),
         'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', '', (40, 0., math.pi)),
         'dPhiJetMetHighMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutHighMet, (40, 0., math.pi)),
+        'dPhiJetMetMin': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', '', (40, 0., math.pi)),
+        'dPhiJetMetMinHighMet': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', cutHighMet, (40, 0., math.pi)),
         'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
     }
 
