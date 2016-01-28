@@ -682,7 +682,7 @@ class RatioCanvas(SimpleCanvas):
 class DataMCCanvas(RatioCanvas):
 
     def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1.):
-        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi)
+        RatioCanvas.__init__(self, name = name+'_'+str(lumi), title = title, lumi = lumi)
 
         self._obs = -1
         self._bkgs = []
