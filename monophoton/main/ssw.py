@@ -11,7 +11,7 @@ from datasets import allsamples
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree10/t2mit/filefi/042'
+sourceDir = '/scratch5/yiiyama/hist/simpletree11/t2mit/filefi/042'
 neroInput = False
 outputDir = '/scratch5/yiiyama/studies/monophoton/skim'
 
@@ -257,13 +257,7 @@ for name in sampleNames:
 
     tree = ROOT.TChain('events')
 
-# TEMPORARY
-    if 'sph' in name:
-        print 'Using simpletree10a for sph'
-        tree.Add(sourceDir.replace('10', '10a') + '/' + sample.directory + '/simpletree_*.root')
-    else:
-        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
-# TEMPORARY
+    tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
  
     for pname, gen in generators[name].items():
         processor = gen(sample)
