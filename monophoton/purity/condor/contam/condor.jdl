@@ -1,0 +1,12 @@
+getenv = True
+executable = /home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton/purity/condor/contam/exec.sh
+should_transfer_files = YES
+transfer_input_files = /home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton/purity/signalcontam.py, /home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton/purity/selections.py, /home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton/purity/plotiso.py
+universe = vanilla
+log = /scratch5/ballen/hist/purity/simpletree10/sieie/Plots/SignalContam/LOC_SEL_ChIsoCHISO_PhotonPtPT_MetMET/condor.log
+output = /scratch5/ballen/hist/purity/simpletree10/sieie/Plots/SignalContam/LOC_SEL_ChIsoCHISO_PhotonPtPT_MetMET/condor.out
+error = /scratch5/ballen/hist/purity/simpletree10/sieie/Plots/SignalContam/LOC_SEL_ChIsoCHISO_PhotonPtPT_MetMET/condor.err
+requirements = Arch == "X86_64" && OpSysAndVer == "SL6" && HasFileTransfer
+accounting_group = group_cmsuser
+arguments = "LOC SEL CHISO PT MET"
+queue 1
