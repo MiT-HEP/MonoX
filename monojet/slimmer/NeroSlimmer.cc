@@ -535,7 +535,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           if (outTree->photonPt > 0 && checkPdgId == 22) {
             // if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
             //// Look for highest pT for kfactor reasons ////
-            if (tempGen->Pt() > outTree->genBos_pt) {
+            if (tempGen->Pt() > saveGenVec.Pt()) {
               saveGenVec = *tempGen;
               outTree->genBos_PdgId = 22;
             }        
@@ -543,15 +543,16 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         }
         //// Look for Z to nunu here or perhaps a W with missed lepton ////
         else if (checkPdgId == 23 || checkPdgId == 24) {
-          if ((tempGen->Pt() > outTree->genBos_pt && !(checkPdgId == 24 && outTree->genBos_PdgId == 23)) || (abs(outTree->genBos_PdgId) == 24 && checkPdgId == 23)) {
+          if ((tempGen->Pt() > saveGenVec.Pt() && !(checkPdgId == 24 && outTree->genBos_PdgId == 23)) || (abs(outTree->genBos_PdgId) == 24 && checkPdgId == 23)) {
             saveGenVec = *tempGen;
             outTree->genBos_PdgId = abs((*(inTree->genPdgId))[iGen]);
           }
         }
       }
-      outTree->genBos_pt  = saveGenVec.Pt();
-      outTree->genBos_eta = saveGenVec.Eta();
-      outTree->genBos_phi = saveGenVec.Phi();
+      outTree->genBos_pt   = saveGenVec.Pt();
+      outTree->genBos_eta  = saveGenVec.Eta();
+      outTree->genBos_phi  = saveGenVec.Phi();
+      outTree->genBos_mass = saveGenVec.M();
     }
 
     for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
@@ -569,6 +570,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
         outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
         outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
+
+        outTree->fatjet1MonojetId = (*(inTree->fatjetak8Monojetid))[iFatJet];
 
         if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
           outTree->fatleading = 1;
@@ -606,7 +609,10 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
 
-    outTree->Fill();
+    if (outTree->met > 140)
+      outTree->Fill();
+    else
+      outTree->Reset();
 
   }
 

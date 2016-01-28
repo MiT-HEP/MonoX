@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Thu Jan 14 16:31:32 2016 by ROOT version 6.02/13
+// Wed Jan 27 18:43:33 2016 by ROOT version 6.06/00
 // from TTree events/events
-// found on file: ../../../../../eos/cms/store/user/zdemirag/V0004/ttbarsync/nero_0000.root
+// found on file: root://eoscms//eos/cms/store/user/zdemirag/V0005/DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM/nero_0001.root
 //////////////////////////////////////////////////////////
 
 #ifndef NeroTreeBambu_h
@@ -46,23 +46,10 @@ public :
    vector<unsigned int> *jetSelBits;
    vector<float>   *jetQ;
    vector<float>   *jetQnoPU;
-   TClonesArray    *jetpuppiP4;
-   vector<float>   *jetpuppiRawPt;
-   vector<float>   *jetpuppiBdiscr;
-   vector<float>   *jetpuppiBdiscrLegacy;
-   vector<float>   *jetpuppiPuId;
-   vector<float>   *jetpuppiUnc;
-   vector<float>   *jetpuppiQGL;
-   vector<int>     *jetpuppiFlavour;
-   vector<int>     *jetpuppiMatchedPartonPdgId;
-   vector<int>     *jetpuppiMotherPdgId;
-   vector<int>     *jetpuppiGrMotherPdgId;
-   vector<unsigned int> *jetpuppiSelBits;
-   vector<float>   *jetpuppiQ;
-   vector<float>   *jetpuppiQnoPU;
    TClonesArray    *fatjetak8P4;
    vector<float>   *fatjetak8RawPt;
    vector<int>     *fatjetak8Flavour;
+   vector<int>     *fatjetak8Monojetid;
    vector<float>   *fatjetak8Tau1;
    vector<float>   *fatjetak8Tau2;
    vector<float>   *fatjetak8Tau3;
@@ -78,6 +65,7 @@ public :
    TClonesArray    *fatjetca15P4;
    vector<float>   *fatjetca15RawPt;
    vector<int>     *fatjetca15Flavour;
+   vector<int>     *fatjetca15Monojetid;
    vector<float>   *fatjetca15Tau1;
    vector<float>   *fatjetca15Tau2;
    vector<float>   *fatjetca15Tau3;
@@ -90,36 +78,6 @@ public :
    vector<float>   *ca15subjet_btag;
    vector<float>   *fatjetca15Hbb;
    vector<float>   *fatjetca15topMVA;
-   TClonesArray    *fatjetak8puppiP4;
-   vector<float>   *fatjetak8puppiRawPt;
-   vector<int>     *fatjetak8puppiFlavour;
-   vector<float>   *fatjetak8puppiTau1;
-   vector<float>   *fatjetak8puppiTau2;
-   vector<float>   *fatjetak8puppiTau3;
-   vector<float>   *fatjetak8puppiTrimmedMass;
-   vector<float>   *fatjetak8puppiPrunedMass;
-   vector<float>   *fatjetak8puppiFilteredMass;
-   vector<float>   *fatjetak8puppiSoftdropMass;
-   TClonesArray    *ak8puppi_subjet;
-   vector<int>     *ak8puppijet_hasSubjet;
-   vector<float>   *ak8puppisubjet_btag;
-   vector<float>   *fatjetak8puppiHbb;
-   vector<float>   *fatjetak8puppitopMVA;
-   TClonesArray    *fatjetca15puppiP4;
-   vector<float>   *fatjetca15puppiRawPt;
-   vector<int>     *fatjetca15puppiFlavour;
-   vector<float>   *fatjetca15puppiTau1;
-   vector<float>   *fatjetca15puppiTau2;
-   vector<float>   *fatjetca15puppiTau3;
-   vector<float>   *fatjetca15puppiTrimmedMass;
-   vector<float>   *fatjetca15puppiPrunedMass;
-   vector<float>   *fatjetca15puppiFilteredMass;
-   vector<float>   *fatjetca15puppiSoftdropMass;
-   TClonesArray    *ca15puppi_subjet;
-   vector<int>     *ca15puppijet_hasSubjet;
-   vector<float>   *ca15puppisubjet_btag;
-   vector<float>   *fatjetca15puppiHbb;
-   vector<float>   *fatjetca15puppitopMVA;
    TClonesArray    *lepP4;
    vector<int>     *lepPdgId;
    vector<float>   *lepIso;
@@ -218,23 +176,10 @@ public :
    TBranch        *b_jetSelBits;   //!
    TBranch        *b_jetQ;   //!
    TBranch        *b_jetQnoPU;   //!
-   TBranch        *b_jetpuppiP4;   //!
-   TBranch        *b_jetpuppiRawPt;   //!
-   TBranch        *b_jetpuppiBdiscr;   //!
-   TBranch        *b_jetpuppiBdiscrLegacy;   //!
-   TBranch        *b_jetpuppiPuId;   //!
-   TBranch        *b_jetpuppiUnc;   //!
-   TBranch        *b_jetpuppiQGL;   //!
-   TBranch        *b_jetpuppiFlavour;   //!
-   TBranch        *b_jetpuppiMatchedPartonPdgId;   //!
-   TBranch        *b_jetpuppiMotherPdgId;   //!
-   TBranch        *b_jetpuppiGrMotherPdgId;   //!
-   TBranch        *b_jetpuppiSelBits;   //!
-   TBranch        *b_jetpuppiQ;   //!
-   TBranch        *b_jetpuppiQnoPU;   //!
    TBranch        *b_fatjetak8P4;   //!
    TBranch        *b_fatjetak8RawPt;   //!
    TBranch        *b_fatjetak8Flavour;   //!
+   TBranch        *b_fatjetak8Monojetid;   //!
    TBranch        *b_fatjetak8Tau1;   //!
    TBranch        *b_fatjetak8Tau2;   //!
    TBranch        *b_fatjetak8Tau3;   //!
@@ -250,6 +195,7 @@ public :
    TBranch        *b_fatjetca15P4;   //!
    TBranch        *b_fatjetca15RawPt;   //!
    TBranch        *b_fatjetca15Flavour;   //!
+   TBranch        *b_fatjetca15Monojetid;   //!
    TBranch        *b_fatjetca15Tau1;   //!
    TBranch        *b_fatjetca15Tau2;   //!
    TBranch        *b_fatjetca15Tau3;   //!
@@ -262,36 +208,6 @@ public :
    TBranch        *b_ca15subjet_btag;   //!
    TBranch        *b_fatjetca15Hbb;   //!
    TBranch        *b_fatjetca15topMVA;   //!
-   TBranch        *b_fatjetak8puppiP4;   //!
-   TBranch        *b_fatjetak8puppiRawPt;   //!
-   TBranch        *b_fatjetak8puppiFlavour;   //!
-   TBranch        *b_fatjetak8puppiTau1;   //!
-   TBranch        *b_fatjetak8puppiTau2;   //!
-   TBranch        *b_fatjetak8puppiTau3;   //!
-   TBranch        *b_fatjetak8puppiTrimmedMass;   //!
-   TBranch        *b_fatjetak8puppiPrunedMass;   //!
-   TBranch        *b_fatjetak8puppiFilteredMass;   //!
-   TBranch        *b_fatjetak8puppiSoftdropMass;   //!
-   TBranch        *b_ak8puppi_subjet;   //!
-   TBranch        *b_ak8puppijet_hasSubjet;   //!
-   TBranch        *b_ak8puppisubjet_btag;   //!
-   TBranch        *b_fatjetak8puppiHbb;   //!
-   TBranch        *b_fatjetak8puppitopMVA;   //!
-   TBranch        *b_fatjetca15puppiP4;   //!
-   TBranch        *b_fatjetca15puppiRawPt;   //!
-   TBranch        *b_fatjetca15puppiFlavour;   //!
-   TBranch        *b_fatjetca15puppiTau1;   //!
-   TBranch        *b_fatjetca15puppiTau2;   //!
-   TBranch        *b_fatjetca15puppiTau3;   //!
-   TBranch        *b_fatjetca15puppiTrimmedMass;   //!
-   TBranch        *b_fatjetca15puppiPrunedMass;   //!
-   TBranch        *b_fatjetca15puppiFilteredMass;   //!
-   TBranch        *b_fatjetca15puppiSoftdropMass;   //!
-   TBranch        *b_ca15puppi_subjet;   //!
-   TBranch        *b_ca15puppijet_hasSubjet;   //!
-   TBranch        *b_ca15puppisubjet_btag;   //!
-   TBranch        *b_fatjetca15puppiHbb;   //!
-   TBranch        *b_fatjetca15puppitopMVA;   //!
    TBranch        *b_lepP4;   //!
    TBranch        *b_lepPdgId;   //!
    TBranch        *b_lepIso;   //!

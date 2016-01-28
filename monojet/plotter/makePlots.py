@@ -150,7 +150,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
                 if channel is 'signal' :
                     makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
                 else:                
-                    makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*leptonSF*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
+                    makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
             
             else:
                 makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ") *mcWeight*" +str(w)+"*"+str(w_trig),"goff")

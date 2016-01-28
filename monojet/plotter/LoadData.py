@@ -8,7 +8,7 @@ lumi = 1.0
 
 ######################################################
 
-dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut/"
+dataDir = "/afs/cern.ch/work/d/dabercro/public/Winter15/FilterTest/"
 dataDir_eos = dataDir
 
 physics_processes = {

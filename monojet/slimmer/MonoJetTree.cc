@@ -135,6 +135,7 @@ MonoJetTree::Reset()
   genBos_pt = -5;
   genBos_eta = -5;
   genBos_phi = -5;
+  genBos_mass = -5;
   genBos_PdgId = 0;
   genMet = -5;
   genMetPhi = -5;
@@ -151,6 +152,7 @@ MonoJetTree::Reset()
   fatjet1tau2 = 0;
   fatjet1tau1 = 0;
   fatjet1tau21 = 1;
+  fatjet1MonojetId = -1;
   fatjet1QGL = -2;
   fatjet1QVol = -1;
   fatjet1DRGenW = 5;
@@ -222,6 +224,7 @@ MonoJetTree::SetupTree()
   t->Branch("genBos_pt",&genBos_pt,"genBos_pt/F");
   t->Branch("genBos_eta",&genBos_eta,"genBos_eta/F");
   t->Branch("genBos_phi",&genBos_phi,"genBos_phi/F");
+  t->Branch("genBos_mass",&genBos_mass,"genBos_mass/F");
   t->Branch("genBos_PdgId",&genBos_PdgId,"genBos_PdgId/I");
   t->Branch("fatjet1Pt",&fatjet1Pt,"fatjet1Pt/F");
   t->Branch("fatjet1Eta",&fatjet1Eta,"fatjet1Eta/F");
@@ -231,6 +234,7 @@ MonoJetTree::SetupTree()
   t->Branch("fatjet1PrunedM",&fatjet1PrunedM,"fatjet1PrunedM/F");
   t->Branch("fatjet1SoftDropM",&fatjet1SoftDropM,"fatjet1SoftDropM/F");
   t->Branch("fatjet1tau21",&fatjet1tau21,"fatjet1tau21/F");
+  t->Branch("fatjet1MonojetId",&fatjet1MonojetId,"fatjet1MonojetId/I");
   t->Branch("fatjet1DRGenW",&fatjet1DRGenW,"fatjet1DRGenW/F");
   t->Branch("fatjet1GenWPt",&fatjet1GenWPt,"fatjet1GenWPt/F");
   t->Branch("fatjet1GenWMass",&fatjet1GenWMass,"fatjet1GenWMass/F");

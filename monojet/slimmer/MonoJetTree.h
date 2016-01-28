@@ -101,6 +101,7 @@ class MonoJetTree
   float genBos_pt;
   float genBos_eta;
   float genBos_phi;
+  float genBos_mass;
   int   genBos_PdgId;
   float genMet;
   float genMetPhi;
@@ -117,6 +118,7 @@ class MonoJetTree
   float fatjet1tau2;
   float fatjet1tau1;
   float fatjet1tau21;
+  int   fatjet1MonojetId;
   float fatjet1QGL;
   float fatjet1QVol;
   float fatjet1DRGenW;
