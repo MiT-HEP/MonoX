@@ -13,18 +13,18 @@ GTrigger   = '(triggerFired[11]==1 || triggerFired[12]==1 || triggerFired[13]==1
 monoJet = 'jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.5'
 monoV   = 'fatjet1Pt > 250 && fatjet1tau21 < 0.45 && abs(fatjet1PrunedM - 85) < 20 && fatjet1overlapB < 2 && fatjet1Eta < 2.5 && fatjet1MonojetId == 1'
 
-topregion = 'n_mediumlep == 1 && n_looselep == 1 && mt > 50 && n_bjetsLoose > 1 && fatjet1overlapB < 1'
+topregion = 'n_mediumlep == 1 && n_looselep == 1 && trueMet > 30 && n_bjetsLoose > 1 && fatjet1overlapB < 1 && fatjet1Pt > 250 && fatjet1Eta < 2.5 && fatjet1MonojetId == 1'
 
 Zee = str(allMetCut + '&&' + 
           photonVeto + '&&' + 
           diLepton + '&&' + 
-          ETrigger + '&&' + 
+#          ETrigger + '&&' + 
           'lep1PdgId*lep2PdgId == -121')
 
 Zmm = str(allMetCut + '&&' + 
           photonVeto + '&&' + 
           diLepton + '&&' + 
-          METTrigger + '&&' + 
+#          METTrigger + '&&' + 
           'lep1PdgId*lep2PdgId == -169')
 
 Wen = str(allMetCut + '&&' + 
@@ -44,16 +44,31 @@ gjet = str(allMetCut + '&&' +
            GTrigger + '&&' + 
            singlePhoton)
 
+signal = str(allMetCut + '&&' + 
+             leptonVeto + '&&' + 
+             photonVeto + '&&' + 
+             METTrigger)
+
+Zll = '(' + Zee + ')||(' + Zmm + ')'
+
 ZeeMJ  = Zee + '&&' + monoJet
 ZmmMJ  = Zmm + '&&' + monoJet
+ZllMJ  = Zll + '&&' + monoJet
 WenMJ  = Wen + '&&' + monoJet
 WmnMJ  = Wmn + '&&' + monoJet
 gjetMJ = gjet + '&&' + monoJet
 
+signalMJ_unblinded = signal + '&&' + monoJet
+signalMJ = signalMJ_unblinded + '&&' + 'runNum == 1'
+
 ZeeMV  = Zee + '&&' + monoV
 ZmmMV  = Zmm + '&&' + monoV
+ZllMV  = Zll + '&&' + monoV
 WenMV  = Wen + '&&' + monoV
 WmnMV  = Wmn + '&&' + monoV
 gjetMV = gjet + '&&' + monoV
 topMV  = photonVeto + '&&' + topregion + '&&' + monoV
 top    = photonVeto + '&&' + topregion
+
+signalMV_unblinded = signal + '&&' + monoV
+signalMV = signalMV_unblinded + '&&' + 'runNum == 1'

@@ -2,7 +2,7 @@
 
 from LimitTreeMaker import newLimitTreeMaker
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Skimmed/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanSkim/'
 
 shit = [
     [directory + 'monojet_DYJetsToLL_M-50_HT-100to200.root','Zll_ht100',148.0],
