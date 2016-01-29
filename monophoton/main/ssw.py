@@ -11,7 +11,7 @@ from datasets import allsamples
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree10/t2mit/filefi/042'
+sourceDir = '/scratch5/yiiyama/hist/simpletree11/t2mit/filefi/042'
 neroInput = False
 outputDir = '/scratch5/ballen/hist/monophoton/skim/tmp'
 
@@ -252,19 +252,13 @@ if sNames[0] == 'all':
 
 for name in sampleNames:
     sample = allsamples[name]
+    print 'Starting sample', name, str(sampleNames.index(name))+'/'+str(len(sampleNames))
 
     skimmer.reset()
 
     tree = ROOT.TChain('events')
+    tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
 
-# TEMPORARY
-    if 'sph' in name:
-        print 'Using simpletree10a for sph'
-        tree.Add(sourceDir.replace('10', '10a') + '/' + sample.directory + '/simpletree_*.root')
-    else:
-        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
-# TEMPORARY
- 
     for pname, gen in generators[name].items():
         processor = gen(sample)
         skimmer.addProcessor(pname, processor)

@@ -86,7 +86,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
     auto* outputFile(new TFile(outputDir + "/" + sampleName + "_" + processors_[iP].first + ".root", "recreate"));
     skimTrees[iP] = new TTree("events", "events");
-    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
+    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "npv", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
     vetoPhotons[iP].book(*skimTrees[iP], {"vetoPhotons"});
 
     cutTrees[iP] = new TTree(processors_[iP].second->getName() + "CutFlow", "cutflow");
@@ -171,10 +171,11 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     if (pass == 0)
       continue;
     
+    /*
     for (unsigned iP(0); iP != nP; ++iP) {
       if ((pass & (1 << iP)) == 0)
         continue;
-
+      
       if (!processors_[iP].second->vetoTaus(event)) {
         pass &= ~(1 << iP);
         cutTrees[iP]->Fill();
@@ -182,7 +183,8 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       else
         ++cut[iP];
     }
-    
+    */
+
     if (pass == 0)
       continue;
 
@@ -210,6 +212,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       outEvents[iP].run = event.run;
       outEvents[iP].lumi = event.lumi;
       outEvents[iP].event = event.event;
+      outEvents[iP].npv = event.npv;
 
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
         processors_[iP].second->calculateMet(event, outEvents[iP]);
@@ -421,7 +424,7 @@ EventProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _o
     return false;
 
   /*
-  if (!(_outEvent.t1Met.dPhiJetMetMin > 0.2))
+  if (!(_outEvent.t1Met.dPhiJetMetMin > 0.5))
     return false;
   */
 
