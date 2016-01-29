@@ -171,7 +171,6 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     if (pass == 0)
       continue;
     
-    /*
     for (unsigned iP(0); iP != nP; ++iP) {
       if ((pass & (1 << iP)) == 0)
         continue;
@@ -183,7 +182,6 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       else
         ++cut[iP];
     }
-    */
 
     if (pass == 0)
       continue;
@@ -303,7 +301,7 @@ EventProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _o
 bool
 EventProcessor::vetoTaus(simpletree::Event const& _event)
 {
-  return true;
+  // return true;
 
   unsigned iTau(0);
   for (; iTau != _event.taus.size(); ++iTau) {

@@ -200,7 +200,8 @@ else:
     sys.exit(0)
 
 countDef = VariableDef('N_{cand}', '', '0.5', cutStringHighMet+' && (photons.pt[0] > %f)' % (175.), (1, 0., 1.))
-limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', '(photons.pt[0] > %f)' % (175.), ( [175. + 25. * x for x in range(18)], [0. + 50. * x for x in range(13)]), is2D = True)
+limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', cutString+' && (photons.pt[0] > %f)' % (175.), 
+                        ( [175. + 25. * x for x in range(18)], [0. + 50. * x for x in range(13)]), is2D = True)
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
 blind = 5
@@ -410,7 +411,7 @@ for sName in obs.samples:
         hists['obs'] = hist2D
         hists['obs'].SetName('data_obs')
 
-limitFile = ROOT.TFile("/home/ballen/cms/root/monoph.root", "RECREATE")
+limitFile = ROOT.TFile("/home/ballen/cms/root/monoph_tauveto.root", "RECREATE")
 limitFile.cd()
 for name, hist in hists.iteritems():
     hist.Write()
