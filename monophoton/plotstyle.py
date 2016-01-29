@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import ROOT
 
 ROOT.gStyle.SetOptStat(0)
@@ -27,25 +28,31 @@ def makeText(x1, y1, x2, y2, textalign = 22, font = 42):
     return pave
 
 
-def makeAxis(axis, a1, a2, b, vmin = 0., vmax = 1., ndiv = 205, font = 42, log = False):
+def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., vmin = 0., vmax = 1., ndiv = 205, font = 42, titleSize = 0.048, log = False, blank = True):
     if axis == 'X':
-        args = (a1, b, a2, b, vmin, vmax, ndiv)
+        args = (xmin, y, xmax, y, vmin, vmax, ndiv)
     elif axis == 'Y':
-        args = (b, a1, b, a2, vmin, vmax, ndiv)
+        args = (x, ymin, x, ymax, vmin, vmax, ndiv)
     else:
         raise RuntimeError('Invalid axis ' + axis)
 
+    options = 'S'
     if log:
-        args = tuple(list(args) + ['G'])
+        options += 'G'
+    if blank:
+        options += 'B'
+
+    args = tuple(list(args) + [options])
 
     gaxis = ROOT.TGaxis(*args)
 
     gaxis.SetLabelFont(font)
     gaxis.SetTitleFont(font)
-    gaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset(axis))
-    gaxis.SetTitleSize(0.048)
-    gaxis.SetLabelSize(0.042)
-    gaxis.SetTickSize(0.)
+    gaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset(axis) * 0.048 / titleSize)
+    gaxis.SetTitleSize(titleSize)
+    gaxis.SetLabelSize(0.875 * titleSize)
+    gaxis.SetTickLength(0.)
+    gaxis.SetGridLength(0.)
 
     return gaxis
 
@@ -85,7 +92,7 @@ class Legend(object):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
-        self.legend.SetTextSize(0.04)
+        self.legend.SetTextSize(0.035)
         self.legend.SetTextFont(42)
         self.legend.SetTextAlign(12)
 
@@ -192,17 +199,23 @@ class Histogram(object):
 
 
 class SimpleCanvas(object):
+
+    XMIN = 0.15
+    XMAX = 0.95
+    YMIN = 0.12
+    YMAX = 0.92
+
     def __init__(self, name = 'cSimple', title = 'simple', lumi = -1., sim = False, cms = True):
         self.canvas = ROOT.TCanvas(name, title, 600, 600)
-        self.canvas.SetTopMargin(0.08)
-        self.canvas.SetRightMargin(0.05)
-        self.canvas.SetBottomMargin(0.12)
-        self.canvas.SetLeftMargin(0.15)
+        self.canvas.SetTopMargin(1. - SimpleCanvas.YMAX)
+        self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
+        self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
+        self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
 
         self._histograms = []
         self._objects = []
 
-        self.legend = Legend(0.7, 0.6, 0.95, 0.95)
+        self.legend = Legend(0.7, 0.55, 0.95, SimpleCanvas.YMAX - 0.03)
 
         self._logy = True
 
@@ -213,17 +226,17 @@ class SimpleCanvas(object):
         self.title = ''
         self.textside = 'left'
 
-        self.titlePave = makeText(0.15, 0.92, 0.95, 1.)
+        self.titlePave = makeText(SimpleCanvas.XMIN, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1.)
 
         if cms:
-            self.cmsPave = makeText(0.18, 0.8, 0.3, 0.91, textalign = 11, font = 62)
+            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX - 0.12, 0.3, SimpleCanvas.YMAX - 0.01, textalign = 11, font = 62)
             if sim:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
             else:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Preliminary}}')
     
             if lumi > 0.:
-                self.lumiPave = makeText(0.6, 0.96, 0.92, 1., textalign = 33)
+                self.lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., textalign = 32)
                 if lumi > 1000.:
                     self.lumiPave.AddText('%.1f fb^{-1} (13 TeV)' % (lumi / 1000.))
                 else:
@@ -437,18 +450,24 @@ class SimpleCanvas(object):
 
 class RatioCanvas(SimpleCanvas):
 
+    PLOT_YMIN = 0.32
+    PLOT_YMAX = SimpleCanvas.YMAX
+    RATIO_YMIN = 0.1
+    RATIO_YMAX = 0.29
+
     def __init__(self, name = 'cRatio', title = 'Ratio', lumi = -1., sim = False, cms = True):
         SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms)
 
         self.canvas.SetCanvasSize(600, 680)
 
-        self.xaxis = makeAxis('X', 0.15, 0.95, 0.1)
+        self.xaxis = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMIN)
+        self.xaxis.SetTitleOffset(self.xaxis.GetTitleOffset() * 1.1)
         self.xtitle = ''
 
-        self.yaxis = makeAxis('Y', 0.31, 0.92, 0.15, vmin = 0.1, vmax = 1., log = True)
+        self.yaxis = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMIN, vmin = 0.1, vmax = 1., log = True)
         self.ytitle = ''
 
-        self.raxis = makeAxis('Y', 0.1, 0.29, 0.15, vmax = 2.)
+        self.raxis = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMIN, vmax = 2., titleSize = 0.036)
         self.rtitle = 'data / MC'
 
         self.rlimits = (0., 2.)
@@ -462,11 +481,11 @@ class RatioCanvas(SimpleCanvas):
         
         self.plotPad = self.canvas.cd(1)
         self.plotPad.SetPad(0., 0., 1., 1.)
-        self.plotPad.SetMargin(0.15, 0.05, 0.31, 0.08) # lrbt
+        self.plotPad.SetMargin(SimpleCanvas.XMIN, 1. - SimpleCanvas.XMAX, RatioCanvas.PLOT_YMIN, 1. - SimpleCanvas.YMAX) # lrbt
         self.plotPad.SetLogy(self._logy)
         
         self.ratioPad = self.canvas.cd(2)
-        self.ratioPad.SetPad(0.15, 0.1, 0.95, 0.29)
+        self.ratioPad.SetPad(SimpleCanvas.XMIN, RatioCanvas.RATIO_YMIN, SimpleCanvas.XMAX, RatioCanvas.RATIO_YMAX)
         self.ratioPad.SetMargin(0., 0., 0., 0.)
         self.ratioPad.SetTickx(1)
 
@@ -487,19 +506,9 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmax(self.rlimits[1])
 
     def Update(self, hList = [], rList = [], logy = None):
-        if logy is not None:
-            self.plotPad.SetLogy(logy)
-            if logy:
-                self.yaxis.SetOption('G')
-            else:
-                self.yaxis.SetOption('')
-
-            self.yaxis.SetWmin(self.plotPad.PadtoY(self.plotPad.GetUymin()))
-            self.yaxis.SetWmax(self.plotPad.PadtoY(self.plotPad.GetUymax()))
-            self.yaxis.Draw()
-            self.canvas.Update()
-
         if not self._needUpdate:
+            if logy is not None:
+                self._updateYaxis(logy)
             return
 
         if logy is None:
@@ -703,22 +712,26 @@ class RatioCanvas(SimpleCanvas):
             self.ratioPad.Update()
 
         self.canvas.cd()
+        self.canvas.Update()
+        self.plotPad.Update()
 
-        self.xaxis.SetWmin(self.plotPad.PadtoX(self.plotPad.GetUxmin()))
-        self.xaxis.SetWmax(self.plotPad.PadtoX(self.plotPad.GetUxmax()))
+        self.xaxis.SetWmin(self.plotPad.GetUxmin())
+        self.xaxis.SetWmax(self.plotPad.GetUxmax())
         self.xaxis.Draw()
 
         if logy:
             self.yaxis.SetOption('G')
+            self.yaxis.SetWmin(math.exp(2.302585092994 * self.plotPad.GetUymin()))
+            self.yaxis.SetWmax(math.exp(2.302585092994 * self.plotPad.GetUymax()))
         else:
             self.yaxis.SetOption('')
+            self.yaxis.SetWmin(self.plotPad.GetUymin())
+            self.yaxis.SetWmax(self.plotPad.GetUymax())
 
-        self.yaxis.SetWmin(self.plotPad.PadtoY(self.plotPad.GetUymin()))
-        self.yaxis.SetWmax(self.plotPad.PadtoY(self.plotPad.GetUymax()))
         self.yaxis.Draw()
 
-        self.raxis.SetWmin(self.ratioPad.PadtoY(self.ratioPad.GetUymin()))
-        self.raxis.SetWmax(self.ratioPad.PadtoY(self.ratioPad.GetUymax()))
+        self.raxis.SetWmin(self.ratioPad.GetUymin())
+        self.raxis.SetWmax(self.ratioPad.GetUymax())
         self.raxis.Draw()
 
         if self.ytitle:
@@ -737,6 +750,22 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.Update()
 
         self._needUpdate = False
+
+    def _updateYaxis(self, logy):
+        self.plotPad.SetLogy(logy)
+        self.canvas.Update()
+
+        if logy:
+            self.yaxis.SetOption('G')
+            self.yaxis.SetWmin(math.exp(2.302585092994 * self.plotPad.GetUymin()))
+            self.yaxis.SetWmax(math.exp(2.302585092994 * self.plotPad.GetUymax()))
+        else:
+            self.yaxis.SetOption('')
+            self.yaxis.SetWmin(self.plotPad.GetUymin())
+            self.yaxis.SetWmax(self.plotPad.GetUymax())    
+
+        self.yaxis.Draw()
+        self.canvas.Update()
 
 
 class DataMCCanvas(RatioCanvas):
@@ -819,21 +848,9 @@ class DataMCCanvas(RatioCanvas):
         return idx
 
     def Update(self, logy = None):
-        if logy is not None:
-            self.plotPad.SetLogy(logy)
-
-            if logy:
-                self.yaxis.SetOption('G')
-            else:
-                self.yaxis.SetOption('')
-
-            self.yaxis.SetTickSize(0.)
-            self.yaxis.SetWmin(self.plotPad.PadtoY(self.plotPad.GetUymin()))
-            self.yaxis.SetWmax(self.plotPad.PadtoY(self.plotPad.GetUymax()))
-            self.yaxis.Draw()
-            self.canvas.Update()
-
         if not self._needUpdate:
+            if logy is not None:
+                self._updateYaxis(logy)
             return
 
         gDirectory = ROOT.gDirectory
