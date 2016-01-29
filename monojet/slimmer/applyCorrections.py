@@ -5,7 +5,7 @@ import os,sys
 
 directory = sys.argv[1]
 
-applicator = Corrector.MakeApplicator('mcFactors',True,'events','events',100000)
+applicator = Corrector.MakeApplicator('mcFactors',True,'events','corrections',100000)
 
 def addCorr(name,expr,cut,fileName,histName):
     applicator.AddCorrector(Corrector.MakeCorrector(name,expr,cut,fileName,histName))
