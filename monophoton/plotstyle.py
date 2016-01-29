@@ -138,7 +138,18 @@ class Legend(object):
         for at in Legend.Attributes:
             value = getattr(entry, 'Get' + at)()
             if value != -1:
-                getattr(obj, 'Set' + at)(value)
+                try:
+                    getattr(obj, 'Set' + at)(value)
+                except:
+                    pass
+
+    @staticmethod
+    def copyStyle(src, dest):
+        for at in Legend.Attributes:
+            try:
+                getattr(dest, 'Set' + at)(getattr(src, 'Get' + at)())
+            except:
+                pass
 
     def construct(self, order = []):
         if self.legend.GetListOfPrimitives().GetEntries() != 0:
@@ -167,17 +178,17 @@ class Legend(object):
 
 
 class Histogram(object):
-    def __init__(self, histogram, drawOpt, useRooPlot = False):
+    def __init__(self, histogram, drawOpt, useRooHist = False):
         self.histogram = histogram
         self.drawOpt = drawOpt
-        self.useRooPlot = useRooPlot
+        self.useRooHist = useRooHist
 
     def __getattr__(self, attr):
         return getattr(self.histogram, attr)
 
     def Clone(self, name = ''):
         clone = self.histogram.Clone(name)
-        return Histogram(clone, self.drawOpt, self.useRooPlot)
+        return Histogram(clone, self.drawOpt, self.useRooHist)
 
 
 class SimpleCanvas(object):
@@ -257,9 +268,9 @@ class SimpleCanvas(object):
             # new histogram
             if clone:
                 self._hStore.cd()
-                self._histograms.append(Histogram(hist.Clone(), drawOpt.upper(), useRooPlot = asymErr))
+                self._histograms.append(Histogram(hist.Clone(), drawOpt.upper(), useRooHist = asymErr))
             else:
-                self._histograms.append(Histogram(hist, drawOpt.upper(), useRooPlot = asymErr))
+                self._histograms.append(Histogram(hist, drawOpt.upper(), useRooHist = asymErr))
 
             newHist = self._histograms[-1]
             try:
@@ -343,15 +354,19 @@ class SimpleCanvas(object):
 
         if len(hList) > 0:
             base = self._histograms[hList[0]]
-            if base.histogram.InheritsFrom(ROOT.TGraph.Class()):
-                base.Draw('A' + base.drawOpt)
+            if base.useRooHist:
+                graph = ROOT.RooHist(base.histogram)
+                self._temporaries.append(graph)
+                graph.Draw('A' + base.drawOpt)
             else:
                 base.Draw(base.drawOpt)
 
             for ih in hList[1:]:
                 hist = self._histograms[ih]
-                if hist.histogram.InheritsFrom(ROOT.TH1.Class()):
-                    hist.Draw(hist.drawOpt + ' SAME')
+                if hist.useRooHist:
+                    graph = ROOT.RooHist(hist.histogram)
+                    self._temporaries.append(graph)
+                    graph.Draw(hist.drawOpt)
                 else:
                     hist.Draw(hist.drawOpt)
     
@@ -499,6 +514,9 @@ class RatioCanvas(SimpleCanvas):
         self.plotPad.cd()
         self.plotPad.SetLogy(logy)
 
+        # map the original histograms to RooHists
+        rooHists = {}
+
         # list of histograms to draw
         if len(hList) == 0:
             hList = range(len(self._histograms))
@@ -506,7 +524,13 @@ class RatioCanvas(SimpleCanvas):
         if len(hList) > 0:
             # draw base
             base = self._histograms[hList[0]]
-            base.Draw(base.drawOpt)
+            if base.useRooHist:
+                graph = ROOT.RooHist(base.histogram)
+                self._temporaries.append(graph)
+                rooHists[base] = graph
+                graph.Draw('A' + base.drawOpt)
+            else:
+                base.Draw(base.drawOpt)
 
             self.plotPad.Update()
     
@@ -519,8 +543,14 @@ class RatioCanvas(SimpleCanvas):
                         base.SetMaximum(hist.GetMaximum() * 5.)
                     else:
                         base.SetMaximum(hist.GetMaximum() * 1.3)
-    
-                hist.Draw(hist.drawOpt + ' SAME')
+
+                if hist.useRooHist:
+                    graph = ROOT.RooHist(hist.histogram)
+                    self._temporaries.append(graph)
+                    rooHists[hist] = graph
+                    graph.Draw(hist.drawOpt)
+                else:
+                    hist.Draw(hist.drawOpt + ' SAME')
 
             self.plotPad.Update()
     
@@ -556,8 +586,31 @@ class RatioCanvas(SimpleCanvas):
             rbase = self._histograms[rList[0]].Clone('rbase')
             ratios.append(rbase)
             self._temporaries.append(rbase)
+
+            # normalize rbase and keep the bin contents
+            rnorms = []
+            for iX in range(1, rbase.GetNbinsX() + 1):
+                norm = rbase.GetBinContent(iX)
+                rnorms.append(norm)
+                if norm > 0.:
+                    rbase.SetBinError(iX, rbase.GetBinError(iX) / norm)
+                    rbase.SetBinContent(iX, 1.)
+                else:
+                    rbase.SetBinError(iX, 0.)
+                    rbase.SetBinContent(iX, 0.)
+
+            # draw rbase
+            rbase.Draw(rbase.drawOpt)
+            rbase.SetMinimum(self.rlimits[0])
+            rbase.SetMaximum(self.rlimits[1])
+
+            # draw the base line
+            if not ('HIST' in rbase.drawOpt and rbase.GetLineWidth() > 0):
+                rline = ROOT.TLine(0., 1., 1., 1.)
+                rline.Draw()
+                self._temporaries.append(rline)
     
-            # first use rbase to normalize others
+            # use rnorms to normalize others
             for ir in rList[1:]:
                 hist = self._histograms[ir]
     
@@ -567,66 +620,73 @@ class RatioCanvas(SimpleCanvas):
                 ratios.append(ratio)
                 self._temporaries.append(ratio)
     
-                if hist.InheritsFrom(ROOT.TH1.Class()):
-                    for iX in range(1, rbase.GetNbinsX() + 1):
-                        norm = rbase.GetBinContent(iX)
-                        if norm > 0.:
-                            ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
-                            ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
+                for iX in range(1, ratio.GetNbinsX() + 1):
+                    norm = rnorms[iX - 1]
+                    if norm > 0.:
+                        ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
+                        ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
+                    else:
+                        ratio.SetBinError(iX, 0.)
+                        ratio.SetBinContent(iX, 0.)
+
+                if 'P' in ratio.drawOpt or ratio.useRooHist:
+                    # graph or using RooHist
+                    graph = ROOT.TGraphAsymmErrors(ratio.GetNbinsX())
+                    self._temporaries.append(graph)
+                    Legend.copyStyle(ratio, graph)
+
+                    for iP in range(graph.GetN()):
+                        norm = rnorms[iP]
+
+                        x = ratio.GetXaxis().GetBinCenter(iP + 1)
+                        y = ratio.GetBinContent(iP + 1)
+                        
+                        if ratio.useRooHist:
+                            if norm > 0.:
+                                errhigh = rooHists[hist].GetErrorYhigh(iP) / norm
+                                errlow = rooHists[hist].GetErrorYlow(iP) / norm
+                            else:
+                                errhigh = 0.
+                                errlow = 0.
                         else:
-                            ratio.SetBinError(iX, 0.)
-                            ratio.SetBinContent(iX, 0.)
-    
-                elif hist.InheritsFrom(ROOT.TGraph.Class()):
-                    for iP in range(rbase.GetNbinsX()):
-                        iX = iP + 1
-                        norm = rbase.GetBinContent(iX)
-                        x = hist.GetX()[iP]
-                        if norm > 0.:
-                            ratio.SetPoint(iP, x, hist.GetY()[iP] / norm)
-                            errhigh = hist.GetErrorYhigh(iP) / norm
-                            errlow = hist.GetErrorYlow(iP) / norm
-                            try:
-                                ratio.SetPointError(iP, 0., 0., errlow, errhigh)
-                            except:
-                                try:
-                                    ratio.SetPointError(iP, 0., errhigh)
-                                except:
-                                    pass
-                        else:
-                            ratio.SetPoint(iP, x, 0.)
-                            try:
-                                ratio.SetPointError(iP, 0., 0., 0., 0.)
-                            except:
-                                try:
-                                    ratio.SetPointError(iP, 0., 0.)
-                                except:
-                                    pass
-    
-            # then normalize rbase
-            for iX in range(1, rbase.GetNbinsX() + 1):
-                norm = rbase.GetBinContent(iX)
-                if norm > 0.:
-                    rbase.SetBinError(iX, rbase.GetBinError(iX) / norm)
-                    rbase.SetBinContent(iX, 1.)
+                            errhigh = ratio.GetBinError(iP + 1)
+                            errlow = ratio.GetBinError(iP + 1)
+
+                        graph.SetPoint(iP, x, y)
+                        graph.SetPointEYhigh(iP, errhigh)
+                        graph.SetPointEYlow(iP, errlow)
+
+                        if y + errhigh < self.rlimits[0] or y - errlow > self.rlimits[1]:
+                            if y < self.rlimits[0]:
+                                end = 1. - (1. - self.rlimits[0]) * 0.95
+                            else:
+                                end = 1. + (self.rlimits[1] - 1.) * 0.95
+
+                            arrow = ROOT.TArrow(x, 1., x, end, ratio.GetMarkerSize() * 0.015, '|>')
+                            arrow.SetFillStyle(1001)
+                            arrow.SetFillColor(ratio.GetMarkerColor())
+                            arrow.SetLineColor(ratio.GetLineColor())
+                            arrow.SetLineStyle(ROOT.kDashed)
+                            arrow.SetLineWidth(ratio.GetLineWidth())
+                            self._temporaries.append(arrow)
+                            arrow.Draw()
+
+                        elif y < self.rlimits[0] or y > self.rlimits[1]:
+                            if y < self.rlimits[0]:
+                                low = self.rlimits[0]
+                                high = min(y + errhigh, self.rlimits[1])
+                            else:
+                                low = max(y - errlow, self.rlimits[0])
+                                high = self.rlimits[1]
+
+                            bar = ROOT.TLine(x, low, x, high)
+                            Legend.copyStyle(ratio, bar)
+                            self._temporaries.append(bar)
+                            bar.Draw()
+
+                    graph.Draw(ratio.drawOpt + 'Z')
                 else:
-                    rbase.SetBinError(iX, 0.)
-                    rbase.SetBinContent(iX, 0.)
-    
-            # draw rbase
-            rbase.Draw(rbase.drawOpt)
-            rbase.SetMinimum(self.rlimits[0])
-            rbase.SetMaximum(self.rlimits[1])
-    
-            # draw the base line
-            if not ('HIST' in rbase.drawOpt and rbase.GetLineWidth() > 0):
-                rline = ROOT.TLine(0., 1., 1., 1.)
-                rline.Draw()
-                self._temporaries.append(rline)
-    
-            # draw other ratios
-            for ratio in ratios[1:]:
-                ratio.Draw(ratio.drawOpt + ' SAME')
+                    ratio.Draw(ratio.drawOpt + ' SAME')
 
             rbase.SetTitle('')
             rbase.GetXaxis().SetTitle('')
