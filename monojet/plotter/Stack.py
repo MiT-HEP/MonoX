@@ -3,9 +3,11 @@
 from StackPlotter import stackPlotter
 from array import array
 import cuts
+import os
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanSkim/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/FatSkim/'
 
+stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
 stackPlotter.SetAllHist('htotal')
 stackPlotter.SetLuminosity(2109.0)
@@ -15,32 +17,15 @@ stackPlotter.SetMCWeights("mcFactors")
 stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.5)
 stackPlotter.SetDefaultExpr('met')
 stackPlotter.SetEventsPer(1.0)
+stackPlotter.SetMinLegendFrac(0.005)
 stackPlotter.SetRatioMinMax(0.5,1.5)
 
 xArray = [200,250,300,350,400,500,600,1000]
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160128/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160129_fuck/'
 
-stackPlotter.SetDefaultWeight(cuts.signalMJ)
-stackPlotter.MakeCanvas(outDir + 'signalMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-exit()
-
-stackPlotter.SetDefaultWeight(cuts.ZmmMJ)
-stackPlotter.MakeCanvas(outDir + 'ZmmMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-stackPlotter.SetDefaultWeight(cuts.ZeeMJ)
-stackPlotter.MakeCanvas(outDir + 'ZeeMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-stackPlotter.SetDefaultWeight(cuts.WmnMJ)
-stackPlotter.MakeCanvas(outDir + 'WmnMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-stackPlotter.SetDefaultWeight(cuts.WenMJ)
-stackPlotter.MakeCanvas(outDir + 'WenMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-stackPlotter.SetDefaultWeight(cuts.gjetMJ)
-stackPlotter.MakeCanvas(outDir + 'gjetMJ_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
-
-###
+if not os.path.exists(outDir):
+    os.makedirs(outDir)
+##
 
 stackPlotter.SetDefaultWeight(cuts.ZmmMV)
 stackPlotter.MakeCanvas(outDir + 'ZmmMV_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
@@ -57,10 +42,11 @@ stackPlotter.MakeCanvas(outDir + 'WenMV_met',len(xArray)-1,array('d',xArray),"|U
 stackPlotter.SetDefaultWeight(cuts.gjetMV)
 stackPlotter.MakeCanvas(outDir + 'gjetMV_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
 
-stackPlotter.SetMCWeights("puWeight * mcWeight * lepton_SF")
-
 stackPlotter.SetDefaultWeight(cuts.topMV)
 stackPlotter.MakeCanvas(outDir + 'topMV_met',len(xArray)-1,array('d',xArray),"|U| [GeV]", "Events Per GeV",True)
+
+stackPlotter.SetDefaultWeight(cuts.signalMV)
+stackPlotter.MakeCanvas(outDir + 'signalMV_met',len(xArray)-1,array('d',xArray),"MET [GeV]", "Events Per GeV",True)
 
 stackPlotter.SetDefaultWeight(cuts.top)
 

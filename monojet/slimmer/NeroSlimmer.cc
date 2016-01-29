@@ -609,7 +609,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
 
-    if (outTree->met > 140)
+    if (outTree->fatjet1Pt > 0)
       outTree->Fill();
     else
       outTree->Reset();
