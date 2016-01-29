@@ -294,7 +294,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       }
 
-      if (iJet < 5) {
+      if (iJet < 4) {
         checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
         if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
           outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
@@ -324,11 +324,11 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         }
       }
 
-      if (iJet == 0 && fabs(tempJet->Eta()) > 2.5)
+      if (iJet == 0 && fabs(tempJet->Eta()) > 2.4)
         outTree->leadingJet_outaccp = 1;
 
       //// Ignore jets that are not in this region ////
-      if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62 || tempJet->Pt() < 15.0)
+      if (fabs(tempJet->Eta()) > 2.4 || (*(inTree->jetPuId))[iJet] < -0.62 || tempJet->Pt() < 15.0)
         continue;
 
       //// Count jets for b-tagging ////

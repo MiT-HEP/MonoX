@@ -10,7 +10,7 @@ export CrombieEosDir=/store/user/zdemirag/V0005
 export CrombieRegDir=/afs/cern.ch/work/d/dabercro/eos/cms$CrombieEosDir
 export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
 export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullFat
-export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FatSkim
+export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FatMETSkim
 #export CrombieDirList=TTbarSync.txt
 #export CrombieDirList=TestMET.txt
 
