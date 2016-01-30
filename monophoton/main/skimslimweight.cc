@@ -86,7 +86,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
     auto* outputFile(new TFile(outputDir + "/" + sampleName + "_" + processors_[iP].first + ".root", "recreate"));
     skimTrees[iP] = new TTree("events", "events");
-    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
+    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "npv", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
     vetoPhotons[iP].book(*skimTrees[iP], {"vetoPhotons"});
 
     cutTrees[iP] = new TTree(processors_[iP].second->getName() + "CutFlow", "cutflow");
@@ -170,11 +170,11 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
     if (pass == 0)
       continue;
-
+    
     for (unsigned iP(0); iP != nP; ++iP) {
       if ((pass & (1 << iP)) == 0)
         continue;
-
+      
       if (!processors_[iP].second->vetoTaus(event)) {
         pass &= ~(1 << iP);
         cutTrees[iP]->Fill();
@@ -210,11 +210,12 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       outEvents[iP].run = event.run;
       outEvents[iP].lumi = event.lumi;
       outEvents[iP].event = event.event;
+      outEvents[iP].npv = event.npv;
 
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
         processors_[iP].second->calculateMet(event, outEvents[iP]);
 
-        outEvents[iP].jets.clear();
+	outEvents[iP].jets.clear();
         processors_[iP].second->cleanJets(event, outEvents[iP]);
 
         if (!processors_[iP].second->selectMet(event, outEvents[iP])) {
@@ -341,9 +342,6 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
       continue;
 
     if (photonSelection(photon) && photonEVeto(photon) && photon.sieie > 0.001 && photon.pt > minPhotonPt_) {
-      // if (photon.eta > 0. && photon.eta < 0.14 && photon.phi > 0.52 && photon.phi < 0.55)
-      //   return false;
-
       // unsigned iM(0);
       // for (; iM != _event.muons.size(); ++iM) {
       //   if (deltaR2(_event.muons[iM], photon) < 0.01)
@@ -364,6 +362,9 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
 bool
 EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
+  float dPhiJetMet = 5.;
+  float dPhiJetMetMin = 5.;
+
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
@@ -392,7 +393,14 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
       continue;
 
     _outEvent.jets.push_back(jet);
+
+    if (iJ > 3)
+      continue;
+
+    dPhiJetMet = TMath::Abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)); 
+    dPhiJetMetMin = TMath::Min(dPhiJetMetMin, dPhiJetMet);
   }
+  _outEvent.t1Met.dPhiJetMetMin = dPhiJetMetMin;
 
   return _outEvent.jets.size() != 0;
 }
@@ -406,23 +414,16 @@ EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event&
 bool
 EventProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
 {
-  if (std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) < 2.)
+  if (!(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
     return false;
 
-  unsigned iJ(0);
-  for (; iJ != 4; ++iJ) {
-    if (iJ == _outEvent.jets.size())
-      break;
-
-    auto& jet(_outEvent.jets[iJ]);
-    if (std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - jet.phi)) < 0.5)
-      break;
-  }
-  if (iJ != 4 && iJ != _outEvent.jets.size())
+  /*
+  if (!(_outEvent.t1Met.dPhiJetMetMin > 0.5))
     return false;
+  */
 
   return true;
-} 
+}
 
 void
 EventProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)

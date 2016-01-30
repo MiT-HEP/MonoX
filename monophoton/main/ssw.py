@@ -271,19 +271,26 @@ print ' '.join(sampleNames)
 if sNames[0] == 'all':
     sys.exit(0)
 
+if not os.path.exists(config.skimDir):
+    os.makedirs(config.skimDir)
+
 for name in sampleNames:
     sample = allsamples[name]
+    print 'Starting sample', name, str(sampleNames.index(name))+'/'+str(len(sampleNames))
 
     skimmer.reset()
 
     tree = ROOT.TChain('events')
+    # tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
 
+# TEMPORARY
     if name.startswith('sph') or name.startswith('sel') or name.startswith('smu'):
         print 'Reading', name, 'from simpletree11a'
-        tree.Add(sourceDir + '/' + sample.directory.replace('simpletree11', 'simpletree11a') + '/simpletree_*.root')
+        tree.Add(sourceDir.replace('11','11a') + '/' + sample.directory + '/simpletree_*.root')
     else:
         tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
- 
+# TEMPORARY
+
     for pname, gen in generators[name].items():
         processor = gen(sample)
         skimmer.addProcessor(pname, processor)
