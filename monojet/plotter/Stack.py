@@ -11,7 +11,7 @@ directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
 stackPlotter.SetAllHist('htotal')
-stackPlotter.SetLuminosity(2109.0)
+stackPlotter.SetLuminosity(2240.0)
 stackPlotter.AddDataFile(directory + 'monojet_Data.root')
 #stackPlotter.ReadMCConfig('MCFiles.txt',directory)
 stackPlotter.ReadMCConfig('MCSig.txt',directory)
