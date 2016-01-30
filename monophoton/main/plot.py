@@ -11,10 +11,9 @@ basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
 from plotstyle import *
 from datasets import allsamples
+import config
 
 ROOT.gROOT.SetBatch(True)
-
-sourceDir = '/scratch5/ballen/hist/monophoton/skim'
 
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
@@ -60,6 +59,33 @@ if region == 'monoph':
         'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', '', (40, 0., math.pi)),
         'dPhiJetMetHighMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutHighMet, (40, 0., math.pi)),
         'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
+    }
+
+elif region == 'lowmt':
+    defsel = 'lowmt'
+    obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
+    bkgGroups = [
+        ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
+        ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakelowmt'), ('sph-d4', 'hfakelowmt')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efakelowmt'), ('sph-d4', 'efakelowmt')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
+        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
+        ('zg', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
+    ]
+
+    wenuCut = 't1Met.met > 40. && jets.size == 0'
+    cutHighMet += ' && jets.size == 0'
+    
+    variables = {
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
+        'phoPtHighMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutHighMet, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', wenuCut, (20, -1.5, 1.5)),
+        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', wenuCut, (20, -math.pi, math.pi)),
+        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', wenuCut, (20, -math.pi, math.pi)),
+        'dPhiPhoMetHighMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cutHighMet, (20, -math.pi, math.pi)),
+        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', wenuCut, (40, 0., 100.)),
+        'metPhiHighMet': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutHighMet, (20, -math.pi, math.pi))
     }
 
 elif region == 'dimu':
@@ -186,7 +212,7 @@ sensitiveCanvas = DataMCCanvas(lumi = lumi / blind)
 simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
-    source = ROOT.TFile.Open(sourceDir + '/' + sampledef.name + '_' + selection + '.root')
+    source = ROOT.TFile.Open(config.skimDir + '/' + sampledef.name + '_' + selection + '.root')
     tree = source.Get('events')
 
     if type(vardef.binning) is list:
@@ -264,7 +290,7 @@ for varname, vardef in variables.items():
         canvas = normalCanvas
 
     canvas.Clear(full = True)
-    canvas.legend.setPosition(0.6, 0.6, 0.92, 0.92)
+    canvas.legend.setPosition(0.6, 0.55, 0.92, SimpleCanvas.YMAX - 0.01)
 
     for gName, group in bkgGroups:
         idx = -1

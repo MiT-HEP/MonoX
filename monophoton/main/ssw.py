@@ -8,12 +8,12 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
+import config
 
 sNames = sys.argv[1:]
 
 sourceDir = '/scratch5/yiiyama/hist/simpletree11/t2mit/filefi/042'
 neroInput = False
-outputDir = '/scratch5/ballen/hist/monophoton/skim'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.Load('libNeroProducerCore.so')
@@ -140,6 +140,23 @@ def makeHadronProxyProcessor(sample):
 def makeEMPlusJetProcessor(sample):
     return ROOT.EMPlusJetProcessor()
 
+def makeLowMtProcessor(sample):
+    return ROOT.LowMtProcessor()
+
+def makeWenuProxyLowMtProcessor(sample):
+    global eleproxyweight
+
+    proc = ROOT.WenuProxyLowMtProcessor(eleproxyweight.GetY()[4])
+    proc.setWeightErr(eleproxyweight.GetErrorY(4))
+    return proc
+
+def makeHadronProxyLowMtProcessor(sample):
+    global hadproxyweight
+
+    proc = ROOT.HadronProxyLowMtProcessor(1.)
+    proc.setReweight(hadproxyweight)
+    return proc
+
 def makeGenWlnuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
 
@@ -158,28 +175,31 @@ def makeGenZnnProxyProcessor(sample):
 def makeGenHadronProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenHadronProcessor)
 
+def makeGenLowMtProcessor(sample):
+    return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
+
 generators = {
-    'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor},
-    'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor},
+    'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
+    'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'wlnu': {'monoph': makeGenWlnuProcessor},
-    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor},
-    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor},
-    'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor},
-    'znng-130': {'monoph':makeGenProcessor},
+    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
+    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
+    'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
+    'znng-130': {'monoph':makeGenProcessor, 'lowmt': makeGenLowMtProcessor},
     'dy-50': {'monoph': makeGenProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
     'znn-400': {'monoph': makeGenHadronProcessor},
     'znn-600': {'monoph': makeGenHadronProcessor},
-    'g-40': {'monoph':makeGenGJetProcessor},
-    'g-100': {'monoph':makeGenGJetProcessor},
-    'g-200': {'monoph':makeGenGJetProcessor},
-    'g-400': {'monoph':makeGenGJetProcessor},
-    'g-600': {'monoph':makeGenGJetProcessor},
+    'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'qcd-200': {'monoph':makeGenProcessor},
     'qcd-300': {'monoph':makeGenProcessor},
     'qcd-500': {'monoph':makeGenProcessor},
@@ -229,6 +249,7 @@ gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
 gidscale = gidSource.Get('scalefactor')
 
 badEventsList = ROOT.EventList()
+# will be in /cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/MitPhysics/data/eventlist soon
 badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_csc2015.txt')
 badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_ecalscn1043093.txt')
 
@@ -257,10 +278,14 @@ for name in sampleNames:
 
     tree = ROOT.TChain('events')
 
-    tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+    if name.startswith('sph') or name.startswith('sel') or name.startswith('smu'):
+        print 'Reading', name, 'from simpletree11a'
+        tree.Add(sourceDir + '/' + sample.directory.replace('simpletree11', 'simpletree11a') + '/simpletree_*.root')
+    else:
+        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
  
     for pname, gen in generators[name].items():
         processor = gen(sample)
         skimmer.addProcessor(pname, processor)
 
-    skimmer.run(tree, outputDir, name, -1, neroInput)
+    skimmer.run(tree, config.skimDir, name, -1, neroInput)

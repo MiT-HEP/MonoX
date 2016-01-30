@@ -214,15 +214,15 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
         processors_[iP].second->calculateMet(event, outEvents[iP]);
 
+        outEvents[iP].jets.clear();
+        processors_[iP].second->cleanJets(event, outEvents[iP]);
+
         if (!processors_[iP].second->selectMet(event, outEvents[iP])) {
           cutTrees[iP]->Fill();
           continue;
         }
         else
           ++cut[iP];
-
-        outEvents[iP].jets.clear();
-        processors_[iP].second->cleanJets(event, outEvents[iP]);
 
         processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
@@ -248,7 +248,6 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 bool
 EventProcessor::passTrigger(simpletree::Event const& _event)
 {
-  //  return _event.hlt[simpletree::kPhoton165HE10].pass || _event.hlt[simpletree::kPhoton135MET100].pass || _event.hlt[simpletree::kPhoton175].pass;
   return _event.hlt[simpletree::kPhoton165HE10].pass;
 }
 
@@ -256,6 +255,9 @@ bool
 EventProcessor::beginEvent(simpletree::Event const& _event)
 {
   if (eventList_ && eventList_->inList(_event))
+    return false;
+
+  if (!_event.metFilters.pass())
     return false;
 
   sortPhotons_(_event);
@@ -300,8 +302,6 @@ EventProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _o
 bool
 EventProcessor::vetoTaus(simpletree::Event const& _event)
 {
-  return true;
-
   unsigned iTau(0);
   for (; iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
@@ -404,10 +404,25 @@ EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event&
 }
 
 bool
-EventProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+EventProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
 {
-  return std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.;
-}
+  if (std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) < 2.)
+    return false;
+
+  unsigned iJ(0);
+  for (; iJ != 4; ++iJ) {
+    if (iJ == _outEvent.jets.size())
+      break;
+
+    auto& jet(_outEvent.jets[iJ]);
+    if (std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - jet.phi)) < 0.5)
+      break;
+  }
+  if (iJ != 4 && iJ != _outEvent.jets.size())
+    return false;
+
+  return true;
+} 
 
 void
 EventProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -913,4 +928,15 @@ GenHadronProcessor::beginEvent(simpletree::Event const& _event)
     return false;
 
   return EventProcessor::beginEvent(_event);
+}
+
+
+bool
+LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
+{
+  double dPhi(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi));
+  if (std::abs(dPhi) > 2.)
+    return false;
+
+  return 2 * _outEvent.t1Met.met * _outEvent.photons[0].pt * (1 - std::cos(dPhi)) < 90. * 90.;
 }
