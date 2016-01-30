@@ -259,6 +259,9 @@ EventProcessor::beginEvent(simpletree::Event const& _event)
   if (eventList_ && eventList_->inList(_event))
     return false;
 
+  if (!_event.metFilters.pass())
+    return false;
+
   sortPhotons_(_event);
   outReady_ = true;
   return true;

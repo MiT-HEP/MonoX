@@ -65,10 +65,6 @@ if region == 'monoph':
         'phoEtaHighMet'+str(cutMet): VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cutStringHighMet, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cutString, (20, -math.pi, math.pi)),
         'phoPhiHighMet'+str(cutMet): VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cutStringHighMet, (20, -math.pi, math.pi)),
-        'sieie': VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutString, (24, 0., 0.012)),
-        'sieieHighMet'+str(cutMet): VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutStringHighMet, (24, 0., 0.012)),
-        # 'R9': VariableDef('R9', '', 'photons.R9', cutString, (100, 0., 1.)),
-        # 'R9HighMet'+str(cutMet): VariableDef('R9', '', 'photons.R9', cutStringHighMet, (100, 0., 1.)),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', cutString, 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', 't1Met.met > 40.', (20, -math.pi, math.pi)),
         'dPhiPhoMetHighMet'+str(cutMet): VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cutStringHighMet, (20, -math.pi, math.pi)),
         'metPhi': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutString, (20, -math.pi, math.pi)),
@@ -77,16 +73,30 @@ if region == 'monoph':
         'dPhiJetMetHighMet'+str(cutMet): VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutStringHighMet, (30, 0., math.pi)),
         'dPhiJetMetMin': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', '', (30, 0., math.pi), overflow = True),
         'dPhiJetMetMinHighMet'+str(cutMet): VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', cutHighMet, (30, 0., math.pi), overflow = True),
-        'njets': VariableDef('N_{jet}', '', 'jets.size', cutString, (10, 0., 10.)),
-        'njetsHighMet'+str(cutMet): VariableDef('N_{jet}', '', 'jets.size', cutStringHighMet, (10, 0., 10.)),
-        'phoPtOverMet': VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutString, (20,0.,10.)),
-        'phoPtOverMetHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutStringHighMet, (20,0.,10.)),
+        'njets': VariableDef('N_{jet}', '', 'jets.size', cutString, (6, 0., 6.)),
+        'njetsHighMet'+str(cutMet): VariableDef('N_{jet}', '', 'jets.size', cutStringHighMet, (6, 0., 6.)),
+        'phoPtOverMet': VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutString, (20,0.,4.)),
+        'phoPtOverMetHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutStringHighMet, (20,0.,4.)),
         'phoPtOverJetPt': VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', cutString, (20,0.,10.)),
         'phoPtOverJetPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', cutStringHighMet, (20,0.,10.)),
         'nVertex': VariableDef('N_{vertex}', '', 'npv', cutString, (40,0.,40.)),
-        'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (40,0.,40.))
-    }
-
+        'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (40,0.,40.)),
+        'sieie': VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutString, (16, 0.004, 0.012)),
+        'sieieHighMet'+str(cutMet): VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutStringHighMet, (16, 0.004, 0.012)),
+        'r9': VariableDef('r9', '', 'photons.r9', cutString, (50, 0.5, 1.)),
+        'r9HighMet'+str(cutMet): VariableDef('r9', '', 'photons.r9', cutStringHighMet, (50, 0.5, 1.)),
+        's4': VariableDef('s4', '', 'photons.s4', cutString, (50, 0.5, 1.)),
+        's4HighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet, (50, 0.5, 1.)),
+        'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', cutString, (60, 0.004, .016)),
+        'etaWidthHighMet'+str(cutMet): VariableDef('etaWidth', '', 'photons.etaWidth', cutStringHighMet, (60, 0.004, .016)),
+        'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', cutString, (25, 0., .05)),
+        'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (25, 0., 0.05)),
+        'time': VariableDef('time', '', 'photons.time', cutString, (40, -4., 4.)),
+        'timeHighMet'+str(cutMet): VariableDef('time', '', 'photons.time', cutStringHighMet, (40, -4., 4.)),
+        'timeSpan': VariableDef('timeSpan', '', 'photons.timeSpan', cutString, (40, -20., 20.)),
+        'timeSpanHighMet'+str(cutMet): VariableDef('timeSpan', '', 'photons.timeSpan', cutStringHighMet, (40, -20., 20.))
+        }
+    
 elif region == 'dimu':
     defsel = 'dimu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
