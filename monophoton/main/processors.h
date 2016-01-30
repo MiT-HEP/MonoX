@@ -261,7 +261,8 @@ class EMPlusJetProcessor : public EMObjectProcessor {
 class HadronProxyProcessor : public EMObjectProcessor {
   // Require exactly 1 hadron-proxy photon object
  public:
- HadronProxyProcessor(double _weightNorm, char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name), EMObjectProcessor() {}
+  HadronProxyProcessor() {}
+  HadronProxyProcessor(double _weightNorm, char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name), EMObjectProcessor() {}
   ~HadronProxyProcessor() {}
 
   void setReweight(TH1* _rwgt) { reweight_ = _rwgt; }
@@ -281,4 +282,32 @@ class GenHadronProcessor : public GenProcessor {
   ~GenHadronProcessor() {}
 
   bool beginEvent(simpletree::Event const&) override;
+};
+
+class LowMtProcessor : public virtual EventProcessor {
+  // Inverting dPhi(met, photon) cut and requiring Mt(photon) < 90 GeV
+
+ public:
+  LowMtProcessor(double _weightNorm = 1., char const* _name = "LowMtProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~LowMtProcessor() {}
+  
+  bool selectMet(simpletree::Event const&, simpletree::Event&) override;
+};
+
+class WenuProxyLowMtProcessor : public LowMtProcessor, public WenuProxyProcessor {
+ public:
+  WenuProxyLowMtProcessor(double _weightNorm, char const* _name = "WenuProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), WenuProxyProcessor() {}
+  ~WenuProxyLowMtProcessor() {}
+};
+
+class HadronProxyLowMtProcessor : public LowMtProcessor, public HadronProxyProcessor {
+ public:
+  HadronProxyLowMtProcessor(double _weightNorm, char const* _name = "HadronProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), HadronProxyProcessor() {}
+  ~HadronProxyLowMtProcessor() {}
+};
+
+class GenLowMtProcessor : public LowMtProcessor, public GenProcessor {
+ public:
+  GenLowMtProcessor(double _weightNorm, char const* _name = "GenLowMtProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
+  ~GenLowMtProcessor() {}
 };

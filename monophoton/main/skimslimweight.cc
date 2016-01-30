@@ -249,7 +249,6 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 bool
 EventProcessor::passTrigger(simpletree::Event const& _event)
 {
-  //  return _event.hlt[simpletree::kPhoton165HE10].pass || _event.hlt[simpletree::kPhoton135MET100].pass || _event.hlt[simpletree::kPhoton175].pass;
   return _event.hlt[simpletree::kPhoton165HE10].pass;
 }
 
@@ -304,8 +303,6 @@ EventProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _o
 bool
 EventProcessor::vetoTaus(simpletree::Event const& _event)
 {
-  // return true;
-
   unsigned iTau(0);
   for (; iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
@@ -345,9 +342,6 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
       continue;
 
     if (photonSelection(photon) && photonEVeto(photon) && photon.sieie > 0.001 && photon.pt > minPhotonPt_) {
-      // if (photon.eta > 0. && photon.eta < 0.14 && photon.phi > 0.52 && photon.phi < 0.55)
-      //   return false;
-
       // unsigned iM(0);
       // for (; iM != _event.muons.size(); ++iM) {
       //   if (deltaR2(_event.muons[iM], photon) < 0.01)
@@ -418,9 +412,8 @@ EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event&
 }
 
 bool
-EventProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+EventProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
 {
-  
   if (!(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
     return false;
 
@@ -936,4 +929,15 @@ GenHadronProcessor::beginEvent(simpletree::Event const& _event)
     return false;
 
   return EventProcessor::beginEvent(_event);
+}
+
+
+bool
+LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
+{
+  double dPhi(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi));
+  if (std::abs(dPhi) > 2.)
+    return false;
+
+  return 2 * _outEvent.t1Met.met * _outEvent.photons[0].pt * (1 - std::cos(dPhi)) < 90. * 90.;
 }
