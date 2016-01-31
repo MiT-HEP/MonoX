@@ -15,6 +15,8 @@ import config
 
 ROOT.gROOT.SetBatch(True)
 
+COUNTONLY = True
+
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
 class VariableDef(object):
@@ -39,7 +41,8 @@ cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 cutdPhiJetMetMin = '(t1Met.dPhiJetMetMin > 0.5)'
 
 #cutString = 'photons.s4[0] < 0.95 && ' + cutdPhiJetMetMin
-cutString = cutdPhiJetMetMin
+#cutString = cutdPhiJetMetMin
+cutString = 'TMath::Abs(photons.time[0]) < 3. && photons.mipEnergy[0] < 6.3 && photons.s4[0] < 0.95'
 if cutString:
     cutStringHighMet = cutString+' && '+cutHighMet
 else:
@@ -239,17 +242,14 @@ else:
     print 'Unknown region', region
     sys.exit(0)
 
-countDef = VariableDef('N_{cand}', '', '0.5', cutStringHighMet+' && (photons.pt[0] > %f)' % (175.), (1, 0., 1.))
-limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', cutString+' && (photons.pt[0] > %f)' % (175.), 
+countDef = VariableDef('N_{cand}', '', '0.5', cutStringHighMet, (1, 0., 1.))
+limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', '',
                         ( [175. + 25. * x for x in range(18)], [0. + 50. * x for x in range(13)]), is2D = True)
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
 blind = 1
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
-
-canvas = DataMCCanvas(lumi = lumi)
-simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     source = ROOT.TFile.Open(config.skimDir + '/' + sampledef.name + '_' + selection + '.root')
@@ -306,8 +306,6 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
         arr = array.array('d', binning)
         hist.SetBins(len(binning) - 1, arr)
 
-    
-
     hist.SetDirectory(0)
     if vardef.is2D:
         xtitle = vardef.title[0]
@@ -347,56 +345,62 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
     return hist
 
-print "Starting plot making."
 
-for varname, vardef in variables.items():
-    isSensitive = region in sensitive and varname in sensitive[region]
+if not COUNTONLY:
 
-    canvas.Clear(full = True)
-    canvas.legend.setPosition(0.6, 0.55, 0.92, SimpleCanvas.YMAX - 0.01)
-
-    if isSensitive:
-        canvas.lumi = lumi / blind
-
-    for gName, group in bkgGroups:
-        idx = -1
-        for sName in group.samples:
-            if type(sName) is tuple:
-                selection = sName[1]
-                sName = sName[0]
-            else:
-                selection = defsel
-
-            hist = getHist(allsamples[sName], selection, varname, vardef)
-
-            for iX in range(1, hist.GetNbinsX() + 1):
-                if hist.GetBinContent(iX) < 0.:
-                    hist.SetBinContent(iX, 0.)
-
-            if isSensitive and blind > 1:
-                hist.Scale(1. / blind)
-
-            idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
-            
-    if isSensitive:
-        for sGroup in sigGroups:
+    canvas = DataMCCanvas(lumi = lumi)
+    simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
+    
+    print "Starting plot making."
+    
+    for varname, vardef in variables.items():
+        isSensitive = region in sensitive and varname in sensitive[region]
+    
+        canvas.Clear(full = True)
+        canvas.legend.setPosition(0.6, 0.55, 0.92, SimpleCanvas.YMAX - 0.01)
+    
+        if isSensitive:
+            canvas.lumi = lumi / blind
+    
+        for gName, group in bkgGroups:
             idx = -1
-            for sName in sGroup.samples:
-                hist = getHist(allsamples[sName], defsel, varname, vardef)
-                if blind > 1:
+            for sName in group.samples:
+                if type(sName) is tuple:
+                    selection = sName[1]
+                    sName = sName[0]
+                else:
+                    selection = defsel
+    
+                hist = getHist(allsamples[sName], selection, varname, vardef)
+    
+                for iX in range(1, hist.GetNbinsX() + 1):
+                    if hist.GetBinContent(iX) < 0.:
+                        hist.SetBinContent(iX, 0.)
+    
+                if isSensitive and blind > 1:
                     hist.Scale(1. / blind)
-
-                idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
-
-    for sName in obs.samples:
-        hist = getHist(allsamples[sName], defsel, varname, vardef, isSensitive)
-        canvas.addObs(hist, title = obs.title)
-
-    canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
-    canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
-
-    canvas.printWeb('monophoton/' + region, varname)
-    # canvas.printWeb('monophoton/' + region, varname + '-linear', logy = False)
+    
+                idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
+                
+        if isSensitive:
+            for sGroup in sigGroups:
+                idx = -1
+                for sName in sGroup.samples:
+                    hist = getHist(allsamples[sName], defsel, varname, vardef)
+                    if blind > 1:
+                        hist.Scale(1. / blind)
+    
+                    idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
+    
+        for sName in obs.samples:
+            hist = getHist(allsamples[sName], defsel, varname, vardef, isSensitive)
+            canvas.addObs(hist, title = obs.title)
+    
+        canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
+        canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
+    
+        canvas.printWeb('monophoton/' + region, varname)
+        # canvas.printWeb('monophoton/' + region, varname + '-linear', logy = False)
 
 print "Finished plotting."
 print "Counting yields and preparing limits file."
