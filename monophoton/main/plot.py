@@ -30,7 +30,11 @@ class VariableDef(object):
 
 region = sys.argv[1]
 
-cutMet = int(sys.argv[2])
+try:
+    cutMet = int(sys.argv[2])
+except IndexError:
+    cutMet = 150
+
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 cutdPhiJetMetMin = '(t1Met.dPhiJetMetMin > 0.5)'
 
@@ -446,7 +450,7 @@ for sName in obs.samples:
         hists['obs'] = hist2D
         hists['obs'].SetName('data_obs')
 
-limitFile = ROOT.TFile("/home/ballen/cms/root/monoph_tauveto.root", "RECREATE")
+limitFile = ROOT.TFile(config.histDir + "/monoph_tauveto.root", "RECREATE")
 limitFile.cd()
 for name, hist in hists.iteritems():
     hist.Write()
