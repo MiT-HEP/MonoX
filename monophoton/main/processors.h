@@ -67,7 +67,7 @@ class EventProcessor {
   virtual bool vetoElectrons(simpletree::Event const&, simpletree::Event&);
   virtual bool vetoMuons(simpletree::Event const&, simpletree::Event&);
   virtual bool vetoTaus(simpletree::Event const&);
-  virtual bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&);
+  virtual bool selectPhotons(simpletree::Event const&, simpletree::Event&);
   virtual bool cleanJets(simpletree::Event const&, simpletree::Event&);
   virtual void calculateMet(simpletree::Event const&, simpletree::Event&);
   virtual bool selectMet(simpletree::Event const&, simpletree::Event&);
@@ -178,7 +178,7 @@ class WenuProxyProcessor : public virtual EventProcessor {
   ~WenuProxyProcessor() {}
 
   bool vetoElectrons(simpletree::Event const&, simpletree::Event&) override;
-  bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 
   void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
 
@@ -197,7 +197,7 @@ class ZeeProxyProcessor : public virtual EventProcessor {
 
   bool passTrigger(simpletree::Event const&) override;
   bool vetoElectrons(simpletree::Event const&, simpletree::Event&) override;
-  bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
   bool prepareOutput(simpletree::Event const&, simpletree::Event&) override;
 
   void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
@@ -246,7 +246,7 @@ class EMObjectProcessor : public virtual EventProcessor {
   EMObjectProcessor(double _weightNorm, char const* _name = "EMObjectProcessor") : EventProcessor(_weightNorm, _name) {}
   ~EMObjectProcessor() {}
 
-  bool selectPhotons(simpletree::Event const&, simpletree::Event&, simpletree::PhotonCollection&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 };
 
 class EMPlusJetProcessor : public EMObjectProcessor {
