@@ -80,11 +80,17 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
   std::vector<TTree*> cutTrees(nP, 0);
   std::vector<simpletree::Event> outEvents(nP);
   std::vector<unsigned short> cut(nP, 0);
+  std::vector<bool*> tauVeto(nP, 0); // cannot use std::vetor<bool> because that is not quite an array of bools
+  std::vector<bool*> metIso(nP, 0);
   
   for (unsigned iP(0); iP != nP; ++iP) {
     auto* outputFile(new TFile(outputDir + "/" + sampleName + "_" + processors_[iP].first + ".root", "recreate"));
     skimTrees[iP] = new TTree("events", "events");
     outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "npv", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
+    tauVeto[iP] = new bool;
+    metIso[iP] = new bool;
+    skimTrees[iP]->Branch("tauVeto", tauVeto[iP], "tauVeto/O");
+    skimTrees[iP]->Branch("t1Met.iso", metIso[iP], "iso/O");
 
     cutTrees[iP] = new TTree(processors_[iP].second->getName() + "CutFlow", "cutflow");
     cutTrees[iP]->Branch("run", &event.run, "run/i");
@@ -159,9 +165,11 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         }))
       continue;
 
-    if (!passAny([this, &event](unsigned iP)->bool {
+    if (!passAny([this, &event, &tauVeto](unsigned iP)->bool {
 
-          return this->processors_[iP].second->vetoTaus(event);
+          //          return this->processors_[iP].second->vetoTaus(event);
+          *tauVeto[iP] = this->processors_[iP].second->vetoTaus(event);
+          return true;
 
         }))
       continue;
@@ -197,8 +205,9 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         bool selectMet(processors_[iP].second->selectMet(event, outEvents[iP]));
         updateCutFlow(selectMet, iP);
 
-        if (!selectMet)
-          continue;
+        // if (!selectMet)
+        //   continue;
+        *metIso[iP] = selectMet;
 
         processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
@@ -220,6 +229,8 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     delete skimTrees[iP];
     delete cutTrees[iP];
     delete file;
+    delete tauVeto[iP];
+    delete metIso[iP];
   }
 
   delete translator;
@@ -344,9 +355,6 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
 bool
 EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  float dPhiJetMet = 5.;
-  float dPhiJetMetMin = 5.;
-
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
@@ -375,14 +383,7 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
       continue;
 
     _outEvent.jets.push_back(jet);
-
-    if (iJ > 3)
-      continue;
-
-    dPhiJetMet = TMath::Abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)); 
-    dPhiJetMetMin = TMath::Min(dPhiJetMetMin, dPhiJetMet);
   }
-  _outEvent.t1Met.dPhiJetMetMin = dPhiJetMetMin;
 
   return true;
 }
@@ -399,10 +400,10 @@ EventProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent
   if (!(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
     return false;
 
-  /*
-  if (!(_outEvent.t1Met.dPhiJetMetMin > 0.5))
-    return false;
-  */
+  for (unsigned iJ(0); iJ != _outEvent.jets.size() && iJ != 4; ++iJ) {
+    if (std::abs(TVector2::Phi_mpi_pi(_outEvent.jets[iJ].phi - _outEvent.t1Met.phi)) < 0.5)
+      return false;
+  }
 
   return true;
 }
