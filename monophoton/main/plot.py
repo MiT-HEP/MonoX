@@ -38,6 +38,7 @@ except IndexError:
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 cutdPhiJetMetMin = '(t1Met.dPhiJetMetMin > 0.5)'
 
+#cutString = 'photons.s4[0] < 0.95 && ' + cutdPhiJetMetMin
 cutString = cutdPhiJetMetMin
 if cutString:
     cutStringHighMet = cutString+' && '+cutHighMet
@@ -243,12 +244,11 @@ limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met
                         ( [175. + 25. * x for x in range(18)], [0. + 50. * x for x in range(13)]), is2D = True)
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
-blind = 5
+blind = 1
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
 
-normalCanvas = DataMCCanvas(lumi = lumi)
-sensitiveCanvas = DataMCCanvas(lumi = lumi / blind)
+canvas = DataMCCanvas(lumi = lumi)
 simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
@@ -352,13 +352,11 @@ print "Starting plot making."
 for varname, vardef in variables.items():
     isSensitive = region in sensitive and varname in sensitive[region]
 
-    if isSensitive:
-        canvas = sensitiveCanvas
-    else:
-        canvas = normalCanvas
-
     canvas.Clear(full = True)
     canvas.legend.setPosition(0.6, 0.55, 0.92, SimpleCanvas.YMAX - 0.01)
+
+    if isSensitive:
+        canvas.lumi = lumi / blind
 
     for gName, group in bkgGroups:
         idx = -1
@@ -403,7 +401,7 @@ for varname, vardef in variables.items():
 print "Finished plotting."
 print "Counting yields and preparing limits file."
 
-canvas = simpleCanvas
+#canvas = simpleCanvas # this line causes segfault somewhere down the line of DataMCCanvas destruction
 hists = {}
 counts = {}
 for gName, group in bkgGroups:
