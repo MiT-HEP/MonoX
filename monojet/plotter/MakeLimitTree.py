@@ -1,8 +1,10 @@
 #! /usr/bin/python
 
 from LimitTreeMaker import newLimitTreeMaker
+import cuts
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanSkim/'
+#directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanSkim/'
+directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
 
 shit = [
     [directory + 'monojet_DYJetsToLL_M-50_HT-100to200.root','Zll_ht100',148.0],
@@ -39,33 +41,31 @@ shit = [
     [directory + 'monojet_Data.root','data',-1]
 ]
 
+ltm = newLimitTreeMaker('testLimit.root')
+
+ltm.SetTreeName('events')
+ltm.AddKeepBranch('met')
+ltm.AddKeepBranch('genBos_pt')
+ltm.AddKeepBranch('jet1Pt')
+ltm.AddWeightBranch('mcFactors')
+ltm.SetAllHistName('htotal')
+ltm.SetOutputWeightBranch('scaleMC_w')
+ltm.SetLuminosity(2109.0)
+    
+ltm.AddRegion('Zmm',cuts.ZmmMV)
+    
+ltm.AddRegion('Wmn',cuts.WmnMV)
+    
+ltm.AddRegion('Wen',cuts.WenMV)
+    
+ltm.AddRegion('Zee',cuts.ZeeMV)
+    
+ltm.AddRegion('signal',cuts.signalMV_unblinded)
+    
+ltm.AddRegion('gjets',cuts.gjetMV)
+
 for thing in shit:
-
-    ltm = newLimitTreeMaker('limits/' + thing[1] + '.root')
-
-    ltm.SetTreeName('events')
-    ltm.AddKeepBranch('met')
-    ltm.AddKeepBranch('genBos_pt')
-    ltm.AddKeepBranch('jet1Pt')
-    ltm.AddWeightBranch('mcFactors')
-    ltm.SetAllHistName('htotal')
-    ltm.SetOutputWeightBranch('scaleMC_w')
-    ltm.SetLuminosity(2109.0)
-    
-    monoVCut = '&& fatjet1tau21 < 0.45 && fatjet1PrunedM > 65 && fatjet1PrunedM < 105 &&fatjet1Pt > 250 && fatjet1Eta < 2.5 && fatjet1MonojetId == 1'
-
-    ltm.AddRegion('Zmm','(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)&&n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -169)&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&&n_tightlep > 0&&abs(minJetMetDPhi_withendcap)>0.5&&met>200.0' + monoVCut)
-    
-    ltm.AddRegion('Wmn','(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&& n_tightlep > 0&&abs(minJetMetDPhi_withendcap)>0.5&&n_looselep == 1 && abs(lep1PdgId)==13 &&met>200.0' + monoVCut)
-    
-    ltm.AddRegion('Wen','(triggerFired[4]==1) || (triggerFired[5]==1) || (triggerFired[11]==1 || triggerFired[12]==1 || triggerFired[13]==1)&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&&n_tightlep > 0&&abs(minJetMetDPhi_withendcap)>0.5&&n_looselep == 1 && abs(lep1PdgId)==11 && trueMet > 50 &&met > 200.0' + monoVCut)
-    
-    ltm.AddRegion('Zee','(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)&&n_looselep == 2 && abs(dilep_m - 91) < 30 && (lep1PdgId*lep2PdgId == -121)&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&&n_tightlep > 0&&abs(minJetMetDPhi_withendcap)>0.5&&met>200.0' + monoVCut)
-    
-    ltm.AddRegion('signal','(triggerFired[0]==1 || triggerFired[1]==1 || triggerFired[2]==1)&&n_looselep==0&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&&abs(minJetMetDPhi_clean)>0.5&&met>200.0' + monoVCut)
-    
-    ltm.AddRegion('gjets','(triggerFired[11]==1 || triggerFired[12]==1 || triggerFired[13]==1)&&photonPt > 175 && abs(photonEta) < 1.4442 && n_mediumpho == 1 && n_loosepho == 1&&n_looselep==0&&n_tau==0&&n_bjetsMedium==0&&n_loosepho==0&&met > 200' + monoVCut)
-
     ltm.AddFile(thing[0],thing[1],thing[2])
+##
 
-    ltm.MakeTree()
+ltm.MakeTrees()
