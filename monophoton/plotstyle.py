@@ -381,7 +381,7 @@ class SimpleCanvas(object):
                     self._temporaries.append(graph)
                     graph.Draw(hist.drawOpt)
                 else:
-                    hist.Draw(hist.drawOpt)
+                    hist.Draw(hist.drawOpt + ' SAME')
     
                 if hist.GetMaximum() > base.GetMaximum():
                     if logy:
