@@ -225,6 +225,7 @@ class SimpleCanvas(object):
 
         self.title = ''
         self.textside = 'left'
+        self.lumi = lumi
 
         self.titlePave = makeText(SimpleCanvas.XMIN, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1.)
 
@@ -234,15 +235,7 @@ class SimpleCanvas(object):
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
             else:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Preliminary}}')
-    
-            if lumi > 0.:
-                self.lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., textalign = 32)
-                if lumi > 1000.:
-                    self.lumiPave.AddText('%.1f fb^{-1} (13 TeV)' % (lumi / 1000.))
-                else:
-                    self.lumiPave.AddText('%.1f pb^{-1} (13 TeV)' % lumi)
-            else:
-                self.lumiPave = None
+
         else:
             self.cmsPave = None
 
@@ -372,7 +365,11 @@ class SimpleCanvas(object):
                 self._temporaries.append(graph)
                 graph.Draw('A' + base.drawOpt)
             else:
-                base.Draw(base.drawOpt)
+                drawOpt = base.drawOpt
+                if base.InheritsFrom(ROOT.TGraph.Class()):
+                    drawOpt += 'A'
+
+                base.Draw(drawOpt)
 
             for ih in hList[1:]:
                 hist = self._histograms[ih]
@@ -381,7 +378,11 @@ class SimpleCanvas(object):
                     self._temporaries.append(graph)
                     graph.Draw(hist.drawOpt)
                 else:
-                    hist.Draw(hist.drawOpt)
+                    drawOpt = hist.drawOpt
+                    if hist.InheritsFrom(ROOT.TH1.Class()):
+                        drawOpt += ' SAME'
+
+                    hist.Draw(drawOpt)
     
                 if hist.GetMaximum() > base.GetMaximum():
                     if logy:
@@ -433,8 +434,17 @@ class SimpleCanvas(object):
                 self.cmsPave.SetTextAlign(11)
     
             self.cmsPave.Draw()
-            if self.lumiPave:
-                self.lumiPave.Draw()
+
+            if self.lumi > 0.:
+                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., textalign = 32)
+                self._temporaries.append(lumiPave)
+
+                if self.lumi > 1000.:
+                    lumiPave.AddText('%.1f fb^{-1} (13 TeV)' % (self.lumi / 1000.))
+                else:
+                    lumiPave.AddText('%.1f pb^{-1} (13 TeV)' % self.lumi)
+
+                lumiPave.Draw()
 
     def printWeb(self, directory, name, logy = None, **options):
         self.Update(logy = logy, **options)
@@ -771,7 +781,7 @@ class RatioCanvas(SimpleCanvas):
 class DataMCCanvas(RatioCanvas):
 
     def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1.):
-        RatioCanvas.__init__(self, name = name+'_'+str(lumi), title = title, lumi = lumi)
+        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi)
 
         self._obs = -1
         self._bkgs = []

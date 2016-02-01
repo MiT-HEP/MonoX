@@ -14,6 +14,7 @@ sNames = sys.argv[1:]
 
 sourceDir = '/scratch5/yiiyama/hist/simpletree11a/t2mit/filefi/042'
 dataSourceDir = sourceDir
+
 neroInput = False
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
@@ -167,6 +168,20 @@ def makeGenWenuProcessor(sample):
 def makeGenWenuProxyProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWenuProxyProcessor)
 
+def makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialProcessor):
+    proc = makeGenProcessor(sample, cls = cls)
+
+    with open(basedir + '/data/znng_kfactor.dat') as source:
+        source.readline()
+        for line in source:
+            pt, kfactor = map(float, line.split())
+            proc.setPtBin(pt, kfactor)
+
+    return proc
+
+def makeGenZnnLowMtProcessor(sample):
+    return makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialLowMtProcessor)
+
 def makeGenGJetProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenGJetProcessor)
 
@@ -190,7 +205,7 @@ generators = {
     'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
-    'znng-130': {'monoph':makeGenProcessor, 'lowmt': makeGenLowMtProcessor},
+    'znng-130': {'monoph':makeGenZnnProcessor, 'lowmt': makeGenZnnLowMtProcessor},
     'dy-50': {'monoph': makeGenProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
@@ -283,7 +298,7 @@ for name in sampleNames:
 
     tree = ROOT.TChain('events')
 
-    if name.startswith('sph') or name.startswith('sel') or name.startswith('smu'):
+    if sample.data:
         print 'Reading', name, 'from', dataSourceDir
         tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
     else:
