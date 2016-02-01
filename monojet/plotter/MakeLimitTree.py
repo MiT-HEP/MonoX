@@ -3,8 +3,8 @@
 from LimitTreeMaker import newLimitTreeMaker
 import cuts
 
-#directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanSkim/'
-directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
+#directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
 
 shit = [
     [directory + 'monojet_DYJetsToLL_M-50_HT-100to200.root','Zll_ht100',148.0],
@@ -41,7 +41,7 @@ shit = [
     [directory + 'monojet_Data.root','data',-1]
 ]
 
-ltm = newLimitTreeMaker('testLimit.root')
+ltm = newLimitTreeMaker('limits/MonoJetLimitsTrees.root')
 
 ltm.SetTreeName('events')
 ltm.AddKeepBranch('met')
@@ -52,17 +52,17 @@ ltm.SetAllHistName('htotal')
 ltm.SetOutputWeightBranch('scaleMC_w')
 ltm.SetLuminosity(2109.0)
     
-ltm.AddRegion('Zmm',cuts.ZmmMV)
+ltm.AddRegion('Zmm',cuts.ZmmMJ)
     
-ltm.AddRegion('Wmn',cuts.WmnMV)
+ltm.AddRegion('Wmn',cuts.WmnMJ)
     
-ltm.AddRegion('Wen',cuts.WenMV)
+ltm.AddRegion('Wen',cuts.WenMJ)
     
-ltm.AddRegion('Zee',cuts.ZeeMV)
+ltm.AddRegion('Zee',cuts.ZeeMJ)
     
-ltm.AddRegion('signal',cuts.signalMV_unblinded)
+ltm.AddRegion('signal',cuts.signalMJ_unblinded)
     
-ltm.AddRegion('gjets',cuts.gjetMV)
+ltm.AddRegion('gjets',cuts.gjetMJ)
 
 for thing in shit:
     ltm.AddFile(thing[0],thing[1],thing[2])

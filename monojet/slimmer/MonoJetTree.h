@@ -125,7 +125,9 @@ class MonoJetTree
   float fatjet1GenWPt;
   float fatjet1GenWMass;
   int   fatjet1overlapB;
-  int   fatleading;
+  int   fatjet1isLeading;
+  float fatjet1DPhiMet;
+  float fatjet1DPhiTrueMet;
 
   TTree*  ReturnTree()                { return t;                             }
   void    Fill()                      { t->Fill(); Reset();                   }

@@ -284,6 +284,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
     //// Now we go on to clean jets ////
 
+    Int_t cleanWithEndcap = 0;
+
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
       
@@ -294,30 +296,33 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       }
 
-      if (iJet < 4) {
-        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
-        if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
-          outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
-
-        Bool_t match = false;
+      Bool_t match = false;
       
-        for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+          match = true;
+          break;
+        }
+      }
+      
+      if (match == false) {
+        for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+          if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
             match = true;
             break;
           }
         }
+      }
       
-        if (match == false) {
-          for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
-            if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
-              match = true;
-              break;
-            }
-          }
-        }
+      if (match == false && tempJet->Pt() > 30.0) {
+        ++cleanWithEndcap;
 
-        if (match == false) {
+        if (cleanWithEndcap < 5) {
+
+          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
+          if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
+            outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
+          
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (checkDPhi < outTree->minJetMetDPhi_withendcap)
             outTree->minJetMetDPhi_withendcap = checkDPhi;
@@ -380,7 +385,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       //// Now do cleaning ////
       
-      Bool_t match = false;
+      match = false;
       
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
         if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
@@ -558,7 +563,26 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
       TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetak8P4->At(iFatJet);
 
-      if (iFatJet == 0) {
+      Bool_t match = false;
+
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempFatJet->Phi(),tempFatJet->Eta()) < 2.0 * dROverlap) {
+          match = true;
+          break;
+        }
+      }
+      
+      for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+        if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempFatJet->Phi(),tempFatJet->Eta()) < 2.0 * dROverlap) {
+          match = true;
+          break;
+        }
+      }
+
+      if (match)
+        continue;
+
+      if (outTree->fatjet1Pt < 0) {
         outTree->fatjet1Pt   = tempFatJet->Pt();
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
@@ -573,12 +597,15 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
         outTree->fatjet1MonojetId = (*(inTree->fatjetak8Monojetid))[iFatJet];
 
-        if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
-          outTree->fatleading = 1;
+        if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.8)
+          outTree->fatjet1isLeading = 1;
         else
-          outTree->fatleading = 0;
+          outTree->fatjet1isLeading = 0;
 
         outTree->fatjet1overlapB = 0;
+
+        outTree->fatjet1DPhiMet     = deltaPhi(outTree->metPhi,outTree->fatjet1Phi);
+        outTree->fatjet1DPhiTrueMet = deltaPhi(outTree->trueMetPhi,outTree->fatjet1Phi);
 
         for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
           TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
@@ -609,7 +636,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
 
-    if (outTree->fatjet1Pt > 0)
+    if (outTree->met > 150)
       outTree->Fill();
     else
       outTree->Reset();
