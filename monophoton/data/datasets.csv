@@ -1,9 +1,9 @@
 sel-d3  "SingleElectron (2015D)"  SingleElectron+Run2015D-PromptReco-v3+AOD  552.7  27322198  -
 smu-d3  "SingleMuon (2015D)"  SingleMuon+Run2015D-PromptReco-v3+AOD  552.7  18120744  -
 sph-d3  "SinglePhoton (2015D)"  SinglePhoton+Run2015D-PromptReco-v3+AOD  552.7  7442646  -
-sel-d4  "SingleElectron (2015D)"  SingleElectron+Run2015D-PromptReco-v4+AOD  1536.2  77437434  -
-smu-d4  "SingleMuon (2015D)"  SingleMuon+Run2015D-PromptReco-v4+AOD  552.7  45163000  -
-sph-d4  "SinglePhoton (2015D)"  SinglePhoton+Run2015D-PromptReco-v4+AOD  1538.4  18885644  -
+sel-d4  "SingleElectron (2015D)"  SingleElectron+Run2015D-PromptReco-v4+AOD  1570.3  77437434  -
+smu-d4  "SingleMuon (2015D)"  SingleMuon+Run2015D-PromptReco-v4+AOD  1570.3  45163000  -
+sph-d4  "SinglePhoton (2015D)"  SinglePhoton+Run2015D-PromptReco-v4+AOD  1570.3  18885644  -
 dy-50  "Z#rightarrowll"  DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM  6025.2  28827486  4.52749622302e+11
 wlnu  "W"  WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  61526.7  24184766  3.73654308847e+12
 wlnu-100  "W"  WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  1347  8783893  8783893.0
