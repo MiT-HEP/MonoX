@@ -2,6 +2,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TLorentzVector.h"
+#include "TROOT.h"
 
 #include "processors.h"
 
@@ -205,9 +206,21 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         bool selectMet(processors_[iP].second->selectMet(event, outEvents[iP]));
         updateCutFlow(selectMet, iP);
 
-        // if (!selectMet)
-        //   continue;
-        *metIso[iP] = selectMet;
+        if (!selectMet)
+          continue;
+
+        // temporary
+        unsigned iJ(0);
+        unsigned nJMax(outEvents[iP].jets.size());
+        if (nJMax > 4)
+          nJMax = 4;
+
+        for (; iJ != nJMax; ++iJ) {
+          if (std::abs(TVector2::Phi_mpi_pi(outEvents[iP].jets[iJ].phi - outEvents[iP].t1Met.phi)) < 0.5)
+            break;
+        }
+        *metIso[iP] = iJ == nJMax;
+        // temporary
 
         processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
@@ -400,11 +413,6 @@ EventProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent
   if (!(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
     return false;
 
-  for (unsigned iJ(0); iJ != _outEvent.jets.size() && iJ != 4; ++iJ) {
-    if (std::abs(TVector2::Phi_mpi_pi(_outEvent.jets[iJ].phi - _outEvent.t1Met.phi)) < 0.5)
-      return false;
-  }
-
   return true;
 }
 
@@ -470,6 +478,32 @@ GenProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event
 
     _outEvent.weight *= idscale_->GetBinContent(iX);
   }
+}
+
+
+void
+GenDifferentialProcessor::setPtBin(double _min, double _relWeight)
+{
+  weights_.emplace_back(_min, _relWeight);
+}
+
+void
+GenDifferentialProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  GenProcessor::calculateWeight(_event, _outEvent);
+
+  if (weights_.size() == 0)
+    return;
+
+  double pt(_outEvent.photons[0].pt);
+  unsigned iBin(0);
+  while (iBin != weights_.size() && pt >= weights_[iBin].first)
+    ++iBin;
+
+  if (iBin > 0)
+    iBin -= 1;
+  
+  _outEvent.weight *= weights_[iBin].second;
 }
 
 
@@ -916,5 +950,7 @@ LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent
   if (std::abs(dPhi) > 2.)
     return false;
 
-  return 2 * _outEvent.t1Met.met * _outEvent.photons[0].pt * (1 - std::cos(dPhi)) < 90. * 90.;
+  double mt2(2 * _outEvent.t1Met.met * _outEvent.photons[0].pt * (1 - std::cos(dPhi)));
+
+  return mt2 > 40. * 40. && mt2 < 150. * 150.;
 }

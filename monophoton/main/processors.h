@@ -115,8 +115,25 @@ class GenProcessor : public virtual EventProcessor {
   bool passTrigger(simpletree::Event const&) override;
   void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
 
+ protected:
   TH1* reweight_{0};
   TH1* idscale_{0};
+};
+
+class GenDifferentialProcessor : public GenProcessor {
+  // Apply differential weights as a function of photon pT
+
+ public:
+  GenDifferentialProcessor() {}
+  GenDifferentialProcessor(double _weightNorm, char const* _name = "GenDifferentialProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
+  ~GenDifferentialProcessor() {}
+
+  void setPtBin(double min, double relWeight);
+
+  void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
+
+ protected:
+  std::vector<std::pair<double, double>> weights_{};
 };
 
 class GenZnnProxyProcessor : public GenProcessor {
@@ -296,18 +313,24 @@ class LowMtProcessor : public virtual EventProcessor {
 
 class WenuProxyLowMtProcessor : public LowMtProcessor, public WenuProxyProcessor {
  public:
-  WenuProxyLowMtProcessor(double _weightNorm, char const* _name = "WenuProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), WenuProxyProcessor() {}
+  WenuProxyLowMtProcessor(double _weightNorm, char const* _name = "WenuProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), WenuProxyProcessor() {}
   ~WenuProxyLowMtProcessor() {}
 };
 
 class HadronProxyLowMtProcessor : public LowMtProcessor, public HadronProxyProcessor {
  public:
-  HadronProxyLowMtProcessor(double _weightNorm, char const* _name = "HadronProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), HadronProxyProcessor() {}
+  HadronProxyLowMtProcessor(double _weightNorm, char const* _name = "HadronProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), HadronProxyProcessor() {}
   ~HadronProxyLowMtProcessor() {}
 };
 
 class GenLowMtProcessor : public LowMtProcessor, public GenProcessor {
  public:
-  GenLowMtProcessor(double _weightNorm, char const* _name = "GenLowMtProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
+  GenLowMtProcessor(double _weightNorm, char const* _name = "GenLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenProcessor() {}
   ~GenLowMtProcessor() {}
+};
+
+class GenDifferentialLowMtProcessor : public LowMtProcessor, public GenDifferentialProcessor {
+ public:
+  GenDifferentialLowMtProcessor(double _weightNorm, char const* _name = "GenDifferentialLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenDifferentialProcessor() {}
+  ~GenDifferentialLowMtProcessor() {}
 };
