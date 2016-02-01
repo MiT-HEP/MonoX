@@ -365,7 +365,11 @@ class SimpleCanvas(object):
                 self._temporaries.append(graph)
                 graph.Draw('A' + base.drawOpt)
             else:
-                base.Draw(base.drawOpt)
+                drawOpt = base.drawOpt
+                if base.InheritsFrom(ROOT.TGraph.Class()):
+                    drawOpt += 'A'
+
+                base.Draw(drawOpt)
 
             for ih in hList[1:]:
                 hist = self._histograms[ih]
@@ -374,7 +378,11 @@ class SimpleCanvas(object):
                     self._temporaries.append(graph)
                     graph.Draw(hist.drawOpt)
                 else:
-                    hist.Draw(hist.drawOpt + ' SAME')
+                    drawOpt = hist.drawOpt
+                    if hist.InheritsFrom(ROOT.TH1.Class()):
+                        drawOpt += ' SAME'
+
+                    hist.Draw(drawOpt)
     
                 if hist.GetMaximum() > base.GetMaximum():
                     if logy:
