@@ -13,8 +13,10 @@ GTrigger   = '(triggerFired[11]==1 || triggerFired[12]==1 || triggerFired[13]==1
 ETrigger   = '((triggerFired[4]==1 || triggerFired[5]==1) || ' + GTrigger + ')'
 MuTrigger  = '(triggerFired[8]==1 || triggerFired[9]==1 || triggerFired[10]==1)'
 
-monoJet = 'jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.4'
-monoV   = 'fatjet1Pt > 250 && fatjet1tau21 < 0.6 && abs(fatjet1PrunedM - 83) < 20 && fatjet1overlapB < 2 && abs(fatjet1Eta) < 2.4 && jet1isMonoJetIdNew == 1'
+monoJet     = 'jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.4'
+monoVSimple = 'fatjet1Pt > 250 && fatjet1tau21 < 0.6'
+monoVNoMass = monoVSimple + ' && fatjet1overlapB < 2 && abs(fatjet1Eta) < 2.4 && jet1isMonoJetIdNew == 1'
+monoV       = monoVNoMass + ' && fatjet1PrunedM < 102 && fatjet1PrunedM > 62'
 
 topregion = 'n_mediumlep == 1 && n_looselep == 1 && trueMet > 50 && n_bjetsLoose > 1 && fatjet1overlapB < 1 && fatjet1Pt > 250 && fatjet1Eta < 2.4 && fatjet1MonojetId == 1'
 
@@ -23,7 +25,7 @@ Zee = str(allCut + ' && ' +
           btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           diLepton + ' && ' + 
-          ETrigger + ' && ' + 
+#          ETrigger + ' && ' + 
           'lep1PdgId*lep2PdgId == -121')
 
 Zmm = str(allCut + ' && ' + 
@@ -31,7 +33,7 @@ Zmm = str(allCut + ' && ' +
           btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           diLepton + ' && ' + 
-          METTrigger + ' && ' + 
+#          METTrigger + ' && ' + 
           'lep1PdgId*lep2PdgId == -169')
 
 Wen = str(allCut + ' && ' + 
@@ -39,7 +41,8 @@ Wen = str(allCut + ' && ' +
           btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           singleLepton + ' && ' + 
-          ETrigger + ' && ' +
+          'lep1Pt > 40 && ' +
+#          ETrigger + ' && ' +
           'abs(lep1PdgId) == 11 && trueMet > 50')
 
 Wmn = str(allCut + ' && ' + 
@@ -47,41 +50,51 @@ Wmn = str(allCut + ' && ' +
           btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           singleLepton + ' && ' + 
-          METTrigger + ' && ' +
+#          METTrigger + ' && ' +
           'abs(lep1PdgId) == 13')
 
 gjet = str(allCut + ' && ' + 
            metCut + ' && ' + 
            btagVeto + ' && ' + 
            leptonVeto + ' && ' + 
-           GTrigger + ' && ' + 
+#           GTrigger + ' && ' + 
            singlePhoton)
 
 signal = str(allCut + ' && ' + 
              metCut + ' && ' + 
              btagVeto + ' && ' + 
              leptonVeto + ' && ' + 
-             METTrigger + ' && ' + 
+#             METTrigger + ' && ' + 
              photonVeto)
 
 Zll = '(' + Zee + ') || (' + Zmm + ')'
 
 top = str(allCut + ' && ' +
           photonVeto + ' && ' +
-          METTrigger + ' && ' +
+#          METTrigger + ' && ' +
           metCut + ' && ' +
 #          '(' + ETrigger + ' || ' + GTrigger + ') && lep1Pt > 25 && ' + 
           topregion)
 
-ZeeMJ  = Zee + ' && ' + monoJet
-ZmmMJ  = Zmm + ' && ' + monoJet
-ZllMJ  = Zll + ' && ' + monoJet
-WenMJ  = Wen + ' && ' + monoJet
-WmnMJ  = Wmn + ' && ' + monoJet
-gjetMJ = gjet + ' && ' + monoJet
+ZeeMJ_inc  = Zee + ' && ' + monoJet
+ZmmMJ_inc  = Zmm + ' && ' + monoJet
+ZllMJ_inc  = Zll + ' && ' + monoJet
+WenMJ_inc  = Wen + ' && ' + monoJet
+WmnMJ_inc  = Wmn + ' && ' + monoJet
+gjetMJ_inc = gjet + ' && ' + monoJet
 
-signalMJ_unblinded = signal + ' && ' + monoJet
-signalMJ = signalMJ_unblinded + ' && ' + 'runNum == 1'
+signalMJ_inc_unblinded = signal + ' && ' + monoJet
+signalMJ_inc = signalMJ_inc_unblinded + ' && ' + 'runNum == 1'
+
+ZeeMJ  = ZeeMJ_inc + ' && !(' + monoV + ')'
+ZmmMJ  = ZmmMJ_inc + ' && !(' + monoV + ')'
+ZllMJ  = ZllMJ_inc + ' && !(' + monoV + ')'
+WenMJ  = WenMJ_inc + ' && !(' + monoV + ')'
+WmnMJ  = WmnMJ_inc + ' && !(' + monoV + ')'
+gjetMJ = gjetMJ_inc + ' && !(' + monoV + ')'
+
+signalMJ_unblinded = signalMJ_inc_unblinded + ' && !(' + monoV + ')'
+signalMJ = signalMJ_inc + ' && !(' + monoV + ')'
 
 ZeeMV  = Zee + ' && ' + monoV
 ZmmMV  = Zmm + ' && ' + monoV
@@ -93,3 +106,26 @@ topMV  = top + ' && ' + monoV
 
 signalMV_unblinded = signal + ' && ' + monoV
 signalMV = signalMV_unblinded + ' && ' + 'runNum == 1'
+
+ZeeMVNoMass  = Zee + ' && ' + monoVNoMass
+ZmmMVNoMass  = Zmm + ' && ' + monoVNoMass
+ZllMVNoMass  = Zll + ' && ' + monoVNoMass
+WenMVNoMass  = Wen + ' && ' + monoVNoMass
+WmnMVNoMass  = Wmn + ' && ' + monoVNoMass
+gjetMVNoMass = gjet + ' && ' + monoVNoMass
+topMVNoMass  = top + ' && ' + monoVNoMass
+
+signalMVNoMass_unblinded = signal + ' && ' + monoVNoMass
+signalMVNoMass = signalMVNoMass_unblinded + ' && ' + 'runNum == 1'
+
+ZeeMVSimple  = Zee + ' && ' + monoVSimple + ' && ' + monoJet
+ZmmMVSimple  = Zmm + ' && ' + monoVSimple + ' && ' + monoJet
+ZllMVSimple  = Zll + ' && ' + monoVSimple + ' && ' + monoJet
+WenMVSimple  = Wen + ' && ' + monoVSimple + ' && ' + monoJet
+WmnMVSimple  = Wmn + ' && ' + monoVSimple + ' && ' + monoJet
+gjetMVSimple = gjet + ' && ' + monoVSimple + ' && ' + monoJet
+topMVSimple  = top + ' && ' + monoVSimple + ' && ' + monoJet
+
+signalMVSimple_unblinded = signal + ' && ' + monoVSimple + ' && ' + monoJet
+signalMVSimple = signalMVSimple_unblinded + ' && ' + 'runNum == 1'
+

@@ -159,7 +159,9 @@ MonoJetTree::Reset()
   fatjet1GenWPt = -5;
   fatjet1GenWMass = -5;
   fatjet1overlapB = -1;
-  fatleading = -1;
+  fatjet1isLeading = -1;
+  fatjet1DPhiMet = 5;
+  fatjet1DPhiTrueMet = 5;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -239,7 +241,9 @@ MonoJetTree::SetupTree()
   t->Branch("fatjet1GenWPt",&fatjet1GenWPt,"fatjet1GenWPt/F");
   t->Branch("fatjet1GenWMass",&fatjet1GenWMass,"fatjet1GenWMass/F");
   t->Branch("fatjet1overlapB",&fatjet1overlapB,"fatjet1overlapB/I");
-  t->Branch("fatleading",&fatleading,"fatleading/I");
+  t->Branch("fatjet1isLeading",&fatjet1isLeading,"fatjet1isLeading/I");
+  t->Branch("fatjet1DPhiMet",&fatjet1DPhiMet,"fatjet1DPhiMet/F");
+  t->Branch("fatjet1DPhiTrueMet",&fatjet1DPhiTrueMet,"fatjet1DPhiTrueMet/F");
 
   Reset();
 }
