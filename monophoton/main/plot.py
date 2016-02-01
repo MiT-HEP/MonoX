@@ -107,9 +107,7 @@ if region == 'monoph':
         }
 
 elif region == 'lowmt':
-#    wenuNoMetCut = baselineCut + ' && jets.size == 1 && TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[0] - photons.phi[0])) < 3.'
-#    wenuNoMetCut = baselineCut + ' && TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - photons.phi[0])) > 0.2'
-    wenuNoMetCut = baselineCut
+    wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
     wenuCut = wenuNoMetCut + ' && t1Met.met > 100.'
 
     defsel = 'lowmt'
