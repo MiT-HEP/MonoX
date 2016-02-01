@@ -1,1 +1,1 @@
-skimDir = '/scratch5/yiiyama/studies/monophoton/skim'
+skimDir = '/scratch5/ballen/hist/monophoton/skim/tmp'

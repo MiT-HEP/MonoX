@@ -12,7 +12,8 @@ import config
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree11/t2mit/filefi/042'
+sourceDir = '/scratch5/yiiyama/hist/simpletree11a/t2mit/filefi/042'
+dataSourceDir = sourceDir
 neroInput = False
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
@@ -276,20 +277,18 @@ if not os.path.exists(config.skimDir):
 
 for name in sampleNames:
     sample = allsamples[name]
-    print 'Starting sample', name, str(sampleNames.index(name))+'/'+str(len(sampleNames))
+    print 'Starting sample', name, str(sampleNames.index(name)+1)+'/'+str(len(sampleNames))
 
     skimmer.reset()
 
     tree = ROOT.TChain('events')
-    # tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
 
-# TEMPORARY
     if name.startswith('sph') or name.startswith('sel') or name.startswith('smu'):
-        print 'Reading', name, 'from simpletree11a'
-        tree.Add(sourceDir.replace('11','11a') + '/' + sample.directory + '/simpletree_*.root')
+        print 'Reading', name, 'from', dataSourceDir
+        tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
     else:
+        print 'Reading', name, 'from', sourceDir
         tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
-# TEMPORARY
 
     for pname, gen in generators[name].items():
         processor = gen(sample)
