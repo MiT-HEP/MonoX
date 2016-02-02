@@ -18,7 +18,10 @@ shit = [
     [directory + 'monojet_WJetsToLNu_HT-100To200.root','Wlv_ht100',1343.0],
     [directory + 'monojet_WJetsToLNu_HT-200To400.root','Wlv_ht200',359.6],
     [directory + 'monojet_WJetsToLNu_HT-400To600.root','Wlv_ht400',48.85],
-    [directory + 'monojet_WJetsToLNu_HT-600ToInf.root','Wlv_ht600',18.91],
+    [directory + 'monojet_WJetsToLNu_HT-600To800.root','Wlv_ht600',12.05],
+    [directory + 'monojet_WJetsToLNu_HT-800To1200.root','Wlv_ht800',5.501],
+    [directory + 'monojet_WJetsToLNu_HT-1200To2500.root','Wlv_ht1200',1.329],
+    [directory + 'monojet_WJetsToLNu_HT-2500ToInf.root','Wlv_ht2500',0.03216],
     [directory + 'monojet_QCD_HT200to300.root','QCD_200To300',1735000.0],
     [directory + 'monojet_QCD_HT300to500.root','QCD_300To500',366800.0],
     [directory + 'monojet_QCD_HT500to700.root','QCD_500To700',29370.0],
@@ -67,5 +70,16 @@ ltm.AddRegion('gjets',cuts.gjetMJ)
 for thing in shit:
     ltm.AddFile(thing[0],thing[1],thing[2])
 ##
+
+ltm.ExceptionSkip('gjets','QCD_200To300')
+ltm.ExceptionSkip('gjets','QCD_300To500')
+ltm.ExceptionSkip('gjets','QCD_500To700')
+ltm.ExceptionSkip('gjets','QCD_700To1000')
+ltm.ExceptionSkip('gjets','QCD_1000To1500')
+ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-40To100.root','QCD_40To100',23080.0)
+ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-100To200.root','QCD_100To200',9235.0)
+ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-200To400.root','QCD_200To400',2298.0)
+ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
+ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
 
 ltm.MakeTrees()
