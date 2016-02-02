@@ -10,7 +10,7 @@ ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
 if sys.argv[1] == "test":
         ROOT.NeroSlimmer(
-        "root://eoscms//store/caf/user/yiiyama/nerov5/WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0038.root",
+        "root://eoscms//store/user/zdemirag/V0005/GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0011.root",
         "test.root")
 elif sys.argv[1] == "compile":
     exit()

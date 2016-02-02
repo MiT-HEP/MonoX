@@ -1,20 +1,20 @@
 # Pick one of these three. 
 # Cannot run all at the same time because they open different sets of files
 
-#channel_list  = ['signal']
-channel_list  = ['Wmn','Zmm']
+channel_list  = ['signal']
+#channel_list  = ['Wmn','Zmm']
 #channel_list  = ['Wen','Zee']
 #channel_list  = ['gjets']
 
 # This is where the plots are output
-folder = '/afs/cern.ch/user/d/dabercro/www/monoV_160122'
+folder = '/afs/cern.ch/user/d/dabercro/www/monoV_160126'
 
 # This is a list of variables plotted
 variable_list = []
-#variable_list.append('met')
+variable_list.append('met')
 #variable_list.append('fatjet1tau21')
 #variable_list.append('fatjet1PrunedM')
-variable_list.append('fatjet1SoftDropM')
+#variable_list.append('fatjet1SoftDropM')
 #variable_list.append('dilep_m')
 #variable_list.append('mt')
 

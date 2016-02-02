@@ -1,0 +1,71 @@
+#! /usr/bin/python
+
+from LimitTreeMaker import newLimitTreeMaker
+import cuts
+
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
+#directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
+
+shit = [
+    [directory + 'monojet_DYJetsToLL_M-50_HT-100to200.root','Zll_ht100',148.0],
+    [directory + 'monojet_DYJetsToLL_M-50_HT-200to400.root','Zll_ht200',40.94],
+    [directory + 'monojet_DYJetsToLL_M-50_HT-400to600.root','Zll_ht400',5.497],
+    [directory + 'monojet_DYJetsToLL_M-50_HT-600toInf.root','Zll_ht600',2.193],
+    [directory + 'monojet_ZJetsToNuNu_HT-100To200_13TeV.root','Zvv_ht100',280.5],
+    [directory + 'monojet_ZJetsToNuNu_HT-200To400_13TeV.root','Zvv_ht200',78.36],
+    [directory + 'monojet_ZJetsToNuNu_HT-400To600_13TeV.root','Zvv_ht400',10.94],
+    [directory + 'monojet_ZJetsToNuNu_HT-600ToInf_13TeV.root','Zvv_ht600',4.20],
+    [directory + 'monojet_WJetsToLNu_HT-100To200.root','Wlv_ht100',1343.0],
+    [directory + 'monojet_WJetsToLNu_HT-200To400.root','Wlv_ht200',359.6],
+    [directory + 'monojet_WJetsToLNu_HT-400To600.root','Wlv_ht400',48.85],
+    [directory + 'monojet_WJetsToLNu_HT-600ToInf.root','Wlv_ht600',18.91],
+    [directory + 'monojet_QCD_HT200to300.root','QCD_200To300',1735000.0],
+    [directory + 'monojet_QCD_HT300to500.root','QCD_300To500',366800.0],
+    [directory + 'monojet_QCD_HT500to700.root','QCD_500To700',29370.0],
+    [directory + 'monojet_QCD_HT700to1000.root','QCD_700To1000',6524.0],
+    [directory + 'monojet_QCD_HT1000to1500.root','QCD_1000To1500',1064.0],
+    [directory + 'monojet_GJets_HT-40To100.root','GJets_40To100',23080.0],
+    [directory + 'monojet_GJets_HT-100To200.root','GJets_100To200',9235.0],
+    [directory + 'monojet_GJets_HT-200To400.root','GJets_200To400',2298.0],
+    [directory + 'monojet_GJets_HT-400To600.root','GJets_400To600',277.6],
+    [directory + 'monojet_GJets_HT-600ToInf.root','GJets_600ToInf',93.47],
+    [directory + 'monojet_TTJets.root','others',831.76],
+    [directory + 'monojet_ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8.root','antitop',26.22],
+    [directory + 'monojet_ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8.root','top',44.07],
+    [directory + 'monojet_ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8.root','antitop_5f',35.6],
+    [directory + 'monojet_ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8.root','top_5f',35.6],
+    [directory + 'monojet_WW.root','WW',118.7],
+    [directory + 'monojet_ZZ.root','ZZ',16.6],
+    [directory + 'monojet_WZ.root','WZ',47.2],
+    [directory + 'monojet_GluGlu_HToInvisible_M125_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','signal_h_ggf',43.92],
+    [directory + 'monojet_Data.root','data',-1]
+]
+
+ltm = newLimitTreeMaker('limits/MonoJetLimitsTrees.root')
+
+ltm.SetTreeName('events')
+ltm.AddKeepBranch('met')
+ltm.AddKeepBranch('genBos_pt')
+ltm.AddKeepBranch('jet1Pt')
+ltm.AddWeightBranch('mcFactors')
+ltm.SetAllHistName('htotal')
+ltm.SetOutputWeightBranch('scaleMC_w')
+ltm.SetLuminosity(2109.0)
+    
+ltm.AddRegion('Zmm',cuts.ZmmMJ)
+    
+ltm.AddRegion('Wmn',cuts.WmnMJ)
+    
+ltm.AddRegion('Wen',cuts.WenMJ)
+    
+ltm.AddRegion('Zee',cuts.ZeeMJ)
+    
+ltm.AddRegion('signal',cuts.signalMJ_unblinded)
+    
+ltm.AddRegion('gjets',cuts.gjetMJ)
+
+for thing in shit:
+    ltm.AddFile(thing[0],thing[1],thing[2])
+##
+
+ltm.MakeTrees()
