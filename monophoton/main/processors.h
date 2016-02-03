@@ -62,6 +62,7 @@ class EventProcessor {
   EventProcessor(double _weightNorm = 1., char const* _name = "EventProcessor") : weightNorm_(_weightNorm), name_(_name) {}
   ~EventProcessor() {}
 
+  virtual void addBranches(TTree&) {}
   virtual bool passTrigger(simpletree::Event const&);
   virtual bool beginEvent(simpletree::Event const&);
   virtual bool vetoElectrons(simpletree::Event const&, simpletree::Event&);
@@ -111,13 +112,18 @@ class GenProcessor : public virtual EventProcessor {
 
   void setReweight(TH1* _rwt) { reweight_ = _rwt; }
   void setIdScaleFactor(TH1* _scl) { idscale_ = _scl; }
+  void useAlternativeWeights(bool _use) { useAltWeights_ = _use; }
 
+  void addBranches(TTree&) override;
   bool passTrigger(simpletree::Event const&) override;
   void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
 
  protected:
   TH1* reweight_{0};
   TH1* idscale_{0};
+  bool useAltWeights_{false};
+  float scaleReweight_[6];
+  float pdfReweight_[100];
 };
 
 class GenDifferentialProcessor : public GenProcessor {
