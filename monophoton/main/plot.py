@@ -23,7 +23,7 @@ if '-C' in sys.argv:
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
 class VariableDef(object):
-    def __init__(self, title, unit, expr, cut, binning, overflow = False, is2D = False):
+    def __init__(self, title, unit, expr, cut, binning, overflow = False, is2D = False, logy = True, ymax = -1.):
         self.title = title
         self.unit = unit
         self.expr = expr
@@ -31,6 +31,8 @@ class VariableDef(object):
         self.binning = binning
         self.overflow = overflow
         self.is2D = is2D
+        self.logy = logy
+        self.ymax = ymax
 
 
 region = sys.argv[1]
@@ -63,9 +65,11 @@ if region == 'monoph':
     
     variables = {
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'metFewer': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
         'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
         'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
         'phoPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'phoPtFewer': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', baselineCut, (20, -1.5, 1.5)),
         'phoEtaHighMet'+str(cutMet): VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cutStringHighMet, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', baselineCut, (20, -math.pi, math.pi)),
@@ -90,13 +94,13 @@ if region == 'monoph':
         'sieieHighMet'+str(cutMet): VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutStringHighMet, (16, 0.004, 0.012)),
         'r9': VariableDef('r9', '', 'photons.r9', baselineCut, (50, 0.5, 1.)),
         'r9HighMet'+str(cutMet): VariableDef('r9', '', 'photons.r9', cutStringHighMet, (50, 0.5, 1.)),
-        's4': VariableDef('s4', '', 'photons.s4', baselineCut, (50, 0.5, 1.)),
-        's4HighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet, (50, 0.5, 1.)),
-        's4halo': VariableDef('s4', '', 'photons.s4', cutString+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        's4': VariableDef('s4', '', 'photons.s4', baselineCut, (50, 0.5, 1.), logy = False),
+        's4HighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet, (20, 0.5, 1.), logy = False),
+        's4halo': VariableDef('s4', '', 'photons.s4', baselineCut+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
         's4haloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        's4nonhalo': VariableDef('s4', '', 'photons.s4', cutString+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        's4nonhalo': VariableDef('s4', '', 'photons.s4', baselineCut+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
         's4nonhaloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', cutString, (60, 0.004, .016)),
+        'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', baselineCut, (60, 0.004, .016)),
         'etaWidthHighMet'+str(cutMet): VariableDef('etaWidth', '', 'photons.etaWidth', cutStringHighMet, (60, 0.004, .016)),
         'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', baselineCut, (25, 0., .05)),
         'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (25, 0., 0.05)),
@@ -108,7 +112,7 @@ if region == 'monoph':
 
 elif region == 'lowmt':
     wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
-    wenuCut = wenuNoMetCut + ' && t1Met.met > 100.'
+    wenuCut = wenuNoMetCut + ' && t1Met.met > 150.'
 
     defsel = 'lowmt'
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
@@ -122,22 +126,17 @@ elif region == 'lowmt':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', wenuNoMetCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuCut, [175.] + [180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
-#        'phoPtHighMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', wenuNoMetCut, [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], overflow = True),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuCut, [175. + 15. * x for x in range(16)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', wenuCut, (20, -1.5, 1.5)),
-        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', wenuCut, (20, -math.pi, math.pi)),
-        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', wenuCut, (20, -1., 1.)),
-#        'dPhiPhoMetHighMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', wenuCut, (20, -math.pi, math.pi)),
-        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', wenuCut, (40, 0., 160.)),
-#        'mtPhoMetHighMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', wenuCut, (40, 0., 160.)),
-        'metPhi': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', wenuCut, (20, -math.pi, math.pi)),
+        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', wenuCut, (20, -math.pi, math.pi), logy = False, ymax = 20.),
+        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', wenuCut, (20, -1., 1.), logy = False, ymax = 20.),
+        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', wenuCut, (11, 40., 150.), logy = False),
+        'metPhi': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', wenuCut, (20, -math.pi, math.pi), logy = False, ymax = 20.),
         'njets': VariableDef('N_{jet}', '', 'jets.size', wenuCut, (6, 0., 6.)),
         'jetPt': VariableDef('p_{T}^{j1}', 'GeV', 'jets.pt[0]', wenuCut + ' && jets.size != 0', (30, 30., 800.)),
         'r9': VariableDef('r9', '', 'photons.r9', wenuCut, (50, 0.5, 1.)),
-#        'r9HighMet'+str(cutMet): VariableDef('r9', '', 'photons.r9', wenuCut, (50, 0.5, 1.)),
         's4': VariableDef('s4', '', 'photons.s4', wenuCut, (50, 0.5, 1.)),
-#        's4HighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', wenuCut, (50, 0.5, 1.))
     }
 
 elif region == 'dimu':
@@ -211,6 +210,8 @@ elif region == 'diel':
     }
 
 elif region == 'monoel':
+    baselineCut += ' && TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.) > 0.01'
+
     defsel = 'monoel'
     obs = GroupSpec('Observed', ['sel-d3', 'sel-d4'], ROOT.kBlack)
     bkgGroups = [
@@ -221,14 +222,15 @@ elif region == 'monoel':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
-        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * electrons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - electrons.phi[0]))))', '', [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
-        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', '', (20, -1.5, 1.5)),
-        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', '', (20, -math.pi, math.pi)),
-        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', '', (20, -math.pi, math.pi)),
-        'dRPhoEl': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.))', '', (20, 0., 4.)),
-        'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
+        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * electrons.pt[0] * (1. - TMath::Cos(t1Met.phi - electrons.phi[0])))', baselineCut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
+        'phoPtLowMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut + ' && t1Met.met < 60.', [175. + 15. * x for x in range(16)], logy = False),
+        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', baselineCut, (20, -1.5, 1.5)),
+        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', baselineCut, (20, -math.pi, math.pi)),
+        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', baselineCut, (20, -math.pi, math.pi)),
+        'dRPhoEl': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.))', baselineCut, (20, 0., 4.)),
+        'njets': VariableDef('N_{jet}', '', 'jets.size', baselineCut, (10, 0., 10.))
     }
 
 elif region == 'elmu':
@@ -360,6 +362,11 @@ if MAKEPLOTS:
 
     canvas = DataMCCanvas(lumi = lumi)
     simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
+
+    # temporary - let canvas return this
+    plotdir = canvas.webdir + '/monophoton/' + region
+    for plot in os.listdir(plotdir):
+        os.remove(plotdir + '/' + plot)
     
     print "Starting plot making."
     
@@ -367,10 +374,12 @@ if MAKEPLOTS:
         isSensitive = region in sensitive and varname in sensitive[region]
     
         canvas.Clear(full = True)
-        canvas.legend.setPosition(0.6, 0.55, 0.92, SimpleCanvas.YMAX - 0.01)
+        canvas.legend.setPosition(0.6, 0.6, 0.92, SimpleCanvas.YMAX - 0.01)
     
         if isSensitive:
             canvas.lumi = lumi / blind
+        else:
+            canvas.lumi = lumi
     
         for gName, group in bkgGroups:
             idx = -1
@@ -409,10 +418,10 @@ if MAKEPLOTS:
         canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
         canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
     
-        canvas.printWeb('monophoton/' + region, varname)
-        # canvas.printWeb('monophoton/' + region, varname + '-linear', logy = False)
+        canvas.printWeb('monophoton/' + region, varname, logy = vardef.logy, ymax = vardef.ymax)
 
-print "Finished plotting."
+    print "Finished plotting."
+
 print "Counting yields and preparing limits file."
 
 #canvas = simpleCanvas # this line causes segfault somewhere down the line of DataMCCanvas destruction
