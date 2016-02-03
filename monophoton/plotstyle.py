@@ -247,6 +247,8 @@ class SimpleCanvas(object):
         self._needUpdate = True
         self._temporaries = []
 
+        self.webdir = os.environ['HOME'] + '/public_html/cmsplots'
+
     def __getattr__(self, name):
         return getattr(self.canvas, name)
 
@@ -339,7 +341,7 @@ class SimpleCanvas(object):
 
         self._modified()
 
-    def Update(self, hList = [], logy = None):
+    def Update(self, hList = [], logy = None, ymax = -1.):
         if logy is not None:
             self.canvas.SetLogy(logy)
             self.canvas.Update()
@@ -371,6 +373,9 @@ class SimpleCanvas(object):
 
                 base.Draw(drawOpt)
 
+            if ymax > 0.:
+                base.SetMaximum(ymax)
+
             for ih in hList[1:]:
                 hist = self._histograms[ih]
                 if hist.useRooHist:
@@ -383,8 +388,8 @@ class SimpleCanvas(object):
                         drawOpt += ' SAME'
 
                     hist.Draw(drawOpt)
-    
-                if hist.GetMaximum() > base.GetMaximum():
+
+                if ymax < 0. and hist.GetMaximum() > base.GetMaximum():
                     if logy:
                         base.SetMaximum(hist.GetMaximum() * 5.)
                     else:
@@ -446,16 +451,15 @@ class SimpleCanvas(object):
 
                 lumiPave.Draw()
 
-    def printWeb(self, directory, name, logy = None, **options):
-        self.Update(logy = logy, **options)
+    def printWeb(self, directory, name, **options):
+        self.Update(**options)
 
-        home = os.environ['HOME']
-        webdir = home + '/public_html/cmsplots/' + directory
-        if not os.path.isdir(webdir):
-            os.makedirs(webdir)
+        targetDir = self.webdir + '/' + directory
+        if not os.path.isdir(targetDir):
+            os.makedirs(targetDir)
 
-        self.canvas.Print(webdir + '/' + name + '.pdf', 'pdf')
-        self.canvas.Print(webdir + '/' + name + '.png', 'png')
+        self.canvas.Print(targetDir + '/' + name + '.pdf', 'pdf')
+        self.canvas.Print(targetDir + '/' + name + '.png', 'png')
 
 
 class RatioCanvas(SimpleCanvas):
@@ -515,7 +519,7 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmin(self.rlimits[0])
         self.raxis.SetWmax(self.rlimits[1])
 
-    def Update(self, hList = [], rList = [], logy = None):
+    def Update(self, hList = [], rList = [], logy = None, ymax = -1.):
         if not self._needUpdate:
             if logy is not None:
                 self._updateYaxis(logy)
@@ -551,13 +555,16 @@ class RatioCanvas(SimpleCanvas):
             else:
                 base.Draw(base.drawOpt)
 
+            if ymax > 0.:
+                base.SetMaximum(ymax)
+
             self.plotPad.Update()
     
             # draw other histograms
             for ih in hList[1:]:
                 hist = self._histograms[ih]
     
-                if hist.GetMaximum() > base.GetMaximum():
+                if ymax < 0. and hist.GetMaximum() > base.GetMaximum():
                     if logy:
                         base.SetMaximum(hist.GetMaximum() * 5.)
                     else:
@@ -857,7 +864,7 @@ class DataMCCanvas(RatioCanvas):
 
         return idx
 
-    def Update(self, logy = None):
+    def Update(self, logy = None, ymax = -1.):
         if not self._needUpdate:
             if logy is not None:
                 self._updateYaxis(logy)
@@ -904,7 +911,7 @@ class DataMCCanvas(RatioCanvas):
 
             self.legend.construct(['obs'] + ['bkg%d' % idx for idx in reversed(self._bkgs)] + ['sig%d' % idx for idx in self._sigs])
 
-            RatioCanvas.Update(self, hList = hList, rList = rList, logy = logy)
+            RatioCanvas.Update(self, hList = hList, rList = rList, logy = logy, ymax = ymax)
 
             self._histograms.pop()
             self._histograms.pop()
