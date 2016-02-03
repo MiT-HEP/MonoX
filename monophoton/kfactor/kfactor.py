@@ -31,12 +31,13 @@ nnlolist = []
 with open(basedir + '/data/znng_grazzini.dat') as source:
     source.readline()
     for line in source:
-        xsec = float(line.split()[1])
-        nnlolist.append(xsec * 3.) # three neutrino flavors
+        words = line.split()
+        xsec, xsecdown, xsecup = float(words[1]), float(words[3]), float(words[5])
+        nnlolist.append((xsec * 3., xsecdown * 3., xsecup * 3.)) # three neutrino flavors
 
 print lolist
 print nnlolist
 
 with open(basedir + '/data/znng_kfactor.dat', 'w') as output:
     for iPt in range(len(binning) - 1):
-        output.write('%.0f %f\n' % (binning[iPt], nnlolist[iPt] / lolist[iPt]))
+        output.write('%.0f %f %f %f\n' % (binning[iPt], nnlolist[iPt][0] / lolist[iPt], nnlolist[iPt][1] / lolist[iPt], nnlolist[iPt][2] / lolist[iPt]))
