@@ -23,12 +23,13 @@ if '-C' in sys.argv:
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
 class VariableDef(object):
-    def __init__(self, title, unit, expr, cut, binning, overflow = False, is2D = False, logy = True, ymax = -1.):
+    def __init__(self, title, unit, expr, cut, binning, blind = None, overflow = False, is2D = False, logy = True, ymax = -1.):
         self.title = title
         self.unit = unit
         self.expr = expr
         self.cut = cut
         self.binning = binning
+        self.blind = blind
         self.overflow = overflow
         self.is2D = is2D
         self.logy = logy
@@ -43,7 +44,7 @@ except IndexError:
     cutMet = 150
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
-baselineCut = 'TMath::Abs(photons.time[0]) < 3. && photons.mipEnergy[0] < 6.3 && photons.s4[0] < 0.95 && tauVeto && t1Met.iso'
+baselineCut = 'TMath::Abs(photons.time[0]) < 3. && photons.mipEnergy[0] < 4.9 && photons.s4[0] < 0.95 && tauVeto && t1Met.iso'
 
 if region == 'monoph':
     if baselineCut:
@@ -56,6 +57,9 @@ if region == 'monoph':
     sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
         ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
@@ -64,12 +68,13 @@ if region == 'monoph':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
-        'metFewer': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
+        # 'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
         'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
-        'phoPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
-        'phoPtFewer': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
+        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 2000.)),
+        'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 2000.)),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
+        'phoPtHighMet'+str(cutMet): VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', baselineCut, (20, -1.5, 1.5)),
         'phoEtaHighMet'+str(cutMet): VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cutStringHighMet, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', baselineCut, (20, -math.pi, math.pi)),
@@ -108,7 +113,7 @@ if region == 'monoph':
         'timeHighMet'+str(cutMet): VariableDef('time', '', 'photons.time', cutStringHighMet, (40, -4., 4.)),
         'timeSpan': VariableDef('timeSpan', '', 'photons.timeSpan', baselineCut, (40, -20., 20.)),
         'timeSpanHighMet'+str(cutMet): VariableDef('timeSpan', '', 'photons.timeSpan', cutStringHighMet, (40, -20., 20.))
-        }
+    }
 
 elif region == 'lowmt':
     wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
@@ -255,8 +260,13 @@ else:
     sys.exit(0)
 
 countDef = VariableDef('N_{cand}', '', '0.5', baselineCut + ' && ' + cutHighMet, (1, 0., 1.))
-limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', '',
-                        ( [175. + 25. * x for x in range(18)], [0. + 50. * x for x in range(13)]), is2D = True)
+"""
+limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', baselineCut,
+                        ( [175. + 25. * x for x in range(18)], [100. + 50. * x for x in range(11)] ), is2D = True)
+"""
+limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photons.pt[0]:t1Met.met', baselineCut,
+                        ( [100. + 50. * x for x in range(11)], [175. + 25. * x for x in range(18)] ), is2D = True)
+
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
 blind = 1
@@ -310,6 +320,13 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     hist.Sumw2()
     if sampledef.data:
         tree.Draw(vardef.expr + '>>' + varname + '-' + sampledef.name, weightexpr, 'goff')
+        if vardef.blind:
+            for i in range(1, hist.GetNbinsX()+1):
+                binCenter = hist.GetBinCenter(i)
+                if binCenter > vardef.blind[0] and binCenter < vardef.blind[1]:
+                    hist.SetBinContent(i, 0.)
+                    hist.SetBinError(i, 0.)
+
     else:
         tree.Draw(vardef.expr + '>>' + varname + '-' + sampledef.name, str(lumi) + ' * ' + weightexpr, 'goff')
 
@@ -471,8 +488,9 @@ for sName in obs.samples:
         hists['obs'] = hist2D
         hists['obs'].SetName('data_obs')
 
-limitFile = ROOT.TFile(config.histDir + "/monoph_tauveto.root", "RECREATE")
+limitFile = ROOT.TFile(config.histDir + "/monoph.root", "RECREATE")
 limitFile.cd()
+
 for name, hist in hists.iteritems():
     hist.Write()
 

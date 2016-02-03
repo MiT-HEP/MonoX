@@ -347,7 +347,10 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
     if (!photon.isEB)
       continue;
 
-    if (photonSelection(photon) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. && photon.s4 < 0.95 && photon.pt > minPhotonPt_) {
+    // need to add sipip cut when available
+    if (photonSelection(photon) && photonEVeto(photon) && photon.pt > minPhotonPt_ &&
+        photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. && photon.s4 < 0.95) {
+
       // unsigned iM(0);
       // for (; iM != _event.muons.size(); ++iM) {
       //   if (deltaR2(_event.muons[iM], photon) < 0.01)
@@ -355,8 +358,9 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
       // }
       // if (iM == _event.muons.size())
       //   _outEvent.photons.push_back(photon);
-
+      
       _outEvent.photons.push_back(photon);
+      //}
     }
   }
 
