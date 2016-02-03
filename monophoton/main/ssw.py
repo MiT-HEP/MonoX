@@ -26,17 +26,17 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/NeroProducer
 ROOT.gROOT.LoadMacro(thisdir + '/skimslimweight.cc+')
 
 def makeEventProcessor(sample):
-    global badEventsList
+#    global badEventsList
 
     proc = ROOT.EventProcessor()
-    proc.setEventList(badEventsList)
+#    proc.setEventList(badEventsList)
     return proc
 
 def makeListedEventProcessor(sample):
-    global badEventsList
+#    global badEventsList
 
     proc = ROOT.ListedEventProcessor()
-    proc.setEventList(badEventsList)
+#    proc.setEventList(badEventsList)
     return proc
 
 def makeGenProcessor(sample, cls = ROOT.GenProcessor):
@@ -45,6 +45,7 @@ def makeGenProcessor(sample, cls = ROOT.GenProcessor):
     proc = cls(sample.crosssection / sample.sumw)
     proc.setReweight(npvweight)
     proc.setIdScaleFactor(gidscale)
+    proc.useAlternativeWeights(True)
     return proc
 
 def makeDimuonProcessor(sample):
@@ -264,10 +265,11 @@ eleproxyweight = eleproxySource.Get('fraction')
 gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
 gidscale = gidSource.Get('scalefactor')
 
-badEventsList = ROOT.EventList()
+# don't need event lists any more because met filter results are in the ntuples since 11b
+#badEventsList = ROOT.EventList()
 # will be in /cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/MitPhysics/data/eventlist soon
-badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_csc2015.txt')
-badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_ecalscn1043093.txt')
+#badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_csc2015.txt')
+#badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_ecalscn1043093.txt')
 
 if len(sNames) != 0:
     if sNames[0] == 'all':
