@@ -55,6 +55,9 @@ if region == 'monoph':
     sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
         ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
@@ -66,10 +69,10 @@ if region == 'monoph':
         # 'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
         'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
-        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 900.)),
-        'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 900.)),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
-        'phoPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
+        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 2000.)),
+        'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 2000.)),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
+        'phoPtHighMet'+str(cutMet): VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', baselineCut, (20, -1.5, 1.5)),
         'phoEtaHighMet'+str(cutMet): VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cutStringHighMet, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', baselineCut, (20, -math.pi, math.pi)),
@@ -263,6 +266,7 @@ limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met
 """
 limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photons.pt[0]:t1Met.met', baselineCut,
                         ( [100. + 50. * x for x in range(11)], [175. + 25. * x for x in range(18)] ), is2D = True)
+
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
 blind = 1
