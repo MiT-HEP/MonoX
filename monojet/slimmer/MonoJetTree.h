@@ -77,6 +77,7 @@ class MonoJetTree
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
   float jet1DPhiTrueMet;
+  float jet1QGL;
   float jet2Pt;
   float jet2Eta;
   float jet2Phi;
@@ -88,7 +89,9 @@ class MonoJetTree
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
   float jet2DPhiTrueMet;
+  float jet2QGL;
   int   n_cleanedjets;
+  float ht_cleanedjets;
   float dPhi_j1j2;
   float minJetMetDPhi;
   float minJetMetDPhi_clean;
@@ -124,7 +127,9 @@ class MonoJetTree
   float fatjet1DRGenW;
   float fatjet1GenWPt;
   float fatjet1GenWMass;
-  int   fatjet1overlapB;
+  float fatjet1DRLooseB;
+  float fatjet1DRMediumB;
+  float fatjet1DRTightB;
   int   fatjet1isLeading;
   float fatjet1DPhiMet;
   float fatjet1DPhiTrueMet;

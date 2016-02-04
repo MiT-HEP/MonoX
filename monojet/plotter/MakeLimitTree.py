@@ -56,30 +56,76 @@ ltm.SetOutputWeightBranch('scaleMC_w')
 ltm.SetLuminosity(2109.0)
     
 ltm.AddRegion('Zmm',cuts.ZmmMJ)
-    
 ltm.AddRegion('Wmn',cuts.WmnMJ)
-    
-ltm.AddRegion('Wen',cuts.WenMJ)
-    
-ltm.AddRegion('Zee',cuts.ZeeMJ)
-    
 ltm.AddRegion('signal',cuts.signalMJ_unblinded)
-    
-ltm.AddRegion('gjets',cuts.gjetMJ)
+ltm.AddRegion('Wen',cuts.WenMJ + ' && ' + cuts.ETrigger)
+ltm.AddRegion('Zee',cuts.ZeeMJ + ' && ' + cuts.ETrigger)
+ltm.AddRegion('gjets',cuts.gjetMJ + ' && ' +  cuts.GTrigger)
 
 for thing in shit:
     ltm.AddFile(thing[0],thing[1],thing[2])
 ##
+
+ltm.AddExceptionDataCut('Zmm',cuts.METTrigger)
+ltm.AddExceptionWeightBranch('Zmm','METTrigger')
+ltm.AddExceptionDataCut('Wmn',cuts.METTrigger)
+ltm.AddExceptionWeightBranch('Wmn','METTrigger')
+ltm.AddExceptionDataCut('signal',cuts.METTrigger)
+ltm.AddExceptionWeightBranch('signal','METTrigger')
+
 
 ltm.ExceptionSkip('gjets','QCD_200To300')
 ltm.ExceptionSkip('gjets','QCD_300To500')
 ltm.ExceptionSkip('gjets','QCD_500To700')
 ltm.ExceptionSkip('gjets','QCD_700To1000')
 ltm.ExceptionSkip('gjets','QCD_1000To1500')
-ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-40To100.root','QCD_40To100',23080.0)
-ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-100To200.root','QCD_100To200',9235.0)
-ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-200To400.root','QCD_200To400',2298.0)
-ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
-ltm.ExceptionAdd('gjets',directory + 'purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
+ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-40To100.root','QCD_40To100',23080.0)
+ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-100To200.root','QCD_100To200',9235.0)
+ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-200To400.root','QCD_200To400',2298.0)
+ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
+ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
 
 ltm.MakeTrees()
+
+ltmV = newLimitTreeMaker('limits/MonoVLimitsTrees.root')
+
+ltmV.SetTreeName('events')
+ltmV.AddKeepBranch('met')
+ltmV.AddKeepBranch('genBos_pt')
+ltmV.AddKeepBranch('jet1Pt')
+ltmV.AddWeightBranch('mcFactors')
+ltmV.SetAllHistName('htotal')
+ltmV.SetOutputWeightBranch('scaleMC_w')
+ltmV.SetLuminosity(2109.0)
+    
+ltmV.AddRegion('Zmm',cuts.ZmmMV)
+ltmV.AddRegion('Wmn',cuts.WmnMV)
+ltmV.AddRegion('signal',cuts.signalMV_unblinded)
+ltmV.AddRegion('Wen',cuts.WenMV + ' && ' + cuts.ETrigger)
+ltmV.AddRegion('Zee',cuts.ZeeMV + ' && ' + cuts.ETrigger)
+ltmV.AddRegion('gjets',cuts.gjetMV + ' && ' +  cuts.GTrigger)
+
+for thing in shit:
+    ltmV.AddFile(thing[0],thing[1],thing[2])
+##
+
+ltmV.AddExceptionDataCut('Zmm',cuts.METTrigger)
+ltmV.AddExceptionWeightBranch('Zmm','METTrigger')
+ltmV.AddExceptionDataCut('Wmn',cuts.METTrigger)
+ltmV.AddExceptionWeightBranch('Wmn','METTrigger')
+ltmV.AddExceptionDataCut('signal',cuts.METTrigger)
+ltmV.AddExceptionWeightBranch('signal','METTrigger')
+
+
+ltmV.ExceptionSkip('gjets','QCD_200To300')
+ltmV.ExceptionSkip('gjets','QCD_300To500')
+ltmV.ExceptionSkip('gjets','QCD_500To700')
+ltmV.ExceptionSkip('gjets','QCD_700To1000')
+ltmV.ExceptionSkip('gjets','QCD_1000To1500')
+ltmV.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-40To100.root','QCD_40To100',23080.0)
+ltmV.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-100To200.root','QCD_100To200',9235.0)
+ltmV.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-200To400.root','QCD_200To400',2298.0)
+ltmV.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
+ltmV.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
+
+ltmV.MakeTrees()

@@ -279,6 +279,12 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
     }
 
+    // Place met cut here //
+    if (outTree->met < 150) {
+      outTree->Reset();
+      continue;
+    }
+
     Double_t checkDPhi = 5.0;
     Double_t clean_checkDPhi = 5.0;
 
@@ -408,6 +414,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       
       outTree->n_cleanedjets++;
+      outTree->ht_cleanedjets += tempJet->Pt();
 
       if (outTree->n_cleanedjets < 5){
         // Check for delta phi from met for all jets:
@@ -430,6 +437,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           
           outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
           outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
+
+          outTree->jet1QGL = (*(inTree->jetQGL))[iJet];
       }
       
       else if (outTree->n_cleanedjets == 2) {
@@ -447,6 +456,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
           outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
           
+          outTree->jet2QGL = (*(inTree->jetQGL))[iJet];
+
           outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
       }
     }
@@ -602,22 +613,32 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         else
           outTree->fatjet1isLeading = 0;
 
-        outTree->fatjet1overlapB = 0;
-
         outTree->fatjet1DPhiMet     = deltaPhi(outTree->metPhi,outTree->fatjet1Phi);
         outTree->fatjet1DPhiTrueMet = deltaPhi(outTree->trueMetPhi,outTree->fatjet1Phi);
 
         for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
           TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
-          if (deltaR(tempJet->Phi(),tempJet->Eta(),outTree->fatjet1Phi,outTree->fatjet1Eta) < 1.2) {
-            if ((*(inTree->jetBdiscr))[iJet] > bCutTight)
-              outTree->fatjet1overlapB = 3;
-            else if ((*(inTree->jetBdiscr))[iJet] > bCutMedium && outTree->fatjet1overlapB < 2)
-              outTree->fatjet1overlapB = 2;
-            else if ((*(inTree->jetBdiscr))[iJet] > bCutLoose && outTree->fatjet1overlapB < 1)
-              outTree->fatjet1overlapB = 1;
+          Float_t checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempJet->Phi(),tempJet->Eta());
+
+          // Check loose distance
+          if ((*(inTree->jetBdiscr))[iJet] > bCutLoose) {
+            if (checkDR < outTree->fatjet1DRLooseB)
+                outTree->fatjet1DRLooseB = checkDR;
+
+            // Check medium distance
+            if ((*(inTree->jetBdiscr))[iJet] > bCutMedium) {
+              if (checkDR < outTree->fatjet1DRMediumB)
+                outTree->fatjet1DRMediumB = checkDR;
+
+              // Check tight distance
+              if ((*(inTree->jetBdiscr))[iJet] > bCutTight) {
+                if (checkDR < outTree->fatjet1DRTightB)
+                  outTree->fatjet1DRTightB = checkDR;
+              }
+            }
           }
         }
+
         if (inTree->metP4_GEN->GetEntries() > 0) {
           for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
             Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
@@ -636,10 +657,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
 
-    if (outTree->met > 150)
-      outTree->Fill();
-    else
-      outTree->Reset();
+    outTree->Fill();
 
   }
 

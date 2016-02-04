@@ -1,6 +1,6 @@
 #! /bin/bash
 
-folder=/afs/cern.ch/work/d/dabercro/public/Winter15/FatSkim/merged/
+folder=/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/merged/
 
 root -q -l -b xsecWeights.cc+\(\"$folder\"\)                      # This is to just make sure the macro is compiled
 
