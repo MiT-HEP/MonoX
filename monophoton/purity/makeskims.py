@@ -5,12 +5,12 @@ from ROOT import *
 from selections import Regions, Variables, Version
 gROOT.SetBatch(True)
 
-varName = 'chiso' 
-# varName = 'sieie'
+# varName = 'chiso' 
+varName = 'sieie'
 # varName = 'sieieScaled'
 var = Variables[varName]
-skims = Regions["ShapeChIso"]
-# skims = Regions["Monophoton"]
+# skims = Regions["ShapeChIso"]
+skims = Regions["Monophoton"]
 
 outDir = os.path.join('/scratch5/ballen/hist/purity/',Version,varName,'Skims/tmp')
 if not os.path.exists(outDir):

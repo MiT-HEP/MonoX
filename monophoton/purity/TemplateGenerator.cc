@@ -202,7 +202,7 @@ TemplateGenerator::fillSkim(TTree* _input, FakeVar _fakevar, PhotonId _id, Doubl
       }
       else {
 	// if (chIso[kObject][iP] < simpletree::Photon::chIsoCuts[kLocation][_id]) {
-	if (chIso[kObject][iP] < 10.0) { // for doing true photon contamination removal
+	if (chIso[kObject][iP] < 11.0) { // for doing true photon contamination removal
 	  PassCut[kChIso] = true;
 	}
       }
