@@ -20,7 +20,7 @@ htree.Add('/scratch5/yiiyama/studies/monophoton/skim/sph-d*_emplusjet.root')
 inputFile = ROOT.TFile.Open('../data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
 
-outputFile = ROOT.TFile.Open('../data/hadronTFactor_test.root', 'recreate')
+outputFile = ROOT.TFile.Open('../data/hadronTFactor.root', 'recreate')
 gpt = ROOT.TH1D('gpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
@@ -35,7 +35,7 @@ for iX in range(1, fpt.GetNbinsX() + 1):
     imp = impurityHist.GetBinContent(bin) / 100.
     err = impurityHist.GetBinError(bin) / 100.
 
-    # print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
+    print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
 
     cont = fpt.GetBinContent(iX) * imp 
     stat = fpt.GetBinError(iX) * imp 
