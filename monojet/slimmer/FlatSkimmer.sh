@@ -19,6 +19,13 @@ CrombieFlatSkimmer  --cut 'met > 200' --tree 'events' --copy 'htotal' --run 'run
 cp $CrombieSkimDir/monojet_TTJets* /afs/cern.ch/work/d/dabercro/public/Winter15/topSkim/.
 cp $CrombieSkimDir/monojet_ST* /afs/cern.ch/work/d/dabercro/public/Winter15/topSkim/.
 
+if [ ! -d $CrombieSkimDir/Purity ]
+then
+    mkdir $CrombieSkimDir/Purity
+fi
+
+cp $CrombieSkimDir/monojet_GJets* $CrombieSkimDir/Purity/.
+
 CrombieFlatSkimmer  --cut 'fatjet1DRGenW < 0.4' --tree 'events' --copy 'htotal' --run 'runNum' --lumi 'lumiNum' --freq 100000 --numproc $CrombieNLocalProcs --indir /afs/cern.ch/work/d/dabercro/public/Winter15/topSkim --outdir $CrombieSkimDir/topRes --json $CrombieGoodRuns
 
 CrombieFlatSkimmer  --cut 'fatjet1DRGenW > 0.4' --tree 'events' --copy 'htotal' --run 'runNum' --lumi 'lumiNum' --freq 100000 --numproc $CrombieNLocalProcs --indir /afs/cern.ch/work/d/dabercro/public/Winter15/topSkim --outdir $CrombieSkimDir/topNonRes --json $CrombieGoodRuns
@@ -27,3 +34,6 @@ CrombieFlatSkimmer  --cut 'fatjet1DRGenW > 0.4' --tree 'events' --copy 'htotal' 
 
 ./applyCorrections.py $CrombieSkimDir/topRes
 ./applyCorrections.py $CrombieSkimDir/topNonRes
+
+./applyTriggers.py $CrombieSkimDir
+./applyPurity.py $CrombieSkimDir/Purity

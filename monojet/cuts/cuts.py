@@ -16,13 +16,13 @@ MuTrigger  = '(triggerFired[8]==1 || triggerFired[9]==1 || triggerFired[10]==1)'
 
 monoJet     = 'jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.4'
 monoVSimple = 'fatjet1Pt > 250 && fatjet1tau21 < 0.6 && met > 250'
-monoVNoMass = monoVSimple + ' && fatjet1overlapB < 2 && abs(fatjet1Eta) < 2.4 && jet1isMonoJetIdNew == 1'
+monoVNoMass = monoVSimple + ' && abs(fatjet1Eta) < 2.4 && jet1isMonoJetIdNew == 1'
 monoV       = monoVNoMass + ' && fatjet1PrunedM < 105 && fatjet1PrunedM > 62'
 monoVeto    = 'fatjet1Pt > 250 && fatjet1PrunedM > 62'
 
-topSimple = 'n_mediumlep == 1 && n_looselep == 1 && trueMet > 30'
+topSimple = 'n_mediumlep == 1 && n_looselep == 1 && trueMet > 30 && n_bjetsMedium != 0'
 topregion = topSimple + ' && n_bjetsLoose > 1 && fatjet1overlapB < 1 && fatjet1Pt > 250 && fatjet1Eta < 2.4 && fatjet1MonojetId == 1'
-toprecoil = topSimple + ' && n_bjetsLoose > 0 && ' + monoV
+toprecoil = topSimple + ' && n_bjetsLoose > 1 '
 
 Zee = str(zeeAll + ' && ' + 
           metCut + ' && ' + 
@@ -80,10 +80,10 @@ top = str(allCut + ' && ' +
           topregion)
 
 topMet = str(allCut + ' && ' +
-             photonVeto + ' && ' +
-#             METTrigger + ' && ' +
-             metCut + ' && ' +
-             toprecoil)
+          photonVeto + ' && ' +
+#          METTrigger + ' && ' +
+          metCut + ' && ' +
+          toprecoil)
 
 ZeeMJ_inc  = Zee + ' && ' + monoJet
 ZmmMJ_inc  = Zmm + ' && ' + monoJet
@@ -140,3 +140,6 @@ signalMVSimple = signalMVSimple_unblinded + ' && ' + 'runNum == 1'
 
 topMu  = topMet + ' && abs(lep1PdgId) == 13 && ' + singleLepton + ' && ' + monoV
 topEle = topMet + ' && abs(lep1PdgId) == 11 && ' + singleLepton + ' && ' + monoV
+
+topMJMu  = topMet + ' && abs(lep1PdgId) == 13 && ' + singleLepton + ' && ' + monoJet
+topMJEle = topMet + ' && abs(lep1PdgId) == 11 && ' + singleLepton + ' && ' + monoJet
