@@ -41,10 +41,10 @@ region = sys.argv[1]
 try:
     cutMet = int(sys.argv[2])
 except IndexError:
-    cutMet = 150
+    cutMet = 140
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
-baselineCut = 'TMath::Abs(photons.time[0]) < 3. && photons.mipEnergy[0] < 4.9 && photons.s4[0] < 0.95 && tauVeto && t1Met.iso'
+baselineCut = 'tauVeto && t1Met.iso'
 
 if region == 'monoph':
     if baselineCut:
