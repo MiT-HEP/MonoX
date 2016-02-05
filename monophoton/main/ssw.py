@@ -12,7 +12,7 @@ import config
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree11a/t2mit/filefi/042'
+sourceDir = '/scratch5/yiiyama/hist/simpletree11c/t2mit/filefi/042'
 dataSourceDir = sourceDir
 
 neroInput = False
@@ -175,7 +175,7 @@ def makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialProcessor):
     with open(basedir + '/data/znng_kfactor.dat') as source:
         source.readline()
         for line in source:
-            pt, kfactor = map(float, line.split())
+            pt, kfactor = map(float, line.split()[:2])
             proc.setPtBin(pt, kfactor)
 
     return proc
@@ -213,7 +213,7 @@ generators = {
     'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wlnu': {'monoph': makeGenWlnuProcessor}, # NLO low stats
     'wlnu-100': {'monoph': makeGenWlnuProcessor},
     'wlnu-200': {'monoph': makeGenWlnuProcessor},

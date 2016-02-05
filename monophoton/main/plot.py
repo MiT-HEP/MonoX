@@ -41,7 +41,7 @@ region = sys.argv[1]
 try:
     cutMet = int(sys.argv[2])
 except IndexError:
-    cutMet = 150
+    cutMet = 140
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 baselineCut = 'TMath::Abs(photons.time[0]) < 3. && photons.mipEnergy[0] < 4.9 && photons.s4[0] < 0.95 && tauVeto && t1Met.iso'
@@ -56,14 +56,16 @@ if region == 'monoph':
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
     sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
-        ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
-        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
-        # ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
-        # ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), #NLO
+        ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), 
+        ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
+        ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
-        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
+        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), #NLO
+        # ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), 
         ('zg', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
     ]
     
@@ -85,34 +87,78 @@ if region == 'monoph':
         'metPhiHighMet'+str(cutMet): VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutStringHighMet, (20, -math.pi, math.pi)),
         'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', baselineCut, (30, 0., math.pi)),
         'dPhiJetMetHighMet'+str(cutMet): VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutStringHighMet, (30, 0., math.pi)),
-        'dPhiJetMetMin': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', '', (30, 0., math.pi), overflow = True),
-        'dPhiJetMetMinHighMet'+str(cutMet): VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 't1Met.dPhiJetMetMin', cutHighMet, (30, 0., math.pi), overflow = True),
+        'dPhiJetMetMin': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 'dPhiJetMetMin', baselineCut.replace(" && t1Met.iso", ""), (30, 0., math.pi), overflow = True),
+        'dPhiJetMetMinHighMet'+str(cutMet): VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 'dPhiJetMetMin', cutStringHighMet.replace(" && t1Met.iso", ""), (30, 0., math.pi), overflow = True),
         'njets': VariableDef('N_{jet}', '', 'jets.size', baselineCut, (6, 0., 6.)),
         'njetsHighMet'+str(cutMet): VariableDef('N_{jet}', '', 'jets.size', cutStringHighMet, (6, 0., 6.)),
         'phoPtOverMet': VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', baselineCut, (20,0.,4.)),
         'phoPtOverMetHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutStringHighMet, (20,0.,4.)),
         'phoPtOverJetPt': VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', baselineCut, (20,0.,10.)),
         'phoPtOverJetPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', cutStringHighMet, (20,0.,10.)),
-        'nVertex': VariableDef('N_{vertex}', '', 'npv', baselineCut, (40,0.,40.)),
-        'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (40,0.,40.)),
+        'nVertex': VariableDef('N_{vertex}', '', 'npv', baselineCut, (20,0.,40.)),
+        'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (20,0.,40.)),
         'sieie': VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', baselineCut, (16, 0.004, 0.012)),
         'sieieHighMet'+str(cutMet): VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', cutStringHighMet, (16, 0.004, 0.012)),
         'r9': VariableDef('r9', '', 'photons.r9', baselineCut, (50, 0.5, 1.)),
         'r9HighMet'+str(cutMet): VariableDef('r9', '', 'photons.r9', cutStringHighMet, (50, 0.5, 1.)),
         's4': VariableDef('s4', '', 'photons.s4', baselineCut, (50, 0.5, 1.), logy = False),
         's4HighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet, (20, 0.5, 1.), logy = False),
-        's4halo': VariableDef('s4', '', 'photons.s4', baselineCut+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        's4haloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        's4nonhalo': VariableDef('s4', '', 'photons.s4', baselineCut+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        's4nonhaloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
-        'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', baselineCut, (60, 0.004, .016)),
-        'etaWidthHighMet'+str(cutMet): VariableDef('etaWidth', '', 'photons.etaWidth', cutStringHighMet, (60, 0.004, .016)),
-        'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', baselineCut, (25, 0., .05)),
-        'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (25, 0., 0.05)),
-        'time': VariableDef('time', '', 'photons.time', baselineCut, (40, -4., 4.)),
-        'timeHighMet'+str(cutMet): VariableDef('time', '', 'photons.time', cutStringHighMet, (40, -4., 4.)),
-        'timeSpan': VariableDef('timeSpan', '', 'photons.timeSpan', baselineCut, (40, -20., 20.)),
-        'timeSpanHighMet'+str(cutMet): VariableDef('timeSpan', '', 'photons.timeSpan', cutStringHighMet, (40, -20., 20.))
+        # 's4halo': VariableDef('s4', '', 'photons.s4', baselineCut+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        # 's4haloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && (photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        # 's4nonhalo': VariableDef('s4', '', 'photons.s4', baselineCut+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        # 's4nonhaloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
+        'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', baselineCut, (30, 0.004, .016)),
+        'etaWidthHighMet'+str(cutMet): VariableDef('etaWidth', '', 'photons.etaWidth', cutStringHighMet, (30, 0.004, .016)),
+        'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', baselineCut, (18, 0.05, .05)),
+        'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (18, 0.05, 0.05)),
+        'time': VariableDef('time', '', 'photons.time', baselineCut, (20, -4., 4.)),
+        'timeHighMet'+str(cutMet): VariableDef('time', '', 'photons.time', cutStringHighMet, (20, -4., 4.)),
+        'timeSpan': VariableDef('timeSpan', '', 'photons.timeSpan', baselineCut, (20, -20., 20.)),
+        'timeSpanHighMet'+str(cutMet): VariableDef('timeSpan', '', 'photons.timeSpan', cutStringHighMet, (20, -20., 20.))
+    }
+
+elif region == 'lowdphi':
+    if baselineCut:
+        baselineCut = baselineCut.replace("t1Met", "!t1Met")
+        cutStringHighMet = baselineCut + ' && ' + cutHighMet
+    else:
+        cutStringHighMet = cutHighMet
+
+    defsel = 'monoph'
+    obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
+    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
+    bkgGroups = [
+        # ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), #NLO
+        ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
+        ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), 
+        ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
+        ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), #NLO
+        # ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), 
+        ('zg', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa))),
+        ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)))
+    ]
+    
+    variables = {
+        # 'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
+        'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
+        'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 2000.)),
+        'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 2000.)),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
+        'phoPtHighMet'+str(cutMet): VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cutStringHighMet, [175., 190., 250., 400., 700., 1000.], overflow = True),
+        'metPhi': VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', baselineCut, (20, -math.pi, math.pi)),
+        'metPhiHighMet'+str(cutMet): VariableDef('#phi(E_{T}^{miss})', '', 't1Met.phi', cutStringHighMet, (20, -math.pi, math.pi)),
+        'dPhiJetMet': VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', baselineCut, (30, 0., math.pi)),
+        'dPhiJetMetHighMet'+str(cutMet): VariableDef('#Delta#phi(E_{T}^{miss}, j)', '', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', cutStringHighMet, (30, 0., math.pi)),
+        'dPhiJetMetMin': VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 'dPhiJetMetMin', baselineCut, (30, 0., math.pi), overflow = True),
+        'dPhiJetMetMinHighMet'+str(cutMet): VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 'dPhiJetMetMin', cutStringHighMet, (30, 0., math.pi), overflow = True),
+        'njets': VariableDef('N_{jet}', '', 'jets.size', baselineCut, (6, 0., 6.)),
+        'njetsHighMet'+str(cutMet): VariableDef('N_{jet}', '', 'jets.size', cutStringHighMet, (6, 0., 6.)),
+        'nVertex': VariableDef('N_{vertex}', '', 'npv', baselineCut, (40,0.,40.)),
+        'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (40,0.,40.)),
     }
 
 elif region == 'lowmt':
@@ -268,8 +314,12 @@ limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photo
                         ( [100. + 50. * x for x in range(11)], [175. + 25. * x for x in range(18)] ), is2D = True)
 
 
-sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
-blind = 5
+sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet), 'mtPhoMet', 'mtPhoMetHighMet'+str(cutMet)]}
+try:
+    blind = int(sys.argv[3])
+except IndexError:
+    blind = 5
+
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
 
@@ -498,17 +548,17 @@ bkgTotal = 0.
 print 'Yields for MET > '+str(cutMet)
 for gName, group in reversed(bkgGroups):
     bkgTotal += counts[gName]
-    print '%+10s  %.1f' % (gName, counts[gName])
+    print '%+10s  %.2f' % (gName, counts[gName])
 
 print '---------------------'
-print '%+10s  %.1f' % ('bkg', bkgTotal)
+print '%+10s  %.2f' % ('bkg', bkgTotal)
 
 print '====================='
 
 if region == 'monoph':
     for sGroup in sigGroups:
         for sName in sGroup.samples:
-            print '%+10s  %.1f' % (sName, counts[sName])
+            print '%+10s  %.2f' % (sName, counts[sName])
 
 print '====================='
-print '%+10s  %.1f' % ('obs', counts['obs'])
+print '%+10s  %.2f' % ('obs', counts['obs'])
