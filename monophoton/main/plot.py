@@ -269,7 +269,7 @@ limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photo
 
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet)]}
-blind = 1
+blind = 5
 
 lumi = sum([allsamples[s].lumi for s in obs.samples])
 
@@ -382,8 +382,8 @@ if MAKEPLOTS:
 
     # temporary - let canvas return this
     plotdir = canvas.webdir + '/monophoton/' + region
-    for plot in os.listdir(plotdir):
-        os.remove(plotdir + '/' + plot)
+    # for plot in os.listdir(plotdir):
+        # os.remove(plotdir + '/' + plot)
     
     print "Starting plot making."
     

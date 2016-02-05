@@ -2,7 +2,7 @@ import os
 import array
 import ROOT
 
-Version = 'simpletree10'
+Version = 'simpletree11c'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
@@ -48,7 +48,7 @@ from ROOT import *
 # nTuple location
 ntupledir = '/scratch5/yiiyama/hist/'+Version+'/t2mit/filefi/042/'
 
-ChIsoSbBins = range(20,101,5)
+ChIsoSbBins = range(20,111,5)
 
 # Variables and associated properties
 # variable Enum, sideband Enum, selection Enum, roofit variable ( region : roofit variable, nbins, variable binning), cut dict for purity
@@ -58,8 +58,8 @@ Variables = { "sieie"  : (kSigmaIetaIeta,kChIso,kLoose, { "barrel"  : (RooRealVa
               ,"sieieScaled"  : (kSigmaIetaIetaScaled,kChIso,kLoose, { "barrel"  : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.004, 0.015), 44, [0.004,0.011,0.015] )
                                                                        ,"endcap" : (RooRealVar('sieieScaled', '#sigma_{i#etai#eta}^{Scaled}', 0.016, 0.040), 48, [0.016,0.030,0.040] ) } 
                            , sieieCuts )
-              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,chIsoCuts["barrel"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] )
-                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 10.0), 20, [0.0,chIsoCuts["endcap"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] ) }
+              ,"chiso" : (kChargedHadronIsolation,kChIso,kLoose, { "barrel"  : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 11.0), 22, [0.0,chIsoCuts["barrel"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] )
+                                                                   ,"endcap" : (RooRealVar('chiso', 'Ch Iso (GeV)', 0.0, 11.0), 22, [0.0,chIsoCuts["endcap"]["medium"]]+[float(x)/10.0 for x in ChIsoSbBins] ) }
                           , chIsoCuts )
               ,"phiso" : (kPhotonIsolation,kSieie,kLoose, { "barrel"  : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] )
                                                             ,"endcap" : (RooRealVar('phiso', 'Ph Iso (GeV)', 0., 10.0), 100, [0.0,5.0,10.0] ) } 
@@ -406,7 +406,7 @@ PhotonPtSels = [ [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((selPhotons.pt
                     ,('PhotonPt140to180', '((selPhotons.pt > 140) && (selPhotons.pt < 180) )')
                     ,('PhotonPt180toInf', '((selPhotons.pt > 180) )') ] ]
 
-cutMet = [000,100,250]
+cutMet = [000,60,100,150]
 MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))') ] 
 MetSels = MetSels + [ ('Met'+str(low)+'to'+str(high),'((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))') for low, high in zip(cutMet,cutMet[1:]) ]
 MetSels = MetSels + [ ('Met'+str(cutMet[-1])+'toInf', '((t1Met.met > '+str(cutMet[-1])+'))') ]
