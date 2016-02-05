@@ -196,27 +196,35 @@ def makeGenLowMtProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
 
 generators = {
+    # Data
     'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
     'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
-    'wlnu': {'monoph': makeGenWlnuProcessor},
-    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
-    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor},
-    'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
+    # MC for signal region
     'znng-130': {'monoph':makeGenZnnProcessor, 'lowmt': makeGenZnnLowMtProcessor},
-    'dy-50': {'monoph': makeGenProcessor},
-    'znn-100': {'monoph': makeGenHadronProcessor},
-    'znn-200': {'monoph': makeGenHadronProcessor},
-    'znn-400': {'monoph': makeGenHadronProcessor},
-    'znn-600': {'monoph': makeGenHadronProcessor},
+    'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'wnlg-130': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'wlnu': {'monoph': makeGenWlnuProcessor}, # NLO low stats
+    'wlnu-100': {'monoph': makeGenWlnuProcessor},
+    'wlnu-200': {'monoph': makeGenWlnuProcessor},
+    'wlnu-400': {'monoph': makeGenWlnuProcessor},
+    'wlnu-600': {'monoph': makeGenWlnuProcessor},
+    # other MC
+    'dy-50': {'monoph': makeGenProcessor},
+    'znn-100': {'monoph': makeGenHadronProcessor},
+    'znn-200': {'monoph': makeGenHadronProcessor},
+    'znn-400': {'monoph': makeGenHadronProcessor},
+    'znn-600': {'monoph': makeGenHadronProcessor},
     'qcd-200': {'monoph':makeGenProcessor},
     'qcd-300': {'monoph':makeGenProcessor},
     'qcd-500': {'monoph':makeGenProcessor},

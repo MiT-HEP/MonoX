@@ -18,6 +18,8 @@ outDir = os.path.join(plotDir, 'Fitting')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
+outputFile = TFile("../data/impurity.root", "RECREATE")
+
 purities = {}
 
 for loc in Locations[:1]:
@@ -26,7 +28,7 @@ for loc in Locations[:1]:
         purities[loc][pid] = {}
         for ptCut in PhotonPtSels[0][1:]:
             purities[loc][pid][ptCut[0]] = {}
-            for metCut in MetSels[:1]:
+            for metCut in MetSels[1:2]:
                 purities[loc][pid][ptCut[0]][metCut[0]] = {}
                 
                 purityFileName = "purity_data_"+loc+"_"+pid+"_"+ptCut[0]+"_"+metCut[0]+"_ex.tex"
@@ -146,6 +148,7 @@ for loc in Locations[:1]:
                 if not conout[1] == "":
                     print conout[1]
 pprint(purities)
+
 """
 colors = ['r','b','g','m','k']
 
@@ -199,7 +202,7 @@ for loc in Locations[:1]:
 
 for loc in Locations[:1]:
     for pid in PhotonIds[1:2]:
-        for metCut in MetSels[:1]:
+        for metCut in MetSels[1:2]:
             purityFileName = "purity_data_"+loc+"_"+pid+"_ptbinned_table.tex"
             purityFilePath = os.path.join(outDir,purityFileName)
             purityFile = open(purityFilePath, "w")
@@ -288,10 +291,14 @@ for loc in Locations[:1]:
                     # print binNumber, purity, uncertainty
                     purityFile.write(r"& %.2f $\pm$ %.2f " % (impurity, uncertainty) )
                     hists[0].SetBinContent(binNumber, impurity)
+                    hists[0].SetBinError(binNumber, uncertainty)
                     hists[1].SetBinContent(binNumber, uncertainty/impurity * 100)
-                    # hists[0].SetBinError(binNumber, uncertainty)
 
+                outputFile.cd()
+                hists[0].SetTitle("Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
+                hists[0].Write()
                 histograms[0].append(hists[0])
+                hists[1].SetTitle("Relative Error on Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
                 histograms[1].append(hists[1])
                 purityFile.write(r"\\")
                 purityFile.write("\n")
@@ -303,14 +310,13 @@ for loc in Locations[:1]:
             purityFile.write(r"\end{document}")
             purityFile.close()
 
-            histograms[0][0].SetTitle("Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
-            histograms[1][0].SetTitle("Relative Error on Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
+            
             suffix = [ "central", "error" ] 
             for hlist in histograms:
                 canvas = TCanvas()
-                hlist[0].Draw()
-                hlist[2].Draw("same")
-                hlist[1].Draw("same")
+                hlist[0].Draw("hist")
+                hlist[2].Draw("samehist")
+                hlist[1].Draw("samehist")
         
                 leg.Draw()
                 plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_"+suffix[histograms.index(hlist)] 

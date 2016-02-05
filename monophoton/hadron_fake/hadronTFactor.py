@@ -1,9 +1,14 @@
+import sys
+import os
 import array
 import math
 import ROOT
+
+basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(basedir)
 from plotstyle import SimpleCanvas
 
-canvas = SimpleCanvas(lumi = 2100.)
+canvas = SimpleCanvas(lumi = 2239.9)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
@@ -12,7 +17,10 @@ gtree.Add('/scratch5/yiiyama/studies/monophoton/skim/sph-d*_monoph.root')
 htree = ROOT.TChain('events')
 htree.Add('/scratch5/yiiyama/studies/monophoton/skim/sph-d*_emplusjet.root')
 
-outputFile = ROOT.TFile.Open('/scratch5/yiiyama/studies/monophoton/hadronTFactor.root', 'recreate')
+inputFile = ROOT.TFile.Open('../data/impurity.root')
+impurityHist = inputFile.Get("ChIso50to80imp")
+
+outputFile = ROOT.TFile.Open('../data/hadronTFactor.root', 'recreate')
 gpt = ROOT.TH1D('gpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
@@ -23,24 +31,14 @@ gpt.Scale(1., 'width')
 fpt = gpt.Clone('fpt')
 for iX in range(1, fpt.GetNbinsX() + 1):
     cent = fpt.GetXaxis().GetBinCenter(iX)
-    if cent > 175. and cent <= 200.:
-        imp = 0.0402
-        err = 0.0087
-    elif cent <= 250.:
-        imp = 0.0424
-        err = 0.0095
-    elif cent < 300.:
-        imp = 0.0364
-        err = 0.0090
-    elif cent < 350.:
-        imp = 0.0333
-        err = 0.0108
-    else:
-        imp = 0.0254
-        err = 0.0047
+    bin = impurityHist.FindBin(cent)
+    imp = impurityHist.GetBinContent(bin) / 100.
+    err = impurityHist.GetBinError(bin) / 100.
 
-    cont = fpt.GetBinContent(iX) * imp
-    stat = fpt.GetBinError(iX) * imp
+    print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
+
+    cont = fpt.GetBinContent(iX) * imp 
+    stat = fpt.GetBinError(iX) * imp 
     syst = fpt.GetBinContent(iX) * err
     fpt.SetBinContent(iX, cont)
     fpt.SetBinError(iX, math.sqrt(stat * stat + err * err))
