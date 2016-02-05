@@ -110,8 +110,8 @@ if region == 'monoph':
         # 's4nonhaloHighMet'+str(cutMet): VariableDef('s4', '', 'photons.s4', cutStringHighMet+' && !(photons[0].mipEnergy > 6.3)', (50, 0.5, 1.)),
         'etaWidth': VariableDef('etaWidth', '', 'photons.etaWidth', baselineCut, (30, 0.004, .016)),
         'etaWidthHighMet'+str(cutMet): VariableDef('etaWidth', '', 'photons.etaWidth', cutStringHighMet, (30, 0.004, .016)),
-        'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', baselineCut, (18, 0.05, .05)),
-        'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (18, 0.05, 0.05)),
+        'phiWidth': VariableDef('phiWidth', '', 'photons.phiWidth', baselineCut, (18, 0., 0.05)),
+        'phiWidthHighMet'+str(cutMet): VariableDef('phiWidth', '', 'photons.phiWidth', cutStringHighMet, (18, 0., 0.05)),
         'time': VariableDef('time', '', 'photons.time', baselineCut, (20, -4., 4.)),
         'timeHighMet'+str(cutMet): VariableDef('time', '', 'photons.time', cutStringHighMet, (20, -4., 4.)),
         'timeSpan': VariableDef('timeSpan', '', 'photons.timeSpan', baselineCut, (20, -20., 20.)),
@@ -218,23 +218,25 @@ elif region == 'dimu':
     }
 
 elif region == 'monomu':
+    cut = baselineCut + ' && photons.pt[0] > 140.'
+
     defsel = 'monomu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
     bkgGroups = [
-        ('wg', GroupSpec('W#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
+        ('wg', GroupSpec('W#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
         ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('zg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
-        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi[0]))))', '', [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
-        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', '', (20, -1.5, 1.5)),
-        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', '', (20, -math.pi, math.pi)),
-        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', '', (20, -math.pi, math.pi)),
-        'dRPhoMu': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.))', '', (20, 0., 4.)),
-        'njets': VariableDef('N_{jet}', '', 'jets.size', '', (10, 0., 10.))
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
+        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi[0]))))', cut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
+        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
+        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cut, (20, -math.pi, math.pi)),
+        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cut, (20, -math.pi, math.pi)),
+        'dRPhoMu': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.))', cut, (20, 0., 4.)),
+        'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
 elif region == 'diel':
@@ -266,27 +268,28 @@ elif region == 'diel':
     }
 
 elif region == 'monoel':
-    baselineCut += ' && TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.) > 0.01'
+    dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
+    cut = baselineCut + ' && ' + dR2_00 + ' > 0.01 && photons.pt[0] > 140.'
 
     defsel = 'monoel'
     obs = GroupSpec('Observed', ['sel-d3', 'sel-d4'], ROOT.kBlack)
     bkgGroups = [
-        ('wg', GroupSpec('W#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
+        ('wg', GroupSpec('W#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))),
         ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('zg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa))),
         ('eefake', GroupSpec('Electron fakes', [('sel-d3', 'eefake'), ('sel-d4', 'eefake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99)))
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)], logy = False),
-        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * electrons.pt[0] * (1. - TMath::Cos(t1Met.phi - electrons.phi[0])))', baselineCut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], logy = False),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)], logy = False),
-        'phoPtLowMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut + ' && t1Met.met < 60.', [175. + 15. * x for x in range(16)], logy = False),
-        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', baselineCut, (20, -1.5, 1.5)),
-        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', baselineCut, (20, -math.pi, math.pi)),
-        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', baselineCut, (20, -math.pi, math.pi)),
-        'dRPhoEl': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.))', baselineCut, (20, 0., 4.)),
-        'njets': VariableDef('N_{jet}', '', 'jets.size', baselineCut, (10, 0., 10.))
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)], logy = False),
+        'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * electrons.pt[0] * (1. - TMath::Cos(t1Met.phi - electrons.phi[0])))', cut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], logy = False),
+        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)], logy = False),
+        'phoPtLowMet': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut + ' && t1Met.met < 60.', [175. + 15. * x for x in range(16)], logy = False),
+        'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
+        'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cut, (20, -math.pi, math.pi)),
+        'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cut, (20, -math.pi, math.pi)),
+        'dRPhoEl': VariableDef('#DeltaR(#gamma, #mu)', '', 'TMath::Sqrt(' + dR2_00 + ')', cut, (20, 0., 4.)),
+        'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
 elif region == 'elmu':
@@ -406,6 +409,7 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
             else:
                 if iX == 1:
                     wnorm = w
+
                 hist.SetBinContent(iX, cont / (w / wnorm))
                 hist.SetBinError(iX, err / (w / wnorm))
 
