@@ -13,9 +13,26 @@
 #include <map>
 #include <functional>
 
-bool const ABORTONFAIL(true);
-
+// Hard-coded parameters
+bool const ABORTONFAIL(false);
 unsigned const PHOTONWP(1);
+
+enum Cut {
+  kTrigger,
+  kEventFilter,
+  kMuonVeto,
+  kElectronVeto,
+  kTauVeto,
+  kPhotonSelection,
+  kJetCleaning,
+  kMetSelection,
+  kHighMet,
+  kMetIso,
+  nCuts
+};
+
+// allow the possibility to apply the cut and record the result but keep the event processing on
+unsigned const IGNORECUT(1 << kTauVeto);
 
 bool
 photonSelection(simpletree::Photon const& _ph)
@@ -34,6 +51,16 @@ bool
 photonEVeto(simpletree::Photon const& _ph)
 {
   return _ph.pixelVeto;
+}
+
+bool
+allBitsUp(unsigned bits, unsigned pos)
+{
+  // return true if bits have all 1's up to one bit before pos
+  // example: bits = 0011, pos = 2 -> true, pos = 3 -> false
+  unsigned mask((1 << pos) - 1);
+  mask &= ~IGNORECUT;
+  return (bits & mask) == mask;
 }
 
 class SkimSlimWeight {
@@ -74,7 +101,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
   std::vector<TTree*> skimTrees(nP, 0);
   std::vector<TTree*> cutTrees(nP, 0);
   std::vector<simpletree::Event> outEvents(nP);
-  std::vector<unsigned short> cut(nP, 0);
+  unsigned short iCut(0);
   std::vector<unsigned> cutBits(nP, 0);
   std::vector<bool*> tauVeto(nP, 0); // cannot use std::vetor<bool> because that is not quite an array of bools
   std::vector<bool*> metIso(nP, 0);
@@ -97,42 +124,31 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     cutTrees[iP]->Branch("lumi", &event.lumi, "lumi/i");
     cutTrees[iP]->Branch("event", &event.event, "event/i");
     if (ABORTONFAIL)
-      cutTrees[iP]->Branch("cut", &(cut[iP]), "cut/s");
+      cutTrees[iP]->Branch("cut", &iCut, "cut/s");
     else
       cutTrees[iP]->Branch("cutBits", &(cutBits[iP]), "cutBits/i");
   }
 
-  unsigned long passInit(0);
-  for (unsigned iP(0); iP != nP; ++iP)
-    passInit |= (1 << iP);
-  unsigned long pass(passInit);
-
-  auto updateCutFlow([&pass, &cut, &cutBits, &cutTrees](bool passCut, unsigned iP) {
-      if (ABORTONFAIL) {
-        if (passCut)
-          ++cut[iP];
-        else {
-          pass &= ~(1 << iP);
-          cutTrees[iP]->Fill();
-        }
-      }
-      else {
-        if (passCut)
-          cutBits[iP] |= (1 << cut[iP]);
-
-        ++cut[iP];
-      }
+  auto updateCutFlow([&iCut, &cutBits, &cutTrees](bool passCut, unsigned iP) {
+      if (passCut)
+        cutBits[iP] |= (1 << iCut);
+      else if (ABORTONFAIL && allBitsUp(cutBits[iP], iCut))
+        cutTrees[iP]->Fill();
     });
 
-  auto passAny([&pass, nP, &updateCutFlow](std::function<bool(unsigned)> const& fct)->bool {
+  auto passAny([&cutBits, &iCut, nP, &updateCutFlow](std::function<bool(unsigned)> const& fct)->bool {
+      bool pass(false);
       for (unsigned iP(0); iP != nP; ++iP) {
-        if ((pass & (1 << iP)) == 0)
+        // in "abort on fail" mode, cutBits must have all 1's up to the last bit
+        if (ABORTONFAIL && !allBitsUp(cutBits[iP], iCut))
           continue;
         
         bool passCut(fct(iP));
         updateCutFlow(passCut, iP);
+        if (passCut)
+          pass = true;
       }
-      return pass != 0;
+      return pass;
     });
 
   long iEntry(0);
@@ -146,9 +162,10 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     for (auto& ev : outEvents)
       ev.init();
 
-    pass = passInit;
-    cut.assign(cut.size(), 0);
+    iCut = 0;
     cutBits.assign(cutBits.size(), 0);
+
+    assert(iCut == kTrigger);
 
     if (!passAny([this, &event](unsigned iP)->bool {
 
@@ -157,12 +174,20 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         }) && ABORTONFAIL)
       continue;
 
+    ++iCut;
+
+    assert(iCut == kEventFilter);
+
     if (!passAny([this, &event](unsigned iP)->bool {
 
           return this->processors_[iP].second->beginEvent(event);
 
         }) && ABORTONFAIL)
       continue;
+
+    ++iCut;
+
+    assert(iCut == kMuonVeto);
 
     if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
 
@@ -171,6 +196,10 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         }) && ABORTONFAIL)
       continue;
 
+    ++iCut;
+
+    assert(iCut == kElectronVeto);
+
     if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
 
           return this->processors_[iP].second->vetoElectrons(event, outEvents[iP]);
@@ -178,13 +207,21 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         }) && ABORTONFAIL)
       continue;
 
+    ++iCut;
+
+    assert(iCut == kTauVeto);
+
     if (!passAny([this, &event, &tauVeto](unsigned iP)->bool {
 
           *tauVeto[iP] = this->processors_[iP].second->vetoTaus(event);
-          return true;
+          return *tauVeto[iP];
 
         }) && ABORTONFAIL)
       continue;
+
+    ++iCut;
+
+    assert(iCut == kPhotonSelection);
 
     if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
 
@@ -193,8 +230,10 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         }) && ABORTONFAIL)
       continue;
 
+    ++iCut;
+
     for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
+      if (ABORTONFAIL && !allBitsUp(cutBits[iP], iCut))
         continue;
 
       outEvents[iP].run = event.run;
@@ -205,7 +244,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
       // multiple output "events" can be created from a single input event in some control regions
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
-        processors_[iP].second->calculateMet(event, outEvents[iP]);
+        assert(iCut == kJetCleaning);
 
         bool cleanJets(processors_[iP].second->cleanJets(event, outEvents[iP]));
         updateCutFlow(cleanJets, iP);
@@ -213,11 +252,28 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         if (!cleanJets && ABORTONFAIL)
           continue;
 
+        ++iCut;
+
+        processors_[iP].second->calculateMet(event, outEvents[iP]);
+
+        assert(iCut == kMetSelection);
+
         bool selectMet(processors_[iP].second->selectMet(event, outEvents[iP]));
         updateCutFlow(selectMet, iP);
 
         if (!selectMet && ABORTONFAIL)
           continue;
+
+        ++iCut;
+
+        assert(iCut == kHighMet);
+
+        bool highMet(outEvents[iP].t1Met.met > 140.);
+        updateCutFlow(highMet, iP);
+
+        ++iCut;
+
+        assert(iCut == kMetIso);
 
         // temporary
         unsigned iJ(0);
@@ -228,26 +284,31 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
         for (; iJ != nJMax; ++iJ) {
 	  dPhi = std::abs(TVector2::Phi_mpi_pi(outEvents[iP].jets[iJ].phi - outEvents[iP].t1Met.phi));
-          if ( dPhi < 0.5)
+          if (dPhi < 0.5)
             break;
         }
         *metIso[iP] = iJ == nJMax;
         updateCutFlow(*metIso[iP], iP);
+
+        ++iCut;
+
 	*dPhiJetMetMin[iP] = dPhi;
         // temporary
 
-        if ((pass & (1 << iP)) != 0) {
+        assert(iCut == nCuts);
+
+        if (allBitsUp(cutBits[iP], iCut - 2)) {
           processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
           skimTrees[iP]->Fill();
         }
 
-        if ((pass & (1 << iP)) != 0 || !ABORTONFAIL)
+        if (!ABORTONFAIL || allBitsUp(cutBits[iP], iCut))
           cutTrees[iP]->Fill();
         
         // cutflow counter is incremented per updateCutFlow call
         // reset the cutflow counter for the next round of prepareOutput
-        cut[iP] -= 3;
+        iCut -= 4;
       }
     }
   }
@@ -498,38 +559,31 @@ GenProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event
     _outEvent.weight *= idscale_->GetBinContent(iX);
   }
 
+  if (kfactors_.size() != 0) {
+    for (auto& parton : _event.partons) {
+      if (parton.pid != 22 || parton.status != 1)
+        continue;
+
+      // what if parton is out of eta acceptance?
+      unsigned iBin(0);
+      while (iBin != kfactors_.size() && parton.pt >= kfactors_[iBin].first)
+        ++iBin;
+
+      if (iBin > 0)
+        iBin -= 1;
+
+      _outEvent.weight *= kfactors_[iBin].second;
+
+      break;
+    }
+  }
+
   if (useAltWeights_) {
     for (unsigned iS(0); iS != 6; ++iS)
       scaleReweight_[iS] = _event.reweight[iS].scale;
     for (unsigned iS(0); iS != 100; ++iS)
       pdfReweight_[iS] = _event.reweight[iS + 6].scale;
   }
-}
-
-
-void
-GenDifferentialProcessor::setPtBin(double _min, double _relWeight)
-{
-  weights_.emplace_back(_min, _relWeight);
-}
-
-void
-GenDifferentialProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  GenProcessor::calculateWeight(_event, _outEvent);
-
-  if (weights_.size() == 0 || _outEvent.photons.size() == 0)
-    return;
-
-  double pt(_outEvent.photons[0].pt);
-  unsigned iBin(0);
-  while (iBin != weights_.size() && pt >= weights_[iBin].first)
-    ++iBin;
-
-  if (iBin > 0)
-    iBin -= 1;
-  
-  _outEvent.weight *= weights_[iBin].second;
 }
 
 

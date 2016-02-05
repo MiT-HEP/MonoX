@@ -169,19 +169,30 @@ def makeGenWenuProcessor(sample):
 def makeGenWenuProxyProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWenuProxyProcessor)
 
-def makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialProcessor):
-    proc = makeGenProcessor(sample, cls = cls)
+def makeGenLowMtProcessor(sample):
+    return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
 
-    with open(basedir + '/data/znng_kfactor.dat') as source:
-        source.readline()
+def makeGenKFactorProcessor(sample, cls = ROOT.GenProcessor, gen = makeGenProcessor):
+    if cls is not None:
+        proc = gen(sample, cls = cls)
+    else:
+        proc = gen(sample)
+
+    with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
         for line in source:
             pt, kfactor = map(float, line.split()[:2])
-            proc.setPtBin(pt, kfactor)
+            proc.setKFactorPtBin(pt, kfactor)
 
     return proc
 
-def makeGenZnnLowMtProcessor(sample):
-    return makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialLowMtProcessor)
+def makeGenKFactorLowMtProcessor(sample):
+    return makeGenKFactorProcessor(sample, cls = ROOT.GenLowMtProcessor)
+
+def makeGenKFactorMonomuonProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenMonomuonProcessor, cls = None)
+
+def makeGenKFactorMonoelectronProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenMonoelectronProcessor, cls = None)
 
 def makeGenGJetProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenGJetProcessor)
@@ -191,9 +202,6 @@ def makeGenZnnProxyProcessor(sample):
 
 def makeGenHadronProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenHadronProcessor)
-
-def makeGenLowMtProcessor(sample):
-    return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
 
 def makeGenGJetLowMtProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenGJetLowMtProcessor)
@@ -207,9 +215,9 @@ generators = {
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
-    'znng-130': {'monoph':makeGenZnnProcessor, 'lowmt': makeGenZnnLowMtProcessor},
+    'znng-130': {'monoph':makeGenKFactorProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wnlg-130': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
+    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},

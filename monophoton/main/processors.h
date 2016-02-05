@@ -113,6 +113,7 @@ class GenProcessor : public virtual EventProcessor {
   void setReweight(TH1* _rwt) { reweight_ = _rwt; }
   void setIdScaleFactor(TH1* _scl) { idscale_ = _scl; }
   void useAlternativeWeights(bool _use) { useAltWeights_ = _use; }
+  void setKFactorPtBin(double _min, double _relWeight) { kfactors_.emplace_back(_min, _relWeight); }
 
   void addBranches(TTree&) override;
   bool passTrigger(simpletree::Event const&) override;
@@ -124,22 +125,7 @@ class GenProcessor : public virtual EventProcessor {
   bool useAltWeights_{false};
   float scaleReweight_[6];
   float pdfReweight_[100];
-};
-
-class GenDifferentialProcessor : public GenProcessor {
-  // Apply differential weights as a function of photon pT
-
- public:
-  GenDifferentialProcessor() {}
-  GenDifferentialProcessor(double _weightNorm, char const* _name = "GenDifferentialProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
-  ~GenDifferentialProcessor() {}
-
-  void setPtBin(double min, double relWeight);
-
-  void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
-
- protected:
-  std::vector<std::pair<double, double>> weights_{};
+  std::vector<std::pair<double, double>> kfactors_{};
 };
 
 class GenZnnProxyProcessor : public GenProcessor {
@@ -334,12 +320,6 @@ class GenLowMtProcessor : public LowMtProcessor, public GenProcessor {
  public:
   GenLowMtProcessor(double _weightNorm, char const* _name = "GenLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenProcessor() {}
   ~GenLowMtProcessor() {}
-};
-
-class GenDifferentialLowMtProcessor : public LowMtProcessor, public GenDifferentialProcessor {
- public:
-  GenDifferentialLowMtProcessor(double _weightNorm, char const* _name = "GenDifferentialLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenDifferentialProcessor() {}
-  ~GenDifferentialLowMtProcessor() {}
 };
 
 class GenGJetLowMtProcessor : public LowMtProcessor, public GenGJetProcessor {
