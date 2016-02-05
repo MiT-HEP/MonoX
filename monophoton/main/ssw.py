@@ -195,6 +195,9 @@ def makeGenHadronProcessor(sample):
 def makeGenLowMtProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
 
+def makeGenGJetLowMtProcessor(sample):
+    return makeGenProcessor(sample, cls = ROOT.GenGJetLowMtProcessor)
+
 generators = {
     # Data
     'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
@@ -207,13 +210,13 @@ generators = {
     'znng-130': {'monoph':makeGenZnnProcessor, 'lowmt': makeGenZnnLowMtProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wnlg-130': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor},
-    'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
-    'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
-    'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
-    'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
-    'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenLowMtProcessor},
+    'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
+    'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
+    'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
+    'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
+    'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenZnnProxyProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wlnu': {'monoph': makeGenWlnuProcessor}, # NLO low stats
     'wlnu-100': {'monoph': makeGenWlnuProcessor},
     'wlnu-200': {'monoph': makeGenWlnuProcessor},
