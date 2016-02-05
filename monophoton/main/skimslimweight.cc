@@ -83,6 +83,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
   std::vector<unsigned short> cut(nP, 0);
   std::vector<bool*> tauVeto(nP, 0); // cannot use std::vetor<bool> because that is not quite an array of bools
   std::vector<bool*> metIso(nP, 0);
+  std::vector<float*> dPhiJetMetMin(nP, 0);
   
   for (unsigned iP(0); iP != nP; ++iP) {
     auto* outputFile(new TFile(outputDir + "/" + sampleName + "_" + processors_[iP].first + ".root", "recreate"));
@@ -90,8 +91,10 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "npv", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
     tauVeto[iP] = new bool;
     metIso[iP] = new bool;
+    dPhiJetMetMin[iP] = new float;
     skimTrees[iP]->Branch("tauVeto", tauVeto[iP], "tauVeto/O");
     skimTrees[iP]->Branch("t1Met.iso", metIso[iP], "iso/O");
+    skimTrees[iP]->Branch("dPhiJetMetMin", dPhiJetMetMin[iP], "dPhiJetMetMin/F");
     processors_[iP].second->addBranches(*skimTrees[iP]);
 
     cutTrees[iP] = new TTree(processors_[iP].second->getName() + "CutFlow", "cutflow");
@@ -213,14 +216,17 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
         // temporary
         unsigned iJ(0);
         unsigned nJMax(outEvents[iP].jets.size());
+	float dPhi = 5.;
         if (nJMax > 4)
           nJMax = 4;
 
         for (; iJ != nJMax; ++iJ) {
-          if (std::abs(TVector2::Phi_mpi_pi(outEvents[iP].jets[iJ].phi - outEvents[iP].t1Met.phi)) < 0.5)
+	  dPhi = std::abs(TVector2::Phi_mpi_pi(outEvents[iP].jets[iJ].phi - outEvents[iP].t1Met.phi));
+          if ( dPhi < 0.5)
             break;
         }
         *metIso[iP] = iJ == nJMax;
+	*dPhiJetMetMin[iP] = dPhi;
         // temporary
 
         processors_[iP].second->calculateWeight(event, outEvents[iP]);
@@ -245,6 +251,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     delete file;
     delete tauVeto[iP];
     delete metIso[iP];
+    delete dPhiJetMetMin[iP];
   }
 
   delete translator;
