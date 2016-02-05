@@ -1,2 +1,2 @@
-skimDir = '/scratch5/ballen/hist/monophoton/skim/tmp'
-histDir = '/home/ballen/cms/root'
+skimDir = '/scratch5/yiiyama/studies/monophoton/skim'
+histDir = '/scratch5/yiiyama/studies/monophoton'

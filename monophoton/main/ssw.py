@@ -175,7 +175,7 @@ def makeGenZnnProcessor(sample, cls = ROOT.GenDifferentialProcessor):
     with open(basedir + '/data/znng_kfactor.dat') as source:
         source.readline()
         for line in source:
-            pt, kfactor = map(float, line.split())
+            pt, kfactor = map(float, line.split()[:2])
             proc.setPtBin(pt, kfactor)
 
     return proc
