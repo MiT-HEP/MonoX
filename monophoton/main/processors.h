@@ -184,6 +184,7 @@ class GenGJetProcessor : public GenProcessor {
   // GenProcessor with a linear k-factor as a function of reconstructed photon pt
 
  public:
+  GenGJetProcessor() {}
   GenGJetProcessor(double _weightNorm, char const* _name = "GenGJetProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
   ~GenGJetProcessor() {}
   
@@ -206,7 +207,7 @@ class WenuProxyProcessor : public virtual EventProcessor {
   void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
 
  protected:
-  std::vector<std::pair<bool, simpletree::LorentzVectorM>> hardElectrons_;
+  std::vector<std::pair<bool, simpletree::Electron const*>> hardElectrons_;
   double weightErr_;
 };
 
@@ -339,4 +340,10 @@ class GenDifferentialLowMtProcessor : public LowMtProcessor, public GenDifferent
  public:
   GenDifferentialLowMtProcessor(double _weightNorm, char const* _name = "GenDifferentialLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenDifferentialProcessor() {}
   ~GenDifferentialLowMtProcessor() {}
+};
+
+class GenGJetLowMtProcessor : public LowMtProcessor, public GenGJetProcessor {
+ public:
+  GenGJetLowMtProcessor(double _weightNorm, char const* _name = "GenGJetLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenGJetProcessor() {}
+  ~GenGJetLowMtProcessor() {}
 };
