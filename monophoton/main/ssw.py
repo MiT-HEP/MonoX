@@ -39,84 +39,61 @@ def makeListedEventProcessor(sample):
 #    proc.setEventList(badEventsList)
     return proc
 
-def makeGenProcessor(sample, cls = ROOT.GenProcessor):
+def makeGenProcessor(sample, cls = ROOT.GenProcessor, args = None):
     global npvweight, gidscale
 
-    proc = cls(sample.crosssection / sample.sumw)
+    if args is not None:
+        arguments = args + (sample.crosssection / sample.sumw,)
+    else:
+        arguments = (sample.crosssection / sample.sumw,)
+
+    proc = cls(*arguments)
     proc.setReweight(npvweight)
     proc.setIdScaleFactor(gidscale)
     proc.useAlternativeWeights(True)
     return proc
 
-def makeDimuonProcessor(sample):
-    proc = ROOT.LeptonProcessor(0, 2)
-    proc.setMinPhotonPt(60.)
+def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor):
+    proc = cls(nEl, nMu)
+    proc.setMinPhotonPt(30.)
     return proc
 
+def makeDimuonProcessor(sample):
+    return makeLeptonProcessor(sample, 0, 2)
+
 def makeMonomuonProcessor(sample):
-    proc = ROOT.LeptonProcessor(0, 1)
-    proc.setMinPhotonPt(60.)
+    return makeLeptonProcessor(sample, 0, 1)
+
+def makeDielectronProcessor(sample):
+    return makeLeptonProcessor(sample, 2, 0)
+
+def makeMonoelectronProcessor(sample):
+    return makeLeptonProcessor(sample, 1, 0)
+
+def makeOppFlavorProcessor(sample):
+    return makeGenLeptonProcessor(sample, 1, 1)
+
+def makeGenLeptonProcessor(sample, nEl, nMu, cls = ROOT.GenLeptonProcessor):
+    global npvweight, gidscale
+
+    proc = makeGenProcessor(sample, cls = cls, args = (nEl, nMu))
+    proc.setMinPhotonPt(30.)
     return proc
 
 def makeGenDimuonProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(0, 2, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 0, 2)
 
 def makeGenMonomuonProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(0, 1, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeDielectronProcessor(sample):
-    proc = ROOT.LeptonProcessor(2, 0)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeMonoelectronProcessor(sample):
-    proc = ROOT.LeptonProcessor(1, 0)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 0, 1)
 
 def makeGenDielectronProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(2, 0, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 2, 0)
 
 def makeGenMonoelectronProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(1, 0, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeOppFlavorProcessor(sample):
-    proc = ROOT.LeptonProcessor(1, 1)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 1, 0)
 
 def makeGenOppFlavorProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(1, 1, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 1, 1)
 
 def makeWenuProxyProcessor(sample):
     global eleproxyweight
@@ -161,7 +138,10 @@ def makeHadronProxyLowMtProcessor(sample):
     return proc
 
 def makeGenWlnuProcessor(sample):
-    return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
+#    return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
+    proc = makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
+    proc.setMinPhotonPt(30.)
+    return proc
 
 def makeGenWenuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWenuProcessor)
@@ -231,7 +211,7 @@ generators = {
     'wlnu-400': {'monoph': makeGenWlnuProcessor},
     'wlnu-600': {'monoph': makeGenWlnuProcessor},
     # other MC
-    'dy-50': {'monoph': makeGenProcessor},
+    'dy-50': {'monoph': makeGenProcessor, 'monomu': makeGenMonomuonProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
     'znn-400': {'monoph': makeGenHadronProcessor},
