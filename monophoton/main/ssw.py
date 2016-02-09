@@ -206,6 +206,9 @@ def makeGenHadronProcessor(sample):
 def makeGenGJetLowMtProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenGJetLowMtProcessor)
 
+def makeGenWtaunuProcessor(sample):
+    return makeGenProcessor(sample, cls = ROOT.GenWtaunuProcessor)
+
 generators = {
     # Data
     'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor},
@@ -225,11 +228,11 @@ generators = {
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'zg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wlnu': {'monoph': makeGenWlnuProcessor}, # NLO low stats
-    'wlnu-100': {'monoph': makeGenWlnuProcessor},
-    'wlnu-200': {'monoph': makeGenWlnuProcessor},
-    'wlnu-400': {'monoph': makeGenWlnuProcessor},
-    'wlnu-600': {'monoph': makeGenWlnuProcessor},
+    'wlnu': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
+    'wlnu-100': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-200': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-400': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-600': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
     # other MC
     'dy-50': {'monoph': makeGenProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
