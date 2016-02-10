@@ -1104,3 +1104,102 @@ LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent
 
   return mt2 > 40. * 40. && mt2 < 150. * 150.;
 }
+
+void
+GenWtaunuProcessor::addBranches(TTree& _outTree)
+{
+    _outTree.Branch("photons.id", nCut_, "id[photons.size]/I");
+  
+    GenProcessor::addBranches(_outTree);
+}
+
+bool
+GenWtaunuProcessor::beginEvent(simpletree::Event const& _event)
+{
+  unsigned iP(0);
+  for (; iP != _event.partons.size(); ++iP) {
+    if (std::abs(_event.partons[iP].pid) == 15)
+      break;
+  }
+  
+  if (iP == _event.partons.size())
+    return false;
+
+  return EventProcessor::beginEvent(_event);
+}
+
+bool
+GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  bool matched = false;
+  int iP = -1;
+  for (auto& photon : _event.photons) {
+    iP++;
+    nCut_[iP] = 0;
+    matched = false;
+ 
+    for (auto& parton : _event.partons) {
+     if (std::abs(parton.pid) == 15)
+       if (parton.dR2(photon) < 0.5) {
+	 matched = true;
+	 break;
+       }
+    } 
+
+    if (!matched)
+      continue;
+    nCut_[iP]++;
+
+    _outEvent.photons.push_back(photon);
+
+    if (!photon.isEB)
+      continue;
+    nCut_[iP]++;
+  
+    if (!(photon.pt > minPhotonPt_))
+      continue;
+    nCut_[iP]++;
+  
+    if (!(photon.hOverE < simpletree::Photon::hOverECuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.nhIso < simpletree::Photon::nhIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.chIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.phIso < simpletree::Photon::phIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.sieie < simpletree::Photon::sieieCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!photonEVeto(photon)) 
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.sieie > 0.001)) 
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.s4 < 0.95))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.mipEnergy < 4.9))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(std::abs(photon.time) < 3.))
+      continue;
+    nCut_[iP]++;
+  }
+  
+  return _outEvent.photons.size() != 0;
+}

@@ -47,6 +47,7 @@ cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
 #baselineCut = 't1Met.iso'
 
+
 sigGroups = []
 
 if region == 'monoph':
@@ -59,12 +60,12 @@ if region == 'monoph':
     obs = GroupSpec('Observed', [('sph-d3', 'monoph'), ('sph-d4', 'monoph')], ROOT.kBlack)
 #    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
-        # ('minor', GroupSpec('t#bar{t}, Z', ['ttg', 'zg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        ('minor', GroupSpec('minor SM', ['ttg', 'zg', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), #NLO
-#        ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), 
-        ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
-#        ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
-#        ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
+        # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), 
+        # ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
+        # ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
         # ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wg'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), #NLO
@@ -318,19 +319,19 @@ else:
     sys.exit(0)
 
 countDef = VariableDef('N_{cand}', '', '0.5', baselineCut + ' && ' + cutHighMet, (1, 0., 1.))
-"""
+
 limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', baselineCut,
-                        ( [175. + 25. * x for x in range(18)], [100. + 50. * x for x in range(11)] ), is2D = True)
+                        ( [175. + 25. * x for x in range(18)], [100. + 10. * x for x in range(51)] ), is2D = True)
 """
 limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photons.pt[0]:t1Met.met', baselineCut,
-                        ( [100. + 50. * x for x in range(11)], [175. + 25. * x for x in range(18)] ), is2D = True)
-
+                        ( [100. + 10. * x for x in range(51)], [175. + 25. * x for x in range(18)] ), is2D = True)
+"""
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet), 'mtPhoMet', 'mtPhoMetHighMet'+str(cutMet)]}
 try:
     blind = int(sys.argv[3])
 except IndexError:
-    blind = 5
+    blind = 1
 
 
 lumi = 0.
@@ -525,6 +526,9 @@ print "Counting yields and preparing limits file."
 #canvas = simpleCanvas # this line causes segfault somewhere down the line of DataMCCanvas destruction
 hists = {}
 counts = {}
+blindCounts = False
+if region == 'monoph':
+    blindCounts = True
 for gName, group in bkgGroups:
     counts[gName] = 0.
     for sName in group.samples:
@@ -535,9 +539,12 @@ for gName, group in bkgGroups:
             selection = defsel
 
         hist = getHist(allsamples[sName], selection, 'count', countDef)
-        counts[gName] += hist.GetBinContent(1) / blind
+        if blindCounts:
+            counts[gName] += hist.GetBinContent(1) / blind
+        else:
+            counts[gName] += hist.GetBinContent(1)
 
-        hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = True)
+        hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
         if gName in hists.keys():
             hists[gName].Add(hist2D)
         else:
@@ -553,10 +560,13 @@ if region == 'monoph':
             else:
                 selection = defsel
 
-            hist = getHist(allsamples[sName], selection, 'count', countDef)
-            counts[sName] = hist.GetBinContent(1) / blind
+            hist = getHist(allsamples[sName], defsel, 'count', countDef)
+            if blindCounts:
+                counts[sName] = hist.GetBinContent(1) / blind
+            else:
+                counts[gName] += hist.GetBinContent(1)
 
-            hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = True)
+            hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
             if sName in hists.keys():
                 hists[sName].Add(hist2D)
             else:
@@ -571,21 +581,22 @@ for sName in obs.samples:
     else:
         selection = defsel
 
-    hist = getHist(allsamples[sName], selection, 'count', countDef, isSensitive = True)
+    hist = getHist(allsamples[sName], defsel, 'count', countDef, isSensitive = blindCounts)
     counts['obs'] += hist.GetBinContent(1)
 
-    hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = True)
+    hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
     if 'obs' in hists.keys():
         hists['obs'].Add(hist2D)
     else:
         hists['obs'] = hist2D
         hists['obs'].SetName('data_obs')
 
-limitFile = ROOT.TFile(config.histDir + "/monoph.root", "RECREATE")
-limitFile.cd()
-
-for name, hist in hists.iteritems():
-    hist.Write()
+if region == 'monoph':
+    limitFile = ROOT.TFile(config.histDir + "/"+region+".root", "RECREATE")
+    limitFile.cd()
+    
+    for name, hist in hists.iteritems():
+        hist.Write()
 
 bkgTotal = 0.
 print 'Yields for MET > '+str(cutMet)
