@@ -337,3 +337,18 @@ class GenGJetLowMtProcessor : public LowMtProcessor, public GenGJetProcessor {
   GenGJetLowMtProcessor(double _weightNorm, char const* _name = "GenGJetLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), GenGJetProcessor() {}
   ~GenGJetLowMtProcessor() {}
 };
+
+class GenWtaunuProcessor : public GenProcessor {
+  // check cut flow of photon id on gen taus
+
+ public:
+  GenWtaunuProcessor(double _weightNorm = 1., char const* _name = "GenWtaunuProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~GenWtaunuProcessor() {}
+  
+  void addBranches(TTree& _outTree) override;
+  bool beginEvent(simpletree::Event const&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
+
+ private:
+  int nCut_[simpletree::Photon::array_data::NMAX];
+};
