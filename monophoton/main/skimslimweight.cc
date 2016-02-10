@@ -344,6 +344,8 @@ EventProcessor::beginEvent(simpletree::Event const& _event)
   if (!_event.metFilters.pass())
     return false;
 
+  photonEnergyShift_.Set(0., 0.);
+
   outReady_ = true;
   return true;
 }
@@ -425,9 +427,11 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
   for (auto& photon : _event.photons) {
     if (!photon.isEB)
       continue;
+    
+    double pt(photon.pt * (1. + photonEnergyVarFactor_));
 
     // need to add sipip cut when available
-    if (photonSelection(photon) && photonEVeto(photon) && photon.pt > minPhotonPt_ &&
+    if (photonSelection(photon) && photonEVeto(photon) && pt > minPhotonPt_ &&
         photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. && photon.s4 < 0.95) {
       // unsigned iM(0);
       // for (; iM != _event.muons.size(); ++iM) {
@@ -438,6 +442,15 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
       //   _outEvent.photons.push_back(photon);
       
       _outEvent.photons.push_back(photon);
+
+      if (photonEnergyVarFactor_ != 0.) {
+        _outEvent.photons.back().pt = pt;
+        TVector2 oldPt;
+        oldPt.SetMagPhi(photon.pt, photon.phi);
+        TVector2 newPt;
+        newPt.SetMagPhi(pt, photon.phi);
+        photonEnergyShift_ += (newPt - oldPt);
+      }
       //}
     }
   }
@@ -449,6 +462,23 @@ bool
 EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   for (auto& jet : _event.jets) {
+    switch (jetEnergyVarFactor_) {
+    case 0:
+      if (jet.pt < 30.)
+        continue;
+      break;
+    case 1:
+      if (jet.ptCorrUp < 30.)
+        continue;
+      break;
+    case -1:
+      if (jet.ptCorrDown < 30.)
+        continue;
+      break;
+    default:
+      continue;
+    }
+
     unsigned iPh(0);
     for (; iPh != _outEvent.photons.size(); ++iPh) {
       if (jet.dR2(_outEvent.photons[iPh]) < 0.16)
@@ -483,6 +513,28 @@ void
 EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   _outEvent.t1Met = _event.t1Met;
+
+  switch (jetEnergyVarFactor_) {
+  case 0:
+    break;
+  case 1:
+    _outEvent.t1Met.met = _event.t1Met.metCorrUp;
+    _outEvent.t1Met.phi = _event.t1Met.phiCorrUp;
+    break;
+  case -1:
+    _outEvent.t1Met.met = _event.t1Met.metCorrDown;
+    _outEvent.t1Met.phi = _event.t1Met.phiCorrDown;
+    break;
+  default:
+    break;
+  }
+
+  if (photonEnergyVarFactor_ != 0.) {
+    auto&& metV(_outEvent.t1Met.v());
+    metV -= photonEnergyShift_;
+    _outEvent.t1Met.met = metV.Mod();
+    _outEvent.t1Met.phi = TVector2::Phi_mpi_pi(metV.Phi());
+  }
 }
 
 bool
@@ -688,8 +740,10 @@ GenZnnProxyProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Eve
 void
 GenZnnProxyProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  auto&& metV(_event.t1Met.v());
-  double sumEt(_event.t1Met.sumEt);
+  EventProcessor::calculateMet(_event, _outEvent);
+
+  auto&& metV(_outEvent.t1Met.v());
+  double sumEt(_outEvent.t1Met.sumEt);
 
   simpletree::LeptonCollection const* leptons(0);
   if (leptonId_ == 11)
@@ -885,6 +939,13 @@ ZeeProxyProcessor::prepareOutput(simpletree::Event const& _event, simpletree::Ev
 }
 
 
+void
+LeptonProcessor::addBranches(TTree& _outTree)
+{
+  _outTree.Branch("t1Met.recoil", &recoilPt_, "recoil/F");
+  _outTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
+}
+
 bool
 LeptonProcessor::passTrigger(simpletree::Event const& _event)
 {
@@ -935,6 +996,23 @@ LeptonProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _
   else {
     return EventProcessor::vetoMuons(_event, _outEvent);
   }
+}
+
+void
+LeptonProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  EventProcessor::calculateMet(_event, _outEvent);
+
+  auto&& metV(_event.t1Met.v());
+
+  for (auto& electron : _outEvent.electrons)
+    metV += TVector2(electron.pt * std::cos(electron.phi), electron.pt * std::sin(electron.phi));
+
+  for (auto& muon : _outEvent.muons)
+    metV += TVector2(muon.pt * std::cos(muon.phi), muon.pt * std::sin(muon.phi));
+
+  recoilPt_ = metV.Mod();
+  recoilPhi_ = TVector2::Phi_mpi_pi(metV.Phi());
 }
 
 

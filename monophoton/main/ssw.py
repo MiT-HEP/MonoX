@@ -39,84 +39,85 @@ def makeListedEventProcessor(sample):
 #    proc.setEventList(badEventsList)
     return proc
 
-def makeGenProcessor(sample, cls = ROOT.GenProcessor):
+def makeGenProcessor(sample, cls = ROOT.GenProcessor, args = None):
     global npvweight, gidscale
 
-    proc = cls(sample.crosssection / sample.sumw)
+    if args is not None:
+        arguments = args + (sample.crosssection / sample.sumw,)
+    else:
+        arguments = (sample.crosssection / sample.sumw,)
+
+    proc = cls(*arguments)
     proc.setReweight(npvweight)
     proc.setIdScaleFactor(gidscale)
     proc.useAlternativeWeights(True)
     return proc
 
-def makeDimuonProcessor(sample):
-    proc = ROOT.LeptonProcessor(0, 2)
-    proc.setMinPhotonPt(60.)
+def makeGenGUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setPhotonEnergyShift(0.015)
+
     return proc
 
+def makeGenGDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setPhotonEnergyShift(-0.015)
+
+    return proc
+
+def makeGenJECUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setJetEnergyShift(1)
+
+    return proc
+
+def makeGenJECDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setJetEnergyShift(-1)
+
+    return proc
+
+def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor):
+    proc = cls(nEl, nMu)
+    proc.setMinPhotonPt(30.)
+    return proc
+
+def makeDimuonProcessor(sample):
+    return makeLeptonProcessor(sample, 0, 2)
+
 def makeMonomuonProcessor(sample):
-    proc = ROOT.LeptonProcessor(0, 1)
-    proc.setMinPhotonPt(60.)
+    return makeLeptonProcessor(sample, 0, 1)
+
+def makeDielectronProcessor(sample):
+    return makeLeptonProcessor(sample, 2, 0)
+
+def makeMonoelectronProcessor(sample):
+    return makeLeptonProcessor(sample, 1, 0)
+
+def makeOppFlavorProcessor(sample):
+    return makeGenLeptonProcessor(sample, 1, 1)
+
+def makeGenLeptonProcessor(sample, nEl, nMu, cls = ROOT.GenLeptonProcessor):
+    global npvweight, gidscale
+
+    proc = makeGenProcessor(sample, cls = cls, args = (nEl, nMu))
+    proc.setMinPhotonPt(30.)
     return proc
 
 def makeGenDimuonProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(0, 2, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 0, 2)
 
 def makeGenMonomuonProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(0, 1, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeDielectronProcessor(sample):
-    proc = ROOT.LeptonProcessor(2, 0)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeMonoelectronProcessor(sample):
-    proc = ROOT.LeptonProcessor(1, 0)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 0, 1)
 
 def makeGenDielectronProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(2, 0, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 2, 0)
 
 def makeGenMonoelectronProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(1, 0, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeOppFlavorProcessor(sample):
-    proc = ROOT.LeptonProcessor(1, 1)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 1, 0)
 
 def makeGenOppFlavorProcessor(sample):
-    global npvweight, gidscale
-
-    proc = ROOT.GenLeptonProcessor(1, 1, sample.crosssection / sample.sumw)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.setMinPhotonPt(60.)
-    return proc
+    return makeGenLeptonProcessor(sample, 1, 1)
 
 def makeWenuProxyProcessor(sample):
     global eleproxyweight
@@ -185,6 +186,18 @@ def makeGenKFactorProcessor(sample, cls = ROOT.GenProcessor, gen = makeGenProces
 
     return proc
 
+def makeGenKFactorGUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGUpProcessor, cls = None)
+
+def makeGenKFactorGDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGDownProcessor, cls = None)
+
+def makeGenKFactorJECUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECUpProcessor, cls = None)
+
+def makeGenKFactorJECDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECDownProcessor, cls = None)
+
 def makeGenKFactorLowMtProcessor(sample):
     return makeGenKFactorProcessor(sample, cls = ROOT.GenLowMtProcessor)
 
@@ -218,23 +231,23 @@ generators = {
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
-    'znng-130': {'monoph':makeGenKFactorProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
+    'znng-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
+    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
-    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wlnu': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
-    'wlnu-100': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-200': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-400': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-600': {'monoph': makeGenWlnuProcessor, 'tau' : makeGenWtaunuProcessor},
+    'ttg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'wlnu': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
+    'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-200': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-400': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-600': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     # other MC
-    'dy-50': {'monoph': makeGenProcessor},
+    'dy-50': {'monoph': makeGenProcessor, 'monomu': makeGenMonomuonProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
     'znn-400': {'monoph': makeGenHadronProcessor},

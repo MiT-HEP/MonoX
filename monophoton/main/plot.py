@@ -44,8 +44,11 @@ except IndexError:
     cutMet = 140
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
-baselineCut = 'tauVeto && t1Met.iso'
-# baselineCut = 't1Met.iso'
+baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
+#baselineCut = 't1Met.iso'
+
+
+sigGroups = []
 
 if region == 'monoph':
     if baselineCut:
@@ -54,8 +57,8 @@ if region == 'monoph':
         cutStringHighMet = cutHighMet
 
     defsel = 'monoph'
-    obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
-    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
+    obs = GroupSpec('Observed', [('sph-d3', 'monoph'), ('sph-d4', 'monoph')], ROOT.kBlack)
+#    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
         ('minor', GroupSpec('minor SM', ['ttg', 'zg', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), #NLO
@@ -73,7 +76,7 @@ if region == 'monoph':
     variables = {
         # 'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut, [40. + 10. * x for x in range(11)] + [150. + 50. * x for x in range(3)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(2)], overflow = True),
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
-        'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
+        'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,60) + [500. + 100. * x for x in range(3)], overflow = True),
         'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 2000.)),
         'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 2000.)),
         'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', baselineCut, [175.]+[180. + 10. * x for x in range(12)] + [300. + 50. * x for x in range(4)] + [500. + 100. * x for x in range(6)], overflow = True),
@@ -201,13 +204,14 @@ elif region == 'dimu':
     ]
 
     mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
-    cut = mass + ' > 50.'
+    cut = mass + ' > 50. && photons.pt[0] > 100. && t1Met.recoil > 100.'
 
     dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
     dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
+        'recoil': VariableDef('Recoil', 'GeV', 't1Met.recoil', cut, [100. + 10. * x for x in range(6)] + [160. + 40. * x for x in range(3)]),
         'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cut, (20, -math.pi, math.pi)),
@@ -218,7 +222,7 @@ elif region == 'dimu':
     }
 
 elif region == 'monomu':
-    cut = baselineCut + ' && photons.pt[0] > 140.'
+    cut = 'photons.pt[0] > 140. && t1Met.recoil > 100.'
 
     defsel = 'monomu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
@@ -229,7 +233,8 @@ elif region == 'monomu':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
+        'recoil': VariableDef('Recoil', 'GeV', 't1Met.recoil', cut, [100. + 10. * x for x in range(6)] + [160. + 40. * x for x in range(3)]),
         'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi[0]))))', cut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
         'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
@@ -329,7 +334,13 @@ except IndexError:
     blind = 1
 
 
-lumi = sum([allsamples[s].lumi for s in obs.samples])
+lumi = 0.
+for sName in obs.samples:
+    if type(sName) is tuple:
+        lumi += allsamples[sName[0]].lumi
+    else:
+        lumi += allsamples[sName].lumi
+
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     source = ROOT.TFile.Open(config.skimDir + '/' + sampledef.name + '_' + selection + '.root')
@@ -389,7 +400,8 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
         tree.Draw(vardef.expr + '>>' + varname + '-' + sampledef.name, str(lumi) + ' * ' + weightexpr, 'goff')
 
     if vardef.overflow:
-        binning += [binning[-1] + (binning[1] - binning[0])]
+        lastbinWidth = (binning[-1] - binning[0]) / 30.
+        binning += [binning[-1] + lastbinWidth]
         arr = array.array('d', binning)
         hist.SetBins(len(binning) - 1, arr)
 
@@ -439,10 +451,9 @@ if MAKEPLOTS:
     canvas = DataMCCanvas(lumi = lumi)
     simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
-    # temporary - let canvas return this
     plotdir = canvas.webdir + '/monophoton/' + region
-    # for plot in os.listdir(plotdir):
-        # os.remove(plotdir + '/' + plot)
+    for plot in os.listdir(plotdir):
+        os.remove(plotdir + '/' + plot)
     
     print "Starting plot making."
     
@@ -450,7 +461,7 @@ if MAKEPLOTS:
         isSensitive = region in sensitive and varname in sensitive[region]
     
         canvas.Clear(full = True)
-        canvas.legend.setPosition(0.6, 0.6, 0.92, SimpleCanvas.YMAX - 0.01)
+        canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(bkgGroups) + len(sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
     
         if isSensitive:
             canvas.lumi = lumi / blind
@@ -481,14 +492,26 @@ if MAKEPLOTS:
             for sGroup in sigGroups:
                 idx = -1
                 for sName in sGroup.samples:
-                    hist = getHist(allsamples[sName], defsel, varname, vardef)
+                    if type(sName) is tuple:
+                        selection = sName[1]
+                        sName = sName[0]
+                    else:
+                        selection = defsel
+
+                    hist = getHist(allsamples[sName], selection, varname, vardef)
                     if blind > 1:
                         hist.Scale(1. / blind)
     
                     idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
     
         for sName in obs.samples:
-            hist = getHist(allsamples[sName], defsel, varname, vardef, isSensitive)
+            if type(sName) is tuple:
+                selection = sName[1]
+                sName = sName[0]
+            else:
+                selection = defsel
+
+            hist = getHist(allsamples[sName], selection, varname, vardef, isSensitive)
             canvas.addObs(hist, title = obs.title)
     
         canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
@@ -531,6 +554,12 @@ for gName, group in bkgGroups:
 if region == 'monoph':
     for sGroup in sigGroups:
         for sName in sGroup.samples:
+            if type(sName) is tuple:
+                selection = sName[1]
+                sName = sName[0]
+            else:
+                selection = defsel
+
             hist = getHist(allsamples[sName], defsel, 'count', countDef)
             if blindCounts:
                 counts[sName] = hist.GetBinContent(1) / blind
@@ -546,6 +575,12 @@ if region == 'monoph':
 
 counts['obs'] = 0.
 for sName in obs.samples:
+    if type(sName) is tuple:
+        selection = sName[1]
+        sName = sName[0]
+    else:
+        selection = defsel
+
     hist = getHist(allsamples[sName], defsel, 'count', countDef, isSensitive = blindCounts)
     counts['obs'] += hist.GetBinContent(1)
 
@@ -580,4 +615,4 @@ if region == 'monoph':
             print '%+10s  %.2f' % (sName, counts[sName])
 
 print '====================='
-print '%+10s  %.2f' % ('obs', counts['obs'])
+print '%+10s  %d' % ('obs', counts['obs'])
