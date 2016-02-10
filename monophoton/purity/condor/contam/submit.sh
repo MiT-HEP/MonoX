@@ -1,7 +1,7 @@
 #!/bin/bash
 
 jdlpath=${PURITY}/condor/contam
-scratch=/scratch5/ballen/hist/purity/simpletree11c/sieie/Plots/SignalContam
+scratch=/scratch5/ballen/hist/purity/simpletree12/sieie/Plots/SignalContam
 # scratch=${CMSPLOTS}/SignalContamTemp
 mkdir -p $scratch
 
