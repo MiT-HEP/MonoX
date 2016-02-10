@@ -76,6 +76,8 @@ class EventProcessor {
   virtual bool prepareOutput(simpletree::Event const&, simpletree::Event&) { bool ready(outReady_); outReady_ = false; return ready; }
 
   void setMinPhotonPt(double _m) { minPhotonPt_ = _m; }
+  void setPhotonEnergyShift(double _var) { photonEnergyVarFactor_ = _var; }
+  void setJetEnergyShift(int _sigma) { jetEnergyVarFactor_ = _sigma; }
   void setEventList(EventList const* _l) { eventList_ = _l; }
 
   TString const& getName() const { return name_; }
@@ -86,6 +88,9 @@ class EventProcessor {
   double weightNorm_{1.};
   TString name_{};
   double minPhotonPt_{175.};
+  double photonEnergyVarFactor_{0.};
+  TVector2 photonEnergyShift_{};
+  int jetEnergyVarFactor_{0};
   bool outReady_{false};
   std::vector<unsigned> photonPtOrder_{};
   EventList const* eventList_{0};
@@ -224,15 +229,19 @@ class LeptonProcessor : public virtual EventProcessor {
   LeptonProcessor(unsigned _nEl, unsigned _nMu, double _weightNorm = 1., char const* _name = "LeptonProcessor") : EventProcessor(_weightNorm, _name), nEl_(_nEl), nMu_(_nMu) {}
   ~LeptonProcessor() {}
 
+  void addBranches(TTree&) override;
   bool passTrigger(simpletree::Event const&) override;
   bool vetoElectrons(simpletree::Event const&, simpletree::Event&) override;
   bool vetoMuons(simpletree::Event const&, simpletree::Event&) override;
   bool vetoTaus(simpletree::Event const&) override { return true; }
+  void calculateMet(simpletree::Event const&, simpletree::Event&) override;
 
  protected:
   unsigned nEl_{0};
   unsigned nMu_{0};
   bool requireTrigger_{true};
+  float recoilPt_{0.};
+  float recoilPhi_{0.};
 };
 
 class GenWenuProxyProcessor : public WenuProxyProcessor, public GenWenuProcessor {
@@ -246,6 +255,7 @@ class GenLeptonProcessor : public LeptonProcessor, public GenProcessor {
   GenLeptonProcessor(unsigned _nEl, unsigned _nMu, double _weightNorm, char const* _name = "GenLeptonProcessor") : EventProcessor(_weightNorm, _name), LeptonProcessor(_nEl, _nMu, _weightNorm, _name), GenProcessor() { requireTrigger_ = false; }
   ~GenLeptonProcessor() {}
 
+  void addBranches(TTree& outTree) override { LeptonProcessor::addBranches(outTree); GenProcessor::addBranches(outTree); }
   bool passTrigger(simpletree::Event const&) override { return true; }
 };
 

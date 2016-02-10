@@ -53,6 +53,30 @@ def makeGenProcessor(sample, cls = ROOT.GenProcessor, args = None):
     proc.useAlternativeWeights(True)
     return proc
 
+def makeGenGUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setPhotonEnergyShift(0.015)
+
+    return proc
+
+def makeGenGDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setPhotonEnergyShift(-0.015)
+
+    return proc
+
+def makeGenJECUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setJetEnergyShift(1)
+
+    return proc
+
+def makeGenJECDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+    proc.setJetEnergyShift(-1)
+
+    return proc
+
 def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor):
     proc = cls(nEl, nMu)
     proc.setMinPhotonPt(30.)
@@ -138,10 +162,7 @@ def makeHadronProxyLowMtProcessor(sample):
     return proc
 
 def makeGenWlnuProcessor(sample):
-#    return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
-    proc = makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
-    proc.setMinPhotonPt(30.)
-    return proc
+    return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
 
 def makeGenWenuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWenuProcessor)
@@ -164,6 +185,18 @@ def makeGenKFactorProcessor(sample, cls = ROOT.GenProcessor, gen = makeGenProces
             proc.setKFactorPtBin(pt, kfactor)
 
     return proc
+
+def makeGenKFactorGUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGUpProcessor, cls = None)
+
+def makeGenKFactorGDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGDownProcessor, cls = None)
+
+def makeGenKFactorJECUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECUpProcessor, cls = None)
+
+def makeGenKFactorJECDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECDownProcessor, cls = None)
 
 def makeGenKFactorLowMtProcessor(sample):
     return makeGenKFactorProcessor(sample, cls = ROOT.GenLowMtProcessor)
@@ -195,21 +228,21 @@ generators = {
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
-    'znng-130': {'monoph':makeGenKFactorProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
+    'znng-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
+    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-200': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-400': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
-    'ttg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'ttg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wlnu': {'monoph': makeGenWlnuProcessor}, # NLO low stats
-    'wlnu-100': {'monoph': makeGenWlnuProcessor},
-    'wlnu-200': {'monoph': makeGenWlnuProcessor},
-    'wlnu-400': {'monoph': makeGenWlnuProcessor},
-    'wlnu-600': {'monoph': makeGenWlnuProcessor},
+    'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor},
+    'wlnu-200': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor},
+    'wlnu-400': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor},
+    'wlnu-600': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor},
     # other MC
     'dy-50': {'monoph': makeGenProcessor, 'monomu': makeGenMonomuonProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
