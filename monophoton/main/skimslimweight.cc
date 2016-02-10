@@ -1030,7 +1030,7 @@ LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent
 void
 GenWtaunuProcessor::addBranches(TTree& _outTree)
 {
-    _outTree.Branch("photonIDcut", &nCut_, "photonIDcut/I");
+    _outTree.Branch("photons.id", nCut_, "id[photons.size]/I");
   
     GenProcessor::addBranches(_outTree);
 }
@@ -1053,78 +1053,75 @@ GenWtaunuProcessor::beginEvent(simpletree::Event const& _event)
 bool
 GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-
+  bool matched = false;
+  int iP = -1;
   for (auto& photon : _event.photons) {
-    nCut_ = 0;
-    
-    if (std::abs(photon.matchedGen) != 15)
+    iP++;
+    nCut_[iP] = 0;
+    matched = false;
+ 
+    for (auto& parton : _event.partons) {
+     if (std::abs(parton.pid) == 15)
+       if (parton.dR2(photon) < 0.5) {
+	 matched = true;
+	 break;
+       }
+    } 
+
+    if (!matched)
       continue;
-    nCut_++;
-    // cutflow_->Fill(nCut_);
+    nCut_[iP]++;
+
+    _outEvent.photons.push_back(photon);
 
     if (!photon.isEB)
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
-    // need to add sipip cut when available
+    nCut_[iP]++;
+  
     if (!(photon.pt > minPhotonPt_))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+  
     if (!(photon.hOverE < simpletree::Photon::hOverECuts[0][PHOTONWP]))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.nhIso < simpletree::Photon::nhIsoCuts[0][PHOTONWP]))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.chIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.phIso < simpletree::Photon::phIsoCuts[0][PHOTONWP]))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.sieie < simpletree::Photon::sieieCuts[0][PHOTONWP]))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!photonEVeto(photon)) 
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.sieie > 0.001)) 
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.s4 < 0.95))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(photon.mipEnergy < 4.9))
       continue;
-vv    nCut_++;
-    // cutflow->Fill(nCut_);
-
+    nCut_[iP]++;
+    
     if (!(std::abs(photon.time) < 3.))
       continue;
-    nCut_++;
-    // cutflow->Fill(nCut_);
-      
-    _outEvent.photons.push_back(photon);
+    nCut_[iP]++;
   }
-
+  
   return _outEvent.photons.size() != 0;
 }

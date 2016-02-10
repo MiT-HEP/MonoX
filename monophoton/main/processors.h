@@ -340,6 +340,5 @@ class GenWtaunuProcessor : public GenProcessor {
   bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 
  private:
-  int nCut_ = 0;
-  // TH1* cutflow_{0};
+  int nCut_[simpletree::Photon::array_data::NMAX];
 };
