@@ -5,7 +5,7 @@ from array import array
 import cuts
 import os
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
 #directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
 
 stackPlotter.SetIsCMSPrelim(True)
@@ -26,9 +26,11 @@ stackPlotter.SetRatioTitle("Data/Pred.")
 stackPlotter.SetRatioDivisions(504,False)
 stackPlotter.SetRatioGrid(1)
 stackPlotter.SetCanvasSize(600,700)
+stackPlotter.SetFontSize(0.03)
+stackPlotter.SetAxisTitleOffset(1.2)
+stackPlotter.SetDumpFileName('dump.root')
 
-
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160204/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_w/'
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
@@ -46,6 +48,14 @@ stackPlotter.SetDefaultWeight(cuts.signalMJ)
 stackPlotter.SetMCWeights('mcFactors*METTrigger')
 stackPlotter.SetDataWeights(cuts.METTrigger)
 
+stackPlotter.SetDefaultWeight('n_tau == 0 && leadingJet_outaccp == 0 && met > 200 && n_bjetsMedium == 0 && n_looselep == 0 && n_loosepho == 0 && jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.4 && runNum == 1 && !(fatjet1Pt > 250 && fatjet1PrunedM > 62 && met > 250 && fatjet1tau21 < 0.6 && abs(fatjet1Eta) < 2.4)')
+expr = 'abs(minJetMetDPhi_clean)'
+stackPlotter.SetDefaultExpr(expr)
+stackPlotter.SetEventsPer(0.1)
+stackPlotter.MakeCanvas(outDir + 'sigTest_' + expr,35,0,3.5,"#Delta #phi_{min}(j,E_{T}^{miss})", "Events Per 0.1",False)
+stackPlotter.SetEventsPer(1.0)
+
+exit()
 
 stackPlotter.SetDefaultWeight(cuts.ZmmMJ_inc)
 expr = 'fatjet1PrunedM'

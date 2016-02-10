@@ -4,14 +4,23 @@ from ROOT import TFile
 from HistPlotter import histPlotter as plotter
 from array import array
 import cuts
+import math, os
 
 plotter.SetCanvasSize(600,700)
 
-xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
+uncFile_ewk = TFile('/afs/cern.ch/user/z/zdemirag/public/forDan/atoz_ewkunc.root')
+uncFile     = TFile('/afs/cern.ch/user/z/zdemirag/public/forDan/atoz_unc.root')
 
-outDir = '~/www/monoV_160208/'
+uncertainties = [
+    uncFile_ewk.a_ewkcorr_overz_Upcommon,
+    uncFile.znlo1_over_anlo1_pdfUp,
+    uncFile.znlo1_over_anlo1_renScaleUp,
+    uncFile.znlo1_over_anlo1_facScaleUp
+]
+
+outDir = '~/www/monoV_160210/'
 #outDir = '~/public/dump/'
 
 gammaMCFile = TFile(directory + 'merged/monojet_GJets.root')
@@ -20,6 +29,8 @@ zeeMCFile   = TFile(directory + 'merged/monojet_DY.root')
 print zeeMCFile.GetName()
 dataFile    = TFile(directory + 'monojet_Data.root')
 print dataFile.GetName()
+
+xArray = [200,250,300,350,400,500,600,1000]
 
 plotter.SetLumiLabel('2.24')
 plotter.SetIsCMSPrelim(True)
@@ -47,6 +58,16 @@ plotter.SetRatioIndex(0)
 
 ratio = plotter.MakeRatio(zPlots,gammaPlots)
 
+for iBin in range(len(xArray)):
+    if iBin == 0:
+        continue
+    sumw2 = math.pow(ratio[0].GetBinError(iBin),2)
+    for uncert in uncertainties:
+        sumw2 += math.pow(ratio[0].GetBinContent(iBin) * (uncert.GetBinContent(iBin) - 1),2)
+    ##
+    ratio[0].SetBinError(iBin,math.sqrt(sumw2))
+##
+
 plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMJ_met',ratio,'|U| [GeV]','Yield Ratio (Zll/#gamma)')
 
 plotter.SetDefaultExpr('photonPt')
@@ -61,6 +82,16 @@ plotter.AddTreeWeight(dataFile.events,cuts.ZllMJ)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
 ratio = plotter.MakeRatio(zPlots,gammaPlots)
+
+for iBin in range(len(xArray)):
+    if iBin == 0:
+        continue
+    sumw2 = math.pow(ratio[0].GetBinError(iBin),2)
+    for uncert in uncertainties:
+        sumw2 += math.pow(ratio[0].GetBinContent(iBin) * (uncert.GetBinContent(iBin) - 1),2)
+    ##
+    ratio[0].SetBinError(iBin,math.sqrt(sumw2))
+##
 
 plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMJ_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zll/#gamma)')
 
@@ -85,14 +116,21 @@ plotter.ResetWeight()
 plotter.AddTreeWeight(gammaMCFile.events,'(' + cuts.gjetMV + ')*mcFactors*XSecWeight')
 plotter.AddTreeWeight(dataFile.events,cuts.gjetMV)
 
-
 gammaPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
 ratio = plotter.MakeRatio(zPlots,gammaPlots)
 
+for iBin in range(len(xArray)):
+    if iBin == 0:
+        continue
+    sumw2 = math.pow(ratio[0].GetBinError(iBin),2)
+    for uncert in uncertainties:
+        sumw2 += math.pow(ratio[0].GetBinContent(iBin) * (uncert.GetBinContent(iBin+1) - 1),2)
+    ##
+    ratio[0].SetBinError(iBin,math.sqrt(sumw2))
+##
+
 plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMV_met',ratio,'|U| [GeV]','Yield Ratio (Zll/#gamma)')
-
-
 
 plotter.SetDefaultExpr('photonPt')
 gammaPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
@@ -106,5 +144,15 @@ plotter.AddTreeWeight(dataFile.events,cuts.ZllMV)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
 ratio = plotter.MakeRatio(zPlots,gammaPlots)
+
+for iBin in range(len(xArray)):
+    if iBin == 0:
+        continue
+    sumw2 = math.pow(ratio[0].GetBinError(iBin),2)
+    for uncert in uncertainties:
+        sumw2 += math.pow(ratio[0].GetBinContent(iBin) * (uncert.GetBinContent(iBin+1) - 1),2)
+    ##
+    ratio[0].SetBinError(iBin,math.sqrt(sumw2))
+##
 
 plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMV_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zll/#gamma)')

@@ -438,7 +438,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
           outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
 
-          outTree->jet1QGL = (*(inTree->jetQGL))[iJet];
+          outTree->jet1QGL    = (*(inTree->jetQGL))[iJet];
+          outTree->jet1Flavor = (*(inTree->jetFlavour))[iJet];
       }
       
       else if (outTree->n_cleanedjets == 2) {

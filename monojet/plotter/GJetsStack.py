@@ -5,7 +5,7 @@ from array import array
 import cuts
 import os
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
 #directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
 
 stackPlotter.SetIsCMSPrelim(True)
@@ -24,8 +24,11 @@ stackPlotter.SetRatioTitle("Data/Pred.")
 stackPlotter.SetRatioDivisions(504,False)
 stackPlotter.SetRatioGrid(1)
 stackPlotter.SetCanvasSize(600,700)
+stackPlotter.SetFontSize(0.03)
+stackPlotter.SetAxisTitleOffset(1.2)
+stackPlotter.SetDumpFileName('dump.root')
 
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160204/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_w/'
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
