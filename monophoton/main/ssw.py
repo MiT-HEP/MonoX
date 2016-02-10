@@ -260,6 +260,23 @@ generators = {
 }
 for sname in ['add%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
     generators[sname] = {'monoph': makeGenProcessor}
+"""
+for sname in ['dm%s-%d-%d' % (mt, mm, dm) for mt in [ 'a', 'v' ] for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000] for dm in [1, 10, 50, 150, 500, 1000]]:
+    generators[sname] = {'monoph': makeGenProcessor}
+"""
+for mt in [ 'a', 'v' ]:
+    for dm in [1, 10, 50, 150, 500, 1000]:
+        for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000]:
+            if mm == 2 * dm:
+                mm = mm - 5
+            sname = 'dm%s-%d-%d' % (mt, mm, dm)
+            try:
+                # print sname
+                allsamples[sname]
+            except KeyError:
+                # print "This combination is not part of the DMWG recommendations, moving onto next one."
+                continue;
+            generators[sname] = {'monoph': makeGenProcessor}
 
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
@@ -312,6 +329,14 @@ if len(sNames) != 0:
     elif sNames[0] == 'list':
         print ' '.join(sorted(generators.keys()))
         sys.exit(0)
+    elif sNames[0] == 'dm':
+        sNames = [key for key in generators.keys() if 'dm' in key]
+        print ' '.join(sorted(sNames))
+        """
+        for sName in sorted(sNames):
+            print sName
+        """
+        sys.exit(0)
 
 skimmer = ROOT.SkimSlimWeight()
 
@@ -338,6 +363,10 @@ for name in sampleNames:
     if sample.data:
         print 'Reading', name, 'from', dataSourceDir
         tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
+    elif 'dm' in name:
+        sourceDir = sourceDir.replace("042","043")
+        print 'Reading', name, 'from', sourceDir
+        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
     else:
         print 'Reading', name, 'from', sourceDir
         tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
