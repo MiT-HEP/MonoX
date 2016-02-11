@@ -58,7 +58,11 @@ if region == 'monoph':
 
     defsel = 'monoph'
     obs = GroupSpec('Observed', [('sph-d3', 'monoph'), ('sph-d4', 'monoph')], ROOT.kBlack)
-#    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
+    sigGroups = [
+        GroupSpec('add5-2', ['add5-2'], 41),       # 0.07069/pb
+        GroupSpec('dmv-500-1', ['dmv-500-1'], 46), # 0.07160/pb
+        GroupSpec('dma-500-1', ['dma-500-1'], 30), # 0.07827/pb 
+        ]
     bkgGroups = [
         ('minor', GroupSpec('minor SM', ['ttg', 'zg', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         # ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), #NLO
@@ -452,9 +456,11 @@ if MAKEPLOTS:
     simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
     plotdir = canvas.webdir + '/monophoton/' + region
+    """
     for plot in os.listdir(plotdir):
         os.remove(plotdir + '/' + plot)
-    
+    """
+
     print "Starting plot making."
     
     for varname, vardef in variables.items():
