@@ -60,7 +60,7 @@ if region == 'monoph':
     obs = GroupSpec('Observed', [('sph-d3', 'monoph'), ('sph-d4', 'monoph')], ROOT.kBlack)
     sigGroups = [
         GroupSpec('add5-2', ['add5-2'], 41),       # 0.07069/pb
-        GroupSpec('dmv-500-1', ['dmv-500-1'], 46), # 0.07160/pb
+        GroupSpec('dmv-1000-150', ['dmv-500-1'], 46), # 0.01437/pb
         GroupSpec('dma-500-1', ['dma-500-1'], 30), # 0.07827/pb 
         ]
     bkgGroups = [
