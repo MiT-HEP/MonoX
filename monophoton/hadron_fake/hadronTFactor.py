@@ -7,15 +7,16 @@ import ROOT
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
 from plotstyle import SimpleCanvas
+import config
 
 canvas = SimpleCanvas(lumi = 2239.9)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
 gtree = ROOT.TChain('events')
-gtree.Add('/scratch5/yiiyama/studies/monophoton/skim/sph-d*_monoph.root')
+gtree.Add(config.skimDir + '/sph-d*_monoph.root')
 htree = ROOT.TChain('events')
-htree.Add('/scratch5/yiiyama/studies/monophoton/skim/sph-d*_emplusjet.root')
+htree.Add(config.skimDir + '/sph-d*_emplusjet.root')
 
 inputFile = ROOT.TFile.Open('../data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
