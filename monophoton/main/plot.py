@@ -99,10 +99,10 @@ if region == 'monoph':
         'dPhiJetMetMinHighMet'+str(cutMet): VariableDef('min#Delta#phi(E_{T}^{miss}, j)', '', 'dPhiJetMetMin', cutStringHighMet.replace(" && t1Met.iso", ""), (30, 0., math.pi), overflow = True),
         'njets': VariableDef('N_{jet}', '', 'jets.size', baselineCut, (6, 0., 6.)),
         'njetsHighMet'+str(cutMet): VariableDef('N_{jet}', '', 'jets.size', cutStringHighMet, (6, 0., 6.)),
-        'phoPtOverMet': VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', baselineCut, (20,0.,4.)),
+        'phoPtOverMet': VariableDef('E_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', baselineCut, (20,0.,4.)),
         'phoPtOverMetHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/E_{T}^{miss}', '', 'photons.pt[0]/t1Met.met', cutStringHighMet, (20,0.,4.)),
-        'phoPtOverJetPt': VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', baselineCut, (20,0.,10.)),
-        'phoPtOverJetPtHighMet'+str(cutMet): VariableDef('p_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', cutStringHighMet, (20,0.,10.)),
+        'phoPtOverJetPt': VariableDef('E_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', baselineCut, (20,0.,10.)),
+        'phoPtOverJetPtHighMet'+str(cutMet): VariableDef('E_{T}^{#gamma}/p_{T}^{jet}', '', 'photons.pt[0]/jets.pt[0]', cutStringHighMet, (20,0.,10.)),
         'nVertex': VariableDef('N_{vertex}', '', 'npv', baselineCut, (20,0.,40.)),
         'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (20,0.,40.)),
         'sieie': VariableDef('#sigma_{i#eta i#eta}', '', 'photons.sieie[0]', baselineCut, (16, 0.004, 0.012)),
@@ -187,7 +187,7 @@ elif region == 'lowmt':
     
     variables = {
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', wenuNoMetCut, [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], overflow = True),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuNoPtCut, [175. + 15. * x for x in range(20)], logy = False, ymax = 0.5),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', wenuNoPtCut, [175. + 15. * x for x in range(20)], logy = False, ymax = 0.5),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', wenuCut, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', wenuCut, (20, -math.pi, math.pi), logy = False, ymax = 20.),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', wenuCut, (20, -1., 1.), logy = False, ymax = 20.),
@@ -200,15 +200,15 @@ elif region == 'lowmt':
     }
 
 elif region == 'dimu':
+    mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
+    cut = mass + ' > 50. && photons.pt[0] > 140. && t1Met.recoil > 100.'
+
     defsel = 'dimu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
     bkgGroups = [
         ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
-        ('zg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
+        ('zg', GroupSpec('Z#rightarrowll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
     ]
-
-    mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
-    cut = mass + ' > 50. && photons.pt[0] > 100. && t1Met.recoil > 100.'
 
     dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
     dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
@@ -216,12 +216,12 @@ elif region == 'dimu':
     variables = {
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
         'recoil': VariableDef('Recoil', 'GeV', 't1Met.recoil', cut, [100. + 10. * x for x in range(6)] + [160. + 40. * x for x in range(3)]),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cut, (20, -math.pi, math.pi)),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cut, (20, -math.pi, math.pi)),
         'dimumass': VariableDef('M_{#mu#mu}', 'GeV', mass, cut, (30, 50., 200.)),
-        'dRPhoMu': VariableDef('#DeltaR(#gamma, #mu)_{min}', '', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), '', (20, 0., 4.)),
+        'dRPhoMu': VariableDef('#DeltaR(#gamma, #mu)_{min}', '', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), cut, (20, 0., 4.)),
         'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
@@ -240,7 +240,7 @@ elif region == 'monomu':
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cut, [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
         'recoil': VariableDef('Recoil', 'GeV', 't1Met.recoil', cut, [100. + 10. * x for x in range(6)] + [160. + 40. * x for x in range(3)]),
         'mt': VariableDef('M_{T}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi[0]))))', cut, [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)]),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', cut, [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', cut, (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', cut, (20, -math.pi, math.pi)),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', cut, (20, -math.pi, math.pi)),
@@ -311,7 +311,7 @@ elif region == 'elmu':
     
     variables = {
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', '', [40. + 10. * x for x in range(12)] + [160. + 40. * x for x in range(3)]),
-        'phoPt': VariableDef('p_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
+        'phoPt': VariableDef('E_{T}^{#gamma}', 'GeV', 'photons.pt[0]', '', [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)]),
         'phoEta': VariableDef('#eta^{#gamma}', '', 'photons.eta[0]', '', (20, -1.5, 1.5)),
         'phoPhi': VariableDef('#phi^{#gamma}', '', 'photons.phi[0]', '', (20, -math.pi, math.pi)),
         'dPhiPhoMet': VariableDef('#Delta#phi(#gamma, E_{T}^{miss})', '', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', '', (20, -math.pi, math.pi)),
@@ -324,10 +324,10 @@ else:
 
 countDef = VariableDef('N_{cand}', '', '0.5', baselineCut + ' && ' + cutHighMet, (1, 0., 1.))
 
-limitDef = VariableDef( ('p_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', baselineCut,
+limitDef = VariableDef( ('E_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', baselineCut,
                         ( [175. + 25. * x for x in range(18)], [100. + 10. * x for x in range(51)] ), is2D = True)
 """
-limitDef = VariableDef( ('E_{T}^{miss}','p_{T}^{#gamma}'), ('GeV','GeV'), 'photons.pt[0]:t1Met.met', baselineCut,
+limitDef = VariableDef( ('E_{T}^{miss}','E_{T}^{#gamma}'), ('GeV','GeV'), 'photons.pt[0]:t1Met.met', baselineCut,
                         ( [100. + 10. * x for x in range(51)], [175. + 25. * x for x in range(18)] ), is2D = True)
 """
 

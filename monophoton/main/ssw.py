@@ -204,6 +204,9 @@ def makeGenKFactorLowMtProcessor(sample):
 def makeGenKFactorMonomuonProcessor(sample):
     return makeGenKFactorProcessor(sample, gen = makeGenMonomuonProcessor, cls = None)
 
+def makeGenKFactorDimuonProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenDimuonProcessor, cls = None)
+
 def makeGenKFactorMonoelectronProcessor(sample):
     return makeGenKFactorProcessor(sample, gen = makeGenMonoelectronProcessor, cls = None)
 
@@ -241,6 +244,7 @@ generators = {
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'zg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zllg-130': {'dimu': makeGenKFactorDimuonProcessor},
     'wlnu': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
     'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     'wlnu-200': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
