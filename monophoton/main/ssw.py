@@ -12,7 +12,7 @@ import config
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree11c/t2mit/filefi/042'
+sourceDir = '/scratch5/yiiyama/hist/simpletree12/t2mit/filefi/042'
 dataSourceDir = sourceDir
 
 neroInput = False
