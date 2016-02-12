@@ -44,7 +44,7 @@ except IndexError:
     cutMet = 140
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
-#baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
+# baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
 baselineCut = 'photons.pt[0] > 175. && t1Met.iso'
 
 sigGroups = []
@@ -64,6 +64,9 @@ if region == 'monoph':
     ]
     bkgGroups = [
         ('minor', GroupSpec('minor SM', ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('wmutau', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
+        # ('zllg', GroupSpec('Z#rightarrow ll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
+        # ('ttg', GroupSpec('tt#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
