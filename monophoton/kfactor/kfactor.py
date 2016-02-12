@@ -7,15 +7,14 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
+import config
 
 sample = sys.argv[1]
-
-sourceDir = '/scratch5/yiiyama/hist/simpletree11full/t2mit/filefi/042'
 
 loSample = allsamples[sample]
 
 tree = ROOT.TChain('events')
-tree.Add(sourceDir + '/' + loSample.directory + '/simpletree_*.root')
+tree.Add(config.ntuplesDir + '/' + loSample.directory + '/simpletree_*.root')
 
 if sample == 'znng-130':
     # the input file from Grazzini has a 1000- bin but has the same cross section as 700-1000.
