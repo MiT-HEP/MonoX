@@ -14,7 +14,7 @@
 #include <functional>
 
 // Hard-coded parameters
-bool const ABORTONFAIL(true);
+bool const ABORTONFAIL(false);
 unsigned const PHOTONWP(1);
 
 enum Cut {
