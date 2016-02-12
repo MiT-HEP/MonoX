@@ -18,10 +18,10 @@ gtree.Add(config.skimDir + '/sph-d*_monoph.root')
 htree = ROOT.TChain('events')
 htree.Add(config.skimDir + '/sph-d*_emplusjet.root')
 
-inputFile = ROOT.TFile.Open('../data/impurity.root')
+inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
 
-outputFile = ROOT.TFile.Open('../data/hadronTFactor.root', 'recreate')
+outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 gpt = ROOT.TH1D('gpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
@@ -36,18 +36,21 @@ for iX in range(1, fpt.GetNbinsX() + 1):
     imp = impurityHist.GetBinContent(bin) / 100.
     err = impurityHist.GetBinError(bin) / 100.
 
-    print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
-
     cont = fpt.GetBinContent(iX) * imp 
     stat = fpt.GetBinError(iX) * imp 
     syst = fpt.GetBinContent(iX) * err
     fpt.SetBinContent(iX, cont)
     fpt.SetBinError(iX, math.sqrt(stat * stat + syst * syst))
 
+    print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
+
 htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
 hpt.Scale(1., 'width')
 tfact = fpt.Clone('tfact')
 tfact.Divide(hpt)
+
+for iX in range(1, fpt.GetNbinsX() + 1):
+    print "gjets: %.2f, fake: %.2f, hadron: %.2f, tfact: %.2f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX))
 
 outputFile.Write()
 
@@ -66,7 +69,7 @@ canvas.addHistogram(hpt, drawOpt = 'HIST')
 
 canvas.ylimits = (0.1, 2000.)
 
-canvas.printWeb('hadronTFactor', 'photon')
+canvas.printWeb('monophoton/hadronTFactor', 'photon')
 
 canvas.Clear()
 canvas.legend.Clear()
@@ -80,4 +83,4 @@ canvas.legend.apply('tfact', tfact)
 
 canvas.addHistogram(tfact, drawOpt = 'EP')
 
-canvas.printWeb('hadronTFactor', 'tfactor')
+canvas.printWeb('monophoton/hadronTFactor', 'tfactor')
