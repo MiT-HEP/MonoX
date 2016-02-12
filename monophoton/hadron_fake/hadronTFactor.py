@@ -27,7 +27,7 @@ gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 hpt.Sumw2()
 
-gtree.Draw('photons.pt[0]>>gpt', 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1', 'goff')
+gtree.Draw('photons.pt[0]>>gpt', 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1 && t1Met.met < 60.', 'goff')
 gpt.Scale(1., 'width')
 fpt = gpt.Clone('fpt')
 for iX in range(1, fpt.GetNbinsX() + 1):
@@ -42,9 +42,9 @@ for iX in range(1, fpt.GetNbinsX() + 1):
     stat = fpt.GetBinError(iX) * imp 
     syst = fpt.GetBinContent(iX) * err
     fpt.SetBinContent(iX, cont)
-    fpt.SetBinError(iX, math.sqrt(stat * stat + err * err))
+    fpt.SetBinError(iX, math.sqrt(stat * stat + syst * syst))
 
-htree.Draw('photons.pt[0]>>hpt', '', 'goff')
+htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
 hpt.Scale(1., 'width')
 tfact = fpt.Clone('tfact')
 tfact.Divide(hpt)
