@@ -12,8 +12,7 @@ import config
 
 sNames = sys.argv[1:]
 
-sourceDir = '/scratch5/yiiyama/hist/simpletree11c/t2mit/filefi/042'
-dataSourceDir = sourceDir
+dataSourceDir = config.ntuplesDir
 
 neroInput = False
 
@@ -25,62 +24,13 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/NeroProducer
 
 ROOT.gROOT.LoadMacro(thisdir + '/skimslimweight.cc+')
 
-def makeEventProcessor(sample):
-#    global badEventsList
-
-    proc = ROOT.EventProcessor()
-#    proc.setEventList(badEventsList)
+def makeEventProcessor(sample, cls = ROOT.EventProcessor, minPt = 175., args = tuple()):
+    proc = cls(*args)
+    proc.setMinPhotonPt(minPt)
     return proc
 
-def makeListedEventProcessor(sample):
-#    global badEventsList
-
-    proc = ROOT.ListedEventProcessor()
-#    proc.setEventList(badEventsList)
-    return proc
-
-def makeGenProcessor(sample, cls = ROOT.GenProcessor, args = None):
-    global npvweight, gidscale
-
-    if args is not None:
-        arguments = args + (sample.crosssection / sample.sumw,)
-    else:
-        arguments = (sample.crosssection / sample.sumw,)
-
-    proc = cls(*arguments)
-    proc.setReweight(npvweight)
-    proc.setIdScaleFactor(gidscale)
-    proc.useAlternativeWeights(True)
-    return proc
-
-def makeGenGUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
-    proc = makeGenProcessor(sample, cls = cls, args = args)
-    proc.setPhotonEnergyShift(0.015)
-
-    return proc
-
-def makeGenGDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
-    proc = makeGenProcessor(sample, cls = cls, args = args)
-    proc.setPhotonEnergyShift(-0.015)
-
-    return proc
-
-def makeGenJECUpProcessor(sample, cls = ROOT.GenProcessor, args = None):
-    proc = makeGenProcessor(sample, cls = cls, args = args)
-    proc.setJetEnergyShift(1)
-
-    return proc
-
-def makeGenJECDownProcessor(sample, cls = ROOT.GenProcessor, args = None):
-    proc = makeGenProcessor(sample, cls = cls, args = args)
-    proc.setJetEnergyShift(-1)
-
-    return proc
-
-def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor):
-    proc = cls(nEl, nMu)
-    proc.setMinPhotonPt(30.)
-    return proc
+def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor, minPt = 30., args = tuple()):
+    return makeEventProcessor(sample, cls = cls, minPt = minPt, args = (nEl, nMu) + args)
 
 def makeDimuonProcessor(sample):
     return makeLeptonProcessor(sample, 0, 2)
@@ -95,14 +45,75 @@ def makeMonoelectronProcessor(sample):
     return makeLeptonProcessor(sample, 1, 0)
 
 def makeOppFlavorProcessor(sample):
-    return makeGenLeptonProcessor(sample, 1, 1)
+    return makeLeptonProcessor(sample, 1, 1)
 
-def makeGenLeptonProcessor(sample, nEl, nMu, cls = ROOT.GenLeptonProcessor):
+def makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyProcessor, minPt = 175., args = tuple()):
+    global eleproxyweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = (eleproxyweight.GetY()[4],) + args)
+
+    proc.setWeightErr(eleproxyweight.GetErrorY(4))
+    return proc
+
+def makeZeeProxyProcessor(sample):
+    return makeWenuProxyProcessor(sample, cls = ROOT.ZeeProxyProcessor, minPt = 60.)
+
+def makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+
+    proc.setReweight(hadproxyweight)
+    return proc
+
+def makeEMPlusJetProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+def makeLowMtProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.LowMtProcessor)
+
+def makeWenuProxyLowMtProcessor(sample):
+    return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
+
+def makeHadronProxyLowMtProcessor(sample):
+    return makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyLowMtProcessor)
+
+def makeGenProcessor(sample, cls = ROOT.GenProcessor, minPt = 175., args = tuple()):
     global npvweight, gidscale
 
-    proc = makeGenProcessor(sample, cls = cls, args = (nEl, nMu))
-    proc.setMinPhotonPt(30.)
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args + (sample.crosssection / sample.sumw,))
+
+    proc.setReweight(npvweight)
+    proc.setIdScaleFactor(gidscale)
+    proc.useAlternativeWeights(True)
     return proc
+
+def makeGenGUpProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+
+    proc.setPhotonEnergyShift(0.015)
+    return proc
+
+def makeGenGDownProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+
+    proc.setPhotonEnergyShift(-0.015)
+    return proc
+
+def makeGenJECUpProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+
+    proc.setJetEnergyShift(1)
+    return proc
+
+def makeGenJECDownProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+    proc = makeGenProcessor(sample, cls = cls, args = args)
+
+    proc.setJetEnergyShift(-1)
+    return proc
+
+def makeGenLeptonProcessor(sample, nEl, nMu, cls = ROOT.GenLeptonProcessor, minPt = 30., args = tuple()):
+    return makeGenProcessor(sample, cls = cls, minPt = minPt, args = args + (nEl, nMu))
 
 def makeGenDimuonProcessor(sample):
     return makeGenLeptonProcessor(sample, 0, 2)
@@ -119,48 +130,6 @@ def makeGenMonoelectronProcessor(sample):
 def makeGenOppFlavorProcessor(sample):
     return makeGenLeptonProcessor(sample, 1, 1)
 
-def makeWenuProxyProcessor(sample):
-    global eleproxyweight
-
-    proc = ROOT.WenuProxyProcessor(eleproxyweight.GetY()[4])
-    proc.setWeightErr(eleproxyweight.GetErrorY(4))
-    return proc
-
-def makeZeeProxyProcessor(sample):
-    global eleproxyweight
-
-    proc = ROOT.ZeeProxyProcessor(eleproxyweight.GetY()[4])
-    proc.setWeightErr(eleproxyweight.GetErrorY(4))
-    proc.setMinPhotonPt(60.)
-    return proc
-
-def makeHadronProxyProcessor(sample):
-    global hadproxyweight
-
-    proc = ROOT.HadronProxyProcessor(1.)
-    proc.setReweight(hadproxyweight)
-    return proc
-
-def makeEMPlusJetProcessor(sample):
-    return ROOT.EMPlusJetProcessor()
-
-def makeLowMtProcessor(sample):
-    return ROOT.LowMtProcessor()
-
-def makeWenuProxyLowMtProcessor(sample):
-    global eleproxyweight
-
-    proc = ROOT.WenuProxyLowMtProcessor(eleproxyweight.GetY()[4])
-    proc.setWeightErr(eleproxyweight.GetErrorY(4))
-    return proc
-
-def makeHadronProxyLowMtProcessor(sample):
-    global hadproxyweight
-
-    proc = ROOT.HadronProxyLowMtProcessor(1.)
-    proc.setReweight(hadproxyweight)
-    return proc
-
 def makeGenWlnuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWlnuProcessor)
 
@@ -172,43 +141,6 @@ def makeGenWenuProxyProcessor(sample):
 
 def makeGenLowMtProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenLowMtProcessor)
-
-def makeGenKFactorProcessor(sample, cls = ROOT.GenProcessor, gen = makeGenProcessor):
-    if cls is not None:
-        proc = gen(sample, cls = cls)
-    else:
-        proc = gen(sample)
-
-    with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
-        for line in source:
-            pt, kfactor = map(float, line.split()[:2])
-            proc.setKFactorPtBin(pt, kfactor)
-
-    return proc
-
-def makeGenKFactorGUpProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenGUpProcessor, cls = None)
-
-def makeGenKFactorGDownProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenGDownProcessor, cls = None)
-
-def makeGenKFactorJECUpProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenJECUpProcessor, cls = None)
-
-def makeGenKFactorJECDownProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenJECDownProcessor, cls = None)
-
-def makeGenKFactorLowMtProcessor(sample):
-    return makeGenKFactorProcessor(sample, cls = ROOT.GenLowMtProcessor)
-
-def makeGenKFactorMonomuonProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenMonomuonProcessor, cls = None)
-
-def makeGenKFactorDimuonProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenDimuonProcessor, cls = None)
-
-def makeGenKFactorMonoelectronProcessor(sample):
-    return makeGenKFactorProcessor(sample, gen = makeGenMonoelectronProcessor, cls = None)
 
 def makeGenGJetProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenGJetProcessor)
@@ -224,6 +156,41 @@ def makeGenGJetLowMtProcessor(sample):
 
 def makeGenWtaunuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWtaunuProcessor)
+
+def makeGenKFactorProcessor(sample, gen = makeGenProcessor):
+    proc = gen(sample)
+
+    with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
+        for line in source:
+            pt, kfactor = map(float, line.split()[:2])
+            proc.setKFactorPtBin(pt, kfactor)
+
+    return proc
+
+def makeGenKFactorGUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGUpProcessor)
+
+def makeGenKFactorGDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenGDownProcessor)
+
+def makeGenKFactorJECUpProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECUpProcessor)
+
+def makeGenKFactorJECDownProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenJECDownProcessor)
+
+def makeGenKFactorLowMtProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenLowMtProcessor)
+
+def makeGenKFactorMonomuonProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenMonomuonProcessor)
+
+def makeGenKFactorDimuonProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenDimuonProcessor)
+
+def makeGenKFactorMonoelectronProcessor(sample):
+    return makeGenKFactorProcessor(sample, gen = makeGenMonoelectronProcessor)
+
 
 generators = {
     # Data
@@ -244,7 +211,7 @@ generators = {
     'g-600': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'ttg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'zg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zllg-130': {'dimu': makeGenKFactorDimuonProcessor},
+    'zllg-130': {'monoph':makeGenKFactorProcessor, 'dimu': makeGenKFactorDimuonProcessor},
     'wlnu': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
     'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     'wlnu-200': {'monoph': makeGenWlnuProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
@@ -291,13 +258,13 @@ if not npvSource:
 
     dataDir = npvSource.mkdir('data')
     dataTree = ROOT.TChain('events')
-    dataTree.Add(sourceDir + '/' + allsamples['smu-d3'].directory + '/simpletree_*.root')
-    dataTree.Add(sourceDir + '/' + allsamples['smu-d4'].directory + '/simpletree_*.root')
+    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d3'].directory + '/simpletree_*.root')
+    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d4'].directory + '/simpletree_*.root')
     ROOT.selectDimu(dataTree, dataDir)
 
     mcDir = npvSource.mkdir('mc')
     mcTree = ROOT.TChain('events')
-    mcTree.Add(sourceDir + '/' + allsamples['dy-50'].directory + '/simpletree_*.root')
+    mcTree.Add(config.ntuplesDir + '/' + allsamples['dy-50'].directory + '/simpletree_*.root')
     ROOT.selectDimu(mcTree, mcDir)
 
     npvSource.cd()
@@ -320,12 +287,6 @@ eleproxyweight = eleproxySource.Get('fraction')
 
 gidSource = ROOT.TFile.Open(basedir + '/data/photonEff.root')
 gidscale = gidSource.Get('scalefactor')
-
-# don't need event lists any more because met filter results are in the ntuples since 11b
-#badEventsList = ROOT.EventList()
-# will be in /cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/MitPhysics/data/eventlist soon
-#badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_csc2015.txt')
-#badEventsList.addSource('/scratch5/yiiyama/studies/monophoton/SinglePhoton_ecalscn1043093.txt')
 
 if len(sNames) != 0:
     if sNames[0] == 'all':
@@ -367,13 +328,13 @@ for name in sampleNames:
     if sample.data:
         print 'Reading', name, 'from', dataSourceDir
         tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
-    elif 'dm' in name:
-        sourceDir = sourceDir.replace("042","043")
+    elif name.startswith('dm'):
+        sourceDir = config.ntuplesDir.replace("042", "043")
         print 'Reading', name, 'from', sourceDir
         tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
     else:
-        print 'Reading', name, 'from', sourceDir
-        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+        print 'Reading', name, 'from', config.ntuplesDir
+        tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
 
     for pname, gen in generators[name].items():
         processor = gen(sample)
