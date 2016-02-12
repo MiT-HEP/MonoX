@@ -14,10 +14,9 @@ canvas = SimpleCanvas(lumi = 2239.9)
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
 gtree = ROOT.TChain('events')
-print config.skimDir
-gtree.Add(config.skimDir+'/sph-d*_monoph.root')
+gtree.Add(config.skimDir + '/sph-d*_monoph.root')
 htree = ROOT.TChain('events')
-htree.Add(config.skimDir+'/sph-d*_emplusjet.root')
+htree.Add(config.skimDir + '/sph-d*_emplusjet.root')
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
@@ -28,7 +27,7 @@ gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 hpt.Sumw2()
 
-gtree.Draw('photons.pt[0]>>gpt', 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1', 'goff')
+gtree.Draw('photons.pt[0]>>gpt', 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1 && t1Met.met < 60.', 'goff')
 gpt.Scale(1., 'width')
 fpt = gpt.Clone('fpt')
 for iX in range(1, fpt.GetNbinsX() + 1):
@@ -41,11 +40,11 @@ for iX in range(1, fpt.GetNbinsX() + 1):
     stat = fpt.GetBinError(iX) * imp 
     syst = fpt.GetBinContent(iX) * err
     fpt.SetBinContent(iX, cont)
-    fpt.SetBinError(iX, math.sqrt(stat * stat + err * err))
+    fpt.SetBinError(iX, math.sqrt(stat * stat + syst * syst))
 
     print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
 
-htree.Draw('photons.pt[0]>>hpt', '', 'goff')
+htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
 hpt.Scale(1., 'width')
 tfact = fpt.Clone('tfact')
 tfact.Divide(hpt)

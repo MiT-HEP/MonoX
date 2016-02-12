@@ -276,13 +276,13 @@ class EMPlusJetProcessor : public EMObjectProcessor {
   ~EMPlusJetProcessor() {}
 
   bool cleanJets(simpletree::Event const&, simpletree::Event&) override;
+  bool selectMet(simpletree::Event const&, simpletree::Event&) override;
 };
   
 class HadronProxyProcessor : public EMObjectProcessor {
   // Require exactly 1 hadron-proxy photon object
  public:
-  HadronProxyProcessor() {}
-  HadronProxyProcessor(double _weightNorm, char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name), EMObjectProcessor() {}
+  HadronProxyProcessor(double _weightNorm = 1., char const* _name = "HadronProxyProcessor") : EventProcessor(_weightNorm, _name), EMObjectProcessor() {}
   ~HadronProxyProcessor() {}
 
   void setReweight(TH1* _rwgt) { reweight_ = _rwgt; }
@@ -322,7 +322,7 @@ class WenuProxyLowMtProcessor : public LowMtProcessor, public WenuProxyProcessor
 
 class HadronProxyLowMtProcessor : public LowMtProcessor, public HadronProxyProcessor {
  public:
-  HadronProxyLowMtProcessor(double _weightNorm, char const* _name = "HadronProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), HadronProxyProcessor() {}
+  HadronProxyLowMtProcessor(double _weightNorm = 1., char const* _name = "HadronProxyLowMtProcessor") : EventProcessor(_weightNorm, _name), LowMtProcessor(), HadronProxyProcessor() {}
   ~HadronProxyLowMtProcessor() {}
 };
 

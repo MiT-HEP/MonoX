@@ -14,7 +14,7 @@
 #include <functional>
 
 // Hard-coded parameters
-bool const ABORTONFAIL(false);
+bool const ABORTONFAIL(true);
 unsigned const PHOTONWP(1);
 
 enum Cut {
@@ -32,7 +32,7 @@ enum Cut {
 };
 
 // allow the possibility to apply the cut and record the result but keep the event processing on
-unsigned const IGNORECUT(1 << kTauVeto);
+unsigned const IGNORECUT((1 << kTauVeto) | (1 << kHighMet) | (1 << kMetIso));
 
 bool
 photonSelection(simpletree::Photon const& _ph)
@@ -297,7 +297,7 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
 
         assert(iCut == nCuts);
 
-        if (allBitsUp(cutBits[iP], iCut - 2)) {
+        if (allBitsUp(cutBits[iP], iCut)) {
           processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
           skimTrees[iP]->Fill();
@@ -1034,6 +1034,25 @@ EMObjectProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
 
       _outEvent.photons.push_back(photon);
     }
+
+    // Wisconsin denominator def
+    // if (photon.passHOverE(PHOTONWP) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
+    //     photon.nhIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::nhIsoCuts[0][0]) &&
+    //     photon.phIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::phIsoCuts[0][0]) &&
+    //     photon.chIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::chIsoCuts[0][0])) {
+    //   unsigned nPass(0);
+    //   if (photon.passCHIso(0))
+    //     ++nPass;
+    //   if (photon.passNHIso(0))
+    //     ++nPass;
+    //   if (photon.passPhIso(0))
+    //     ++nPass;
+
+    //   if (nPass == 3)
+    //     break;
+      
+    //   _outEvent.photons.push_back(photon);
+    // }
   }
 
   return _outEvent.photons.size() == 1 && iP == _event.photons.size();
@@ -1054,6 +1073,12 @@ EMPlusJetProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event
   return false;
 }
 
+bool
+EMPlusJetProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  return true;
+}
+
 
 void
 HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -1061,8 +1086,7 @@ HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletre
   EventProcessor::calculateWeight(_event, _outEvent);
 
   if (reweight_) {
-    int iX(0);
-    reweight_->FindFixBin(_event.photons[0].pt);
+    int iX(reweight_->FindFixBin(_event.photons[0].pt));
     if (iX == 0)
       iX = 1;
     else if (iX > reweight_->GetNbinsX())
