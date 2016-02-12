@@ -44,7 +44,8 @@ except IndexError:
     cutMet = 140
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
-baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
+#baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
+baselineCut = 'photons.pt[0] > 175. && t1Met.iso'
 #baselineCut = 't1Met.iso'
 
 

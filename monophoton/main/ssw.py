@@ -235,7 +235,7 @@ generators = {
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
     'znng-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
-    'wg': {'monoph':makeGenProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'wg': {'monoph':makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'lowmt': makeGenGJetLowMtProcessor},
@@ -263,11 +263,8 @@ generators = {
     'qcd-1000': {'monoph':makeGenProcessor}
 }
 for sname in ['add%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
-    generators[sname] = {'monoph': makeGenProcessor}
-"""
-for sname in ['dm%s-%d-%d' % (mt, mm, dm) for mt in [ 'a', 'v' ] for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000] for dm in [1, 10, 50, 150, 500, 1000]]:
-    generators[sname] = {'monoph': makeGenProcessor}
-"""
+    generators[sname] = {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
+
 for mt in [ 'a', 'v' ]:
     for dm in [1, 10, 50, 150, 500, 1000]:
         for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000]:
@@ -280,7 +277,7 @@ for mt in [ 'a', 'v' ]:
             except KeyError:
                 # print "This combination is not part of the DMWG recommendations, moving onto next one."
                 continue;
-            generators[sname] = {'monoph': makeGenProcessor}
+            generators[sname] = {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
 
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
