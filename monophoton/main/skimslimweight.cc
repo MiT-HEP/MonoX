@@ -363,7 +363,7 @@ EventProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event
 
     unsigned iP(0);
     for (; iP != _outEvent.photons.size(); ++iP) {
-      if (_outEvent.photons[iP].dR2(electron) < 0.0225)
+      if (_outEvent.photons[iP].dR2(electron) < 0.25)
         break;
     }
     if (iP != _outEvent.photons.size()) // there was a matching candidate photon
@@ -382,10 +382,21 @@ EventProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _o
   unsigned iM(0);
   for (; iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-    if (muon.loose && muon.pt > 10.)
-      break;
+    if (!muon.loose || muon.pt < 10.)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != _outEvent.photons.size(); ++iP) {
+      if (_outEvent.photons[iP].dR2(muon) < 0.25)
+        break;
+    }
+    if (iP != _outEvent.photons.size()) // there was a matching candidate photon
+      continue;
+
+    break;
   }
 
+  // no muon matched the veto condition
   return iM == _event.muons.size();
 }
 
