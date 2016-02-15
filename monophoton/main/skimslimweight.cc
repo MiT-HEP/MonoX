@@ -363,7 +363,7 @@ EventProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event
 
     unsigned iP(0);
     for (; iP != _outEvent.photons.size(); ++iP) {
-      if (_outEvent.photons[iP].dR2(electron) < 0.0225)
+      if (_outEvent.photons[iP].dR2(electron) < 0.0225) // Bhawna uses 0.5
         break;
     }
     if (iP != _outEvent.photons.size()) // there was a matching candidate photon
