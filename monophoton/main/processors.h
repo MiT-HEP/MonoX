@@ -272,11 +272,20 @@ class EMObjectProcessor : public virtual EventProcessor {
 class EMPlusJetProcessor : public EMObjectProcessor {
   // Require >= 1 jet and 1 hadron-proxy photon object
  public:
-  EMPlusJetProcessor(char const* _name = "EMPlusJetProcessor") : EventProcessor(1., _name), EMObjectProcessor() {}
+ EMPlusJetProcessor(char const* _name = "EMPlusJetProcessor") : EventProcessor(1., _name), EMObjectProcessor() {}
   ~EMPlusJetProcessor() {}
 
   bool cleanJets(simpletree::Event const&, simpletree::Event&) override;
   bool selectMet(simpletree::Event const&, simpletree::Event&) override;
+};
+
+class PurityProcessor : public EMPlusJetProcessor {
+  // Same as EMPlusJet, but also allow true photons in the EM object selection
+ public:
+ PurityProcessor(char const* _name = "PurityProcessor") : EventProcessor(1., _name), EMPlusJetPRocessor() {}
+  ~PurityProcessor() {}
+
+  bool selectonPhotons(simpletree::Event const&, simpletree:Event&) override;
 };
   
 class HadronProxyProcessor : public EMObjectProcessor {

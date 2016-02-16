@@ -1090,6 +1090,31 @@ EMPlusJetProcessor::selectMet(simpletree::Event const& _event, simpletree::Event
   return true;
 }
 
+bool
+PurityProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  unsigned iP(0);
+  for (; iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+    if (!photon.isEB)
+      continue;
+
+    if (photon.sieie > 0.015)
+      continue;
+    
+    if (photon.chIso > 11.0)
+      continue;
+
+    if (photon.passHOverE(PHOTONWP) && photon.passNHIso(PHOTONWP) && photon.passPhIso(PHOTONWP) && photonEVeto(photon) && photon.pt > minPhotonPt_) {
+      // if (photon.sieie < 0.012 && photon.passCHIso(PHOTONWP))
+      //   break;
+
+      _outEvent.photons.push_back(photon);
+    }
+  }
+
+  return _outEvent.photons.size() == 1 && iP == _event.photons.size();
+}
 
 void
 HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -1175,7 +1200,7 @@ GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::E
  
     for (auto& parton : _event.partons) {
      if (std::abs(parton.pid) == 15)
-       if (parton.dR2(photon) < 0.5) {
+       if (parton.dR2(photon) < 0.25) {
 	 matched = true;
 	 break;
        }
