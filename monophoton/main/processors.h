@@ -287,6 +287,12 @@ class PurityProcessor : public EMPlusJetProcessor {
 
   bool selectonPhotons(simpletree::Event const&, simpletree:Event&) override;
 };
+
+class GenPurityProcessor : public PurityProcessor, public GenProcessor {
+ public:
+ GenPurityProcessor(double _weightNorm, char const* _name = "GenPurityProcessor") : EventProcessor(_weightNorm, _name), GenProcessor(), PurityProcessor() {}
+  ~GenPurityProcessor() {}
+};
   
 class HadronProxyProcessor : public EMObjectProcessor {
   // Require exactly 1 hadron-proxy photon object
