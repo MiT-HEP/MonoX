@@ -112,6 +112,7 @@ MonoJetTree::Reset()
   jet1DPhiMet = -1;
   jet1DPhiTrueMet = -1;
   jet1QGL = -2;
+  jet1Flavor = -1;
   jet2Pt = -5;
   jet2Eta = -7;
   jet2Phi = -5;
@@ -224,6 +225,7 @@ MonoJetTree::SetupTree()
   t->Branch("jet1isMonoJetId",&jet1isMonoJetId,"jet1isMonoJetId/I");
   t->Branch("jet1isMonoJetIdNew",&jet1isMonoJetIdNew,"jet1isMonoJetIdNew/I");
   t->Branch("jet1QGL",&jet1QGL,"jet1QGL/F");
+  t->Branch("jet1Flavor",&jet1Flavor,"jet1Flavor/I");
   t->Branch("n_cleanedjets",&n_cleanedjets,"n_cleanedjets/I");
   t->Branch("ht_cleanedjets",&ht_cleanedjets,"ht_cleanedjets/F");
   t->Branch("dPhi_j1j2",&dPhi_j1j2,"dPhi_j1j2/F");

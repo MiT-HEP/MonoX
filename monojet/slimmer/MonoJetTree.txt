@@ -63,6 +63,7 @@ jet1isMonoJetIdNew/I=-1
 #jet1DPhiMet/F=-1
 #jet1DPhiTrueMet/F=-1
 jet1QGL/F=-2
+jet1Flavor/I=-1
 #jet2Pt/F=-5
 #jet2Eta/F=-7
 #jet2Phi/F=-5

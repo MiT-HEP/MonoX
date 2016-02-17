@@ -78,6 +78,7 @@ class MonoJetTree
   float jet1DPhiMet;
   float jet1DPhiTrueMet;
   float jet1QGL;
+  int   jet1Flavor;
   float jet2Pt;
   float jet2Eta;
   float jet2Phi;
