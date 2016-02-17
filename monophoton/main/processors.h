@@ -279,13 +279,13 @@ class EMPlusJetProcessor : public EMObjectProcessor {
   bool selectMet(simpletree::Event const&, simpletree::Event&) override;
 };
 
-class PurityProcessor : public virtual EMPlusJetProcessor {
+class PurityProcessor : public EMPlusJetProcessor {
   // Same as EMPlusJet, but also allow true photons in the EM object selection
  public:
  PurityProcessor(char const* _name = "PurityProcessor") : EventProcessor(1., _name), EMPlusJetProcessor() {}
   ~PurityProcessor() {}
 
-  bool selectonPhotons(simpletree::Event const&, simpletree::Event&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 };
 
 class GenPurityProcessor : public PurityProcessor, public GenProcessor {
