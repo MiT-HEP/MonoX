@@ -12,7 +12,7 @@
 
 #include "functions.h"
 #include "MonoJetTree.h"
-#include "NeroTreeBambu.h"
+#include "NeroTree76.h"
 
 enum IsoType {
   kIsoVeto = 0,  
@@ -63,7 +63,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
-  NeroTreeBambu *inTree   = new NeroTreeBambu(inTreeFetch);
+  NeroTree76 *inTree      = new NeroTree76(inTreeFetch);
   TTree *allTree          = (TTree*) inFile->Get("nero/all");
   Float_t mcWeight        = 0.;
   TBranch *mcWeightBranch = allTree->GetBranch("mcWeight");
@@ -571,8 +571,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->genBos_mass = saveGenVec.M();
     }
 
-    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
-      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetak8P4->At(iFatJet);
+    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetAK8CHSP4->GetEntries(); iFatJet++) {
+      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetAK8CHSP4->At(iFatJet);
 
       Bool_t match = false;
 
@@ -598,15 +598,15 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
         outTree->fatjet1Mass = tempFatJet->M();
-        outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
-        outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
-        outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
-        outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
-        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
-        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
+        outTree->fatjet1TrimmedM  = (*(inTree->fatjetAK8CHSTrimmedMass))[iFatJet];
+        outTree->fatjet1PrunedM   = (*(inTree->fatjetAK8CHSPrunedMass))[iFatJet];
+        outTree->fatjet1FilteredM = (*(inTree->fatjetAK8CHSFilteredMass))[iFatJet];
+        outTree->fatjet1SoftDropM = (*(inTree->fatjetAK8CHSSoftdropMass))[iFatJet];
+        outTree->fatjet1tau1  = (*(inTree->fatjetAK8CHSTau1))[iFatJet];
+        outTree->fatjet1tau2  = (*(inTree->fatjetAK8CHSTau2))[iFatJet];
         outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
 
-        outTree->fatjet1MonojetId = (*(inTree->fatjetak8Monojetid))[iFatJet];
+        // outTree->fatjet1MonojetId = (*(inTree->fatjetAK8CHSMonojetid))[iFatJet];
 
         if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.8)
           outTree->fatjet1isLeading = 1;
