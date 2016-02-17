@@ -2,9 +2,9 @@ import os
 import sys
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Measurement, Selections, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor
 from ROOT import *
-gROOT.SetBatch(True)
+gROOT.SetBatch(False)
 
 loc = sys.argv[1]
 pid = sys.argv[2]
@@ -15,7 +15,7 @@ met = sys.argv[5]
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 ptSel = '(1)'
-for ptsel in PhotonPtSels[0]:
+for ptsel in PhotonPtSels:
     if 'PhotonPt'+pt == ptsel[0]:
         ptSel = ptsel[1]
 if ptSel == '(1)':
@@ -35,21 +35,19 @@ var = Variables[varName]
 varBins = True
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-skimDir  = os.path.join(versDir,'Skims')
+skimDir  = '/scratch5/ballen/hist/monophoton/skim'
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
-# plotDir = os.path.join(os.environ['CMSPLOTS'],'SignalContamTemp',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
 skimName = "Monophoton"
-skim = Measurement[skimName][0]
+skim = Measurement[skimName][1]
 
 baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
 
 outName = os.path.join(plotDir,'chiso_'+inputKey)
 print outName+'.root'
-outFile = TFile(outName+'.root','recreate')
-
+outFile = TFile(outName+'.root','RECREATE')
 
 histograms = [ [], [], [] ]
 leg = TLegend(0.725,0.7,0.875,0.85 );
@@ -58,7 +56,7 @@ leg.SetTextSize(0.03);
 
 colors = [kBlue, kRed, kBlack]
 
-truthSel = '(selPhotons.matchedGen == -22)'
+truthSel = '(photons.matchedGen == -22)'
 fullSel = baseSel+' && '+truthSel
 
 raw = HistExtractor(var[0],var[3][loc],skim,fullSel,skimDir,varBins)
@@ -68,7 +66,7 @@ histograms[0].append(raw)
 nBins = len(var[3][loc][-1]) - 1
 binEdges = array('d',var[3][loc][-1])
 eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[loc][pid]+' && '+metSel+" && "+sieieSels[loc][pid]+")"
-eSel = eSelScratch.replace("selPhotons", "probes")
+eSel = eSelScratch.replace("photons", "probes")
 print eSel
 
 mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
@@ -126,7 +124,7 @@ for iList, hlist in enumerate(histograms):
         hist.GetXaxis().SetTitleSize(0.045)
         hist.GetYaxis().SetLabelSize(0.045)
         hist.GetYaxis().SetTitleSize(0.045)
-        
+
         outFile.cd()
         hist.Write()
         
@@ -140,7 +138,6 @@ for iList, hlist in enumerate(histograms):
             hist.Draw("samehist")
         leg.AddEntry(hist, hist.GetName(), 'L')
 
-    outFile.Close()
     canvas.cd()
     if (iList < 2): 
         leg.Draw()
@@ -155,5 +152,7 @@ for iList, hlist in enumerate(histograms):
     canvas.SaveAs(newName+'_Logy.pdf')
     canvas.SaveAs(newName+'_Logy.png')
     canvas.SaveAs(newName+'_Logy.C')
-
+    
+    
     leg.Clear()
+outFile.Close()
