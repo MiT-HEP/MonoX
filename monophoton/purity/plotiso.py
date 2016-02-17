@@ -4,7 +4,7 @@ from array import array
 from pprint import pprint
 from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor
 from ROOT import *
-gROOT.SetBatch(False)
+gROOT.SetBatch(True)
 
 loc = sys.argv[1]
 pid = sys.argv[2]
