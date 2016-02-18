@@ -137,6 +137,11 @@ def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
 
     tree.Draw(tempVar+">>"+_skim[0], _sel, "goff")
 
+    if not 'Fit' in _skim[0]:
+        for iBin in range(1, tempH.GetNbinsX()+1):
+            if not tempH.GetBinContent(iBin) > 0:
+                tempH.SetBinContent(iBin, 0.0000001)
+
     return tempH
         
 def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
@@ -189,6 +194,8 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
 
     frame = _var.frame()
     frame.SetTitle(_title)
+    # frame.SetMinimum(0.001)
+    # frame.SetMaximum(10000)
 
     _datahist.plotOn(frame, RooFit.Name("data"))
     model.plotOn(frame, RooFit.Name("Fit"))
@@ -235,7 +242,8 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
     canvas.SaveAs(_name+'.pdf')
     canvas.SaveAs(_name+'.png')
     canvas.SaveAs(_name+'.C')
-    
+    canvas.SaveAs(_name+'.root')
+
     canvas.SetLogy()
     canvas.SaveAs(_name+'_Logy.pdf')
     canvas.SaveAs(_name+'_Logy.png')
