@@ -129,7 +129,8 @@ class Legend(object):
 
         args = [lwidth, lstyle, lcolor, fstyle, fcolor, msize, mstyle, mcolor]
         for iA in range(len(args)):
-            getattr(ent, 'Set' + Legend.Attributes[iA])(args[iA])
+            if args[iA] >= 0:
+                getattr(ent, 'Set' + Legend.Attributes[iA])(args[iA])
 
         if color != -1:
             for at in Legend.Attributes:
@@ -314,6 +315,11 @@ class SimpleCanvas(object):
         pave = maketext(x1, y1, x2, y2, textalign = textalign, font = font)
         pave.AddText(text)
         self._objects.append(pave)
+
+    def applyStyles(self):
+        for hist in self._histograms:
+            if hist.GetName() in self.legend.entries:
+                self.legend.apply(hist.GetName(), hist)
 
     def Clear(self, full = False):
         name = self.canvas.GetName()
