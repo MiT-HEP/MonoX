@@ -3,7 +3,7 @@ import sys
 from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
-from selections import Variables, Version, Measurement, Selections, SigmaIetaIetaSels, ChIsoSbSels, PhotonPtSels, MetSels, cutMatchedToReal, HistExtractor, HistToTemplate, PlotNames,FitTemplates, SignalSubtraction
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels, chIsoSels, ChIsoSbSels, PhotonPtSels, MetSels, cutMatchedToReal, HistExtractor, HistToTemplate, PlotNames,FitTemplates, SignalSubtraction
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -16,16 +16,6 @@ met = sys.argv[5]
 
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
-try: 
-    # print Selections[inputKey]
-    temp = Selections[inputKey]
-except KeyError:
-    print "Selection inputted from command line doesn't exist. Quitting!!!"
-    print inputKey
-    print "Available selections are: "
-    for sel in Selections: print sel
-    sys.exit()
-
 chIsoSel = '(1)'
 for chisosel in ChIsoSbSels:
     if 'ChIso'+chiso == chisosel[0]:
@@ -35,7 +25,7 @@ if chIsoSel == '(1)':
     print 'Not applying any chIso selection!'
  
 ptSel = '(1)'
-for ptsel in PhotonPtSels[0]:
+for ptsel in PhotonPtSels:
     if 'PhotonPt'+pt == ptsel[0]:
         ptSel = ptsel[1]
 if ptSel == '(1)':
@@ -53,9 +43,7 @@ if metSel == '(1)':
 ### Directory stuff so that results are saved and such
 varName = 'chiso'
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-# skimDir  = os.path.join(versDir,'Skims')
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
-# plotDir = os.path.join(os.environ['CMSPLOTS'],'ST10','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
@@ -72,11 +60,9 @@ splits = chiso.split("to")
 minIso = float(splits[0])/10.0
 maxIso = float(splits[1])/10.0
 
-# dRcuts = [0.5,0.4,0.8]
 labels = [ 'rawmc', 'scaledmc' ] 
 isoHists = []
 for label in labels:
-    # isoHist = isoFile.Get("ShapeChIso_dR"+str(int(dR*10)))
     isoHist = isoFile.Get(label)
     
     ### Get Sig and Sideband fractions
@@ -92,7 +78,6 @@ for label in labels:
     sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
     print "Fraction in sideband:", sbFrac
 
-    # sigFrac = isoHist.GetBinContent(1)
     sigFrac = isoHist.Integral(1,3)
     print "Fraction in signal:", sigFrac
     isoHists.append( (isoHist, sbFrac, sigFrac) )
@@ -102,25 +87,26 @@ varName = 'sieie'
 var = Variables[varName]
 varBins = False
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-skimDir  = os.path.join(versDir,'Skims')
+skimDir  = '/scratch5/ballen/hist/monophoton/skim'
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
-# plotDir = os.path.join(os.environ['CMSPLOTS'],'ST10','SignalContam',inputKey)
-skimName = "Monophoton"
 
-sbSkims = [ ('TempSidebandGJets','TempSignalGJets',kPhoton,r'Sideband Template from #gamma+jets MC')
-            ,('TempSidebandGJetsScaled','TempSignalGJets',kPhoton,r'Scaled Sideband Template from #gamma+jets MC') ]
+sigSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSels[loc][pid]+' && '+ptSel+' && '+metSel
+sbSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
+truthSel =  '(photons.matchedGen == -22)'
 
-truthSel =  '( selPhotons.matchedGen == -22)'
-sbSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+truthSel+' && '+ptSel+' &&'+metSel
-
-# fit, signal, contamination, background
-skims = [ Measurement[skimName][1], Measurement[skimName][0], sbSkims[0], Measurement[skimName][5], sbSkims[1], Measurement[skimName][5] ]
-sels = [ Selections[inputKey][1], Selections[inputKey][0], sbSel, Selections[inputKey][5], sbSel, Selections[inputKey][5] ]
+# fit, signal, contamination, background, contamination scaled, background
+skims = Measurement["Monophoton"]
+sels = [ sigSel
+         ,sigSel+' && '+truthSel
+         ,sbSel+' && '+truthSel
+         ,sbSel
+         ,sbSel+' && '+truthSel
+         ,sbSel
+         ]
 
 # get initial templates
-
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
 initialHists = []
 initialTemplates = []

@@ -41,7 +41,9 @@ cutflow = [
     ('vetoTaus',)
 ]
 
-print ntotal, 1
+# print ntotal, 1
+
+print "%40s %15d %15.4e %15.1e" % ("total", ntotal, (float(ntotal) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, ntotal, 0.6826895, True) - float(ntotal) / ntotal))
 
 mask = 0
 for cuts in cutflow:
@@ -54,4 +56,5 @@ for cuts in cutflow:
         mask |= bitmasks[bitname]
 
     nevt = tree.GetEntries('(cutBits & {mask}) == {mask}'.format(mask = mask))
-    print nevt, '%.4e' % (float(nevt) / ntotal), '%.1e' % (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal), name
+    # print nevt, '%.4e' % (float(nevt) / ntotal), '%.1e' % (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal), name
+    print "%40s %15d %15.4e %15.1e" % (name, nevt, (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
