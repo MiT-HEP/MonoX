@@ -45,8 +45,7 @@ except IndexError:
 
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 # baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
-# baselineCut = 'photons.pt[0] > 175. && t1Met.iso'
-baselineCut = ''
+baselineCut = 'photons.pt[0] > 175. && t1Met.iso'
 
 sigGroups = []
 
@@ -59,15 +58,15 @@ if region == 'monoph':
     defsel = 'monoph'
     obs = GroupSpec('Observed', [('sph-d3', 'monoph'), ('sph-d4', 'monoph')], ROOT.kBlack)
     sigGroups = [
-        GroupSpec('add5-2', ['add5-2'], 41),       # 0.07069/pb
-        GroupSpec('dmv-1000-150', ['dmv-1000-150'], 46), # 0.01437/pb
-        GroupSpec('dma-500-1', ['dma-500-1'], 30), # 0.07827/pb 
+        # GroupSpec('add5-2', ['add5-2'], 41),       # 0.07069/pb
+        # GroupSpec('dmv-1000-150', ['dmv-1000-150'], 46), # 0.01437/pb
+        # GroupSpec('dma-500-1', ['dma-500-1'], 30), # 0.07827/pb 
     ]
     bkgGroups = [
-        ('minor', GroupSpec('minor SM', ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
+        # ('minor', GroupSpec('minor SM', ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         # ('wmutau', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         # ('zllg', GroupSpec('Z#rightarrow ll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
-        # ('ttg', GroupSpec('tt#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
+        ('ttg', GroupSpec('tt#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
@@ -340,8 +339,16 @@ for sName in obs.samples:
 
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
-    histName = varname + '-' + sampledef.name + '_' + selection
-    print histName
+    
+    histName = varname + '-' + sampledef.name + '-' + selection
+    fileName = config.skimDir + '/' + sampledef.name + '_' + selection + '.root'
+    if not os.path.exists(fileName):
+        # need to be slightly smarter about this for the MC backgrounds
+        return ROOT.TH1F(histName, '', 1, 0., 1.)
+
+    source = ROOT.TFile.Open(fileName)
+    tree = source.Get('events')
+
     if vardef.is2D:
         nbins = []
         arr = []
@@ -371,16 +378,6 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
         hist = ROOT.TH1D(histName, '', nbins, arr)
 
-    fileName = config.skimDir + '/' + sampledef.name + '_' + selection + '.root'
-    print fileName
-    if not os.path.exists(fileName):
-        print 'skipping!'
-        return hist
-    source = ROOT.TFile.Open(fileName)
-    tree = source.Get('events')
-    print tree
-    print hist
-
     cut = vardef.cut
     if isSensitive and blind > 1:
         if cut:
@@ -393,11 +390,11 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     else:
         weightexpr = 'weight'
 
-    print weightexpr
+    drawexpr = vardef.expr + '>>' + histName
 
     hist.Sumw2()
     if sampledef.data:
-        tree.Draw(vardef.expr + '>>' + histName, weightexpr, 'goff')
+        tree.Draw(drawexpr, weightexpr, 'goff')
         if vardef.blind:
             for i in range(1, hist.GetNbinsX()+1):
                 binCenter = hist.GetBinCenter(i)
@@ -406,7 +403,8 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
                     hist.SetBinError(i, 0.)
 
     else:
-        tree.Draw(vardef.expr + '>>' + histName, str(lumi) + ' * ' + weightexpr, 'goff')
+        weightexpr = str(lumi) + ' * ' + weightexpr
+        tree.Draw(drawexpr, weightexpr, 'goff')
 
     if vardef.overflow:
         lastbinWidth = (binning[-1] - binning[0]) / 30.
