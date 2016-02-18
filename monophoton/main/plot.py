@@ -6,6 +6,16 @@ import collections
 import array
 import math
 import ROOT
+from argparse import ArgumentParser
+
+argParser = ArgumentParser(description = 'Plot and count')
+argParser.add_argument('region', metavar = 'REGION', help = 'Control or signal region name.')
+argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
+argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
+argParser.add_argument('--blind', '-b', metavar = 'PRESCALE', dest = 'blind', type = int, default = 1, help = 'Prescale for blinding.')
+
+args = argParser.parse_args()
+sys.argv = []
 
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
@@ -15,10 +25,7 @@ import config
 
 ROOT.gROOT.SetBatch(True)
 
-MAKEPLOTS = True
-if '-C' in sys.argv:
-    MAKEPLOTS = False
-    sys.argv.remove('-C')
+cutMet = 140
 
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
@@ -35,21 +42,13 @@ class VariableDef(object):
         self.logy = logy
         self.ymax = ymax
 
-
-region = sys.argv[1]
-
-try:
-    cutMet = int(sys.argv[2])
-except IndexError:
-    cutMet = 140
-
 cutHighMet = '(t1Met.met > '+str(cutMet)+')'
 # baselineCut = 'photons.pt[0] > 175. && tauVeto && t1Met.iso'
 baselineCut = 'photons.pt[0] > 175. && t1Met.iso'
 
 sigGroups = []
 
-if region == 'monoph':
+if args.region == 'monoph':
     if baselineCut:
         cutStringHighMet = baselineCut + ' && ' + cutHighMet
     else:
@@ -117,7 +116,7 @@ if region == 'monoph':
         'timeSpanHighMet'+str(cutMet): VariableDef('timeSpan', '', 'photons.timeSpan', cutStringHighMet, (20, -20., 20.))
     }
 
-elif region == 'lowdphi':
+elif args.region == 'lowdphi':
     if baselineCut:
         baselineCut = baselineCut.replace("t1Met", "!t1Met")
         cutStringHighMet = baselineCut + ' && ' + cutHighMet
@@ -157,7 +156,7 @@ elif region == 'lowdphi':
         'nVertexHighMet'+str(cutMet): VariableDef('N_{vertex}', '', 'npv', cutStringHighMet, (40,0.,40.)),
     }
 
-elif region == 'lowmt':
+elif args.region == 'lowmt':
     wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
     wenuNoPtCut = baselineCut + ' && t1Met.met > 140.'
     wenuCut = wenuNoMetCut + ' && t1Met.met > 140.'
@@ -187,7 +186,7 @@ elif region == 'lowmt':
         's4': VariableDef('s4', '', 'photons.s4', wenuCut, (50, 0.5, 1.)),
     }
 
-elif region == 'dimu':
+elif args.region == 'dimu':
     mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
     cut = mass + ' > 50. && photons.pt[0] > 140. && t1Met.recoil > 100.'
 
@@ -213,7 +212,7 @@ elif region == 'dimu':
         'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
-elif region == 'monomu':
+elif args.region == 'monomu':
     cut = 'photons.pt[0] > 140. && t1Met.recoil > 100.'
 
     defsel = 'monomu'
@@ -236,7 +235,7 @@ elif region == 'monomu':
         'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
-elif region == 'diel':
+elif args.region == 'diel':
     dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
     dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
@@ -264,7 +263,7 @@ elif region == 'diel':
         'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.)),
     }
 
-elif region == 'monoel':
+elif args.region == 'monoel':
     dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
     cut = baselineCut + ' && ' + dR2_00 + ' > 0.01 && photons.pt[0] > 140.'
 
@@ -289,7 +288,7 @@ elif region == 'monoel':
         'njets': VariableDef('N_{jet}', '', 'jets.size', cut, (10, 0., 10.))
     }
 
-elif region == 'elmu':
+elif args.region == 'elmu':
     defsel = 'elmu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
     bkgGroups = [
@@ -307,7 +306,7 @@ elif region == 'elmu':
     }
 
 else:
-    print 'Unknown region', region
+    print 'Unknown region', args.region
     sys.exit(0)
 
 countDef = VariableDef('N_{cand}', '', '0.5', baselineCut + ' && ' + cutHighMet, (1, 0., 1.))
@@ -320,11 +319,6 @@ limitDef = VariableDef( ('E_{T}^{miss}','E_{T}^{#gamma}'), ('GeV','GeV'), 'photo
 """
 
 sensitive = {'monoph': ['met', 'metHighMet'+str(cutMet), 'phoPtHighMet'+str(cutMet), 'mtPhoMet', 'mtPhoMetHighMet'+str(cutMet)]}
-try:
-    blind = int(sys.argv[3])
-except IndexError:
-    blind = 1
-
 
 lumi = 0.
 for sName in obs.samples:
@@ -367,11 +361,11 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
         hist = ROOT.TH1D(varname + '-' + sampledef.name, '', nbins, arr)
 
     cut = vardef.cut
-    if isSensitive and blind > 1:
+    if isSensitive and args.blind > 1:
         if cut:
-            cut += ' && event % {blind} == 0'.format(blind = blind)
+            cut += ' && event % {blind} == 0'.format(blind = args.blind)
         else:
-            cut = ' event % {blind} == 0'.format(blind = blind)
+            cut = ' event % {blind} == 0'.format(blind = args.blind)
 
     if cut:
         weightexpr = 'weight * (%s)' % cut
@@ -438,12 +432,15 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     return hist
 
 
-if MAKEPLOTS:
+if not args.countOnly or args.bbb != '':
+
+    if args.bbb:
+        stack = {}
 
     canvas = DataMCCanvas(lumi = lumi)
     simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
 
-    plotdir = canvas.webdir + '/monophoton/' + region
+    plotdir = canvas.webdir + '/monophoton/' + args.region
     """
     for plot in os.listdir(plotdir):
         os.remove(plotdir + '/' + plot)
@@ -452,13 +449,17 @@ if MAKEPLOTS:
     print "Starting plot making."
     
     for varname, vardef in variables.items():
-        isSensitive = region in sensitive and varname in sensitive[region]
-    
+        if args.countOnly and varname != args.bbb:
+            continue
+        print varname
+
+        isSensitive = args.region in sensitive and varname in sensitive[args.region]
+
         canvas.Clear(full = True)
         canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(bkgGroups) + len(sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
     
         if isSensitive:
-            canvas.lumi = lumi / blind
+            canvas.lumi = lumi / args.blind
         else:
             canvas.lumi = lumi
     
@@ -472,16 +473,22 @@ if MAKEPLOTS:
                     selection = defsel
     
                 hist = getHist(allsamples[sName], selection, varname, vardef)
-    
+  
                 for iX in range(1, hist.GetNbinsX() + 1):
                     if hist.GetBinContent(iX) < 0.:
                         hist.SetBinContent(iX, 0.)
     
-                if isSensitive and blind > 1:
-                    hist.Scale(1. / blind)
-    
+                if isSensitive and args.blind > 1:
+                    hist.Scale(1. / args.blind)
+   
                 idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
-                
+
+                if varname == args.bbb:
+                    try:
+                        stack[gName].Add(hist)
+                    except KeyError:
+                        stack[gName] = hist.Clone(gName + '_bbb')
+
         if isSensitive:
             for sGroup in sigGroups:
                 idx = -1
@@ -493,8 +500,8 @@ if MAKEPLOTS:
                         selection = defsel
 
                     hist = getHist(allsamples[sName], selection, varname, vardef)
-                    if blind > 1:
-                        hist.Scale(1. / blind)
+                    if args.blind > 1:
+                        hist.Scale(1. / args.blind)
     
                     idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
     
@@ -507,11 +514,18 @@ if MAKEPLOTS:
 
             hist = getHist(allsamples[sName], selection, varname, vardef, isSensitive)
             canvas.addObs(hist, title = obs.title)
+
+            if varname == args.bbb:
+                try:
+                    stack['obs'].Add(hist)
+                except KeyError:
+                    stack['obs'] = hist.Clone('obs_bbb')
     
         canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
         canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
-    
-        canvas.printWeb('monophoton/' + region, varname, logy = vardef.logy, ymax = vardef.ymax)
+
+        if not args.countOnly:
+            canvas.printWeb('monophoton/' + args.region, varname, logy = vardef.logy, ymax = vardef.ymax)
 
     print "Finished plotting."
 
@@ -521,8 +535,9 @@ print "Counting yields and preparing limits file."
 hists = {}
 counts = {}
 blindCounts = False
-if region == 'monoph':
+if args.region == 'monoph':
     blindCounts = True
+
 for gName, group in bkgGroups:
     counts[gName] = 0.
     for sName in group.samples:
@@ -534,7 +549,7 @@ for gName, group in bkgGroups:
 
         hist = getHist(allsamples[sName], selection, 'count', countDef)
         if blindCounts:
-            counts[gName] += hist.GetBinContent(1) / blind
+            counts[gName] += hist.GetBinContent(1) / args.blind
         else:
             counts[gName] += hist.GetBinContent(1)
 
@@ -545,7 +560,7 @@ for gName, group in bkgGroups:
             hists[gName] = hist2D
             hists[gName].SetName(gName)
 
-if region == 'monoph':
+if args.region == 'monoph':
     for sGroup in sigGroups:
         for sName in sGroup.samples:
             if type(sName) is tuple:
@@ -556,7 +571,7 @@ if region == 'monoph':
 
             hist = getHist(allsamples[sName], defsel, 'count', countDef)
             if blindCounts:
-                counts[sName] = hist.GetBinContent(1) / blind
+                counts[sName] = hist.GetBinContent(1) / args.blind
             else:
                 counts[gName] += hist.GetBinContent(1)
 
@@ -585,8 +600,8 @@ for sName in obs.samples:
         hists['obs'] = hist2D
         hists['obs'].SetName('data_obs')
 
-if region == 'monoph':
-    limitFile = ROOT.TFile(config.histDir + "/"+region+".root", "RECREATE")
+if args.region == 'monoph':
+    limitFile = ROOT.TFile(config.histDir + "/"+args.region+".root", "RECREATE")
     limitFile.cd()
     
     for name, hist in hists.iteritems():
@@ -603,10 +618,40 @@ print '%+10s  %.2f' % ('bkg', bkgTotal)
 
 print '====================='
 
-if region == 'monoph':
+if args.region == 'monoph':
     for sGroup in sigGroups:
         for sName in sGroup.samples:
             print '%+10s  %.2f' % (sName, counts[sName])
 
 print '====================='
 print '%+10s  %d' % ('obs', counts['obs'])
+
+if args.bbb != '':
+    print 'Bin-by-bin yield for variable', args.bbb
+
+    obs = stack['obs']
+    nBins = obs.GetNbinsX()
+
+    boundaries = []
+    for iX in range(1, nBins + 1):
+        boundaries.append('%12s' % ('[%.0f, %.0f]' % (obs.GetXaxis().GetBinLowEdge(iX), obs.GetXaxis().GetBinUpEdge(iX))))
+    boundaries.append('%12s' % 'total')
+
+    print '           ' + ' '.join(boundaries)
+    print '===================================================================================='
+
+    bkgTotal = [0.] * nBins
+
+    for gName, group in reversed(bkgGroups):
+        yields = []
+        for iX in range(1, nBins + 1):
+            cont = stack[gName].GetBinContent(iX) * obs.GetXaxis().GetBinWidth(iX)
+            yields.append(cont)
+            bkgTotal[iX - 1] += cont
+
+        print ('%+10s' % gName), ' '.join(['%12.2f' % y for y in yields]), ('%12.2f' % sum(yields))
+
+    print '------------------------------------------------------------------------------------'
+    print ('%+10s' % 'total'), ' '.join(['%12.2f' % b for b in bkgTotal]), ('%12.2f' % sum(bkgTotal))
+    print '===================================================================================='
+    print ('%+10s' % 'obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
