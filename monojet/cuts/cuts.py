@@ -1,3 +1,5 @@
+Luminosity = 2240.0
+
 allCut = 'n_tau == 0 && abs(minJetMetDPhi_clean) > 0.5 && leadingJet_outaccp == 0'
 zeeAll = 'n_tau == 0 && leadingJet_outaccp == 0'
 metCut = 'met > 200'
@@ -16,7 +18,7 @@ ETrigger   = '((triggerFired[4]==1 || triggerFired[5]==1) || ' + GTrigger + ')'
 MuTrigger  = '(triggerFired[8]==1 || triggerFired[9]==1 || triggerFired[10]==1)'
 
 monoJet     = 'jet1Pt > 100 && jet1isMonoJetIdNew == 1 && abs(jet1Eta) < 2.4'
-monoVSimple = 'fatjet1Pt > 250 && fatjet1tau21 < 0.6 && met > 250'
+monoVSimple = 'fatjet1Pt > 250 && fatjet1tau21 < 0.6 && met > 250 && ' + monoJet
 monoVNoMass = monoVSimple + ' && abs(fatjet1Eta) < 2.4 && jet1isMonoJetIdNew == 1'
 monoV       = monoVNoMass + ' && fatjet1PrunedM < 105 && fatjet1PrunedM > 62'
 #monoVeto    = monoV

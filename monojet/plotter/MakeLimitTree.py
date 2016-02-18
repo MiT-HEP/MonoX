@@ -3,9 +3,7 @@
 from LimitTreeMaker import newLimitTreeMaker
 import cuts
 
-#directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkim/'
-#directory = '/Users/dabercro/GradSchool/Winter15/FatMETSkim_160129/'
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_160212/'
 
 theFiles = [
     ['monojet_DYJetsToLL_M-50_HT-100to200.root','Zll_ht100',148.0],
@@ -45,7 +43,7 @@ theFiles = [
     ['monojet_Data.root','data',-1]
 ]
 
-ltm = newLimitTreeMaker('limits/MonoJetLimitsTrees.root')
+ltm = newLimitTreeMaker('limits/MonoJetInclusiveLimitsTrees.root')
 
 ltm.SetTreeName('events')
 ltm.AddKeepBranch('met')
@@ -54,14 +52,14 @@ ltm.AddKeepBranch('jet1Pt')
 ltm.AddWeightBranch('mcFactors')
 ltm.SetAllHistName('htotal')
 ltm.SetOutputWeightBranch('scaleMC_w')
-ltm.SetLuminosity(2240.0)
+ltm.SetLuminosity(cuts.Luminosity)
     
-ltm.AddRegion('Zmm',cuts.ZmmMJ)
-ltm.AddRegion('Wmn',cuts.WmnMJ)
-ltm.AddRegion('signal',cuts.signalMJ_unblinded)
-ltm.AddRegion('Wen',cuts.WenMJ + ' && ' + cuts.ETrigger)
-ltm.AddRegion('Zee',cuts.ZeeMJ + ' && ' + cuts.ETrigger)
-ltm.AddRegion('gjets',cuts.gjetMJ + ' && ' +  cuts.GTrigger)
+ltm.AddRegion('Zmm',cuts.ZmmMJ_inc)
+ltm.AddRegion('Wmn',cuts.WmnMJ_inc)
+ltm.AddRegion('signal',cuts.signalMJ_inc_unblinded)
+ltm.AddRegion('Wen',cuts.WenMJ_inc + ' && ' + cuts.ETrigger)
+ltm.AddRegion('Zee',cuts.ZeeMJ_inc + ' && ' + cuts.ETrigger)
+ltm.AddRegion('gjets',cuts.gjetMJ_inc + ' && ' +  cuts.GTrigger)
 
 for aFile in theFiles:
     ltm.AddFile(directory + aFile[0],aFile[1],aFile[2])
@@ -88,7 +86,48 @@ ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QC
 
 ltm.MakeTrees()
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MV/'
+ltmJ = newLimitTreeMaker('limits/MonoJetLimitsTrees.root')
+
+ltmJ.SetTreeName('events')
+ltmJ.AddKeepBranch('met')
+ltmJ.AddKeepBranch('genBos_pt')
+ltmJ.AddKeepBranch('jet1Pt')
+ltmJ.AddWeightBranch('mcFactors')
+ltmJ.SetAllHistName('htotal')
+ltmJ.SetOutputWeightBranch('scaleMC_w')
+ltmJ.SetLuminosity(cuts.Luminosity)
+    
+ltmJ.AddRegion('Zmm',cuts.ZmmMJ_inc)
+ltmJ.AddRegion('Wmn',cuts.WmnMJ_inc)
+ltmJ.AddRegion('signal',cuts.signalMJ_inc_unblinded)
+ltmJ.AddRegion('Wen',cuts.WenMJ_inc + ' && ' + cuts.ETrigger)
+ltmJ.AddRegion('Zee',cuts.ZeeMJ_inc + ' && ' + cuts.ETrigger)
+ltmJ.AddRegion('gjets',cuts.gjetMJ_inc + ' && ' +  cuts.GTrigger)
+
+for aFile in theFiles:
+    ltmJ.AddFile(directory + aFile[0],aFile[1],aFile[2])
+##
+
+ltmJ.AddExceptionDataCut('Zmm',cuts.METTrigger)
+ltmJ.AddExceptionWeightBranch('Zmm','METTrigger')
+ltmJ.AddExceptionDataCut('Wmn',cuts.METTrigger)
+ltmJ.AddExceptionWeightBranch('Wmn','METTrigger')
+ltmJ.AddExceptionDataCut('signal',cuts.METTrigger)
+ltmJ.AddExceptionWeightBranch('signal','METTrigger')
+
+
+ltmJ.ExceptionSkip('gjets','QCD_200To300')
+ltmJ.ExceptionSkip('gjets','QCD_300To500')
+ltmJ.ExceptionSkip('gjets','QCD_500To700')
+ltmJ.ExceptionSkip('gjets','QCD_700To1000')
+ltmJ.ExceptionSkip('gjets','QCD_1000To1500')
+ltmJ.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-40To100.root','QCD_40To100',23080.0)
+ltmJ.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-100To200.root','QCD_100To200',9235.0)
+ltmJ.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-200To400.root','QCD_200To400',2298.0)
+ltmJ.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
+ltmJ.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
+
+ltmJ.MakeTrees()
 
 ltmV = newLimitTreeMaker('limits/MonoVLimitsTrees.root')
 
@@ -99,7 +138,7 @@ ltmV.AddKeepBranch('jet1Pt')
 ltmV.AddWeightBranch('mcFactors')
 ltmV.SetAllHistName('htotal')
 ltmV.SetOutputWeightBranch('scaleMC_w')
-ltmV.SetLuminosity(2109.0)
+ltmV.SetLuminosity(cuts.Luminosity)
     
 ltmV.AddRegion('Zmm',cuts.ZmmMV)
 ltmV.AddRegion('Wmn',cuts.WmnMV)
