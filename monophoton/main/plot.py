@@ -67,7 +67,7 @@ if region == 'monoph':
         # ('wmutau', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         # ('zllg', GroupSpec('Z#rightarrow ll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         # ('ttg', GroupSpec('tt#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
-        ('g', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
+        ('gjets', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
         ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), 
@@ -310,7 +310,11 @@ else:
     print 'Unknown region', region
     sys.exit(0)
 
-countDef = VariableDef('N_{cand}', '', '0.5', baselineCut + ' && ' + cutHighMet, (1, 0., 1.))
+if baselineCut:
+    countCut = baselineCut + ' && ' + cutHighMet
+else:
+    countCut = cutHighMet
+countDef = VariableDef('N_{cand}', '', '0.5', countCut, (1, 0., 1.))
 
 limitDef = VariableDef( ('E_{T}^{#gamma}','E_{T}^{miss}'), ('GeV','GeV'), 't1Met.met:photons.pt[0]', baselineCut,
                         ( [175. + 25. * x for x in range(18)], [100. + 10. * x for x in range(51)] ), is2D = True)
@@ -335,7 +339,14 @@ for sName in obs.samples:
 
 
 def getHist(sampledef, selection, varname, vardef, isSensitive = False):
-    source = ROOT.TFile.Open(config.skimDir + '/' + sampledef.name + '_' + selection + '.root')
+    
+    histName = varname + '-' + sampledef.name + '-' + selection
+    fileName = config.skimDir + '/' + sampledef.name + '_' + selection + '.root'
+    if not os.path.exists(fileName):
+        # need to be slightly smarter about this for the MC backgrounds
+        return ROOT.TH1F(histName, '', 1, 0., 1.)
+
+    source = ROOT.TFile.Open(fileName)
     tree = source.Get('events')
 
     if vardef.is2D:
@@ -353,7 +364,8 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
             nbins.append(nbins_)
             arr.append(arr_)
 
-        hist = ROOT.TH2D(varname + '-' + sampledef.name, '', nbins[0], arr[0], nbins[1], arr[1]) 
+        hist = ROOT.TH2D(histName, '', nbins[0], arr[0], nbins[1], arr[1]) 
+        
     else:
         if type(vardef.binning) is list:
             nbins = len(vardef.binning) - 1
@@ -364,7 +376,7 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
         arr = array.array('d', binning)
 
-        hist = ROOT.TH1D(varname + '-' + sampledef.name, '', nbins, arr)
+        hist = ROOT.TH1D(histName, '', nbins, arr)
 
     cut = vardef.cut
     if isSensitive and blind > 1:
@@ -378,9 +390,11 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     else:
         weightexpr = 'weight'
 
+    drawexpr = vardef.expr + '>>' + histName
+
     hist.Sumw2()
     if sampledef.data:
-        tree.Draw(vardef.expr + '>>' + varname + '-' + sampledef.name, weightexpr, 'goff')
+        tree.Draw(drawexpr, weightexpr, 'goff')
         if vardef.blind:
             for i in range(1, hist.GetNbinsX()+1):
                 binCenter = hist.GetBinCenter(i)
@@ -389,7 +403,8 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
                     hist.SetBinError(i, 0.)
 
     else:
-        tree.Draw(vardef.expr + '>>' + varname + '-' + sampledef.name, str(lumi) + ' * ' + weightexpr, 'goff')
+        weightexpr = str(lumi) + ' * ' + weightexpr
+        tree.Draw(drawexpr, weightexpr, 'goff')
 
     if vardef.overflow:
         lastbinWidth = (binning[-1] - binning[0]) / 30.
@@ -516,6 +531,7 @@ if MAKEPLOTS:
     print "Finished plotting."
 
 print "Counting yields and preparing limits file."
+systs = [ '', '-gup', '-gdown', '-jecup', '-jecdown' ] 
 
 #canvas = simpleCanvas # this line causes segfault somewhere down the line of DataMCCanvas destruction
 hists = {}
@@ -538,12 +554,15 @@ for gName, group in bkgGroups:
         else:
             counts[gName] += hist.GetBinContent(1)
 
-        hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
-        if gName in hists.keys():
-            hists[gName].Add(hist2D)
-        else:
-            hists[gName] = hist2D
-            hists[gName].SetName(gName)
+        for syst in systs:
+            hist2D = getHist(allsamples[sName], selection+syst, 'limit', limitDef, isSensitive = blindCounts)
+            if gName+syst in hists.keys():
+                hists[gName+syst].Add(hist2D)
+            else:
+                hists[gName+syst] = hist2D
+                hists[gName+syst].SetName(gName+syst)
+            if 'sph' in sName:
+                break
 
 if region == 'monoph':
     for sGroup in sigGroups:
@@ -560,12 +579,13 @@ if region == 'monoph':
             else:
                 counts[gName] += hist.GetBinContent(1)
 
-            hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
-            if sName in hists.keys():
-                hists[sName].Add(hist2D)
-            else:
-                hists[sName] = hist2D
-                hists[sName].SetName(sName)
+            for syst in systs:
+                hist2D = getHist(allsamples[sName], selection+syst, 'limit', limitDef, isSensitive = blindCounts)
+                if sName+syst in hists.keys():
+                    hists[sName+syst].Add(hist2D)
+                else:
+                    hists[sName+syst] = hist2D
+                    hists[sName+syst].SetName(sName+syst)
 
 counts['obs'] = 0.
 for sName in obs.samples:
@@ -589,7 +609,7 @@ if region == 'monoph':
     limitFile = ROOT.TFile(config.histDir + "/"+region+".root", "RECREATE")
     limitFile.cd()
     
-    for name, hist in hists.iteritems():
+    for name, hist in sorted(hists.iteritems()):
         hist.Write()
 
 bkgTotal = 0.

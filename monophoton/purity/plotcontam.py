@@ -26,7 +26,7 @@ for loc in Locations[:1]:
     purities[loc] = {}
     for pid in PhotonIds[1:2]:
         purities[loc][pid] = {}
-        for ptCut in PhotonPtSels[0][1:]:
+        for ptCut in PhotonPtSels[1:]:
             purities[loc][pid][ptCut[0]] = {}
             for metCut in MetSels[1:2]:
                 purities[loc][pid][ptCut[0]][metCut[0]] = {}
@@ -149,57 +149,6 @@ for loc in Locations[:1]:
                     print conout[1]
 pprint(purities)
 
-"""
-colors = ['r','b','g','m','k']
-
-for loc in Locations[:1]:
-    for pid in PhotonIds[1:2]:
-        for ptCut in PhotonPtSels[0][1:]:
-            for metCut in MetSels[:1]:
-                isoVals = np.asarray([ float(key.split('o')[1].strip('t'))/10.0 for key in sorted(purities[loc][pid][ptCut[0]][metCut[0]]) ])
-                    #isoVals = np.arange(2.0,8.5,0.5)
-                puritiesCalc = ( np.asarray(  [ value[0] for key, value in sorted(purities[loc][pid][ptCut[0]][metCut[0]].iteritems()) ])
-                                 ,np.asarray( [ abs(value[-1]) for key, value in sorted(purities[loc][pid][ptCut[0]][metCut[0]].iteritems()) ]) )
-                pprint(isoVals)
-                pprint(puritiesCalc)
-
-                params = [ 0.01, 10.0 ]
-                paramsInit = params
-
-                def purityFunc(_params, _iso):
-                    purity_ = _params[0] # + _params[1] * _iso
-                    return purity_
-                    
-                def resFunc(_params, _iso, _purity):
-                    err = ( _purity[0] - purityFunc(_params, _iso) ) / _purity[1]
-                    return err
-
-                    
-                paramsFit = leastsq(resFunc, paramsInit, args=(isoVals, puritiesCalc), full_output=1, warning=True )
-                pprint(paramsFit)
-
-                isosFit = np.arange(0.0,10.5,0.5)
-                puritiesFit = [ purityFunc(paramsFit[0], iso) for iso in  isosFit]
-                #pprint(isosFit)
-                #pprint(puritiesFit)
-                    
-                    
-                plot.figure()
-                # plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt=colors[PhotonPtSels[0][1:].index(ptCut)]+'o', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
-                plot.errorbar(isoVals, puritiesCalc[0], yerr=puritiesCalc[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
-                plot.plot(isosFit, puritiesFit, 'r-', linewidth=1.0)
-                # plot.legend(['Measured', 'Fit'])
-                plot.xlim(0.,10.)
-                plot.ylim(0.0,10.0)
-                # plot.ylim(2.5,7.5)
-                plot.tick_params(axis='both', which='major', labelsize=16)
-                plot.ylabel(r'Impurity (%)', fontsize=24)
-                plot.xlabel(r'Charged Hadron Isolation (GeV)', fontsize=24)
-                outName = os.path.join(outDir,'purityfit_'+loc+'_'+pid+'_'+ptCut[0]+'_'+metCut[0]+'_ex')
-                plot.savefig(outName+'.pdf', format='pdf')
-                plot.savefig(outName+'.png', format='png')
-"""
-
 for loc in Locations[:1]:
     for pid in PhotonIds[1:2]:
         for metCut in MetSels[1:2]:
@@ -228,7 +177,7 @@ for loc in Locations[:1]:
             
 
             purityFile.write(r"photon\ $p_{T}$ ")
-            for ptCut in PhotonPtSels[0][1:]:
+            for ptCut in PhotonPtSels[1:]:
                 ptRange = ptCut[0].strip("PhotonPt").split("to")
                 purityFile.write("& [%s, %s] " % tuple(ptRange) )
             purityFile.write(r"\\ \hline")
@@ -279,7 +228,7 @@ for loc in Locations[:1]:
 
                 leg.AddEntry(hist,chIsoLabel.replace("$",""),'L')
             
-                for ptCut in PhotonPtSels[0][1:]:
+                for ptCut in PhotonPtSels[1:]:
                     lowEdge = int(ptCut[0].split("t")[2])
                     binNumber = 0
                     for bin in bins:
