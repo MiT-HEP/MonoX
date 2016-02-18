@@ -49,7 +49,7 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
   return (lepIso/lepPt) < isoCut;
 }
 
-void NeroSlimmer(TString inFileName, TString outFileName) {
+void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) {
 
   Float_t dROverlap  = 0.4;
   Float_t dRGenMatch = 0.2;
@@ -108,10 +108,14 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     outTree->npv       = inTree->npv;
     outTree->rho       = inTree->rho;
 
-    if (inTree->mcWeight < 0)
-      outTree->mcWeight = -1;
-    else
-      outTree->mcWeight = 1;
+    if (isSig)
+      outTree->mcWeight = inTree->mcWeight;
+    else {
+      if (inTree->mcWeight < 0)
+        outTree->mcWeight = -1;
+      else
+        outTree->mcWeight = 1;
+    }
 
     outTree->trueMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
     outTree->trueMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();

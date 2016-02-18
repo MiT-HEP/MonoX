@@ -40,7 +40,535 @@ theFiles = [
     ['monojet_ZZ.root','ZZ',16.6],
     ['monojet_WZ.root','WZ',47.2],
     ['monojet_GluGlu_HToInvisible_M125_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','signal_h_ggf',43.92],
-    ['monojet_Data.root','data',-1]
+    ['monojet_Data.root','data',-1],
+## Signal samples
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10000_Mchi-1000',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10000_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-1000_Mchi-1000',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-1000_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-1000_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-1000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-1000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-1000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-100_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-100_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-100_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-100_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-10_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-1000',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-2000_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-200_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-200_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-200_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-200_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-200_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-20_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-20_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-300_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-300_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-300_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-300_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-300_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-5000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-5000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-500_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-500_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Pseudoscalar_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Pseudoscalar_Mphi-500_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-10000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-10000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-1000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-1000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-1000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-1000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-1000_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-100_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-100_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-100_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-100_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-10_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-10_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-2000_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-200_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-200_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-200_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-200_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-20_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-20_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-20_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-300_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-300_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-300_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-300_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-300_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-1000',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-5000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-5000_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-100',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-150',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-1',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-500',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-500_Mchi-50',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-50_Mchi-10',1],
+    ['monojet_DMS_NNPDF30_Scalar_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Scalar_Mphi-50_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-10000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-10000_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-10000_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-1000_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-1000_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-1000_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-1000_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-1000_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-100_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-100_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-100_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-100_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-100_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-10_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-10_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-2000_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-2000_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-2000_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-200_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-200_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-200_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-200_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-200_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-20_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-20_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-20_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-300_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-300_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-300_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-300_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-300_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-300_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-500',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-5000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-5000_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-500_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-500_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-500_Mchi-500',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-500_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-50_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-50_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Axial_Mphi-50_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Axial_Mphi-50_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10000_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10000_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10000_Mchi-500',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10000_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-1000_Mchi-1000',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-1000_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-100_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-100_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM.root','Vector_Mphi-100_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-100_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-100_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-10_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-2000_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-2000_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-2000_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-200_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-200_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-200_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-200_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-200_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-20_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-20_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-20_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-300_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-300_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-300_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-100',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-150',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-500',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-500_Mchi-50',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-50_Mchi-10',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-50_Mchi-1',1],
+    ['monojet_DMV_NNPDF30_Vector_Mphi-50_Mchi-50_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root','Vector_Mphi-50_Mchi-50',1],
+## MonoV Signal
+monojet_AxialMonoW_Mphi-10000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-100_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-100_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-10_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-15_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-195_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-195_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1995_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-1995_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-2000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-200_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-20_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-295_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-295_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-500_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-50_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-95_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-995_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoW_Mphi-995_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-100_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-10_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-195_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-195_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1995_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-1995_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-200_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-295_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-50_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-50_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-50_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-95_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-95_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_AxialMonoZ_Mphi-995_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-100_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-100_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-10_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-195_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-2000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-20_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-295_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-295_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-500_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-50_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-50_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-50_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-95_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-95_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-995_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoW_Mphi-995_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-100_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-10_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-15_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-15_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-195_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-195_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1995_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-1995_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-2000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-200_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-20_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-295_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-295_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-5000_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-500_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-50_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-50_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-50_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-50_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-95_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-95_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-995_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root
+monojet_VectorMonoZ_Mphi-995_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root
 ]
 
 ltm = newLimitTreeMaker('limits/MonoJetInclusiveLimitsTrees.root')
@@ -57,7 +585,7 @@ ltm.SetLuminosity(cuts.Luminosity)
 ltm.AddRegion('Zmm',cuts.ZmmMJ_inc)
 ltm.AddRegion('Wmn',cuts.WmnMJ_inc)
 ltm.AddRegion('signal',cuts.signalMJ_inc_unblinded)
-ltm.AddRegion('Wen',cuts.WenMJ_inc + ' && ' + cuts.ETrigger)
+ltm.AddRegion('Wen',cuts.WenMJ_inc)
 ltm.AddRegion('Zee',cuts.ZeeMJ_inc + ' && ' + cuts.ETrigger)
 ltm.AddRegion('gjets',cuts.gjetMJ_inc + ' && ' +  cuts.GTrigger)
 
@@ -100,7 +628,7 @@ ltmJ.SetLuminosity(cuts.Luminosity)
 ltmJ.AddRegion('Zmm',cuts.ZmmMJ_inc)
 ltmJ.AddRegion('Wmn',cuts.WmnMJ_inc)
 ltmJ.AddRegion('signal',cuts.signalMJ_inc_unblinded)
-ltmJ.AddRegion('Wen',cuts.WenMJ_inc + ' && ' + cuts.ETrigger)
+ltmJ.AddRegion('Wen',cuts.WenMJ_inc)
 ltmJ.AddRegion('Zee',cuts.ZeeMJ_inc + ' && ' + cuts.ETrigger)
 ltmJ.AddRegion('gjets',cuts.gjetMJ_inc + ' && ' +  cuts.GTrigger)
 
@@ -143,7 +671,7 @@ ltmV.SetLuminosity(cuts.Luminosity)
 ltmV.AddRegion('Zmm',cuts.ZmmMV)
 ltmV.AddRegion('Wmn',cuts.WmnMV)
 ltmV.AddRegion('signal',cuts.signalMV_unblinded)
-ltmV.AddRegion('Wen',cuts.WenMV + ' && ' + cuts.ETrigger)
+ltmV.AddRegion('Wen',cuts.WenMV)
 ltmV.AddRegion('Zee',cuts.ZeeMV + ' && ' + cuts.ETrigger)
 ltmV.AddRegion('gjets',cuts.gjetMV + ' && ' +  cuts.GTrigger)
 
