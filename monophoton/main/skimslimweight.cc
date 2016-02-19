@@ -1033,18 +1033,64 @@ EMObjectProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
   unsigned iP(0);
   for (; iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
-    if (!photon.isEB)
+    if (!photon.isEB || photon.pt < minPhotonPt_)
       continue;
 
-    if (photon.sieie > 0.015)
-      continue;
+    int selection(selectPhoton(photon));
 
-    if (photon.passHOverE(PHOTONWP) && photon.passNHIso(PHOTONWP) && photon.passPhIso(PHOTONWP) && photonEVeto(photon) && photon.pt > minPhotonPt_) {
-      if (photon.sieie < 0.012 && photon.passCHIso(PHOTONWP))
-        break;
+    if (selection < 0) // vetoed
+      break;
 
+    if (selection > 0)
       _outEvent.photons.push_back(photon);
-    }
+  }
+
+  return _outEvent.photons.size() == 1 && iP == _event.photons.size();
+}
+
+void
+EMObjectProcessor::addSelection(unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  std::bitset<nSelections> sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  selections_.push_back(sel);
+}
+
+void
+EMObjectProcessor::addVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  std::bitset<nSelections> sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  vetoes_.push_back(sel);
+}
+
+int
+EMObjectProcessor::selectPhoton(simpletree::Photon const& _photon)
+{
+  bool pass[nSelections] = {
+    _photon.passHOverE(PHOTONWP),
+    _photon.passSieie(PHOTONWP),
+    _photon.passCHIso(PHOTONWP),
+    _photon.passNHIso(PHOTONWP),
+    _photon.passPhIso(PHOTONWP),
+    photonEVeto(_photon),
+    (_photon.sieie < 0.015),
+    (_photon.chIso < 11.),
+    !_photon.passSieie(PHOTONWP),
+    !_photon.passCHIso(PHOTONWP),
+    !_photon.passNHIso(PHOTONWP),
+    !_photon.passPhIso(PHOTONWP)
+  };
 
     // Wisconsin denominator def
     // if (photon.passHOverE(PHOTONWP) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
@@ -1061,12 +1107,38 @@ EMObjectProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
 
     //   if (nPass == 3)
     //     break;
-      
-    //   _outEvent.photons.push_back(photon);
-    // }
-  }
 
-  return _outEvent.photons.size() == 1 && iP == _event.photons.size();
+  unsigned iV(0);
+  for (; iV != vetoes_.size(); ++iV) {
+    auto& veto(vetoes_[iV]);
+
+    unsigned iB(0);
+    for (; iB != nSelections; ++iB) {
+      if (veto[iB] && pass[iB])
+        break;
+    }
+    if (iB == nSelections) // no veto cut matched
+      break;
+  }
+  if (iV == vetoes_.size()) // all veto selections matched
+    return -1;
+
+  unsigned iS(0);
+  for (; iS != selections_.size(); ++iS) {
+    auto& veto(selections_[iS]);
+
+    unsigned iB(0);
+    for (; iB != nSelections; ++iB) {
+      if (veto[iB] && pass[iB])
+        break;
+    }
+    if (iB == nSelections) // no veto cut matched
+      break;
+  }
+  if (iS == selections_.size()) // all veto selections matched
+    return 1;
+    
+  return 0;
 }
 
 
@@ -1090,31 +1162,6 @@ EMPlusJetProcessor::selectMet(simpletree::Event const& _event, simpletree::Event
   return true;
 }
 
-bool
-PurityProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  unsigned iP(0);
-  for (; iP != _event.photons.size(); ++iP) {
-    auto& photon(_event.photons[iP]);
-    if (!photon.isEB)
-      continue;
-
-    if (photon.sieie > 0.015)
-      continue;
-    
-    if (photon.chIso > 11.0)
-      continue;
-
-    if (photon.passHOverE(PHOTONWP) && photon.passNHIso(PHOTONWP) && photon.passPhIso(PHOTONWP) && photonEVeto(photon) && photon.pt > minPhotonPt_) {
-      // if (photon.sieie < 0.012 && photon.passCHIso(PHOTONWP))
-      //   break;
-
-      _outEvent.photons.push_back(photon);
-    }
-  }
-
-  return _outEvent.photons.size() == 1 && iP == _event.photons.size();
-}
 
 void
 HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)

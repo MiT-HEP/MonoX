@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <map>
 #include <set>
+#include <bitset>
 
 class EventList {
  public:
@@ -260,13 +261,40 @@ class GenLeptonProcessor : public LeptonProcessor, public GenProcessor {
 };
 
 class EMObjectProcessor : public virtual EventProcessor {
-  // Require exactly 1 hadron-proxy photon object
+  // Generic EMObject event selector
  public:
   EMObjectProcessor() {}
   EMObjectProcessor(double _weightNorm, char const* _name = "EMObjectProcessor") : EventProcessor(_weightNorm, _name) {}
   ~EMObjectProcessor() {}
 
+  enum Selection {
+    PassHOverE,
+    PassSieie,
+    PassCHIso,
+    PassNHIso,
+    PassPhIso,
+    PassEVeto,
+    PassLooseSieie,
+    PassLooseCHIso,
+    FailSieie,
+    FailCHIso,
+    FailNHIso,
+    FailPhIso,
+    nSelections
+  };
+
   bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
+
+  void addSelection(unsigned, unsigned = nSelections, unsigned = nSelections);
+  void addVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
+  
+  int selectPhoton(simpletree::Photon const&); // 0->fail, 1->pass, -1->veto
+
+ private:
+  // Will select photons based on the AND of the elements.
+  // Within each element, multiple bits are considered as OR.
+  std::vector<std::bitset<nSelections>> selections_;
+  std::vector<std::bitset<nSelections>> vetoes_;
 };
 
 class EMPlusJetProcessor : public EMObjectProcessor {
@@ -279,19 +307,10 @@ class EMPlusJetProcessor : public EMObjectProcessor {
   bool selectMet(simpletree::Event const&, simpletree::Event&) override;
 };
 
-class PurityProcessor : public EMPlusJetProcessor {
-  // Same as EMPlusJet, but also allow true photons in the EM object selection
+class GenEMPlusJetProcessor : public EMPlusJetProcessor, public GenProcessor {
  public:
- PurityProcessor(char const* _name = "PurityProcessor") : EventProcessor(1., _name), EMPlusJetProcessor() {}
-  ~PurityProcessor() {}
-
-  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
-};
-
-class GenPurityProcessor : public PurityProcessor, public GenProcessor {
- public:
- GenPurityProcessor(double _weightNorm, char const* _name = "GenPurityProcessor") : EventProcessor(_weightNorm, _name), GenProcessor(), PurityProcessor() {}
-  ~GenPurityProcessor() {}
+ GenEMPlusJetProcessor(double _weightNorm, char const* _name = "GenEMPlusJetProcessor") : EventProcessor(_weightNorm, _name), GenProcessor(), EMPlusJetProcessor() {}
+  ~GenEMPlusJetProcessor() {}
 };
   
 class HadronProxyProcessor : public EMObjectProcessor {

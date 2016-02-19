@@ -62,12 +62,44 @@ def makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 17
     global hadproxyweight
 
     proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
-
     proc.setReweight(hadproxyweight)
+
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.FailSieie, ROOT.EMPlusJetProcessor.FailCHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassSieie)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassCHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassEVeto)
+
     return proc
 
 def makeEMPlusJetProcessor(sample):
-    return makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+    # One jet proxy + high-pT jet. We actually don't need this because there is the purity processor
+    # which gives a superset, right?
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.FailSieie, ROOT.EMPlusJetProcessor.FailCHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassSieie)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassCHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addVeto(ROOT.EMPlusJetProcessor.PassEVeto)
+
+    return proc
 
 def makeLowMtProcessor(sample):
     return makeEventProcessor(sample, cls = ROOT.LowMtProcessor)
@@ -76,7 +108,17 @@ def makeWenuProxyLowMtProcessor(sample):
     return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
 
 def makePurityProcessor(sample):
-    return makeEventProcessor(sample, cls = ROOT.PurityProcessor)
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+
+    return proc
 
 def makeHadronProxyLowMtProcessor(sample):
     return makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyLowMtProcessor)
@@ -185,7 +227,17 @@ def makeGenWtaunuProcessor(sample):
     return makeGenProcessor(sample, cls = ROOT.GenWtaunuProcessor)
 
 def makeGenPurityProcessor(sample):
-    return makeGenProcessor(sample, cls = ROOT.GenPurityProcessor)
+    # One loose photon + high-pT jet.
+
+    proc = makeGenProcessor(sample, cls = ROOT.GenEMPlusJetProcessor)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
+    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+
+    return proc
 
 def makeGenKFactorProcessor(sample, gen = makeGenProcessor):
     proc = gen(sample)
