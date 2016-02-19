@@ -1039,6 +1039,9 @@ EMObjectProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
     if (photon.sieie > 0.015)
       continue;
 
+    if (photon.chIso > 11.0)
+      continue;
+
     if (photon.passHOverE(PHOTONWP) && photon.passNHIso(PHOTONWP) && photon.passPhIso(PHOTONWP) && photonEVeto(photon) && photon.pt > minPhotonPt_) {
       if (photon.sieie < 0.012 && photon.passCHIso(PHOTONWP))
         break;
