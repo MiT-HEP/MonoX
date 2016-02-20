@@ -9,19 +9,28 @@ sys.path.append(basedir)
 from plotstyle import SimpleCanvas
 import config
 
+ALT = True
+
 canvas = SimpleCanvas(lumi = 2239.9)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
 gtree = ROOT.TChain('events')
-gtree.Add(config.skimDir + '/sph-d*_monoph.root')
+gtree.Add(config.skimDir + '/sph-d*_monophpv.root')
 htree = ROOT.TChain('events')
-htree.Add(config.skimDir + '/sph-d*_emplusjet.root')
+if not ALT: #nominal proxy
+    htree.Add(config.skimDir + '/sph-d*_purity.root')
+else:
+    htree.Add(config.skimDir + '/sph-d*_purityalt.root')
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
 
-outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
+if not ALT:
+    outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
+else:
+    outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactorAlt.root', 'recreate')
+
 gpt = ROOT.TH1D('gpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
@@ -44,7 +53,11 @@ for iX in range(1, fpt.GetNbinsX() + 1):
 
     print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
 
-htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
+if not ALT: #nominal proxy
+    htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)', 'goff')
+else:
+    htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
+
 hpt.Scale(1., 'width')
 tfact = fpt.Clone('tfact')
 tfact.Divide(hpt)
@@ -69,7 +82,10 @@ canvas.addHistogram(hpt, drawOpt = 'HIST')
 
 canvas.ylimits = (0.1, 2000.)
 
-canvas.printWeb('monophoton/hadronTFactor', 'photon')
+if not ALT:
+    canvas.printWeb('monophoton/hadronTFactor', 'distributions')
+else:
+    canvas.printWeb('monophoton/hadronTFactor', 'distributions-alt')
 
 canvas.Clear()
 canvas.legend.Clear()
@@ -83,4 +99,7 @@ canvas.legend.apply('tfact', tfact)
 
 canvas.addHistogram(tfact, drawOpt = 'EP')
 
-canvas.printWeb('monophoton/hadronTFactor', 'tfactor')
+if not ALT:
+    canvas.printWeb('monophoton/hadronTFactor', 'tfactor')
+else:
+    canvas.printWeb('monophoton/hadronTFactor', 'tfactor-alt')
