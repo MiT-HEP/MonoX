@@ -25,7 +25,7 @@ import config
 
 ROOT.gROOT.SetBatch(True)
 
-cutMet = 140
+cutMet = 170
 
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
@@ -158,8 +158,8 @@ elif args.region == 'lowdphi':
 
 elif args.region == 'lowmt':
     wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
-    wenuNoPtCut = baselineCut + ' && t1Met.met > 140.'
-    wenuCut = wenuNoMetCut + ' && t1Met.met > 140.'
+    wenuNoPtCut = baselineCut + ' && t1Met.met > ' + str(cutMet)
+    wenuCut = wenuNoMetCut + ' && t1Met.met > ' + str(cutMet)
 
     defsel = 'lowmt'
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
@@ -188,7 +188,7 @@ elif args.region == 'lowmt':
 
 elif args.region == 'dimu':
     mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
-    cut = mass + ' > 50. && photons.pt[0] > 140. && t1Met.recoil > 100.'
+    cut = mass + ' > 50. && photons.pt[0] > ' + str(cutMet) + ' && t1Met.recoil > 100.'
 
     defsel = 'dimu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
@@ -213,7 +213,7 @@ elif args.region == 'dimu':
     }
 
 elif args.region == 'monomu':
-    cut = 'photons.pt[0] > 140. && t1Met.recoil > 100.'
+    cut = 'photons.pt[0] > ' + str(cutMet) + ' && t1Met.recoil > 100.'
 
     defsel = 'monomu'
     obs = GroupSpec('Observed', ['smu-d3', 'smu-d4'], ROOT.kBlack)
@@ -265,7 +265,7 @@ elif args.region == 'diel':
 
 elif args.region == 'monoel':
     dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
-    cut = baselineCut + ' && ' + dR2_00 + ' > 0.01 && photons.pt[0] > 140.'
+    cut = baselineCut + ' && ' + dR2_00 + ' > 0.01 && photons.pt[0] > ' + str(cutMet)
 
     defsel = 'monoel'
     obs = GroupSpec('Observed', ['sel-d3', 'sel-d4'], ROOT.kBlack)
