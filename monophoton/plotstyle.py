@@ -108,6 +108,7 @@ class Legend(object):
     def add(self, obl, title = '', opt = 'LFP', color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
         ent = ROOT.TLegendEntry(0)
 
+        modified = []
         if type(obl) is str:
             name = obl
 
@@ -120,7 +121,7 @@ class Legend(object):
             for at in Legend.Attributes:
                 try:
                     getattr(ent, 'Set' + at)(getattr(obj, 'Get' + at)())
-                    attr.append(at)
+                    modified.append(at)
                 except AttributeError:
                     pass
 
@@ -129,8 +130,11 @@ class Legend(object):
 
         args = [lwidth, lstyle, lcolor, fstyle, fcolor, msize, mstyle, mcolor]
         for iA in range(len(args)):
-            if args[iA] >= 0:
-                getattr(ent, 'Set' + Legend.Attributes[iA])(args[iA])
+            at = Legend.Attributes[iA]
+            if args[iA] == -1 and at in modified:
+                continue
+
+            getattr(ent, 'Set' + at)(args[iA])
 
         if color != -1:
             for at in Legend.Attributes:
@@ -144,12 +148,10 @@ class Legend(object):
         entry = self.entries[name]
 
         for at in Legend.Attributes:
-            value = getattr(entry, 'Get' + at)()
-            if value != -1:
-                try:
-                    getattr(obj, 'Set' + at)(value)
-                except:
-                    pass
+            try:
+                getattr(obj, 'Set' + at)(getattr(entry, 'Get' + at)())
+            except AttributeError:
+                pass
 
     @staticmethod
     def copyStyle(src, dest):
