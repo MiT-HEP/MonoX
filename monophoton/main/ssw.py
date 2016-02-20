@@ -29,6 +29,9 @@ def makeEventProcessor(sample, cls = ROOT.EventProcessor, minPt = 175., args = t
     proc.setMinPhotonPt(minPt)
     return proc
 
+def makeCandidateProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.CandidateProcessor)
+
 def makeLeptonProcessor(sample, nEl, nMu, cls = ROOT.LeptonProcessor, minPt = 30., args = tuple()):
     return makeEventProcessor(sample, cls = cls, minPt = minPt, args = (nEl, nMu) + args)
 
@@ -64,45 +67,34 @@ def makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 17
     proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
     proc.setReweight(hadproxyweight)
 
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.FailSieie, ROOT.EMPlusJetProcessor.FailCHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassSieie)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassCHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassEVeto)
+    for sel in ['HOverE', 'NHIso', 'PhIso', 'EVeto', 'Sieie15', 'CHIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.CHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.CHIso)
 
     return proc
 
-def makeEMPlusJetProcessor(sample):
-    # One jet proxy + high-pT jet. We actually don't need this because there is the purity processor
-    # which gives a superset, right?
+def makeHadronProxyAltProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyaltweight
 
-    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.FailSieie, ROOT.EMPlusJetProcessor.FailCHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassSieie)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassCHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addVeto(ROOT.EMPlusJetProcessor.PassEVeto)
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyaltweight)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.NHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.PhIso)
 
     return proc
 
-def makeLowMtProcessor(sample):
-    return makeEventProcessor(sample, cls = ROOT.LowMtProcessor)
+def makeLowMtCandidateProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.LowMtCandidateProcessor)
 
 def makeWenuProxyLowMtProcessor(sample):
     return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
@@ -111,12 +103,21 @@ def makePurityProcessor(sample):
     # One loose photon + high-pT jet.
 
     proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIso', 'PhIso']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    return proc
+
+def makePurityAltProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie12', 'CHIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
 
     return proc
 
@@ -133,25 +134,28 @@ def makeGenProcessor(sample, cls = ROOT.GenProcessor, minPt = 175., args = tuple
     proc.useAlternativeWeights(True)
     return proc
 
-def makeGenGUpProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+def makeGenCandidateProcessor(sample):
+    return makeGenProcessor(sample, cls = ROOT.GenCandidateProcessor)
+
+def makeGenGUpProcessor(sample, cls = ROOT.GenCandidateProcessor, args = tuple()):
     proc = makeGenProcessor(sample, cls = cls, args = args)
 
     proc.setPhotonEnergyShift(0.015)
     return proc
 
-def makeGenGDownProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+def makeGenGDownProcessor(sample, cls = ROOT.GenCandidateProcessor, args = tuple()):
     proc = makeGenProcessor(sample, cls = cls, args = args)
 
     proc.setPhotonEnergyShift(-0.015)
     return proc
 
-def makeGenJECUpProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+def makeGenJECUpProcessor(sample, cls = ROOT.GenCandidateProcessor, args = tuple()):
     proc = makeGenProcessor(sample, cls = cls, args = args)
 
     proc.setJetEnergyShift(1)
     return proc
 
-def makeGenJECDownProcessor(sample, cls = ROOT.GenProcessor, args = tuple()):
+def makeGenJECDownProcessor(sample, cls = ROOT.GenCandidateProcessor, args = tuple()):
     proc = makeGenProcessor(sample, cls = cls, args = args)
 
     proc.setJetEnergyShift(-1)
@@ -230,16 +234,12 @@ def makeGenPurityProcessor(sample):
     # One loose photon + high-pT jet.
 
     proc = makeGenProcessor(sample, cls = ROOT.GenEMPlusJetProcessor)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassHOverE)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassNHIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassPhIso)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassEVeto)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseSieie)
-    proc.addSelection(ROOT.EMPlusJetProcessor.PassLooseCHIso)
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIso', 'PhIso']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
 
     return proc
 
-def makeGenKFactorProcessor(sample, gen = makeGenProcessor):
+def makeGenKFactorProcessor(sample, gen = makeGenCandidateProcessor):
     proc = gen(sample)
 
     with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
@@ -275,23 +275,23 @@ def makeGenKFactorMonoelectronProcessor(sample):
 
 generators = {
     # Data
-    'sph-d3': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor},
-    'sph-d4': {'monoph': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'emplusjet': makeEMPlusJetProcessor, 'lowmt': makeLowMtProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor},
+    'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
+    'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
     'znng-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
-    'wg': {'monoph':makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'wg': {'monoph':makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
     'g-40': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
     'g-100': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
     'g-200': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
     'g-400': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
     'g-600': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'ttg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'ttg': {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
     'zllg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'dimu': makeGenKFactorDimuonProcessor},
     'wlnu': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
     'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
@@ -299,19 +299,19 @@ generators = {
     'wlnu-400': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     'wlnu-600': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     # other MC
-    'dy-50': {'monoph': makeGenProcessor, 'monomu': makeGenMonomuonProcessor},
+    'dy-50': {'monoph': makeGenCandidateProcessor, 'monomu': makeGenMonomuonProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
     'znn-200': {'monoph': makeGenHadronProcessor},
     'znn-400': {'monoph': makeGenHadronProcessor},
     'znn-600': {'monoph': makeGenHadronProcessor},
-    'qcd-200': {'monoph':makeGenProcessor},
-    'qcd-300': {'monoph':makeGenProcessor},
-    'qcd-500': {'monoph':makeGenProcessor},
-    'qcd-700': {'monoph':makeGenProcessor},
-    'qcd-1000': {'monoph':makeGenProcessor}
+    'qcd-200': {'monoph':makeGenCandidateProcessor},
+    'qcd-300': {'monoph':makeGenCandidateProcessor},
+    'qcd-500': {'monoph':makeGenCandidateProcessor},
+    'qcd-700': {'monoph':makeGenCandidateProcessor},
+    'qcd-1000': {'monoph':makeGenCandidateProcessor}
 }
 for sname in ['add%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
-    generators[sname] = {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
+    generators[sname] = {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
 
 for mt in [ 'a', 'v' ]:
     for dm in [1, 10, 50, 150, 500, 1000]:
@@ -325,7 +325,7 @@ for mt in [ 'a', 'v' ]:
             except KeyError:
                 # print "This combination is not part of the DMWG recommendations, moving onto next one."
                 continue;
-            generators[sname] = {'monoph': makeGenProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
+            generators[sname] = {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
 
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
@@ -359,6 +359,9 @@ npvweight = npvSource.Get('npvweight')
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
+
+hadproxyaltSource = ROOT.TFile.Open(basedir + '/data/hadronTFactorAlt.root')
+hadproxyaltweight = hadproxyaltSource.Get('tfact')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyweight = eleproxySource.Get('fraction')
@@ -406,13 +409,23 @@ for name in sampleNames:
     if sample.data:
         print 'Reading', name, 'from', dataSourceDir
         tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
+
     elif name.startswith('dm'):
-        sourceDir = config.ntuplesDir.replace("042", "043")
-        print 'Reading', name, 'from', sourceDir
-        tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+        if os.path.exists(config.phskimDir + '/' + name + '.root'):
+            print 'Reading', name, 'from', config.phskimDir
+            tree.Add(config.phskimDir + '/' + name + '.root')
+        else:
+            sourceDir = config.ntuplesDir.replace("042", "043")
+            print 'Reading', name, 'from', sourceDir
+            tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+
     else:
-        print 'Reading', name, 'from', config.ntuplesDir
-        tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
+        if os.path.exists(config.phskimDir + '/' + name + '.root'):
+            print 'Reading', name, 'from', config.phskimDir
+            tree.Add(config.phskimDir + '/' + name + '.root')
+        else:
+            print 'Reading', name, 'from', config.ntuplesDir
+            tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
 
     for pname, gen in generators[name].items():
         processor = gen(sample)

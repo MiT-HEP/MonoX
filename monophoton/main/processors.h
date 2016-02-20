@@ -66,10 +66,10 @@ class EventProcessor {
   virtual void addBranches(TTree&) {}
   virtual bool passTrigger(simpletree::Event const&);
   virtual bool beginEvent(simpletree::Event const&);
+  virtual bool selectPhotons(simpletree::Event const&, simpletree::Event&);
   virtual bool vetoElectrons(simpletree::Event const&, simpletree::Event&);
   virtual bool vetoMuons(simpletree::Event const&, simpletree::Event&);
   virtual bool vetoTaus(simpletree::Event const&);
-  virtual bool selectPhotons(simpletree::Event const&, simpletree::Event&);
   virtual bool cleanJets(simpletree::Event const&, simpletree::Event&);
   virtual void calculateMet(simpletree::Event const&, simpletree::Event&);
   virtual bool selectMet(simpletree::Event const&, simpletree::Event&);
@@ -97,15 +97,13 @@ class EventProcessor {
   EventList const* eventList_{0};
 };
 
-class ListedEventProcessor : public EventProcessor {
-  // For beam halo control region; inverted event list filter
-
+class CandidateProcessor : public virtual EventProcessor {
+  // EventProcessor with chWorstIso on the photon
  public:
-  ListedEventProcessor() {}
-  ListedEventProcessor(double _weightNorm = 1., char const* _name = "ListedEventProcessor") : EventProcessor(_weightNorm, _name) {}
-  ~ListedEventProcessor() {}
+  CandidateProcessor(double _weightNorm = 1., char const* _name = "CandidateProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~CandidateProcessor() {}
 
-  bool beginEvent(simpletree::Event const&) override;
+  bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 };
 
 class GenProcessor : public virtual EventProcessor {
@@ -134,11 +132,17 @@ class GenProcessor : public virtual EventProcessor {
   std::vector<std::pair<double, double>> kfactors_{};
 };
 
-class GenZnnProxyProcessor : public GenProcessor {
+class GenCandidateProcessor : public CandidateProcessor, public GenProcessor {
+ public:
+  GenCandidateProcessor(double _weightNorm = 1., char const* _name = "CandidateProcessor") : EventProcessor(_weightNorm, _name), CandidateProcessor(), GenProcessor() {}
+  ~GenCandidateProcessor() {}
+};
+
+class GenZnnProxyProcessor : public GenCandidateProcessor {
   // GenProcessor with lepton-emulated MET
 
  public:
-  GenZnnProxyProcessor(double _weightNorm, char const* _name = "GenZnnProxyProcessor") : EventProcessor(_weightNorm * 20.00 / (3.363 + 3.366), _name), GenProcessor() {}
+  GenZnnProxyProcessor(double _weightNorm, char const* _name = "GenZnnProxyProcessor") : EventProcessor(_weightNorm * 20.00 / (3.363 + 3.366), _name), GenCandidateProcessor() {}
   ~GenZnnProxyProcessor() {}
 
   bool beginEvent(simpletree::Event const&) override;
@@ -172,12 +176,12 @@ class GenWenuProcessor : public GenProcessor {
   bool beginEvent(simpletree::Event const&) override;
 };
 
-class GenGJetProcessor : public GenProcessor {
-  // GenProcessor with a linear k-factor as a function of reconstructed photon pt
+class GenGJetProcessor : public GenCandidateProcessor {
+  // GenCandidateProcessor with a linear k-factor as a function of reconstructed photon pt
 
  public:
   GenGJetProcessor() {}
-  GenGJetProcessor(double _weightNorm, char const* _name = "GenGJetProcessor") : EventProcessor(_weightNorm, _name), GenProcessor() {}
+  GenGJetProcessor(double _weightNorm, char const* _name = "GenGJetProcessor") : EventProcessor(_weightNorm, _name), GenCandidateProcessor() {}
   ~GenGJetProcessor() {}
   
   void calculateWeight(simpletree::Event const&, simpletree::Event&) override;
@@ -199,7 +203,6 @@ class WenuProxyProcessor : public virtual EventProcessor {
   void setWeightErr(double _weightErr) { weightErr_ = _weightErr; }
 
  protected:
-  std::vector<std::pair<bool, simpletree::Electron const*>> hardElectrons_;
   double weightErr_;
 };
 
@@ -223,7 +226,7 @@ class ZeeProxyProcessor : public virtual EventProcessor {
   double weightErr_;
 };
 
-class LeptonProcessor : public virtual EventProcessor {
+class LeptonProcessor : public CandidateProcessor {
   // Require exactly nEl electrons and nMu muons
 
  public:
@@ -268,33 +271,34 @@ class EMObjectProcessor : public virtual EventProcessor {
   ~EMObjectProcessor() {}
 
   enum Selection {
-    PassHOverE,
-    PassSieie,
-    PassCHIso,
-    PassNHIso,
-    PassPhIso,
-    PassEVeto,
-    PassLooseSieie,
-    PassLooseCHIso,
-    FailSieie,
-    FailCHIso,
-    FailNHIso,
-    FailPhIso,
+    HOverE,
+    Sieie,
+    CHIso,
+    NHIso,
+    PhIso,
+    EVeto,
+    Sieie12,
+    Sieie15,
+    CHIso11,
+    NHIso11,
+    PhIso3,
     nSelections
   };
 
   bool selectPhotons(simpletree::Event const&, simpletree::Event&) override;
 
-  void addSelection(unsigned, unsigned = nSelections, unsigned = nSelections);
-  void addVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
+  void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
+  void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   
   int selectPhoton(simpletree::Photon const&); // 0->fail, 1->pass, -1->veto
 
  private:
   // Will select photons based on the AND of the elements.
   // Within each element, multiple bits are considered as OR.
-  std::vector<std::bitset<nSelections>> selections_;
-  std::vector<std::bitset<nSelections>> vetoes_;
+  typedef std::bitset<nSelections> BitMask;
+  typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
+  std::vector<SelectionMask> selections_;
+  std::vector<SelectionMask> vetoes_;
 };
 
 class EMPlusJetProcessor : public EMObjectProcessor {
@@ -346,6 +350,12 @@ class LowMtProcessor : public virtual EventProcessor {
   ~LowMtProcessor() {}
   
   bool selectMet(simpletree::Event const&, simpletree::Event&) override;
+};
+
+class LowMtCandidateProcessor : public LowMtProcessor, public CandidateProcessor {
+ public:
+  LowMtCandidateProcessor(double _weightNorm = 1., char const* _name = "LowMtProcessor") : EventProcessor(_weightNorm, _name) {}
+  ~LowMtCandidateProcessor() {}
 };
 
 class WenuProxyLowMtProcessor : public LowMtProcessor, public WenuProxyProcessor {
