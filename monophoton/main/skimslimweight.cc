@@ -1101,6 +1101,8 @@ EMObjectProcessor::selectPhoton(simpletree::Photon const& _photon)
   cutres[CHIso11] = (_photon.chIso < 11.);
   cutres[NHIso11] = (_photon.nhIso < 11.);
   cutres[PhIso3] = (_photon.phIso < 3.);
+  cutres[NHIsoTight] = _photon.passNHIso(2);
+  cutres[PhIsoTight] = _photon.passPhIso(2);
 
   // Wisconsin denominator def
   // if (photon.passHOverE(PHOTONWP) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&

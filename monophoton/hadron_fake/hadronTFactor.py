@@ -46,7 +46,8 @@ gpt.Write()
 fpt.Write()
 
 samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)'), 
-            ('alt', 't1Met.met < 60.') 
+            ('Down', 't1Met.met < 60.'),
+            ('Up', 't1Met.met < 60.')
             ]
 
 for samp, sel in samples:

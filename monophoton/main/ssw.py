@@ -12,7 +12,7 @@ import config
 
 sNames = sys.argv[1:]
 
-dataSourceDir = config.ntuplesDir
+dataSourceDir = config.ntuplesDir.replace("13a", "13")
 
 neroInput = False
 
@@ -109,7 +109,19 @@ def makePurityProcessor(sample):
 
     return proc
 
-def makePurityAltProcessor(sample):
+def makePurityUpProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIsoTight', 'PhIsoTight']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+
+    return proc
+
+def makePurityDownProcessor(sample):
     # One loose photon + high-pT jet.
 
     proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
@@ -278,11 +290,11 @@ generators = {
     'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
                'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 
                'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
-               'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
+               'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
     'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
                'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 
                'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
-               'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
+               'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
