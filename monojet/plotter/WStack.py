@@ -5,13 +5,12 @@ from array import array
 import cuts
 import os
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
-#directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_160216/'
 
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
 stackPlotter.SetAllHist('htotal')
-stackPlotter.SetLuminosity(2240.0)
+stackPlotter.SetLuminosity(cuts.Luminosity)
 stackPlotter.AddDataFile(directory + 'monojet_Data.root')
 #stackPlotter.ReadMCConfig('MCFiles.txt',directory)
 #stackPlotter.ReadMCConfig('MCSig.txt',directory)
@@ -30,13 +29,10 @@ stackPlotter.SetFontSize(0.03)
 stackPlotter.SetAxisTitleOffset(1.2)
 stackPlotter.SetDumpFileName('dump.root')
 
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_w/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160220/'
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
-if not os.path.exists(outDir + 'rootFiles'):
-    os.makedirs(outDir + 'rootFiles')
-##
 
 stackPlotter.SetRatioMinMax(0.5,1.5)
 

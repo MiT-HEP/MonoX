@@ -10,7 +10,8 @@ ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
 if sys.argv[1] == "test":
     ROOT.NeroSlimmer(
-        "/scratch3/ceballos/hist/monov_all/t2mit/filefi/043/VectorMonoW_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0000.root",
+        "root://eoscms//eos/cms/store/user/dabercro/Nero/v1.2/JHUGen_Higgs_ZH_125_10/JHUGen_Higgs_ZH_125_10/160221_112337/0000/NeroNtuples_1.root",
+#        "/scratch3/ceballos/hist/monov_all/t2mit/filefi/043/VectorMonoW_Mphi-50_Mchi-10_gSM-1p0_gDM-1p0_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM/nero_0000.root",
         "test.root")
 elif sys.argv[1] == "compile":
     exit()
@@ -26,7 +27,8 @@ else:
             isSig = False
             if (((('DMS' in sys.argv[1]) or ('DMV' in sys.argv[1])) and 
                  ('NNPDF' in sys.argv[1]) and ('powheg' in sys.argv[1])) or 
-                (('MonoW' in sys.argv[1]) or ('MonoZ' in sys.argv[1]))):
+                (('MonoW' in sys.argv[1]) or ('MonoZ' in sys.argv[1])) or
+                ('JHUGen_Higgs' in sys.argv[1])):
                 isSig = True
                 print 'Running on signal!'
 

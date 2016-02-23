@@ -4,14 +4,13 @@ from StackPlotter import stackPlotter
 from array import array
 import cuts
 import os
+from shit import directory, outDir
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_both_MJ/'
-#directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
 
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
 stackPlotter.SetAllHist('htotal')
-stackPlotter.SetLuminosity(2240.0)
+stackPlotter.SetLuminosity(cuts.Luminosity)
 stackPlotter.AddDataFile(directory + 'monojet_Data.root')
 stackPlotter.ReadMCConfig('MCTop.txt',directory)
 stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.5)
@@ -25,8 +24,6 @@ stackPlotter.SetRatioGrid(1)
 stackPlotter.SetCanvasSize(600,700)
 stackPlotter.SetFontSize(0.03)
 stackPlotter.SetAxisTitleOffset(1.2)
-
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_both/'
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
@@ -47,8 +44,6 @@ stackPlotter.SetDefaultWeight(cuts.top)
 stackPlotter.SetEventsPer(0.1)
 stackPlotter.MakeCanvas(outDir + 'top_' + expr,20,0,4,"#Delta R(W,j)", "Events Per 0.1",False)
 stackPlotter.SetEventsPer(1.0)
-
-exit()
 
 expr = 'fatjet1PrunedM'
 stackPlotter.SetDefaultExpr(expr)

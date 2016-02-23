@@ -8,7 +8,7 @@ import math, os
 
 plotter.SetCanvasSize(600,700)
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_160212/'
 
 uncFile_ewk = TFile('/afs/cern.ch/user/z/zdemirag/public/forDan/atoz_ewkunc.root')
 uncFile     = TFile('/afs/cern.ch/user/z/zdemirag/public/forDan/atoz_unc.root')
@@ -20,7 +20,7 @@ uncertainties = [
     uncFile.znlo1_over_anlo1_facScaleUp
 ]
 
-outDir = '~/www/monoV_160210/'
+outDir = '~/www/monoV_160222/'
 #outDir = '~/public/dump/'
 
 gammaMCFile = TFile(directory + 'merged/monojet_GJets.root')
@@ -37,6 +37,9 @@ plotter.SetIsCMSPrelim(True)
 plotter.SetLegendLocation(plotter.kUpper,plotter.kRight)
 plotter.SetDefaultExpr('met')
 plotter.SetEventsPer(1.0)
+
+plotter.SetAxisMinMax(0.055,0.18)
+plotter.SetRatioMinMax(0.0,2.0)
 
 plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZllMJ + ')*mcFactors*XSecWeight')
 plotter.AddTreeWeight(dataFile.events,cuts.ZllMJ)
@@ -99,6 +102,8 @@ plotter.ResetTree()
 plotter.ResetWeight()
 
 ## Mono V
+
+plotter.SetAxisMinMax(0.0,0.0)
 
 xArray = [250,300,350,400,500,600,1000]
 

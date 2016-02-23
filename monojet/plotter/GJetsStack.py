@@ -4,9 +4,9 @@ from StackPlotter import stackPlotter
 from array import array
 import cuts
 import os
+from shit import directory, outDir
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
-#directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_160216/'
 
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
@@ -26,14 +26,31 @@ stackPlotter.SetRatioGrid(1)
 stackPlotter.SetCanvasSize(600,700)
 stackPlotter.SetFontSize(0.03)
 stackPlotter.SetAxisTitleOffset(1.2)
-stackPlotter.SetDumpFileName('dump.root')
-
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_w/'
+#stackPlotter.SetDumpFileName('dump.root')
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 if not os.path.exists(outDir + 'rootFiles'):
     os.makedirs(outDir + 'rootFiles')
+##
+
+xArray = [0, 50, 100, 140, 170.,200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
+
+stackPlotter.SetDefaultWeight(cuts.gjetMJ_inc + ' && ' + cuts.GTrigger)
+expr = 'ht_cleanedjets'
+stackPlotter.SetDefaultExpr(expr)
+stackPlotter.MakeCanvas(outDir + 'gjetMJ_inc_' + expr,len(xArray)-1,array('d',xArray),"HT [GeV]", "Events Per GeV",True)
+
+stackPlotter.SetDefaultWeight(cuts.gjetMJ + ' && ' + cuts.GTrigger)
+stackPlotter.MakeCanvas(outDir + 'gjetMJ_' + expr,len(xArray)-1,array('d',xArray),"HT [GeV]", "Events Per GeV",True)
+
+xArray = [0,50,100,150,200,250,300,350,400,500,600,1000]
+
+stackPlotter.SetDefaultWeight(cuts.gjetMV + ' && ' + cuts.GTrigger)
+stackPlotter.MakeCanvas(outDir + 'gjetMV_' + expr,len(xArray)-1,array('d',xArray),"HT [GeV]", "Events Per GeV",True)
+
+exit()
+
 ##
 
 xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]

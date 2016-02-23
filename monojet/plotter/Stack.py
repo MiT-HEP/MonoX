@@ -4,14 +4,12 @@ from StackPlotter import stackPlotter
 from array import array
 import cuts
 import os
-
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/Correct_w_MJ/'
-#directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
+from shit import directory, outDir
 
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
 stackPlotter.SetAllHist('htotal')
-stackPlotter.SetLuminosity(2240.0)
+stackPlotter.SetLuminosity(cuts.Luminosity)
 stackPlotter.AddDataFile(directory + 'monojet_Data.root')
 #stackPlotter.ReadMCConfig('MCFiles.txt',directory)
 #stackPlotter.ReadMCConfig('MCSig.txt',directory)
@@ -29,8 +27,6 @@ stackPlotter.SetCanvasSize(600,700)
 stackPlotter.SetFontSize(0.03)
 stackPlotter.SetAxisTitleOffset(1.2)
 stackPlotter.SetDumpFileName('dump.root')
-
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160209_w/'
 
 if not os.path.exists(outDir):
     os.makedirs(outDir)
@@ -54,8 +50,6 @@ stackPlotter.SetDefaultExpr(expr)
 stackPlotter.SetEventsPer(0.1)
 stackPlotter.MakeCanvas(outDir + 'sigTest_' + expr,35,0,3.5,"#Delta #phi_{min}(j,E_{T}^{miss})", "Events Per 0.1",False)
 stackPlotter.SetEventsPer(1.0)
-
-exit()
 
 stackPlotter.SetDefaultWeight(cuts.ZmmMJ_inc)
 expr = 'fatjet1PrunedM'
@@ -230,13 +224,15 @@ stackPlotter.MakeCanvas(outDir + 'WenMV_' + expr,8,0,8,"Number of Jets", "Events
 
 ## Signal regions
 
-stackPlotter.AddSignalFile(directory + 'monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root',
-                           1.0,'Signal V (1 TeV)',2)
+#stackPlotter.AddSignalFile(directory + 'monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root',
+#                           1.0,'Signal V (1 TeV)',2)
+
+stackPlotter.SetDumpFileName('dump.root')
 
 stackPlotter.SetMCWeights('mcFactors*METTrigger')
 stackPlotter.SetDataWeights(cuts.METTrigger)
 
-stackPlotter.SetDefaultWeight(cuts.signalMV)
+stackPlotter.SetDefaultWeight(cuts.signalMV_unblinded)
 expr = 'met'
 stackPlotter.SetDefaultExpr(expr)
 stackPlotter.MakeCanvas(outDir + 'signalMV_' + expr,len(xArray)-1,array('d',xArray),"E_{T}^{miss} [GeV]", "Events Per GeV",True)
@@ -249,7 +245,7 @@ stackPlotter.MakeCanvas(outDir + 'signalMV_' + expr,8,0,8,"Number of Jets", "Eve
 
 xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
 
-stackPlotter.SetDefaultWeight(cuts.signalMJ_inc)
+stackPlotter.SetDefaultWeight(cuts.signalMJ_inc_unblinded)
 expr = 'fatjet1PrunedM'
 stackPlotter.SetDefaultExpr(expr)
 stackPlotter.MakeCanvas(outDir + 'signalMJ_inc_' + expr,20,0,200,"Pruned Mass [GeV]", "Events Per GeV",False)
@@ -262,7 +258,7 @@ stackPlotter.SetEventsPer(1.0)
 
 
 stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.5)
-stackPlotter.SetDefaultWeight(cuts.signalMJ)
+stackPlotter.SetDefaultWeight(cuts.signalMJ_unblinded)
 expr = 'met'
 stackPlotter.SetDefaultExpr(expr)
 stackPlotter.MakeCanvas(outDir + 'signalMJ_' + expr,len(xArray)-1,array('d',xArray),"E_{T}^{miss} [GeV]", "Events Per GeV",True)

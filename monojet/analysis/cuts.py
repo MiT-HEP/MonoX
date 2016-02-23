@@ -1,4 +1,5 @@
-Luminosity = 2240.0
+categories = ['monoJet_inc','monoV','monoJet']
+regions    = ['signal','Zmm','Zee','Wmn','Wen','gjets']
 
 allCut = 'n_tau == 0 && abs(minJetMetDPhi_clean) > 0.5 && leadingJet_outaccp == 0'
 zeeAll = 'n_tau == 0 && leadingJet_outaccp == 0'
@@ -34,7 +35,7 @@ Zee = str(zeeAll + ' && ' +
           btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           diLepton + ' && ' + 
-#          ETrigger + ' && ' + 
+          ETrigger + ' && ' + 
           'lep1PdgId*lep2PdgId == -121')
 
 Zmm = str(allCut + ' && ' + 
@@ -51,7 +52,7 @@ Wen = str(allCut + ' && ' +
           photonVeto + ' && ' + 
           singleLepton + ' && ' + 
           'lep1Pt > 40 && ' +
-#          ETrigger + ' && ' +
+          ETrigger + ' && ' +
           'abs(lep1PdgId) == 11 && trueMet > 50')
 
 Wmn = str(allCut + ' && ' + 
@@ -66,7 +67,7 @@ gjet = str(allCut + ' && ' +
            metCut + ' && ' + 
            btagVeto + ' && ' + 
            leptonVeto + ' && ' + 
-#           GTrigger + ' && ' + 
+           GTrigger + ' && ' + 
            singlePhoton)
 
 signal = str(allCut + ' && ' + 
@@ -91,66 +92,46 @@ topMet = str(allCut + ' && ' +
           metCut + ' && ' +
           toprecoil)
 
-ZeeMJ_inc  = Zee + ' && ' + monoJet
-ZmmMJ_inc  = Zmm + ' && ' + monoJet
-ZllMJ_inc  = Zll + ' && ' + monoJet
-WenMJ_inc  = Wen + ' && ' + monoJet
-WmnMJ_inc  = Wmn + ' && ' + monoJet
-WlnMJ_inc  = Wln + ' && ' + monoJet
-gjetMJ_inc = gjet + ' && ' + monoJet
+categoryCuts = {
+    'monoJet_inc' : '',
+    'monoV' : '',
+    'monoJet' : '',
+    }
 
-signalMJ_inc_unblinded = signal + ' && ' + monoJet
-signalMJ_inc = signalMJ_inc_unblinded # + ' && ' + 'runNum == 1'
+regionCuts = {
+    'signal' : signal,
+    'Zmm' : Zmm,
+    'Zee' : Zee,
+    'Wmn' : Wmn,
+    'Wen' : Wen,
+    'gjets' : gjet,
+    'Zll' : Zll,
+    'Wln' : Wln
+    }
 
-ZeeMJ  = ZeeMJ_inc + ' && !(' + monoVeto + ')'
-ZmmMJ  = ZmmMJ_inc + ' && !(' + monoVeto + ')'
-ZllMJ  = ZllMJ_inc + ' && !(' + monoVeto + ')'
-WenMJ  = WenMJ_inc + ' && !(' + monoVeto + ')'
-WmnMJ  = WmnMJ_inc + ' && !(' + monoVeto + ')'
-WlnMJ  = WlnMJ_inc + ' && !(' + monoVeto + ')'
-gjetMJ = gjetMJ_inc + ' && !(' + monoVeto + ')'
+defaultMCWeight = 'mcWeight'
 
-signalMJ_unblinded = signalMJ_inc_unblinded + ' && !(' + monoVeto + ')'
-signalMJ = signalMJ_inc + ' && !(' + monoVeto + ')'
+additionKeys = ['signal','Zmm','Wmn']
+additions    = { # key : [Data,MC]
+    'signal' :  [METTrigger,'METTrigger'],
+    'Zmm' :     [METTrigger,'METTrigger'],
+    'Wmn' :     [METTrigger,'METTrigger'],
+    'default' : ['1',defaultMCWeight]
+    }
 
-ZeeMV  = Zee + ' && ' + monoV
-ZmmMV  = Zmm + ' && ' + monoV
-ZllMV  = Zll + ' && ' + monoV
-WenMV  = Wen + ' && ' + monoV
-WmnMV  = Wmn + ' && ' + monoV
-WlnMV  = Wln + ' && ' + monoV
-gjetMV = gjet + ' && ' + monoV
-topMV  = top + ' && ' + monoV
+def cut(category, region):
+    return '((' + categoryCuts[category] + ') && (' + regionCuts[region] + '))'
 
-signalMV_unblinded = signal + ' && ' + monoV
-signalMV = signalMV_unblinded # + ' && ' + 'runNum == 1'
+def dataMCCuts(region, isData):
+    key = 'default'
+    index = 1
+    if region in additionKeys:
+        key = region
 
-ZeeMVNoMass  = Zee + ' && ' + monoVNoMass
-ZmmMVNoMass  = Zmm + ' && ' + monoVNoMass
-ZllMVNoMass  = Zll + ' && ' + monoVNoMass
-WenMVNoMass  = Wen + ' && ' + monoVNoMass
-WmnMVNoMass  = Wmn + ' && ' + monoVNoMass
-WlnMVNoMass  = Wln + ' && ' + monoVNoMass
-gjetMVNoMass = gjet + ' && ' + monoVNoMass
-topMVNoMass  = top + ' && ' + monoVNoMass
+    if isData:
+        index = 0
 
-signalMVNoMass_unblinded = signal + ' && ' + monoVNoMass
-signalMVNoMass = signalMVNoMass_unblinded # + ' && ' + 'runNum == 1'
-
-ZeeMVSimple  = Zee + ' && ' + monoVSimple + ' && ' + monoJet
-ZmmMVSimple  = Zmm + ' && ' + monoVSimple + ' && ' + monoJet
-ZllMVSimple  = Zll + ' && ' + monoVSimple + ' && ' + monoJet
-WenMVSimple  = Wen + ' && ' + monoVSimple + ' && ' + monoJet
-WmnMVSimple  = Wmn + ' && ' + monoVSimple + ' && ' + monoJet
-WlnMVSimple  = Wln + ' && ' + monoVSimple + ' && ' + monoJet
-gjetMVSimple = gjet + ' && ' + monoVSimple + ' && ' + monoJet
-topMVSimple  = top + ' && ' + monoVSimple + ' && ' + monoJet
-
-signalMVSimple_unblinded = signal + ' && ' + monoVSimple + ' && ' + monoJet
-signalMVSimple = signalMVSimple_unblinded # + ' && ' + 'runNum == 1'
-
-topMu  = topMet + ' && abs(lep1PdgId) == 13 && ' + singleLepton + ' && ' + monoV
-topEle = topMet + ' && abs(lep1PdgId) == 11 && ' + singleLepton + ' && ' + monoV
-
-topMJMu  = topMet + ' && abs(lep1PdgId) == 13 && ' + singleLepton + ' && ' + monoJet
-topMJEle = topMet + ' && abs(lep1PdgId) == 11 && ' + singleLepton + ' && ' + monoJet
+    if key == 'default' or index == 0:
+        return '(' + additions[key][index] + ')'
+    else:
+        return '((' + additions[key][index] + ')*(' + defaultMCWeight + '))'

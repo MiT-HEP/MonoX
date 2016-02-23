@@ -1,1 +1,2 @@
-VBF_HToInvisible_M125_13TeV_powheg_pythia8/VBF_HToInvisible_M125_13TeV
+JHUGen_Higgs_WH_125_10
+JHUGen_Higgs_ZH_125_10

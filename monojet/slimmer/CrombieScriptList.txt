@@ -1,6 +1,6 @@
 MonoJetTree.h
 MonoJetTree.cc
-NeroTreeBambu.h
-NeroTreeBambu.C
+NeroTree76.h
+NeroTree76.C
 functions.h
 NeroSlimmer.cc

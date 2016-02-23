@@ -4,9 +4,9 @@ from StackPlotter import stackPlotter
 from array import array
 import cuts
 import os
+from shit import outDir
 
-directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/CleanMETSkimmed_v2/'
-#directory = '/Users/dabercro/GradSchool/Winter15/CleanMETSkim_160201/'
+directory = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_160216/'
 
 stackPlotter.SetIsCMSPrelim(True)
 stackPlotter.SetTreeName('events')
@@ -27,9 +27,6 @@ stackPlotter.SetRatioDivisions(504,False)
 stackPlotter.SetRatioGrid(1)
 stackPlotter.SetCanvasSize(600,700)
 
-
-outDir = '/afs/cern.ch/user/d/dabercro/www/monoV_160204_ht/'
-
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 if not os.path.exists(outDir + 'rootFiles'):
@@ -38,7 +35,7 @@ if not os.path.exists(outDir + 'rootFiles'):
 
 stackPlotter.SetRatioMinMax(0.5,1.5)
 
-xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
+xArray = [0, 50, 100, 140, 170.,200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
 
 ########## MET Trigger stuff
 
@@ -76,7 +73,7 @@ stackPlotter.MakeCanvas(outDir + 'WenMJ_' + expr,len(xArray)-1,array('d',xArray)
 
 ########## MET Trigger stuff
 
-xArray = [250,300,350,400,500,600,1000]
+xArray = [0,50,100,150,200,250,300,350,400,500,600,1000]
 
 
 stackPlotter.SetDefaultWeight(cuts.signalMV)
@@ -110,21 +107,22 @@ stackPlotter.MakeCanvas(outDir + 'WenMV_' + expr,len(xArray)-1,array('d',xArray)
 
 ## Signal regions
 
-stackPlotter.AddSignalFile(directory + 'monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root',
-                           1.0,'Signal V (1 TeV)',2)
+#stackPlotter.AddSignalFile(directory + 'monojet_DMV_NNPDF30_Axial_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV-powheg+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root',
+#                           1.0,'Signal V (1 TeV)',2)
+
 
 stackPlotter.SetMCWeights('mcFactors*METTrigger')
 stackPlotter.SetDataWeights(cuts.METTrigger)
 
 stackPlotter.SetDefaultWeight(cuts.signalMV)
 stackPlotter.SetDefaultExpr(expr)
+stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.3)
 stackPlotter.MakeCanvas(outDir + 'signalMV_' + expr,len(xArray)-1,array('d',xArray),"HT [GeV]", "Events Per GeV",True)
 
 
-xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
+xArray = [0, 50, 100, 140, 170.,200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
 
-
-stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.5)
 stackPlotter.SetDefaultWeight(cuts.signalMJ)
 stackPlotter.SetDefaultExpr(expr)
+stackPlotter.SetLegendLocation(stackPlotter.kUpper,stackPlotter.kRight,0.25,0.5)
 stackPlotter.MakeCanvas(outDir + 'signalMJ_' + expr,len(xArray)-1,array('d',xArray),"HT [GeV]", "Events Per GeV",True)

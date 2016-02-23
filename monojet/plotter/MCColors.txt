@@ -13,8 +13,8 @@ monojet_WJetsToLNu_HT-600To800.root     12.05  .   .
 monojet_WJetsToLNu_HT-800To1200.root     5.501  .   .
 monojet_WJetsToLNu_HT-1200To2500.root     1.329  .   .
 monojet_WJetsToLNu_HT-2500ToInf.root     0.03216  .   .
-monojet_QCD_HT100to200.root                                          27500000.0             QCD                920
-monojet_QCD_HT200to300.root                                           1735000.0              .                  .
+#monojet_QCD_HT100to200.root                                          27500000.0             QCD                920
+monojet_QCD_HT200to300.root                                           1735000.0             QCD                920
 monojet_QCD_HT300to500.root                                            366800.0              .                  .
 monojet_QCD_HT500to700.root                                             29370.0              .                  .
 monojet_QCD_HT700to1000.root                                             6524.0              .                  .
