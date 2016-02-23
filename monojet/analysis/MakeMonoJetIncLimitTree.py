@@ -1,7 +1,8 @@
 #! /usr/bin/python
 
+from CrombieTools.AnalysisTools.LimitTreeMaker import *
 import CrombieTools.LoadConfig
-from CrombieTools.AnalysisTools.LimitTreemaker import *
+import os
 
 ltm = newLimitTreeMaker()
 
@@ -11,6 +12,11 @@ ltm.AddKeepBranch('genBos_pt')
 ltm.AddKeepBranch('jet1Pt')
 ltm.SetAllHistName('htotal')
 ltm.SetOutputWeightBranch('scaleMC_w')
+ltm.SetReportFrequency(20)
+
+directory = os.environ['CrombieInFilesDir']
+if not directory.endswith('/'):
+    directory = directory + '/'
 
 ltm.ExceptionSkip('gjets','QCD_100To200')
 ltm.ExceptionSkip('gjets','QCD_200To300')
@@ -24,7 +30,11 @@ ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-200To400.root','QC
 ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-400To600.root','QCD_400To600',277.6)
 ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
 
+SetupFromEnv(ltm)
+ltm.ReadMCConfig(os.environ['CrombieMCConfig'])
+ltm.ReadMCConfig(os.environ['CrombieSigConfig'])
+
 if __name__ == '__main__':
     ltm.SetOutFileName('MonoJetIncLimitsTrees.root')
-    SetupFromEnv(ltm,'monoJet_inc')
+    SetCuts(ltm,'monoJet_inc')
     ltm.MakeTrees()

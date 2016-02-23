@@ -93,9 +93,9 @@ topMet = str(allCut + ' && ' +
           toprecoil)
 
 categoryCuts = {
-    'monoJet_inc' : '',
-    'monoV' : '',
-    'monoJet' : '',
+    'monoJet_inc' : monoJet,
+    'monoV' : monoV,
+    'monoJet' : monoJet + ' && !(' + monoVeto + ')',
     }
 
 regionCuts = {

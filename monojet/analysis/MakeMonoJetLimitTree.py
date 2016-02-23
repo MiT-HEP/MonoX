@@ -3,5 +3,5 @@
 from MakeMonoJetIncLimitTree import *
 
 ltm.SetOutFileName('MonoJetLimitsTrees.root')
-SetupFromEnv(ltm,'monoJet')
+SetCuts(ltm,'monoJet')
 ltm.MakeTrees()

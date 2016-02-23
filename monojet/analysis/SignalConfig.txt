@@ -5,7 +5,7 @@ signal_h125_ggf                     monojet_GluGlu_HToInvisible_M125_13TeV_powhe
 signal_h150_ggf                     monojet_GluGlu_HToInvisible_M150_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     45.89  .  .
 signal_h200_ggf                     monojet_GluGlu_HToInvisible_M200_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     49.58  .  .
 signal_h300_ggf                     monojet_GluGlu_HToInvisible_M300_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     56.55  .  .
-signal_h400_ggf                     monojet_GluGlu_HToInvisible_M400_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     63.39  .  .
+signal_h400_ggf                     monojet_GluGlu_HToInvisible_M400_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM.root     63.39  .  .
 signal_h500_ggf                     monojet_GluGlu_HToInvisible_M500_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     70.43  .  .
 signal_h600_ggf                     monojet_GluGlu_HToInvisible_M600_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root     77.82  .  .
 signal_h110_vbf                     monojet_VBF_HToInvisible_M110_13TeV_powheg_pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM.root        4.144  .  .
@@ -181,7 +181,7 @@ AxialMonoW_Mphi-10000_Mchi-50_lep   monojet_AxialMonoW_Mphi-10000_Mchi-50_lep_gS
 AxialMonoW_Mphi-1000_Mchi-1000      monojet_AxialMonoW_Mphi-1000_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 AxialMonoW_Mphi-1000_Mchi-100       monojet_AxialMonoW_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 AxialMonoW_Mphi-1000_Mchi-100_lep   monojet_AxialMonoW_Mphi-1000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
-AxialMonoW_Mphi-1000_Mchi-10        monojet_AxialMonoW_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
+#AxialMonoW_Mphi-1000_Mchi-10        monojet_AxialMonoW_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 AxialMonoW_Mphi-1000_Mchi-10_lep    monojet_AxialMonoW_Mphi-1000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
 AxialMonoW_Mphi-1000_Mchi-150       monojet_AxialMonoW_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 AxialMonoW_Mphi-1000_Mchi-150_lep   monojet_AxialMonoW_Mphi-1000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
@@ -209,11 +209,11 @@ AxialMonoW_Mphi-195_Mchi-100_lep    monojet_AxialMonoW_Mphi-195_Mchi-100_lep_gSM
 AxialMonoW_Mphi-1995_Mchi-1000      monojet_AxialMonoW_Mphi-1995_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 AxialMonoW_Mphi-1995_Mchi-1000_lep  monojet_AxialMonoW_Mphi-1995_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 AxialMonoW_Mphi-2000_Mchi-100       monojet_AxialMonoW_Mphi-2000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
-AxialMonoW_Mphi-2000_Mchi-100_lep   monojet_AxialMonoW_Mphi-2000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
+#AxialMonoW_Mphi-2000_Mchi-100_lep   monojet_AxialMonoW_Mphi-2000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 AxialMonoW_Mphi-2000_Mchi-10        monojet_AxialMonoW_Mphi-2000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 AxialMonoW_Mphi-2000_Mchi-150       monojet_AxialMonoW_Mphi-2000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
-AxialMonoW_Mphi-2000_Mchi-150_lep   monojet_AxialMonoW_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
-AxialMonoW_Mphi-2000_Mchi-1         monojet_AxialMonoW_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
+#AxialMonoW_Mphi-2000_Mchi-150_lep   monojet_AxialMonoW_Mphi-2000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
+#AxialMonoW_Mphi-2000_Mchi-1         monojet_AxialMonoW_Mphi-2000_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
 AxialMonoW_Mphi-2000_Mchi-500       monojet_AxialMonoW_Mphi-2000_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 AxialMonoW_Mphi-2000_Mchi-500_lep   monojet_AxialMonoW_Mphi-2000_Mchi-500_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 AxialMonoW_Mphi-2000_Mchi-50        monojet_AxialMonoW_Mphi-2000_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
@@ -239,7 +239,7 @@ AxialMonoW_Mphi-300_Mchi-50         monojet_AxialMonoW_Mphi-300_Mchi-50_gSM-1p0_
 AxialMonoW_Mphi-300_Mchi-50_lep     monojet_AxialMonoW_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
 AxialMonoW_Mphi-500_Mchi-100        monojet_AxialMonoW_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 AxialMonoW_Mphi-500_Mchi-100_lep    monojet_AxialMonoW_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
-AxialMonoW_Mphi-500_Mchi-10         monojet_AxialMonoW_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
+#AxialMonoW_Mphi-500_Mchi-10         monojet_AxialMonoW_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
 AxialMonoW_Mphi-500_Mchi-10_lep     monojet_AxialMonoW_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
 AxialMonoW_Mphi-500_Mchi-150        monojet_AxialMonoW_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 AxialMonoW_Mphi-500_Mchi-150_lep    monojet_AxialMonoW_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
@@ -321,7 +321,7 @@ AxialMonoZ_Mphi-300_Mchi-10_lep     monojet_AxialMonoZ_Mphi-300_Mchi-10_lep_gSM-
 AxialMonoZ_Mphi-300_Mchi-1          monojet_AxialMonoZ_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                   1  .  .
 AxialMonoZ_Mphi-300_Mchi-1_lep      monojet_AxialMonoZ_Mphi-300_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 AxialMonoZ_Mphi-300_Mchi-50         monojet_AxialMonoZ_Mphi-300_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
-AxialMonoZ_Mphi-300_Mchi-50_lep     monojet_AxialMonoZ_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
+#AxialMonoZ_Mphi-300_Mchi-50_lep     monojet_AxialMonoZ_Mphi-300_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
 AxialMonoZ_Mphi-500_Mchi-100        monojet_AxialMonoZ_Mphi-500_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 AxialMonoZ_Mphi-500_Mchi-100_lep    monojet_AxialMonoZ_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
 AxialMonoZ_Mphi-500_Mchi-10         monojet_AxialMonoZ_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
@@ -365,7 +365,7 @@ VectorMonoW_Mphi-1000_Mchi-50        monojet_VectorMonoW_Mphi-1000_Mchi-50_gSM-1
 VectorMonoW_Mphi-100_Mchi-100        monojet_VectorMonoW_Mphi-100_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 VectorMonoW_Mphi-100_Mchi-10         monojet_VectorMonoW_Mphi-100_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 VectorMonoW_Mphi-100_Mchi-10_lep     monojet_VectorMonoW_Mphi-100_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
-VectorMonoW_Mphi-100_Mchi-1          monojet_VectorMonoW_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
+#VectorMonoW_Mphi-100_Mchi-1          monojet_VectorMonoW_Mphi-100_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 VectorMonoW_Mphi-100_Mchi-1_lep      monojet_VectorMonoW_Mphi-100_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
 VectorMonoW_Mphi-10_Mchi-1000        monojet_VectorMonoW_Mphi-10_Mchi-1000_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 VectorMonoW_Mphi-10_Mchi-1000_lep    monojet_VectorMonoW_Mphi-10_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
@@ -373,7 +373,7 @@ VectorMonoW_Mphi-10_Mchi-100         monojet_VectorMonoW_Mphi-10_Mchi-100_gSM-1p
 VectorMonoW_Mphi-10_Mchi-100_lep     monojet_VectorMonoW_Mphi-10_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 VectorMonoW_Mphi-10_Mchi-10          monojet_VectorMonoW_Mphi-10_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 VectorMonoW_Mphi-10_Mchi-10_lep      monojet_VectorMonoW_Mphi-10_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
-VectorMonoW_Mphi-10_Mchi-150         monojet_VectorMonoW_Mphi-10_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
+#VectorMonoW_Mphi-10_Mchi-150         monojet_VectorMonoW_Mphi-10_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 VectorMonoW_Mphi-10_Mchi-150_lep     monojet_VectorMonoW_Mphi-10_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 VectorMonoW_Mphi-10_Mchi-1           monojet_VectorMonoW_Mphi-10_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
 VectorMonoW_Mphi-10_Mchi-1_lep       monojet_VectorMonoW_Mphi-10_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
@@ -404,7 +404,7 @@ VectorMonoW_Mphi-20_Mchi-1_lep       monojet_VectorMonoW_Mphi-20_Mchi-1_lep_gSM-
 VectorMonoW_Mphi-295_Mchi-150        monojet_VectorMonoW_Mphi-295_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 VectorMonoW_Mphi-295_Mchi-150_lep    monojet_VectorMonoW_Mphi-295_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoW_Mphi-300_Mchi-100        monojet_VectorMonoW_Mphi-300_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
-VectorMonoW_Mphi-300_Mchi-100_lep    monojet_VectorMonoW_Mphi-300_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
+#VectorMonoW_Mphi-300_Mchi-100_lep    monojet_VectorMonoW_Mphi-300_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoW_Mphi-300_Mchi-10         monojet_VectorMonoW_Mphi-300_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 VectorMonoW_Mphi-300_Mchi-10_lep     monojet_VectorMonoW_Mphi-300_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 VectorMonoW_Mphi-300_Mchi-1          monojet_VectorMonoW_Mphi-300_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
@@ -449,7 +449,7 @@ VectorMonoZ_Mphi-1000_Mchi-1000      monojet_VectorMonoZ_Mphi-1000_Mchi-1000_gSM
 VectorMonoZ_Mphi-1000_Mchi-1000_lep  monojet_VectorMonoZ_Mphi-1000_Mchi-1000_lep_gSM-1p0_gDM-1p0_13TeV.root                         1  .  .
 VectorMonoZ_Mphi-1000_Mchi-100       monojet_VectorMonoZ_Mphi-1000_Mchi-100_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
 VectorMonoZ_Mphi-1000_Mchi-100_lep   monojet_VectorMonoZ_Mphi-1000_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                          1  .  .
-VectorMonoZ_Mphi-1000_Mchi-10        monojet_VectorMonoZ_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
+#VectorMonoZ_Mphi-1000_Mchi-10        monojet_VectorMonoZ_Mphi-1000_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
 VectorMonoZ_Mphi-1000_Mchi-10_lep    monojet_VectorMonoZ_Mphi-1000_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoZ_Mphi-1000_Mchi-150       monojet_VectorMonoZ_Mphi-1000_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                              1  .  .
 VectorMonoZ_Mphi-1000_Mchi-150_lep   monojet_VectorMonoZ_Mphi-1000_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                          1  .  .
@@ -493,7 +493,7 @@ VectorMonoZ_Mphi-200_Mchi-10         monojet_VectorMonoZ_Mphi-200_Mchi-10_gSM-1p
 VectorMonoZ_Mphi-200_Mchi-10_lep     monojet_VectorMonoZ_Mphi-200_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 VectorMonoZ_Mphi-200_Mchi-150_lep    monojet_VectorMonoZ_Mphi-200_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoZ_Mphi-200_Mchi-1          monojet_VectorMonoZ_Mphi-200_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
-VectorMonoZ_Mphi-200_Mchi-1_lep      monojet_VectorMonoZ_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
+#VectorMonoZ_Mphi-200_Mchi-1_lep      monojet_VectorMonoZ_Mphi-200_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
 VectorMonoZ_Mphi-200_Mchi-50         monojet_VectorMonoZ_Mphi-200_Mchi-50_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 VectorMonoZ_Mphi-200_Mchi-50_lep     monojet_VectorMonoZ_Mphi-200_Mchi-50_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
 VectorMonoZ_Mphi-20_Mchi-1           monojet_VectorMonoZ_Mphi-20_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                  1  .  .
@@ -525,8 +525,8 @@ VectorMonoZ_Mphi-500_Mchi-100        monojet_VectorMonoZ_Mphi-500_Mchi-100_gSM-1
 VectorMonoZ_Mphi-500_Mchi-100_lep    monojet_VectorMonoZ_Mphi-500_Mchi-100_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoZ_Mphi-500_Mchi-10         monojet_VectorMonoZ_Mphi-500_Mchi-10_gSM-1p0_gDM-1p0_13TeV.root                                1  .  .
 VectorMonoZ_Mphi-500_Mchi-10_lep     monojet_VectorMonoZ_Mphi-500_Mchi-10_lep_gSM-1p0_gDM-1p0_13TeV.root                            1  .  .
-VectorMonoZ_Mphi-500_Mchi-150        monojet_VectorMonoZ_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
-VectorMonoZ_Mphi-500_Mchi-150_lep    monojet_VectorMonoZ_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
+#VectorMonoZ_Mphi-500_Mchi-150        monojet_VectorMonoZ_Mphi-500_Mchi-150_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
+#VectorMonoZ_Mphi-500_Mchi-150_lep    monojet_VectorMonoZ_Mphi-500_Mchi-150_lep_gSM-1p0_gDM-1p0_13TeV.root                           1  .  .
 VectorMonoZ_Mphi-500_Mchi-1          monojet_VectorMonoZ_Mphi-500_Mchi-1_gSM-1p0_gDM-1p0_13TeV.root                                 1  .  .
 VectorMonoZ_Mphi-500_Mchi-1_lep      monojet_VectorMonoZ_Mphi-500_Mchi-1_lep_gSM-1p0_gDM-1p0_13TeV.root                             1  .  .
 VectorMonoZ_Mphi-500_Mchi-500        monojet_VectorMonoZ_Mphi-500_Mchi-500_gSM-1p0_gDM-1p0_13TeV.root                               1  .  .
