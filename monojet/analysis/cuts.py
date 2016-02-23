@@ -86,12 +86,6 @@ top = str(allCut + ' && ' +
           metCut + ' && ' +
           topregion)
 
-topMet = str(allCut + ' && ' +
-          photonVeto + ' && ' +
-#          METTrigger + ' && ' +
-          metCut + ' && ' +
-          toprecoil)
-
 categoryCuts = {
     'monoJet_inc' : monoJet,
     'monoV' : monoV,
@@ -107,15 +101,17 @@ regionCuts = {
     'gjets' : gjet,
     'Zll' : Zll,
     'Wln' : Wln
+    'tt'  : top
     }
 
 defaultMCWeight = 'mcWeight'
 
-additionKeys = ['signal','Zmm','Wmn']
+additionKeys = ['signal','Zmm','Wmn','tt']
 additions    = { # key : [Data,MC]
     'signal' :  [METTrigger,'METTrigger'],
     'Zmm' :     [METTrigger,'METTrigger'],
     'Wmn' :     [METTrigger,'METTrigger'],
+    'tt'  :     [METTrigger,'METTrigger'],
     'default' : ['1',defaultMCWeight]
     }
 
