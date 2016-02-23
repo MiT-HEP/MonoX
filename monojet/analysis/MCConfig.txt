@@ -31,16 +31,6 @@ antitop            monojet_ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pyt
 top                monojet_ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8.root         44.07             .                  .
 antitop_5f         monojet_ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8.root         35.6              .                  .
 top_5f             monojet_ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8.root             35.6              .                  .
-#fixMe topRes/monojet_TTJets.root                                                       831.76            Resonant_top                804
-#fixMe topRes/monojet_ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8.root     26.22             .                  .
-#fixMe topRes/monojet_ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8.root         44.07             .                  .
-#fixMe topRes/monojet_ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8.root         35.6              .                  .
-#fixMe topRes/monojet_ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8.root             35.6              .                  .
-#fixMe topNonRes/monojet_TTJets.root                                                       831.76            Non-Resonant_top                805
-#fixMe topNonRes/monojet_ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8.root     26.22             .                  .
-#fixMe topNonRes/monojet_ST_t-channel_top_4f_leptonDecays_13TeV-powheg-pythia8.root         44.07             .                  .
-#fixMe topNonRes/monojet_ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8.root         35.6              .                  .
-#fixMe topNonRes/monojet_ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8.root             35.6              .                  .
 WW                 monojet_WW.root                                                           118.7           Di-boson             840
 ZZ                 monojet_ZZ.root                                                            16.6              .                  .
 WZ                 monojet_WZ.root                                                            47.2              .                  .

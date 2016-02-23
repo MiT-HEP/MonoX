@@ -31,8 +31,8 @@ ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-400To600.root','QC
 ltm.ExceptionAdd('gjets',directory + 'Purity/monojet_GJets_HT-600ToInf.root','QCD_600ToInf',93.47)
 
 SetupFromEnv(ltm)
-ltm.ReadMCConfig(os.environ['CrombieMCConfig'])
-ltm.ReadMCConfig(os.environ['CrombieSigConfig'])
+ltm.ReadMCConfig(os.environ['CrombieMCConfig'],ltm.kBackground)
+ltm.ReadMCConfig(os.environ['CrombieSigConfig'],ltm.kSignal)
 
 if __name__ == '__main__':
     ltm.SetOutFileName('MonoJetIncLimitsTrees.root')

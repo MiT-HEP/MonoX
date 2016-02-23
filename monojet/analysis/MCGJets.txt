@@ -1,0 +1,13 @@
+skip               monojet_QCD_HT100to200.root
+skip               monojet_QCD_HT200to300.root
+skip               monojet_QCD_HT300to500.root
+skip               monojet_QCD_HT500to700.root
+skip               monojet_QCD_HT700to1000.root
+skip               monojet_QCD_HT1000to1500.root
+skip               monojet_QCD_HT1500to2000.root
+skip               monojet_QCD_HT2000toInf.root
+QCD_40To100        Purity/monojet_GJets_HT-40To100.root                                    23080.0             QCD                920
+QCD_100To200       Purity/monojet_GJets_HT-100To200.root                                    9235.0              .                  .
+QCD_200To400       Purity/monojet_GJets_HT-200To400.root                                    2298.0              .                  .
+QCD_400To600       Purity/monojet_GJets_HT-400To600.root                                     277.6              .                  .
+QCD_600ToInf       Purity/monojet_GJets_HT-600ToInf.root                                      93.47             .                  .
