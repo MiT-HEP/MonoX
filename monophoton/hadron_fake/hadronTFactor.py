@@ -9,32 +9,20 @@ sys.path.append(basedir)
 from plotstyle import SimpleCanvas
 import config
 
-ALT = True
-
 canvas = SimpleCanvas(lumi = 2239.9)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
 gtree = ROOT.TChain('events')
 gtree.Add(config.skimDir + '/sph-d*_monophpv.root')
-htree = ROOT.TChain('events')
-if not ALT: #nominal proxy
-    htree.Add(config.skimDir + '/sph-d*_purity.root')
-else:
-    htree.Add(config.skimDir + '/sph-d*_purityalt.root')
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityHist = inputFile.Get("ChIso50to80imp")
 
-if not ALT:
-    outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
-else:
-    outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactorAlt.root', 'recreate')
+outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
 gpt = ROOT.TH1D('gpt', ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
-hpt = ROOT.TH1D('hpt', ';p_{T} (GeV)', len(binning) - 1, binning)
-hpt.Sumw2()
 
 gtree.Draw('photons.pt[0]>>gpt', 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1 && t1Met.met < 60.', 'goff')
 gpt.Scale(1., 'width')
@@ -53,53 +41,68 @@ for iX in range(1, fpt.GetNbinsX() + 1):
 
     print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
 
-if not ALT: #nominal proxy
-    htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)', 'goff')
-else:
-    htree.Draw('photons.pt[0]>>hpt', 't1Met.met < 60.', 'goff')
+outputFile.cd()
+gpt.Write()
+fpt.Write()
 
-hpt.Scale(1., 'width')
-tfact = fpt.Clone('tfact')
-tfact.Divide(hpt)
+samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)'), 
+            ('alt', 't1Met.met < 60.') 
+            ]
 
-for iX in range(1, fpt.GetNbinsX() + 1):
-    print "gjets: %.2f, fake: %.2f, hadron: %.2f, tfact: %.2f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX))
+for samp, sel in samples:
+    htree = ROOT.TChain('events')
+    htree.Add(config.skimDir + '/sph-d*_purity'+samp+'.root')
 
-outputFile.Write()
+    hname = 'hpt'+samp
+    hpt = ROOT.TH1D(hname, ';p_{T} (GeV)', len(binning) - 1, binning)
+    hpt.Sumw2()
+    
+    htree.Draw('photons.pt[0]>>'+hname, sel, 'goff')
+    hpt.Scale(1., 'width')
 
-canvas.legend.add('gpt', title = '#gamma + jet', lcolor = ROOT.kBlack, lwidth = 2)
-canvas.legend.add('fpt', title = '#gamma + jet #times impurity', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
-canvas.legend.add('hpt', title = 'EMobject + jet', lcolor = ROOT.kBlue, lwidth = 2)
-canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
+    tname = 'tfact'+samp
+    tfact = fpt.Clone(tname)
+    tfact.Divide(hpt)
 
-canvas.legend.apply('gpt', gpt)
-canvas.legend.apply('fpt', fpt)
-canvas.legend.apply('hpt', hpt)
+    for iX in range(1, fpt.GetNbinsX() + 1):
+        print "gjets: %7.2f, fake: %7.2f, hadron: %7.2f, tfact: %5.3f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX))
 
-canvas.addHistogram(gpt, drawOpt = 'HIST')
-canvas.addHistogram(fpt, drawOpt = 'HIST')
-canvas.addHistogram(hpt, drawOpt = 'HIST')
+    outputFile.cd()
+    hpt.Write()
+    tfact.Write()
 
-canvas.ylimits = (0.1, 2000.)
+    canvas.cd()
+    canvas.Clear()
+    canvas.legend.Clear()
 
-if not ALT:
-    canvas.printWeb('monophoton/hadronTFactor', 'distributions')
-else:
-    canvas.printWeb('monophoton/hadronTFactor', 'distributions-alt')
+    canvas.legend.add('gpt', title = '#gamma + jet', lcolor = ROOT.kBlack, lwidth = 2)
+    canvas.legend.add('fpt', title = '#gamma + jet #times impurity', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add(hname, title = 'EMobject + jet', lcolor = ROOT.kBlue, lwidth = 2)
+    canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
 
-canvas.Clear()
-canvas.legend.Clear()
+    canvas.legend.apply('gpt', gpt)
+    canvas.legend.apply('fpt', fpt)
+    canvas.legend.apply(hname, hpt)
 
-canvas.ylimits = (0., -1.)
-canvas.SetLogy(False)
+    canvas.addHistogram(gpt, drawOpt = 'HIST')
+    canvas.addHistogram(fpt, drawOpt = 'HIST')
+    canvas.addHistogram(hpt, drawOpt = 'HIST')
 
-canvas.legend.add('tfact', title = 'Transfer factor', lcolor = ROOT.kBlack, lwidth = 1)
+    canvas.ylimits = (0.1, 2000.)
+    canvas.SetLogy(True)
 
-canvas.legend.apply('tfact', tfact)
+    canvas.printWeb('monophoton/hadronTFactor', 'distributions'+samp)
 
-canvas.addHistogram(tfact, drawOpt = 'EP')
+    canvas.Clear()
+    canvas.legend.Clear()
 
-if not ALT:
-    canvas.printWeb('monophoton/hadronTFactor', 'tfactor')
-else:
-    canvas.printWeb('monophoton/hadronTFactor', 'tfactor-alt')
+    canvas.ylimits = (0., -1.)
+    canvas.SetLogy(False)
+    
+    canvas.legend.add(tname, title = 'Transfer factor', lcolor = ROOT.kBlack, lwidth = 1)
+    
+    canvas.legend.apply(tname, tfact)
+
+    canvas.addHistogram(tfact, drawOpt = 'EP')
+
+    canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+samp)
