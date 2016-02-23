@@ -100,11 +100,11 @@ regionCuts = {
     'Wen' : Wen,
     'gjets' : gjet,
     'Zll' : Zll,
-    'Wln' : Wln
+    'Wln' : Wln,
     'tt'  : top
     }
 
-defaultMCWeight = 'mcWeight'
+defaultMCWeight = 'mcFactors'
 
 additionKeys = ['signal','Zmm','Wmn','tt']
 additions    = { # key : [Data,MC]
