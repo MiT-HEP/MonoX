@@ -67,6 +67,11 @@ if args.region == 'monoph':
         # ('zllg', GroupSpec('Z#rightarrow ll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         # ('ttg', GroupSpec('tt#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))), # for counting indiviudal contributions
         ('gjets', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
+        # ('hfakeWorstDown', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorstDown'), ('sph-d4', 'hfakeWorstDown')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        # ('hfakeWorstUp', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorstUp'), ('sph-d4', 'hfakeWorstUp')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        # ('hfakeWorst', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorst'), ('sph-d4', 'hfakeWorst')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        # ('hfakeDown', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeDown'), ('sph-d4', 'hfakeDown')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        # ('hfakeUp', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeUp'), ('sph-d4', 'hfakeUp')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
         ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), 
