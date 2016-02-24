@@ -45,9 +45,9 @@ outputFile.cd()
 gpt.Write()
 fpt.Write()
 
-samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)'), 
-            ('Down', 't1Met.met < 60.'),
-            ('Up', 't1Met.met < 60.')
+samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
+            ,('Down', 't1Met.met < 60.')
+            ,('Up', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
             ]
 
 for samp, sel in samples:
@@ -66,7 +66,7 @@ for samp, sel in samples:
     tfact.Divide(hpt)
 
     for iX in range(1, fpt.GetNbinsX() + 1):
-        print "gjets: %7.2f, fake: %7.2f, hadron: %7.2f, tfact: %5.3f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX))
+        print "gjets: %6.1f, fake: %6.1f, hadron: %6.1f, tfact: %4.2f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX)*100)
 
     outputFile.cd()
     hpt.Write()
