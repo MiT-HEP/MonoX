@@ -109,11 +109,53 @@ def makeHadronProxyDownProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt 
 
     return proc
 
-def makeLowMtCandidateProcessor(sample):
-    return makeEventProcessor(sample, cls = ROOT.LowMtCandidateProcessor)
+def makeHadronProxyWorstProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstweight
 
-def makeWenuProxyLowMtProcessor(sample):
-    return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstweight)
+
+    for sel in ['HOverE', 'NHIso', 'PhIso', 'EVeto', 'Sieie15', 'ChWorstIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makeHadronProxyWorstUpProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstupweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstupweight)
+
+    for sel in ['HOverE', 'NHIsoTight', 'PhIsoTight', 'EVeto', 'Sieie15', 'ChWorstIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makeHadronProxyWorstDownProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstdownweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstdownweight)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.NHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.PhIso)
+
+    return proc
 
 def makePurityProcessor(sample):
     # One loose photon + high-pT jet.
@@ -148,6 +190,46 @@ def makePurityDownProcessor(sample):
     proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
 
     return proc
+
+def makePurityWorstProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIso', 'PhIso']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    return proc
+
+def makePurityWorstUpProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIsoTight', 'PhIsoTight']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makePurityWorstDownProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie12', 'ChWorstIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+
+    return proc
+
+def makeLowMtCandidateProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.LowMtCandidateProcessor)
+
+def makeWenuProxyLowMtProcessor(sample):
+    return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
 
 def makeHadronProxyLowMtProcessor(sample):
     return makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyLowMtProcessor)
@@ -303,16 +385,22 @@ def makeGenKFactorMonoelectronProcessor(sample):
 
 generators = {
     # Data
-    'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
-               'efake': makeWenuProxyProcessor, 
-               'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor, 
-               'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
-               'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
-    'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
-               'efake': makeWenuProxyProcessor, 
-               'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor, 
-               'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
-               'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
+    'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor
+               # ,'efake': makeWenuProxyProcessor
+               # ,'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor
+               ,'hfakeWorst': makeHadronProxyWorstProcessor, 'hfakeWorstUp': makeHadronProxyWorstUpProcessor, 'hfakeWorstDown': makeHadronProxyWorstDownProcessor 
+               # ,'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor
+               # ,'purityWorst': makePurityWorstProcessor, 'purityWorstUp': makePurityWorstUpProcessor, 'purityWorstDown': makePurityWorstDownProcessor
+               # ,'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor
+               },
+    'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor
+               # ,'efake': makeWenuProxyProcessor
+               # ,'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor
+               ,'hfakeWorst': makeHadronProxyWorstProcessor, 'hfakeWorstUp': makeHadronProxyWorstUpProcessor, 'hfakeWorstDown': makeHadronProxyWorstDownProcessor 
+               # ,'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor
+               # ,'purityWorst': makePurityWorstProcessor, 'purityWorstUp': makePurityWorstUpProcessor, 'purityWorstDown': makePurityWorstDownProcessor
+               # ,'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor
+               },
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
@@ -433,6 +521,9 @@ hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
 hadproxyupweight = hadproxySource.Get('tfactUp')
 hadproxydownweight = hadproxySource.Get('tfactDown')
+hadproxyworstweight = hadproxySource.Get('tfactWorst')
+hadproxyworstupweight = hadproxySource.Get('tfactWorstUp')
+hadproxyworstdownweight = hadproxySource.Get('tfactWorstDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyweight = eleproxySource.Get('fraction')
