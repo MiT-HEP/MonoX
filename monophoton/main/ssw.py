@@ -77,11 +77,27 @@ def makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 17
 
     return proc
 
-def makeHadronProxyAltProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
-    global hadproxyaltweight
+def makeHadronProxyUpProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyupweight
 
     proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
-    proc.setReweight(hadproxyaltweight)
+    proc.setReweight(hadproxyupweight)
+
+    for sel in ['HOverE', 'NHIsoTight', 'PhIsoTight', 'EVeto', 'Sieie15', 'CHIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.CHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.CHIso)
+
+    return proc
+
+def makeHadronProxyDownProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxydownweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxydownweight)
 
     for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIso11', 'PhIso3']:
         proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
@@ -117,7 +133,7 @@ def makePurityUpProcessor(sample):
     for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIsoTight', 'PhIsoTight']:
         proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
 
-    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.CHIso)
 
     return proc
 
@@ -288,11 +304,13 @@ def makeGenKFactorMonoelectronProcessor(sample):
 generators = {
     # Data
     'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
-               'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 
+               'efake': makeWenuProxyProcessor, 
+               'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor, 
                'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
                'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
     'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 
-               'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 
+               'efake': makeWenuProxyProcessor, 
+               'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor, 
                'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 
                'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor},
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
@@ -413,9 +431,8 @@ npvweight = npvSource.Get('npvweight')
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
-
-hadproxyaltSource = ROOT.TFile.Open(basedir + '/data/hadronTFactorAlt.root')
-hadproxyaltweight = hadproxyaltSource.Get('tfact')
+hadproxyupweight = hadproxySource.Get('tfactUp')
+hadproxydownweight = hadproxySource.Get('tfactDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyweight = eleproxySource.Get('fraction')
