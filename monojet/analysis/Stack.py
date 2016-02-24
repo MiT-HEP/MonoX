@@ -22,9 +22,10 @@ plotter.SetCanvasSize(600,700)
 plotter.SetFontSize(0.03)
 plotter.SetAxisTitleOffset(1.2)
 
-xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
+categories = ['monoJet']
+regions    = ['signal']
 
-SetCuts('monoJet','signal')
+xArray = [200., 230., 260.0, 290.0, 320.0, 350.0, 390.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]
 
 Exprs = [
     ['met',len(xArray)-1,array('d',xArray),'E_{T}^{miss} [GeV]', 'Events Per GeV',True],
@@ -33,6 +34,5 @@ Exprs = [
     ]
 
 for expr in Exprs:
-    plotter.SetDefaultExpr(expr[0])
-    expr[0] = 'monoJet_' + expr[0]
-    plotter.MakeCanvas(*tuple(expr))
+    ## Add manipulation of format for each expr as needed
+    MakePlots(categories,regions,expr)
