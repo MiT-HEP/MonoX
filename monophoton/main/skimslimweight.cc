@@ -1298,6 +1298,10 @@ GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::E
     if (!(photon.chIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
       continue;
     nCut_[iP]++;
+
+    if (!(photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
     
     if (!(photon.phIso < simpletree::Photon::phIsoCuts[0][PHOTONWP]))
       continue;
