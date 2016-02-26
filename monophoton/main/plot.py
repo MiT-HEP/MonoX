@@ -69,10 +69,10 @@ if args.region == 'monoph':
         ('gjets', GroupSpec('#gamma + jets', ['g-40', 'g-100', 'g-200', 'g-400', 'g-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))),
         # ('hfakeWorstDown', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorstDown'), ('sph-d4', 'hfakeWorstDown')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         # ('hfakeWorstUp', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorstUp'), ('sph-d4', 'hfakeWorstUp')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
-        # ('hfakeWorst', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorst'), ('sph-d4', 'hfakeWorst')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        ('hfakeWorst', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeWorst'), ('sph-d4', 'hfakeWorst')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         # ('hfakeDown', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeDown'), ('sph-d4', 'hfakeDown')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         # ('hfakeUp', GroupSpec('Hadronic fakes', [('sph-d3', 'hfakeUp'), ('sph-d4', 'hfakeUp')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
-        ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
+        # ('hfake', GroupSpec('Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))),
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
         ('wg', GroupSpec('W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff))), 
         ('zg', GroupSpec('Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)))
@@ -80,6 +80,7 @@ if args.region == 'monoph':
     
     variables = {
         'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
+        'metLowMet': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], overflow = True),
         'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,60) + [500. + 100. * x for x in range(3)], overflow = True),
         'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), blind = (600., 2000.)),
         'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), blind = (600., 2000.)),
@@ -130,9 +131,9 @@ elif args.region == 'lowdphi':
 
     defsel = 'monoph'
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
-    sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
+    # sigGroups = [GroupSpec('add5-2', ['add5-2'], ROOT.kGreen + 4)]
     bkgGroups = [
-        ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zg'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
+        ('zllg', GroupSpec('Z#rightarrowll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x55, 0x44, 0x99))),
         ('ttg', GroupSpec('t#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff))),
         ('wlnu', GroupSpec('W#rightarrow#mu#nu, W#rightarrow#tau#nu', ['wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x99, 0x44, 0xff))), 
         ('efake', GroupSpec('Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99))),
@@ -143,7 +144,7 @@ elif args.region == 'lowdphi':
     ]
     
     variables = {
-        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [130., 150., 170., 190., 250., 400., 700., 1000.], overflow = True),
+        'met': VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', baselineCut,  [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], overflow = True),
         'metHighMet'+str(cutMet): VariableDef('E_{T}^{miss}', 'GeV', 't1Met.met', cutStringHighMet, range(cutMet,500,50) + [500. + 100. * x for x in range(2)], overflow = True),
         'mtPhoMet': VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', baselineCut, (22, 200., 1300.), (600., 2000.)),
         'mtPhoMetHighMet'+str(cutMet): VariableDef('M_{T#gamma}', 'GeV', 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))', cutStringHighMet, (22, 200., 1300.), (600., 2000.)),
