@@ -4,8 +4,12 @@ import sys,os
 import ROOT
 import os.path
 
+OutTreeName = 'MonoJetTree'
+
+os.system(os.environ['CROMBIEPATH'] + '/scripts/MakeTree.sh ' + OutTreeName)
+ROOT.gROOT.LoadMacro(OutTreeName + '.cc+')
+
 ROOT.gROOT.LoadMacro('NeroTree76.C+')
-ROOT.gROOT.LoadMacro('MonoJetTree.cc+')
 ROOT.gROOT.LoadMacro('NeroSlimmer.cc+')
 
 if sys.argv[1] == "test":

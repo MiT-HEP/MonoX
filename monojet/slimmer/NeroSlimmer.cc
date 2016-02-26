@@ -73,6 +73,16 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
   TLorentzVector vec2;
   TLorentzVector vec3;
 
+  TLorentzVector saveGenVec;
+  TLorentzVector saveDMVec;
+
+  Int_t nentries = inTreeFetch->GetEntriesFast();
+
+  std::vector<TLorentzVector*> leptonVecs;
+  std::vector<TLorentzVector*> photonVecs;
+
+  Float_t checkDR = 0.0;
+  
   for (Int_t iEntry = 0; iEntry < allTree->GetEntriesFast(); iEntry++) {
     mcWeightBranch->GetEntry(iEntry);
     if (mcWeight > 0)
@@ -83,11 +93,6 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
 
   outFile->WriteTObject(allHist,allHist->GetName());
 
-  Int_t nentries = inTreeFetch->GetEntriesFast();
-
-  std::vector<TLorentzVector*> leptonVecs;
-  std::vector<TLorentzVector*> photonVecs;
-  
   for (Int_t iEntry = 0; iEntry < nentries; iEntry++) {
     
     //// Clear out the saved vectors for cleaning ////
@@ -119,6 +124,9 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
 
     outTree->trueMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
     outTree->trueMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
+
+    outTree->rawMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
+    outTree->rawMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
 
     outTree->triggerFired = inTree->triggerFired;
     
@@ -513,16 +521,39 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
       outTree->genMet = genMet->Pt();
       outTree->genMetPhi = genMet->Phi();
       
-      TLorentzVector saveGenVec;
-      
       saveGenVec.SetPtEtaPhiM(0,0,0,0);
+      saveDMVec.SetPtEtaPhiM(0,0,0,0);
+      Bool_t saveThisDM = false;
       
       Bool_t isFound = false;
       
       for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
         TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
         Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
-        
+      
+        if (checkPdgId == 25){
+          outTree->genDM_pt = tempGen->Pt();
+          outTree->genDM_eta = tempGen->Eta();
+          outTree->genDM_phi = tempGen->Phi();
+          outTree->genDM_mass = tempGen->M();
+          outTree->genDM_PdgId = checkPdgId;
+        }
+        else if (checkPdgId > 900000 && outTree->genDM_PdgId != 25) {
+          if (saveDMVec.Pt() > 1) {
+            if (saveThisDM)
+              std::cout << "Uh oh, found three DM particles... Fix slimmer." << std::endl;
+            saveThisDM = true;
+          }
+          saveDMVec = saveDMVec + *tempGen;
+          if (saveThisDM) {
+            outTree->genDM_pt = saveDMVec.Pt();
+            outTree->genDM_eta = saveDMVec.Eta();
+            outTree->genDM_phi = saveDMVec.Phi();
+            outTree->genDM_mass = saveDMVec.M();
+            outTree->genDM_PdgId = checkPdgId;
+          }
+        }
+  
         if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(outTree->boson_pt < 0 && (checkPdgId == 23 || checkPdgId == 24)))
           continue;
         
@@ -570,6 +601,7 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
           }
         }
       }
+
       outTree->genBos_pt   = saveGenVec.Pt();
       outTree->genBos_eta  = saveGenVec.Eta();
       outTree->genBos_phi  = saveGenVec.Phi();
@@ -623,7 +655,7 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
 
         for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
           TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
-          Float_t checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempJet->Phi(),tempJet->Eta());
+          checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempJet->Phi(),tempJet->Eta());
 
           // Check loose distance
           if ((*(inTree->jetBdiscr))[iJet] > bCutLoose) {
@@ -650,14 +682,29 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
             if (checkPdgId != 23 && checkPdgId != 24)
               continue;
 
-            TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
-            Float_t checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempGen->Phi(),tempGen->Eta());
+            TLorentzVector *tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
+            checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempGen->Phi(),tempGen->Eta());
             if (checkDR < outTree->fatjet1DRGenW) {
               outTree->fatjet1DRGenW   = checkDR;
               outTree->fatjet1GenWPt   = tempGen->Pt();
               outTree->fatjet1GenWMass = tempGen->M();
             }
           }
+        }
+      }
+    }
+
+    if (inTree->metP4_GEN->GetEntries() > 0) {
+      // Loop through to find gen jet information matched to leading jets.
+      for (Int_t iGen = 0; iGen < inTree->genjetP4->GetEntries(); ++iGen) {
+        TLorentzVector *tempGenJet = (TLorentzVector*) inTree->genjetP4->At(iGen);
+        checkDR = deltaR(outTree->jet1Phi,outTree->jet1Eta,tempGenJet->Phi(),tempGenJet->Eta());
+        if (checkDR < outTree->genJetDRjet1) {
+          outTree->genJet_pt = tempGenJet->Pt();
+          outTree->genJet_eta = tempGenJet->Eta();
+          outTree->genJet_phi = tempGenJet->Phi();
+          outTree->genJet_mass = tempGenJet->M();
+          outTree->genJetDRjet1 = checkDR;
         }
       }
     }

@@ -1,5 +1,4 @@
-MonoJetTree.h
-MonoJetTree.cc
+MonoJetTree.txt
 NeroTree76.h
 NeroTree76.C
 functions.h

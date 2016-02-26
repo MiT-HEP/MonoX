@@ -134,6 +134,23 @@ class MonoJetTree
   int   fatjet1isLeading;
   float fatjet1DPhiMet;
   float fatjet1DPhiTrueMet;
+  float genDM_pt;
+  float genDM_eta;
+  float genDM_phi;
+  float genDM_mass;
+  int   genDM_PdgId;
+  float genJet_pt;
+  float genJet_eta;
+  float genJet_phi;
+  float genJet_mass;
+  float genJetDRjet1;
+  float rawMet;
+  float rawMetPhi;
+  float genFatJet_pt;
+  float genFatJet_eta;
+  float genFatJet_phi;
+  float genFatJet_mass;
+  float genFatJetDRfatjet1;
 
   TTree*  ReturnTree()                { return t;                             }
   void    Fill()                      { t->Fill(); Reset();                   }
