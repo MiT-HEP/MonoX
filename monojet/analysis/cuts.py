@@ -5,8 +5,7 @@ allCut = 'n_tau == 0 && abs(minJetMetDPhi_clean) > 0.5 && leadingJet_outaccp == 
 zeeAll = 'n_tau == 0 && leadingJet_outaccp == 0'
 metCut = 'met > 200'
 
-btagVeto = 'n_bjetsMedium == 0'
-#btagVeto = 'n_bjetsMedium != -2'
+bVeto = 'n_bjetsMedium == 0'
 photonVeto = 'n_loosepho == 0'
 leptonVeto = 'n_looselep == 0'
 diLepton = 'n_looselep == 2 && abs(dilep_m - 90) < 30 && n_tightlep > 0'
@@ -30,59 +29,56 @@ topSimple = 'n_tightlep == 1 && n_looselep == 1 && trueMet > 30 && n_bjetsMedium
 topregion = topSimple + ' && n_bjetsLoose > 1 && fatjet1overlapB < 1 && fatjet1Pt > 250 && fatjet1Eta < 2.4 && fatjet1MonojetId == 1'
 toprecoil = topSimple + ' && n_bjetsLoose > 1 '
 
-Zee = str(zeeAll + ' && ' + 
+Zee_noBVeto = str(zeeAll + ' && ' + 
           metCut + ' && ' + 
-          btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           diLepton + ' && ' + 
           ETrigger + ' && ' + 
           'lep1PdgId*lep2PdgId == -121')
 
-Zmm = str(allCut + ' && ' + 
+Zmm_noBVeto = str(allCut + ' && ' + 
           metCut + ' && ' + 
-          btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           diLepton + ' && ' + 
-#          METTrigger + ' && ' + 
           'lep1PdgId*lep2PdgId == -169')
 
-Wen = str(allCut + ' && ' + 
+Wen_noBVeto = str(allCut + ' && ' + 
           metCut + ' && ' + 
-          btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           singleLepton + ' && ' + 
           'lep1Pt > 40 && ' +
           ETrigger + ' && ' +
           'abs(lep1PdgId) == 11 && trueMet > 50')
 
-Wmn = str(allCut + ' && ' + 
+Wmn_noBVeto = str(allCut + ' && ' + 
           metCut + ' && ' + 
-          btagVeto + ' && ' + 
           photonVeto + ' && ' + 
           singleLepton + ' && ' + 
-#          METTrigger + ' && ' +
           'abs(lep1PdgId) == 13')
 
-gjet = str(allCut + ' && ' + 
+gjet_noBVeto = str(allCut + ' && ' + 
            metCut + ' && ' + 
-           btagVeto + ' && ' + 
            leptonVeto + ' && ' + 
            GTrigger + ' && ' + 
            singlePhoton)
 
-signal = str(allCut + ' && ' + 
+signal_noBVeto = str(allCut + ' && ' + 
              metCut + ' && ' + 
-             btagVeto + ' && ' + 
              leptonVeto + ' && ' + 
-#             METTrigger + ' && ' + 
              photonVeto)
+
+signal = signal_noBVeto + ' && ' + bVeto
+Zmm = Zmm_noBVeto + ' && ' + bVeto
+Zee = Zee_noBVeto + ' && ' + bVeto
+Wmn = Wmn_noBVeto + ' && ' + bVeto
+Wen = Wen_noBVeto + ' && ' + bVeto
+gjet = gjet_noBVeto + ' && ' + bVeto
 
 Zll = '((' + Zee + ') || (' + Zmm + '))'
 Wln = '((' + Wen + ') || (' + Wmn + '))'
 
 top = str(allCut + ' && ' +
           photonVeto + ' && ' +
-#          METTrigger + ' && ' +
           metCut + ' && ' +
           topregion)
 
@@ -93,6 +89,12 @@ categoryCuts = {
     }
 
 regionCuts = {
+    'signal_noBVeto' : signal_noBVeto,
+    'Zmm_noBVeto' : Zmm_noBVeto,
+    'Zee_noBVeto' : Zee_noBVeto,
+    'Wmn_noBVeto' : Wmn_noBVeto,
+    'Wen_noBVeto' : Wen_noBVeto,
+    'gjets_noBVeto' : gjet_noBVeto,
     'signal' : signal,
     'Zmm' : Zmm,
     'Zee' : Zee,
