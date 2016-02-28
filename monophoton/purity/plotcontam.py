@@ -4,10 +4,6 @@ from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
 from ROOT import *
-import numpy as np
-import matplotlib.pyplot as plot
-import matplotlib.axes as axes
-from scipy.optimize import leastsq
 from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels
 # gROOT.SetBatch(True)
 

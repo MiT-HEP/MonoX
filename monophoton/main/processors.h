@@ -282,6 +282,10 @@ class EMObjectProcessor : public virtual EventProcessor {
     CHIso11,
     NHIso11,
     PhIso3,
+    NHIsoTight,
+    PhIsoTight,
+    ChWorstIso,
+    ChWorstIso11,
     nSelections
   };
 
