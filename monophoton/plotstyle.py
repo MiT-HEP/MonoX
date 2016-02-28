@@ -98,12 +98,16 @@ class Legend(object):
 
         self.entries = {}
         self.defaultOrder = []
+        self.autoPosition = True
 
-    def setPosition(self, x1, y1, x2, y2):
+    def setPosition(self, x1, y1, x2, y2, fix = True):
         self.legend.SetX1(x1)
         self.legend.SetY1(y1)
         self.legend.SetX2(x2)
         self.legend.SetY2(y2)
+
+        if fix:
+            self.autoPosition = False
 
     def add(self, obl, title = '', opt = 'LFP', color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
         ent = ROOT.TLegendEntry(0)
@@ -420,6 +424,11 @@ class SimpleCanvas(object):
         self.drawText()
 
         if len(self.legend.entries) != 0:
+            if self.legend.autoPosition:
+                maxlen = max([len(e.GetLabel()) for e in self.legend.entries.values()])
+                self.legend.legend.SetX1(0.95 - 0.015 * maxlen)
+                self.legend.legend.SetY1(SimpleCanvas.YMAX - 0.03 - 0.04 * len(self.legend.entries))
+
             self.legend.Draw()
 
         self.canvas.Update()
