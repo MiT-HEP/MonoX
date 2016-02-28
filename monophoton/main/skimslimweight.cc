@@ -1109,6 +1109,10 @@ EMObjectProcessor::selectPhoton(simpletree::Photon const& _photon)
   cutres[CHIso11] = (_photon.chIso < 11.);
   cutres[NHIso11] = (_photon.nhIso < 11.);
   cutres[PhIso3] = (_photon.phIso < 3.);
+  cutres[NHIsoTight] = _photon.passNHIso(2);
+  cutres[PhIsoTight] = _photon.passPhIso(2);
+  cutres[ChWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]);
+  cutres[ChWorstIso11] = (_photon.chWorstIso < 11.);
 
   // Wisconsin denominator def
   // if (photon.passHOverE(PHOTONWP) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
@@ -1300,6 +1304,10 @@ GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::E
     nCut_[iP]++;
     
     if (!(photon.chIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+
+    if (!(photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
       continue;
     nCut_[iP]++;
     

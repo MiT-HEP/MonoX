@@ -12,7 +12,7 @@ import config
 
 sNames = sys.argv[1:]
 
-dataSourceDir = config.ntuplesDir
+dataSourceDir = config.ntuplesDir.replace("13a", "13")
 
 neroInput = False
 
@@ -77,11 +77,27 @@ def makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 17
 
     return proc
 
-def makeHadronProxyAltProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
-    global hadproxyaltweight
+def makeHadronProxyUpProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyupweight
 
     proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
-    proc.setReweight(hadproxyaltweight)
+    proc.setReweight(hadproxyupweight)
+
+    for sel in ['HOverE', 'NHIsoTight', 'PhIsoTight', 'EVeto', 'Sieie15', 'CHIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.CHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.CHIso)
+
+    return proc
+
+def makeHadronProxyDownProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxydownweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxydownweight)
 
     for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIso11', 'PhIso3']:
         proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
@@ -93,11 +109,53 @@ def makeHadronProxyAltProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt =
 
     return proc
 
-def makeLowMtCandidateProcessor(sample):
-    return makeEventProcessor(sample, cls = ROOT.LowMtCandidateProcessor)
+def makeHadronProxyWorstProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstweight
 
-def makeWenuProxyLowMtProcessor(sample):
-    return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstweight)
+
+    for sel in ['HOverE', 'NHIso', 'PhIso', 'EVeto', 'Sieie15', 'ChWorstIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makeHadronProxyWorstUpProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstupweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstupweight)
+
+    for sel in ['HOverE', 'NHIsoTight', 'PhIsoTight', 'EVeto', 'Sieie15', 'ChWorstIso11']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.Sieie12)
+    proc.addVeto(True, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makeHadronProxyWorstDownProcessor(sample, cls = ROOT.HadronProxyProcessor, minPt = 175., args = tuple()):
+    global hadproxyworstdownweight
+
+    proc = makeEventProcessor(sample, cls = cls, minPt = minPt, args = args)
+    proc.setReweight(hadproxyworstdownweight)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+        proc.addVeto(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.NHIso)
+    proc.addVeto(True, ROOT.EMObjectProcessor.PhIso)
+
+    return proc
 
 def makePurityProcessor(sample):
     # One loose photon + high-pT jet.
@@ -109,7 +167,19 @@ def makePurityProcessor(sample):
 
     return proc
 
-def makePurityAltProcessor(sample):
+def makePurityUpProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'CHIso11', 'NHIsoTight', 'PhIsoTight']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.CHIso)
+
+    return proc
+
+def makePurityDownProcessor(sample):
     # One loose photon + high-pT jet.
 
     proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
@@ -120,6 +190,46 @@ def makePurityAltProcessor(sample):
     proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
 
     return proc
+
+def makePurityWorstProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIso', 'PhIso']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    return proc
+
+def makePurityWorstUpProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie15', 'ChWorstIso11', 'NHIsoTight', 'PhIsoTight']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.Sieie12, ROOT.EMObjectProcessor.ChWorstIso)
+
+    return proc
+
+def makePurityWorstDownProcessor(sample):
+    # One loose photon + high-pT jet.
+
+    proc = makeEventProcessor(sample, cls = ROOT.EMPlusJetProcessor)
+
+    for sel in ['HOverE', 'EVeto', 'Sieie12', 'ChWorstIso11', 'NHIso11', 'PhIso3']:
+        proc.addSelection(True, getattr(ROOT.EMObjectProcessor, sel))
+
+    proc.addSelection(False, ROOT.EMObjectProcessor.NHIso, ROOT.EMObjectProcessor.PhIso)
+
+    return proc
+
+def makeLowMtCandidateProcessor(sample):
+    return makeEventProcessor(sample, cls = ROOT.LowMtCandidateProcessor)
+
+def makeWenuProxyLowMtProcessor(sample):
+    return makeWenuProxyProcessor(sample, cls = ROOT.WenuProxyLowMtProcessor)
 
 def makeHadronProxyLowMtProcessor(sample):
     return makeHadronProxyProcessor(sample, cls = ROOT.HadronProxyLowMtProcessor)
@@ -275,29 +385,77 @@ def makeGenKFactorMonoelectronProcessor(sample):
 
 generators = {
     # Data
-    'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
-    'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor, 'efake': makeWenuProxyProcessor, 'hfake': makeHadronProxyProcessor, 'hfakealt': makeHadronProxyAltProcessor, 'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor, 'purity': makePurityProcessor, 'purityalt': makePurityAltProcessor},
+    'sph-d3': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor
+               # ,'efake': makeWenuProxyProcessor
+               # ,'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor
+               ,'hfakeWorst': makeHadronProxyWorstProcessor, 'hfakeWorstUp': makeHadronProxyWorstUpProcessor, 'hfakeWorstDown': makeHadronProxyWorstDownProcessor 
+               # ,'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor
+               # ,'purityWorst': makePurityWorstProcessor, 'purityWorstUp': makePurityWorstUpProcessor, 'purityWorstDown': makePurityWorstDownProcessor
+               # ,'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor
+               },
+    'sph-d4': {'monoph': makeCandidateProcessor, 'monophpv': makeEventProcessor
+               # ,'efake': makeWenuProxyProcessor
+               # ,'hfake': makeHadronProxyProcessor, 'hfakeUp': makeHadronProxyUpProcessor, 'hfakeDown': makeHadronProxyDownProcessor
+               ,'hfakeWorst': makeHadronProxyWorstProcessor, 'hfakeWorstUp': makeHadronProxyWorstUpProcessor, 'hfakeWorstDown': makeHadronProxyWorstDownProcessor 
+               # ,'purity': makePurityProcessor, 'purityUp': makePurityUpProcessor, 'purityDown': makePurityDownProcessor
+               # ,'purityWorst': makePurityWorstProcessor, 'purityWorstUp': makePurityWorstUpProcessor, 'purityWorstDown': makePurityWorstDownProcessor
+               # ,'lowmt': makeLowMtCandidateProcessor, 'efakelowmt': makeWenuProxyLowMtProcessor, 'hfakelowmt': makeHadronProxyLowMtProcessor
+               },
     'smu-d3': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'smu-d4': {'dimu': makeDimuonProcessor, 'monomu': makeMonomuonProcessor, 'elmu': makeOppFlavorProcessor},
     'sel-d3': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     'sel-d4': {'diel': makeDielectronProcessor, 'monoel': makeMonoelectronProcessor, 'eefake': makeZeeProxyProcessor},
     # MC for signal region
-    'znng-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
-    'wg': {'monoph':makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'wnlg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
-    'g-40': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'g-100': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'g-200': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'g-400': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'g-600': {'monoph':makeGenGJetProcessor, 'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
-    'ttg': {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zg': {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'elmu': makeGenOppFlavorProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
-    'zllg-130': {'monoph':makeGenKFactorProcessor, 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 'dimu': makeGenKFactorDimuonProcessor},
-    'wlnu': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
-    'wlnu-100': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-200': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-400': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
-    'wlnu-600': {'monoph': makeGenWlnuProcessor, 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'znng-130': {'monoph':makeGenKFactorProcessor, 
+                 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 
+                 'lowmt': makeGenKFactorLowMtProcessor},
+    'wnlg-130': {'monoph':makeGenKFactorProcessor, 
+                 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 
+                 'monomu': makeGenKFactorMonomuonProcessor, 'monoel': makeGenKFactorMonoelectronProcessor, 'lowmt': makeGenKFactorLowMtProcessor},
+    'wg': {'monoph':makeGenCandidateProcessor, 
+           'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 
+           'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'g-40': {'monoph':makeGenGJetProcessor, 
+             'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 
+             'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
+    'g-100': {'monoph':makeGenGJetProcessor, 
+              'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 
+              'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
+    'g-200': {'monoph':makeGenGJetProcessor, 
+              'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 
+              'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
+    'g-400': {'monoph':makeGenGJetProcessor, 
+              'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 
+              'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
+    'g-600': {'monoph':makeGenGJetProcessor, 
+              'monoph-gup':makeGenGJetGUpProcessor, 'monoph-gdown':makeGenGJetGDownProcessor, 'monoph-jecup':makeGenGJetJECUpProcessor, 'monoph-jecdown':makeGenGJetJECDownProcessor, 
+              'lowmt': makeGenGJetLowMtProcessor, 'purity': makeGenPurityProcessor},
+    'ttg': {'monoph': makeGenCandidateProcessor, 
+            'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 
+            'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'elmu': makeGenOppFlavorProcessor, 
+            'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zg': {'monoph': makeGenCandidateProcessor, 
+           'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor, 
+           'dimu': makeGenDimuonProcessor, 'diel': makeGenDielectronProcessor, 'elmu': makeGenOppFlavorProcessor, 
+           'monomu': makeGenMonomuonProcessor, 'monoel': makeGenMonoelectronProcessor, 'lowmt': makeGenLowMtProcessor}, # NLO low stats
+    'zllg-130': {'monoph':makeGenKFactorProcessor, 
+                 'monoph-gup':makeGenKFactorGUpProcessor, 'monoph-gdown':makeGenKFactorGDownProcessor, 'monoph-jecup':makeGenKFactorJECUpProcessor, 'monoph-jecdown':makeGenKFactorJECDownProcessor, 
+                 'dimu': makeGenKFactorDimuonProcessor},
+    'wlnu': {'monoph': makeGenWlnuProcessor, 
+             'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 
+             'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor}, # NLO low stats
+    'wlnu-100': {'monoph': makeGenWlnuProcessor, 
+                 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 
+                 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-200': {'monoph': makeGenWlnuProcessor, 
+                 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 
+                 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-400': {'monoph': makeGenWlnuProcessor, 
+                 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 
+                 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
+    'wlnu-600': {'monoph': makeGenWlnuProcessor, 
+                 'monoph-gup':makeGenWlnuGUpProcessor, 'monoph-gdown':makeGenWlnuGDownProcessor, 'monoph-jecup':makeGenWlnuJECUpProcessor, 'monoph-jecdown':makeGenWlnuJECDownProcessor, 
+                 'monomu': makeGenMonomuonProcessor, 'tau' : makeGenWtaunuProcessor},
     # other MC
     'dy-50': {'monoph': makeGenCandidateProcessor, 'monomu': makeGenMonomuonProcessor},
     'znn-100': {'monoph': makeGenHadronProcessor},
@@ -311,7 +469,8 @@ generators = {
     'qcd-1000': {'monoph':makeGenCandidateProcessor}
 }
 for sname in ['add%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
-    generators[sname] = {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
+    generators[sname] = {'monoph': makeGenCandidateProcessor, 
+                         'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
 
 for mt in [ 'a', 'v' ]:
     for dm in [1, 10, 50, 150, 500, 1000]:
@@ -325,7 +484,8 @@ for mt in [ 'a', 'v' ]:
             except KeyError:
                 # print "This combination is not part of the DMWG recommendations, moving onto next one."
                 continue;
-            generators[sname] = {'monoph': makeGenCandidateProcessor, 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
+            generators[sname] = {'monoph': makeGenCandidateProcessor, 
+                                 'monoph-gup':makeGenGUpProcessor, 'monoph-gdown':makeGenGDownProcessor, 'monoph-jecup':makeGenJECUpProcessor, 'monoph-jecdown':makeGenJECDownProcessor}
 
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
@@ -359,9 +519,11 @@ npvweight = npvSource.Get('npvweight')
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyweight = hadproxySource.Get('tfact')
-
-hadproxyaltSource = ROOT.TFile.Open(basedir + '/data/hadronTFactorAlt.root')
-hadproxyaltweight = hadproxyaltSource.Get('tfact')
+hadproxyupweight = hadproxySource.Get('tfactUp')
+hadproxydownweight = hadproxySource.Get('tfactDown')
+hadproxyworstweight = hadproxySource.Get('tfactWorst')
+hadproxyworstupweight = hadproxySource.Get('tfactWorstUp')
+hadproxyworstdownweight = hadproxySource.Get('tfactWorstDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyweight = eleproxySource.Get('fraction')

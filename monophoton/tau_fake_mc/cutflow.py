@@ -20,12 +20,12 @@ for sName in sampleNames:
     sPath = config.skimDir + '/' + sName + '_tau.root'
     tree.Add(sPath)
 
-cutNames = [ 'tau matched', 'isEB', 'pT > 175', 'pass hOverE', 'pass nhIso', 'pass chIso', 'pass phIso', 'pass sieie <', 'pass eveto', 'pass sieie >', 'pass s4', 'pass mip energy', 'pass time' ]
+cutNames = [ 'tau matched', 'isEB', 'pT > 175', 'pass hOverE', 'pass nhIso', 'pass chIso', 'pass chWorstIso', 'pass phIso', 'pass sieie <', 'pass eveto', 'pass sieie >', 'pass s4', 'pass mip energy', 'pass time' ]
 
 hist = ROOT.TH1F("yield", "yield", 1, 0., 1.)
 
 lumi = 2239.9
-baselineCuts = [ '', 't1Met.iso', 't1Met.iso && t1Met.met > 140', 't1Met.iso && tauVeto && t1Met.met > 140' ]
+baselineCuts = [ '', 't1Met.iso', 't1Met.iso && t1Met.met > 170', 't1Met.iso && tauVeto && t1Met.met > 170' ]
 yields = []
 for baselineCut in baselineCuts:
     print "==============================================="
@@ -34,7 +34,7 @@ for baselineCut in baselineCuts:
     print "==============================================="
     print '%20s & %10s & %10s & %10s & %10s \\\\' % ('cut', 'raw yield', 'raw eff', 'weightyeild', 'weight eff')
     temp = []
-    for iC in range(0,13):
+    for iC, cutName in enumerate(cutNames):
         if baselineCut:
             idCutString = baselineCut+' && photons.id > '+str(iC) 
         else:
@@ -47,9 +47,9 @@ for baselineCut in baselineCuts:
         weightedCounts = hist.GetBinContent(1)
 
         if iC:
-            print '%20s & %10d & %10.4f & %10.2f & %10.4f \\\\' % (cutNames[iC], counts, counts / temp[0][0] * 100., weightedCounts, weightedCounts / temp[0][1] * 100.)
+            print '%20s & %10d & %10.4f & %10.2f & %10.4f \\\\' % (cutName, counts, counts / temp[0][0] * 100., weightedCounts, weightedCounts / temp[0][1] * 100.)
         else: 
-            print '%20s & %10d & %10.4f & %10.2f & %10.4f \\\\' % (cutNames[iC], counts, 100., weightedCounts, 100.)
+            print '%20s & %10d & %10.4f & %10.2f & %10.4f \\\\' % (cutName, counts, 100., weightedCounts, 100.)
         temp.append( (counts, weightedCounts) )
     yields.append(temp)
 
