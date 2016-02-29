@@ -169,6 +169,48 @@ canvas.addStacked(tfacts[1], title = 'MC', idx = -1)
 canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
 
 ###########################################
+####### Plain Root Attempt ################
+###########################################
+
+expo = r.TF1("expo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
+expo.SetParameters(1., -0.1, 0.)
+expo.SetParLimits(1, -10., 0.)
+expo.SetParLimits(2, 0., 10.)
+
+model = expo
+
+tfacts[0].SetMinimum(0.0000001)
+tfacts[0].Fit(model, "M WL B V", "goff", 0., 120.)
+
+outputFile.cd()
+model.Write()
+
+tcanvas = r.TCanvas()
+
+tfacts[0].Draw()
+model.Draw("same")
+
+leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
+leg.SetFillColor(r.kWhite)
+leg.SetTextSize(0.03)
+leg.AddEntry(tfacts[0], "Measured", "P")
+leg.AddEntry(model, "Fit", "L")
+leg.Draw("same")
+
+tcanvas.SetLogy(True)
+
+outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFit'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png')
+
+ 
+
+###########################################
+####### RooFit Attempt     ################
+###########################################
+
+"""
+###########################################
 ####### Fitting on Low MET ################
 ###########################################
 
@@ -255,7 +297,11 @@ tcanvas.SetLogy(False)
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactExtrap'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
+"""
 
+###########################################
+####### Numpy attempt at fitting ##########
+###########################################
 
 """
 from pprint import pprint
