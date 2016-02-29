@@ -244,6 +244,11 @@ tcanvas.SaveAs(outName+'.png')
 ####### Apply Transfer Factor #############
 ###########################################
 
+for iBin in range(gmets[0].GetNbinsX()+2):
+    # print iBin, gmets[0].GetBinLowEdge(iBin)
+    if (gmets[0].GetBinContent(iBin) < 0.):
+        gmets[0].SetBinContent(iBin, 0.)
+
 for model in models:
     gmet = gmets[0].Clone('gmetScaled'+model.GetName())
     gmet.Multiply(model)
@@ -252,12 +257,6 @@ for model in models:
     gmet.Write()
 
     print '%s predicts %.4f events for MET > 170' % (model.GetName(), gmet.Integral(14, gmet.GetNbinsX()+1))
-
-"""
-170 = bin 14
-for iBin in range(gmet.GetNbinsX()+1):
-    print iBin, gmet.GetBinLowEdge(iBin)
-"""
 
 
 
