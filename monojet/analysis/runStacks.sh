@@ -2,10 +2,10 @@
 
 CompileCrombieTools PlotStack
 
-./Stack.py
-./GJetsStack.py
-./StackNoBVeto.py
-./GJetsNoBVetoStack.py
+./Stack.py &
+./GJetsStack.py &
+./StackNoBVeto.py &
+./GJetsNoBVetoStack.py &
 
 wait
 

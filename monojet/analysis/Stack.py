@@ -43,10 +43,10 @@ def RunPlots2(categories,regions):
 
     MakePlots(categories,regions,SetupArgs(anArray))
     plotter.SetEventsPer(0.1)
-    MakePlots(categories,regions,[['minJetMetDPhi_clean',35,0,2.5,'#Delta #phi_{min}(j,E_{T}^{miss})', 'Events Per 0.1',False],
-                                  ['jet1Eta',50,-2.5,2.5,'Leading jet #eta','Events Per 0.1',False]])
-    plotter.SetEventsPer(0.05)
+    MakePlots(categories,regions,[['jet1Eta',50,-2.5,2.5,'Leading jet #eta','Events Per 0.1',False]])
     plotter.SetLegendLocation(plotter.kUpper,plotter.kLeft,0.25,0.5)
+    MakePlots(categories,regions,[['minJetMetDPhi_clean',35,0,2.5,'#Delta #phi_{min}(j,E_{T}^{miss})', 'Events Per 0.1',False]])
+    plotter.SetEventsPer(0.05)
     MakePlots(categories,regions,[['fatjet1tau21',20,0,1,'#tau_{2}/#tau_{1}', 'Events Per 0.05',False]])
     
     plotter.SetEventsPer(1.0)
