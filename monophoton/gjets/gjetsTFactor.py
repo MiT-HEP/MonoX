@@ -177,6 +177,17 @@ expo.SetParameters(1., -0.1, 0.)
 expo.SetParLimits(1, -10., 0.)
 expo.SetParLimits(2, 0., 10.)
 
+rayleigh = r.TF1("rayleigh", "( x / [0]**2 ) * TMath::Exp( -x**2 / ( 2 * [0]**2))", 0., 600.)
+rayleigh.SetParameter(0, 10.)
+rayleigh.SetParLimits(0, 0., 600.)
+
+# pepe = r.TF1("pepe", "( x / ([0] + [1]*x)**2) * TMath::Exp( -x**2 /(2 * ([0] + [1]*x)**2))", 0., 600.)
+pepe = r.TF1("pepe", "TMath::Sqrt(( x / [0]**2 ) * TMath::Exp( -x**2 / ( 2 * [0]**2))**2 + ( x / [1]**2 ) * TMath::Exp( -x**2 / ( 2 * [1]**2))**2)", 0., 600.)
+pepe.SetParameters(10., 100.)
+pepe.SetParLimits(0, 0.001, 150.)
+pepe.SetParLimits(1, 0.1, 600.)
+
+## choosing model ##
 model = expo
 
 tfacts[0].SetMinimum(0.0000001)
@@ -197,13 +208,17 @@ leg.AddEntry(tfacts[0], "Measured", "P")
 leg.AddEntry(model, "Fit", "L")
 leg.Draw("same")
 
-tcanvas.SetLogy(True)
+tcanvas.SetLogy(False)
 
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFit'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
 
- 
+tcanvas.SetLogy(True)
+
+outName = outName+'Logy'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png')
 
 ###########################################
 ####### RooFit Attempt     ################
