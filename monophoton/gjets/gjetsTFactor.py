@@ -9,10 +9,6 @@ from plotstyle import SimpleCanvas, RatioCanvas, DataMCCanvas
 import config
 
 canvas = DataMCCanvas(lumi = 2239.9)
-# binning = array.array('d', [0. + 10. * x for x in range(13)])
-
-binning = array.array('d', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)]
-                      + [200. + 50. * x for x in range(9)] ) 
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
@@ -41,9 +37,14 @@ mctree.Add(config.skimDir + '/g-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
-regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.met < 120. && !t1Met.iso)')
+regions = [ ( 'Low', '(photons.pt[0] > 175. && !t1Met.iso)')
             ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.iso)') 
             ] 
+
+# binning = array.array('d', [0. + 10. * x for x in range(13)])
+
+binning = array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+                      + [200. + 50. * x for x in range(9)] ) 
 
 dmets = []
 bmets = []
@@ -133,7 +134,11 @@ for method, hists in methods:
     tname = 'tfact'+method
     tfact = hists[1].Clone(tname)
     tfact.Divide(hists[0])
+
     tfact.GetYaxis().SetTitle("")
+
+    tfact.SetMarkerStyle(8)
+    tfact.SetMarkerSize(0.8)
 
     outputFile.cd()
     tfact.Write()
@@ -192,24 +197,34 @@ gauss.SetParLimits(1, 0.001, 150.)
 gauss.SetParLimits(2, 0.1, 600.)
 
 ## choosing model ##
-model = gauss
+models = [ gauss, expo, pepe, rayleigh ]
 
-tfacts[0].SetMinimum(0.0000001)
-tfacts[0].Fit(model, "M WL B V", "goff", 0., 120.)
+tfacts[0].SetMinimum(0.0000000001)
+tfacts[0].SetMaximum(1.1)
+fit = tfacts[0].Clone('fit')
+for iM, model in enumerate(models):
+    fit.Fit(model, "M WL B V", "goff", 0., 120.)
 
-outputFile.cd()
-model.Write()
+    model.SetLineColor((iM+1)*2)
+
+    outputFile.cd()
+    model.Write()
 
 tcanvas = r.TCanvas()
 
-tfacts[0].Draw()
-model.Draw("same")
+tfacts[0].SetMarkerColor(1)
+tfacts[0].SetMarkerStyle(8)
+tfacts[0].SetMarkerSize(1.2)
+tfacts[0].Draw("PE")
+for model in models[:]:
+    model.Draw("same")
 
 leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
 leg.SetFillColor(r.kWhite)
 leg.SetTextSize(0.03)
 leg.AddEntry(tfacts[0], "Measured", "P")
-leg.AddEntry(model, "Fit", "L")
+for model in models[:]:
+    leg.AddEntry(model, model.GetName(), "L")
 leg.Draw("same")
 
 tcanvas.SetLogy(False)
@@ -223,6 +238,28 @@ tcanvas.SetLogy(True)
 outName = outName+'Logy'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
+
+
+###########################################
+####### Apply Transfer Factor #############
+###########################################
+
+for model in models:
+    gmet = gmets[0].Clone('gmetScaled'+model.GetName())
+    gmet.Multiply(model)
+
+    outputFile.cd()
+    gmet.Write()
+
+    print '%s predicts %.4f events for MET > 170' % (model.GetName(), gmet.Integral(14, gmet.GetNbinsX()+1))
+
+"""
+170 = bin 14
+for iBin in range(gmet.GetNbinsX()+1):
+    print iBin, gmet.GetBinLowEdge(iBin)
+"""
+
+
 
 ###########################################
 ####### RooFit Attempt     ################
