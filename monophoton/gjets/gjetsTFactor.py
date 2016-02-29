@@ -37,6 +37,10 @@ mctree.Add(config.skimDir + '/g-200_monoph.root')
 mctree.Add(config.skimDir + '/g-400_monoph.root')
 mctree.Add(config.skimDir + '/g-600_monoph.root')
 
+###########################################
+####### Get Data/MC Yields ################
+###########################################
+
 regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.met < 120. && !t1Met.iso)')
             ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.iso)') 
             ] 
@@ -116,6 +120,10 @@ for region, sel in regions:
 
     canvas.printWeb('monophoton/gjetsTFactor', 'distributions'+region)
 
+###########################################
+####### Transfer Factors ##################
+###########################################
+
 methods = [ ('Data', gmets), ('MC', mcmets) ]
 scanvas = SimpleCanvas(lumi = 2239.9)
 
@@ -134,8 +142,8 @@ for method, hists in methods:
     scanvas.Clear()
     scanvas.legend.Clear()
 
-    scanvas.ylimits = (0., 1.)
-    scanvas.SetLogy(False)
+    scanvas.ylimits = (0.01, 2.5)
+    scanvas.SetLogy(True)
 
     scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
     scanvas.legend.add(tname, title = 'Transfer factor', lcolor = r.kBlack, lwidth = 1)
@@ -149,8 +157,8 @@ for method, hists in methods:
 canvas.Clear()
 canvas.legend.Clear()
 
-canvas.ylimits = (0., 1.)
-canvas.SetLogy(False)
+canvas.ylimits = (0.01, 2.5)
+canvas.SetLogy(True)
 
 canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 
@@ -160,30 +168,95 @@ canvas.addStacked(tfacts[1], title = 'MC', idx = -1)
 
 canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
 
-# binning = array.array('d', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)]
-#                      + [200. + 50. * x for x in range(9)] ) 
+###########################################
+####### Plain Root Attempt ################
+###########################################
 
-met = r.RooRealVar('met', 'E_T^{miss} (GeV)', 0., 600.)
+expo = r.TF1("expo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
+expo.SetParameters(1., -0.1, 0.)
+expo.SetParLimits(1, -10., 0.)
+expo.SetParLimits(2, 0., 10.)
+
+rayleigh = r.TF1("rayleigh", "( x / [0]**2 ) * TMath::Exp( -x**2 / ( 2 * [0]**2))", 0., 600.)
+rayleigh.SetParameter(0, 10.)
+rayleigh.SetParLimits(0, 0., 600.)
+
+# pepe = r.TF1("pepe", "( x / ([0] + [1]*x)**2) * TMath::Exp( -x**2 /(2 * ([0] + [1]*x)**2))", 0., 600.)
+pepe = r.TF1("pepe", "TMath::Sqrt(( x / [0]**2 ) * TMath::Exp( -x**2 / ( 2 * [0]**2))**2 + ( x / [1]**2 ) * TMath::Exp( -x**2 / ( 2 * [1]**2))**2)", 0., 600.)
+pepe.SetParameters(10., 100.)
+pepe.SetParLimits(0, 0.001, 150.)
+pepe.SetParLimits(1, 0.1, 600.)
+
+## choosing model ##
+model = expo
+
+tfacts[0].SetMinimum(0.0000001)
+tfacts[0].Fit(model, "M WL B V", "goff", 0., 120.)
+
+outputFile.cd()
+model.Write()
+
+tcanvas = r.TCanvas()
+
+tfacts[0].Draw()
+model.Draw("same")
+
+leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
+leg.SetFillColor(r.kWhite)
+leg.SetTextSize(0.03)
+leg.AddEntry(tfacts[0], "Measured", "P")
+leg.AddEntry(model, "Fit", "L")
+leg.Draw("same")
+
+tcanvas.SetLogy(False)
+
+outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFit'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png')
+
+tcanvas.SetLogy(True)
+
+outName = outName+'Logy'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png')
+
+###########################################
+####### RooFit Attempt     ################
+###########################################
+
+"""
+###########################################
+####### Fitting on Low MET ################
+###########################################
+
+met = r.RooRealVar('met', 'E_T^{miss} (GeV)', 0., 120.)
 met.setRange("fitting", 0., 120.)
 met.setRange("plotting", 0., 600.)
 
 fitTemplate = r.RooDataHist('fitTemp', '', r.RooArgList(met), tfacts[0])
 
+norm = r.RooRealVar('norm', 'norm', 1., 0., 10.)
+
 rate = r.RooRealVar('rate', 'rate', -0.1, -5., 0.)
 expo = r.RooExponential("expo", "", met, rate)
+expo.setNormRange('fitting')
+eexpo = r.RooExtendPdf("eexpo", "", expo, norm, "fitting")
+
 model = expo
 
-model.fitTo(fitTemplate, r.RooFit.Range("fitting"))
+fitResult = model.fitTo(fitTemplate, r.RooFit.Extended(), r.RooFit.Strategy(1), r.RooFit.Save())
 
 tcanvas = r.TCanvas()
 
 frame = met.frame()
 frame.SetTitle('#gamma + jets Transfer Factor')
-frame.SetMinimum(0.0)
+frame.SetMinimum(0.01)
 frame.SetMaximum(1.0)
 
-fitTemplate.plotOn(frame, r.RooFit.Name('Measured'), r.RooFit.Range("fitting"))
-model.plotOn(frame, r.RooFit.Name('Fit'), r.RooFit.Range("plotting"))
+fitTemplate.plotOn(frame, r.RooFit.Name('Measured'))
+model.plotOn(frame, r.RooFit.Name('Fit'), r.RooFit.Range("fitting"), r.RooFit.NormRange("fitting"))
+
+model.Print('t')
 
 frame.Draw("goff")
 
@@ -194,10 +267,56 @@ leg.AddEntry(frame.findObject('Measured'), "Measured", "P")
 leg.AddEntry(frame.findObject("Fit"), "Fit", "L")
 leg.Draw()
 
+tcanvas.SetLogy(False)
+
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFit'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
 
+###########################################
+####### Extrapolate to High MET ###########
+###########################################
+
+metPlot = r.RooRealVar('metPlot', 'E_T^{miss} (GeV)', 0., 600.)
+metPlot.setRange("fitting", 0., 120.)
+metPlot.setRange("plotting", 0., 600.)
+
+fitTemplatePlot = r.RooDataHist('fitTempPlot', '', r.RooArgList(met), tfacts[0])
+
+expoPlot = r.RooExponential("expoPlot", "", metPlot, rate)
+eexpoPlot = r.RooExtendPdf("eexpoPlot", "", expoPlot, norm, "fitting")
+
+modelPlot = eexpoPlot
+
+frame = metPlot.frame()
+frame.SetTitle('#gamma + jets Transfer Factor')
+frame.SetMinimum(0.00001)
+frame.SetMaximum(1.0)
+
+fitTemplatePlot.plotOn(frame, r.RooFit.Name('Measured'))
+modelPlot.plotOn(frame, r.RooFit.Name('Fit'), r.RooFit.Range("plotting"), r.RooFit.NormRange("fitting"))
+
+modelPlot.Print('t')
+
+frame.Draw("goff")
+
+leg = r.TLegend(0.6, 0.6, 0.85, 0.75)
+leg.SetFillColor(r.kWhite)
+leg.SetTextSize(0.03)
+leg.AddEntry(frame.findObject('Measured'), "Measured", "P")
+leg.AddEntry(frame.findObject("Fit"), "Fit", "L")
+leg.Draw()
+
+tcanvas.SetLogy(False)
+
+outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactExtrap'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png')
+"""
+
+###########################################
+####### Numpy attempt at fitting ##########
+###########################################
 
 """
 from pprint import pprint
