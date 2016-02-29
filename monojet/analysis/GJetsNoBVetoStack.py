@@ -3,7 +3,7 @@
 from Stack import *
 
 gjetBRegion = ['gjets_noBVeto']
-
 ReadExceptionConfig('gjets')
 
-RunPlots(gjetBRegion)
+if __name__ == '__main__':
+    RunPlots(gjetBRegion)
