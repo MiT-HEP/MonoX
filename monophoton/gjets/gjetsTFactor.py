@@ -196,8 +196,18 @@ gauss.SetParameters(1., 10., 100.)
 gauss.SetParLimits(1, 0.001, 150.)
 gauss.SetParLimits(2, 0.1, 600.)
 
+smear = r.TF1("smear", "[0] * TMath::Exp( -x**2/[1]**2)", 0., 600.)
+smear.SetParameters(1., 10.)
+smear.SetParLimits(1, 0.001, 150.)
+
 ## choosing model ##
-models = [ gauss, expo, pepe, rayleigh ]
+models = [ gauss, expo, pepe ] #, rayleigh ]
+"""
+for model in models[:]:
+    convolve = r.TF1Convolution(model, smear)
+    smeared = r.TF1(model.GetName()+"Smeared", convolve, 0., 600., convolve.GetNpar())
+    models.append(smeared)
+"""
 
 tfacts[0].SetMinimum(0.0000000001)
 tfacts[0].SetMaximum(1.1)
@@ -249,16 +259,31 @@ for iBin in range(gmets[0].GetNbinsX()+2):
     if (gmets[0].GetBinContent(iBin) < 0.):
         gmets[0].SetBinContent(iBin, 0.)
 
-for model in models:
-    gmet = gmets[0].Clone('gmetScaled'+model.GetName())
+scanvas.Clear()
+scanvas.legend.Clear()
+
+scanvas.ylimits = (0.00000000005, 50000)
+scanvas.SetLogy(True)
+
+scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
+
+for iM, model in enumerate(models):
+    gname = 'gmetScaled'+model.GetName()
+    gmet = gmets[0].Clone(gname)
     gmet.Multiply(model)
+
+    scanvas.legend.add(gname, title = model.GetName(), lcolor = (iM+1)*2, lwidth = 1, mcolor = (iM+1)*2, mstyle = 8, msize = 0.8)
+
+    scanvas.legend.apply(gname, gmet)
+
+    scanvas.addHistogram(gmet, drawOpt = 'EP')
 
     outputFile.cd()
     gmet.Write()
 
     print '%s predicts %.4f events for MET > 170' % (model.GetName(), gmet.Integral(14, gmet.GetNbinsX()+1))
 
-
+scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 
 ###########################################
 ####### RooFit Attempt     ################
