@@ -11,10 +11,10 @@ wlnu-200         "W"                                 WJetsToLNu_HT-200To400_Tune
 wlnu-400         "W"                                 WJetsToLNu_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM  48.86  1894442  1894442.0 # GenXSecAnalyzer
 wlnu-600         "W"                                 WJetsToLNu_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  18.73  1039152  1039152.0 # GenXSecAnalyzer
 znn              "Z#rightarrow#nu#nu"                DYJetsToNuNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  11001.  20500164  2.19779100093e+11 # GenXSecAnalyzer * 3
-znn-100          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-100To200_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  280.47  5154824  5154824.0
-znn-200          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-200To400_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  78.36  5032927  5032927.0
-znn-400          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-400To600_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  10.944  1018882  1018882.0
-znn-600          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-600ToInf_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  4.203  1015904  1015904.0
+znn-100          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-100To200_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  279.7  5154824  5154824.0 # GenXSecAnalyzer * 3
+znn-200          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-200To400_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  78.36  5032927  5032927.0 # GenXSecAnalyzer * 3
+znn-400          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-400To600_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  10.944  1018882  1018882.0 # GenXSecAnalyzer * 3
+znn-600          "Z#rightarrow#nu#nu"                ZJetsToNuNu_HT-600ToInf_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  4.203  1015904  1015904.0 # GenXSecAnalyzer * 3
 dy-50-100        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  1.482e+02  1816921  1816921.0
 dy-50-200        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  4.146e+01  973937  973937.0
 dy-50-400        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-400to600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9_ext1-v1+AODSIM  5.621e+00  9352428  9352428.0
