@@ -25,7 +25,7 @@ import config
 
 ROOT.gROOT.SetBatch(True)
 
-cutMet = 170
+cutMet = 150
 
 GroupSpec = collections.namedtuple('GroupSpec', ['title', 'samples', 'color'])
 
@@ -166,6 +166,8 @@ elif args.region == 'lowmt':
     wenuNoMetCut = baselineCut + ' && photons.pt[0] < 400.'
     wenuNoPtCut = baselineCut + ' && t1Met.met > ' + str(cutMet)
     wenuCut = wenuNoMetCut + ' && t1Met.met > ' + str(cutMet)
+
+    baselineCut = wenuNoMetCut
 
     defsel = 'lowmt'
     obs = GroupSpec('Observed', ['sph-d3', 'sph-d4'], ROOT.kBlack)
@@ -342,12 +344,6 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     
     histName = varname + '-' + sampledef.name + '-' + selection
     fileName = config.skimDir + '/' + sampledef.name + '_' + selection + '.root'
-    if not os.path.exists(fileName):
-        # need to be slightly smarter about this for the MC backgrounds
-        return ROOT.TH1F(histName, '', 1, 0., 1.)
-
-    source = ROOT.TFile.Open(fileName)
-    tree = source.Get('events')
 
     if vardef.is2D:
         nbins = []
@@ -378,6 +374,21 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
 
         hist = ROOT.TH1D(histName, '', nbins, arr)
 
+        if vardef.overflow:
+            lastbinWidth = (binning[-1] - binning[0]) / 30.
+            binning += [binning[-1] + lastbinWidth]
+            arr = array.array('d', binning)
+            hist.SetBins(len(binning) - 1, arr)
+
+    if not os.path.exists(fileName):
+        # need to be slightly smarter about this for the MC backgrounds
+        return hist
+
+    source = ROOT.TFile.Open(fileName)
+    tree = source.Get('events')
+
+    hist.SetDirectory(source)
+
     cut = vardef.cut
     if isSensitive and args.blind > 1:
         if cut:
@@ -405,12 +416,6 @@ def getHist(sampledef, selection, varname, vardef, isSensitive = False):
     else:
         weightexpr = str(lumi) + ' * ' + weightexpr
         tree.Draw(drawexpr, weightexpr, 'goff')
-
-    if vardef.overflow:
-        lastbinWidth = (binning[-1] - binning[0]) / 30.
-        binning += [binning[-1] + lastbinWidth]
-        arr = array.array('d', binning)
-        hist.SetBins(len(binning) - 1, arr)
 
     hist.SetDirectory(0)
     if vardef.is2D:
