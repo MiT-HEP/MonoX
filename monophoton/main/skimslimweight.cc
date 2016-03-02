@@ -2,6 +2,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TLorentzVector.h"
+#include "TROOT.h"
 
 #include "processors.h"
 
@@ -10,16 +11,56 @@
 #include <vector>
 #include <utility>
 #include <map>
-#include <fstream>
-#include <cstdlib>
-#include <string>
+#include <functional>
 
-double
-deltaR2(simpletree::Particle const& _p1, simpletree::Particle const& _p2)
+// Hard-coded parameters
+bool const ABORTONFAIL(false);
+unsigned const PHOTONWP(1);
+
+enum Cut {
+  kTrigger,
+  kEventFilter,
+  kPhotonSelection,
+  kMuonVeto,
+  kElectronVeto,
+  kTauVeto,
+  kJetCleaning,
+  kMetSelection,
+  kHighMet,
+  kMetIso,
+  nCuts
+};
+
+// allow the possibility to apply the cut and record the result but keep the event processing on
+unsigned const IGNORECUT((1 << kTauVeto) | (1 << kHighMet) | (1 << kMetIso));
+
+bool
+photonSelection(simpletree::Photon const& _ph)
 {
-  double dEta(_p1.eta - _p2.eta);
-  double dPhi(TVector2::Phi_mpi_pi(_p1.phi - _p2.phi));
-  return dEta * dEta + dPhi * dPhi;
+  switch (PHOTONWP) {
+  case 0:
+    return _ph.loose;
+  case 1:
+    return _ph.medium;
+  case 2:
+    return _ph.tight;
+  };
+}
+
+bool
+photonEVeto(simpletree::Photon const& _ph)
+{
+  return _ph.pixelVeto;
+}
+
+bool
+allBitsUp(unsigned bits, unsigned pos)
+{
+  // return true if bits have all 1's up to one bit before pos
+  // example: bits = 0011, pos = 2 -> true, pos = 3 -> false
+  unsigned mask((1 << pos) - 1);
+  mask &= ~IGNORECUT;
+  return (bits & mask) == mask;
 }
 
 class SkimSlimWeight {
@@ -27,14 +68,12 @@ public:
   SkimSlimWeight() {}
   ~SkimSlimWeight() {}
 
-  void reset() { processors_.clear(); eventFilter_.clear(); }
+  void reset() { processors_.clear(); }
   void addProcessor(char const* _name, EventProcessor* _p) { processors_.emplace_back(_name, _p); }
   void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1, bool neroInput = false);
-  void addEventFilter(char const*);
 
 private:
   std::vector<std::pair<TString, EventProcessor*>> processors_{};
-  std::map<unsigned, std::map<unsigned, std::set<unsigned>>> eventFilter_{};
 };
 
 void
@@ -57,33 +96,60 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
       translator->setTriggerNames(triggerNames->GetTitle());
   }
   else
-    event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "taus", "jets", "photons", "electrons", "muons", "partons", "t1Met", "hlt"});
+    event.setAddress(*_input);
 
   std::vector<TTree*> skimTrees(nP, 0);
   std::vector<TTree*> cutTrees(nP, 0);
   std::vector<simpletree::Event> outEvents(nP);
-  std::vector<simpletree::PhotonCollection> vetoPhotons;
-  std::vector<unsigned short> cut(nP, 0);
+  unsigned short iCut(0);
+  std::vector<unsigned> cutBits(nP, 0);
+  std::vector<bool*> tauVeto(nP, 0); // cannot use std::vetor<bool> because that is not quite an array of bools
+  std::vector<bool*> metIso(nP, 0);
+  std::vector<float*> dPhiJetMetMin(nP, 0);
   
   for (unsigned iP(0); iP != nP; ++iP) {
-    vetoPhotons.emplace_back("vetoPhotons");
-
     auto* outputFile(new TFile(outputDir + "/" + sampleName + "_" + processors_[iP].first + ".root", "recreate"));
     skimTrees[iP] = new TTree("events", "events");
-    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "weight", "jets", "photons", "electrons", "muons", "t1Met"});
-    vetoPhotons[iP].book(*skimTrees[iP], {"vetoPhotons"});
+    outEvents[iP].book(*skimTrees[iP], {"run", "lumi", "event", "npv", "weight", "partons", "jets", "photons", "electrons", "muons", "t1Met"});
+    tauVeto[iP] = new bool;
+    metIso[iP] = new bool;
+    dPhiJetMetMin[iP] = new float;
+    skimTrees[iP]->Branch("tauVeto", tauVeto[iP], "tauVeto/O");
+    skimTrees[iP]->Branch("t1Met.iso", metIso[iP], "iso/O");
+    skimTrees[iP]->Branch("dPhiJetMetMin", dPhiJetMetMin[iP], "dPhiJetMetMin/F");
+    processors_[iP].second->addBranches(*skimTrees[iP]);
 
-    cutTrees[iP] = new TTree(processors_[iP].second->getName() + "CutFlow", "cutflow");
+    cutTrees[iP] = new TTree("cutflow", "cutflow");
     cutTrees[iP]->Branch("run", &event.run, "run/i");
     cutTrees[iP]->Branch("lumi", &event.lumi, "lumi/i");
     cutTrees[iP]->Branch("event", &event.event, "event/i");
-    cutTrees[iP]->Branch("cut", &(cut[iP]), "cut/s");
+    if (ABORTONFAIL)
+      cutTrees[iP]->Branch("cut", &iCut, "cut/s");
+    else
+      cutTrees[iP]->Branch("cutBits", &(cutBits[iP]), "cutBits/i");
   }
 
-  unsigned long passInit(0);
-  for (unsigned iP(0); iP != nP; ++iP)
-    passInit |= (1 << iP);
-  unsigned long pass(passInit);
+  auto updateCutFlow([&iCut, &cutBits, &cutTrees](bool passCut, unsigned iP) {
+      if (passCut)
+        cutBits[iP] |= (1 << iCut);
+      else if (ABORTONFAIL && allBitsUp(cutBits[iP], iCut))
+        cutTrees[iP]->Fill();
+    });
+
+  auto passAny([&cutBits, &iCut, nP, &updateCutFlow](std::function<bool(unsigned)> const& fct)->bool {
+      bool pass(false);
+      for (unsigned iP(0); iP != nP; ++iP) {
+        // in "abort on fail" mode, cutBits must have all 1's up to the last bit
+        if (ABORTONFAIL && !allBitsUp(cutBits[iP], iCut))
+          continue;
+        
+        bool passCut(fct(iP));
+        updateCutFlow(passCut, iP);
+        if (passCut)
+          pass = true;
+      }
+      return pass;
+    });
 
   long iEntry(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
@@ -93,129 +159,156 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     if (translator)
       translator->translate();
 
-    if (eventFilter_.size() != 0) {
-      auto rItr(eventFilter_.find(event.run));
-      if (rItr != eventFilter_.end()) {
-        auto lItr(rItr->second.find(event.lumi));
-        if (lItr != rItr->second.end()) {
-          auto eItr(lItr->second.find(event.event));
-          if (eItr != lItr->second.end())
-            continue;
-        }
-      }
-    }
+    for (auto& ev : outEvents)
+      ev.init();
 
-    pass = passInit;
-    cut.assign(cut.size(), 0);
+    iCut = 0;
+    cutBits.assign(cutBits.size(), 0);
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if (!processors_[iP].second->passTrigger(event)) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kTrigger);
 
-    if (pass == 0)
+    if (!passAny([this, &event](unsigned iP)->bool {
+
+          return this->processors_[iP].second->passTrigger(event);
+
+        }) && ABORTONFAIL)
       continue;
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
-        continue;
+    ++iCut;
 
-      if (!processors_[iP].second->beginEvent(event)) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kEventFilter);
 
-    if (pass == 0)
+    if (!passAny([this, &event](unsigned iP)->bool {
+
+          return this->processors_[iP].second->beginEvent(event);
+
+        }) && ABORTONFAIL)
       continue;
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
-        continue;
+    ++iCut;
 
-      outEvents[iP].muons.clear();
-      if (!processors_[iP].second->vetoMuons(event, outEvents[iP])) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kPhotonSelection);
 
-    if (pass == 0)
+    if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
+
+          return this->processors_[iP].second->selectPhotons(event, outEvents[iP]);
+
+        }) && ABORTONFAIL)
       continue;
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
-        continue;
+    ++iCut;
 
-      outEvents[iP].electrons.clear();
-      if (!processors_[iP].second->vetoElectrons(event, outEvents[iP])) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kMuonVeto);
 
-    if (pass == 0)
+    if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
+
+          return this->processors_[iP].second->vetoMuons(event, outEvents[iP]);
+
+        }) && ABORTONFAIL)
       continue;
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
-        continue;
+    ++iCut;
 
-      if (!processors_[iP].second->vetoTaus(event)) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kElectronVeto);
 
-    if (pass == 0)
+    if (!passAny([this, &event, &outEvents](unsigned iP)->bool {
+
+          return this->processors_[iP].second->vetoElectrons(event, outEvents[iP]);
+
+        }) && ABORTONFAIL)
       continue;
 
-    for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
-        continue;
+    ++iCut;
 
-      outEvents[iP].photons.clear();
-      vetoPhotons[iP].clear();
-      if (!processors_[iP].second->selectPhotons(event, outEvents[iP], vetoPhotons[iP])) {
-        pass &= ~(1 << iP);
-        cutTrees[iP]->Fill();
-      }
-      else
-        ++cut[iP];
-    }
+    assert(iCut == kTauVeto);
 
-    if (pass == 0)
+    if (!passAny([this, &event, &tauVeto](unsigned iP)->bool {
+
+          *tauVeto[iP] = this->processors_[iP].second->vetoTaus(event);
+          return *tauVeto[iP];
+
+        }) && ABORTONFAIL)
       continue;
 
+    ++iCut;
+
     for (unsigned iP(0); iP != nP; ++iP) {
-      if ((pass & (1 << iP)) == 0)
+      if (ABORTONFAIL && !allBitsUp(cutBits[iP], iCut))
         continue;
-
-      outEvents[iP].jets.clear();
-      processors_[iP].second->cleanJets(event, outEvents[iP]);
-
-      processors_[iP].second->calculateMet(event, outEvents[iP]);
-      processors_[iP].second->calculateWeight(event, outEvents[iP]);
 
       outEvents[iP].run = event.run;
       outEvents[iP].lumi = event.lumi;
       outEvents[iP].event = event.event;
+      outEvents[iP].npv = event.npv;
+      outEvents[iP].partons.copy(event.partons);
 
+      // multiple output "events" can be created from a single input event in some control regions
       while (processors_[iP].second->prepareOutput(event, outEvents[iP])) {
-        skimTrees[iP]->Fill();
-        cutTrees[iP]->Fill();
+        assert(iCut == kJetCleaning);
+
+        bool cleanJets(processors_[iP].second->cleanJets(event, outEvents[iP]));
+        updateCutFlow(cleanJets, iP);
+
+        if (!cleanJets && ABORTONFAIL)
+          continue;
+
+        ++iCut;
+
+        processors_[iP].second->calculateMet(event, outEvents[iP]);
+
+        assert(iCut == kMetSelection);
+
+        bool selectMet(processors_[iP].second->selectMet(event, outEvents[iP]));
+        updateCutFlow(selectMet, iP);
+
+        if (!selectMet && ABORTONFAIL)
+          continue;
+
+        ++iCut;
+
+        assert(iCut == kHighMet);
+
+        bool highMet(outEvents[iP].t1Met.met > 140.);
+        updateCutFlow(highMet, iP);
+
+        ++iCut;
+
+        assert(iCut == kMetIso);
+
+        // temporary
+        unsigned iJ(0);
+        unsigned nJMax(outEvents[iP].jets.size());
+	float dPhi = 5.;
+        if (nJMax > 4)
+          nJMax = 4;
+
+        for (; iJ != nJMax; ++iJ) {
+	  dPhi = std::abs(TVector2::Phi_mpi_pi(outEvents[iP].jets[iJ].phi - outEvents[iP].t1Met.phi));
+          if (dPhi < 0.5)
+            break;
+        }
+        *metIso[iP] = iJ == nJMax;
+        updateCutFlow(*metIso[iP], iP);
+
+        ++iCut;
+
+	*dPhiJetMetMin[iP] = dPhi;
+        // temporary
+
+        assert(iCut == nCuts);
+
+        if (allBitsUp(cutBits[iP], iCut)) {
+          processors_[iP].second->calculateWeight(event, outEvents[iP]);
+
+          skimTrees[iP]->Fill();
+        }
+
+        if (!ABORTONFAIL || allBitsUp(cutBits[iP], iCut))
+          cutTrees[iP]->Fill();
+        
+        // cutflow counter is incremented per updateCutFlow call
+        // reset the cutflow counter for the next round of prepareOutput
+        iCut -= 4;
       }
     }
   }
@@ -228,48 +321,77 @@ SkimSlimWeight::run(TTree* _input, char const* _outputDir, char const* _sampleNa
     delete skimTrees[iP];
     delete cutTrees[iP];
     delete file;
+    delete tauVeto[iP];
+    delete metIso[iP];
+    delete dPhiJetMetMin[iP];
   }
 
   delete translator;
 }
 
-void
-SkimSlimWeight::addEventFilter(char const* _listName)
-{
-  std::ifstream input(_listName);
-  std::string line;
-
-  while (true) {
-    std::getline(input, line);
-    if (!input.good())
-      break;
-
-    unsigned run(std::atoi(line.substr(0, line.find(":")).c_str()));
-    unsigned lumi(std::atoi(line.substr(line.find(":") + 1, line.rfind(":")).c_str()));
-    unsigned event(std::atoi(line.substr(line.rfind(":") + 1).c_str()));
-
-    eventFilter_[run][lumi].insert(event);
-  }
-}
-
 bool
 EventProcessor::passTrigger(simpletree::Event const& _event)
 {
-  //    return _event.hlt[simpletree::kPhoton165HE10].pass || _event.hlt[simpletree::kPhoton135MET100].pass || _event.hlt[simpletree::kPhoton175].pass;
   return _event.hlt[simpletree::kPhoton165HE10].pass;
 }
 
 bool
 EventProcessor::beginEvent(simpletree::Event const& _event)
 {
-  sortPhotons_(_event);
+  if (eventList_ && eventList_->inList(_event))
+    return false;
+
+  if (!_event.metFilters.pass())
+    return false;
+
+  photonEnergyShift_.Set(0., 0.);
+
   outReady_ = true;
   return true;
 }
 
 bool
+EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& photon : _event.photons) {
+    if (!photon.isEB)
+      continue;
+    
+    double pt(photon.pt * (1. + photonEnergyVarFactor_));
+
+    // need to add sipip cut when available
+    if (photonSelection(photon) && photonEVeto(photon) && pt > minPhotonPt_ &&
+        photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
+        !(photon.eta > 0.076158 && photon.eta < 0.088094 && photon.phi > 0.527580 && photon.phi < 0.541795)) {
+      // unsigned iM(0);
+      // for (; iM != _event.muons.size(); ++iM) {
+      //   if (_event.muons[iM].dR2(photon) < 0.01)
+      //     break;
+      // }
+      // if (iM == _event.muons.size())
+      //   _outEvent.photons.push_back(photon);
+      
+      _outEvent.photons.push_back(photon);
+
+      if (photonEnergyVarFactor_ != 0.) {
+        _outEvent.photons.back().pt = pt;
+        TVector2 oldPt;
+        oldPt.SetMagPhi(photon.pt, photon.phi);
+        TVector2 newPt;
+        newPt.SetMagPhi(pt, photon.phi);
+        photonEnergyShift_ += (newPt - oldPt);
+      }
+    }
+  }
+
+  return _outEvent.photons.size() != 0;
+}
+
+bool
 EventProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
+  // veto condition: loose, pt > 10 GeV, no matching candidate photon
+
   unsigned iE(0);
   for (; iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
@@ -278,13 +400,16 @@ EventProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event
 
     unsigned iP(0);
     for (; iP != _outEvent.photons.size(); ++iP) {
-      if (deltaR2(_outEvent.photons[iP], electron) < 0.0225)
+      if (_outEvent.photons[iP].dR2(electron) < 0.25) // used to be 0.0225
         break;
     }
-    if (iP == _outEvent.photons.size())
-      break;
+    if (iP != _outEvent.photons.size()) // there was a matching candidate photon
+      continue;
+
+    break;
   }
 
+  // no electron matched the veto condition
   return iE == _event.electrons.size();
 }
 
@@ -294,10 +419,21 @@ EventProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _o
   unsigned iM(0);
   for (; iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-    if (muon.loose && muon.pt > 10.)
-      break;
+    if (!muon.loose || muon.pt < 10.)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != _outEvent.photons.size(); ++iP) {
+      if (_outEvent.photons[iP].dR2(muon) < 0.25)
+        break;
+    }
+    if (iP != _outEvent.photons.size()) // there was a matching candidate photon
+      continue;
+
+    break;
   }
 
+  // no muon matched the veto condition
   return iM == _event.muons.size();
 }
 
@@ -311,7 +447,7 @@ EventProcessor::vetoTaus(simpletree::Event const& _event)
     unsigned iE(0);
     for (; iE != _event.electrons.size(); ++iE) {
       auto& electron(_event.electrons[iE]);
-      if (electron.loose && deltaR2(tau, electron) < 0.16)
+      if (electron.loose && tau.dR2(electron) < 0.16)
         break;
     }
     if (iE != _event.electrons.size())
@@ -319,8 +455,8 @@ EventProcessor::vetoTaus(simpletree::Event const& _event)
 
     unsigned iM(0);
     for (; iM != _event.muons.size(); ++iM) {
-      auto& electron(_event.muons[iM]);
-      if (electron.loose && deltaR2(tau, electron) < 0.16)
+      auto& muon(_event.muons[iM]);
+      if (muon.loose && tau.dR2(muon) < 0.16)
         break;
     }
     if (iM != _event.muons.size())
@@ -334,42 +470,29 @@ EventProcessor::vetoTaus(simpletree::Event const& _event)
 }
 
 bool
-EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent, simpletree::PhotonCollection& _vetoPhotons)
-{
-  unsigned iP(0);
-  for (; iP != photonPtOrder_.size(); ++iP) {
-    auto& photon(_event.photons[photonPtOrder_[iP]]);
-    if (!photon.isEB)
-      continue;
-
-    if (photon.medium && photon.pixelVeto && photon.electronVeto && photon.pt > minPhotonPt_) {
-      if (photon.eta > 0. && photon.eta < 0.14 && photon.phi > 0.52 && photon.phi < 0.55)
-        return false;
-
-      unsigned iM(0);
-      for (; iM != _event.muons.size(); ++iM) {
-        if (deltaR2(_event.muons[iM], photon) < 0.01)
-          break;
-      }
-      if (iM == _event.muons.size())
-        _outEvent.photons.push_back(photon);
-    }
-    else if(photon.loose)
-      _vetoPhotons.push_back(photon);
-  }
-
-  return _outEvent.photons.size() != 0;
-}
-
-bool
 EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
-    auto& jet(_event.jets[iJ]);
+  for (auto& jet : _event.jets) {
+    switch (jetEnergyVarFactor_) {
+    case 0:
+      if (jet.pt < 30.)
+        continue;
+      break;
+    case 1:
+      if (jet.ptCorrUp < 30.)
+        continue;
+      break;
+    case -1:
+      if (jet.ptCorrDown < 30.)
+        continue;
+      break;
+    default:
+      continue;
+    }
 
     unsigned iPh(0);
     for (; iPh != _outEvent.photons.size(); ++iPh) {
-      if (deltaR2(jet, _outEvent.photons[iPh]) < 0.16)
+      if (jet.dR2(_outEvent.photons[iPh]) < 0.16)
         break;
     }
     if (iPh != _outEvent.photons.size())
@@ -377,7 +500,7 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
 
     unsigned iMu(0);
     for (; iMu != _outEvent.muons.size(); ++iMu) {
-      if (deltaR2(jet, _outEvent.muons[iMu]) < 0.16)
+      if (jet.dR2(_outEvent.muons[iMu]) < 0.16)
         break;
     }
     if (iMu != _outEvent.muons.size())
@@ -385,7 +508,7 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
 
     unsigned iEl(0);
     for (; iEl != _outEvent.electrons.size(); ++iEl) {
-      if (deltaR2(jet, _outEvent.electrons[iEl]) < 0.16)
+      if (jet.dR2(_outEvent.electrons[iEl]) < 0.16)
         break;
     }
     if (iEl != _outEvent.electrons.size())
@@ -394,13 +517,45 @@ EventProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _o
     _outEvent.jets.push_back(jet);
   }
 
-  return _outEvent.jets.size() != 0;
+  return true;
 }
 
 void
 EventProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   _outEvent.t1Met = _event.t1Met;
+
+  switch (jetEnergyVarFactor_) {
+  case 0:
+    break;
+  case 1:
+    _outEvent.t1Met.met = _event.t1Met.metCorrUp;
+    _outEvent.t1Met.phi = _event.t1Met.phiCorrUp;
+    break;
+  case -1:
+    _outEvent.t1Met.met = _event.t1Met.metCorrDown;
+    _outEvent.t1Met.phi = _event.t1Met.phiCorrDown;
+    break;
+  default:
+    break;
+  }
+
+  if (photonEnergyVarFactor_ != 0.) {
+    auto&& metV(_outEvent.t1Met.v());
+    metV -= photonEnergyShift_;
+    _outEvent.t1Met.met = metV.Mod();
+    _outEvent.t1Met.phi = TVector2::Phi_mpi_pi(metV.Phi());
+  }
+}
+
+bool
+EventProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  if (_outEvent.photons.size() != 0 &&
+      !(std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi)) > 2.))
+    return false;
+
+  return true;
 }
 
 void
@@ -409,19 +564,31 @@ EventProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Eve
   _outEvent.weight = _event.weight * weightNorm_;
 }
 
-void
-EventProcessor::sortPhotons_(simpletree::Event const& _event)
+
+bool
+CandidateProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  photonPtOrder_.clear();
+  if (!EventProcessor::selectPhotons(_event, _outEvent))
+    return false;
 
-  std::map<double, unsigned> sorter;
-  for (unsigned iP(0); iP != _event.photons.size(); ++iP)
-    sorter.emplace(_event.photons[iP].pt, iP);
-
-  for (auto sItr(sorter.rbegin()); sItr != sorter.rend(); ++sItr)
-    photonPtOrder_.push_back(sItr->second);
+  return _outEvent.photons[0].chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP];
 }
 
+
+void
+GenProcessor::addBranches(TTree& _outTree)
+{
+  if (!useAltWeights_)
+    return;
+
+  _outTree.Branch("scale1020", scaleReweight_, "scale1020/F");
+  _outTree.Branch("scale1005", scaleReweight_ + 1, "scale1005/F");
+  _outTree.Branch("scale2010", scaleReweight_ + 2, "scale2010/F");
+  _outTree.Branch("scale2020", scaleReweight_ + 3, "scale2020/F");
+  _outTree.Branch("scale0510", scaleReweight_ + 4, "scale0510/F");
+  _outTree.Branch("scale0520", scaleReweight_ + 5, "scale0520/F");
+  _outTree.Branch("pdf", pdfReweight_, "pdf[100]/F");
+}
 
 bool
 GenProcessor::passTrigger(simpletree::Event const&)
@@ -444,7 +611,7 @@ GenProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event
     _outEvent.weight *= reweight_->GetBinContent(iX);
   }
 
-  if (idscale_) {
+  if (idscale_ && _outEvent.photons.size() != 0) {
     int iX(idscale_->FindFixBin(_outEvent.photons[0].pt));
     if (iX == 0)
       iX = 1;
@@ -452,6 +619,32 @@ GenProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event
       iX = idscale_->GetNbinsX();
 
     _outEvent.weight *= idscale_->GetBinContent(iX);
+  }
+
+  if (kfactors_.size() != 0) {
+    for (auto& parton : _event.partons) {
+      if (parton.pid != 22 || parton.status != 1)
+        continue;
+
+      // what if parton is out of eta acceptance?
+      unsigned iBin(0);
+      while (iBin != kfactors_.size() && parton.pt >= kfactors_[iBin].first)
+        ++iBin;
+
+      if (iBin > 0)
+        iBin -= 1;
+
+      _outEvent.weight *= kfactors_[iBin].second;
+
+      break;
+    }
+  }
+
+  if (useAltWeights_) {
+    for (unsigned iS(0); iS != 6; ++iS)
+      scaleReweight_[iS] = _event.reweight[iS].scale;
+    for (unsigned iS(0); iS != 100; ++iS)
+      pdfReweight_[iS] = _event.reweight[iS + 6].scale;
   }
 }
 
@@ -489,7 +682,7 @@ GenZnnProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree:
 
       unsigned iG(0);
       for (; iG != finalStates.size(); ++iG) {
-        if (deltaR2(finalStates[iG], electron) < 0.01)
+        if (finalStates[iG].dR2(electron) < 0.01)
           break;
       }
       if (iG != finalStates.size()) {
@@ -508,8 +701,20 @@ GenZnnProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree:
     if (iE == proxyLeptons_[0] || iE == proxyLeptons_[1])
       continue;
 
-    if (electrons[iE].loose && electrons[iE].pt > 10.)
-      break;
+    auto& electron(electrons[iE]);
+
+    if (!electron.loose || electron.pt < 10.)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != _outEvent.photons.size(); ++iP) {
+      if (_outEvent.photons[iP].dR2(electron) < 0.25) // used to be 0.0225
+        break;
+    }
+    if (iP != _outEvent.photons.size()) // there was a matching candidate photon
+      continue;
+    
+    break;
   }
 
   return iE == electrons.size();
@@ -528,7 +733,7 @@ GenZnnProxyProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Eve
 
       unsigned iG(0);
       for (; iG != finalStates.size(); ++iG) {
-        if (deltaR2(finalStates[iG], muon) < 0.01)
+        if (finalStates[iG].dR2(muon) < 0.01)
           break;
       }
       if (iG != finalStates.size()) {
@@ -547,8 +752,20 @@ GenZnnProxyProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Eve
     if (iM == proxyLeptons_[0] || iM == proxyLeptons_[1])
       continue;
 
-    if (muons[iM].loose && muons[iM].pt > 10.)
-      break;
+    auto& muon(muons[iM]);
+
+    if (!muon.loose && muon.pt < 10.)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != _outEvent.photons.size(); ++iP) {
+      if (_outEvent.photons[iP].dR2(muon) < 0.25) // used to be 0.0225
+        break;
+    }
+    if (iP != _outEvent.photons.size()) // there was a matching candidate photon
+      continue;
+
+    break;
   }
 
   return iM == muons.size();
@@ -557,8 +774,10 @@ GenZnnProxyProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Eve
 void
 GenZnnProxyProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  auto&& metV(_event.t1Met.v());
-  double sumEt(_event.t1Met.sumEt);
+  EventProcessor::calculateMet(_event, _outEvent);
+
+  auto&& metV(_outEvent.t1Met.v());
+  double sumEt(_outEvent.t1Met.sumEt);
 
   simpletree::LeptonCollection const* leptons(0);
   if (leptonId_ == 11)
@@ -619,66 +838,53 @@ GenGJetProcessor::calculateWeight(simpletree::Event const& _event, simpletree::E
 {
   GenProcessor::calculateWeight(_event, _outEvent);
 
-  _outEvent.weight *= 1.71691 - 0.00122061 * _outEvent.photons[0].pt;
+  if (_outEvent.photons.size() != 0)
+    _outEvent.weight *= 1.71691 - 0.00122061 * _outEvent.photons[0].pt;
 }
 
+
+bool
+WenuProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  unsigned iP(0);
+  for (; iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+    if (!photon.isEB)
+      continue;
+
+    if (photonSelection(photon) && photon.pt > minPhotonPt_) {
+      if (photonEVeto(photon))
+        break;
+
+      _outEvent.photons.push_back(photon);
+    }
+  }
+
+  if (_outEvent.photons.size() == 0 || iP != _event.photons.size())
+    return false;
+
+  return true;
+}
 
 bool
 WenuProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   auto& electrons(_event.electrons);
 
-  hardElectrons_.clear();
-
   unsigned iE(0);
   for (; iE != electrons.size(); ++iE) {
-    if (electrons[iE].pt > 150.)
-      hardElectrons_.emplace_back(electrons[iE].loose, electrons[iE].p4());
-    else if (electrons[iE].loose && electrons[iE].pt > 10.)
-      break;
+    auto& electron(electrons[iE]);
+
+    if (!electron.loose || electron.pt < 10.)
+      continue;
+
+    if (_outEvent.photons.size() != 0 && _outEvent.photons[0].dR2(electron) < 0.25) // this is the candidate photon (with pixel seed)
+      continue;
+
+    break;
   }
 
   return iE == electrons.size();      
-}
-
-bool
-WenuProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent, simpletree::PhotonCollection& _vetoPhotons)
-{
-  unsigned iP(0);
-  for (; iP != photonPtOrder_.size(); ++iP) {
-    auto& photon(_event.photons[photonPtOrder_[iP]]);
-    if (!photon.isEB)
-      continue;
-
-    if (photon.medium && photon.pt > minPhotonPt_) {
-      if (photon.pixelVeto || photon.electronVeto)
-        break;
-
-      for (auto& ele : hardElectrons_) {
-        double dEta(ele.second.Eta() - photon.eta);
-        double dPhi(TVector2::Phi_mpi_pi(ele.second.Phi() - photon.phi));
-        if (dEta * dEta + dPhi * dPhi < 0.01)
-          ele.first = false;
-      }
-
-      _outEvent.photons.push_back(photon);
-    }
-    else if(photon.loose)
-      _vetoPhotons.push_back(photon);
-  }
-
-  if (_outEvent.photons.size() == 0 || iP != photonPtOrder_.size())
-    return false;
-
-  unsigned iE(0);
-  for (; iE != hardElectrons_.size(); ++iE) {
-    if (hardElectrons_[iE].first)
-      break;
-  }
-  if (iE != hardElectrons_.size())
-    return false;
-
-  return true;
 }
 
 
@@ -689,25 +895,17 @@ ZeeProxyProcessor::passTrigger(simpletree::Event const& _event)
 }
 
 bool
-ZeeProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  // electron selection and veto done in selectPhotons
-  return true;
-}
-
-bool
-ZeeProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent, simpletree::PhotonCollection& _vetoPhotons)
+ZeeProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   egPairs_.clear();
 
-  unsigned iP(0);
-  for (; iP != photonPtOrder_.size(); ++iP) {
-    auto& photon(_event.photons[photonPtOrder_[iP]]);
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
     if (!photon.isEB)
       continue;
 
-    if (photon.medium && photon.pt > minPhotonPt_) {
-      if (photon.pixelVeto || photon.electronVeto)
+    if (photonSelection(photon) && photon.pt > minPhotonPt_) {
+      if (photonEVeto(photon))
         break;
 
       int unmatchedE(-1);
@@ -717,9 +915,7 @@ ZeeProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
         if (!electron.loose || electron.pt < 10.)
           continue;
 
-        double dEta(electron.eta - photon.eta);
-        double dPhi(TVector2::Phi_mpi_pi(electron.phi - photon.phi));
-        if (dEta * dEta + dPhi * dPhi < 0.01)
+        if (electron.dR2(photon) < 0.01)
           continue;
 
         if (unmatchedE >= 0)
@@ -736,13 +932,18 @@ ZeeProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Ev
 
       auto& electron(_event.electrons[unmatchedE]);
       if (electron.tight && electron.pt > 30. && electron.matchHLT27Loose)
-        egPairs_.emplace_back(iE, iP);
+        egPairs_.emplace_back(unmatchedE, iP);
     }
-    else if(photon.loose)
-      _vetoPhotons.push_back(photon);
   }
 
   return egPairs_.size() != 0;
+}
+
+bool
+ZeeProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  // electron selection and veto done in selectPhotons
+  return true;
 }
 
 bool
@@ -762,6 +963,13 @@ ZeeProxyProcessor::prepareOutput(simpletree::Event const& _event, simpletree::Ev
 }
 
 
+void
+LeptonProcessor::addBranches(TTree& _outTree)
+{
+  _outTree.Branch("t1Met.recoil", &recoilPt_, "recoil/F");
+  _outTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
+}
+
 bool
 LeptonProcessor::passTrigger(simpletree::Event const& _event)
 {
@@ -778,12 +986,9 @@ bool
 LeptonProcessor::vetoElectrons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   if (nEl_ > 0) {
-    auto& electrons(_event.electrons);
-
     bool foundTight(false);
 
-    for (unsigned iE(0); iE != electrons.size(); ++iE) {
-      auto& electron(electrons[iE]);
+    for (auto& electron : _event.electrons) {
       if (electron.tight && electron.pt > 30. && (!requireTrigger_ || electron.matchHLT27Loose))
         foundTight = true;
       if (electron.loose && electron.pt > 10.)
@@ -801,12 +1006,9 @@ bool
 LeptonProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   if (nMu_ > 0) {
-    auto& muons(_event.muons);
-
     bool foundTight(false);
     
-    for (unsigned iM(0); iM != muons.size(); ++iM) {
-      auto& muon(muons[iM]);
+    for (auto& muon : _event.muons) {
       if (muon.tight && muon.pt > 30. && (!requireTrigger_ || muon.matchHLT27))
         foundTight = true;
       if (muon.loose && muon.pt > 10.)
@@ -820,31 +1022,166 @@ LeptonProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Event& _
   }
 }
 
+void
+LeptonProcessor::calculateMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  EventProcessor::calculateMet(_event, _outEvent);
+
+  auto&& metV(_event.t1Met.v());
+
+  for (auto& electron : _outEvent.electrons)
+    metV += TVector2(electron.pt * std::cos(electron.phi), electron.pt * std::sin(electron.phi));
+
+  for (auto& muon : _outEvent.muons)
+    metV += TVector2(muon.pt * std::cos(muon.phi), muon.pt * std::sin(muon.phi));
+
+  recoilPt_ = metV.Mod();
+  recoilPhi_ = TVector2::Phi_mpi_pi(metV.Phi());
+}
+
 
 bool
-HadronProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent, simpletree::PhotonCollection& _vetoPhotons)
+EMObjectProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   unsigned iP(0);
-  for (; iP != photonPtOrder_.size(); ++iP) {
-    auto& photon(_event.photons[photonPtOrder_[iP]]);
-    if (!photon.isEB)
+  for (; iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+    if (!photon.isEB || photon.pt < minPhotonPt_)
       continue;
 
-    if (photon.sieie > 0.015)
-      continue;
+    int selection(selectPhoton(photon));
 
-    if (photon.passHOverE(1) && photon.passNHIso(1) && photon.passPhIso(1) && photon.pixelVeto && photon.electronVeto && photon.pt > minPhotonPt_) {
-      if (photon.sieie < 0.012 && photon.passCHIso(1))
-        break;
-
+    if (selection < 0) // vetoed
+      break;
+    else if (selection > 0)
       _outEvent.photons.push_back(photon);
-    }
-    else if(photon.loose)
-      _vetoPhotons.push_back(photon);
   }
 
-  return _outEvent.photons.size() == 1 && iP == photonPtOrder_.size();
+  return _outEvent.photons.size() == 1 && iP == _event.photons.size();
 }
+
+void
+EMObjectProcessor::addSelection(bool _pass, unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  BitMask sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  selections_.emplace_back(_pass, sel);
+}
+
+void
+EMObjectProcessor::addVeto(bool _pass, unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  BitMask sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  vetoes_.emplace_back(_pass, sel);
+}
+
+int
+EMObjectProcessor::selectPhoton(simpletree::Photon const& _photon)
+{
+  BitMask cutres;
+  cutres[HOverE] = _photon.passHOverE(PHOTONWP);
+  cutres[Sieie] = _photon.passSieie(PHOTONWP);
+  cutres[CHIso] = _photon.passCHIso(PHOTONWP);
+  cutres[NHIso] = _photon.passNHIso(PHOTONWP);
+  cutres[PhIso] = _photon.passPhIso(PHOTONWP);
+  cutres[EVeto] = photonEVeto(_photon);
+  cutres[Sieie12] = (_photon.sieie < 0.012);
+  cutres[Sieie15] = (_photon.sieie < 0.015);
+  cutres[CHIso11] = (_photon.chIso < 11.);
+  cutres[NHIso11] = (_photon.nhIso < 11.);
+  cutres[PhIso3] = (_photon.phIso < 3.);
+  cutres[NHIsoTight] = _photon.passNHIso(2);
+  cutres[PhIsoTight] = _photon.passPhIso(2);
+  cutres[ChWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]);
+  cutres[ChWorstIso11] = (_photon.chWorstIso < 11.);
+
+  // Wisconsin denominator def
+  // if (photon.passHOverE(PHOTONWP) && photonEVeto(photon) && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
+  //     photon.nhIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::nhIsoCuts[0][0]) &&
+  //     photon.phIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::phIsoCuts[0][0]) &&
+  //     photon.chIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::chIsoCuts[0][0])) {
+  //   unsigned nPass(0);
+  //   if (photon.passCHIso(0))
+  //     ++nPass;
+  //   if (photon.passNHIso(0))
+  //     ++nPass;
+  //   if (photon.passPhIso(0))
+  //     ++nPass;
+
+  //   if (nPass == 3)
+  //     break;
+
+  if (vetoes_.size() != 0) {
+    unsigned iV(0);
+    for (; iV != vetoes_.size(); ++iV) {
+      BitMask& mask(vetoes_[iV].second);
+
+      if (vetoes_[iV].first) { // passing at least one of OR'ed cuts required
+        if ((mask & cutres).none()) // but it failed all
+          break;
+      }
+      else { // failing at least one of OR'ed cuts required
+        if ((mask & cutres) == mask) // but it passed all
+          break;
+      }
+    }
+    if (iV == vetoes_.size()) // all veto requirements matched
+      return -1;
+  }
+
+  if (selections_.size() != 0) {
+    unsigned iS(0);
+    for (; iS != selections_.size(); ++iS) {
+      BitMask& mask(selections_[iS].second);
+
+      if (selections_[iS].first) {
+        if ((mask & cutres).none())
+          break;
+      }
+      else {
+        if ((mask & cutres) == mask)
+          break;
+      }
+    }
+    if (iS == selections_.size()) // all selection requirements matched
+      return 1;
+  }
+    
+  return 0;
+}
+
+
+bool
+EMPlusJetProcessor::cleanJets(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  if (!EventProcessor::cleanJets(_event, _outEvent))
+    return false;
+
+  for (auto& jet : _outEvent.jets) {
+    if (jet.pt > 100. && std::abs(jet.eta) < 2.5)
+      return true;
+  }
+
+  return false;
+}
+
+bool
+EMPlusJetProcessor::selectMet(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  return true;
+}
+
 
 void
 HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -852,8 +1189,7 @@ HadronProxyProcessor::calculateWeight(simpletree::Event const& _event, simpletre
   EventProcessor::calculateWeight(_event, _outEvent);
 
   if (reweight_) {
-    int iX(0);
-    reweight_->FindFixBin(_event.photons[0].pt);
+    int iX(reweight_->FindFixBin(_event.photons[0].pt));
     if (iX == 0)
       iX = 1;
     else if (iX > reweight_->GetNbinsX())
@@ -878,4 +1214,123 @@ GenHadronProcessor::beginEvent(simpletree::Event const& _event)
     return false;
 
   return EventProcessor::beginEvent(_event);
+}
+
+
+bool
+LowMtProcessor::selectMet(simpletree::Event const&, simpletree::Event& _outEvent)
+{
+  if (_outEvent.photons.size() == 0)
+    return false;
+
+  double dPhi(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi));
+  if (std::abs(dPhi) > 2.)
+    return false;
+
+  double mt2(2 * _outEvent.t1Met.met * _outEvent.photons[0].pt * (1 - std::cos(dPhi)));
+
+  return mt2 > 40. * 40. && mt2 < 150. * 150.;
+}
+
+void
+GenWtaunuProcessor::addBranches(TTree& _outTree)
+{
+    _outTree.Branch("photons.id", nCut_, "id[photons.size]/I");
+  
+    GenProcessor::addBranches(_outTree);
+}
+
+bool
+GenWtaunuProcessor::beginEvent(simpletree::Event const& _event)
+{
+  unsigned iP(0);
+  for (; iP != _event.partons.size(); ++iP) {
+    if (std::abs(_event.partons[iP].pid) == 15)
+      break;
+  }
+  
+  if (iP == _event.partons.size())
+    return false;
+
+  return EventProcessor::beginEvent(_event);
+}
+
+bool
+GenWtaunuProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  bool matched = false;
+  int iP = -1;
+  for (auto& photon : _event.photons) {
+    iP++;
+    nCut_[iP] = 0;
+    matched = false;
+ 
+    for (auto& parton : _event.partons) {
+     if (std::abs(parton.pid) == 15)
+       if (parton.dR2(photon) < 0.25) {
+	 matched = true;
+	 break;
+       }
+    } 
+
+    if (!matched)
+      continue;
+    nCut_[iP]++;
+
+    _outEvent.photons.push_back(photon);
+
+    if (!photon.isEB)
+      continue;
+    nCut_[iP]++;
+  
+    if (!(photon.pt > minPhotonPt_))
+      continue;
+    nCut_[iP]++;
+  
+    if (!(photon.hOverE < simpletree::Photon::hOverECuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.nhIso < simpletree::Photon::nhIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.chIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+
+    if (!(photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.phIso < simpletree::Photon::phIsoCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.sieie < simpletree::Photon::sieieCuts[0][PHOTONWP]))
+      continue;
+    nCut_[iP]++;
+    
+    if (!photonEVeto(photon)) 
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.sieie > 0.001)) 
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.s4 < 0.95))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(photon.mipEnergy < 4.9))
+      continue;
+    nCut_[iP]++;
+    
+    if (!(std::abs(photon.time) < 3.))
+      continue;
+    nCut_[iP]++;
+  }
+  
+  return _outEvent.photons.size() != 0;
 }

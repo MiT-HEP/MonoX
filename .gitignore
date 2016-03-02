@@ -36,7 +36,6 @@
 *~
 
 datacard*.txt
-*.root
 *.pdf
 *.png
 ._*

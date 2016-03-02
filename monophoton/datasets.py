@@ -102,9 +102,9 @@ if __name__ == '__main__':
 
     if args.showInfo:
         try:
-            allsamples[name].dump()
+            allsamples[args.showInfo].dump()
         except:
-            print 'No sample', name
+            print 'No sample', args.showInfo
         
         sys.exit(0)
 
