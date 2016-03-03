@@ -1,18 +1,21 @@
 #include "operators.h"
 
+#include "TH1.h"
+#include "TF1.h"
+
 //--------------------------------------------------------------------
 // Base
 //--------------------------------------------------------------------
 
 bool
-Cut::operator()(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Cut::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   result_ = pass(_event, _outEvent);
   return ignoreDecision_ || result_;
 }
 
 bool
-Modifier::operator()(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Modifier::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   apply(_event, _outEvent);
   return true;
@@ -591,35 +594,49 @@ NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 void
-KFactorCorrection::setCorrection(TH1* _corr)
-{
-  kfactors_.clear();
-
-  for (int iX(1); iX <= _corr->GetNbinsX(); ++iX)
-    kfactors_.emplace_back(_corr->GetXaxis()->GetBinLowEdge(iX), _corr->GetBinContent(iX));
-}
-
-void
 KFactorCorrection::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   double maxPt(0.);
-  for (auto& fs : _event.promptFinalStates) {
-    if (fs.pid != 22)
-      continue;
-
-    if (fs.pt > maxPt)
-      maxPt = fs.pt;
+  switch (photonType_) {
+  case kParton:
+    for (auto& part : _event.partons) {
+      if (part.pid == 22 && part.status == 1 && part.pt > maxPt)
+        maxPt = part.pt;
+    }
+    break;
+  case kPostShower:
+    for (auto& fs : _event.promptFinalStates) {
+      if (fs.pid == 22 && fs.pt > maxPt)
+        maxPt = fs.pt;
+    }
+    break;
+  default:
+    return;
   }
 
   if (maxPt > 0.) {
     // what if the gen photon is out of eta acceptance?
-    unsigned iBin(0);
-    while (iBin != kfactors_.size() && maxPt >= kfactors_[iBin].first)
-      ++iBin;
 
-    if (iBin > 0)
-      iBin -= 1;
+    if (kfactor_->InheritsFrom(TH1::Class())) {
+      TH1* corr(static_cast<TH1*>(kfactor_));
 
-    _outEvent.weight *= kfactors_[iBin].second;
+      int iX(corr->FindFixBin(maxPt));
+      if (iX == 0)
+        iX = 1;
+      if (iX > corr->GetNbinsX())
+        iX = corr->GetNbinsX();
+
+      _outEvent.weight *= corr->GetBinContent(iX);
+    }
+    else if (kfactor_->InheritsFrom(TF1::Class())) {
+      TF1* corr(static_cast<TF1*>(kfactor_));
+
+      if (maxPt < corr->GetXmin())
+        maxPt = corr->GetXmin();
+      if (maxPt > corr->GetXmax())
+        maxPt = corr->GetXmax();
+
+      _outEvent.weight *= corr->Eval(maxPt);
+    }
   }
 }
