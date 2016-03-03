@@ -19,11 +19,11 @@ dy-50-100        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-100to200
 dy-50-200        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-200to400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  4.146e+01  973937  973937.0
 dy-50-400        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-400to600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9_ext1-v1+AODSIM  5.621e+00  9352428  9352428.0
 dy-50-600        "Z#rightarrowll"                    DYJetsToLL_M-50_HT-600toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  2.144e+00  903277  903277.0
-g-40             "#gamma"                            GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  20730.0  4799091  4799091.0
-g-100            "#gamma"                            GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  9226.0  4740403  4740403.0
-g-200            "#gamma"                            GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  2300.0  10424189  10424189.0
-g-400            "#gamma"                            GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  277.4  2476770  2476770.0
-g-600            "#gamma"                            GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  93.38  2550765  2550765.0
+gj-40            "#gamma+jet"                        GJets_HT-40To100_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  20730.0  4799091  4799091.0
+gj-100           "#gamma+jet"                        GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  9226.0  4740403  4740403.0
+gj-200           "#gamma+jet"                        GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  2300.0  10424189  10424189.0
+gj-400           "#gamma+jet"                        GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  277.4  2476770  2476770.0
+gj-600           "#gamma+jet"                        GJets_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  93.38  2550765  2550765.0
 qcd-200          "QCD"                               QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  1735000.0  18718905  18718905.0
 qcd-300          "QCD"                               QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  366800.0  20278243  20278243.0
 qcd-500          "QCD"                               QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  29370.0  19664159  19664159.0
