@@ -114,7 +114,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[MIP49] = _photon.mipEnergy < 4.9;
   cutres[Time] = std::abs(_photon.time) < 3.;
   cutres[SieieNonzero] = _photon.sieie > 0.001;
-  cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.14 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
+  cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
   cutres[CHIso11] = (_photon.chIso < 11.);
@@ -451,16 +451,13 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 void
 LeptonRecoil::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
-  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+  _skimTree.Branch("t1Met.recoil", &recoil_, "recoil/F");
+  _skimTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
 }
 
 void
 LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  realMet_ = _event.t1Met.met;
-  realPhi_ = _event.t1Met.phi;
-
   simpletree::LeptonCollection* col(0);
 
   switch (collection_) {
@@ -482,8 +479,8 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
     mey += lep.pt * std::sin(lep.phi);
   }
 
-  _outEvent.t1Met.met = std::sqrt(mex * mex + mey * mey);
-  _outEvent.t1Met.phi = std::atan2(mey, mex);
+  recoil_ = std::sqrt(mex * mex + mey * mey);
+  recoilPhi_ = std::atan2(mey, mex);
 }
 
 //--------------------------------------------------------------------

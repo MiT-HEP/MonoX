@@ -14,6 +14,7 @@ ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
 photonFullSelection = [
     'HOverE',
     'Sieie',
+    'CHIso',
     'CHWorstIso',
     'NHIso',
     'PhIso',
@@ -136,6 +137,7 @@ def hadProxy(sample, name, selector = None):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
+    sels.remove('CHIso')
     sels.remove('CHWorstIso')
 
     for sel in sels:
@@ -190,6 +192,7 @@ def hadProxyDown(sample, name, selector = None):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
+    sels.remove('CHIso')
     sels.remove('CHWorstIso')
     sels.remove('NHIso')
     sels.remove('PhIso')
@@ -233,6 +236,7 @@ def leptonBase(sample, name, selector = None):
         'LeptonSelection',
         'TauVeto',
         'JetCleaning',
+        'CopyMet',
         'LeptonRecoil'
     ]:
         selector.addOperator(getattr(ROOT, op)())

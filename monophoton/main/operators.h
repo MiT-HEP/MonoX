@@ -244,8 +244,8 @@ class LeptonRecoil : public Modifier {
   void apply(simpletree::Event const&, simpletree::Event&) override;
 
   Collection collection_;
-  float realMet_;
-  float realPhi_;
+  float recoil_;
+  float recoilPhi_;
 };
 
 class UniformWeight : public Modifier {
