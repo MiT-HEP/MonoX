@@ -596,12 +596,15 @@ class RatioCanvas(SimpleCanvas):
                     hist.Draw(hist.drawOpt + ' SAME')
 
             self.plotPad.Update()
-    
-            if logy:
-                if self.minimum > 0.:
-                    base.SetMinimum(self.minimum)
+
+            if self.ylimits[1] < self.ylimits[0]:
+                if logy:
+                    if self.minimum > 0.:
+                        base.SetMinimum(self.minimum)
+                else:
+                    base.SetMinimum(0.)
             else:
-                base.SetMinimum(0.)
+                base.GetYaxis().SetRangeUser(*self.ylimits)
 
             base.GetYaxis().SetTitle('')
             base.GetYaxis().SetLabelSize(0.)
