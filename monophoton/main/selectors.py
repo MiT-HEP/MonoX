@@ -1,5 +1,6 @@
 import sys
 import os
+import array
 import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -139,6 +140,8 @@ def hadProxy(sample, name, selector = None):
     sels.remove('Sieie')
     sels.remove('CHIso')
     sels.remove('CHWorstIso')
+    sels.append('Sieie15')
+    sels.append('CHIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -323,20 +326,31 @@ def kfactor(generator):
 
     def scaled(sample, name):
         selector = generator(sample, name)
-        
-        qcd = ROOT.KFactorCorrection('QCDNLOCorrection')
-    
+   
+        binning = array.array('d', [])
+        factors = []
         with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
             for line in source:
                 pt, kfactor = map(float, line.split()[:2])
-                qcd.addPtBin(pt, kfactor)
-    
-        ewk = ROOT.KFactorCorrection('EWKNLOCorrection')
+                binning.append(pt)
+                factors.append(kfactor)
 
+        binning.append(6500.)
+
+        corr = ROOT.TH1D('qcd', '', len(factors), binning)
+        for iX in range(len(binning)):
+            corr.SetBinContent(iX + 1, factors[iX])
+
+        qcd = ROOT.KFactorCorrection(corr, 'QCDNLOCorrection')
+        qcd.setPhotonType(ROOT.KFactorCorrection.kPostShower)
+    
         ewkcorrSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
         corr = ewkcorrSource.Get(sample.name)
         ewk.setCorrection(corr)
         ewkcorrSource.Close()
+
+        ewk = ROOT.KFactorCorrection(corr, 'EWKNLOCorrection')
+        qcd.setPhotonType(ROOT.KFactorCorrection.kParton)
 
         selector.addOperator(qcd)
         selector.addOperator(ewk)

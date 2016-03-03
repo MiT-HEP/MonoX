@@ -18,7 +18,7 @@ class Operator {
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
 
-  virtual bool operator()(simpletree::Event const&, simpletree::Event&) = 0;
+  virtual bool exec(simpletree::Event const&, simpletree::Event&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
 
@@ -31,7 +31,7 @@ class Cut : public Operator {
   Cut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
   virtual ~Cut() {}
 
-  bool operator()(simpletree::Event const&, simpletree::Event&) override;
+  bool exec(simpletree::Event const&, simpletree::Event&) override;
 
   void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
@@ -49,7 +49,7 @@ class Modifier : public Operator {
   Modifier(char const* name) : Operator(name) {}
   virtual ~Modifier() {}
 
-  bool operator()(simpletree::Event const&, simpletree::Event&) override;
+  bool exec(simpletree::Event const&, simpletree::Event&) override;
 
  protected:
   virtual void apply(simpletree::Event const&, simpletree::Event&) = 0;
@@ -309,14 +309,20 @@ class NPVWeight : public Modifier {
 
 class KFactorCorrection : public Modifier {
  public:
-  KFactorCorrection(char const* name = "KFactorCorrection") : Modifier(name) {}
+  enum PhotonType {
+    kParton,
+    kPostShower,
+    nPhotonTypes
+  };
 
-  void addPtBin(double ptmin, double kfactor) { kfactors_.emplace_back(ptmin, kfactor); }
-  void setCorrection(TH1*);
+  KFactorCorrection(TObject* corr, char const* name = "KFactorCorrection") : Modifier(name), kfactor_(corr) {}
+
+  void setPhotonType(unsigned t) { photonType_ = t; }
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
-  std::vector<std::pair<double, double>> kfactors_;
+  TObject* kfactor_;
+  unsigned photonType_{kParton};
 };
 
 #endif

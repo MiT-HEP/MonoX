@@ -55,7 +55,7 @@ EventSelector::selectEvent(simpletree::Event const& _event)
 
   bool pass(true);
   for (auto* op : operators_)
-    pass = pass && (*op)(_event, outEvent_);
+    pass = pass && op->exec(_event, outEvent_);
 
   if (pass)
     skimOut_->Fill();
@@ -106,7 +106,7 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
   bool passUpToEE(true);
   auto opItr(operators_.begin());
   while (true) {
-    passUpToEE = passUpToEE && (**opItr)(_event, outEvent_);
+    passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
     if (opItr == eePairSel_)
       break;
   }
@@ -119,7 +119,7 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
 
       bool pass(true);
       for (; opItr != operators_.end(); ++opItr)
-        pass = pass && (**opItr)(_event, outEvent_);
+        pass = pass && (*opItr)->exec(_event, outEvent_);
 
       if (pass)
         skimOut_->Fill();
@@ -129,7 +129,7 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
   }
   else {
     for (; opItr != operators_.end(); ++opItr)
-      (**opItr)(_event, outEvent_);
+      (*opItr)->exec(_event, outEvent_);
 
     cutsOut_->Fill();
   }
