@@ -191,7 +191,7 @@ pepe.SetParameters(1., 10., 10.)
 pepe.SetParLimits(1, 0.1, 150.)
 pepe.SetParLimits(2, 0.001, 10.)
 
-pepeplus = r.TF1("Pepeplus", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
+pepeplus = r.TF1("PepePlus", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
 pepeplus.SetParameters(1., 10., 10., 10.)
 pepeplus.SetParLimits(1, 0.1, 1000.)
 pepeplus.SetParLimits(2, 0.001, 100.)
@@ -341,34 +341,41 @@ for iG, gmet in enumerate(gmets):
     tcanvas.SaveAs(outName+'.pdf')
     tcanvas.SaveAs(outName+'.png')
 
-scanvas.Clear()
-scanvas.legend.Clear()
-
-scanvas.ylimits = (0.0001, 2.5)
+tcanvas.Clear()
 scanvas.SetLogy(True)
 
-scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
+leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
+leg.SetFillColor(r.kWhite)
+leg.SetTextSize(0.03)
 
 tfacts = []
 
 for iM, model in enumerate(models):
     tname = 'tfact'+model.GetName()
     fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
-    print fstring
+    # print fstring
     tfact = r.TF1(tname, fstring, 0., 600.)
-    # tfact.SetTitle('')
+    tfact.SetLineColor((iM+3)*2)
+    tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
+    # tfact.SetMinimum(0.0001)
 
     outputFile.cd()
     tfact.Write()
     tfacts.append(tfact)
 
-    scanvas.legend.add(tname, title = model.GetName(), lcolor = (iM+3)*2, lwidth = 1)
+    tcanvas.cd()
+    if iM:
+        tfact.Draw("L same")
+    else:
+        tfact.Draw("L")
 
-    scanvas.legend.apply(tname, tfact)
+    leg.AddEntry(tfact, models[iM].GetName(), "L")
 
-    scanvas.addHistogram(tfact, drawOpt = 'L')
+leg.Draw("same")
 
-scanvas.printWeb('monophoton/gjetsTFactor', 'tfactFitMet')
+outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFitMet'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png') 
 
 scanvas.Clear()
 scanvas.legend.Clear()
@@ -383,7 +390,7 @@ for iF, tfact in enumerate(tfacts):
     gmet = gmets[0].Clone(gname)
     gmet.Multiply(tfact)
 
-    scanvas.legend.add(gname, title = tfact.GetName(), lcolor = (iF+3)*2, lwidth = 1, mcolor = (iF+3)*2, mstyle = 8, msize = 0.8)
+    scanvas.legend.add(gname, title = tfact.GetName().strip('tfact'), lcolor = (iF+3)*2, lwidth = 1, mcolor = (iF+3)*2, mstyle = 8, msize = 0.8)
 
     scanvas.legend.apply(gname, gmet)
 
