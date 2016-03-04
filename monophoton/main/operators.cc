@@ -473,7 +473,7 @@ LeptonRecoil::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
     col = &_outEvent.muons;
     break;
   default:
-    return;
+    return false;
   }
 
   double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
