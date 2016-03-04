@@ -315,16 +315,32 @@ void
 PhotonMetDPhi::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("t1Met.photonDPhi", &dPhi_, "photonDPhi/F");
+  _skimTree.Branch("t1Met.photonDPhiJECUp", &dPhiJECUp_, "photonDPhiJECUp/F");
+  _skimTree.Branch("t1Met.photonDPhiJECDown", &dPhiJECDown_, "photonDPhiJECDown/F");
+  _skimTree.Branch("t1Met.photonDPhiGECUp", &dPhiGECUp_, "photonDPhiGECUp/F");
+  _skimTree.Branch("t1Met.photonDPhiGECDown", &dPhiGECDown_, "photonDPhiGECDown/F");
 }
 
 bool
 PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   dPhi_ = 0.;
-  if (_outEvent.photons.size() != 0)
+  if (_outEvent.photons.size() != 0) {
     dPhi_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi));
 
-  return dPhi_ > 2.;
+    if (metVar_) {
+      dPhiJECUp_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiCorrUp - _outEvent.photons[0].phi));
+      dPhiJECDown_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiCorrDown - _outEvent.photons[0].phi));
+      dPhiGECUp_ = std::abs(TVector2::Phi_mpi_pi(metVar_->gecUp().Phi() - _outEvent.photons[0].phi));
+      dPhiGECDown_ = std::abs(TVector2::Phi_mpi_pi(metVar_->gecDown().Phi() - _outEvent.photons[0].phi));
+    }
+  }
+
+  for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_}) {
+    if (dPhi > 2.)
+      return true;
+  }
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -335,8 +351,10 @@ void
 JetMetDPhi::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("t1Met.minJetDPhi", &dPhi_, "minJetDPhi/F");
-  _skimTree.Branch("t1Met.minJetDPhiCorrUp", &dPhiCorrUp_, "minJetDPhiCorrUp/F");
-  _skimTree.Branch("t1Met.minJetDPhiCorrDown", &dPhiCorrDown_, "minJetDPhiCorrDown/F");
+  _skimTree.Branch("t1Met.minJetDPhiJECUp", &dPhiJECUp_, "minJetDPhiJECUp/F");
+  _skimTree.Branch("t1Met.minJetDPhiJECDown", &dPhiJECDown_, "minJetDPhiJECDown/F");
+  _skimTree.Branch("t1Met.minJetDPhiGECUp", &dPhiGECUp_, "minJetDPhiGECUp/F");
+  _skimTree.Branch("t1Met.minJetDPhiGECDown", &dPhiGECDown_, "minJetDPhiGECDown/F");
 }
 
 bool
@@ -347,35 +365,62 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   unsigned nJCorrDown(0);
 
   dPhi_ = 4.;
-  dPhiCorrUp_ = 4.;
-  dPhiCorrDown_ = 4.;
+  dPhiJECUp_ = 4.;
+  dPhiJECDown_ = 4.;
+  dPhiGECUp_ = 4.;
+  dPhiGECDown_ = 4.;
+
   for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
     auto& jet(_outEvent.jets[iJ]);
-    double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)));
-    double dPhiCorrUp(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrUp)));
-    double dPhiCorrDown(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrDown)));
 
     if (jet.pt > 30. && nJ < 4) {
       ++nJ;
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)));
       if (dPhi < dPhi_)
         dPhi_ = dPhi;
+
+      if (metVar_) {
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecUp().Phi()));
+        if (dPhi < dPhiGECUp_)
+          dPhiGECUp_ = dPhi;
+
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecDown().Phi()));
+        if (dPhi < dPhiGECDown_)
+          dPhiGECDown_ = dPhi;
+      }
     }
-    if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
-      ++nJCorrUp;
-      if (dPhiCorrUp < dPhiCorrUp_)
-        dPhiCorrUp_ = dPhiCorrUp;
-    }
-    if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
-      ++nJCorrDown;
-      if (dPhiCorrDown < dPhiCorrDown_)
-        dPhiCorrDown_ = dPhiCorrDown;
+
+    if (metVar_) {
+      if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
+        ++nJCorrUp;
+        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrUp)));
+        if (dPhi < dPhiJECUp_)
+          dPhiJECUp_ = dPhi;
+      }
+
+      if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
+        ++nJCorrDown;
+        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrDown)));
+        if (dPhi < dPhiJECDown_)
+          dPhiJECDown_ = dPhi;
+      }
     }
   }
 
-  if (passIfIsolated_)
-    return dPhi_ > 0.5 || dPhiCorrUp_ > 0.5 || dPhiCorrDown_ > 0.5;
-  else
-    return dPhi_ < 0.5 || dPhiCorrUp_ < 0.5 || dPhiCorrDown_ < 0.5;
+  if (passIfIsolated_) {
+    for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_}) {
+      if (dPhi > 0.5)
+        return true;
+    }
+    return false;
+  }
+  else {
+    for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_}) {
+      if (dPhi < 0.5)
+        return true;
+    }
+    return false;
+  }
 }
 
 //--------------------------------------------------------------------
@@ -402,6 +447,47 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+}
+
+//--------------------------------------------------------------------
+// LeptonRecoil
+//--------------------------------------------------------------------
+
+void
+LeptonRecoil::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.recoil", &recoil_, "recoil/F");
+  _skimTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
+}
+
+bool
+LeptonRecoil::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::LeptonCollection* col(0);
+
+  switch (collection_) {
+  case kElectrons:
+    col = &_outEvent.electrons;
+    break;
+  case kMuons:
+    col = &_outEvent.muons;
+    break;
+  default:
+    return;
+  }
+
+  double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
+  double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
+    
+  for (auto& lep : *col) {
+    mex += lep.pt * std::cos(lep.phi);
+    mey += lep.pt * std::sin(lep.phi);
+  }
+
+  recoil_ = std::sqrt(mex * mex + mey * mey);
+  recoilPhi_ = std::atan2(mey, mex);
+
+  return recoil_ > min_;
 }
 
 //--------------------------------------------------------------------
@@ -448,83 +534,166 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 }
 
 //--------------------------------------------------------------------
-// LeptonRecoil
+// MetVariations
 //--------------------------------------------------------------------
 
 void
-LeptonRecoil::addBranches(TTree& _skimTree)
+MetVariations::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("t1Met.recoil", &recoil_, "recoil/F");
-  _skimTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
+  if (photonSel_) {
+    _skimTree.Branch("t1Met.metGECUp", &metGECUp_, "metGECUp/F");
+    _skimTree.Branch("t1Met.phiGECUp", &phiGECUp_, "phiGECUp/F");
+    _skimTree.Branch("t1Met.metGECDown", &metGECDown_, "metGECDown/F");
+    _skimTree.Branch("t1Met.phiGECDown", &phiGECDown_, "phiGECDown/F");
+  }
 }
 
 void
-LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
 {
-  simpletree::LeptonCollection* col(0);
+  metGECUp_ = 0.;
+  phiGECUp_ = 0.;
+  metGECDown_ = 0.;
+  phiGECDown_ = 0.;
 
-  switch (collection_) {
-  case kElectrons:
-    col = &_outEvent.electrons;
-    break;
-  case kMuons:
-    col = &_outEvent.muons;
-    break;
-  default:
+  if (_outEvent.photons.size() == 0)
     return;
-  }
 
-  double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
-  double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
+  if (photonSel_) {
+    TVector2 metV(_outEvent.t1Met.v());
     
-  for (auto& lep : *col) {
-    mex += lep.pt * std::cos(lep.phi);
-    mey += lep.pt * std::sin(lep.phi);
-  }
+    auto& photon(_outEvent.photons[0]);
 
-  recoil_ = std::sqrt(mex * mex + mey * mey);
-  recoilPhi_ = std::atan2(mey, mex);
+    TVector2 nominal;
+    nominal.SetMagPhi(photon.pt, photon.phi);
+
+    TVector2 photonUp;
+    photonUp.SetMagPhi(photonSel_->ptVariation(photon, true), photon.phi);
+
+    TVector2 photonDown;
+    photonDown.SetMagPhi(photonSel_->ptVariation(photon, false), photon.phi);
+
+    TVector2 shiftUp(metV + nominal - photonUp);
+    TVector2 shiftDown(metV + nominal - photonDown);
+
+    metGECUp_ = shiftUp.Mod();
+    phiGECUp_ = TVector2::Phi_mpi_pi(shiftUp.Phi());
+    metGECDown_ = shiftDown.Mod();
+    phiGECDown_ = TVector2::Phi_mpi_pi(shiftDown.Phi());
+  }
 }
 
 //--------------------------------------------------------------------
-// UniformWeight
+// ConstantWeight
 //--------------------------------------------------------------------
 
 void
-UniformWeight::addBranches(TTree& _skimTree)
+ConstantWeight::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("delta" + name_, &weightUncert_, "delta" + name_ + "/D");
+  if (weightUncertUp_ != 0.)
+    _skimTree.Branch("reweight_" + name_ + "Up", &weightUncertUp_, "reweight_" + name_ + "Up/D");
+  if (weightUncertDown_ != 0.)
+    _skimTree.Branch("reweight_" + name_ + "Down", &weightUncertDown_, "reweight_" + name_ + "Down/D");
 }
 
 //--------------------------------------------------------------------
 // PtWeight
 //--------------------------------------------------------------------
 
-void
-PtWeight::addBranches(TTree& _skimTree)
+PhotonPtWeight::PhotonPtWeight(TObject* _factors, char const* _name/* = "PhotonPtWeight"*/) :
+  Modifier(_name),
+  nominal_(0)
 {
-  if (uncertUp_)
-    _skimTree.Branch("delta" + name_ + "Up", &weightUncertUp_, "delta" + name_ + "Up/D");
-  if (uncertDown_)
-    _skimTree.Branch("delta" + name_ + "Down", &weightUncertDown_, "delta" + name_ + "Down/D");
+  nominal_ = _factors->Clone(name_ + "_" + _factors->GetName());
+  if (nominal_->InheritsFrom(TH1::Class()))
+    static_cast<TH1*>(nominal_)->SetDirectory(0);
+}
+
+PhotonPtWeight::~PhotonPtWeight()
+{
+  for (auto& var : variations_)
+    delete var.second;
+
+  for (auto& var : varWeights_)
+    delete var.second;
 }
 
 void
-PtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonPtWeight::addBranches(TTree& _skimTree)
 {
-  int iPt(factors_->GetXaxis()->FindFixBin(_outEvent.photons[0].pt));
-  if (iPt == 0)
-    iPt = 1;
-  if (iPt > factors_->GetNbinsX())
-    iPt = factors_->GetNbinsX();
+  for (auto& var : varWeights_)
+    _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
+}
 
-  double weight(factors_->GetBinContent(iPt));
+void
+PhotonPtWeight::addVariation(char const* _suffix, TObject* _corr)
+{
+  auto* clone(_corr->Clone(name_ + "_" + _corr->GetName()));
+  if (clone->InheritsFrom(TH1::Class()))
+    static_cast<TH1*>(clone)->SetDirectory(0);
+  variations_[_suffix] = clone;
+  varWeights_[_suffix] = new double;
+}
+
+void
+PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  double maxPt(0.);
+  switch (photonType_) {
+  case kReco:
+    for (auto& photon : _outEvent.photons) {
+      if (photon.pt > maxPt)
+        maxPt = photon.pt;
+    }
+    break;
+  case kParton:
+    for (auto& part : _event.partons) {
+      if (part.pid == 22 && part.status == 1 && part.pt > maxPt)
+        maxPt = part.pt;
+    }
+    break;
+  case kPostShower:
+    for (auto& fs : _event.promptFinalStates) {
+      if (fs.pid == 22 && fs.pt > maxPt)
+        maxPt = fs.pt;
+    }
+    break;
+  default:
+    return;
+  }
+
+  auto calcWeight([maxPt](TObject* source)->double {
+      if (source->InheritsFrom(TH1::Class())) {
+        TH1* hist(static_cast<TH1*>(source));
+
+        int iX(hist->FindFixBin(maxPt));
+        if (iX == 0)
+          iX = 1;
+        if (iX > hist->GetNbinsX())
+          iX = hist->GetNbinsX();
+
+        return hist->GetBinContent(iX);
+      }
+      else if (source->InheritsFrom(TF1::Class())) {
+        TF1* func(static_cast<TF1*>(source));
+
+        double x(maxPt);
+        if (x < func->GetXmin())
+          x = func->GetXmin();
+        if (x > func->GetXmax())
+          x = func->GetXmax();
+
+        return func->Eval(x);
+      }
+      else
+        return 0.;
+    });
+
+  double weight(calcWeight(nominal_));
   _outEvent.weight *= weight;
 
-  if (uncertUp_)
-    weightUncertUp_ = uncertUp_->GetBinContent(iPt) - weight;
-  if (uncertDown_)
-    weightUncertDown_ = uncertDown_->GetBinContent(iPt) - weight;
+  for (auto& var : varWeights_)
+    *var.second = calcWeight(variations_[var.first]) / weight;
 }
 
 //--------------------------------------------------------------------
@@ -587,56 +756,4 @@ NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
     iX = factors_->GetNbinsX();
 
   _outEvent.weight *= factors_->GetBinContent(iX);
-}
-
-//--------------------------------------------------------------------
-// KFactorCorrection
-//--------------------------------------------------------------------
-
-void
-KFactorCorrection::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  double maxPt(0.);
-  switch (photonType_) {
-  case kParton:
-    for (auto& part : _event.partons) {
-      if (part.pid == 22 && part.status == 1 && part.pt > maxPt)
-        maxPt = part.pt;
-    }
-    break;
-  case kPostShower:
-    for (auto& fs : _event.promptFinalStates) {
-      if (fs.pid == 22 && fs.pt > maxPt)
-        maxPt = fs.pt;
-    }
-    break;
-  default:
-    return;
-  }
-
-  if (maxPt > 0.) {
-    // what if the gen photon is out of eta acceptance?
-
-    if (kfactor_->InheritsFrom(TH1::Class())) {
-      TH1* corr(static_cast<TH1*>(kfactor_));
-
-      int iX(corr->FindFixBin(maxPt));
-      if (iX == 0)
-        iX = 1;
-      if (iX > corr->GetNbinsX())
-        iX = corr->GetNbinsX();
-
-      _outEvent.weight *= corr->GetBinContent(iX);
-    }
-    else if (kfactor_->InheritsFrom(TF1::Class())) {
-      TF1* corr(static_cast<TF1*>(kfactor_));
-
-      if (maxPt < corr->GetXmin())
-        maxPt = corr->GetXmin();
-      if (maxPt > corr->GetXmax())
-        maxPt = corr->GetXmax();
-
-      _outEvent.weight *= corr->Eval(maxPt);
-    }
-  }
 }
