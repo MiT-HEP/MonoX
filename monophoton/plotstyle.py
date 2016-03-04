@@ -271,6 +271,11 @@ class SimpleCanvas(object):
         self._temporaries = []
 
     def addHistogram(self, hist, drawOpt = 'HIST', idx = -1, clone = True, asymErr = False):
+        """
+        Any object with the following methods can be added as a "histogram":
+        Draw, Get/SetMaximum/Minimum, GetX/Yaxis()
+        """
+
         gDirectory = ROOT.gDirectory
 
         if idx < 0:
@@ -396,7 +401,7 @@ class SimpleCanvas(object):
                     graph.Draw(hist.drawOpt)
                 else:
                     drawOpt = hist.drawOpt
-                    if hist.InheritsFrom(ROOT.TH1.Class()):
+                    if hist.InheritsFrom(ROOT.TH1.Class()) or hist.InheritsFrom(ROOT.TF1.Class()):
                         drawOpt += ' SAME'
 
                     hist.Draw(drawOpt)
@@ -596,12 +601,15 @@ class RatioCanvas(SimpleCanvas):
                     hist.Draw(hist.drawOpt + ' SAME')
 
             self.plotPad.Update()
-    
-            if logy:
-                if self.minimum > 0.:
-                    base.SetMinimum(self.minimum)
+
+            if self.ylimits[1] < self.ylimits[0]:
+                if logy:
+                    if self.minimum > 0.:
+                        base.SetMinimum(self.minimum)
+                else:
+                    base.SetMinimum(0.)
             else:
-                base.SetMinimum(0.)
+                base.GetYaxis().SetRangeUser(*self.ylimits)
 
             base.GetYaxis().SetTitle('')
             base.GetYaxis().SetLabelSize(0.)

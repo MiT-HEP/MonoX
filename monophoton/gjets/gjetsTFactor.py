@@ -28,11 +28,11 @@ bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
 
 mctree = r.TChain('events')
-mctree.Add(config.skimDir + '/g-40_monoph.root')
-mctree.Add(config.skimDir + '/g-100_monoph.root')
-mctree.Add(config.skimDir + '/g-200_monoph.root')
-mctree.Add(config.skimDir + '/g-400_monoph.root')
-mctree.Add(config.skimDir + '/g-600_monoph.root')
+mctree.Add(config.skimDir + '/gj-40_monoph.root')
+mctree.Add(config.skimDir + '/gj-100_monoph.root')
+mctree.Add(config.skimDir + '/gj-200_monoph.root')
+mctree.Add(config.skimDir + '/gj-400_monoph.root')
+mctree.Add(config.skimDir + '/gj-600_monoph.root')
 
 ###########################################
 ####### Get Data/MC Yields ################
