@@ -21,7 +21,8 @@ btree.Add(config.skimDir + '/sph-d*_efake.root')
 
 bmctree = r.TChain('events')
 bmctree.Add(config.skimDir + '/znng-130_monoph.root')
-bmctree.Add(config.skimDir + '/wnlg-130_monoph.root')
+bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
+# bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
@@ -341,6 +342,10 @@ for iG, gmet in enumerate(gmets):
     tcanvas.SaveAs(outName+'.pdf')
     tcanvas.SaveAs(outName+'.png')
 
+###########################################
+####### Get TF from Fits   ################
+###########################################
+
 tcanvas.Clear()
 scanvas.SetLogy(True)
 
@@ -376,6 +381,10 @@ leg.Draw("same")
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFitMet'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png') 
+
+###########################################
+####### Apply new TFs      ################
+###########################################
 
 scanvas.Clear()
 scanvas.legend.Clear()
@@ -495,67 +504,4 @@ tcanvas.SetLogy(False)
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactExtrap'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
-"""
-
-###########################################
-####### Numpy attempt at fitting ##########
-###########################################
-
-"""
-from pprint import pprint
-import numpy as np
-from scipy.optimize import leastsq
-import matplotlib.pyplot as plot
-import matplotlib.axes as axes
-
-print 'stuff'
-
-metVals = np.asarray( [5. + 10. * x for x in range(12) ])
-tVals = np.asarray( [ (tfacts[0].GetBinContent(iBin), tfacts[0].GetBinError(iBin)) 
-                      for iBin in range(tfacts[0].GetNbinsX()+1) ] )
-
-print 'stuff stuff'
-
-pprint(metVals)
-pprint(tVals)
-
-params = [-0.1, 0.]
-paramsInit = params
-
-print 'stuff stuff stuff'
-
-def fitFunc(_params, _met):
-    tfact_ = np.exp(_met / _params[0]) + _params[1]
-    return tfact_
-
-def resFunc(_params, _met, _tfact):
-    err_ = ( _tfact[0] - fitFunc(_params, _met) ) / _tfact[1]
-
-paramsFit = leastsq(resFunc, paramsInit, args=(metVals, tVals), full_output=1, warning=True)
-pprint(paramsFit)
-
-metFits = np.asarray( [5. + 10. * x for x in range(12)] + [130. + 20. * x for x in range (4) ] 
-                      + [225. + 50. * x for x in range(9)] )
-tFits = [ fitFunc(paramsFit[0], met) for met in metFits ]
-
-pprint(metFits)
-pprint(tFits)
-
-plot.figure()
-
-plot.errorbar(metVals, tVals[0], yerr=tVals[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
-plot.plot(metFits, tFits, 'r-', linewidth=1.0)
-
-plot.legend(['Measured','Fit'])
-
-plot.xlim(0.,600.)
-plot.ylim(0.0,1.0)
-
-plot.tick_params(axis='both', which='major', labelsize=16)
-plot.ylabel(r'Transfer Factor', fontsize=24)
-plot.xlabel(r'E_T^{miss} (GeV)', fontsize=24)
-
-outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactPyFit'
-plot.savefig(outName+'.pdf', format='pdf')
-plot.savefig(outName+'.png', format='png')
 """
