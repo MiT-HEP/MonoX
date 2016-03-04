@@ -1,4 +1,5 @@
 import math
+import array
 import ROOT
 
 class GroupSpec(object):
@@ -7,25 +8,25 @@ class GroupSpec(object):
         self.title = title
         self.samples = samples
         self.color = color
+        self.variations = []
 
 
 class VariableDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', baseline = True, blind = None, overflow = False, is2D = False, logy = True, ymax = -1.):
+    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, blind = None, overflow = False, logy = True, ymax = -1.):
         self.name = name
         self.title = title
         self.unit = unit
         self.expr = expr
         self.cut = cut
-        self.baseline = baseline
+        self.applyBaseline = applyBaseline
         self.binning = binning
         self.blind = blind
         self.overflow = overflow
-        self.is2D = is2D
         self.logy = logy
         self.ymax = ymax
 
     def clone(self, name, binning = None, cut = ''):
-        vardef = VariableDef(name, self.title, self.expr, self.binning, unit = self.unit, cut = self.cut, baseline = self.baseline, blind = self.blind, overflow = self.overflow, is2D = self.is2D, logy = self.logy, ymax = self.ymax)
+        vardef = VariableDef(name, self.title, self.expr, self.binning, unit = self.unit, cut = self.cut, applyBaseline = self.applyBaseline, blind = self.blind, overflow = self.overflow, logy = self.logy, ymax = self.ymax)
         
         if binning is not None:
             vardef.binning = binning
@@ -34,22 +35,90 @@ class VariableDef(object):
 
         return vardef
 
+    def ndim(self):
+        if type(self.expr) is tuple:
+            return len(self.expr)
+        else:
+            return 1
+
+    def makeHist(self, name):
+        """
+        Make an empty histogram from the specifications.
+        """
+    
+        if self.ndim() == 1:
+            if type(self.binning) is list:
+                nbins = len(self.binning) - 1
+                arr = array.array('d', self.binning)
+    
+            elif type(self.binning) is tuple:
+                nbins = self.binning[0]
+                arr = array.array('d', [self.binning[1] + (self.binning[2] - self.binning[1]) / nbins * i for i in range(nbins + 1)])
+    
+            if self.overflow:
+                lastbinWidth = (arr[-1] - arr[0]) / 30.
+                arr += array.array('d', [self.binning[-1] + lastbinWidth])
+    
+            hist = ROOT.TH1D(name, '', nbins, arr)
+    
+        else:
+            args = []
+    
+            for binning in self.binning:
+                if type(binning) is list:
+                    nbins = len(binning) - 1
+                    arr = array.array('d', binning)
+    
+                elif type(binning) is tuple:
+                    nbins = binning[0]
+                    arr = array.array('d', [binning[1] + (binning[2] - binning[1]) / nbins * i for i in range(nbins + 1)])
+                    
+                args += [nbins, arr]
+    
+            if ndim == 2:
+                hist = ROOT.TH2D(name, '', *tuple(args))
+            elif ndim == 3:
+                # who would do this??
+                hist = ROOT.TH3D(name, '', *tuple(args))
+            else:
+                raise RuntimeError('What are you thinking')
+
+        hist.SetDirectory(0)
+        hist.Sumw2()
+        return hist
+
+
 class PlotConfig(object):
-    def __init__(self, defaultRegion):
-        self.defaultRegion = defaultRegion
+    def __init__(self, name, obsSamples):
+        self.name = name # name serves as the default sample selection (e.g. monoph)
         self.baseline = '1'
-        self.fullSelection = ''
-        self.obs = GroupSpec('obs', 'Observed')
+        self.fullSelection = '1'
+        self.obs = GroupSpec('obs', 'Observed', samples = obsSamples)
         self.sigGroups = []
         self.bkgGroups = []
         self.variables = []
         self.sensitiveVars = []
+        self.treeMaker = None
 
     def getVariable(self, name):
         return next(variable for variable in self.variables if variable.name == name)
 
     def countConfig(self):
         return VariableDef('count', '', '0.5', (1, 0., 1.), cut = self.fullSelection)
+
+    def findGroup(self, name):
+        return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)
+
+
+class Variation(object):
+    """
+    Specifies alternative samples and cuts for systematic variation.
+    """
+
+    def __init__(self, name, samples, cut = ''):
+        self.name = name
+        self.samples = samples
+        self.cut = cut
 
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
@@ -60,22 +129,21 @@ def getConfig(region):
     if region == 'monoph':
         metCut = 't1Met.met > 170.'
         
-        config = PlotConfig('monoph')
-        config.baseline = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5'
+        config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
+        config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = metCut
-        config.obs.samples = ['sph-d3', 'sph-d4']
         config.sigGroups = [
-            GroupSpec('add5-2', 'ADD n=5 M_{D}=2TeV', ['add5-2'], 41), # 0.07069/pb
-            GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', ['dmv-1000-150'], 46), # 0.01437/pb
-            GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', ['dma-500-1'], 30) # 0.07827/pb 
+            GroupSpec('add5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
+            GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
+            GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            GroupSpec('hfake', 'Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('efake', 'Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
-            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = [('sph-d3', 'efake'), ('sph-d4', 'efake')], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
+            GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [130., 150., 170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
@@ -87,7 +155,7 @@ def getConfig(region):
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', dPhiPhoMet, (20, -math.pi, math.pi), cut = 't1Met.met > 40.'),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi)),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi)),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
@@ -107,22 +175,42 @@ def getConfig(region):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['count', 'met', 'metWide', 'metHighMet', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
+        
+        config.treeMaker = ROOT.MonophotonTreeMaker
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            if group.name == 'efake' or group.name == 'hfake':
+                continue
+
+            for p in ['Up', 'Down']:
+                cut = config.baseline.replace('t1Met.minJetDPhi', 't1Met.minJetDPhiJEC' + p) + ' && ' + metCut.replace('t1Met.met', 't1Met.metCorr' + p)
+                group.variations.append(Variation('jec' + p, group.samples, cut = cut))
+
+            for p in ['Up', 'Down']:
+                cut = config.baseline.replace('t1Met.minJetDPhi', 't1Met.minJetDPhiGEC' + p).replace('photons.pt', 'photons.ptVar' + p) + ' && ' + metCut.replace('t1Met.met', 't1Met.metGEC' + p)
+                group.variations.append(Variation('gec' + p, group.samples, cut = cut))
+
+        # Specific systematic variations
+        config.findGroup('hfake').variations += [
+            Variation('tfactorUp', [('sph-d3', 'hfakeUp'), ('sph-d4', 'hfakeUp')]),
+            Variation('tfactorDown', [('sph-d3', 'hfakeDown'), ('sph-d4', 'hfakeDown')])
+        ]
     
     elif args.region == 'lowdphi':
         metCut = 't1Met.met > 170.'
         
-        config = PlotConfig('monoph')
+        config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
         config.baseline = 'photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5'
         config.fullSelection = metCut
-        config.obs.samples = ['sph-d3', 'sph-d4']
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('efake', 'Electron fakes', [('sph-d3', 'efake'), ('sph-d4', 'efake')], ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
-            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', ['wnlg-130'], ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', ['znng-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            GroupSpec('hfake', 'Hadronic fakes', [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+            GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = [('sph-d3', 'efake'), ('sph-d4', 'efake')], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
+            GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [130., 150., 170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
@@ -144,13 +232,12 @@ def getConfig(region):
         dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
         dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
 
-        config = PlotConfig('dimu')
+        config = PlotConfig('dimu', ['smu-d3', 'smu-d4'])
         config.baseline = mass + ' > 50. && t1Met.recoil > 100.'
         config.fullSelection = 'photons.pt[0] > 100.'
-        config.obs.samples = ['smu-d3', 'smu-d4']
         config.bkgGroups = [
-            GroupSpec('ttg', 't#bar{t}#gamma', ['ttg'], ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zg', 'Z#rightarrowll+#gamma', ['zllg-130'], ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            GroupSpec('ttg', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], unit = 'GeV', overflow = True),

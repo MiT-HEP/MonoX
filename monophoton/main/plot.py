@@ -9,101 +9,147 @@ import ROOT
 
 ROOT.gROOT.SetBatch(True)
 
-basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from plotstyle import *
 from datasets import allsamples
 import config
 from main.plotconfig import getConfig
 
-def getHist(sampledef, selection, vardef, baseline, lumi = 0., isSensitive = False):
-    
-    histName = vardef.name + '-' + sampledef.name + '-' + selection
-    fileName = config.skimDir + '/' + sampledef.name + '_' + selection + '.root'
+lumi = 0. # to be set in __main__
+lumiUncert = 0.027
 
-    if vardef.is2D:
-        nbins = []
-        arr = []
-        for binning in vardef.binning:
-            if type(binning) is list:
-                nbins_ = len(binning) - 1
-                binning_ = list(binning)
-            elif type(binning) is tuple:
-                nbins_ = binning[0]
-                binning_ = [binning[1] + (binning[2] - binning[1]) / nbins * i for i in range(nbins + 1)]
-                
-            arr_ = array.array('d', binning_)
-            nbins.append(nbins_)
-            arr.append(arr_)
+def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation = True, isSensitive = False):
+    """
+    Create a histogram object for a given variable (vardef) from a given sample and selection.
+    Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
+    """
 
-        hist = ROOT.TH2D(histName, '', nbins[0], arr[0], nbins[1], arr[1]) 
-        
+    histName = vardef.name + '-' + sample.name + '_' + selection
+    sourceName = config.skimDir + '/' + sample.name + '_' + selection + '.root'
+
+    # quantity to be plotted
+    if type(vardef.expr) is tuple:
+        expr = ':'.join(vardef.expr)
     else:
-        if type(vardef.binning) is list:
-            nbins = len(vardef.binning) - 1
-            binning = list(vardef.binning)
-        elif type(vardef.binning) is tuple:
-            nbins = vardef.binning[0]
-            binning = [vardef.binning[1] + (vardef.binning[2] - vardef.binning[1]) / nbins * i for i in range(nbins + 1)]
+        expr = vardef.expr
 
-        arr = array.array('d', binning)
+    # cuts and weights
+    cuts = ['1']
+    if vardef.applyBaseline and baseline:
+        cuts = [baseline]
 
-        hist = ROOT.TH1D(histName, '', nbins, arr)
+    if vardef.cut:
+        cuts.append(vardef.cut)
 
-        if vardef.overflow:
-            lastbinWidth = (binning[-1] - binning[0]) / 30.
-            binning += [binning[-1] + lastbinWidth]
-            arr = array.array('d', binning)
-            hist.SetBins(len(binning) - 1, arr)
+    if isSensitive and args.prescale > 1 and vardef.blind is None:
+        cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
 
-    if not os.path.exists(fileName):
-        # need to be slightly smarter about this for the MC backgrounds
+    weightexpr = 'weight*(' + '&&'.join(['(%s)' % c for c in cuts]) + ')'
+    if not sample.data:
+        weightexpr = str(lumi) + '*' + weightexpr
+
+    # generate empty histogram from vardef
+    hist = vardef.makeHist(histName)
+
+    # open the source file
+    if not os.path.exists(sourceName):
+        print 'Error: Cannot open file', sourceName
         return hist
 
-    source = ROOT.TFile.Open(fileName)
+    source = ROOT.TFile.Open(sourceName)
     tree = source.Get('events')
 
-    hist.SetDirectory(source)
+    # routine to fill a histogram with possible reweighting
+    def fillHist(h, reweight = '1.'):
+        """
+        Fill h with expr, weighted with reweight * weightexpr. Take care of overflows
+        """
 
-    cuts = []
-    if vardef.baseline:
-        cuts.append(baseline)
+        ROOT.gROOT.cd()
+        h.SetDirectory(ROOT.gROOT) # bring the histogram here
+        tree.Draw(expr + '>>' + h.GetName(), reweight + '*' + weightexpr, 'goff')
+        h.SetDirectory(outDir)
+        if vardef.overflow:
+            iOverflow = h.GetNbinsX()
+            cont = h.GetBinContent(iOverflow)
+            err2 = math.pow(h.GetBinError(iOverflow), 2.)
+            h.SetBinContent(iOverflow, cont + h.GetBinContent(iOverflow + 1))
+            h.SetBinError(iOverflow, math.sqrt(err2 + math.pow(h.GetBinError(iOverflow + 1), 2.)))
 
-    cuts.append(vardef.cut)
+    # fill the nominal histogram
+    fillHist(hist)
 
-    if isSensitive and args.blind > 1:
-        cuts.append('event % {blind} == 0'.format(blind = args.blind))
+    if weightVariation:
+        # set bin errors to uncertainties from weight variations
+        diffs = []
+        for branch in tree.GetListOfBranches():
+            bname = branch.GetName()
 
-    cut = '&&'.join(c for c in cuts if c)
+            # find the shift-up weights reweight_(*)Up
+            if not bname.startswith('reweight_') or not bname.endswith('Up'):
+                continue
 
-    if cut:
-        weightexpr = 'weight * (%s)' % cut
-    else:
-        weightexpr = 'weight'
+            upName = bname.replace('reweight_', '')
+            varName = upName[0:-2]
+            downName = varName + 'Down'
 
-    drawexpr = vardef.expr + '>>' + histName
+            if not tree.GetBranch('reweight_' + downName):
+                print 'Weight variation ' + varName + ' does not have downward shift in ' + sample.name + ' ' + selection
+                continue
 
-    hist.Sumw2()
-    if sampledef.data:
-        tree.Draw(drawexpr, weightexpr, 'goff')
-        if vardef.blind:
-            for i in range(1, hist.GetNbinsX()+1):
-                binCenter = hist.GetBinCenter(i)
-                if binCenter > vardef.blind[0] and binCenter < vardef.blind[1]:
-                    hist.SetBinContent(i, 0.)
-                    hist.SetBinError(i, 0.)
+            upHist = vardef.makeHist(histName + '_' + upName)
+            downHist = vardef.makeHist(histName + '_' + downName)
 
-    else:
-        weightexpr = str(lumi) + ' * ' + weightexpr
-        tree.Draw(drawexpr, weightexpr, 'goff')
+            fillHist(upHist, reweight = 'reweight_' + upName)
+            fillHist(downHist, reweight = 'reweight_' + downName)
 
-    hist.SetDirectory(0)
-    if vardef.is2D:
-        xtitle = vardef.title[0]
-        ytitle = vardef.title[1]
-        ztitle = 'Events'
-    else:
-        for iX in range(1, nbins + 1):
+            upHist.Add(hist, -1.)
+            downHist.Add(hist, -1.)
+
+            # take the average variation as uncertainty
+            varHist = upHist.Clone(histName + '_' + varName)
+            varHist.SetDirectory(outDir)
+            varHist.Add(downHist, -1.)
+            varHist.Scale(0.5)
+
+            diffs.append(varHist)
+
+        if not sample.data:
+            # lumi up and down
+            upHist = hist.Clone(histName + '_lumiUp')
+            downHist = hist.Clone(histName + '_lumiDown')
+            varHist = hist.Clone(histName + '_lumi')
+            upHist.SetDirectory(outDir)
+            downHist.SetDirectory(outDir)
+            varHist.SetDirectory(outDir)
+
+            upHist.Scale(lumiUncert)
+            downHist.Scale(-lumiUncert)
+            varHist.Scale(lumiUncert)
+
+            diffs.append(varHist)
+
+        for diff in diffs:
+            for iX in range(1, hist.GetNbinsX() + 1):
+                err = math.sqrt(math.pow(hist.GetBinError(iX), 2.) + math.pow(diff.GetBinContent(iX), 2.))
+                hist.SetBinError(iX, err)
+
+    # we don't need the tree any more
+    source.Close()
+
+    # Take care of masking
+    if sample.data and vardef.blind:
+        for i in range(1, hist.GetNbinsX()+1):
+            binCenter = hist.GetBinCenter(i)
+            if binCenter > vardef.blind[0] and binCenter < vardef.blind[1]:
+                hist.SetBinContent(i, 0.)
+                hist.SetBinError(i, 0.)
+
+    # Label the axes
+    if vardef.ndim() == 1:
+        for iX in range(1, hist.GetNbinsX() + 1):
             cont = hist.GetBinContent(iX)
             err = hist.GetBinError(iX)
             w = hist.GetXaxis().GetBinWidth(iX)
@@ -129,13 +175,33 @@ def getHist(sampledef, selection, vardef, baseline, lumi = 0., isSensitive = Fal
             else:
                 ytitle += '%.2f' % hist.GetXaxis().GetBinWidth(1)
 
+    else:
+        xtitle = vardef.title[0]
+        ytitle = vardef.title[1]
+        ztitle = 'Events'
+
     hist.GetXaxis().SetTitle(xtitle)
     hist.GetYaxis().SetTitle(ytitle)
-    if vardef.is2D:
+
+    if vardef.ndim() != 1:
         hist.GetZaxis().SetTitle(ztitle)
         hist.SetMinimum(0.)
 
     return hist
+
+
+def fillTree(outTree, sample, selection, treeMaker, cut, isNominal, prescale = 1.):
+    sourceName = config.skimDir + '/' + sample.name + '_' + selection + '.root'
+    # open the source file
+    if not os.path.exists(sourceName):
+        print 'Error: Cannot open file', sourceName
+        return
+
+    source = ROOT.TFile.Open(sourceName)
+    tree = source.Get('events')
+
+    treeMaker(tree, outTree, cut, sample.data, isNominal, prescale)
+    source.Close()
 
 
 if __name__ == '__main__':
@@ -146,31 +212,40 @@ if __name__ == '__main__':
     argParser.add_argument('region', metavar = 'REGION', help = 'Control or signal region name.')
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
-    argParser.add_argument('--blind', '-b', metavar = 'PRESCALE', dest = 'blind', type = int, default = 1, help = 'Prescale for blinding.')
+    argParser.add_argument('--prescale', '-b', metavar = 'PRESCALE', dest = 'prescale', type = int, default = 1, help = 'Prescale for prescaling.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
+    argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     
     args = argParser.parse_args()
     sys.argv = []
 
+    ROOT.gSystem.Load('libMitFlatDataFormats.so')
+    ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+
+    ROOT.gROOT.LoadMacro(thisdir + '/treemakers.cc+')
+
     plotConfig = getConfig(args.region)
 
-    lumi = 0.
+    # lumi defined in the global scope for getHist function
     for sName in plotConfig.obs.samples:
-        if type(sName) is tuple:
-            lumi += allsamples[sName[0]].lumi
-        else:
-            lumi += allsamples[sName].lumi
-    
+        lumi += allsamples[sName].lumi
+
+    if args.countOnly:
+        outFile = None
+        histOut = None
+        outDir = None
+    else:
+        outFile = ROOT.TFile.Open(config.histDir + '/' + args.region + '.root', 'recreate')
+        histOut = outFile.mkdir('histograms')
+
     if not args.countOnly or args.bbb != '':
         if args.bbb:
             stack = {}
     
         canvas = DataMCCanvas(lumi = lumi)
-        simpleCanvas = SimpleCanvas(lumi = lumi, sim = True)
-    
-        plotdir = canvas.webdir + '/monophoton/' + args.region
     
         if args.clearDir:
+            plotdir = canvas.webdir + '/monophoton/' + args.region
             for plot in os.listdir(plotdir):
                 os.remove(plotdir + '/' + plot)
     
@@ -180,18 +255,27 @@ if __name__ == '__main__':
             if args.countOnly and vardef.name != args.bbb:
                 continue
 
+            if len(args.plots) != 0 and vardef.name not in args.plots:
+                continue
+
             print vardef.name
-    
+
             isSensitive = vardef.name in plotConfig.sensitiveVars
-    
+
+            # set up canvas
             canvas.Clear(full = True)
             canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
         
             if isSensitive:
-                canvas.lumi = lumi / args.blind
+                canvas.lumi = lumi / args.prescale
             else:
                 canvas.lumi = lumi
-        
+
+            # create output directory
+            if histOut:
+                outDir = histOut.mkdir(vardef.name)
+
+            # make background histograms
             for group in plotConfig.bkgGroups:
                 idx = -1
                 for sName in group.samples:
@@ -199,16 +283,22 @@ if __name__ == '__main__':
                         selection = sName[1]
                         sName = sName[0]
                     else:
-                        selection = plotConfig.defaultRegion
+                        selection = plotConfig.name
         
-                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, lumi = lumi)
+                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = outDir)
       
                     for iX in range(1, hist.GetNbinsX() + 1):
                         if hist.GetBinContent(iX) < 0.:
                             hist.SetBinContent(iX, 0.)
+                        if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+                            hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
         
-                    if isSensitive and args.blind > 1:
-                        hist.Scale(1. / args.blind)
+                    if isSensitive:
+                        hist.Scale(1. / args.prescale)
+
+                    if outDir:
+                        outDir.cd()
+                        hist.Write()
        
                     idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
     
@@ -217,31 +307,28 @@ if __name__ == '__main__':
                             stack[group.name].Add(hist)
                         except KeyError:
                             stack[group.name] = hist.Clone(grop.name + '_bbb')
-    
+
+            # plot signal distributions for sensitive variables
             if isSensitive:
-                for sGroup in plotConfig.sigGroups:
-                    idx = -1
-                    for sName in sGroup.samples:
-                        if type(sName) is tuple:
-                            selection = sName[1]
-                            sName = sName[0]
-                        else:
-                            selection = plotConfig.defaultRegion
+                for group in plotConfig.sigGroups:
+                    # signal groups should only have one sample
+
+                    hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir)
+                    hist.Scale(1. / args.prescale)
+
+                    if outDir:
+                        outDir.cd()
+                        hist.Write()
     
-                        hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, lumi = lumi)
-                        if args.blind > 1:
-                            hist.Scale(1. / args.blind)
-        
-                        idx = canvas.addSignal(hist, title = sGroup.title, color = sGroup.color, idx = idx)
+                    canvas.addSignal(hist, title = group.title, color = group.color)
         
             for sName in plotConfig.obs.samples:
-                if type(sName) is tuple:
-                    selection = sName[1]
-                    sName = sName[0]
-                else:
-                    selection = plotConfig.defaultRegion
-    
-                hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, isSensitive = isSensitive)
+                hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, isSensitive = isSensitive, outDir = outDir)
+
+                if outDir:
+                    outDir.cd()
+                    hist.Write()
+
                 canvas.addObs(hist, title = plotConfig.obs.title)
     
                 if vardef.name == args.bbb:
@@ -259,104 +346,180 @@ if __name__ == '__main__':
         print "Finished plotting."
     
     print "Counting yields and preparing limits file."
-#    systs = [ '', '-gup', '-gdown', '-jecup', '-jecdown' ] 
-    
-    #canvas = simpleCanvas # this line causes segfault somewhere down the line of DataMCCanvas destruction
-    hists = {}
-    counts = {}
-    isSensitive = ('count' in plotConfig.sensitiveVars)
+   
+    # counters: list of single-bin histograms
+    counters = {}
+    isSensitive = (len(plotConfig.sensitiveVars) != 0) # if any variable is deemed sensitive, signal region count should also be
     vardef = plotConfig.countConfig()
 
-    blindScale = 1.
     if isSensitive:
-        blindScale = args.blind
-    
+        prescale = args.prescale
+    else:
+        prescale = 1.
+
     for group in plotConfig.bkgGroups:
-        counts[group.name] = 0.
+        counters[group.name] = vardef.makeHist('counts-' + group.name + '_' + plotConfig.name)
+        if histOut:
+            counters[group.name].SetDirectory(histOut.GetDirectory('histograms'))
+
         for sName in group.samples:
             if type(sName) is tuple:
                 selection = sName[1]
                 sName = sName[0]
             else:
-                selection = plotConfig.defaultRegion
+                selection = plotConfig.name
     
-            hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, lumi = lumi)
-            counts[group.name] += hist.GetBinContent(1) / blindScale
+            hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = histOut)
+            hist.Scale(1. / prescale)
+
+            if histOut:
+                histOut.cd()
+                hist.Write()
+
+            counters[group.name].Add(hist)
+
+        if histOut:
+            histOut.cd()
+            counters[group.name].Write()
     
-#            for syst in systs:
-#                hist2D = getHist(allsamples[sName], selection+syst, 'limit', limitDef, isSensitive = isSensitive)
-#                histName = group.name + syst
-#                if histName in hists.keys():
-#                    hists[histName].Add(hist2D)
-#                else:
-#                    hists[histName] = hist2D
-#                    hists[histName].SetName(histName)
-#                if 'sph' in sName:
-#                    break
+    for group in plotConfig.sigGroups:
+        hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = histOut)
+        hist.Scale(1. / prescale)
+
+        if histOut:
+            histOut.cd()
+            hist.Write()
+
+        counters[group.name] = hist
     
-    if isSensitive:
-        for sGroup in plotConfig.sigGroups:
-            for sName in sGroup.samples:
+    counters['obs'] = vardef.makeHist('counts-obs_' + plotConfig.name)
+    if histOut:
+        counters['obs'].SetDirectory(histOut)
+
+    for sName in plotConfig.obs.samples:
+        hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, isSensitive = isSensitive)
+        counters['obs'].Add(hist)
+
+    if histOut:
+        histOut.cd()
+        counters['obs'].Write()
+
+    if outFile and plotConfig.treeMaker:
+        print "Making final ntuples."
+
+        # Write final trees
+        treeOut = outFile.mkdir('trees')
+
+        fullSelection = plotConfig.baseline + ' && ' + plotConfig.fullSelection
+
+        for group in plotConfig.bkgGroups:
+            sys.stdout.write(group.name + ' ')
+            sys.stdout.flush()
+
+            treeOut.cd()
+            tree = ROOT.TTree(group.name, 'events')
+
+            for sName in group.samples:
                 if type(sName) is tuple:
                     selection = sName[1]
                     sName = sName[0]
                 else:
-                    selection = plotConfig.defaultRegion
-    
-                hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, lumi = lumi)
-                counts[sName] = hist.GetBinContent(1) / blindScale
-    
-#                for syst in systs:
-#                    hist2D = getHist(allsamples[sName], selection+syst, 'limit', limitDef, isSensitive = isSensitive)
-#                    if sName+syst in hists.keys():
-#                        hists[sName+syst].Add(hist2D)
-#                    else:
-#                        hists[sName+syst] = hist2D
-#                        hists[sName+syst].SetName(sName+syst)
-    
-    counts['obs'] = 0.
-    for sName in plotConfig.obs.samples:
-        if type(sName) is tuple:
-            selection = sName[1]
-            sName = sName[0]
-        else:
-            selection = plotConfig.defaultRegion
-    
-        hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, isSensitive = isSensitive)
-        counts['obs'] += hist.GetBinContent(1)
-    
-#        hist2D = getHist(allsamples[sName], selection, 'limit', limitDef, isSensitive = blindCounts)
-#        if 'obs' in hists.keys():
-#            hists['obs'].Add(hist2D)
-#        else:
-#            hists['obs'] = hist2D
-#            hists['obs'].SetName('data_obs')
-    
-#    if args.region == 'monoph':
-#        limitFile = ROOT.TFile(config.histDir + "/"+args.region+".root", "RECREATE")
-#        limitFile.cd()
-#        
-#        for name, hist in sorted(hists.iteritems()):
-#            hist.Write()
-    
+                    selection = plotConfig.name
+
+                fillTree(tree, allsamples[sName], selection, plotConfig.treeMaker, fullSelection, True, prescale = prescale)
+
+            treeOut.cd()
+            tree.Write()
+
+            for variation in group.variations:
+                sys.stdout.write(group.name + '_' + variation.name + ' ')
+                sys.stdout.flush()
+
+                treeOut.cd()
+                tree = ROOT.TTree(group.name + '_' + variation.name, 'events')
+
+                for sName in variation.samples:
+                    if type(sName) is tuple:
+                        selection = sName[1]
+                        sName = sName[0]
+                    else:
+                        selection = plotConfig.name
+
+                    if variation.cut:
+                        cut = variation.cut
+                    else:
+                        cut = fullSelection
+
+                    fillTree(tree, allsamples[sName], selection, plotConfig.treeMaker, cut, False, prescale = prescale)
+
+                treeOut.cd()
+                tree.Write()
+
+        for group in plotConfig.sigGroups:
+            sys.stdout.write(group.name + ' ')
+            sys.stdout.flush()
+
+            treeOut.cd()
+            tree = ROOT.TTree(group.name, 'events')
+
+            fillTree(tree, allsamples[group.name], plotConfig.name, plotConfig.treeMaker, fullSelection, True, prescale = prescale)
+
+            for variation in group.variations:
+                sys.stdout.write(group.name + '_' + variation.name + ' ')
+                sys.stdout.flush()
+
+                treeOut.cd()
+                tree = ROOT.TTree(group.name + '_' + variation.name, 'events')
+
+                if variation.cut:
+                    cut = variation.cut
+                else:
+                    cut = fullSelection
+
+                fillTree(tree, allsamples[group.name], plotConfig.name, plotConfig.treeMaker, cut, False, prescale = prescale)
+
+                treeOut.cd()
+                tree.Write()
+
+        sys.stdout.write('obs')
+        sys.stdout.flush()
+
+        treeOut.cd()
+        tree = ROOT.TTree('obs', 'events')
+        
+        for sName in plotConfig.obs.samples:
+            fillTree(tree, allsamples[sName], plotConfig.name, plotConfig.treeMaker, fullSelection, True)
+
+        treeOut.cd()
+        tree.Write()
+
+        print ''
+
+    # Print out the predictions and yield
     bkgTotal = 0.
+    bkgTotalErr2 = 0.
     print 'Yields for ' + plotConfig.baseline + ' && ' + vardef.cut
     for group in reversed(plotConfig.bkgGroups):
-        bkgTotal += counts[group.name]
-        print '%+10s  %.2f' % (group.name, counts[group.name])
+        counter = counters[group.name]
+        count = counter.GetBinContent(1)
+        err = counter.GetBinError(1)
+
+        bkgTotal += count
+        bkgTotalErr2 += math.pow(err, 2.)
+
+        print '%+12s  %.2f +- %.2f' % (group.name, count, err)
     
     print '---------------------'
-    print '%+10s  %.2f' % ('bkg', bkgTotal)
+    print '%+12s  %.2f +- %.2f' % ('bkg', bkgTotal, math.sqrt(bkgTotalErr2))
     
     print '====================='
     
-    if isSensitive:
-        for sGroup in plotConfig.sigGroups:
-            for sName in sGroup.samples:
-                print '%+10s  %.2f' % (sName, counts[sName])
+    for group in plotConfig.sigGroups:
+        counter = counters[group.name]
+        print '%+12s  %.2f +- %.2f' % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
     
     print '====================='
-    print '%+10s  %d' % ('obs', counts['obs'])
+    print '%+12s  %d' % ('obs', int(counters['obs'].GetBinContent(1)))
     
     if args.bbb != '':
         print 'Bin-by-bin yield for variable', args.bbb
@@ -381,9 +544,9 @@ if __name__ == '__main__':
                 yields.append(cont)
                 bkgTotal[iX - 1] += cont
     
-            print ('%+10s' % group.name), ' '.join(['%12.2f' % y for y in yields]), ('%12.2f' % sum(yields))
+            print ('%+12s' % group.name), ' '.join(['%12.2f' % y for y in yields]), ('%12.2f' % sum(yields))
     
         print '------------------------------------------------------------------------------------'
-        print ('%+10s' % 'total'), ' '.join(['%12.2f' % b for b in bkgTotal]), ('%12.2f' % sum(bkgTotal))
+        print ('%+12s' % 'total'), ' '.join(['%12.2f' % b for b in bkgTotal]), ('%12.2f' % sum(bkgTotal))
         print '===================================================================================='
-        print ('%+10s' % 'obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
+        print ('%+12s' % 'obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))

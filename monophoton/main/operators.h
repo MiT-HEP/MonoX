@@ -7,6 +7,7 @@
 #include "TH2.h"
 
 #include <bitset>
+#include <map>
 
 //--------------------------------------------------------------------
 // Base classes
@@ -160,14 +161,23 @@ class TauVeto : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 };
 
+class MetVariations; // defined below
+
 class PhotonMetDPhi : public Cut {
  public:
   PhotonMetDPhi(char const* name = "PhotonMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+
+  void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   float dPhi_{0.};
+  float dPhiJECUp_{0.};
+  float dPhiJECDown_{0.};
+  float dPhiGECUp_{0.};
+  float dPhiGECDown_{0.};
+  MetVariations* metVar_{0};
 };
 
 class JetMetDPhi : public Cut {
@@ -176,14 +186,17 @@ class JetMetDPhi : public Cut {
   void addBranches(TTree& skimTree) override;
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
-
+  void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   float dPhi_{0.};
-  float dPhiCorrUp_{0.};
-  float dPhiCorrDown_{0.};
+  float dPhiJECUp_{0.};
+  float dPhiJECDown_{0.};
+  float dPhiGECUp_{0.};
+  float dPhiGECDown_{0.};
   bool passIfIsolated_{true};
+  MetVariations* metVar_{0};
 };
 
 class LeptonSelection : public Cut {
@@ -196,6 +209,38 @@ class LeptonSelection : public Cut {
 
   unsigned nEl_{0};
   unsigned nMu_{0};
+};
+
+class HighMet : public Cut {
+ public:
+  HighMet(char const* name = "HighMet") : Cut(name) {}
+
+  void setThreshold(double min) { min_ = min; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override { return t1Met.met > min_; }
+
+  double min_{170.};
+};
+
+class LeptonRecoil : public Cut {
+  enum Collection {
+    kElectrons,
+    kMuons,
+    nCollections
+  };
+
+ public:
+  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
+  void addBranches(TTree& skimTree) override;
+
+  void setThreshold(double min) { min_ = min; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  Collection collection_;
+  float recoil_;
+  float recoilPhi_;
+  double min_{100.};
 };
 
 //--------------------------------------------------------------------
@@ -229,55 +274,65 @@ class CopyMet : public Modifier {
   void apply(simpletree::Event const& event, simpletree::Event& outEvent) override { outEvent.t1Met = event.t1Met; }
 };
 
-class LeptonRecoil : public Modifier {
-  enum Collection {
-    kElectrons,
-    kMuons,
-    nCollections
-  };
-
+class MetVariations : public Modifier {
  public:
-  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
+  MetVariations(char const* name = "MetVariations") : Modifier(name) {}
   void addBranches(TTree& skimTree) override;
+
+  void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
+  TVector2 gecUp() const { TVector2 v; v.SetMagPhi(metGECUp_, phiGECUp_); return v; }
+  TVector2 gecDown() const { TVector2 v; v.SetMagPhi(metGECDown_, phiGECDown_); return v; }
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
-
-  Collection collection_;
-  float recoil_;
-  float recoilPhi_;
+  
+  PhotonSelection* photonSel_{0};
+  float metGECUp_{0.};
+  float phiGECUp_{0.};
+  float metGECDown_{0.};
+  float phiGECDown_{0.};
+  // add other met variation sources
 };
 
-class UniformWeight : public Modifier {
+class ConstantWeight : public Modifier {
  public:
-  UniformWeight(double weight, char const* name = "UniformWeight") : Modifier(name), weight_(weight) {}
+  ConstantWeight(double weight, char const* name = "ConstantWeight") : Modifier(name), weight_(weight) {}
   void addBranches(TTree& skimTree) override;
 
-  void setUncertainty(double delta) { weightUncert_ = delta; }
+  void setUncertaintyUp(double delta) { weightUncertUp_ = 1. + delta; }
+  void setUncertaintyDown(double delta) { weightUncertDown_ = 1. - delta; }
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override { _outEvent.weight *= weight_; }
   
   double weight_;
-  double weightUncert_;
+  double weightUncertUp_{0.};
+  double weightUncertDown_{0.};
 };
 
-class PtWeight : public Modifier {
+class PhotonPtWeight : public Modifier {
  public:
-  PtWeight(TH1* factors, char const* name = "PtWeight") : Modifier(name), factors_(factors) {}
+  enum PhotonType {
+    kReco,
+    kParton,
+    kPostShower,
+    nPhotonTypes
+  };
+
+  PhotonPtWeight(TObject* factors, char const* name = "PhotonPtWeight");
+  ~PhotonPtWeight();
+
   void addBranches(TTree& skimTree) override;
 
-  void setUncertaintyUp(TH1* delta) { uncertUp_ = delta; }
-  void setUncertaintyDown(TH1* delta) { uncertDown_ = delta; }
-
+  void setPhotonType(unsigned t) { photonType_ = t; }
+  void addVariation(char const* suffix, TObject* corr);
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
-  TH1* factors_{0};
-  TH1* uncertUp_{0};
-  TH1* uncertDown_{0};
-  double weightUncertUp_;
-  double weightUncertDown_;
+  TObject* nominal_;
+  std::map<TString, TObject*> variations_;
+  std::map<TString, double*> varWeights_;
+  unsigned photonType_{kReco};
 };
 
 class IDSFWeight : public Modifier {
@@ -305,24 +360,6 @@ class NPVWeight : public Modifier {
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   TH1* factors_;
-};
-
-class KFactorCorrection : public Modifier {
- public:
-  enum PhotonType {
-    kParton,
-    kPostShower,
-    nPhotonTypes
-  };
-
-  KFactorCorrection(TObject* corr, char const* name = "KFactorCorrection") : Modifier(name), kfactor_(corr) {}
-
-  void setPhotonType(unsigned t) { photonType_ = t; }
- protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
-
-  TObject* kfactor_;
-  unsigned photonType_{kParton};
 };
 
 #endif

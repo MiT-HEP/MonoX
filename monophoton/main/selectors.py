@@ -55,30 +55,48 @@ def monophotonBase(sample, name, selector = None):
     if selector is None:
         selector = ROOT.EventSelector(name)
 
-    operators = [
+    operators = []
+
+    if sample.data:
+        operators.append('HLTPhoton165HE10')
+
+    operators += [
         'MetFilters',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
         'JetCleaning',
-        'CopyMet',
-        'PhotonMetDPhi',
-        'JetMetDPhi'
+        'CopyMet'
     ]
 
-    if sample.data:
-        operators.insert(0, 'HLTPhoton165HE10')
+    if not sample.data:
+        operators.append('MetVariations')
+
+    operators += [
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'HighMet'
+    ]
 
     for op in operators:
         selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
-        selector.addOperator(ROOT.UniformWeight(sample.crosssection / sample.sumw))
+        metVar = selector.findOperator('MetVariations')
+        metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+        selector.addOperator(metVar)
+
+        selector.findOperator('PhotonMetDPhi').setMetVariations(metVar)
+        selector.findOperator('JetMetDPhi').setMetVariations(metVar)
+
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('HighMet').setIgnoreDecision(True)
     
     return selector
 
@@ -106,8 +124,9 @@ def eleProxy(sample, name, selector = None):
 
     selector = monophotonBase(sample, name, selector)
 
-    weight = ROOT.UniformWeight(eleproxyWeight.GetY()[0])
-    weight.setUncertainty(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
+    weight = ROOT.ConstantWeight(eleproxyWeight.GetY()[0], 'egfakerate')
+    weight.setUncertaintyUp(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
+    weight.setUncertaintyDown(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -131,7 +150,8 @@ def hadProxy(sample, name, selector = None):
 
     selector = monophotonBase(sample, name, selector)
 
-    weight = ROOT.PtWeight(hadproxyWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyWeight)
+    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -160,7 +180,8 @@ def hadProxyUp(sample, name, selector = None):
 
     selector = monophotonBase(sample, name, selector)
 
-    weight = ROOT.PtWeight(hadproxyupWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyupWeight)
+    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -188,7 +209,8 @@ def hadProxyDown(sample, name, selector = None):
 
     selector = monophotonBase(sample, name, selector)
 
-    weight = ROOT.PtWeight(hadproxydownWeight)
+    weight = ROOT.PhotonPtWeight(hadproxydownWeight)
+    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -245,7 +267,7 @@ def leptonBase(sample, name, selector = None):
         selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
-        selector.addOperator(ROOT.UniformWeight(sample.crosssection / sample.sumw))
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -326,34 +348,32 @@ def kfactor(generator):
 
     def scaled(sample, name):
         selector = generator(sample, name)
-   
-        binning = array.array('d', [])
-        factors = []
-        with open(basedir + '/data/' + sample.name + '_kfactor.dat') as source:
-            for line in source:
-                pt, kfactor = map(float, line.split()[:2])
-                binning.append(pt)
-                factors.append(kfactor)
 
-        binning.append(6500.)
+        qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
+        corr = qcdSource.Get(sample.name)
 
-        corr = ROOT.TH1D('qcd', '', len(factors), binning)
-        for iX in range(len(binning)):
-            corr.SetBinContent(iX + 1, factors[iX])
+        qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
 
-        qcd = ROOT.KFactorCorrection(corr, 'QCDNLOCorrection')
-        qcd.setPhotonType(ROOT.KFactorCorrection.kPostShower)
-    
-        ewkcorrSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
-        corr = ewkcorrSource.Get(sample.name)
-        ewk.setCorrection(corr)
-        ewkcorrSource.Close()
-
-        ewk = ROOT.KFactorCorrection(corr, 'EWKNLOCorrection')
-        qcd.setPhotonType(ROOT.KFactorCorrection.kParton)
+        for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'pdfUp', 'pdfDown', 'scaleUp', 'scaleDown']:
+            vcorr = qcdSource.Get(sample.name + '_' + variation)
+            if vcorr:
+                qcd.addVariation('qcd' + variation, vcorr)
 
         selector.addOperator(qcd)
-        selector.addOperator(ewk)
+    
+        ewkSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
+        corr = ewkSource.Get(sample.name)
+        if corr:
+            ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
+            ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
+    
+            for variation in ['Up', 'Down']:
+                vcorr = ewkSource.Get(sample.name + '_' + variation)
+                if vcorr:
+                    ewk.addVariation('ewk' + variation, vcorr)
+
+            selector.addOperator(ewk)
     
         return selector
 
