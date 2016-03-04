@@ -16,13 +16,13 @@ dtree = r.TChain('events')
 dtree.Add(config.skimDir + '/sph-d*_monoph.root')
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-d*_hfakeWorst.root')
+btree.Add(config.skimDir + '/sph-d*_hfake.root')
 btree.Add(config.skimDir + '/sph-d*_efake.root')
 
 bmctree = r.TChain('events')
 bmctree.Add(config.skimDir + '/znng-130_monoph.root')
-bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
-# bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
+# bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
+bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
@@ -38,8 +38,8 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
-regions = [ ( 'Low', '(photons.pt[0] > 175. && !t1Met.iso)')
-            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.iso)') 
+regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5)')
+            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.minJetDPhi > 0.5)') 
             ] 
 
 # binning = array.array('d', [0. + 10. * x for x in range(13)])
@@ -397,6 +397,7 @@ scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 for iF, tfact in enumerate(tfacts):
     gname = 'gmetScaledFit'+tfact.GetName().strip('tfact')
     gmet = gmets[0].Clone(gname)
+    gmet.GetListOfFunctions().RemoveLast()
     gmet.Multiply(tfact)
 
     scanvas.legend.add(gname, title = tfact.GetName().strip('tfact'), lcolor = (iF+3)*2, lwidth = 1, mcolor = (iF+3)*2, mstyle = 8, msize = 0.8)

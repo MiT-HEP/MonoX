@@ -143,7 +143,6 @@ def purity(sample, name, selector = None):
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
     return selector
 
