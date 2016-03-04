@@ -19,8 +19,6 @@ defaults = {
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
     'gjets': selectors.gammaJets,
-    'efakeGJets': selectors.eleProxyGammaJets,
-    'hfakeGJets': selectors.hadProxyGammaJets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'diel': selectors.dielectron,
