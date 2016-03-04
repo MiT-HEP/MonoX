@@ -29,7 +29,7 @@ photonFullSelection = [
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 npvWeight = npvSource.Get('npvweight')
 
-photonSFSource = ROOT.TFile.Open(basedir + '/data/Mediumnumbers.txt.egamma_SF2D.root')
+photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
