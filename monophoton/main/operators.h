@@ -217,7 +217,7 @@ class HighMet : public Cut {
 
   void setThreshold(double min) { min_ = min; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override { return t1Met.met > min_; }
+  bool pass(simpletree::Event const&, simpletree::Event& outEvent) override { return outEvent.t1Met.met > min_; }
 
   double min_{170.};
 };
@@ -230,7 +230,7 @@ class LeptonRecoil : public Cut {
   };
 
  public:
-  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
+  LeptonRecoil(char const* name = "LeptonRecoil") : Cut(name), collection_(nCollections) {}
   void addBranches(TTree& skimTree) override;
 
   void setThreshold(double min) { min_ = min; }
