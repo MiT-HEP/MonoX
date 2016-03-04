@@ -132,9 +132,6 @@ def purity(sample, name, selector = None):
 
     selector = monophotonBase(sample, name, selector)
 
-    weight = ROOT.PtWeight(hadproxyWeight)
-    selector.addOperator(weight)
-
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
