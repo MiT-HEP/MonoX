@@ -707,7 +707,8 @@ class RatioCanvas(SimpleCanvas):
                         graph.SetPointEYhigh(iP, errhigh)
                         graph.SetPointEYlow(iP, errlow)
 
-                        if y + errhigh < self.rlimits[0] or y - errlow > self.rlimits[1]:
+                        rmed = (self.rlimits[0] + self.rlimits[1]) * 0.5
+                        if y + errhigh < rmed - 0.8 * (rmed - self.rlimits[0]) or y - errlow > rmed + 0.8 * (self.rlimits[1] - rmed):
                             if y < self.rlimits[0]:
                                 end = 1. - (1. - self.rlimits[0]) * 0.95
                             else:
