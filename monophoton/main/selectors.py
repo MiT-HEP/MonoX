@@ -79,6 +79,7 @@ def monophotonBase(sample, name, selector = None):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     
     return selector
 
@@ -124,9 +125,9 @@ def eleProxy(sample, name, selector = None):
 
     return selector
 
-def hadProxy(sample, name, selector = None):
+def purity(sample, name, selector = None):
     """
-    Candidate-like but with inverted sieie or CHIso.
+    Candidate-like but with loosened sieie or CHIso.
     """
 
     selector = monophotonBase(sample, name, selector)
@@ -147,9 +148,35 @@ def hadProxy(sample, name, selector = None):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
+    return selector
+
+def hadProxy(sample, name, selector = None):
+    """
+    Candidate-like but with inverted sieie or CHIso.
+    """
+
+    selector = monophotonBase(sample, name, selector)
+
+    weight = ROOT.PtWeight(hadproxyWeight)
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
+    sels.append('CHIso11')
+    sels.append('CHWorstIso11')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
 
     return selector
 
@@ -167,9 +194,13 @@ def hadProxyUp(sample, name, selector = None):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
+    sels.remove('CHIso')
     sels.remove('CHWorstIso')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
+    sels.append('Sieie15')
+    sels.append('CHIso11')
+    sels.append('CHWorstIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -177,7 +208,7 @@ def hadProxyUp(sample, name, selector = None):
 
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
 
     return selector
 
