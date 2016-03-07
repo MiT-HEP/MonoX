@@ -2,7 +2,7 @@ import os
 import array
 import ROOT
 
-Version = 'simpletree12'
+Version = 'simpletree13b'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')

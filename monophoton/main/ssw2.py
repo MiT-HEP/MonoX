@@ -17,6 +17,7 @@ defaults = {
     'hfake': selectors.hadProxy,
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
+    'purity': selectors.purity,
     'gjets': selectors.gammaJets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -26,16 +27,17 @@ defaults = {
     'eefake': selectors.zee
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
-mc_cand = ['monoph']
+mc_cand = ['monoph'] 
+mc_purity = ['purity']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
-mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in ['monoph']]
-mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in ['monomu', 'monoel']]
-mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in ['dimu', 'diel', 'elmu']]
-mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in ['monoph']]
+mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
+mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
+mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
+mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
 
 selectors = {
     # Data
@@ -48,11 +50,12 @@ selectors = {
     # MC for signal region
     'znng-130': mc_vgcand,
     'wnlg-130': mc_vgcand + mc_vglep,
-    'gj-40': mc_cand,
-    'gj-100': mc_cand,
-    'gj-200': mc_cand,
-    'gj-400': mc_cand,
-    'gj-600': mc_cand,
+    'wg': mc_cand,
+    'gj-40': mc_cand + mc_purity,
+    'gj-100': mc_cand + mc_purity,
+    'gj-200': mc_cand + mc_purity,
+    'gj-400': mc_cand + mc_purity,
+    'gj-600': mc_cand + mc_purity,
     'ttg': mc_cand + mc_lep + mc_dilep,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu-100': mc_wlnu,
