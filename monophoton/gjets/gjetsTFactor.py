@@ -22,7 +22,7 @@ btree.Add(config.skimDir + '/sph-d*_efake.root')
 bmctree = r.TChain('events')
 bmctree.Add(config.skimDir + '/znng-130_monoph.root')
 # bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
-bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
+bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
@@ -38,8 +38,8 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
-regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5)')
-            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.minJetDPhi > 0.5)') 
+regions = [ ( 'Low',  '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)')
+            ,('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < 120.)') 
             ] 
 
 # binning = array.array('d', [0. + 10. * x for x in range(13)])
@@ -183,6 +183,11 @@ expo.SetParameters(1., -0.1, 0.)
 expo.SetParLimits(1, -10., 0.)
 expo.SetParLimits(2, 0., 10.)
 
+dexpo = r.TF1("DoubleExpo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
+dexpo.SetParameters(10., 0.1, -0.1, -0.1)
+dexpo.SetParLimits(2, -10., 0.)
+dexpo.SetParLimits(3, -10., 0.)
+
 rayleigh = r.TF1("Rayleigh", "[0] * x * TMath::Exp( -x**2 / ( 2 * [1]**2))", 0., 600.)
 rayleigh.SetParameters(1., 10.)
 rayleigh.SetParLimits(1, 0.1, 600.)
@@ -193,10 +198,19 @@ pepe.SetParLimits(1, 0.1, 150.)
 pepe.SetParLimits(2, 0.001, 10.)
 
 pepeplus = r.TF1("PepePlus", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
-pepeplus.SetParameters(1., 10., 10., 10.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
 pepeplus.SetParLimits(1, 0.1, 1000.)
 pepeplus.SetParLimits(2, 0.001, 100.)
 pepeplus.SetParLimits(3, 0.00001, 1.)
+
+rpepe = r.TF1("PepeRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
+rpepe.SetParameters(1., 10., 10., 0.1, 10., 10., 0.1)
+rpepe.SetParLimits(1, 0.1, 1000.)
+rpepe.SetParLimits(2, 0.001, 100.)
+rpepe.SetParLimits(3, 0.00001, 1.)
+rpepe.SetParLimits(4, 0.1, 1000.)
+rpepe.SetParLimits(5, 0.001, 100.)
+rpepe.SetParLimits(6, 0.00001, 1.)
 
 gauss = r.TF1("Gauss", "[0] * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
 gauss.SetParameters(1., 10., 100.)
@@ -208,7 +222,8 @@ smear.SetParameters(1., 10.)
 smear.SetParLimits(1, 0.1, 150.)
 
 ## choosing model ##
-models = [ gauss, expo, pepe, pepeplus ] #, rayleigh ]
+models = [ gauss, dexpo, rpepe ] 
+colors = [ r.kRed, r.kBlue, r.kMagenta ] 
 """
 for model in models[:]:
     convolve = r.TF1Convolution(model, smear)
@@ -220,9 +235,10 @@ tfacts[0].SetMinimum(0.0000000001)
 tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
-    fit.Fit(model, "M WL B ", "goff", 0., 120.)
+    print "\nFitting with", model.GetName(), "\n"
+    fit.Fit(model, "M WL B V", "goff", 0., 120.)
 
-    model.SetLineColor((iM+1)*2)
+    model.SetLineColor(colors[iM])
 
     outputFile.cd()
     model.Write()
@@ -279,7 +295,7 @@ for iM, model in enumerate(models):
     gmet = gmets[0].Clone(gname)
     gmet.Multiply(model)
 
-    scanvas.legend.add(gname, title = model.GetName(), lcolor = (iM+1)*2, lwidth = 1, mcolor = (iM+1)*2, mstyle = 8, msize = 0.8)
+    scanvas.legend.add(gname, title = model.GetName(), lcolor = colors[iM], lwidth = 1, mcolor = colors[iM], mstyle = 8, msize = 0.8)
 
     scanvas.legend.apply(gname, gmet)
 
@@ -298,7 +314,8 @@ scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 
 gfits = []
 
-models = models[2:]
+models = [ pepe, pepeplus ] 
+colors = [ r.kOrange, r.kGreen-3 ] 
 
 for iG, gmet in enumerate(gmets):
     gfits.append([])
@@ -306,7 +323,7 @@ for iG, gmet in enumerate(gmets):
         gfit = model.Clone(gmet.GetName()+model.GetName())
         gmet.Fit(gfit, "M WL B ", "goff", 0., 120.)
 
-    #  model.SetLineColor((iM+1)*2)
+        gfit.SetLineColor(colors[iM])
 
         outputFile.cd()
         gfit.Write()
@@ -360,7 +377,7 @@ for iM, model in enumerate(models):
     fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
     # print fstring
     tfact = r.TF1(tname, fstring, 0., 600.)
-    tfact.SetLineColor((iM+3)*2)
+    tfact.SetLineColor((iM+1)*2+1)
     tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
     # tfact.SetMinimum(0.0001)
 
@@ -400,7 +417,7 @@ for iF, tfact in enumerate(tfacts):
     gmet.GetListOfFunctions().RemoveLast()
     gmet.Multiply(tfact)
 
-    scanvas.legend.add(gname, title = tfact.GetName().strip('tfact'), lcolor = (iF+3)*2, lwidth = 1, mcolor = (iF+3)*2, mstyle = 8, msize = 0.8)
+    scanvas.legend.add(gname, title = tfact.GetName().strip('tfact'), lcolor = colors[iF], lwidth = 1, mcolor = colors[iF], mstyle = 8, msize = 0.8)
 
     scanvas.legend.apply(gname, gmet)
 
