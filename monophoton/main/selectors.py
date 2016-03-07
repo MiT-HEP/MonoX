@@ -282,7 +282,7 @@ def halo(norm):
         """
     
         selector = ROOT.NormalizingSelector(name)
-        selector.setNormalization(norm)
+        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
     
         selector = monophotonBase(sample, name, selector)
     

@@ -68,15 +68,13 @@ class NormalizingSelector : public EventSelector {
   NormalizingSelector(char const* name) : EventSelector(name) {}
   ~NormalizingSelector() {}
 
-  void initialize(char const* outputPath, simpletree::Event& event) override;
   void finalize() override;
-  bool selectEvent(simpletree::Event const&) override;
 
-  void setNormalization(double _norm) { norm_ = _norm; }
+  void setNormalization(double norm, char const* normCut) { norm_ = norm; normCut_ = normCut; }
 
  protected:
   double norm_{1.};
-  double sumW_{0.};
+  TString normCut_{""};
 };
 
 #endif

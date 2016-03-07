@@ -233,17 +233,16 @@ WlnuSelector::selectEvent(simpletree::Event const& _event)
 //--------------------------------------------------------------------
 
 void
-NormalizingSelector::initialize(char const* _outputPath, simpletree::Event& _event)
-{
-  EventSelector::initialize(_outputPath, _event);
-  sumW_ = 0.;
-}
-
-void
 NormalizingSelector::finalize()
 {
   if (!skimOut_)
     return;
+
+  auto* hSumW(new TH1D("sumW", "", 1, 0., 1.));
+  hSumW->Sumw2();
+  skimOut_->Draw("0.5>>sumW", "weight * (" + normCut_ + ")", "goff");
+  double sumW(hSumW->GetBinContent(1));
+  delete hSumW;
 
   auto* outputFile(skimOut_->GetCurrentFile());
   TString outName(outputFile->GetName());
@@ -257,7 +256,7 @@ NormalizingSelector::finalize()
 
   long iEntry(0);
   while (skimOut_->GetEntry(iEntry++)) {
-    weight = norm_ / sumW_ * outEvent_.weight;
+    weight = norm_ / sumW * outEvent_.weight;
     trueSkim->Fill();
   }
 
@@ -273,15 +272,4 @@ NormalizingSelector::finalize()
   cutsOut_ = 0;
 
   gSystem->Rename(tmpName, outName);
-}
-
-bool
-NormalizingSelector::selectEvent(simpletree::Event const& _event)
-{
-  if (EventSelector::selectEvent(_event)) {
-    sumW_ += outEvent_.weight;
-    return true;
-  }
-  else
-    return false;
 }
