@@ -273,6 +273,40 @@ def gammaJets(sample, name, selector = None):
 
     return selector
 
+def halo(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    def normalized(sample, name):
+        """
+        Candidate-like, but with inverted MIP tag and CSC filter.
+        """
+    
+        selector = ROOT.NormalizingSelector(name)
+        selector.setNormalization(norm)
+    
+        selector = monophotonBase(sample, name, selector)
+    
+        # 0->CSC halo tagger
+    #    selector.findOperator('MetFilters').setFilter(0, -1)
+    
+        photonSel = selector.findOperator('PhotonSelection')
+    
+        sels = list(photonFullSelection)
+        sels.remove('Sieie')
+        sels.remove('MIP49')
+        sels.append('Sieie15')
+    
+        for sel in sels:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    
+        photonSel.addSelection(False, ROOT.PhotonSelection.MIP49)
+    
+        return selector
+
+    return normalized
+
 def leptonBase(sample, name, selector = None):
     """
     Base for n-lepton + photon selection

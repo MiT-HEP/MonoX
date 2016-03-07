@@ -37,12 +37,13 @@ mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
+mc_gj = [(region, selectors.kfactor(defaults[region])) for region in mc_cand + mc_purity]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
 
 selectors = {
     # Data
-    'sph-d3': data_sph,
-    'sph-d4': data_sph,
+    'sph-d3': data_sph + [('halo', selectors.halo(5.9 * allsamples['sph-d3'].lumi / (allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi)))],
+    'sph-d4': data_sph + [('halo', selectors.halo(5.9 * allsamples['sph-d4'].lumi / (allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi)))],
     'smu-d3': data_smu,
     'smu-d4': data_smu,
     'sel-d3': data_sel,
@@ -51,11 +52,11 @@ selectors = {
     'znng-130': mc_vgcand,
     'wnlg-130': mc_vgcand + mc_vglep,
     'wg': mc_cand,
-    'gj-40': mc_cand + mc_purity,
-    'gj-100': mc_cand + mc_purity,
-    'gj-200': mc_cand + mc_purity,
-    'gj-400': mc_cand + mc_purity,
-    'gj-600': mc_cand + mc_purity,
+    'gj-40': mc_gj,
+    'gj-100': mc_gj,
+    'gj-200': mc_gj,
+    'gj-400': mc_gj,
+    'gj-600': mc_gj,
     'ttg': mc_cand + mc_lep + mc_dilep,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu-100': mc_wlnu,
