@@ -140,6 +140,7 @@ def getConfig(region):
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('halo', 'Beam halo', samples = [('sph-d3', 'halo'), ('sph-d4', 'halo')], color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = [('sph-d3', 'efake'), ('sph-d4', 'efake')], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
@@ -181,7 +182,7 @@ def getConfig(region):
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
-            if group.name == 'efake' or group.name == 'hfake':
+            if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
 
             for p in ['Up', 'Down']:
