@@ -182,7 +182,6 @@ def hadProxy(sample, name, selector = None):
     sels.remove('CHIso')
     sels.remove('CHWorstIso')
     sels.append('Sieie15')
-    sels.append('CHIso11')
     sels.append('CHWorstIso11')
 
     for sel in sels:
@@ -215,7 +214,6 @@ def hadProxyUp(sample, name, selector = None):
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
     sels.append('Sieie15')
-    sels.append('CHIso11')
     sels.append('CHWorstIso11')
 
     for sel in sels:
