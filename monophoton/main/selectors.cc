@@ -84,11 +84,14 @@ ZeeEventSelector::ZeeEventSelector(char const* name) :
   operators_.push_back(new HLTEle27eta2p1WPLooseGsf());
   operators_.push_back(new MetFilters());
   operators_.push_back(new EEPairSelection());
-  eePairSel_ = operators_.begin() + (operators_.size() - 1);
   operators_.push_back(new MuonVeto());
   operators_.push_back(new TauVeto());
   operators_.push_back(new JetCleaning());
   operators_.push_back(new LeptonRecoil());
+
+  eePairSel_ = operators_.begin();
+  while (!dynamic_cast<EEPairSelection*>(*eePairSel_))
+    ++eePairSel_;
 }
 
 ZeeEventSelector::~ZeeEventSelector()
@@ -104,11 +107,14 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
   outEvent_.weight = _event.weight;
 
   bool passUpToEE(true);
+
   auto opItr(operators_.begin());
   while (true) {
     passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
     if (opItr == eePairSel_)
       break;
+
+    ++opItr;
   }
 
   if (passUpToEE) {
@@ -189,7 +195,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
       else
         break;
     }
-    if (iElectron < _event.electrons.size() && iE == _event.electrons.size()) 
+    if (iElectron >= _event.electrons.size() || iE == _event.electrons.size())
       continue;
 
     eePairs_.emplace_back(iP, iElectron);
