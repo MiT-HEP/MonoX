@@ -84,8 +84,13 @@ class HLTIsoMu27 : public Cut {
 class MetFilters : public Cut {
  public:
   MetFilters(char const* name = "MetFilters") : Cut(name) {}
+
+  // 1->require pass, -1->require fail, 0->ignore
+  void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
  protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.metFilters.pass(); }
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  int filterConfig_[6]{1, 1, 1, 1, 1, 1};
 };
 
 class PhotonSelection : public Cut {

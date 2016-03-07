@@ -22,6 +22,36 @@ Modifier::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
 }
 
 //--------------------------------------------------------------------
+// MetFilters
+//--------------------------------------------------------------------
+
+bool
+MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
+{
+  bool fired[] = {
+    _event.metFilters.cschalo,
+    _event.metFilters.hbhe,
+    _event.metFilters.hbheIso,
+    _event.metFilters.badsc,
+    _event.metFilters.badTrack,
+    _event.metFilters.badMuonTrack
+  };
+
+  for (unsigned iF(0); iF != 6; ++iF) {
+    if (fired[iF]) {
+      if (filterConfig_[iF] == 1)
+        return false;
+    }
+    else {
+      if (filterConfig_[iF] == -1)
+        return false;
+    }
+  }
+
+  return true;
+}
+
+//--------------------------------------------------------------------
 // PhotonSelection
 //--------------------------------------------------------------------
 
