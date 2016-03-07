@@ -16,7 +16,7 @@ public:
   void addOperator(Operator* _op, unsigned idx = -1) { if (idx >= operators_.size()) operators_.push_back(_op); else operators_.insert(operators_.begin() + idx, _op); }
   virtual void initialize(char const* outputPath, simpletree::Event& event);
   virtual void finalize();
-  virtual void selectEvent(simpletree::Event const&);
+  virtual bool selectEvent(simpletree::Event const&);
 
   TString const& name() const { return name_; }
   unsigned size() const { return operators_.size(); }
@@ -37,7 +37,7 @@ class ZeeEventSelector : public EventSelector {
   ZeeEventSelector(char const* name);
   ~ZeeEventSelector();
 
-  void selectEvent(simpletree::Event const&) override;
+  bool selectEvent(simpletree::Event const&) override;
 
   class EEPairSelection : public PhotonSelection {
   public:
@@ -59,7 +59,22 @@ class WlnuSelector : public EventSelector {
  public:
   WlnuSelector(char const* name) : EventSelector(name) {}
 
-  void selectEvent(simpletree::Event const&) override;
+  bool selectEvent(simpletree::Event const&) override;
+};
+
+class NormalizingSelector : public EventSelector {
+  // Special event selector that normalizes the output to a given total sumW at the end
+ public:
+  NormalizingSelector(char const* name) : EventSelector(name) {}
+  ~NormalizingSelector() {}
+
+  void finalize() override;
+
+  void setNormalization(double norm, char const* normCut) { norm_ = norm; normCut_ = normCut; }
+
+ protected:
+  double norm_{1.};
+  TString normCut_{""};
 };
 
 #endif

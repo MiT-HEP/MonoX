@@ -32,7 +32,7 @@ outFile = ROOT.TFile.Open(basedir + '/data/kfactor.root', 'recreate')
 
 print 'gjets'
 
-func = ROOT.TF1('gjets', '[0] - [1] * x')
+func = ROOT.TF1('gjets', '[0] - [1] * x', 160., 1000.)
 func.SetParameters(1.71691, 0.00122061)
 func.Write('gj-40')
 func.Write('gj-100')

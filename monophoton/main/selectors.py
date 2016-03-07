@@ -182,7 +182,6 @@ def hadProxy(sample, name, selector = None):
     sels.remove('CHIso')
     sels.remove('CHWorstIso')
     sels.append('Sieie15')
-    sels.append('CHIso11')
     sels.append('CHWorstIso11')
 
     for sel in sels:
@@ -215,7 +214,6 @@ def hadProxyUp(sample, name, selector = None):
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
     sels.append('Sieie15')
-    sels.append('CHIso11')
     sels.append('CHWorstIso11')
 
     for sel in sels:
@@ -272,6 +270,40 @@ def gammaJets(sample, name, selector = None):
     selector.findOperator('JetMetDPhi').setPassIfIsolated(False)
 
     return selector
+
+def halo(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    def normalized(sample, name):
+        """
+        Candidate-like, but with inverted MIP tag and CSC filter.
+        """
+    
+        selector = ROOT.NormalizingSelector(name)
+        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+    
+        selector = monophotonBase(sample, name, selector)
+    
+        # 0->CSC halo tagger
+    #    selector.findOperator('MetFilters').setFilter(0, -1)
+    
+        photonSel = selector.findOperator('PhotonSelection')
+    
+        sels = list(photonFullSelection)
+        sels.remove('Sieie')
+        sels.remove('MIP49')
+        sels.append('Sieie15')
+    
+        for sel in sels:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    
+        photonSel.addSelection(False, ROOT.PhotonSelection.MIP49)
+    
+        return selector
+
+    return normalized
 
 def leptonBase(sample, name, selector = None):
     """
@@ -351,16 +383,16 @@ def oppflavor(sample, name, selector = None):
 def zee(sample, name):
     selector = ROOT.ZeeEventSelector(name)
 
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setMinPt(140.)
+    eeSel = selector.findOperator('EEPairSelection')
+    eeSel.setMinPt(140.)
 
     sels = list(photonFullSelection)
     sels.remove('EVeto')
 
     for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        eeSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+    eeSel.addSelection(False, ROOT.PhotonSelection.EVeto)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)

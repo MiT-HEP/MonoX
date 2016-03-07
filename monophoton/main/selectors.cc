@@ -2,6 +2,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TSystem.h"
 
 #include <cstring>
 
@@ -16,7 +17,7 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event)
   skimOut_ = new TTree("events", "events");
   cutsOut_ = new TTree("cutflow", "cutflow");
 
-  _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons"}); // branches to be directly copied
+  _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "metFilters.cschalo"}); // branches to be directly copied
   outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
 
   cutsOut_->Branch("run", &_event.run, "run/i");
@@ -47,20 +48,24 @@ EventSelector::finalize()
   cutsOut_ = 0;
 }
 
-void
+bool
 EventSelector::selectEvent(simpletree::Event const& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
 
   bool pass(true);
-  for (auto* op : operators_)
-    pass = pass && op->exec(_event, outEvent_);
+  for (auto* op : operators_) {
+    if (!op->exec(_event, outEvent_))
+      pass = false;
+  }
 
   if (pass)
     skimOut_->Fill();
 
   cutsOut_->Fill();
+
+  return pass;
 }
 
 Operator*
@@ -84,11 +89,14 @@ ZeeEventSelector::ZeeEventSelector(char const* name) :
   operators_.push_back(new HLTEle27eta2p1WPLooseGsf());
   operators_.push_back(new MetFilters());
   operators_.push_back(new EEPairSelection());
-  eePairSel_ = operators_.begin() + (operators_.size() - 1);
   operators_.push_back(new MuonVeto());
   operators_.push_back(new TauVeto());
   operators_.push_back(new JetCleaning());
   operators_.push_back(new LeptonRecoil());
+
+  eePairSel_ = operators_.begin();
+  while (!dynamic_cast<EEPairSelection*>(*eePairSel_))
+    ++eePairSel_;
 }
 
 ZeeEventSelector::~ZeeEventSelector()
@@ -97,18 +105,21 @@ ZeeEventSelector::~ZeeEventSelector()
     delete op;
 }
 
-void
+bool
 ZeeEventSelector::selectEvent(simpletree::Event const& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
 
   bool passUpToEE(true);
+
   auto opItr(operators_.begin());
   while (true) {
     passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
     if (opItr == eePairSel_)
       break;
+
+    ++opItr;
   }
 
   if (passUpToEE) {
@@ -126,12 +137,16 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
 
       cutsOut_->Fill();
     }
+
+    return true;
   }
   else {
     for (; opItr != operators_.end(); ++opItr)
       (*opItr)->exec(_event, outEvent_);
 
     cutsOut_->Fill();
+
+    return false;
   }
 }
 
@@ -189,7 +204,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
       else
         break;
     }
-    if (iElectron < _event.electrons.size() && iE == _event.electrons.size()) 
+    if (iElectron >= _event.electrons.size() || iE == _event.electrons.size())
       continue;
 
     eePairs_.emplace_back(iP, iElectron);
@@ -202,13 +217,59 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
 // WlnuSelector
 //--------------------------------------------------------------------
 
-void
+bool
 WlnuSelector::selectEvent(simpletree::Event const& _event)
 {
   for (auto& parton : _event.partons) {
     if (parton.status == 1 && std::abs(parton.pid) == 11)
-      return;
+      return false;
   }
 
-  EventSelector::selectEvent(_event);
+  return EventSelector::selectEvent(_event);
+}
+
+//--------------------------------------------------------------------
+// NormalizingSelector
+//--------------------------------------------------------------------
+
+void
+NormalizingSelector::finalize()
+{
+  if (!skimOut_)
+    return;
+
+  auto* hSumW(new TH1D("sumW", "", 1, 0., 1.));
+  hSumW->Sumw2();
+  skimOut_->Draw("0.5>>sumW", "weight * (" + normCut_ + ")", "goff");
+  double sumW(hSumW->GetBinContent(1));
+  delete hSumW;
+
+  auto* outputFile(skimOut_->GetCurrentFile());
+  TString outName(outputFile->GetName());
+  TString tmpName(outName);
+  tmpName.ReplaceAll(".root", "_tmp.root");
+
+  auto* trueOutput(TFile::Open(tmpName, "recreate"));
+  auto* trueSkim(skimOut_->CloneTree(0));
+  double weight(0.);
+  trueSkim->SetBranchAddress("weight", &weight);
+
+  long iEntry(0);
+  while (skimOut_->GetEntry(iEntry++)) {
+    weight = norm_ / sumW * outEvent_.weight;
+    trueSkim->Fill();
+  }
+
+  trueOutput->cd();
+  trueSkim->Write();
+  auto* trueCuts(cutsOut_->CloneTree());
+  trueCuts->Write();
+
+  delete trueOutput;
+  delete outputFile;
+
+  skimOut_ = 0;
+  cutsOut_ = 0;
+
+  gSystem->Rename(tmpName, outName);
 }
