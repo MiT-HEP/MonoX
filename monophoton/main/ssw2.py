@@ -9,6 +9,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 import main.selectors as selectors
+import main.plotconfig as plotconfig
 import config
 
 defaults = {
@@ -18,7 +19,6 @@ defaults = {
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
-    'gjets': selectors.gammaJets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'diel': selectors.dielectron,
@@ -27,7 +27,7 @@ defaults = {
     'eefake': selectors.zee
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
@@ -37,7 +37,7 @@ mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
-mc_gj = [(region, selectors.kfactor(defaults[region])) for region in mc_cand + mc_purity]
+mc_gj = [('monoph', selectors.kfactor(selectors.candidate)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
 
 selectors = {
@@ -51,6 +51,7 @@ selectors = {
     # MC for signal region
     'znng-130': mc_vgcand,
     'wnlg-130': mc_vgcand + mc_vglep,
+    'zg': mc_cand + mc_lep + mc_dilep,
     'wg': mc_cand,
     'gj-40': mc_gj,
     'gj-100': mc_gj,
@@ -84,72 +85,74 @@ for mt in ['a', 'v']:
             selectors[sname] = mc_cand
 
 if __name__ == '__main__':
+
+    from argparse import ArgumentParser
+    
+    argParser = ArgumentParser(description = 'Plot and count')
+    argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
+    argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
+    argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
+    
+    args = argParser.parse_args()
+    sys.argv = []
+
     ROOT.gSystem.Load('libMitFlatDataFormats.so')
     ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
     
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
-    sNames = sys.argv[1:]
+    snames = []
 
-    if len(sNames) != 0:
-        if sNames[0] == 'all':
-            sNames = selectors.keys()
-        elif sNames[0] == 'list':
-            print ' '.join(sorted(selectors.keys()))
-            sys.exit(0)
-        elif sNames[0] == 'dm':
-            sNames = [key for key in selectors.keys() if 'dm' in key]
-            print ' '.join(sorted(sNames))
-            """
-            for sName in sorted(sNames):
-                print sName
-            """
-            sys.exit(0)
+    if args.plotConfig:
+        # if a plot config is specified, use the samples for that
+        snames = plotconfig.getConfig(args.plotConfig).samples()
+
+    elif len(args.snames) != 0:
+        # handle special group names
+        if args.snames[0] == 'all':
+            snames = selectors.keys()
+
+        elif args.snames[0] == 'dm' or args.snames[0] == 'add':
+            snames = [key for key in selectors.keys() if key.startswith(args.snames[0])]
+
+        else:
+            snames = args.snames
+
+    # filter out empty samples
+    tmp = [name for name in snames if allsamples[name].sumw > 0.]
+    snames = tmp
+
+    if args.list:
+        print ' '.join(sorted(snames))
+        sys.exit(0)
     
     skimmer = ROOT.Skimmer()
-    
-    sampleNames = []
-    for name in sNames:
-        if allsamples[name].sumw > 0.:
-            sampleNames.append(name)
-    
-    print ' '.join(sampleNames)
-    if sNames[0] == 'all':
-        sys.exit(0)
     
     if not os.path.exists(config.skimDir):
         os.makedirs(config.skimDir)
 
-    dataSourceDir = config.ntuplesDir
-    
-    for sname in sampleNames:
+    for sname in snames:
         sample = allsamples[sname]
         print 'Starting sample', sname, str(sampleNames.index(sname)+1)+'/'+str(len(sampleNames))
     
         skimmer.reset()
     
         tree = ROOT.TChain('events')
-    
-        if sample.data:
-            print 'Reading', sname, 'from', dataSourceDir
-            tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
-    
-        elif sname.startswith('dm'):
-            if os.path.exists(config.phskimDir + '/' + sname + '.root'):
-                print 'Reading', sname, 'from', config.phskimDir
-                tree.Add(config.phskimDir + '/' + sname + '.root')
-            else:
-                sourceDir = config.ntuplesDir.replace("042", "043")
-                print 'Reading', sname, 'from', sourceDir
-                tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
-    
+
+        if os.path.exists(config.phskimDir + '/' + sname + '.root'):
+            print 'Reading', sname, 'from', config.phskimDir
+            tree.Add(config.phskimDir + '/' + sname + '.root')
+
         else:
-            if os.path.exists(config.phskimDir + '/' + sname + '.root'):
-                print 'Reading', sname, 'from', config.phskimDir
-                tree.Add(config.phskimDir + '/' + sname + '.root')
+            if sample.data:
+                sourceDir = config.dataNtuplesDir
+            elif sname.startswith('dm'):
+                sourceDir = config.ntuplesDir.replace("042", "043")
             else:
-                print 'Reading', sname, 'from', config.ntuplesDir
-                tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
+                sourceDir = config.ntuplesDir
+
+            print 'Reading', sname, 'from', sourceDir
+            tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
     
         for selconf in selectors[sname]:
             if type(selconf) == str:
