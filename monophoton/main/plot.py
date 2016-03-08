@@ -50,26 +50,24 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
     if not sample.data:
         weightexpr = str(lumi) + '*' + weightexpr
 
-    # generate empty histogram from vardef
-    hist = vardef.makeHist(histName)
-
     # open the source file
     if not os.path.exists(sourceName):
         print 'Error: Cannot open file', sourceName
-        return hist
+        # return an empty histogram
+        return vardef.makeHist(histName)
 
     source = ROOT.TFile.Open(sourceName)
     tree = source.Get('events')
 
     # routine to fill a histogram with possible reweighting
-    def fillHist(h, reweight = '1.'):
+    def fillHist(name, tree = tree, weightexpr = weightexpr, reweight = '1.'):
         """
         Fill h with expr, weighted with reweight * weightexpr. Take care of overflows
         """
 
         ROOT.gROOT.cd()
-        h.SetDirectory(ROOT.gROOT) # bring the histogram here
-        tree.Draw(expr + '>>' + h.GetName(), reweight + '*' + weightexpr, 'goff')
+        h = vardef.makeHist(name)
+        tree.Draw(expr + '>>' + name, reweight + '*' + weightexpr, 'goff')
         if vardef.overflow:
             iOverflow = h.GetNbinsX()
             cont = h.GetBinContent(iOverflow)
@@ -77,8 +75,10 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
             h.SetBinContent(iOverflow, cont + h.GetBinContent(iOverflow + 1))
             h.SetBinError(iOverflow, math.sqrt(err2 + math.pow(h.GetBinError(iOverflow + 1), 2.)))
 
+        return h
+
     # fill the nominal histogram
-    fillHist(hist)
+    hist = fillHist(histName)
 
     if weightVariation:
         # set bin errors to uncertainties from weight variations
@@ -98,11 +98,8 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
                 print 'Weight variation ' + varName + ' does not have downward shift in ' + sample.name + ' ' + selection
                 continue
 
-            upHist = vardef.makeHist(histName + '_' + upName)
-            downHist = vardef.makeHist(histName + '_' + downName)
-
-            fillHist(upHist, reweight = 'reweight_' + upName)
-            fillHist(downHist, reweight = 'reweight_' + downName)
+            upHist = fillHist(histName + '_' + upName, reweight = 'reweight_' + upName)
+            downHist = fillHist(histName + '_' + downName, reweight = 'reweight_' + downName)
 
             upHist.Add(hist, -1.)
             downHist.Add(hist, -1.)
@@ -116,12 +113,7 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
 
         if not sample.data:
             # lumi up and down
-            upHist = hist.Clone(histName + '_lumiUp')
-            downHist = hist.Clone(histName + '_lumiDown')
             varHist = hist.Clone(histName + '_lumi')
-
-            upHist.Scale(lumiUncert)
-            downHist.Scale(-lumiUncert)
             varHist.Scale(lumiUncert)
 
             diffs.append(varHist)
@@ -194,20 +186,6 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
     return hist
 
 
-def fillTree(outTree, sample, selection, treeMaker, cut, isNominal, prescale = 1.):
-    sourceName = config.skimDir + '/' + sample.name + '_' + selection + '.root'
-    # open the source file
-    if not os.path.exists(sourceName):
-        print 'Error: Cannot open file', sourceName
-        return
-
-    source = ROOT.TFile.Open(sourceName)
-    tree = source.Get('events')
-
-    treeMaker(tree, outTree, cut, sample.data, isNominal, prescale)
-    source.Close()
-
-
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
@@ -219,6 +197,7 @@ if __name__ == '__main__':
     argParser.add_argument('--prescale', '-b', metavar = 'PRESCALE', dest = 'prescale', type = int, default = 1, help = 'Prescale for prescaling.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
+    argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -234,11 +213,15 @@ if __name__ == '__main__':
             stack = {}
     
         canvas = DataMCCanvas(lumi = lumi)
+
+        if args.plotDir:
+            plotDir = 'monophoton/' + args.plotDir
+        else:
+            plotDir = 'monophoton/' + args.region
     
         if args.clearDir:
-            plotdir = canvas.webdir + '/monophoton/' + args.region
-            for plot in os.listdir(plotdir):
-                os.remove(plotdir + '/' + plot)
+            for plot in os.listdir(canvas.webdir + '/' + plotDir):
+                os.remove(canvas.webdir + '/' + plotDir + '/' + plot)
     
         print "Starting plot making."
         
@@ -310,7 +293,7 @@ if __name__ == '__main__':
             canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
     
             if not args.countOnly:
-                canvas.printWeb('monophoton/' + args.region, vardef.name, logy = vardef.logy, ymax = vardef.ymax)
+                canvas.printWeb(plotDir, vardef.name, logy = vardef.logy, ymax = vardef.ymax)
     
         print "Finished plotting."
     
