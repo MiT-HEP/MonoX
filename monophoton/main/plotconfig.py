@@ -83,7 +83,6 @@ class VariableDef(object):
             else:
                 raise RuntimeError('What are you thinking')
 
-        hist.SetDirectory(0)
         hist.Sumw2()
         return hist
 
