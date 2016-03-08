@@ -42,11 +42,15 @@ class VariableDef(object):
         else:
             return 1
 
-    def makeHist(self, name):
+    def makeHist(self, hname, outDir = None):
         """
         Make an empty histogram from the specifications.
         """
     
+        if outDir:
+            gd = ROOT.gDirectory
+            outDir.cd()
+
         if self.ndim() == 1:
             if type(self.binning) is list:
                 nbins = len(self.binning) - 1
@@ -60,7 +64,7 @@ class VariableDef(object):
                 lastbinWidth = (arr[-1] - arr[0]) / 30.
                 arr += array.array('d', [self.binning[-1] + lastbinWidth])
     
-            hist = ROOT.TH1D(name, '', nbins, arr)
+            hist = ROOT.TH1D(self.name + '-' + hname, '', nbins, arr)
     
         else:
             args = []
@@ -77,12 +81,15 @@ class VariableDef(object):
                 args += [nbins, arr]
     
             if ndim == 2:
-                hist = ROOT.TH2D(name, '', *tuple(args))
+                hist = ROOT.TH2D(self.name + '-' + hname, '', *tuple(args))
             elif ndim == 3:
                 # who would do this??
-                hist = ROOT.TH3D(name, '', *tuple(args))
+                hist = ROOT.TH3D(self.name + '-' + hname, '', *tuple(args))
             else:
                 raise RuntimeError('What are you thinking')
+
+        if outDir:
+            gd.cd()
 
         hist.Sumw2()
         return hist
