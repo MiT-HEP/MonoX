@@ -347,7 +347,7 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     
     argParser = ArgumentParser(description = 'Plot and count')
-    argParser.add_argument('region', metavar = 'REGION', help = 'Control or signal region name.')
+    argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot config name.')
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
     argParser.add_argument('--prescale', '-b', metavar = 'PRESCALE', dest = 'prescale', type = int, default = 1, help = 'Prescale for prescaling.')
@@ -359,7 +359,7 @@ if __name__ == '__main__':
     args = argParser.parse_args()
     sys.argv = []
 
-    plotConfig = getConfig(args.region)
+    plotConfig = getConfig(args.config)
 
     if len(args.plots) == 0:
         args.plots = [v.name for v in plotConfig.variables]
@@ -390,7 +390,7 @@ if __name__ == '__main__':
         else:
             plotDir = 'monophoton/' + args.plotDir
     else:
-        plotDir = 'monophoton/' + args.region
+        plotDir = 'monophoton/' + args.config
 
     if plotDir and args.clearDir:
         for plot in os.listdir(canvas.webdir + '/' + plotDir):
@@ -433,9 +433,12 @@ if __name__ == '__main__':
                 canvas.addStacked(hist, title = group.title, color = group.color)
 
         # plot signal distributions for sensitive variables
-        if isSensitive:
+        if isSensitive or outFile:
+            sigGroups = []
             for group in plotConfig.sigGroups:
                 # signal groups should only have one sample
+
+                sigGroups.append(group.name)
 
                 hist = getHist(group.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = sampleDir)
 
@@ -449,6 +452,14 @@ if __name__ == '__main__':
                 elif plotDir:
                     canvas.addSignal(hist, title = group.title, color = group.color)
 
+            if outFile:
+                # when output file is specified, make plots for all signal models
+                for sample in allsamples:
+                    if not sample.signal or sample.name in sigGroups:
+                        continue
+
+                    getHist(sample.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = outFile)
+                    
         obshist = vardef.makeHist('obs', outDir = outFile)
 
         for sname in plotConfig.obs.samples:

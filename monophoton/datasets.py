@@ -2,7 +2,7 @@ import re
 import os
 
 class SampleDef(object):
-    def __init__(self, name, category = '', title = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, custom = {}):
+    def __init__(self, name, category = '', title = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, custom = {}):
         self.name = name
         self.category = category
         self.title = title
@@ -15,10 +15,11 @@ class SampleDef(object):
             self.sumw = sumw
         self.lumi = lumi
         self.data = data
+        self.signal = signal
         self.custom = custom
 
     def clone(self):
-        return SampleDef(self.name, category = self.category, title = self.title, directory = self.directory, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, custom = dict(self.custom.items()))
+        return SampleDef(self.name, category = self.category, title = self.title, directory = self.directory, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, signal = self.signal, custom = dict(self.custom.items()))
 
     def dump(self):
         print 'name =', self.name
@@ -30,6 +31,7 @@ class SampleDef(object):
         print 'sumw =', self.sumw
         print 'lumi =', self.lumi
         print 'data =', self.data
+        print 'signal =', self.signal
 
 class SampleDefList(object):
     def __init__(self, samples = []):
@@ -73,7 +75,14 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as
         if matches.group(6) == '-':
             sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), lumi = float(matches.group(4)), nevents = int(matches.group(5)), data = True)
         else:
-            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), crosssection = float(matches.group(4)), nevents = int(matches.group(5)), sumw = float(matches.group(6)))
+            xsec = float(matches.group(4))
+            if xsec < 0.:
+                signal = True
+                xsec = -xsec
+            else:
+                signal = False
+
+            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), crosssection = xsec, nevents = int(matches.group(5)), sumw = float(matches.group(6)), signal = signal)
 
         allsamples.samples.append(sdef)
 
