@@ -323,7 +323,7 @@ class SimpleCanvas(object):
         self._objects.append(line)
 
     def addText(self, text, x1, y1, x2, y2, textalign = 22, font = 42):
-        pave = maketext(x1, y1, x2, y2, textalign = textalign, font = font)
+        pave = makeText(x1, y1, x2, y2, textalign = textalign, font = font)
         pave.AddText(text)
         self._objects.append(pave)
 
@@ -350,6 +350,7 @@ class SimpleCanvas(object):
             self._logy = True
             self.title = ''
             self.textside = 'left'
+            self._objects = []
 
         for h in self._histograms:
             h.Delete()
@@ -857,7 +858,8 @@ class DataMCCanvas(RatioCanvas):
             # a new background
             self._bkgs.append(idx)
 
-            bkgHist = self._histograms[idx]
+            bkgHist = self._histograms[idx].histogram
+
             fillcolor = ROOT.gROOT.GetColor(color)
             if fillcolor:
                 r = fillcolor.GetRed() * 0.8
@@ -868,9 +870,9 @@ class DataMCCanvas(RatioCanvas):
                 lcolor = color
 
             self.legend.add('bkg%d' % idx, title = title, opt = 'LF', fcolor = color, mcolor = lcolor, lcolor = lcolor, fstyle = style, lwidth = 2, lstyle = ROOT.kSolid)
-            self.legend.apply('bkg%d' % idx, bkgHist.histogram)
+            self.legend.apply('bkg%d' % idx, bkgHist)
 
-            self._stack.Add(bkgHist.histogram)
+            self._stack.Add(bkgHist)
 
         self._modified()
 
@@ -935,7 +937,12 @@ class DataMCCanvas(RatioCanvas):
             hList = [0, iBorder, iUncert] + self._sigs + [self._obs]
             rList = [iBorder] + [self._obs]
 
-            self.legend.construct(['obs'] + ['bkg%d' % idx for idx in reversed(self._bkgs)] + ['sig%d' % idx for idx in self._sigs])
+            legendOrder = []
+            if self._obs != -1:
+                legendOrder.append('obs')
+            legendOrder += ['bkg%d' % idx for idx in reversed(self._bkgs)] + ['sig%d' % idx for idx in self._sigs]
+
+            self.legend.construct(legendOrder)
 
             RatioCanvas.Update(self, hList = hList, rList = rList, logy = logy, ymax = ymax)
 
