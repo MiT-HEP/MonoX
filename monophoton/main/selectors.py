@@ -143,9 +143,9 @@ def eleProxy(sample, name, selector = None):
 
     return selector
 
-def purity(sample, name, selector = None):
+def purityBase(sample, name, selector = None):
     """
-    Candidate-like but with loosened sieie or CHIso.
+    Base selector for EM+Jet control region.
     """
 
     if selector is None:
@@ -181,6 +181,15 @@ def purity(sample, name, selector = None):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
 
+    return selector
+
+def purity(sample, name, selector = None):
+    """
+    EM Object is true photon-like, but with loosen sieie and CHIso requirements.
+    """
+
+    selector = purityBase(sample, name, selector)
+
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
@@ -197,14 +206,18 @@ def purity(sample, name, selector = None):
 
 def purityUp(sample, name, selector = None):
     """
-    Candidate-like with tight NHIso and PhIso, with inverted sieie or CHIso and no MET requirement.
+    EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
     """
     
-    selector = purity(sample, name, selector)
+    selector = purityBase(sample, name, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
     sels.append('CHWorstIso11')
@@ -216,19 +229,25 @@ def purityUp(sample, name, selector = None):
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
     photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    
+    return selector
 
 def purityDown(sample, name, selector = None):
     """
-    Candidate-like, but with loosened sieie + CHIso and inverted NHIso or PhIso and no MET requirement.
+    EM Object is true photon like, but with inverted NHIso and PhIso requirements and loosened sieie and CHIso requirements.
     """
     
-    selector = purity(sample, name, selector)
+    selector = purityBase(sample, name, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
     sels.remove('NHIso')
     sels.remove('PhIso')
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
     sels.append('CHWorstIso11')
     sels.append('NHIso11')
     sels.append('PhIso3')
@@ -240,6 +259,8 @@ def purityDown(sample, name, selector = None):
     photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+
+    return selector
 
 def hadProxy(sample, name, selector = None):
     """

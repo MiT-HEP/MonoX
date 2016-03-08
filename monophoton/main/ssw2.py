@@ -18,6 +18,8 @@ defaults = {
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
+    'purityUp': selectors.purityUp,
+    'purityDown': selectors.purityDown,
     'gjets': selectors.gammaJets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -27,7 +29,7 @@ defaults = {
     'eefake': selectors.zee
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
