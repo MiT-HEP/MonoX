@@ -148,7 +148,38 @@ def purity(sample, name, selector = None):
     Candidate-like but with loosened sieie or CHIso.
     """
 
-    selector = monophotonBase(sample, name, selector)
+    if selector is None:
+        selector = ROOT.EventSelector(name)
+
+    operators = []
+
+    if sample.data:
+        operators.append('HLTPhoton165HE10')
+
+    operators += [
+        'MetFilters',
+        'PhotonSelection',
+        'MuonVeto',
+        'ElectronVeto',
+        'TauVeto',
+        'JetCleaning',
+        'CopyMet'
+    ]
+
+    operators += [
+        'JetMetDPhi'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+        selector.addOperator(ROOT.NPVWeight(npvWeight))
+
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
 
     photonSel = selector.findOperator('PhotonSelection')
 
