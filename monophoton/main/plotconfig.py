@@ -98,7 +98,7 @@ class PlotConfig(object):
         self.bkgGroups = []
         self.variables = []
         self.sensitiveVars = []
-        self.treeMaker = None
+        self.treeMaker = ''
 
     def getVariable(self, name):
         return next(variable for variable in self.variables if variable.name == name)
@@ -108,6 +108,25 @@ class PlotConfig(object):
 
     def findGroup(self, name):
         return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)
+
+    def samples(self):
+        snames = set(self.obs.samples)
+
+        for group in self.bkgGroups:
+            for s in group.samples:
+                if type(s) is tuple:
+                    snames.add(s[0])
+                else:
+                    snames.add(s)
+
+        for group in self.sigGroups:
+            for s in group.samples:
+                if type(s) is tuple:
+                    snames.add(s[0])
+                else:
+                    snames.add(s)
+
+        return list(snames)
 
 
 class Variation(object):
@@ -178,7 +197,7 @@ def getConfig(region):
 
         config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
         
-        config.treeMaker = ROOT.MonophotonTreeMaker
+        config.treeMaker = 'MonophotonTreeMaker'
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:

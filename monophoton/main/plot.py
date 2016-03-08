@@ -20,7 +20,7 @@ from main.plotconfig import getConfig
 lumi = 0. # to be set in __main__
 lumiUncert = 0.027
 
-def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation = True, isSensitive = False):
+def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation = True, prescale = 1, postscale = 1.):
     """
     Create a histogram object for a given variable (vardef) from a given sample and selection.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -43,7 +43,7 @@ def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation 
     if vardef.cut:
         cuts.append(vardef.cut)
 
-    if isSensitive and args.prescale > 1 and vardef.blind is None:
+    if prescale > 1 and vardef.blind is None:
         cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
 
     weightexpr = 'weight*(' + '&&'.join(['(%s)' % c for c in cuts]) + ')'
@@ -139,6 +139,15 @@ def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation 
     # we don't need the tree any more
     source.Close()
 
+    for iX in range(1, hist.GetNbinsX() + 1):
+        if hist.GetBinContent(iX) < 0.:
+            hist.SetBinContent(iX, 0.)
+        if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+            hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
+
+    if postscale > 1. and vardef.blind is None:
+        hist.Scale(1. / postscale)
+
     # Take care of masking
     if sample.data and vardef.blind:
         for i in range(1, hist.GetNbinsX()+1):
@@ -219,24 +228,15 @@ if __name__ == '__main__':
     args = argParser.parse_args()
     sys.argv = []
 
-    ROOT.gSystem.Load('libMitFlatDataFormats.so')
-    ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
-
-    ROOT.gROOT.LoadMacro(thisdir + '/treemakers.cc+')
-
     plotConfig = getConfig(args.region)
 
     # lumi defined in the global scope for getHist function
     for sName in plotConfig.obs.samples:
         lumi += allsamples[sName].lumi
 
-    if args.countOnly:
-        outFile = None
-        histOut = None
-        outDir = None
-    else:
-        outFile = ROOT.TFile.Open(config.histDir + '/' + args.region + '.root', 'recreate')
-        histOut = outFile.mkdir('histograms')
+    outFile = None
+    histOut = None
+    outDir = None
 
     if not args.countOnly or args.bbb != '':
         if args.bbb:
@@ -260,16 +260,20 @@ if __name__ == '__main__':
 
             print vardef.name
 
-            isSensitive = vardef.name in plotConfig.sensitiveVars
-
             # set up canvas
             canvas.Clear(full = True)
             canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
+
+            isSensitive = vardef.name in plotConfig.sensitiveVars
         
             if isSensitive:
                 canvas.lumi = lumi / args.prescale
+                prescale = args.prescale
+                postscale = float(args.prescale)
             else:
                 canvas.lumi = lumi
+                prescale = 1
+                postscale = 1.
 
             # create output directory
             if histOut:
@@ -285,16 +289,7 @@ if __name__ == '__main__':
                     else:
                         selection = plotConfig.name
         
-                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = outDir)
-      
-                    for iX in range(1, hist.GetNbinsX() + 1):
-                        if hist.GetBinContent(iX) < 0.:
-                            hist.SetBinContent(iX, 0.)
-                        if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
-                            hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
-        
-                    if isSensitive:
-                        hist.Scale(1. / args.prescale)
+                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = outDir, postscale = postscale)
 
                     if outDir:
                         outDir.cd()
@@ -313,8 +308,7 @@ if __name__ == '__main__':
                 for group in plotConfig.sigGroups:
                     # signal groups should only have one sample
 
-                    hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir)
-                    hist.Scale(1. / args.prescale)
+                    hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir, postscale = postscale)
 
                     if outDir:
                         outDir.cd()
@@ -323,7 +317,7 @@ if __name__ == '__main__':
                     canvas.addSignal(hist, title = group.title, color = group.color)
         
             for sName in plotConfig.obs.samples:
-                hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, isSensitive = isSensitive, outDir = outDir)
+                hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir, prescale = prescale)
 
                 if outDir:
                     outDir.cd()
@@ -403,97 +397,6 @@ if __name__ == '__main__':
     if histOut:
         histOut.cd()
         counters['obs'].Write()
-
-    if outFile and plotConfig.treeMaker:
-        print "Making final ntuples."
-
-        # Write final trees
-        treeOut = outFile.mkdir('trees')
-
-        fullSelection = plotConfig.baseline + ' && ' + plotConfig.fullSelection
-
-        for group in plotConfig.bkgGroups:
-            sys.stdout.write(group.name + ' ')
-            sys.stdout.flush()
-
-            treeOut.cd()
-            tree = ROOT.TTree(group.name, 'events')
-
-            for sName in group.samples:
-                if type(sName) is tuple:
-                    selection = sName[1]
-                    sName = sName[0]
-                else:
-                    selection = plotConfig.name
-
-                fillTree(tree, allsamples[sName], selection, plotConfig.treeMaker, fullSelection, True, prescale = prescale)
-
-            treeOut.cd()
-            tree.Write()
-
-            for variation in group.variations:
-                sys.stdout.write(group.name + '_' + variation.name + ' ')
-                sys.stdout.flush()
-
-                treeOut.cd()
-                tree = ROOT.TTree(group.name + '_' + variation.name, 'events')
-
-                for sName in variation.samples:
-                    if type(sName) is tuple:
-                        selection = sName[1]
-                        sName = sName[0]
-                    else:
-                        selection = plotConfig.name
-
-                    if variation.cut:
-                        cut = variation.cut
-                    else:
-                        cut = fullSelection
-
-                    fillTree(tree, allsamples[sName], selection, plotConfig.treeMaker, cut, False, prescale = prescale)
-
-                treeOut.cd()
-                tree.Write()
-
-        for group in plotConfig.sigGroups:
-            sys.stdout.write(group.name + ' ')
-            sys.stdout.flush()
-
-            treeOut.cd()
-            tree = ROOT.TTree(group.name, 'events')
-
-            fillTree(tree, allsamples[group.name], plotConfig.name, plotConfig.treeMaker, fullSelection, True, prescale = prescale)
-
-            for variation in group.variations:
-                sys.stdout.write(group.name + '_' + variation.name + ' ')
-                sys.stdout.flush()
-
-                treeOut.cd()
-                tree = ROOT.TTree(group.name + '_' + variation.name, 'events')
-
-                if variation.cut:
-                    cut = variation.cut
-                else:
-                    cut = fullSelection
-
-                fillTree(tree, allsamples[group.name], plotConfig.name, plotConfig.treeMaker, cut, False, prescale = prescale)
-
-                treeOut.cd()
-                tree.Write()
-
-        sys.stdout.write('obs')
-        sys.stdout.flush()
-
-        treeOut.cd()
-        tree = ROOT.TTree('obs', 'events')
-        
-        for sName in plotConfig.obs.samples:
-            fillTree(tree, allsamples[sName], plotConfig.name, plotConfig.treeMaker, fullSelection, True)
-
-        treeOut.cd()
-        tree.Write()
-
-        print ''
 
     # Print out the predictions and yield
     bkgTotal = 0.
