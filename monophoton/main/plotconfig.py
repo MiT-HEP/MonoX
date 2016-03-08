@@ -132,12 +132,13 @@ class PlotConfig(object):
 class Variation(object):
     """
     Specifies alternative samples and cuts for systematic variation.
+    Must specify either region or replacements or both as a two-component tuple corresponding to up and down variations.
     """
 
-    def __init__(self, name, samples, cut = ''):
+    def __init__(self, name, region = None, replacements = None):
         self.name = name
-        self.samples = samples
-        self.cut = cut
+        self.region = region
+        self.replacements = replacements
 
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
@@ -203,20 +204,17 @@ def getConfig(confName):
         for group in config.bkgGroups + config.sigGroups:
             if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
-            for p in ['Up', 'Down']:
-                cut = config.baseline.replace('t1Met.minJetDPhi', 't1Met.minJetDPhiJEC' + p) + ' && ' + metCut.replace('t1Met.met', 't1Met.metCorr' + p)
-                group.variations.append(Variation('jec' + p, group.samples, cut = cut))
-
-            for p in ['Up', 'Down']:
-                cut = config.baseline.replace('t1Met.minJetDPhi', 't1Met.minJetDPhiGEC' + p).replace('photons.pt', 'photons.ptVar' + p) + ' && ' + metCut.replace('t1Met.met', 't1Met.metGEC' + p)
-                group.variations.append(Variation('gec' + p, group.samples, cut = cut))
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.pt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.pt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
-        config.findGroup('hfake').variations += [
-            Variation('tfactorUp', [('sph-d3', 'hfakeUp'), ('sph-d4', 'hfakeUp')]),
-            Variation('tfactorDown', [('sph-d3', 'hfakeDown'), ('sph-d4', 'hfakeDown')])
-        ]
+        config.findGroup('hfake').variations.append(Variation('tfactor', region = ('hfakeUp', 'hfakeDown')))
     
     elif confName == 'lowdphi':
         metCut = 't1Met.met > 170.'

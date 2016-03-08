@@ -2,9 +2,9 @@
 
 import sys
 import os
-import collections
 import array
 import math
+import re
 import ROOT
 
 ROOT.gROOT.SetBatch(True)
@@ -20,7 +20,7 @@ from main.plotconfig import getConfig
 lumi = 0. # to be set in __main__
 lumiUncert = 0.027
 
-def getHist(sample, region, vardef, baseline, weightVariation = True, prescale = 1, postscale = 1.):
+def getHist(sample, region, vardef, baseline, weightVariation = True, cutReplacements = [], prescale = 1, postscale = 1.):
     """
     Create a histogram object for a given variable (vardef) from a given sample and region.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -47,6 +47,16 @@ def getHist(sample, region, vardef, baseline, weightVariation = True, prescale =
         cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
 
     weightexpr = 'weight*(' + '&&'.join(['(%s)' % c for c in cuts]) + ')'
+
+    if cutReplacements:
+        print 'original', weightexpr
+
+    for repl in cutReplacements:
+        # replace the variable names given in repl = ('original', 'new')
+        # enclose the original variable name with characters that would not be a part of the variable
+        weightexpr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', weightexpr)
+        expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
+
     if not sample.data:
         weightexpr = str(lumi) + '*' + weightexpr
 
@@ -60,7 +70,7 @@ def getHist(sample, region, vardef, baseline, weightVariation = True, prescale =
     tree = source.Get('events')
 
     # routine to fill a histogram with possible reweighting
-    def fillHist(name, tree = tree, weightexpr = weightexpr, reweight = '1.'):
+    def fillHist(name, reweight = '1.'):
         """
         Fill h with expr, weighted with reweight * weightexpr. Take care of overflows
         """
@@ -257,16 +267,48 @@ if __name__ == '__main__':
                 else:
                     region = plotConfig.name
 
-                for sName in group.samples:
-                    hist = getHist(allsamples[sName], region, vardef, plotConfig.baseline, postscale = postscale)
+                # combined group histogram
+                histName = vardef.name + '-' + group.name
+                hist = vardef.makeHist(histName)
 
-                    idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
-    
-                    if vardef.name == args.bbb:
-                        try:
-                            stack[group.name].Add(hist)
-                        except KeyError:
-                            stack[group.name] = hist.Clone(grop.name + '_bbb')
+                for sName in group.samples:
+                    hist.Add(getHist(allsamples[sName], region, vardef, plotConfig.baseline, postscale = postscale))
+
+                # systematics variation
+                for variation in group.variations:
+                    # two histograms (up and down)
+                    vhists = tuple([vardef.makeHist(histName + '_' + variation.name + v) for v in ['Up', 'Down']])
+
+                    for iV in range(2):
+                        if variation.region:
+                            vregion = variation.region[iV]
+                        else:
+                            vregion = region
+
+                        if variation.replacements:
+                            repl = variation.replacements[iV]
+                        else:
+                            repl = []
+
+                        for sName in group.samples:
+                            vhists[iV].Add(getHist(allsamples[sName], vregion, vardef, plotConfig.baseline, weightVariation = False, cutReplacements = repl, postscale = postscale))
+
+                    vhists[0].Add(hist, -1.)
+                    vhists[1].Add(hist, -1.)
+
+                    # take the average variation as uncertainty
+                    varHist = vhists[0].Clone(histName + '_' + variation.name)
+                    varHist.Add(vhists[1], -1.)
+                    varHist.Scale(0.5)
+                        
+                    for iX in range(1, hist.GetNbinsX() + 1):
+                        err = math.sqrt(math.pow(hist.GetBinError(iX), 2.) + math.pow(varHist.GetBinContent(iX), 2.))
+                        hist.SetBinError(iX, err)
+
+                canvas.addStacked(hist, title = group.title, color = group.color)
+
+                if vardef.name == args.bbb:
+                    stack[group.name] = hist.Clone(group.name + '_bbb')
 
             # plot signal distributions for sensitive variables
             if isSensitive:
