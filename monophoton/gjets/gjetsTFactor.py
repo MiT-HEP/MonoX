@@ -315,7 +315,7 @@ scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 gfits = []
 
 models = [ pepe, pepeplus ] 
-colors = [ r.kOrange, r.kGreen-3 ] 
+colors = [ r.kOrange-3, r.kGreen-3 ] 
 
 for iG, gmet in enumerate(gmets):
     gfits.append([])
@@ -377,7 +377,7 @@ for iM, model in enumerate(models):
     fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
     # print fstring
     tfact = r.TF1(tname, fstring, 0., 600.)
-    tfact.SetLineColor((iM+1)*2+1)
+    tfact.SetLineColor(colors[iM])
     tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
     # tfact.SetMinimum(0.0001)
 
