@@ -22,7 +22,7 @@ elif sys.argv[1] == "compile":
 else:
     if not os.path.isfile(sys.argv[2]):
         try:
-            testFile = ROOT.TFile(sys.argv[1])
+            testFile = ROOT.TFile.Open(sys.argv[1])
             if not 'nero' in testFile.GetListOfKeys():
                 testFile.Close()
                 exit(0)

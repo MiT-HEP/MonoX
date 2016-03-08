@@ -1,7 +1,8 @@
 #! /usr/bin/python
 
 from ROOT import TFile
-from HistPlotter import histPlotter as plotter
+from CrombieTools.PlotTools.PlotHists import plotter
+from CrombieTools.PlotTools.PlotUtils import GetRatioToLines
 from array import array
 import cuts
 import math, os
@@ -20,8 +21,7 @@ uncertainties = [
     uncFile.znlo1_over_anlo1_facScaleUp
 ]
 
-outDir = '~/www/monoV_160222/'
-#outDir = '~/public/dump/'
+outDir = '~/www/plots/' + os.environ['CROMBIEDATE'] + '/'
 
 gammaMCFile = TFile(directory + 'merged/monojet_GJets.root')
 print gammaMCFile.GetName()
@@ -38,11 +38,11 @@ plotter.SetLegendLocation(plotter.kUpper,plotter.kRight)
 plotter.SetDefaultExpr('met')
 plotter.SetEventsPer(1.0)
 
-plotter.SetAxisMinMax(0.055,0.18)
+plotter.SetAxisMinMax(0.0,0.12)
 plotter.SetRatioMinMax(0.0,2.0)
 
-plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZllMJ + ')*mcFactors*XSecWeight')
-plotter.AddTreeWeight(dataFile.events,cuts.ZllMJ)
+plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZeeMJ + ')*mcFactors*XSecWeight')
+plotter.AddTreeWeight(dataFile.events,cuts.ZeeMJ)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
 plotter.ResetTree()
@@ -59,7 +59,7 @@ plotter.AddLegendEntry('Data',1)
 plotter.SetDataIndex(1)
 plotter.SetRatioIndex(0)
 
-ratio = plotter.MakeRatio(zPlots,gammaPlots)
+ratio = GetRatioToLines(zPlots,gammaPlots)
 
 for iBin in range(len(xArray)):
     if iBin == 0:
@@ -71,7 +71,7 @@ for iBin in range(len(xArray)):
     ratio[0].SetBinError(iBin,math.sqrt(sumw2))
 ##
 
-plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMJ_met',ratio,'|U| [GeV]','Yield Ratio (Zll/#gamma)')
+plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZeeMJ_met',ratio,'|U| [GeV]','Yield Ratio (Zee/#gamma)')
 
 plotter.SetDefaultExpr('photonPt')
 gammaPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
@@ -80,11 +80,11 @@ plotter.ResetTree()
 plotter.ResetWeight()
 
 plotter.SetDefaultExpr('dilep_pt')
-plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZllMJ + ')*mcFactors*XSecWeight')
-plotter.AddTreeWeight(dataFile.events,cuts.ZllMJ)
+plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZeeMJ + ')*mcFactors*XSecWeight')
+plotter.AddTreeWeight(dataFile.events,cuts.ZeeMJ)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
-ratio = plotter.MakeRatio(zPlots,gammaPlots)
+ratio = GetRatioToLines(zPlots,gammaPlots)
 
 for iBin in range(len(xArray)):
     if iBin == 0:
@@ -96,7 +96,7 @@ for iBin in range(len(xArray)):
     ratio[0].SetBinError(iBin,math.sqrt(sumw2))
 ##
 
-plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMJ_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zll/#gamma)')
+plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZeeMJ_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zee/#gamma)')
 
 plotter.ResetTree()
 plotter.ResetWeight()
@@ -108,8 +108,8 @@ plotter.SetAxisMinMax(0.0,0.0)
 xArray = [250,300,350,400,500,600,1000]
 
 
-plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZllMV + ')*mcFactors*XSecWeight')
-plotter.AddTreeWeight(dataFile.events,cuts.ZllMV)
+plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZeeMV + ')*mcFactors*XSecWeight')
+plotter.AddTreeWeight(dataFile.events,cuts.ZeeMV)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
 plotter.SetDefaultExpr('met')
@@ -123,7 +123,7 @@ plotter.AddTreeWeight(dataFile.events,cuts.gjetMV)
 
 gammaPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
-ratio = plotter.MakeRatio(zPlots,gammaPlots)
+ratio = GetRatioToLines(zPlots,gammaPlots)
 
 for iBin in range(len(xArray)):
     if iBin == 0:
@@ -135,7 +135,7 @@ for iBin in range(len(xArray)):
     ratio[0].SetBinError(iBin,math.sqrt(sumw2))
 ##
 
-plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMV_met',ratio,'|U| [GeV]','Yield Ratio (Zll/#gamma)')
+plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZeeMV_met',ratio,'|U| [GeV]','Yield Ratio (Zee/#gamma)')
 
 plotter.SetDefaultExpr('photonPt')
 gammaPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
@@ -144,11 +144,11 @@ plotter.ResetTree()
 plotter.ResetWeight()
 
 plotter.SetDefaultExpr('dilep_pt')
-plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZllMV + ')*mcFactors*XSecWeight')
-plotter.AddTreeWeight(dataFile.events,cuts.ZllMV)
+plotter.AddTreeWeight(zeeMCFile.events,'(' + cuts.ZeeMV + ')*mcFactors*XSecWeight')
+plotter.AddTreeWeight(dataFile.events,cuts.ZeeMV)
 zPlots = plotter.MakeHists(len(xArray)-1,array('d',xArray))
 
-ratio = plotter.MakeRatio(zPlots,gammaPlots)
+ratio = GetRatioToLines(zPlots,gammaPlots)
 
 for iBin in range(len(xArray)):
     if iBin == 0:
@@ -160,4 +160,4 @@ for iBin in range(len(xArray)):
     ratio[0].SetBinError(iBin,math.sqrt(sumw2))
 ##
 
-plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZllMV_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zll/#gamma)')
+plotter.MakeCanvas(outDir + 'Zgamma_ratio_ZeeMV_pt',ratio,'Boson p_{T} [GeV]','Yield Ratio (Zee/#gamma)')

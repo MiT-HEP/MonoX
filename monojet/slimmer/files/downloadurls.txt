@@ -18,3 +18,5 @@ http://dabercro.web.cern.ch/dabercro/slimmerfiles_160218/triggerEffs.root
 http://dabercro.web.cern.ch/dabercro/slimmerfiles_160218/uncertainties_24bins.root
 http://dabercro.web.cern.ch/dabercro/slimmerfiles_160218/uncertainties_8bins.root
 http://dabercro.web.cern.ch/dabercro/slimmerfiles_160218/uncertainties_EWK_24bins.root
+http://t3serv001.mit.edu/~dhsu/scalefactors/root/2016-02-26/2016-02-26_74x_template_erfcexp/scalefactors-ele.root
+http://t3serv001.mit.edu/~dhsu/scalefactors/root/2016-02-26/2016-02-26_74x_template_erfcexp/scalefactors-mu.root
