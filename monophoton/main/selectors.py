@@ -195,6 +195,52 @@ def purity(sample, name, selector = None):
 
     return selector
 
+def purityUp(sample, name, selector = None):
+    """
+    Candidate-like with tight NHIso and PhIso, with inverted sieie or CHIso and no MET requirement.
+    """
+    
+    selector = purity(sample, name, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.append('NHIsoTight')
+    sels.append('PhIsoTight')
+    sels.append('CHWorstIso11')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+
+def purityDown(sample, name, selector = None):
+    """
+    Candidate-like, but with loosened sieie + CHIso and inverted NHIso or PhIso and no MET requirement.
+    """
+    
+    selector = purity(sample, name, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('NHIso')
+    sels.remove('PhIso')
+    sels.append('CHWorstIso11')
+    sels.append('NHIso11')
+    sels.append('PhIso3')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+
 def hadProxy(sample, name, selector = None):
     """
     Candidate-like but with inverted sieie or CHIso.

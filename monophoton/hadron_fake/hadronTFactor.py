@@ -20,7 +20,7 @@ outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
 isos = [ ('Worst', '') ] # [ ( '', 'pv'), ('Worst', '') ]
 
-samples = [ ('', 't1Met.met < 60.') #  && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
+samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
             ,('Down', 't1Met.met < 60.')
             ,('Up', 't1Met.met < 60.')
             ]
@@ -58,7 +58,7 @@ for iso in isos:
 
     for samp, sel in samples:
         htree = ROOT.TChain('events')
-        htree.Add(config.skimDir + '/sph-d*_hfake'+samp+'.root')
+        htree.Add(config.skimDir + '/sph-d*_purity'+samp+'.root')
 
         hname = 'hpt'+iso[0]+samp
         hpt = ROOT.TH1D(hname, ';p_{T} (GeV)', len(binning) - 1, binning)
