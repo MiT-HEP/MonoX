@@ -3,10 +3,11 @@ import array
 import ROOT
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], color = ROOT.kBlack):
+    def __init__(self, name, title, samples = [], region = '', color = ROOT.kBlack):
         self.name = name
         self.title = title
         self.samples = samples
+        self.region = region
         self.color = color
         self.variations = []
 
@@ -89,7 +90,7 @@ class VariableDef(object):
 
 class PlotConfig(object):
     def __init__(self, name, obsSamples):
-        self.name = name # name serves as the default sample selection (e.g. monoph)
+        self.name = name # name serves as the default region selection (e.g. monoph)
         self.baseline = '1'
         self.fullSelection = '1'
         self.obs = GroupSpec('obs', 'Observed', samples = obsSamples)
@@ -142,9 +143,9 @@ class Variation(object):
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
         
-def getConfig(region):
+def getConfig(confName):
 
-    if region == 'monoph':
+    if confName == 'monoph':
         metCut = 't1Met.met > 170.'
         
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
@@ -158,9 +159,9 @@ def getConfig(region):
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            GroupSpec('halo', 'Beam halo', samples = [('sph-d3', 'halo'), ('sph-d4', 'halo')], color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
-            GroupSpec('hfake', 'Hadronic fakes', samples = [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('efake', 'Electron fakes', samples = [('sph-d3', 'efake'), ('sph-d4', 'efake')], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('halo', 'Beam halo', samples = ['sph-d3', 'sph-d4'], region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = ['sph-d3', 'sph-d4'], region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = ['sph-d3', 'sph-d4'], region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
@@ -217,7 +218,7 @@ def getConfig(region):
             Variation('tfactorDown', [('sph-d3', 'hfakeDown'), ('sph-d4', 'hfakeDown')])
         ]
     
-    elif args.region == 'lowdphi':
+    elif confName == 'lowdphi':
         metCut = 't1Met.met > 170.'
         
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
@@ -225,10 +226,10 @@ def getConfig(region):
         config.fullSelection = metCut
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('efake', 'Electron fakes', samples = [('sph-d3', 'efake'), ('sph-d4', 'efake')], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('efake', 'Electron fakes', samples = ['sph-d3', 'sph-d4'], region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            GroupSpec('hfake', 'Hadronic fakes', samples = [('sph-d3', 'hfake'), ('sph-d4', 'hfake')], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = ['sph-d3', 'sph-d4'], region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         ]
         config.variables = [
@@ -246,7 +247,7 @@ def getConfig(region):
             if variable.name not in ['met']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
     
-    elif args.region == 'dimu':
+    elif confName == 'dimu':
         mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
         dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
         dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
@@ -272,7 +273,7 @@ def getConfig(region):
         ]
     
     else:
-        print 'Unknown region', args.region
+        print 'Unknown configuration', confName
         return
 
     return config

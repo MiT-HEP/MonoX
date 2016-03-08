@@ -20,14 +20,14 @@ from main.plotconfig import getConfig
 lumi = 0. # to be set in __main__
 lumiUncert = 0.027
 
-def getHist(sample, selection, vardef, baseline, weightVariation = True, prescale = 1, postscale = 1.):
+def getHist(sample, region, vardef, baseline, weightVariation = True, prescale = 1, postscale = 1.):
     """
-    Create a histogram object for a given variable (vardef) from a given sample and selection.
+    Create a histogram object for a given variable (vardef) from a given sample and region.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
     """
 
-    histName = vardef.name + '-' + sample.name + '_' + selection
-    sourceName = config.skimDir + '/' + sample.name + '_' + selection + '.root'
+    histName = vardef.name + '-' + sample.name + '_' + region
+    sourceName = config.skimDir + '/' + sample.name + '_' + region + '.root'
 
     # quantity to be plotted
     if type(vardef.expr) is tuple:
@@ -95,7 +95,7 @@ def getHist(sample, selection, vardef, baseline, weightVariation = True, prescal
             downName = varName + 'Down'
 
             if not tree.GetBranch('reweight_' + downName):
-                print 'Weight variation ' + varName + ' does not have downward shift in ' + sample.name + ' ' + selection
+                print 'Weight variation ' + varName + ' does not have downward shift in ' + sample.name + ' ' + region
                 continue
 
             upHist = fillHist(histName + '_' + upName, reweight = 'reweight_' + upName)
@@ -252,14 +252,13 @@ if __name__ == '__main__':
             # make background histograms
             for group in plotConfig.bkgGroups:
                 idx = -1
+                if group.region:
+                    region = group.region
+                else:
+                    region = plotConfig.name
+
                 for sName in group.samples:
-                    if type(sName) is tuple:
-                        selection = sName[1]
-                        sName = sName[0]
-                    else:
-                        selection = plotConfig.name
-        
-                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, postscale = postscale)
+                    hist = getHist(allsamples[sName], region, vardef, plotConfig.baseline, postscale = postscale)
 
                     idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
     
@@ -306,34 +305,32 @@ if __name__ == '__main__':
 
     if isSensitive:
         prescale = args.prescale
+        postscale = float(args.prescale)
     else:
-        prescale = 1.
+        prescale = 1
+        postscale = 1.
 
     for group in plotConfig.bkgGroups:
         counters[group.name] = vardef.makeHist('counts-' + group.name + '_' + plotConfig.name)
 
-        for sName in group.samples:
-            if type(sName) is tuple:
-                selection = sName[1]
-                sName = sName[0]
-            else:
-                selection = plotConfig.name
-    
-            hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline)
-            hist.Scale(1. / prescale)
+        if group.region:
+            region = group.region
+        else:
+            region = plotConfig.name
 
+        for sName in group.samples:
+            hist = getHist(allsamples[sName], region, vardef, plotConfig.baseline, postscale = postscale)
             counters[group.name].Add(hist)
 
     for group in plotConfig.sigGroups:
-        hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline)
-        hist.Scale(1. / prescale)
+        hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, postscale = postscale)
 
         counters[group.name] = hist
     
     counters['obs'] = vardef.makeHist('counts-obs_' + plotConfig.name)
 
     for sName in plotConfig.obs.samples:
-        hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, isSensitive = isSensitive)
+        hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, prescale = prescale)
         counters['obs'].Add(hist)
 
     # Print out the predictions and yield
