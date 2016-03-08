@@ -5,6 +5,7 @@
 
 #include "TTree.h"
 #include "TString.h"
+#include "TF1.h"
 
 #include <vector>
 
@@ -16,7 +17,7 @@ public:
   void addOperator(Operator* _op, unsigned idx = -1) { if (idx >= operators_.size()) operators_.push_back(_op); else operators_.insert(operators_.begin() + idx, _op); }
   virtual void initialize(char const* outputPath, simpletree::Event& event);
   virtual void finalize();
-  virtual bool selectEvent(simpletree::Event const&);
+  virtual void selectEvent(simpletree::Event&);
 
   TString const& name() const { return name_; }
   unsigned size() const { return operators_.size(); }
@@ -37,7 +38,7 @@ class ZeeEventSelector : public EventSelector {
   ZeeEventSelector(char const* name);
   ~ZeeEventSelector();
 
-  bool selectEvent(simpletree::Event const&) override;
+  void selectEvent(simpletree::Event&) override;
 
   class EEPairSelection : public PhotonSelection {
   public:
@@ -59,7 +60,7 @@ class WlnuSelector : public EventSelector {
  public:
   WlnuSelector(char const* name) : EventSelector(name) {}
 
-  bool selectEvent(simpletree::Event const&) override;
+  void selectEvent(simpletree::Event&) override;
 };
 
 class NormalizingSelector : public EventSelector {
@@ -75,6 +76,23 @@ class NormalizingSelector : public EventSelector {
  protected:
   double norm_{1.};
   TString normCut_{""};
+};
+
+class SmearingSelector : public EventSelector {
+  // Generates nSample events per input event with smeared MET according to a model.
+  // Technically there are statistics issues here, but we'll ignore it for now.
+ public:
+  SmearingSelector(char const* name) : EventSelector(name) {}
+  ~SmearingSelector() {}
+
+  void selectEvent(simpletree::Event&) override;
+
+  void setNSamples(unsigned n) { nSamples_ = n; }
+  void setFunction(TF1* func) { func_ = func; }
+
+ protected:
+  unsigned nSamples_{1};
+  TF1* func_{0};
 };
 
 #endif

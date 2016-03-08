@@ -48,8 +48,8 @@ EventSelector::finalize()
   cutsOut_ = 0;
 }
 
-bool
-EventSelector::selectEvent(simpletree::Event const& _event)
+void
+EventSelector::selectEvent(simpletree::Event& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
@@ -64,8 +64,6 @@ EventSelector::selectEvent(simpletree::Event const& _event)
     skimOut_->Fill();
 
   cutsOut_->Fill();
-
-  return pass;
 }
 
 Operator*
@@ -105,8 +103,8 @@ ZeeEventSelector::~ZeeEventSelector()
     delete op;
 }
 
-bool
-ZeeEventSelector::selectEvent(simpletree::Event const& _event)
+void
+ZeeEventSelector::selectEvent(simpletree::Event& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
@@ -137,16 +135,12 @@ ZeeEventSelector::selectEvent(simpletree::Event const& _event)
 
       cutsOut_->Fill();
     }
-
-    return true;
   }
   else {
     for (; opItr != operators_.end(); ++opItr)
       (*opItr)->exec(_event, outEvent_);
 
     cutsOut_->Fill();
-
-    return false;
   }
 }
 
@@ -217,15 +211,15 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
 // WlnuSelector
 //--------------------------------------------------------------------
 
-bool
-WlnuSelector::selectEvent(simpletree::Event const& _event)
+void
+WlnuSelector::selectEvent(simpletree::Event& _event)
 {
   for (auto& parton : _event.partons) {
     if (parton.status == 1 && std::abs(parton.pid) == 11)
-      return false;
+      return;
   }
 
-  return EventSelector::selectEvent(_event);
+  EventSelector::selectEvent(_event);
 }
 
 //--------------------------------------------------------------------
@@ -272,4 +266,26 @@ NormalizingSelector::finalize()
   cutsOut_ = 0;
 
   gSystem->Rename(tmpName, outName);
+}
+
+//--------------------------------------------------------------------
+// SmearingSelector
+//--------------------------------------------------------------------
+
+void
+SmearingSelector::selectEvent(simpletree::Event& _event)
+{
+  if (!func_)
+    return;
+
+  // smearing the MET only - total pT will be inconsistent
+  double originalMet(_event.t1Met.met);
+
+  _event.weight /= nSamples_;
+
+  for (unsigned iS(0); iS != nSamples_; ++iS) {
+    _event.t1Met.met = originalMet + func_->GetRandom();
+  
+    EventSelector::selectEvent(_event);
+  }
 }
