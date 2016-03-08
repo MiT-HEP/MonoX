@@ -935,7 +935,7 @@ class DataMCCanvas(RatioCanvas):
             self._temporaries += [borderHist, uncertHist]
 
             hList = [0, iBorder, iUncert] + self._sigs + [self._obs]
-            rList = [iBorder] + [self._obs]
+            rList = [iBorder, iUncert] + [self._obs]
 
             legendOrder = []
             if self._obs != -1:
