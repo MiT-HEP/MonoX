@@ -20,7 +20,7 @@ from main.plotconfig import getConfig
 lumi = 0. # to be set in __main__
 lumiUncert = 0.027
 
-def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation = True, prescale = 1, postscale = 1.):
+def getHist(sample, selection, vardef, baseline, weightVariation = True, prescale = 1, postscale = 1.):
     """
     Create a histogram object for a given variable (vardef) from a given sample and selection.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -70,7 +70,6 @@ def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation 
         ROOT.gROOT.cd()
         h.SetDirectory(ROOT.gROOT) # bring the histogram here
         tree.Draw(expr + '>>' + h.GetName(), reweight + '*' + weightexpr, 'goff')
-        h.SetDirectory(outDir)
         if vardef.overflow:
             iOverflow = h.GetNbinsX()
             cont = h.GetBinContent(iOverflow)
@@ -110,7 +109,6 @@ def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation 
 
             # take the average variation as uncertainty
             varHist = upHist.Clone(histName + '_' + varName)
-            varHist.SetDirectory(outDir)
             varHist.Add(downHist, -1.)
             varHist.Scale(0.5)
 
@@ -121,9 +119,6 @@ def getHist(sample, selection, vardef, baseline, outDir = None, weightVariation 
             upHist = hist.Clone(histName + '_lumiUp')
             downHist = hist.Clone(histName + '_lumiDown')
             varHist = hist.Clone(histName + '_lumi')
-            upHist.SetDirectory(outDir)
-            downHist.SetDirectory(outDir)
-            varHist.SetDirectory(outDir)
 
             upHist.Scale(lumiUncert)
             downHist.Scale(-lumiUncert)
@@ -234,10 +229,6 @@ if __name__ == '__main__':
     for sName in plotConfig.obs.samples:
         lumi += allsamples[sName].lumi
 
-    outFile = None
-    histOut = None
-    outDir = None
-
     if not args.countOnly or args.bbb != '':
         if args.bbb:
             stack = {}
@@ -275,10 +266,6 @@ if __name__ == '__main__':
                 prescale = 1
                 postscale = 1.
 
-            # create output directory
-            if histOut:
-                outDir = histOut.mkdir(vardef.name)
-
             # make background histograms
             for group in plotConfig.bkgGroups:
                 idx = -1
@@ -289,12 +276,8 @@ if __name__ == '__main__':
                     else:
                         selection = plotConfig.name
         
-                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = outDir, postscale = postscale)
+                    hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, postscale = postscale)
 
-                    if outDir:
-                        outDir.cd()
-                        hist.Write()
-       
                     idx = canvas.addStacked(hist, title = group.title, color = group.color, idx = idx)
     
                     if vardef.name == args.bbb:
@@ -308,20 +291,12 @@ if __name__ == '__main__':
                 for group in plotConfig.sigGroups:
                     # signal groups should only have one sample
 
-                    hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir, postscale = postscale)
-
-                    if outDir:
-                        outDir.cd()
-                        hist.Write()
+                    hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, postscale = postscale)
     
                     canvas.addSignal(hist, title = group.title, color = group.color)
         
             for sName in plotConfig.obs.samples:
-                hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, outDir = outDir, prescale = prescale)
-
-                if outDir:
-                    outDir.cd()
-                    hist.Write()
+                hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, prescale = prescale)
 
                 canvas.addObs(hist, title = plotConfig.obs.title)
     
@@ -353,8 +328,6 @@ if __name__ == '__main__':
 
     for group in plotConfig.bkgGroups:
         counters[group.name] = vardef.makeHist('counts-' + group.name + '_' + plotConfig.name)
-        if histOut:
-            counters[group.name].SetDirectory(histOut.GetDirectory('histograms'))
 
         for sName in group.samples:
             if type(sName) is tuple:
@@ -363,40 +336,22 @@ if __name__ == '__main__':
             else:
                 selection = plotConfig.name
     
-            hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline, outDir = histOut)
+            hist = getHist(allsamples[sName], selection, vardef, plotConfig.baseline)
             hist.Scale(1. / prescale)
-
-            if histOut:
-                histOut.cd()
-                hist.Write()
 
             counters[group.name].Add(hist)
 
-        if histOut:
-            histOut.cd()
-            counters[group.name].Write()
-    
     for group in plotConfig.sigGroups:
-        hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline, outDir = histOut)
+        hist = getHist(allsamples[group.name], plotConfig.name, vardef, plotConfig.baseline)
         hist.Scale(1. / prescale)
-
-        if histOut:
-            histOut.cd()
-            hist.Write()
 
         counters[group.name] = hist
     
     counters['obs'] = vardef.makeHist('counts-obs_' + plotConfig.name)
-    if histOut:
-        counters['obs'].SetDirectory(histOut)
 
     for sName in plotConfig.obs.samples:
         hist = getHist(allsamples[sName], plotConfig.name, vardef, plotConfig.baseline, isSensitive = isSensitive)
         counters['obs'].Add(hist)
-
-    if histOut:
-        histOut.cd()
-        counters['obs'].Write()
 
     # Print out the predictions and yield
     bkgTotal = 0.
