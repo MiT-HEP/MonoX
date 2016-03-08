@@ -564,6 +564,26 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 }
 
 //--------------------------------------------------------------------
+// HighPtJetSelection
+//--------------------------------------------------------------------
+
+bool
+HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& jet : _outEvent.jets) {
+    if (std::abs(jet.eta) > 5.)
+      continue;
+
+    if (jet.pt < min_)
+      continue;
+    
+    return true;
+  }
+
+  return false;
+}
+
+//--------------------------------------------------------------------
 // MetVariations
 //--------------------------------------------------------------------
 
