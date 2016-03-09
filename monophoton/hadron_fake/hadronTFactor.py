@@ -18,7 +18,7 @@ impurityHist = inputFile.Get("ChIso50to80imp")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
-isos = [ ('Worst', ''), ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '') ]
+isos = [ ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '') ]
 
 baseSel = 't1Met.met < 60. && photons.size == 1 && photons.pixelVeto[0]'
 
@@ -38,8 +38,8 @@ for iso in isos:
     gtree.Draw('photons.pt[0]>>'+gname, baseSel+' && photons.medium[0]', 'goff')
     gpt.Scale(1., 'width')
 
-    inputFile = ROOT.TFile.Open(basedir+'/data/impurity'+iso[1]+'.root')
-    impurityHist = inputFile.Get("ChIso50to80imp")
+    # inputFile = ROOT.TFile.Open(basedir+'/data/impurity'+iso[1]+'.root')
+    # impurityHist = inputFile.Get("ChIso50to80imp")
 
     fname = 'fpt'+iso[0]
     fpt = gpt.Clone(fname)

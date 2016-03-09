@@ -167,7 +167,7 @@ def purityBase(sample, name, selector = None):
         'ElectronVeto',
         'TauVeto',
         'JetCleaning',
-        # 'HighPtJetSelection',
+        'HighPtJetSelection',
         'CopyMet'
     ]
 
@@ -184,7 +184,7 @@ def purityBase(sample, name, selector = None):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
-    # selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
+    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
 
     return selector
