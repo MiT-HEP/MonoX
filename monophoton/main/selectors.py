@@ -42,6 +42,10 @@ hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyWeight = hadproxySource.Get('tfactWorst')
 hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
 hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
+#hadproxyWeight = hadproxySource.Get('tfactJetPt')
+#hadproxyupWeight = hadproxySource.Get('tfactJetPtUp')
+#hadproxydownWeight = hadproxySource.Get('tfactJetPtDown')
+
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyWeight = eleproxySource.Get('fraction')
@@ -163,7 +167,7 @@ def purityBase(sample, name, selector = None):
         'ElectronVeto',
         'TauVeto',
         'JetCleaning',
-        'HighPtJetSelection',
+        # 'HighPtJetSelection',
         'CopyMet'
     ]
 
@@ -180,7 +184,7 @@ def purityBase(sample, name, selector = None):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
-    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
+    # selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
 
     return selector
