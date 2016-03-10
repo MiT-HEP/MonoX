@@ -46,10 +46,12 @@ class VariableDef(object):
         """
         Make an empty histogram from the specifications.
         """
-    
+
+        gd = ROOT.gDirectory    
         if outDir:
-            gd = ROOT.gDirectory
             outDir.cd()
+        else:
+            ROOT.gROOT.cd()
 
         if self.ndim() == 1:
             if type(self.binning) is list:
@@ -88,8 +90,7 @@ class VariableDef(object):
             else:
                 raise RuntimeError('What are you thinking')
 
-        if outDir:
-            gd.cd()
+        gd.cd()
 
         hist.Sumw2()
         return hist
@@ -100,7 +101,7 @@ class PlotConfig(object):
         self.name = name # name serves as the default region selection (e.g. monoph)
         self.baseline = '1'
         self.fullSelection = '1'
-        self.obs = GroupSpec('obs', 'Observed', samples = obsSamples)
+        self.obs = GroupSpec('data_obs', 'Observed', samples = obsSamples)
         self.sigGroups = []
         self.bkgGroups = []
         self.variables = []
@@ -127,11 +128,7 @@ class PlotConfig(object):
                     snames.add(s)
 
         for group in self.sigGroups:
-            for s in group.samples:
-                if type(s) is tuple:
-                    snames.add(s[0])
-                else:
-                    snames.add(s)
+            snames.add(group.name)
 
         return list(snames)
 

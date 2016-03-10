@@ -310,11 +310,11 @@ def printCounts(counters, plotConfig):
         print '%+12s  %.2f +- %.2f' % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
     
     print '====================='
-    print '%+12s  %d' % ('obs', int(counters['obs'].GetBinContent(1)))
+    print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
     
 
 def printBinByBin(stack, plotConfig):
-    obs = stack['obs']
+    obs = stack['data_obs']
     nBins = obs.GetNbinsX()
 
     boundaries = []
@@ -339,7 +339,7 @@ def printBinByBin(stack, plotConfig):
     print '------------------------------------------------------------------------------------'
     print ('%+12s' % 'total'), ' '.join(['%12.2f' % b for b in bkgTotal]), ('%12.2f' % sum(bkgTotal))
     print '===================================================================================='
-    print ('%+12s' % 'obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
+    print ('%+12s' % 'data_obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
 
 
 if __name__ == '__main__':
@@ -355,6 +355,7 @@ if __name__ == '__main__':
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
     argParser.add_argument('--out-file', '-o', metavar = 'PATH', dest = 'outFile', default = '', help = 'Histogram output file.')
+    argParser.add_argument('--all-signal', '-S', action = 'store_true', dest = 'allSignal', help = 'Write histogram for all signal points.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -452,7 +453,7 @@ if __name__ == '__main__':
                 elif plotDir:
                     canvas.addSignal(hist, title = group.title, color = group.color)
 
-            if outFile:
+            if args.allSignal:
                 # when output file is specified, make plots for all signal models
                 for sample in allsamples:
                     if not sample.signal or sample.name in sigGroups:
@@ -460,7 +461,7 @@ if __name__ == '__main__':
 
                     getHist(sample.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = outFile)
                     
-        obshist = vardef.makeHist('obs', outDir = outFile)
+        obshist = vardef.makeHist('data_obs', outDir = outFile)
 
         for sname in plotConfig.obs.samples:
             obshist.Add(getHist(sname, plotConfig.name, vardef, plotConfig.baseline, prescale = prescale, outDir = sampleDir))
@@ -477,7 +478,7 @@ if __name__ == '__main__':
                     obshist.SetBinError(i, 0.)
 
         if vardef.name == 'count' or vardef.name == args.bbb:
-            counters['obs'] = obshist
+            counters['data_obs'] = obshist
         elif plotDir:
             canvas.addObs(obshist, title = plotConfig.obs.title)
 

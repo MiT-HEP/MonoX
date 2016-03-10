@@ -227,27 +227,6 @@ class HighMet : public Cut {
   double min_{170.};
 };
 
-class LeptonRecoil : public Cut {
-  enum Collection {
-    kElectrons,
-    kMuons,
-    nCollections
-  };
-
- public:
-  LeptonRecoil(char const* name = "LeptonRecoil") : Cut(name), collection_(nCollections) {}
-  void addBranches(TTree& skimTree) override;
-
-  void setThreshold(double min) { min_ = min; }
- protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
-
-  Collection collection_;
-  float recoil_;
-  float recoilPhi_;
-  double min_{100.};
-};
-
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
@@ -277,6 +256,26 @@ class CopyMet : public Modifier {
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
   void apply(simpletree::Event const& event, simpletree::Event& outEvent) override { outEvent.t1Met = event.t1Met; }
+};
+
+class LeptonRecoil : public Modifier {
+ public:
+  enum Collection {
+    kElectrons,
+    kMuons,
+    nCollections
+  };
+
+  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
+  void addBranches(TTree& skimTree) override;
+
+  void setCollection(Collection col) { collection_ = col; }
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event&) override;
+
+  Collection collection_;
+  float realMet_;
+  float realPhi_;
 };
 
 class MetVariations : public Modifier {

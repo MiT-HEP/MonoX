@@ -107,16 +107,19 @@ if __name__ == '__main__':
         # if a plot config is specified, use the samples for that
         snames = plotconfig.getConfig(args.plotConfig).samples()
 
-    elif len(args.snames) != 0:
-        # handle special group names
-        if args.snames[0] == 'all':
-            snames = selectors.keys()
+    else:
+        snames = args.snames
 
-        elif args.snames[0] == 'dm' or args.snames[0] == 'add':
-            snames = [key for key in selectors.keys() if key.startswith(args.snames[0])]
-
-        else:
-            snames = args.snames
+    # handle special group names
+    if 'all' in snames:
+        snames.remove('all')
+        snames = selectors.keys()
+    if 'dm' in snames:
+        snames.remove('dm')
+        snames += [key for key in selectors.keys() if key.startswith('dm')]
+    if 'add' in snames:
+        snames.remove('add')
+        snames += [key for key in selectors.keys() if key.startswith('add')]
 
     # filter out empty samples
     tmp = [name for name in snames if allsamples[name].sumw > 0.]
@@ -133,7 +136,7 @@ if __name__ == '__main__':
 
     for sname in snames:
         sample = allsamples[sname]
-        print 'Starting sample', sname, str(sampleNames.index(sname)+1)+'/'+str(len(sampleNames))
+        print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
     
         skimmer.reset()
     

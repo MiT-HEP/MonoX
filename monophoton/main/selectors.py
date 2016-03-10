@@ -271,6 +271,21 @@ def gammaJets(sample, name, selector = None):
 
     return selector
 
+def gjSmeared(sample, name):
+    """
+    Candidate-like, with a smeared MET distribution.
+    """
+
+    selector = ROOT.SmearingSelector(name)
+    candidate(sample, name, selector)
+
+    smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
+    smearing.SetParameters(3.28522, 5.98605e-01) # measured in gjets/smearfit.py
+    selector.setNSamples(10)
+    selector.setFunction(smearing)
+
+    return selector
+
 def halo(norm):
     """
     Wrapper to return the generator for the halo proxy sample normalized to norm.
@@ -313,15 +328,19 @@ def leptonBase(sample, name, selector = None):
     if selector is None:
         selector = ROOT.EventSelector(name)
 
-    for op in [
+    operators = [
         'MetFilters',
         'PhotonSelection',
         'LeptonSelection',
         'TauVeto',
         'JetCleaning',
-        'CopyMet',
-        'LeptonRecoil'
-    ]:
+        'LeptonRecoil',
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'HighMet'
+    ]
+
+    for op in operators:
         selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
@@ -335,17 +354,22 @@ def leptonBase(sample, name, selector = None):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('HighMet').setIgnoreDecision(True)
 
     return selector
 
 def electronBase(sample, name, selector = None):
     selector = leptonBase(sample, name, selector)
+    selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
     selector.addOperator(ROOT.HLTEle27eta2p1WPLooseGsf(), 0)
 
     return selector
 
 def muonBase(sample, name, selector = None):
     selector = leptonBase(sample, name, selector)
+    selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
     selector.addOperator(ROOT.HLTIsoMu27(), 0)
 
     return selector

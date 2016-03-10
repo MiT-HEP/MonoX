@@ -127,8 +127,13 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
       _outEvent.photons.clear();
       break;
     }
-    else if (selection > 0)
+    else if (selection > 0) {
+      if (vetoes_.size() == 0) {
+        ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, true);
+        ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, false);
+      }
       _outEvent.photons.push_back(photon);
+    }
   }
 
   return _outEvent.photons.size() != 0;
@@ -480,47 +485,6 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 }
 
 //--------------------------------------------------------------------
-// LeptonRecoil
-//--------------------------------------------------------------------
-
-void
-LeptonRecoil::addBranches(TTree& _skimTree)
-{
-  _skimTree.Branch("t1Met.recoil", &recoil_, "recoil/F");
-  _skimTree.Branch("t1Met.recoilPhi", &recoilPhi_, "recoilPhi/F");
-}
-
-bool
-LeptonRecoil::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  simpletree::LeptonCollection* col(0);
-
-  switch (collection_) {
-  case kElectrons:
-    col = &_outEvent.electrons;
-    break;
-  case kMuons:
-    col = &_outEvent.muons;
-    break;
-  default:
-    return false;
-  }
-
-  double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
-  double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
-    
-  for (auto& lep : *col) {
-    mex += lep.pt * std::cos(lep.phi);
-    mey += lep.pt * std::sin(lep.phi);
-  }
-
-  recoil_ = std::sqrt(mex * mex + mey * mey);
-  recoilPhi_ = std::atan2(mey, mex);
-
-  return recoil_ > min_;
-}
-
-//--------------------------------------------------------------------
 // JetCleaning
 //--------------------------------------------------------------------
 
@@ -561,6 +525,48 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 
     _outEvent.jets.push_back(jet);
   }
+}
+
+//--------------------------------------------------------------------
+// LeptonRecoil
+//--------------------------------------------------------------------
+
+void
+LeptonRecoil::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
+  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+}
+
+void
+LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::LeptonCollection* col(0);
+
+  switch (collection_) {
+  case kElectrons:
+    col = &_outEvent.electrons;
+    break;
+  case kMuons:
+    col = &_outEvent.muons;
+    break;
+  default:
+    return;
+  }
+
+  realMet_ = _event.t1Met.met;
+  realPhi_ = _event.t1Met.phi;
+
+  double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
+  double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
+    
+  for (auto& lep : *col) {
+    mex += lep.pt * std::cos(lep.phi);
+    mey += lep.pt * std::sin(lep.phi);
+  }
+
+  _outEvent.t1Met.met = std::sqrt(mex * mex + mey * mey);
+  _outEvent.t1Met.phi = std::atan2(mey, mex);
 }
 
 //--------------------------------------------------------------------
