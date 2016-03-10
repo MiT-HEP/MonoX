@@ -2,7 +2,6 @@
 
 import sys
 import os
-import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -96,6 +95,8 @@ if __name__ == '__main__':
     
     args = argParser.parse_args()
     sys.argv = []
+
+    import ROOT
 
     ROOT.gSystem.Load('libMitFlatDataFormats.so')
     ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')

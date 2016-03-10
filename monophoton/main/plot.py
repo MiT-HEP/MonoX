@@ -115,7 +115,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
     return hist
 
 
-def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None, cutReplacements = [], prescale = 1, postscale = 1., outDir = None):
+def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None, cutReplacements = [], prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
     """
     Create a histogram object for a given variable (vardef) from a given sample and region.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -150,16 +150,13 @@ def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None
     if prescale > 1 and vardef.blind is None:
         cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
 
-    weightexpr = 'weight*(' + '&&'.join(['(%s)' % c for c in cuts]) + ')'
+    selection = '&&'.join(['(%s)' % c for c in cuts])
 
     for repl in cutReplacements:
         # replace the variable names given in repl = ('original', 'new')
         # enclose the original variable name with characters that would not be a part of the variable
-        weightexpr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', weightexpr)
+        selection = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', selection)
         expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
-
-    if not sample.data:
-        weightexpr = str(lumi) + '*' + weightexpr
 
     source = ROOT.TFile.Open(sourceName)
     tree = source.Get('events')
@@ -167,11 +164,19 @@ def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None
     # routine to fill a histogram with possible reweighting
     def fillHist(name, reweight = '1.'):
         """
-        Fill h with expr, weighted with reweight * weightexpr. Take care of overflows
+        Fill h with expr, weighted with reweight * weight * (selection). Take care of overflows
         """
 
         h = vardef.makeHist(name, outDir = outDir)
-        tree.Draw(expr + '>>' + h.GetName(), reweight + '*' + weightexpr, 'goff')
+
+        if plotAcceptance:
+            weight = '1.'
+        else:
+            weight = 'weight'
+            if not sample.data:
+                weight += '*' + str(lumi)
+
+        tree.Draw(expr + '>>' + h.GetName(), '%s*%s*(%s)' % (reweight, weight, selection), 'goff')
         if vardef.overflow:
             iOverflow = h.GetNbinsX()
             cont = h.GetBinContent(iOverflow)
@@ -184,6 +189,9 @@ def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None
                 h.SetBinContent(iX, 0.)
             if h.GetBinContent(iX) - h.GetBinError(iX) < 0.:
                 h.SetBinError(iX, h.GetBinContent(iX) - 1.e-6)
+
+        if plotAcceptance:
+            h.Scale(1. / sample.nevents)
 
         writeHist(h)
 
@@ -232,7 +240,7 @@ def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None
 
 
 def writeHist(hist):
-    if hist.GetDirectory() == ROOT.gROOT:
+    if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
         return
 
     gd = ROOT.gDirectory
@@ -313,7 +321,7 @@ def printCounts(counters, plotConfig):
     print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
     
 
-def printBinByBin(stack, plotConfig):
+def printBinByBin(stack, plotConfig, precision = '.2f'):
     obs = stack['data_obs']
     nBins = obs.GetNbinsX()
 
@@ -334,10 +342,10 @@ def printBinByBin(stack, plotConfig):
             yields.append(cont)
             bkgTotal[iX - 1] += cont
 
-        print ('%+12s' % group.name), ' '.join(['%12.2f' % y for y in yields]), ('%12.2f' % sum(yields))
+        print ('%+12s' % group.name), ' '.join([('%12' + precision) % y for y in yields]), (('%12' + precision) % sum(yields))
 
     print '------------------------------------------------------------------------------------'
-    print ('%+12s' % 'total'), ' '.join(['%12.2f' % b for b in bkgTotal]), ('%12.2f' % sum(bkgTotal))
+    print ('%+12s' % 'total'), ' '.join([('%12' + precision) % b for b in bkgTotal]), (('%12' + precision) % sum(bkgTotal))
     print '===================================================================================='
     print ('%+12s' % 'data_obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
 
@@ -405,7 +413,7 @@ if __name__ == '__main__':
 
         print vardef.name
 
-        if vardef.name == 'count':
+        if vardef.name == 'count' or vardef.name == args.bbb:
             counters = {}
             isSensitive = True
 
@@ -426,7 +434,7 @@ if __name__ == '__main__':
 
         # make background histograms
         for group in plotConfig.bkgGroups:
-            hist = groupHist(group, vardef, plotConfig, postscale = 1., outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, postscale = postscale, outFile = outFile)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
