@@ -244,6 +244,7 @@ def getConfig(confName):
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [130., 150., 170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
@@ -254,7 +255,7 @@ def getConfig(confName):
         ]
 
         for variable in list(config.variables):
-            if variable.name not in ['met']:
+            if variable.name not in ['met', 'metWide']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
     
     elif confName == 'dimu':

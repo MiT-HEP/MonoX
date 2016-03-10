@@ -9,6 +9,7 @@ argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name.')
 argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
 argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
+argParser.add_argument('--variable', '-v', action = 'store', dest = 'variable', default = 'metHigh', help = 'Discriminating variable.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -32,7 +33,7 @@ from main.plotconfig import getConfig
 monophConfig = getConfig('monoph')
 source = ROOT.TFile.Open(args.input)
 
-variable = 'metHigh'
+variable = args.variable
 
 def getHist(name, syst = ''):
     if syst:
@@ -59,7 +60,7 @@ for group in monophConfig.bkgGroups:
     iP += 1
 
 processes = [args.model] + [g.name for g in monophConfig.bkgGroups if g.name in rates]
-colw = max(10, max([len(p) for p in processes]) + 1)
+colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
 cols = '%-' + str(colw) + 's'
 colsr = '%' + str(colw) + 's'
 colf = '%-' + str(colw) + '.2f'
