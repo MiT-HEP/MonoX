@@ -20,12 +20,15 @@ btree.Add(config.skimDir + '/sph-d*_hfake.root')
 btree.Add(config.skimDir + '/sph-d*_efake.root')
 
 bmctree = r.TChain('events')
-bmctree.Add(config.skimDir + '/znng-130_monoph.root')
+# bmctree.Add(config.skimDir + '/znng-130_monoph.root')
 # bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
 bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
-bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
+bmctree.Add(config.skimDir + '/zg_monoph.root')
+
+znntree = r.TChain('events')
+znntree.Add(config.skimDir + '/zg_dimu.root')
 
 mctree = r.TChain('events')
 mctree.Add(config.skimDir + '/gj-40_monoph.root')
@@ -38,14 +41,17 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
-regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5)')
-            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.minJetDPhi > 0.5)') 
+regions = [ ( 'Low', '(photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi > 2.)')
+            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.)') 
             ] 
 
-# binning = array.array('d', [0. + 10. * x for x in range(13)])
+binnings = {
+    'Low': array.array('d', [0. + 2. * x for x in range(100)]),
+    'High': array.array('d', [0. + 2. * x for x in range(65)])
+}
 
-binning = array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
-                      + [200. + 50. * x for x in range(9)] ) 
+#binning = array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+#                      + [200. + 50. * x for x in range(9)] ) 
 
 dmets = []
 bmets = []
@@ -53,6 +59,8 @@ gmets = []
 mcmets = []
 
 for region, sel in regions:
+    binning = binnings[region]
+
     dname = 'dmet'+region
     dmet = r.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     dmet.SetMinimum(0.02)
@@ -70,6 +78,7 @@ for region, sel in regions:
     bmcmet = r.TH1D(bname+'MC', ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     bmcmet.Sumw2()
     bmctree.Draw('t1Met.met>>'+bname, '2239.9 * weight * '+sel, 'goff')
+    znntree.Draw('t1Met.met>>+' + bname, '2239.9 * 6.112 * weight * ' + sel, 'goff')
     bmet.Add(bmcmet)
 
     gname ='gmet'+region
