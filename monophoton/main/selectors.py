@@ -42,6 +42,10 @@ hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyWeight = hadproxySource.Get('tfactWorst')
 hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
 hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
+#hadproxyWeight = hadproxySource.Get('tfactJetPt')
+#hadproxyupWeight = hadproxySource.Get('tfactJetPtUp')
+#hadproxydownWeight = hadproxySource.Get('tfactJetPtDown')
+
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
 eleproxyWeight = eleproxySource.Get('fraction')
@@ -143,12 +147,54 @@ def eleProxy(sample, name, selector = None):
 
     return selector
 
-def purity(sample, name, selector = None):
+def purityBase(sample, name, selector = None):
     """
-    Candidate-like but with loosened sieie or CHIso.
+    Base selector for EM+Jet control region.
     """
 
-    selector = monophotonBase(sample, name, selector)
+    if selector is None:
+        selector = ROOT.EventSelector(name)
+
+    operators = []
+
+    if sample.data:
+        operators.append('HLTPhoton165HE10')
+
+    operators += [
+        'MetFilters',
+        'PhotonSelection',
+        'MuonVeto',
+        'ElectronVeto',
+        'TauVeto',
+        'JetCleaning',
+        'HighPtJetSelection',
+        'CopyMet'
+    ]
+
+    operators += [
+        'JetMetDPhi'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+        selector.addOperator(ROOT.NPVWeight(npvWeight))
+
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+
+    return selector
+
+def purity(sample, name, selector = None):
+    """
+    EM Object is true photon-like, but with loosen sieie and CHIso requirements.
+    """
+
+    selector = purityBase(sample, name, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
 
@@ -161,6 +207,64 @@ def purity(sample, name, selector = None):
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    return selector
+
+def purityUp(sample, name, selector = None):
+    """
+    EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
+    """
+    
+    selector = purityBase(sample, name, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
+    sels.append('NHIsoTight')
+    sels.append('PhIsoTight')
+    sels.append('CHWorstIso11')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    
+    return selector
+
+def purityDown(sample, name, selector = None):
+    """
+    EM Object is true photon like, but with inverted NHIso and PhIso requirements and loosened sieie and CHIso requirements.
+    """
+    
+    selector = purityBase(sample, name, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('NHIso')
+    sels.remove('PhIso')
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
+    sels.append('CHWorstIso11')
+    sels.append('NHIso11')
+    sels.append('PhIso3')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
 
     return selector
 

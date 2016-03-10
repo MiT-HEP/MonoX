@@ -227,6 +227,17 @@ class HighMet : public Cut {
   double min_{170.};
 };
 
+class HighPtJetSelection : public Cut {
+ public:
+  HighPtJetSelection(char const* name = "HighPtJetSelection") : Cut(name) {}
+
+  void setJetPtCut(double min) { min_ = min; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double min_{100.};
+};
+
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------

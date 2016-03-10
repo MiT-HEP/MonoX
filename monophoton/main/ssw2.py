@@ -19,6 +19,8 @@ defaults = {
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
+    'purityUp': selectors.purityUp,
+    'purityDown': selectors.purityDown,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'diel': selectors.dielectron,
@@ -27,11 +29,10 @@ defaults = {
     'eefake': selectors.zee
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
-mc_purity = ['purity']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
