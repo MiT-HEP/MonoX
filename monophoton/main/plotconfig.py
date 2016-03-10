@@ -1,5 +1,13 @@
+import sys
 import math
 import array
+
+needHelp = False
+for opt in ['-h', '--help']:
+    if opt in sys.argv:
+        needHelp = True
+        sys.argv.remove(opt)
+
 import ROOT
 
 class GroupSpec(object):
@@ -279,3 +287,6 @@ def getConfig(confName):
         return
 
     return config
+
+if needHelp:
+    sys.argv.append('--help')

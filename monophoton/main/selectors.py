@@ -1,6 +1,12 @@
 import sys
 import os
 import array
+needHelp = False
+for opt in ['-h', '--help']:
+    if opt in sys.argv:
+        needHelp = True
+        sys.argv.remove(opt)
+
 import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -101,7 +107,7 @@ def monophotonBase(sample, name, selector = None):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
-    
+
     return selector
 
 def candidate(sample, name, selector = None):
@@ -214,7 +220,7 @@ def purityUp(sample, name, selector = None):
     """
     EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
     """
-    
+
     selector = purityBase(sample, name, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -235,14 +241,14 @@ def purityUp(sample, name, selector = None):
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
     photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
-    
+
     return selector
 
 def purityDown(sample, name, selector = None):
     """
     EM Object is true photon like, but with inverted NHIso and PhIso requirements and loosened sieie and CHIso requirements.
     """
-    
+
     selector = purityBase(sample, name, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -399,27 +405,27 @@ def halo(norm):
         """
         Candidate-like, but with inverted MIP tag and CSC filter.
         """
-    
+
         selector = ROOT.NormalizingSelector(name)
         selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
-    
+
         selector = monophotonBase(sample, name, selector)
-    
+
         # 0->CSC halo tagger
     #    selector.findOperator('MetFilters').setFilter(0, -1)
-    
+
         photonSel = selector.findOperator('PhotonSelection')
-    
+
         sels = list(photonFullSelection)
         sels.remove('Sieie')
         sels.remove('MIP49')
         sels.append('Sieie15')
-    
+
         for sel in sels:
             photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-    
+
         photonSel.addSelection(False, ROOT.PhotonSelection.MIP49)
-    
+
         return selector
 
     return normalized
@@ -547,20 +553,20 @@ def kfactor(generator):
                 qcd.addVariation('qcd' + variation, vcorr)
 
         selector.addOperator(qcd)
-    
+
         ewkSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
         corr = ewkSource.Get(sample.name)
         if corr:
             ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
             ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
-    
+
             for variation in ['Up', 'Down']:
                 vcorr = ewkSource.Get(sample.name + '_' + variation)
                 if vcorr:
                     ewk.addVariation('ewk' + variation, vcorr)
 
             selector.addOperator(ewk)
-    
+
         return selector
 
     return scaled
@@ -574,3 +580,6 @@ def wlnu(generator):
         return generator(sample, name, ROOT.WlnuSelector(name))
 
     return filtered
+
+if needHelp:
+    sys.argv.append('--help')
