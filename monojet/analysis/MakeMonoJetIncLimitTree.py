@@ -15,7 +15,7 @@ ltm.SetOutputWeightBranch('scaleMC_w')
 ltm.SetReportFrequency(20)
 
 SetupFromEnv(ltm)
-ltm.AddMCFile('data',str(ltm.GetInDirectory()) + 'monojet_Data.root',-1)
+ltm.AddFile('data',str(ltm.GetInDirectory()) + 'monojet_Data.root',-1)
 
 if __name__ == '__main__':
     ltm.SetOutFileName('MonoJetIncLimitsTrees.root')
