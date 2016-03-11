@@ -5,11 +5,11 @@ import sys
 from argparse import ArgumentParser
 
 argParser = ArgumentParser(description = 'Write combine data card.')
-argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name.')
+argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name. Use "nomodel" for model-independent limits.')
 argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
 argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
-argParser.add_argument('--variable', '-v', action = 'store', dest = 'variable', default = 'metHigh', help = 'Discriminating variable.')
+argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'metHigh', help = 'Discriminating variable.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -35,6 +35,21 @@ source = ROOT.TFile.Open(args.input)
 
 variable = args.variable
 
+lumi = 0.
+for sName in monophConfig.obs.samples:
+    lumi += allsamples[sName].lumi
+
+# gather process names
+processes = [args.model] + [g.name for g in monophConfig.bkgGroups]
+
+# determine column widths (for human-readability)
+colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
+cols = '%-' + str(colw) + 's'
+colsr = '%' + str(colw) + 's'
+colf = '%-' + str(colw) + '.2f'
+cold = '%-' + str(colw) + 'd'
+
+
 def getHist(name, syst = ''):
     if syst:
         return source.Get(variable + '-' + name + '_' + syst)
@@ -42,60 +57,88 @@ def getHist(name, syst = ''):
         return source.Get(variable + '-' + name)
 
 
-processIds = {
-    args.model: 0
-}
-rates = {
-    args.model: getHist(args.model).GetSumOfWeights()
-}
+def makeProcessBlock(processes, procs, binLow = 1):
+    processBlock = [
+        'bin                  ',
+        'process              ',
+        'process              ',
+        'rate                 '
+    ]
 
-iP = 1
-for group in monophConfig.bkgGroups:
-    rate = getHist(group.name).GetSumOfWeights()
-    if rate == 0.:
-        continue
+    for iP, process in enumerate(processes):
+        if process == 'nomodel':
+            rate = lumi / 1000. # sigma x A x eff = 1 fb
+        else:
+            hist = getHist(process)
+            rate = hist.Integral(binLow, hist.GetNbinsX())
+            if rate < 0.005:
+                continue
 
-    rates[group.name] = rate
-    processIds[group.name] = iP
-    iP += 1
+        procs.append(process)
 
-processes = [args.model] + [g.name for g in monophConfig.bkgGroups if g.name in rates]
-colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
-cols = '%-' + str(colw) + 's'
-colsr = '%' + str(colw) + 's'
-colf = '%-' + str(colw) + '.2f'
-cold = '%' + str(colw) + 'd'
+        processBlock[0] += cols % variable
+        processBlock[1] += cols % process
+        processBlock[2] += cold % iP
+        processBlock[3] += colf % rate
+
+    return processBlock
+
+
+def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
+    block = []
+
+    for syst, procs in nuisances.items():
+        line = cols % syst
+        
+        if syst == 'lumi' or not shape:
+            line += '   lnN'
+        else:
+            line += ' shape'
+    
+        words = []
+    
+        for proc in processes:
+            if proc in procs:
+                if shape and syst != 'lumi':
+                    words.append('1')
+                else:
+                    hist = getHist(proc)
+                    nominal = hist.Integral(binLow, hist.GetNbinsX())
+                    up = getHist(proc, syst + 'Up').Integral(binLow, hist.GetNbinsX())
+                    down = getHist(proc, syst + 'Down').Integral(binLow, hist.GetNbinsX())
+                    relunc = (up - down) * 0.5 / nominal
+
+                    words.append('%.3f' % (1. + relunc))
+    
+            else:
+                words.append('-')
+    
+        for word in words:
+            line += colsr % word
+    
+        block.append(line)
+
+    return block
+
+
+def writeCard(outputName, blocks):
+    with open(outputName, 'w') as datacard:
+        for block in blocks:
+            for line in block:
+                datacard.write(line + '\n')
+
+            datacard.write('---------------------------------\n')
+
 
 obs = source.Get(variable + '-data_obs')
 
-lines = [
+headerBlock = [
     'imax 1',
-    'jmax %d' % (len(processes) - 1),
-    'kmax *',
-    '---------------',
-    'shapes * * %s $CHANNEL-$PROCESS $CHANNEL-$PROCESS_$SYSTEMATIC' % args.input,
-    '---------------',
-    'bin         ' + variable,
-    'observation %.0f' % obs.GetSumOfWeights(),
-    '---------------------------------'
+    '', # jmax %d - need to be set when we know how many processes have non-zero rate
+    'kmax *'
 ]
 
-pblock = [
-    'bin                  ',
-    'process              ',
-    'process              ',
-    'rate                 '
-]
-for proc in processes:
-    pblock[0] += cols % variable
-    pblock[1] += cols % proc
-    pblock[2] += cols % processIds[proc]
-    pblock[3] += colf % rates[proc]
-
-lines += pblock
-
-lines.append('---------------------------------')
-
+# collect names of nuisance parameters for each process
 nuisances = {}
 for key in source.GetListOfKeys():
     matches = re.match(variable + '-([0-9a-zA-Z-]+)_([0-9a-zA-Z]+)Up', key.GetName())
@@ -112,36 +155,63 @@ for key in source.GetListOfKeys():
         nuisances[syst] = [proc]
     else:
         nuisances[syst].append(proc)
-    
-for syst, procs in nuisances.items():
-    line = cols % syst
-    
-    if syst == 'lumi':
-        line += '   lnN'
-    else:
-        line += ' shape'
 
-    words = []
-
-    for proc in processes:
-        if proc in procs:
-            if syst == 'lumi':
-                words.append('%.3f' % (getHist(proc, 'lumiUp').GetSumOfWeights() / rates[proc]))
-            else:
-                words.append('1')
-
-        else:
-            words.append('-')
-
-    for word in words:
-        line += colsr % word
-
-    lines.append(line)
-
+# set the output name
 outputName = args.outputName
 if not outputName:
-    outputName = variable + '-' + args.model + '.dat'
+    outputName = args.model + '-' + variable + '.dat'
 
-with open(outputName, 'w') as datacard:
-    for line in lines:
-        datacard.write(line + '\n')
+# start writing cards
+
+if args.model == 'nomodel':
+    # Model independent
+    
+    nBins = obs.GetNbinsX()
+
+    # iterate over bins and make one datacard for each integral
+    for binLow in range(1, nBins + 1):
+        obsBlock = [
+            'bin         ' + variable,
+            'observation %.0f' % obs.Integral(binLow, nBins)
+        ]
+
+        procs = []
+        processBlock = makeProcessBlock(processes, procs, binLow = binLow)
+
+        headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
+
+        nuisanceBlock = makeNuisanceBlock(nuisances, procs, binLow = binLow, shape = False)
+
+        if outputName.rfind('.') == -1:
+            outName = outputName
+            ext = '.dat'
+        else:
+            outName = outputName[:outputName.rfind('.')]
+            ext = outputName[outputName.rfind('.'):]
+
+        bound = obs.GetXaxis().GetBinLowEdge(binLow)
+        if math.floor(bound) == bound:
+            outName += ('_%.0f' % bound) + ext
+        else:
+            outName += ('_%f' % bound) + ext
+
+        writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock])
+
+else:
+    shapeBlock = [
+        'shapes * * %s $CHANNEL-$PROCESS $CHANNEL-$PROCESS_$SYSTEMATIC' % args.input,
+    ]
+
+    obsBlock = [
+        'bin         ' + variable,
+        'observation %.0f' % obs.GetSumOfWeights(),
+    ]
+
+    procs = []
+    processBlock = makeProcessBlock(processes, procs)
+
+    headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
+
+    nuisanceBlock = makeNuisanceBlock(nuisances, procs)
+
+    writeCard(outputName, [headerBlock, shapeBlock, obsBlock, processBlock, nuisanceBlock])
