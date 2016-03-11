@@ -53,9 +53,9 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
         # print tmp
         if tmp:
             if 'Observed' in tmp[0]:
-                obs = tmp[4]
+                obs = float(tmp[4])
             elif "Expected" in tmp[0]:
-                exp = tmp[4]
+                exp = float(tmp[4])
 
     return (obs, exp)
 
@@ -86,6 +86,6 @@ for model in modelList:
     (out, err) = MakeDataCard.communicate()
         
     limits[model] = RunHiggsTool(cardPath,LimitToolDir)
-    print "%s %10s %10s" % (model, limits[model][0], limits[model][1])
+    print "%s %10.2f %10.2f" % (model, limits[model][0], limits[model][1])
 
 # pprint(limits)
