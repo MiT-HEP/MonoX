@@ -46,13 +46,13 @@ addCorr('lepton_SF',['abs(lep2Eta)','lep2Pt'],'lep2IsTight && lep2Pt > 0 && abs(
 
 applicator.AddFactorToMerge('mcWeight')
 
-ewk_a = Corrector.MakeCorrector('ewk_a','genBos_pt','genBos_PdgId == 22','files/scalefactors_v4.root','a_ewkcorr/a_ewkcorr')
-ewk_z = Corrector.MakeCorrector('ewk_z','genBos_pt','abs(genBos_PdgId) == 23','files/scalefactors_v4.root','z_ewkcorr/z_ewkcorr')
-ewk_w = Corrector.MakeCorrector('ewk_w','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v4.root','w_ewkcorr/w_ewkcorr')
+ewk_a = Corrector.MakeCorrector('ewk_a','genBos_pt','genBos_PdgId == 22','files/uncertainties_EWK_24bins.root',['EWKcorr/photon','GJets_1j_NLO/nominal_G'])
+ewk_z = Corrector.MakeCorrector('ewk_z','genBos_pt','abs(genBos_PdgId) == 23','files/uncertainties_EWK_24bins.root',['EWKcorr/Z','ZJets_012j_NLO/nominal'])
+ewk_w = Corrector.MakeCorrector('ewk_w','genBos_pt','abs(genBos_PdgId) == 24','files/uncertainties_EWK_24bins.root',['EWKcorr/W','WJets_012j_NLO/nominal'])
 
-kfactor  = Corrector.MakeCorrector('kfactor','genBos_pt','genBos_PdgId == 22','files/scalefactors_v4.root','anlo1_over_alo/anlo1_over_alo')
-zkfactor = Corrector.MakeCorrector('zkfactor','genBos_pt','abs(genBos_PdgId) == 23','files/scalefactors_v4.root',['znlo012/znlo012_nominal','zlo/zlo_nominal'])
-wkfactor = Corrector.MakeCorrector('wkfactor','genBos_pt','abs(genBos_PdgId) == 24','files/scalefactors_v4.root',['wnlo012/wnlo012_nominal','wlo/wlo_nominal'])
+kfactor  = Corrector.MakeCorrector('kfactor','genBos_pt','genBos_PdgId == 22','files/uncertainties_EWK_24bins.root',['GJets_1j_NLO/nominal_G','GJets_LO/inv_pt_G'])
+zkfactor = Corrector.MakeCorrector('zkfactor','genBos_pt','abs(genBos_PdgId) == 23','files/uncertainties_EWK_24bins.root',['ZJets_012j_NLO/nominal','ZJets_LO/inv_pt'])
+wkfactor = Corrector.MakeCorrector('wkfactor','genBos_pt','abs(genBos_PdgId) == 24','files/uncertainties_EWK_24bins.root',['WJets_012j_NLO/nominal','WJets_LO/inv_pt'])
 
 applicator.AddCorrector(ewk_a)
 applicator.AddCorrector(ewk_z)

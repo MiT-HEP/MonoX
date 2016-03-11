@@ -2,6 +2,10 @@
 
 fresh=$1
 
+cd $CROMBIEPATH
+git checkout MonoJetMoriond2016
+cd -
+
 source CrombieSlimmingConfig.sh
 
 if [ "$fresh" = "fresh" ]
@@ -39,3 +43,7 @@ cp $CrombieSkimDir/monojet_GJets* $CrombieSkimDir/Purity/.
 
 ./applyTriggers.py $CrombieSkimDir
 ./applyPurity.py $CrombieSkimDir/Purity
+
+cd $CROMBIEPATH
+git checkout master
+cd -

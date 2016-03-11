@@ -302,8 +302,6 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
 
     //// Now we go on to clean jets ////
 
-    Int_t cleanWithEndcap = 0;
-
     for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
       TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
       
@@ -333,9 +331,9 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
       }
       
       if (match == false && tempJet->Pt() > 30.0) {
-        ++cleanWithEndcap;
+        outTree->n_jetsCleanWithEndcap++;
 
-        if (cleanWithEndcap < 5) {
+        if (outTree->n_jetsCleanWithEndcap < 5) {
 
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
           if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)

@@ -51,6 +51,7 @@ leadingjetEta/F=-7
 leadingjetPhi/F=-5
 leadingjetM/F=-5
 n_jets/I=0
+n_jetsCleanWithEndcap/I=0
 jet1Pt/F=-5
 jet1Eta/F=-7
 jet1Phi/F=-5
