@@ -89,29 +89,42 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
 
     for syst, procs in nuisances.items():
         line = cols % syst
-        
-        if syst == 'lumi' or not shape:
-            line += '   lnN'
-        else:
-            line += ' shape'
-    
+
         words = []
-    
+
+        lnN = False
+
+        # iterate over all processes (=columns)    
         for proc in processes:
             if proc in procs:
-                if shape and syst != 'lumi':
+                var = getHist(proc, syst + 'Var')
+
+                # this process is affected by this uncertainty
+                if not var and shape:
+                    if lnN:
+                        raise RuntimeError(syst + ' is supposed to be a uniform scale variation')
+
                     words.append('1')
                 else:
+                    lnN = True
                     hist = getHist(proc)
                     nominal = hist.Integral(binLow, hist.GetNbinsX())
-                    up = getHist(proc, syst + 'Up').Integral(binLow, hist.GetNbinsX())
-                    down = getHist(proc, syst + 'Down').Integral(binLow, hist.GetNbinsX())
-                    relunc = (up - down) * 0.5 / nominal
+                    if var:
+                        relunc = var.Integral(binLow, hist.GetNbinsX()) / nominal - 1.
+                    else:
+                        up = getHist(proc, syst + 'Up').Integral(binLow, hist.GetNbinsX())
+                        down = getHist(proc, syst + 'Down').Integral(binLow, hist.GetNbinsX())
+                        relunc = (up - down) * 0.5 / nominal
 
                     words.append('%.3f' % (1. + relunc))
     
             else:
                 words.append('-')
+
+        if lnN:
+            line += '   lnN'
+        else:
+            line += ' shape'
     
         for word in words:
             line += colsr % word
@@ -141,14 +154,18 @@ headerBlock = [
 # collect names of nuisance parameters for each process
 nuisances = {}
 for key in source.GetListOfKeys():
-    matches = re.match(variable + '-([0-9a-zA-Z-]+)_([0-9a-zA-Z]+)Up', key.GetName())
+    matches = re.match(variable + '-([0-9a-zA-Z-]+)_([0-9a-zA-Z]+)(Up|Var)', key.GetName())
     if not matches:
         continue
 
     proc = matches.group(1)
     syst = matches.group(2)
+    vartype = matches.group(3)
 
-    if proc not in processes or not getHist(proc, syst + 'Down'):
+    if proc not in processes:
+        continue
+
+    if vartype == 'Up' and not getHist(proc, syst + 'Down'):
         continue
 
     if syst not in nuisances:
