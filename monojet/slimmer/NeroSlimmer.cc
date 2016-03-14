@@ -111,6 +111,7 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
     outTree->lumiNum   = inTree->lumiNum;
     outTree->eventNum  = inTree->eventNum;
     outTree->npv       = inTree->npv;
+    outTree->npvTrue   = inTree->puTrueInt;
     outTree->rho       = inTree->rho;
 
     if (isSig)
@@ -705,6 +706,14 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
           outTree->genJetDRjet1 = checkDR;
         }
       }
+    }
+
+    // Now do the VBF cut
+    if (outTree->n_jetsCleanWithEndcap > 1) {
+      TLorentzVector* tempJet1 = (TLorentzVector*) inTree->jetP4->At(0);
+      TLorentzVector* tempJet2 = (TLorentzVector*) inTree->jetP4->At(1);
+
+      outTree->IsVBF = tempJet1->Pt() > 80 && tempJet2->Pt() > 70 && vectorSumMass(tempJet1->Pt(), tempJet1->Eta(), tempJet1->Phi(), tempJet1->M(), tempJet2->Pt(), tempJet2->Eta(), tempJet2->Phi(), tempJet2->M()) > 1100 && fabs(tempJet1->Eta() - tempJet2->Eta()) > 3.6 && outTree->minJetMetDPhi_clean > 2.3;
     }
 
     outTree->Fill();
