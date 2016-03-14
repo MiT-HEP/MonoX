@@ -46,13 +46,19 @@ regions = [
     ('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < 120.)')
 ] 
 
+"""
 binnings = {
     'Low': array.array('d', [0. + 2. * x for x in range(100)]),
     'High': array.array('d', [0. + 2. * x for x in range(65)])
 }
+"""
 
-#binning = array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
-#                      + [200. + 50. * x for x in range(9)] ) 
+binnings =  {
+    'Low': array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+                       + [200. + 50. * x for x in range(9)] ),
+    'High': array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+                       + [200. + 50. * x for x in range(9)] )
+}
 
 dmets = []
 bmets = []
@@ -188,32 +194,32 @@ canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
 ####### Plain Root Attempt ################
 ###########################################
 
-expo = r.TF1("Expo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
+expo = r.TF1("SingleExpo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
 expo.SetParameters(1., -0.1, 0.)
 expo.SetParLimits(1, -10., 0.)
 expo.SetParLimits(2, 0., 10.)
 
-dexpo = r.TF1("DoubleExpo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
+dexpo = r.TF1("Expo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
 dexpo.SetParameters(10., 0.1, -0.1, -0.1)
-dexpo.SetParLimits(2, -10., 0.)
-dexpo.SetParLimits(3, -10., 0.)
+dexpo.SetParLimits(2, -1., 0.)
+dexpo.SetParLimits(3, -1., 0.)
 
 rayleigh = r.TF1("Rayleigh", "[0] * x * TMath::Exp( -x**2 / ( 2 * [1]**2))", 0., 600.)
 rayleigh.SetParameters(1., 10.)
 rayleigh.SetParLimits(1, 0.1, 600.)
 
-pepe = r.TF1("Pepe", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
+pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
 pepe.SetParameters(1., 10., 10.)
 pepe.SetParLimits(1, 0.1, 150.)
 pepe.SetParLimits(2, 0.001, 10.)
 
-pepeplus = r.TF1("PepePlus", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
+pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
 pepeplus.SetParameters(1., 10., 10., 0.1)
 pepeplus.SetParLimits(1, 0.1, 1000.)
 pepeplus.SetParLimits(2, 0.001, 100.)
 pepeplus.SetParLimits(3, 0.00001, 1.)
 
-rpepe = r.TF1("PepeRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
+rpepe = r.TF1("RayleighRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
 rpepe.SetParameters(1., 10., 10., 0.1, 10., 10., 0.1)
 rpepe.SetParLimits(1, 0.1, 1000.)
 rpepe.SetParLimits(2, 0.001, 100.)
@@ -232,7 +238,7 @@ smear.SetParameters(1., 10.)
 smear.SetParLimits(1, 0.1, 150.)
 
 ## choosing model ##
-models = [ gauss, dexpo, rpepe ] 
+models = [ gauss, dexpo ] #, rpepe ] 
 colors = [ r.kRed, r.kBlue, r.kMagenta ] 
 """
 for model in models[:]:
@@ -246,7 +252,7 @@ tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
     print "\nFitting with", model.GetName(), "\n"
-    fit.Fit(model, "M WL B V", "goff", 0., 120.)
+    fit.Fit(model, "M WL B ", "goff", 30., 120.)
 
     model.SetLineColor(colors[iM])
 
@@ -345,6 +351,7 @@ for iG, gmet in enumerate(gmets):
     gmet.SetMarkerColor(1)
     gmet.SetMarkerStyle(8)
     gmet.SetMarkerSize(1.2)
+    gmet.GetListOfFunctions().RemoveLast()
     gmet.Draw("PE")
     for gfit in gfits[iG]:
         gfit.Draw("same")
