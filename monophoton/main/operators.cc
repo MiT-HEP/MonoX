@@ -646,10 +646,10 @@ MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
 void
 ConstantWeight::addBranches(TTree& _skimTree)
 {
-  if (weightUncertUp_ != 0.)
-    _skimTree.Branch("reweight_" + name_ + "Up", &weightUncertUp_, "reweight_" + name_ + "Up/D");
-  if (weightUncertDown_ != 0.)
-    _skimTree.Branch("reweight_" + name_ + "Down", &weightUncertDown_, "reweight_" + name_ + "Down/D");
+  if (weightUp_ >= 0.)
+    _skimTree.Branch("reweight_" + name_ + "Up", &weightUp_, "reweight_" + name_ + "Up/D");
+  if (weightDown_ >= 0.)
+    _skimTree.Branch("reweight_" + name_ + "Down", &weightDown_, "reweight_" + name_ + "Down/D");
 }
 
 //--------------------------------------------------------------------
@@ -757,6 +757,13 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
 //--------------------------------------------------------------------
 
 void
+IDSFWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("reweight_" + name_ + "Up", &weightUp_, "reweight_" + name_ + "Up/D");
+  _skimTree.Branch("reweight_" + name_ + "Down", &weightDown_, "reweight_" + name_ + "Down/D");
+}
+
+void
 IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
@@ -795,7 +802,14 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (iEta > factors_->GetYaxis()->GetNbins())
     iEta = factors_->GetYaxis()->GetNbins();
 
-  _outEvent.weight *= factors_->GetBinContent(factors_->GetBin(iPt, iEta));
+  int iBin(factors_->GetBin(iPt, iEta));
+
+  double weight(factors_->GetBinContent(iBin));
+
+  _outEvent.weight *= weight;
+
+  weightUp_ = 1. + factors_->GetBinError(iBin) / weight;
+  weightDown_ = 1. - factors_->GetBinError(iBin) / weight;
 }
 
 //--------------------------------------------------------------------

@@ -314,15 +314,15 @@ class ConstantWeight : public Modifier {
   ConstantWeight(double weight, char const* name = "ConstantWeight") : Modifier(name), weight_(weight) {}
   void addBranches(TTree& skimTree) override;
 
-  void setUncertaintyUp(double delta) { weightUncertUp_ = 1. + delta; }
-  void setUncertaintyDown(double delta) { weightUncertDown_ = 1. - delta; }
+  void setUncertaintyUp(double delta) { weightUp_ = 1. + delta; }
+  void setUncertaintyDown(double delta) { weightDown_ = 1. - delta; }
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override { _outEvent.weight *= weight_; }
   
   double weight_;
-  double weightUncertUp_{0.};
-  double weightUncertDown_{0.};
+  double weightUp_{-1.};
+  double weightDown_{-1.};
 };
 
 class PhotonPtWeight : public Modifier {
@@ -361,11 +361,14 @@ class IDSFWeight : public Modifier {
 
   IDSFWeight(Object obj, TH2* factors, char const* name = "IDSFWeight") : Modifier(name), object_(obj), factors_(factors) {}
 
+  void addBranches(TTree& skimTree) override;
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   Object object_;
   TH2* factors_;
+  double weightUp_;
+  double weightDown_;
 };
 
 class NPVWeight : public Modifier {

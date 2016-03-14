@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import sys
+argv = sys.argv
+sys.argv = []
 import os
 import array
 import math
 import re
 import ROOT
-
 ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -18,7 +19,6 @@ import config
 from main.plotconfig import getConfig
 
 lumi = 0. # to be set in __main__
-lumiUncert = 0.027
 
 def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
     """
@@ -37,7 +37,6 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
 
     # nominal. name: variable-group
     hist = vardef.makeHist(group.name, outDir = outFile)
-    varhists = {}
 
     for sname in group.samples:
         if group.region:
@@ -46,42 +45,21 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
             hname = ''
 
         # add up histograms from individual samples (saved to sampleDir)
-        weightVariations = {}
-        shist = getHist(sname, region, vardef, plotConfig.baseline, hname = hname, weightVariations = weightVariations, postscale = postscale, outDir = sampleDir)
+        shist = getHist(sname, region, vardef, plotConfig.baseline, hname = hname, postscale = postscale, outDir = sampleDir)
         hist.Add(shist)
         
-        # add up reweight variation histograms. name: variable-group_varname{Up,Down}
-        for varname, (up, down) in weightVariations.items():
-            if varname not in varhists:
-                varhists[varname] = (vardef.makeHist(group.name + '_' + varname + 'Up', outDir = outFile), vardef.makeHist(group.name + '_' + varname + 'Down', outDir = outFile))
+    varhists = {}
 
-            varhists[varname][0].Add(up)
-            varhists[varname][1].Add(down)
-
-        # add the nominal if the sample does not have the particular variation
-        for varname in varhists.keys():
-            if varname not in weightVariations:
-                varhists[varname][0].Add(shist)
-                varhists[varname][1].Add(shist)
-
-    # other systematics variation
+    # systematics variations
     for variation in group.variations:
-        # two histograms (up and down)
-        vhists = tuple([vardef.makeHist(group.name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
-        varhists[variation.name] = vhists
+        if type(variation.reweight) is float:
+            # uniform variation by a constant
 
-        for iV in range(2):
-            if variation.region:
-                vregion = variation.region[iV]
-            else:
-                vregion = region
+            varname = variation.name + 'Var'
 
-            if variation.replacements:
-                repl = variation.replacements[iV]
-            else:
-                repl = []
+            vhist = vardef.makeHist(group.name + '_' + varname, outDir = outFile)
 
-            varname = variation.name + ('Up' if iV == 0 else 'Down')
+            reweight = 1. + variation.reweight
 
             for sname in group.samples:
                 if group.region:
@@ -89,33 +67,73 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
                 else:
                     hname = sname + '_' + varname
 
-                vhists[iV].Add(getHist(sname, vregion, vardef, plotConfig.baseline, hname = hname, cutReplacements = repl, postscale = postscale, outDir = sampleDir))
+                vhist.Add(getHist(sname, region, vardef, plotConfig.baseline, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir))
+
+            varhists[variation.name] = (vhist,) # make it a tuple to align with rest
+
+        else:
+            # up & down variations
+
+            vhists = tuple([vardef.makeHist(group.name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
+    
+            for iV in range(2):
+                v = 'Up' if iV == 0 else 'Down'
+                varname = variation.name + v
+
+                if variation.region is not None:
+                    vregion = variation.region[iV]
+                else:
+                    vregion = region
+    
+                if variation.replacements is not None:
+                    repl = variation.replacements[iV]
+                else:
+                    repl = []
+    
+                if type(variation.reweight) is str:
+                    reweight = 'reweight_' + variation.reweight + v
+                else:
+                    reweight = None
+   
+                for sname in group.samples:
+                    if group.region:
+                        hname = sname + '_' + group.region + '_' + varname
+                    else:
+                        hname = sname + '_' + varname
+    
+                    vhists[iV].Add(getHist(sname, vregion, vardef, plotConfig.baseline, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir))
+
+            varhists[variation.name] = vhists
 
     # write raw histograms before formatting (which includes bin width normalization)
     writeHist(hist)
-    for up, down in varhists.values():
-        writeHist(up)
-        writeHist(down)
+    for vhists in varhists.values():
+        for vhist in vhists:
+            writeHist(vhist)
 
     # apply variations as uncertainties
-    for up, down in varhists.values():
-        # take the average variation as uncertainty
-        vhist = up.Clone(hist.GetName() + '_var')
-        vhist.Add(down, -1.)
-        vhist.Scale(0.5)
+    for vhists in varhists.values():
+        if len(vhists) == 1:
+            vhist = vhists[0]
+        else:
+            # take the average variation as uncertainty
+            vhist = vhists[0].Clone(hist.GetName() + '_var')
+            vhist.Add(vhists[1], -1.)
+            vhist.Scale(0.5)
 
         for iX in range(1, hist.GetNbinsX() + 1):
             err = math.sqrt(math.pow(hist.GetBinError(iX), 2.) + math.pow(vhist.GetBinContent(iX), 2.))
             hist.SetBinError(iX, err)
 
-        vhist.Delete()
+        if len(vhists) == 2:
+            vhist.Delete()
 
     formatHist(hist, vardef)
 
     return hist
 
 
-def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None, cutReplacements = [], prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
+def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
     """
     Create a histogram object for a given variable (vardef) from a given sample and region.
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -161,75 +179,39 @@ def getHist(sname, region, vardef, baseline, hname = '', weightVariations = None
     source = ROOT.TFile.Open(sourceName)
     tree = source.Get('events')
 
-    # routine to fill a histogram with possible reweighting
-    def fillHist(name, reweight = '1.'):
-        """
-        Fill h with expr, weighted with reweight * weight * (selection). Take care of overflows
-        """
+    hist = vardef.makeHist(hname, outDir = outDir)
 
-        h = vardef.makeHist(name, outDir = outDir)
-
-        if plotAcceptance:
-            weight = '1.'
-        else:
-            weight = 'weight'
-            if not sample.data:
-                weight += '*' + str(lumi)
-
-        tree.Draw(expr + '>>' + h.GetName(), '%s*%s*(%s)' % (reweight, weight, selection), 'goff')
-        if vardef.overflow:
-            iOverflow = h.GetNbinsX()
-            cont = h.GetBinContent(iOverflow)
-            err2 = math.pow(h.GetBinError(iOverflow), 2.)
-            h.SetBinContent(iOverflow, cont + h.GetBinContent(iOverflow + 1))
-            h.SetBinError(iOverflow, math.sqrt(err2 + math.pow(h.GetBinError(iOverflow + 1), 2.)))
-
-        for iX in range(1, h.GetNbinsX() + 1):
-            if h.GetBinContent(iX) < 0.:
-                h.SetBinContent(iX, 0.)
-            if h.GetBinContent(iX) - h.GetBinError(iX) < 0.:
-                h.SetBinError(iX, h.GetBinContent(iX) - 1.e-6)
-
-        if plotAcceptance:
-            h.Scale(1. / sample.nevents)
-
-        writeHist(h)
-
-        return h
-
-    # fill the nominal histogram
-    hist = fillHist(hname)
-
-    if type(weightVariations) is dict:
-        for branch in tree.GetListOfBranches():
-            bname = branch.GetName()
-    
-            # find the shift-up weights reweight_(*)Up
-            if not bname.startswith('reweight_') or not bname.endswith('Up'):
-                continue
-    
-            upName = bname.replace('reweight_', '')
-            varName = upName[0:-2]
-            downName = varName + 'Down'
-    
-            if not tree.GetBranch('reweight_' + downName):
-                print 'Weight variation ' + varName + ' does not have downward shift in ' + sample.name + ' ' + region
-                continue
-    
-            upHist = fillHist(hname + '_' + upName, reweight = 'reweight_' + upName)
-            downHist = fillHist(hname + '_' + downName, reweight = 'reweight_' + downName)
-
-            weightVariations[varName] = (upHist, downHist)
-    
+    if plotAcceptance:
+        weight = '1.'
+    else:
+        weight = 'weight'
         if not sample.data:
-            # lumi up and down
-            upHist = hist.Clone(hist.GetName() + '_lumiUp')
-            upHist.Scale(1. + lumiUncert)
-            downHist = hist.Clone(hist.GetName() + '_lumiUp')
-            downHist.Scale(1. - lumiUncert)
+            weight += '*' + str(lumi)
 
-            weightVariations['lumi'] = (upHist, downHist)
-    
+        if type(reweight) is float:
+            weight += '*' + str(reweight)
+        elif type(reweight) is str:
+            weight += '*' + reweight
+
+    tree.Draw(expr + '>>' + hist.GetName(), '%s*(%s)' % (weight, selection), 'goff')
+    if vardef.overflow:
+        iOverflow = hist.GetNbinsX()
+        cont = hist.GetBinContent(iOverflow)
+        err2 = math.pow(hist.GetBinError(iOverflow), 2.)
+        hist.SetBinContent(iOverflow, cont + hist.GetBinContent(iOverflow + 1))
+        hist.SetBinError(iOverflow, math.sqrt(err2 + math.pow(hist.GetBinError(iOverflow + 1), 2.)))
+
+    for iX in range(1, hist.GetNbinsX() + 1):
+        if hist.GetBinContent(iX) < 0.:
+            hist.SetBinContent(iX, 0.)
+        if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+            hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
+
+    if plotAcceptance:
+        hist.Scale(1. / sample.nevents)
+
+    writeHist(hist)
+
     # we don't need the tree any more
     source.Close()
 
@@ -351,6 +333,8 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
 
 
 if __name__ == '__main__':
+
+    sys.argv = argv
 
     from argparse import ArgumentParser
     

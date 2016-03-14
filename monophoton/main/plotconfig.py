@@ -147,10 +147,14 @@ class Variation(object):
     Must specify either region or replacements or both as a two-component tuple corresponding to up and down variations.
     """
 
-    def __init__(self, name, region = None, replacements = None):
+    def __init__(self, name, region = None, replacements = None, reweight = None):
         self.name = name
         self.region = region
         self.replacements = replacements
+        # reweight:
+        #  single float -> scale uniformly. Output suffix _{name}Var
+        #  string -> use branches 'reweight_%sUp' & 'reweight_%sDown'. Output suffix _{name}Up & _{name}Down
+        self.reweight = reweight
 
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
@@ -216,6 +220,14 @@ def getConfig(confName):
         for group in config.bkgGroups + config.sigGroups:
             if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+#            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+
+            group.variations.append(Variation('worstIsoSF', reweight = 0.08))
+
+            group.variations.append(Variation('leptonvetoSF', reweight = 0.08))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -226,7 +238,12 @@ def getConfig(confName):
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
-        config.findGroup('hfake').variations.append(Variation('tfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 'egfakerate'))
+        config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('zgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
     
     elif confName == 'lowdphi':
         metCut = 't1Met.met > 170.'
