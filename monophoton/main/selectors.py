@@ -118,7 +118,7 @@ def candidate(sample, name, selector = None):
     selector = monophotonBase(sample, name, selector)
 
     if not sample.data:
-        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'PhotonIDSFWeight'))
+        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
 
     photonSel = selector.findOperator('PhotonSelection')
 
