@@ -713,6 +713,17 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
       TLorentzVector* tempJet1 = (TLorentzVector*) inTree->jetP4->At(0);
       TLorentzVector* tempJet2 = (TLorentzVector*) inTree->jetP4->At(1);
 
+      outTree->jot1Pt = tempJet1->Pt();
+      outTree->jot1Eta = tempJet1->Eta();
+      outTree->jot1Phi = tempJet1->Phi();
+      outTree->jot1M = tempJet1->M();
+      outTree->jot2Pt = tempJet2->Pt();
+      outTree->jot2Eta = tempJet2->Eta();
+      outTree->jot2Phi = tempJet2->Phi();
+      outTree->jot2M = tempJet2->M();
+      outTree->mjj = vectorSumMass(tempJet1->Pt(), tempJet1->Eta(), tempJet1->Phi(), tempJet1->M(), tempJet2->Pt(), tempJet2->Eta(), tempJet2->Phi(), tempJet2->M());
+      outTree->jjDEta = fabs(tempJet1->Eta() - tempJet2->Eta());
+
       outTree->IsVBF = tempJet1->Pt() > 80 && tempJet2->Pt() > 70 && vectorSumMass(tempJet1->Pt(), tempJet1->Eta(), tempJet1->Phi(), tempJet1->M(), tempJet2->Pt(), tempJet2->Eta(), tempJet2->Phi(), tempJet2->M()) > 1100 && fabs(tempJet1->Eta() - tempJet2->Eta()) > 3.6 && outTree->minJetMetDPhi_clean > 2.3;
     }
 

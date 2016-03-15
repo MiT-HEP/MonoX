@@ -7,5 +7,5 @@ export CrombieInFilesDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_16
 export CrombieOutPlotDir=/afs/cern.ch/user/d/dabercro/www/plots/$CROMBIEDATE
 export CrombieOutLimitTreeDir=limits/$CROMBIEDATE
 
-#export CrombieCutsFile=cutsVBFVeto.py
-export CrombieCutsFile=cuts.py
+export CrombieCutsFile=cutsVBFVeto.py
+#export CrombieCutsFile=cuts.py
