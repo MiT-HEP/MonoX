@@ -72,11 +72,6 @@ def makeProcessBlock(processes, procs, binLow = 1):
             hist = getHist(process)
             rate = hist.Integral(binLow, hist.GetNbinsX())
             if rate < 0.005:
-                """
-                if iP == 0:
-                    rate = rate * 1000
-                else:
-                """
                 continue
 
         procs.append(process)
