@@ -1,11 +1,12 @@
 import sys
+argv = sys.argv
+sys.argv = []
 import os
 import array
 import math
 import re
-import ROOT
 
-ROOT.gROOT.SetBatch(True)
+import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -16,7 +17,7 @@ import config
 from main.plotconfig import getConfig
 from main.plot import getHist, formatHist, printBinByBin
 
-varname = sys.argv[1]
+varname = argv[1]
 
 plotConfig = getConfig('monoph')
 vardef = next(v for v in plotConfig.variables if v.name == varname)
@@ -33,7 +34,7 @@ for group in plotConfig.bkgGroups:
             region = plotConfig.name
             hname = ''
 
-        hist = getHist(sname, region, vardef, plotConfig.baseline, hname = hname, acceptance = True)
+        hist = getHist(sname, region, vardef, plotConfig.baseline, hname = hname, plotAcceptance = True)
         hist.Scale(allsamples[sname].nevents)
 
         totalw += allsamples[sname].nevents
@@ -47,7 +48,7 @@ for group in plotConfig.bkgGroups:
 
 totalw = 0.
 for sname in plotConfig.obs.samples:
-    hist = getHist(sname, plotConfig.name, vardef, plotConfig.baseline, acceptance = True)
+    hist = getHist(sname, plotConfig.name, vardef, plotConfig.baseline, plotAcceptance = True)
     try:
         stack['data_obs'].Add(hist)
     except KeyError:
