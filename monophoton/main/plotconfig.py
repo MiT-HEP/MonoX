@@ -169,7 +169,7 @@ def getConfig(confName):
         config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = metCut
         config.sigGroups = [
-            GroupSpec('add5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
+            GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
             GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
             GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
         ]
@@ -221,13 +221,13 @@ def getConfig(confName):
             if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
 
-            group.variations.append(Variation('lumi', reweight = 0.027))
+            # group.variations.append(Variation('lumi', reweight = 0.027))
 
-#            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            group.variations.append(Variation('worstIsoSF', reweight = 0.08))
+            # group.variations.append(Variation('worstIsoSF', reweight = 0.08))
 
-            group.variations.append(Variation('leptonvetoSF', reweight = 0.08))
+            # group.variations.append(Variation('leptonvetoSF', reweight = 0.08))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]

@@ -9,7 +9,7 @@ argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name. Us
 argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
 argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
-argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'metHigh', help = 'Discriminating variable.')
+argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -72,6 +72,11 @@ def makeProcessBlock(processes, procs, binLow = 1):
             hist = getHist(process)
             rate = hist.Integral(binLow, hist.GetNbinsX())
             if rate < 0.005:
+                """
+                if iP == 0:
+                    rate = rate * 1000
+                else:
+                """
                 continue
 
         procs.append(process)

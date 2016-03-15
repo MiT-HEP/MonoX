@@ -66,7 +66,7 @@ selectors = {
     'wlnu-600': mc_wlnu
 }
 
-for sname in ['add%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
+for sname in ['add-%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
     selectors[sname] = mc_cand
 
 for mt in ['a', 'v']:
