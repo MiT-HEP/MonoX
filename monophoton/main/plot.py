@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-argv = sys.argv
-sys.argv = []
 import os
 import array
 import math
 import re
-import ROOT
-ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -334,8 +330,6 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
 
 if __name__ == '__main__':
 
-    sys.argv = argv
-
     from argparse import ArgumentParser
     
     argParser = ArgumentParser(description = 'Plot and count')
@@ -351,6 +345,9 @@ if __name__ == '__main__':
     
     args = argParser.parse_args()
     sys.argv = []
+
+    import ROOT
+    ROOT.gROOT.SetBatch(True)
 
     plotConfig = getConfig(args.config)
 
