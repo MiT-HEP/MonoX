@@ -1,0 +1,41 @@
+#! /usr/bin/python
+
+from ROOT import TFile
+from CrombieTools.PlotTools.PlotROC import plotter
+import cuts
+from CrombieTools import Nminus1Cut
+
+inDir = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_VBFStudy/files/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/VBFStudy/'
+
+vbfFile = TFile(inDir + 'monojet_VBFSignal.root')
+zvvFile = TFile(inDir + 'monojet_ZJetsToNuNu.root')
+qcdFile = TFile(inDir + 'monojet_QCD.root')
+
+plotter.AddTree(vbfFile.events)
+plotter.AddTree(zvvFile.events)
+plotter.AddTree(qcdFile.events)
+
+plotter.AddLegendEntry('VBF',1)
+plotter.AddLegendEntry('Zvv',2)
+plotter.AddLegendEntry('QCD',3)
+
+plotter.SetLumiLabel('2.30')
+plotter.SetIsCMSPrelim(True)
+plotter.SetLegendLocation(plotter.kUpper,plotter.kRight)
+plotter.SetEventsPer(1.0)
+plotter.SetNormalizedHists(True)
+
+def MakePlot(args):
+    holding = list(args)
+    expr = args[0]
+    holding[0] = outDir + 'VBFStudy_' + expr
+    plotter.SetDefaultWeight(Nminus1Cut(cuts.cut('monoJet_inc','signal') + '*(' + cuts.METTrigger + ')',expr))
+    plotter.SetDefaultExpr(expr)
+    plotter.MakeCanvas(*holding)
+
+MakePlot(['jot1Pt',40,0,1000,'Jet 1 p_{T} [GeV]','AU',True])
+MakePlot(['jot2Pt',40,0,1000,'Jet 2 p_{T} [GeV]','AU',True])
+MakePlot(['mjj',60,0,3000,'Di-jet Mass [GeV]','AU'])
+MakePlot(['jjDEta',40,0,10,'Di-jet #Delta#eta','AU'])
+MakePlot(['minJetMetDPhi_clean',20,0,4,'min #Delta#phi(j,MET)','AU'])

@@ -1,6 +1,6 @@
 from cuts import *
 
-VBFSelection = 'IsVBF == 1'
+VBFSelection = 'jot1Pt > 80 && jot2Pt > 30'
 
 def new_cut(category, region):
     return '((' + categoryCuts[category] + ') && (' + regionCuts[region] + ') && !(' + VBFSelection + '))'
