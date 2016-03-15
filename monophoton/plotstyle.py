@@ -99,6 +99,7 @@ class Legend(object):
         self.entries = {}
         self.defaultOrder = []
         self.autoPosition = True
+        self._modified = False
 
     def setPosition(self, x1, y1, x2, y2, fix = True):
         self.legend.SetX1(x1)
@@ -148,6 +149,14 @@ class Legend(object):
         self.entries[name] = ent
         self.defaultOrder.append(name)
 
+        self._modified = True
+
+    def remove(self, name):
+        self.entries.pop(name)
+        self.defaultOrder.remove(name)
+
+        self._modified = True
+
     def apply(self, name, obj):
         entry = self.entries[name]
 
@@ -166,15 +175,19 @@ class Legend(object):
                 pass
 
     def construct(self, order = []):
-        if self.legend.GetListOfPrimitives().GetEntries() != 0:
+        if not self._modified:
             return
 
         if len(order) == 0:
             order = self.defaultOrder
 
+        self.legend.Clear()
+
         for name in order:
             ent = self.entries[name]
             self.legend.AddEntry(ent, ent.GetLabel(), ent.GetOption())
+
+        self._modified = False
 
     def Clear(self):
         self.legend.Clear()
@@ -182,7 +195,7 @@ class Legend(object):
         self.defaultOrder = []
 
     def Draw(self, order = []):
-        if self.legend.GetListOfPrimitives().GetEntries() == 0:
+        if self._modified:
             self.construct(order)
 
         self.legend.Draw()
