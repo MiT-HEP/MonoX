@@ -17,7 +17,7 @@ plotter.SetLumiLabel('2.30')
 plotter.SetIsCMSPrelim(True)
 plotter.SetLegendLocation(plotter.kUpper,plotter.kLeft)
 
-theCut = cuts.cut('monoJet_inc','signal') + '* (jjDEta > 0 && mjj > 0)'
+theCut = cuts.cut('monoJet_inc','signal') + '* (jjDEta > 0 && mjj > 0 && mjj < 2000)'
 
 plotter.SetSignalCut(theCut)
 plotter.SetBackgroundCut(theCut)
@@ -35,5 +35,7 @@ plotter.AddVar('mjj')
 plotter.MakeCanvas(outDir + 'Sig_VBF_mjj',500,'dijet mass cut [GeV]','Significance')
 
 plotter.ResetVars()
+plotter.ResetLegend()
+plotter.AddLegendEntry('Di-jet #Delta#eta',2)
 plotter.AddVar('jjDEta')
 plotter.MakeCanvas(outDir + 'Sig_VBF_jjDEta',500,'#Delta#eta cut','Significance')
