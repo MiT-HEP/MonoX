@@ -119,6 +119,9 @@ def candidate(sample, name, selector = None):
 
     if not sample.data:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
 
@@ -390,7 +393,7 @@ def gjSmeared(sample, name):
     candidate(sample, name, selector)
 
     smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
-    smearing.SetParameters(3.28522, 5.98605e-01) # measured in gjets/smearfit.py
+    smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
     selector.setNSamples(10)
     selector.setFunction(smearing)
 
@@ -547,7 +550,7 @@ def kfactor(generator):
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
 
-        for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'pdfUp', 'pdfDown', 'scaleUp', 'scaleDown']:
+        for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sample.name + '_' + variation)
             if vcorr:
                 qcd.addVariation('qcd' + variation, vcorr)

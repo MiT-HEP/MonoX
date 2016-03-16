@@ -827,3 +827,42 @@ NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
   _outEvent.weight *= factors_->GetBinContent(iX);
 }
+
+//--------------------------------------------------------------------
+// NNPDFVariation
+//--------------------------------------------------------------------
+
+void
+NNPDFVariation::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("reweight_pdfUp", &weightUp_, "reweight_pdfUp/D");
+  _skimTree.Branch("reweight_pdfDown", &weightDown_, "reweight_pdfDown/D");
+}
+
+void
+NNPDFVariation::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  double central(1.);
+  unsigned offset(0);
+
+  if (_event.reweight[107].scale != 0.) {
+    // This is amc_74 (102 reweights, last two for alternative alpha_s which we ignore)
+    // This is obviously not a robust way to detect sample type, but this is the best we can do now.
+    // We should store the pdfrwgt string in the simpletree file in the future
+    offset = 6;
+  }
+  else {
+    // This is mg5_74 (101 reweights, first is nominal)
+    central = _event.reweight[6].scale;
+    offset = 7;
+  }
+    
+  double sumd2(0.);
+  for (unsigned iW(0); iW != 100; ++iW) {
+    double d(_event.reweight[iW + offset].scale - central);
+    sumd2 += d * d;
+  }
+  double dw(std::sqrt(sumd2 / 99.));
+  weightUp_ = 1. + dw;
+  weightDown_ = 1. - dw;
+}
