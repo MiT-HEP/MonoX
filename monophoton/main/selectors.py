@@ -396,37 +396,49 @@ def gjSmeared(sample, name):
 
     return selector
 
+def normalized(norm, sample, name, inverts, removes, appends):
+    """
+    Candidate-like, but with inverted MIP tag and CSC filter.
+    """
+
+    selector = ROOT.NormalizingSelector(name)
+    selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+
+    selector = monophotonBase(sample, name, selector)
+
+    # 0->CSC halo tagger
+#    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+
+    for invert in inverts:
+        sels.remove(invert)
+        photonSel.addSelection(False, getattr(ROOT.PhotonSelection, invert))
+
+    for remove in removes:
+        sels.remove(remove)
+
+    for append in appends:
+        sels.append(append)
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    return selector
+
+
 def halo(norm):
     """
     Wrapper to return the generator for the halo proxy sample normalized to norm.
     """
 
-    def normalized(sample, name):
-        """
-        Candidate-like, but with inverted MIP tag and CSC filter.
-        """
+    inverts = [ 'MIP49' ]
+    removes = [ 'Sieie' ]
+    appends = [ 'Sieie15' ] 
 
-        selector = ROOT.NormalizingSelector(name)
-        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
-
-        selector = monophotonBase(sample, name, selector)
-
-        # 0->CSC halo tagger
-    #    selector.findOperator('MetFilters').setFilter(0, -1)
-
-        photonSel = selector.findOperator('PhotonSelection')
-
-        sels = list(photonFullSelection)
-        sels.remove('Sieie')
-        sels.remove('MIP49')
-        sels.append('Sieie15')
-
-        for sel in sels:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-
-        photonSel.addSelection(False, ROOT.PhotonSelection.MIP49)
-
-        return selector
+    normalized(norm, inverts, removes, appends)
 
     return normalized
 

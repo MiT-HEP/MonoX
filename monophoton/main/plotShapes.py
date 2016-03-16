@@ -39,7 +39,7 @@ if 'mtPhoMet' in variable:
 elif 'phoPt' in variable:
     xtitle = 'E_{T}^{#gamma} (GeV)'
 elif 'met' in variable:
-    xtitle = 'E_{T}^{miss}) (GeV)'
+    xtitle = 'E_{T}^{miss} (GeV)'
 
 
 lumi = 0.
