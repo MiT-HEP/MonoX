@@ -37,7 +37,7 @@ mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
-mc_gj = [('monoph', selectors.kfactor(selectors.candidate)), ('purity', selectors.kfactor(selectors.purity))]
+mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
 
 selectors = {
