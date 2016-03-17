@@ -19,6 +19,7 @@ import array
 import math
 import re
 import ROOT
+from pprint import pprint
 
 ROOT.gROOT.SetBatch(True)
 
@@ -87,12 +88,16 @@ def makeProcessBlock(processes, procs, binLow = 1):
 def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
     block = []
 
+    systList = {}
+
     for syst, procs in nuisances.items():
         line = cols % syst
 
         words = []
 
         lnN = False
+
+        vals = {}
 
         # iterate over all processes (=columns)    
         for proc in processes:
@@ -117,6 +122,7 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
                         relunc = (up - down) * 0.5 / nominal
 
                     words.append('%.3f' % (1. + relunc))
+                    vals[proc] = 1. + relunc
     
             else:
                 words.append('-')
@@ -130,8 +136,12 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
             line += colsr % word
     
         block.append(line)
+        systList[syst] = vals
 
-    return block
+    if shape:
+        return block
+    else:
+        return (block, systList)
 
 
 def writeCard(outputName, blocks):
@@ -185,6 +195,8 @@ if args.model == 'nomodel':
     
     nBins = obs.GetNbinsX()
 
+    systLists = {}
+
     # iterate over bins and make one datacard for each integral
     for binLow in range(1, nBins + 1):
         obsBlock = [
@@ -197,7 +209,7 @@ if args.model == 'nomodel':
 
         headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
-        nuisanceBlock = makeNuisanceBlock(nuisances, procs, binLow = binLow, shape = False)
+        (nuisanceBlock, systList) = makeNuisanceBlock(nuisances, procs, binLow = binLow, shape = False)
 
         if outputName.rfind('.') == -1:
             outName = outputName
@@ -213,6 +225,26 @@ if args.model == 'nomodel':
             outName += ('_%f' % bound) + ext
 
         writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock])
+        systLists[bound] = systList
+
+    header = "%-20s" % " "
+    for bound in sorted(systLists.keys()):
+        header += " %6.0f" % bound
+    print header
+
+    systs = systLists[obs.GetBinLowEdge(1)]
+    for syst in sorted(systs):
+        for proc in systs[syst]:
+            # print syst, proc
+            temp = "%s_%s:" % (syst, proc)
+            string = "%-20s" % temp
+            for bound in sorted(systLists.keys()):
+                try:
+                    string += " %6.2f" % systLists[bound][syst][proc]
+                except KeyError:
+                    string += " %6s" % "-"
+            print string
+        
 
 else:
     shapeBlock = [
