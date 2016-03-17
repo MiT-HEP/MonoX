@@ -5,8 +5,11 @@ from ROOT import TFile
 import cuts
 from CrombieTools import Nminus1Cut
 
-#inDir = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_VBFStudy/files/'
-#outDir = '/afs/cern.ch/user/d/dabercro/www/plots/160316/'
+inDir = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_VBFStudy/files/'
+outDir = '/afs/cern.ch/user/d/dabercro/www/plots/160316/'
+
+#inDir = '/Users/dabercro/GradSchool/Winter15/vbfFiles/'
+#outDir = 'plots/160317/'
 
 if __name__ == '__main__':
     from CrombieTools.PlotTools.PlotHists import plotter
@@ -42,3 +45,7 @@ if __name__ == '__main__':
     MakePlot(['mjj',60,0,3000,'Di-jet Mass [GeV]','AU'])
     MakePlot(['jjDEta',40,0,10,'Di-jet #Delta#eta','AU'])
     MakePlot(['minJetMetDPhi_clean',20,0,4,'min #Delta#phi(j,MET)','AU'])
+    MakePlot(['gen_jot1Pt',40,0,1000,'Jet 1 p_{T} [GeV]','AU',True])
+    MakePlot(['gen_jot2Pt',40,0,1000,'Jet 2 p_{T} [GeV]','AU',True])
+    MakePlot(['gen_mjj',60,0,3000,'Di-jet Mass [GeV]','AU'])
+    MakePlot(['gen_jjDEta',40,0,10,'Di-jet #Delta#eta','AU'])
