@@ -419,7 +419,8 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
         sels = list(photonFullSelection)
 
         for invert in inverts:
-            sels.remove(invert)
+            if invert in sels:
+                sels.remove(invert)
             photonSel.addSelection(False, getattr(ROOT.PhotonSelection, invert))
 
         for remove in removes:
@@ -458,14 +459,14 @@ def haloCSC(norm):
 
     return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
 
-def haloDown(norm):
+def haloSieie(norm):
     """
     Wrapper to return the generator for the halo proxy sample normalized to norm.
     """
 
-    inverts = [ 'MIP49' ]
-    removes = [ 'Sieie' ]
-    appends = [ 'Sieie15' ] 
+    inverts = [ 'Sieie15' ]
+    removes = [ 'Sieie', 'MIP49' ]
+    appends = [] 
 
     return sampleDefiner(norm, inverts, removes, appends)
 
