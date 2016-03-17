@@ -10,6 +10,7 @@ argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
 argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
 argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
+argParser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -246,7 +247,7 @@ if args.model == 'nomodel':
             print string
         
 
-else:
+elif args.shape:
     shapeBlock = [
         'shapes * * %s $CHANNEL-$PROCESS $CHANNEL-$PROCESS_$SYSTEMATIC' % args.input,
     ]
@@ -264,3 +265,18 @@ else:
     nuisanceBlock = makeNuisanceBlock(nuisances, procs)
 
     writeCard(outputName, [headerBlock, shapeBlock, obsBlock, processBlock, nuisanceBlock])
+
+else:
+    obsBlock = [
+        'bin         ' + variable,
+        'observation %.0f' % obs.GetSumOfWeights(),
+    ]
+
+    procs = []
+    processBlock = makeProcessBlock(processes, procs)
+
+    headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
+
+    (nuisanceBlock, systList) = makeNuisanceBlock(nuisances, procs, shape = False)
+
+    writeCard(outputName, [headerBlock, obsBlock, processBlock, nuisanceBlock])

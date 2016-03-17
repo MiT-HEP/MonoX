@@ -11,6 +11,7 @@ parser = ArgumentParser()
 parser.add_argument('models', metavar = 'MODEL', nargs='+', help = 'Signal model(s) to compute limits for.')
 parser.add_argument('-R', '--root-file', metavar = 'PATH', action = 'store', dest = 'rootFile', help = 'Histogram ROOT file.')
 parser.add_argument('--variable', '-v', action = 'store', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
+parser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
 
 opts = parser.parse_args()
 
@@ -94,12 +95,16 @@ print datetime.datetime.now(), '\n'
 limits = {} # "dmv-500-150" : ( Obs, Exp )
 print "%16s %10s %10s" % ('model', 'Observed', 'Expected')
 for iM, model in enumerate(modelList):
+    """
     if iM % 10 == 0:
         print datetime.datetime.now()
-    
+    """
+
     '''./datacard.py dma-500-1 limitsfile.root -o test.txt -O -v phoPtHighMet'''
     cardPath = os.path.join(cardDir, model+'_'+opts.variable+'.txt')
     argList = ['./datacard.py', model, opts.rootFile, '-v', opts.variable, '-o', cardPath]
+    if opts.shape:
+        argList.append('-s')
     MakeDataCard = Popen(argList, stdout=PIPE, stderr=PIPE)
     
     (out, err) = MakeDataCard.communicate()
@@ -110,3 +115,4 @@ for iM, model in enumerate(modelList):
 
     print "%16s %10.2f %10.2f" % (model, limits[model][0], limits[model][1])
 
+print datetime.datetime.now()
