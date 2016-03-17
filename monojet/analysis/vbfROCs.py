@@ -7,9 +7,6 @@ from CrombieTools.PlotTools.PlotROC import plotter
 vbfFile = TFile(inDir + 'monojet_VBFSignal.root')
 bkgdFile = TFile(inDir + 'monojet_Bkgd.root')
 
-plotter.AddVar('mjj')
-plotter.AddVar('jjDEta')
-
 plotter.AddLegendEntry('Di-jet Mass',1)
 plotter.AddLegendEntry('Di-jet #Delta#eta',2)
 
@@ -25,7 +22,14 @@ plotter.SetBackgroundCut(theCut)
 plotter.SetSignalTree(vbfFile.events)
 plotter.SetBackgroundTree(bkgdFile.events)
 
+plotter.AddVar('mjj')
+plotter.AddVar('jjDEta')
 plotter.MakeCanvas(outDir + 'ROC_VBF')
+
+plotter.ResetVars()
+plotter.AddVar('gen_mjj')
+plotter.AddVar('gen_jjDEta')
+plotter.MakeCanvas(outDir + 'ROC_VBF_gen')
 
 plotter.SetPlotType(plotter.kSignificance)
 plotter.SetLegendLocation(plotter.kUpper,plotter.kRight)
@@ -39,3 +43,13 @@ plotter.ResetLegend()
 plotter.AddLegendEntry('Di-jet #Delta#eta',2)
 plotter.AddVar('jjDEta')
 plotter.MakeCanvas(outDir + 'Sig_VBF_jjDEta',500,'#Delta#eta cut','Significance')
+
+plotter.ResetVars()
+plotter.AddVar('gen_mjj')
+plotter.MakeCanvas(outDir + 'Sig_VBF_gen_mjj',500,'dijet mass cut [GeV]','Significance')
+
+plotter.ResetVars()
+plotter.ResetLegend()
+plotter.AddLegendEntry('Di-jet #Delta#eta',2)
+plotter.AddVar('gen_jjDEta')
+plotter.MakeCanvas(outDir + 'Sig_VBF_gen_jjDEta',500,'#Delta#eta cut','Significance')
