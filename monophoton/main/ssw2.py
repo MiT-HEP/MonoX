@@ -40,10 +40,17 @@ mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dil
 mc_gj = [('monoph', selectors.kfactor(selectors.candidate)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
 
+sphLumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
+haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4'] ]
+
 selectors = {
     # Data
-    'sph-d3': data_sph + [('halo', selectors.halo(5.9 * allsamples['sph-d3'].lumi / (allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi)))],
-    'sph-d4': data_sph + [('halo', selectors.halo(5.9 * allsamples['sph-d4'].lumi / (allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi)))],
+    'sph-d3': data_sph + [('halo', selectors.halo(haloNorms[0]))
+                          ,('haloCSC', selectors.haloCSC(haloNorms[0]))
+                          ],
+    'sph-d4': data_sph + [('halo', selectors.halo(haloNorms[1]))
+                          ,('haloCSC', selectors.haloCSC(haloNorms[1]))
+                          ],
     'smu-d3': data_smu,
     'smu-d4': data_smu,
     'sel-d3': data_sel,

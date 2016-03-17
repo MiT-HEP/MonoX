@@ -396,37 +396,41 @@ def gjSmeared(sample, name):
 
     return selector
 
-def normalized(norm, sample, name, inverts, removes, appends):
+def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
     """
     Candidate-like, but with inverted MIP tag and CSC filter.
     """
 
-    selector = ROOT.NormalizingSelector(name)
-    selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+    def normalized(sample, name):
+        selector = ROOT.NormalizingSelector(name)
+        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
 
-    selector = monophotonBase(sample, name, selector)
+        selector = monophotonBase(sample, name, selector)
 
-    # 0->CSC halo tagger
-#    selector.findOperator('MetFilters').setFilter(0, -1)
+        # 0->CSC halo tagger
+        if not CSCFilter:
+            selector.findOperator('MetFilters').setFilter(0, -1)
 
-    photonSel = selector.findOperator('PhotonSelection')
+        photonSel = selector.findOperator('PhotonSelection')
 
-    sels = list(photonFullSelection)
+        sels = list(photonFullSelection)
 
-    for invert in inverts:
-        sels.remove(invert)
-        photonSel.addSelection(False, getattr(ROOT.PhotonSelection, invert))
+        for invert in inverts:
+            sels.remove(invert)
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, invert))
 
-    for remove in removes:
-        sels.remove(remove)
+        for remove in removes:
+            sels.remove(remove)
 
-    for append in appends:
-        sels.append(append)
+        for append in appends:
+            sels.append(append)
 
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        for sel in sels:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
-    return selector
+        return selector
+
+    return normalized
 
 
 def halo(norm):
@@ -438,9 +442,29 @@ def halo(norm):
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
-    normalized(norm, inverts, removes, appends)
+    return sampleDefiner(norm, inverts, removes, appends)
 
-    return normalized
+def haloCSC(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    inverts = []
+    removes = [ 'Sieie', 'MIP49' ]
+    appends = [ 'Sieie15' ] 
+
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
+
+def haloDown(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    inverts = [ 'MIP49' ]
+    removes = [ 'Sieie' ]
+    appends = [ 'Sieie15' ] 
+
+    return sampleDefiner(norm, inverts, removes, appends)
 
 def leptonBase(sample, name, selector = None):
     """
