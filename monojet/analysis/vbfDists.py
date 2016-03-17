@@ -5,8 +5,8 @@ from ROOT import TFile
 import cuts
 from CrombieTools import Nminus1Cut
 
-inDir = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_VBFStudy/files/'
-outDir = '/afs/cern.ch/user/d/dabercro/www/plots/160316/'
+#inDir = '/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_VBFStudy/files/'
+#outDir = '/afs/cern.ch/user/d/dabercro/www/plots/160316/'
 
 if __name__ == '__main__':
     from CrombieTools.PlotTools.PlotHists import plotter
