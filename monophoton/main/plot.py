@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-argv = sys.argv
-sys.argv = []
 import os
 import array
 import math
 import re
-import ROOT
-ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -274,6 +270,8 @@ def formatHist(hist, vardef):
 
 
 def printCounts(counters, plotConfig):
+    prec = '%.2f'
+
     # Print out the predictions and yield
     bkgTotal = 0.
     bkgTotalErr2 = 0.
@@ -288,16 +286,16 @@ def printCounts(counters, plotConfig):
         bkgTotal += count
         bkgTotalErr2 += math.pow(err, 2.)
 
-        print '%+12s  %.2f +- %.2f' % (group.name, count, err)
+        print ('%+12s  ' + prec + ' +- ' + prec) % (group.name, count, err)
     
     print '---------------------'
-    print '%+12s  %.2f +- %.2f' % ('bkg', bkgTotal, math.sqrt(bkgTotalErr2))
+    print ('%+12s  ' + prec + ' +- ' + prec) % ('bkg', bkgTotal, math.sqrt(bkgTotalErr2))
     
     print '====================='
     
     for group in plotConfig.sigGroups:
         counter = counters[group.name]
-        print '%+12s  %.2f +- %.2f' % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
+        print ('%+12s  ' + prec + ' +- ' + prec) % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
     
     print '====================='
     print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
@@ -334,8 +332,6 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
 
 if __name__ == '__main__':
 
-    sys.argv = argv
-
     from argparse import ArgumentParser
     
     argParser = ArgumentParser(description = 'Plot and count')
@@ -351,6 +347,9 @@ if __name__ == '__main__':
     
     args = argParser.parse_args()
     sys.argv = []
+
+    import ROOT
+    ROOT.gROOT.SetBatch(True)
 
     plotConfig = getConfig(args.config)
 

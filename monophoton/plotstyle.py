@@ -99,6 +99,7 @@ class Legend(object):
         self.entries = {}
         self.defaultOrder = []
         self.autoPosition = True
+        self._modified = False
 
     def setPosition(self, x1, y1, x2, y2, fix = True):
         self.legend.SetX1(x1)
@@ -148,6 +149,14 @@ class Legend(object):
         self.entries[name] = ent
         self.defaultOrder.append(name)
 
+        self._modified = True
+
+    def remove(self, name):
+        self.entries.pop(name)
+        self.defaultOrder.remove(name)
+
+        self._modified = True
+
     def apply(self, name, obj):
         entry = self.entries[name]
 
@@ -166,15 +175,19 @@ class Legend(object):
                 pass
 
     def construct(self, order = []):
-        if self.legend.GetListOfPrimitives().GetEntries() != 0:
+        if not self._modified:
             return
 
         if len(order) == 0:
             order = self.defaultOrder
 
+        self.legend.Clear()
+
         for name in order:
             ent = self.entries[name]
             self.legend.AddEntry(ent, ent.GetLabel(), ent.GetOption())
+
+        self._modified = False
 
     def Clear(self):
         self.legend.Clear()
@@ -182,7 +195,7 @@ class Legend(object):
         self.defaultOrder = []
 
     def Draw(self, order = []):
-        if self.legend.GetListOfPrimitives().GetEntries() == 0:
+        if self._modified:
             self.construct(order)
 
         self.legend.Draw()
@@ -641,15 +654,27 @@ class RatioCanvas(SimpleCanvas):
 
             # normalize rbase and keep the bin contents
             rnorms = []
-            for iX in range(1, rbase.GetNbinsX() + 1):
-                norm = rbase.GetBinContent(iX)
-                rnorms.append(norm)
-                if norm > 0.:
-                    rbase.SetBinError(iX, rbase.GetBinError(iX) / norm)
-                    rbase.SetBinContent(iX, 1.)
-                else:
-                    rbase.SetBinError(iX, 0.)
-                    rbase.SetBinContent(iX, 0.)
+            if rbase.InheritsFrom(ROOT.TH1.Class()):
+                for iX in range(1, rbase.GetNbinsX() + 1):
+                    norm = rbase.GetBinContent(iX)
+                    rnorms.append(norm)
+                    if norm > 0.:
+                        rbase.SetBinError(iX, rbase.GetBinError(iX) / norm)
+                        rbase.SetBinContent(iX, 1.)
+                    else:
+                        rbase.SetBinError(iX, 0.)
+                        rbase.SetBinContent(iX, 0.)
+
+            elif rbase.InheritsFrom(ROOT.TGraph.Class()):
+                for iX in range(0, rbase.GetN()):
+                    norm = rbase.GetY()[iX]
+                    rnorms.append(norm)
+                    if norm > 0.:
+                        rbase.SetPoint(iX, rbase.GetX()[iX], 1.)
+                        rbase.SetPointError(iX, rbase.GetErrorX(iX), GetErrorY(iX) / norm)
+                    else:
+                        rbase.SetPoint(iX, rbase.GetX()[iX], 0.)
+                        rbase.SetPointError(iX, rbase.GetErrorX(iX), 0.)
 
             # draw rbase
             rbase.Draw(rbase.drawOpt)
@@ -673,13 +698,24 @@ class RatioCanvas(SimpleCanvas):
                 self._temporaries.append(ratio)
     
                 for iX in range(1, ratio.GetNbinsX() + 1):
-                    norm = rnorms[iX - 1]
-                    if norm > 0.:
-                        ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
-                        ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
-                    else:
-                        ratio.SetBinError(iX, 0.)
-                        ratio.SetBinContent(iX, 0.)
+                    try:
+                        norm = rnorms[iX - 1]
+                        if norm > 0.:
+                            ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
+                            ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
+                        else:
+                            ratio.SetBinError(iX, 0.)
+                            ratio.SetBinContent(iX, 0.)
+
+                    except IndexError:
+                        # rbase is a TF1
+                        norm = rbase.Integral(ratio.GetXaxis().GetBinLowEdge(iX), ratio.GetXaxis().GetBinUpEdge(iX))
+                        if norm > 0.:
+                            ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
+                            ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
+                        else:
+                            ratio.SetBinError(iX, 0.)
+                            ratio.SetBinContent(iX, 0.)
 
                 if 'P' in ratio.drawOpt or ratio.useRooHist:
                     # graph or using RooHist

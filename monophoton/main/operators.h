@@ -380,4 +380,16 @@ class NPVWeight : public Modifier {
   TH1* factors_;
 };
 
+class NNPDFVariation : public Modifier {
+ public:
+  NNPDFVariation(char const* name = "NNPDFVariation") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+
+  double weightUp_;
+  double weightDown_;
+};
+
 #endif
