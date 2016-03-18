@@ -96,7 +96,9 @@ class VariableDef(object):
                 # who would do this??
                 hist = ROOT.TH3D(self.name + '-' + hname, '', *tuple(args))
             else:
+                # I appreciate this error message
                 raise RuntimeError('What are you thinking')
+            
 
         gd.cd()
 

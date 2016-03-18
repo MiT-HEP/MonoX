@@ -2,7 +2,7 @@ import re
 import os
 
 class SampleDef(object):
-    def __init__(self, name, category = '', title = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, custom = {}):
+    def __init__(self, name, category = '', title = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., scale = 1., data = False, signal = False, custom = {}):
         self.name = name
         self.category = category
         self.title = title
@@ -14,6 +14,7 @@ class SampleDef(object):
         else:
             self.sumw = sumw
         self.lumi = lumi
+        self.scale = scale
         self.data = data
         self.signal = signal
         self.custom = custom
@@ -68,21 +69,32 @@ allsamples = SampleDefList()
 
 with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
     for line in dsSource:
-        matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([0-9e.+-]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
+        # print line
+        matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
         if not matches:
             continue
+        # print matches.group(1), matches.group(2), matches.group(3), matches.group(4), matches.group(5), matches.group(6)
 
         if matches.group(6) == '-':
             sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), lumi = float(matches.group(4)), nevents = int(matches.group(5)), data = True)
         else:
-            xsec = float(matches.group(4))
+            xsec = matches.group(4)
+            scale = 1.
+            if 'x' in xsec:
+                (xsec, scale) = xsec.split('x')
+                xsec = float(xsec) # * float(scale)
+                scale = float(scale)
+            else:
+                xsec = float(xsec)
             if xsec < 0.:
                 signal = True
                 xsec = -xsec
             else:
                 signal = False
 
-            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), crosssection = xsec, nevents = int(matches.group(5)), sumw = float(matches.group(6)), signal = signal)
+            # print signal, xsec, scale
+
+            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), crosssection = xsec, scale = scale, nevents = int(matches.group(5)), sumw = float(matches.group(6)), signal = signal)
 
         allsamples.samples.append(sdef)
 
