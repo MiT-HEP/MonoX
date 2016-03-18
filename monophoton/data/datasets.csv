@@ -39,21 +39,21 @@ tt               "t#bar{t}"                          TTJets_TuneCUETP8M1_13TeV-a
 ww               "WW"                                WW_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  118.7  994416  994431.676433
 wz               "WZ"                                WZ_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  66.1  999248  999248.0
 zz               "ZZ"                                ZZ_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v3+AODSIM  123.188599475  996944  996944.0
-add3-1           "#scale[0.8]{ADD +3d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.4084  50000  51004.4614868
-add3-2           "#scale[0.8]{ADD +3d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.05152  50000  50880.8837569
-add3-3           "#scale[0.8]{ADD +3d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01089  50000  52471.6408701
-add4-1           "#scale[0.8]{ADD +4d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.5932  49441  50232.1660146
-add4-2           "#scale[0.8]{ADD +4d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.0593  50000  52034.1358171
-add4-3           "#scale[0.8]{ADD +4d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01054  49237  54063.6732314
-add5-1           "#scale[0.8]{ADD +5d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.973  49603  51381.7724788
-add5-2           "#scale[0.8]{ADD +5d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.07069  50000  53012.9812294
-add5-3           "#scale[0.8]{ADD +5d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01062  50000  56515.3955762
-add6-1           "#scale[0.8]{ADD +6d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -1.868  50000  54978.9812714
-add6-2           "#scale[0.8]{ADD +6d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.08792  50000  57244.079953
-add6-3           "#scale[0.8]{ADD +6d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -0.01084  50000  64034.1632991
-add8-1           "#scale[0.8]{ADD +8d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -11.46  50000  63776.1005852
-add8-2           "#scale[0.8]{ADD +8d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.1676  50000  60634.9686419
-add8-3           "#scale[0.8]{ADD +8d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01258  49264  70877.4738435
+add-3-1           "#scale[0.8]{ADD +3d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.4084  50000  51004.4614868
+add-3-2           "#scale[0.8]{ADD +3d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.05152  50000  50880.8837569
+add-3-3           "#scale[0.8]{ADD +3d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01089  50000  52471.6408701
+add-4-1           "#scale[0.8]{ADD +4d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.5932  49441  50232.1660146
+add-4-2           "#scale[0.8]{ADD +4d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.0593  50000  52034.1358171
+add-4-3           "#scale[0.8]{ADD +4d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01054  49237  54063.6732314
+add-5-1           "#scale[0.8]{ADD +5d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.973  49603  51381.7724788
+add-5-2           "#scale[0.8]{ADD +5d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.07069  50000  53012.9812294
+add-5-3           "#scale[0.8]{ADD +5d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01062  50000  56515.3955762
+add-6-1           "#scale[0.8]{ADD +6d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -1.868  50000  54978.9812714
+add-6-2           "#scale[0.8]{ADD +6d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.08792  50000  57244.079953
+add-6-3           "#scale[0.8]{ADD +6d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -0.01084  50000  64034.1632991
+add-8-1           "#scale[0.8]{ADD +8d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -11.46  50000  63776.1005852
+add-8-2           "#scale[0.8]{ADD +8d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.1676  50000  60634.9686419
+add-8-3           "#scale[0.8]{ADD +8d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01258  49264  70877.4738435
 dma-10-1         "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.202e-01  49800  49800.0
 dma-10-10        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-10_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.898e-02  50000  50000.0
 dma-10-50        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.734e-03  49200  49200.0

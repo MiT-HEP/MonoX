@@ -399,39 +399,75 @@ def gjSmeared(sample, name):
 
     return selector
 
-def halo(norm):
+def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
     """
-    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    Candidate-like, but with inverted MIP tag and CSC filter.
     """
 
     def normalized(sample, name):
-        """
-        Candidate-like, but with inverted MIP tag and CSC filter.
-        """
-
         selector = ROOT.NormalizingSelector(name)
         selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
 
         selector = monophotonBase(sample, name, selector)
 
         # 0->CSC halo tagger
-    #    selector.findOperator('MetFilters').setFilter(0, -1)
+        if not CSCFilter:
+            selector.findOperator('MetFilters').setFilter(0, -1)
 
         photonSel = selector.findOperator('PhotonSelection')
 
         sels = list(photonFullSelection)
-        sels.remove('Sieie')
-        sels.remove('MIP49')
-        sels.append('Sieie15')
+
+        for invert in inverts:
+            sels.remove(invert)
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, invert))
+
+        for remove in removes:
+            sels.remove(remove)
+
+        for append in appends:
+            sels.append(append)
 
         for sel in sels:
             photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
-        photonSel.addSelection(False, ROOT.PhotonSelection.MIP49)
-
         return selector
 
     return normalized
+
+
+def halo(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    inverts = [ 'MIP49' ]
+    removes = [ 'Sieie' ]
+    appends = [ 'Sieie15' ] 
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def haloCSC(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    inverts = []
+    removes = [ 'Sieie', 'MIP49' ]
+    appends = [ 'Sieie15' ] 
+
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
+
+def haloDown(norm):
+    """
+    Wrapper to return the generator for the halo proxy sample normalized to norm.
+    """
+
+    inverts = [ 'MIP49' ]
+    removes = [ 'Sieie' ]
+    appends = [ 'Sieie15' ] 
+
+    return sampleDefiner(norm, inverts, removes, appends)
 
 def leptonBase(sample, name, selector = None):
     """
