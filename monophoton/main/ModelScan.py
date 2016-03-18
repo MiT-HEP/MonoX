@@ -86,7 +86,7 @@ for model in sorted(allsamples):
     if not yval in classes[name][1]:
         classes[name][1].append(yval)
 
-pprint(classes)
+# pprint(classes)
 
 modelList = opts.models
 if modelList == []:
@@ -107,6 +107,12 @@ print datetime.datetime.now(), '\n'
 limits = {} # "dmv-500-150" : ( Obs, Exp )
 print "%16s %15s %15s" % ('model', 'Observed (1/fb)', 'Expected (1/fb)')
 for iM, model in enumerate(modelList):
+    try:
+        allsamples[model]
+    except:
+        print 'Skipping', model
+        continue
+
     '''./datacard.py dma-500-1 limitsfile.root -o test.txt -O -v phoPtHighMet'''
     cardPath = os.path.join(cardDir, model+'_'+opts.variable+'.txt')
     argList = ['./datacard.py', model, opts.rootFile, '-v', opts.variable, '-o', cardPath]
