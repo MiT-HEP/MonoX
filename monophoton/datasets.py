@@ -70,18 +70,30 @@ class SampleDefList(object):
 
 allsamples = SampleDefList()
 
+outFile = open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv_new', 'w')
+
 with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
     for line in dsSource:
-        # print line
-        matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([^ ]+) +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
+        if line.startswith( '#' ):
+            outFile.write(line)
+            continue
+        matches = re.match('([^ ]+) +"(.*)" +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+) +([^ ]+) +([^ ]+) +(.*)', line.strip())
+        if not matches:
+            matches = re.match('([^ ]+) +"(.*)" +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+) +([^ ]+) +([^ ]+)', line.strip())
         if not matches:
             continue
-        # print matches.group(1), matches.group(2), matches.group(3), matches.group(4), matches.group(5), matches.group(6), matches.group(7)
+        if 'zgr' in matches.group(1):
+            print matches.group(1), matches.group(2), matches.group(3), matches.group(4), matches.group(5), matches.group(6), matches.group(7)
+        try:
+            reorder = '%-16s %-35s %-20s %-10s %-20s %-10s %s %s \n' % (matches.group(1), '"'+matches.group(2)+'"', matches.group(3), matches.group(4), matches.group(5), matches.group(6), matches.group(7), matches.group(8))
+        except IndexError:
+            reorder = '%-16s %-35s %-20s %-10s %-20s %-10s %s \n' % (matches.group(1), '"'+matches.group(2)+'"', matches.group(3), matches.group(4), matches.group(5), matches.group(6), matches.group(7))
+        outFile.write(reorder)
 
-        if matches.group(7) == '-':
-            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(3).strip(), directory = matches.group(4), lumi = float(matches.group(5)), nevents = int(matches.group(6)), data = True)
+        if matches.group(5) == '-':
+            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(6), directory = matches.group(7), lumi = float(matches.group(3)), nevents = int(matches.group(4)), data = True)
         else:
-            xsec = matches.group(5)
+            xsec = matches.group(3)
             scale = 1.
             if 'x' in xsec:
                 (xsec, scale) = xsec.split('x')
@@ -97,9 +109,11 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as
 
             # print signal, xsec, scale
 
-            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(3).strip(), directory = matches.group(4), crosssection = xsec, scale = scale, nevents = int(matches.group(6)), sumw = float(matches.group(7)), signal = signal)
+            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(6), directory = matches.group(7), crosssection = xsec, scale = scale, nevents = int(matches.group(4)), sumw = float(matches.group(5)), signal = signal)
 
         allsamples.samples.append(sdef)
+
+outFile.close()
 
 if __name__ == '__main__':
     import sys

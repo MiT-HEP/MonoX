@@ -93,6 +93,9 @@ for mt in ['a', 'v']:
 
             selectors[sname] = mc_cand
 
+for sname in ['zgr-750-%s' % width for width in ['0014', '5600']]:
+    selectors[sname] = mc_cand
+
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
@@ -164,7 +167,7 @@ if __name__ == '__main__':
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
 
             print 'Reading', sname, 'from', sourceDir
-            tree.Add(sourceDir + '/simpletree_*.root')
+            tree.Add(sourceDir + '/simpletree*.root')
     
         for selconf in selectors[sname]:
             if type(selconf) == str:

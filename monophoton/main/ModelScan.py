@@ -105,7 +105,7 @@ shutil.copy(opts.rootFile, rootFilePath)
 print datetime.datetime.now(), '\n'
 
 limits = {} # "dmv-500-150" : ( Obs, Exp )
-print "%16s %15s %15s" % ('model', 'Observed (1/fb)', 'Expected (1/fb)')
+print "%-16s %15s %15s" % ('model', 'Observed (1/fb)', 'Expected (1/fb)')
 for iM, model in enumerate(modelList):
     try:
         allsamples[model]
@@ -136,8 +136,8 @@ for iM, model in enumerate(modelList):
     limits[model] = (obs, exp)
 
     if obs < 0.1 or exp < 0.1:
-        print "%16s %15.1E %15.1E" % (model, limits[model][0], limits[model][1])
+        print "%-16s %15.1E %15.1E" % (model, limits[model][0], limits[model][1])
     else:
-        print "%16s %15.1f %15.1f" % (model, limits[model][0], limits[model][1])
+        print "%-16s %15.1f %15.1f" % (model, limits[model][0], limits[model][1])
 
 print datetime.datetime.now()
