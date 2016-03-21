@@ -237,6 +237,7 @@ class SimpleCanvas(object):
 
         self.legend = Legend(0.7, 0.55, 0.95, SimpleCanvas.YMAX - 0.03)
 
+        self._logx = False
         self._logy = True
 
         self.ylimits = (0., -1.)
@@ -360,6 +361,7 @@ class SimpleCanvas(object):
 
         if full:
             self.legend.Clear()
+            self._logx = False
             self._logy = True
             self.title = ''
             self.textside = 'left'
@@ -372,7 +374,11 @@ class SimpleCanvas(object):
 
         self._modified()
 
-    def Update(self, hList = [], logy = None, ymax = -1.):
+    def Update(self, hList = [], logx = None, logy = None, ymax = -1.):
+        if logx is not None:
+            self.canvas.SetLogx(logx)
+            self.canvas.Update()
+
         if logy is not None:
             self.canvas.SetLogy(logy)
             self.canvas.Update()
@@ -380,13 +386,16 @@ class SimpleCanvas(object):
         if not self._needUpdate:
             return
 
+        if logx is None:
+            logx = self._logx
+
         if logy is None:
             logy = self._logy
 
         gPad = ROOT.gPad
         self.canvas.cd()
-        if logy:
-            self.canvas.SetLogy(True)
+        self.canvas.SetLogx(logx)
+        self.canvas.SetLogy(logy)
 
         if len(hList) == 0:
             hList = range(len(self._histograms))
@@ -454,6 +463,10 @@ class SimpleCanvas(object):
         gPad.cd()
 
         self._needUpdate = False
+
+    def SetLogx(self, logx):
+        self._logx = logx
+        self._modified()
 
     def SetLogy(self, logy):
         self._logy = logy
@@ -532,6 +545,7 @@ class RatioCanvas(SimpleCanvas):
         self.plotPad = self.canvas.cd(1)
         self.plotPad.SetPad(0., 0., 1., 1.)
         self.plotPad.SetMargin(SimpleCanvas.XMIN, 1. - SimpleCanvas.XMAX, RatioCanvas.PLOT_YMIN, 1. - SimpleCanvas.YMAX) # lrbt
+        self.plotPad.SetLogx(self._logx)
         self.plotPad.SetLogy(self._logy)
         
         self.ratioPad = self.canvas.cd(2)
@@ -555,11 +569,17 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmin(self.rlimits[0])
         self.raxis.SetWmax(self.rlimits[1])
 
-    def Update(self, hList = [], rList = [], logy = None, ymax = -1.):
+    def Update(self, hList = [], rList = [], logx = None, logy = None, ymax = -1.):
         if not self._needUpdate:
+            if logx is not None:
+                self._updateAxis('x', logx)
             if logy is not None:
-                self._updateYaxis(logy)
+                self._updateAxis('y', logy)
+
             return
+
+        if logx is None:
+            logx = self._logx
 
         if logy is None:
             logy = self._logy
@@ -571,6 +591,7 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.Update()
 
         self.plotPad.cd()
+        self.plotPad.SetLogx(logx)
         self.plotPad.SetLogy(logy)
 
         # map the original histograms to RooHists
@@ -638,18 +659,18 @@ class RatioCanvas(SimpleCanvas):
 
         # now ratio plots
         self.ratioPad.cd()
+        self.ratioPad.SetLogx(logx)
 
         # list of ratio histograms
         if len(rList) == 0:
             rList = list(hList)
 
-        ratios = []
-
         if len(rList) > 0:
             # set up ratio base
             self._hStore.cd()
             rbase = self._histograms[rList[0]].Clone('rbase')
-            ratios.append(rbase)
+            rbase.SetMaximum()
+            rbase.SetMinimum()
             self._temporaries.append(rbase)
 
             # normalize rbase and keep the bin contents
@@ -678,8 +699,6 @@ class RatioCanvas(SimpleCanvas):
 
             # draw rbase
             rbase.Draw(rbase.drawOpt)
-            rbase.SetMinimum(self.rlimits[0])
-            rbase.SetMaximum(self.rlimits[1])
 
             # draw the base line
             if not ('HIST' in rbase.drawOpt and rbase.GetLineWidth() > 0):
@@ -694,7 +713,7 @@ class RatioCanvas(SimpleCanvas):
                 self._hStore.cd()
                 ratio = hist.Clone('ratio_' + hist.GetName())
                 ratio.SetTitle('')
-                ratios.append(ratio)
+                ratio.Reset('M')
                 self._temporaries.append(ratio)
     
                 for iX in range(1, ratio.GetNbinsX() + 1):
@@ -781,8 +800,10 @@ class RatioCanvas(SimpleCanvas):
             rbase.GetXaxis().SetTitle('')
             rbase.GetXaxis().SetLabelSize(0.)
             rbase.GetXaxis().SetNdivisions(205)
+            rbase.GetYaxis().SetTitle('')
             rbase.GetYaxis().SetLabelSize(0.)
             rbase.GetYaxis().SetNdivisions(302)
+            rbase.GetYaxis().SetRangeUser(*self.rlimits)
 
             # will be overridden by self.xtitle
             self.xaxis.SetTitle(rbase.GetXaxis().GetTitle())
@@ -795,24 +816,11 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.Update()
         self.plotPad.Update()
 
-        self.xaxis.SetWmin(self.plotPad.GetUxmin())
-        self.xaxis.SetWmax(self.plotPad.GetUxmax())
-        self.xaxis.Draw()
+        ratio = self._temporaries[-1]
 
-        if logy:
-            self.yaxis.SetOption('G')
-            self.yaxis.SetWmin(math.exp(2.302585092994 * self.plotPad.GetUymin()))
-            self.yaxis.SetWmax(math.exp(2.302585092994 * self.plotPad.GetUymax()))
-        else:
-            self.yaxis.SetOption('')
-            self.yaxis.SetWmin(self.plotPad.GetUymin())
-            self.yaxis.SetWmax(self.plotPad.GetUymax())
-
-        self.yaxis.Draw()
-
-        self.raxis.SetWmin(self.ratioPad.GetUymin())
-        self.raxis.SetWmax(self.ratioPad.GetUymax())
-        self.raxis.Draw()
+        self._updateAxis('x', logx)
+        self._updateAxis('y', logy)
+        self._updateAxis('r')
 
         if self.ytitle:
             self.yaxis.SetTitle(self.ytitle)
@@ -831,20 +839,38 @@ class RatioCanvas(SimpleCanvas):
 
         self._needUpdate = False
 
-    def _updateYaxis(self, logy):
-        self.plotPad.SetLogy(logy)
+    def _updateAxis(self, ax, log = False):
+        if ax == 'x':
+            self.plotPad.SetLogx(log)
+            self.ratioPad.SetLogx(log)
+        elif ax == 'y':
+            self.plotPad.SetLogy(log)
+
         self.canvas.Update()
 
-        if logy:
-            self.yaxis.SetOption('G')
-            self.yaxis.SetWmin(math.exp(2.302585092994 * self.plotPad.GetUymin()))
-            self.yaxis.SetWmax(math.exp(2.302585092994 * self.plotPad.GetUymax()))
-        else:
-            self.yaxis.SetOption('')
-            self.yaxis.SetWmin(self.plotPad.GetUymin())
-            self.yaxis.SetWmax(self.plotPad.GetUymax())    
+        if ax == 'x':
+            axis = self.xaxis
+            umin = self.plotPad.GetUxmin()
+            umax = self.plotPad.GetUxmax()
+        elif ax == 'y':
+            axis = self.yaxis
+            umin = self.plotPad.GetUymin()
+            umax = self.plotPad.GetUymax()
+        elif ax == 'r':
+            axis = self.raxis
+            umin = self.rlimits[0]
+            umax = self.rlimits[1]
 
-        self.yaxis.Draw()
+        if log:
+            axis.SetOption('G')
+            axis.SetWmin(math.exp(2.302585092994 * umin))
+            axis.SetWmax(math.exp(2.302585092994 * umax))
+        else:
+            axis.SetOption('')
+            axis.SetWmin(umin)
+            axis.SetWmax(umax)
+
+        axis.Draw()
         self.canvas.Update()
 
 
@@ -928,10 +954,12 @@ class DataMCCanvas(RatioCanvas):
 
         return idx
 
-    def Update(self, logy = None, ymax = -1.):
+    def Update(self, logx = None, logy = None, ymax = -1.):
         if not self._needUpdate:
+            if logx is not None:
+                self._updateAxis('x', logx)
             if logy is not None:
-                self._updateYaxis(logy)
+                self._updateAxis('y', logy)
             return
 
         gDirectory = ROOT.gDirectory
@@ -980,7 +1008,7 @@ class DataMCCanvas(RatioCanvas):
 
             self.legend.construct(legendOrder)
 
-            RatioCanvas.Update(self, hList = hList, rList = rList, logy = logy, ymax = ymax)
+            RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, ymax = ymax)
 
             self._histograms.pop()
             self._histograms.pop()
