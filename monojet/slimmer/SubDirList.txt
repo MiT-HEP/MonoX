@@ -1,2 +1,9 @@
-JHUGen_Higgs_WH_125_10
-JHUGen_Higgs_ZH_125_10
+JHUGen_ScalarWH_1000_100
+JHUGen_ScalarWH_100_1
+JHUGen_ScalarWH_10_1
+JHUGen_ScalarWH_200_10
+JHUGen_ScalarWH_200_100
+JHUGen_ScalarWH_300_10
+JHUGen_ScalarWH_300_150
+JHUGen_ScalarWH_500_10
+JHUGen_ScalarZH_1000_100

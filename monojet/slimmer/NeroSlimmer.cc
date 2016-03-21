@@ -283,7 +283,7 @@ void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) 
     
     //// If we're in signal selection, fill MET, otherwise, fill recoil vars ////
 
-    if (outTree->met < 0) {
+    if (outTree->met < 100) {
       outTree->met    = outTree->trueMet;
       outTree->metPhi = outTree->trueMetPhi;
     }
