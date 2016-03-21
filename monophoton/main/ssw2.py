@@ -159,14 +159,12 @@ if __name__ == '__main__':
 
         else:
             if sample.data:
-                sourceDir = config.dataNtuplesDir
-            elif sname.startswith('dm'):
-                sourceDir = config.ntuplesDir.replace("042", "043")
+                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.directory
             else:
-                sourceDir = config.ntuplesDir
+                sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
 
             print 'Reading', sname, 'from', sourceDir
-            tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+            tree.Add(sourceDir + '/simpletree_*.root')
     
         for selconf in selectors[sname]:
             if type(selconf) == str:

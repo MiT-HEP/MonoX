@@ -2,32 +2,35 @@ import re
 import os
 
 class SampleDef(object):
-    def __init__(self, name, category = '', title = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., scale = 1., data = False, signal = False, custom = {}):
+    def __init__(self, name, category = '', title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, custom = {}):
         self.name = name
         self.category = category
         self.title = title
+        self.book = book
         self.directory = directory
         self.crosssection = crosssection
+        self.scale = scale
         self.nevents = nevents
         if sumw == 0.:
             self.sumw = float(nevents)
         else:
             self.sumw = sumw
         self.lumi = lumi
-        self.scale = scale
         self.data = data
         self.signal = signal
         self.custom = custom
 
     def clone(self):
-        return SampleDef(self.name, category = self.category, title = self.title, directory = self.directory, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, signal = self.signal, custom = dict(self.custom.items()))
+        return SampleDef(self.name, category = self.category, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, scale = self.scale, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, signal = self.signal, custom = dict(self.custom.items()))
 
     def dump(self):
         print 'name =', self.name
         print 'category =', self.category
         print 'title =', self.title
+        print 'book =', self.book
         print 'directory =', self.directory
         print 'crosssection =', self.crosssection
+        print 'scale =', self.scale
         print 'nevents =', self.nevents
         print 'sumw =', self.sumw
         print 'lumi =', self.lumi
@@ -70,15 +73,15 @@ allsamples = SampleDefList()
 with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
     for line in dsSource:
         # print line
-        matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
+        matches = re.match('([^ ]+) +"(.*)" +([^ ]+) +([^ ]+) +([0-9e.+-x]+) +([0-9]+) +([0-9e.+-]+)', line.strip())
         if not matches:
             continue
-        # print matches.group(1), matches.group(2), matches.group(3), matches.group(4), matches.group(5), matches.group(6)
+        # print matches.group(1), matches.group(2), matches.group(3), matches.group(4), matches.group(5), matches.group(6), matches.group(7)
 
-        if matches.group(6) == '-':
-            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), lumi = float(matches.group(4)), nevents = int(matches.group(5)), data = True)
+        if matches.group(7) == '-':
+            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(3).strip(), directory = matches.group(4), lumi = float(matches.group(5)), nevents = int(matches.group(6)), data = True)
         else:
-            xsec = matches.group(4)
+            xsec = matches.group(5)
             scale = 1.
             if 'x' in xsec:
                 (xsec, scale) = xsec.split('x')
@@ -94,7 +97,7 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as
 
             # print signal, xsec, scale
 
-            sdef = SampleDef(matches.group(1), title = matches.group(2), directory = matches.group(3), crosssection = xsec, scale = scale, nevents = int(matches.group(5)), sumw = float(matches.group(6)), signal = signal)
+            sdef = SampleDef(matches.group(1), title = matches.group(2), book = matches.group(3).strip(), directory = matches.group(4), crosssection = xsec, scale = scale, nevents = int(matches.group(6)), sumw = float(matches.group(7)), signal = signal)
 
         allsamples.samples.append(sdef)
 
