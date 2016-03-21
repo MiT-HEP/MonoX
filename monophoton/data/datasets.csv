@@ -51,15 +51,15 @@ add-5-3           "#scale[0.8]{ADD +5d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-5_Tun
 add-6-1           "#scale[0.8]{ADD +6d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -1.868  50000  54978.9812714
 add-6-2           "#scale[0.8]{ADD +6d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.08792  50000  57244.079953
 add-6-3           "#scale[0.8]{ADD +6d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v2+AODSIM  -0.01084  50000  64034.1632991
-add-8-1           "#scale[0.8]{ADD +8d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -11.46  50000  63776.1005852
+add-8-1           "#scale[0.8]{ADD +8d M_{D}=1 TeV}"  ADDmonoPhoton_MD-1_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -11.46x1.0e-3  50000  63776.1005852
 add-8-2           "#scale[0.8]{ADD +8d M_{D}=2 TeV}"  ADDmonoPhoton_MD-2_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.1676  50000  60634.9686419
 add-8-3           "#scale[0.8]{ADD +8d M_{D}=3 TeV}"  ADDmonoPhoton_MD-3_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -0.01258  49264  70877.4738435
 dma-10-1         "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.202e-01  49800  49800.0
 dma-10-10        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-10_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.898e-02  50000  50000.0
 dma-10-50        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.734e-03  49200  49200.0
 dma-10-150       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.284e-03  49600  49600.0
-dma-10-500       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.674e-05  50000  50000.0
-dma-10-1000      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.344e-06  49200  49200.0
+dma-10-500       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.674e-05x1.0e3  50000  50000.0
+dma-10-1000      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.344e-06x1.0e4  49200  49200.0
 dma-20-1         "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-20_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.870e-01  50000  50000.0
 dma-50-1         "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-50_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.468e-01  50000  50000.0
 dma-50-10        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-10_Mv-50_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.952e-01  50000  50000.0
@@ -70,24 +70,24 @@ dma-100-10       "DMA"                               DarkMatter_MonoPhoton_AV_Mx
 dma-200-1        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-200_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.681e-01  50000  50000.0
 dma-200-50       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-200_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.144e-01  50000  50000.0
 dma-200-150      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-200_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.800e-03  50000  50000.0
-dma-295-150      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-295_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.456e-03  50000  50000.0
-dma-300-1        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-300_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.783e-01  50000  50000.0
+dma-295-150      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-295_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.456e-03x1.0e5  50000  50000.0
+dma-300-1        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-300_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.783e-01x1.0e5  50000  50000.0
 dma-300-50       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-300_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.631e-01  50000  50000.0
 dma-500-1        "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.827e-02  46000  46000.0
 dma-500-150      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.312e-02  50000  50000.0
-dma-500-500      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.725e-05  50000  50000.0
+dma-500-500      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.725e-05x1.0e3  50000  50000.0
 dma-995-500      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.678e-04  50000  50000.0
 dma-1000-1       "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.465e-02  50000  50000.0
-dma-1000-150     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.349e-02  50000  50000.0
-dma-1000-1000    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.830e-06  50000  50000.0
-dma-1995-1000    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-1995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.649e-05  50000  50000.0
+dma-1000-150     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.349e-02 50000  50000.0
+dma-1000-1000    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.830e-06x1.0e4  50000  50000.0
+dma-1995-1000    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-1995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.649e-05x1.0e3  50000  50000.0
 dma-2000-500     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-2000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -8.975e-04  50000  50000.0
-dma-10000-1      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.218e-07  50000  50000.0
-dma-10000-10     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-10_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.217e-07  50000  50000.0
-dma-10000-50     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.198e-07  49200  49200.0
-dma-10000-150    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.076e-07  49400  49400.0
-dma-10000-500    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.267e-08  50000  50000.0
-dma-10000-1000   "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.572e-08  50000  50000.0
+dma-10000-1      "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.218e-07x1.0e6  50000  50000.0
+dma-10000-10     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-10_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.217e-07x1.0e6  50000  50000.0
+dma-10000-50     "DMA"                               DarkMatter_MonoPhoton_AV_Mx-50_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.198e-07x1.0e6  49200  49200.0
+dma-10000-150    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-150_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.076e-07x1.0e6  49400  49400.0
+dma-10000-500    "DMA"                               DarkMatter_MonoPhoton_AV_Mx-500_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.267e-08x1.0e6  50000  50000.0
+dma-10000-1000   "DMA"                               DarkMatter_MonoPhoton_AV_Mx-1000_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.572e-08x1.0e6  50000  50000.0
 dmewk-3000-1     "DMEWK"                             DarkMatter_MonoPhoton_EWK_scalar_Mx-1_lambda-3000_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.200e-06  50000  50000.0
 dmewk-3000-10    "DMEWK"                             DarkMatter_MonoPhoton_EWK_scalar_Mx-10_lambda-3000_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.198e-06  50000  50000.0
 dmewk-3000-50    "DMEWK"                             DarkMatter_MonoPhoton_EWK_scalar_Mx-50_lambda-3000_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.168e-06  50000  50000.0
@@ -101,7 +101,7 @@ dmv-10-10        "DMV"                               DarkMatter_MonoPhoton_V_Mx-
 dmv-10-50        "DMV"                               DarkMatter_MonoPhoton_V_Mx-50_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.238e-02  50000  50000.0
 dmv-10-150       "DMV"                               DarkMatter_MonoPhoton_V_Mx-150_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.668e-03  50000  50000.0
 dmv-10-500       "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.087e-04  50000  50000.0
-dmv-10-1000      "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.262e-06  50000  50000.0
+dmv-10-1000      "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -5.262e-06x1.0e3  50000  50000.0
 dmv-15-10        "DMV"                               DarkMatter_MonoPhoton_V_Mx-10_Mv-15_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.527e-02  50000  50000.0
 dmv-20-1         "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-20_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.752e-01  50000  50000.0
 dmv-50-1         "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-50_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -4.451e-01  50000  50000.0
@@ -117,16 +117,16 @@ dmv-295-150      "DMV"                               DarkMatter_MonoPhoton_V_Mx-
 dmv-300-1        "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-300_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.785e-01  50000  50000.0
 dmv-300-50       "DMV"                               DarkMatter_MonoPhoton_V_Mx-50_Mv-300_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.776e-01  50000  50000.0
 dmv-500-1        "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.464e-02  50000  50000.0
-dmv-500-150      "DMV"                               DarkMatter_MonoPhoton_V_Mx-150_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.160e-02  50000  50000.0
-dmv-995-500      "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.136e-03  50000  50000.0
+dmv-500-150      "DMV"                               DarkMatter_MonoPhoton_V_Mx-150_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.160e-02x1.0e6  50000  50000.0
+dmv-995-500      "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.136e-03x1.0e6  50000  50000.0
 dmv-1000-1       "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.446e-02  49200  49200.0
 dmv-1000-150     "DMV"                               DarkMatter_MonoPhoton_V_Mx-150_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.437e-02  50000  50000.0
-dmv-1000-1000    "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.679e-06  50000  50000.0
+dmv-1000-1000    "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -7.679e-06x1.0e3  50000  50000.0
 dmv-1995-1000    "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-1995_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -2.533e-04  50000  50000.0
 dmv-2000-1       "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-2000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.207e-03  50000  50000.0
 dmv-2000-500     "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-2000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.152e-03  50000  50000.0
-dmv-10000-1      "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.222e-07  50000  50000.0
-dmv-10000-10     "DMV"                               DarkMatter_MonoPhoton_V_Mx-10_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.216e-07  50000  50000.0
-dmv-10000-50     "DMV"                               DarkMatter_MonoPhoton_V_Mx-50_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.223e-07  50000  50000.0
-dmv-10000-500    "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -8.307e-08  50000  50000.0
-dmv-10000-1000   "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.499e-08  50000  50000.0
+dmv-10000-1      "DMV"                               DarkMatter_MonoPhoton_V_Mx-1_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.222e-07x1.0e6 50000  50000.0
+dmv-10000-10     "DMV"                               DarkMatter_MonoPhoton_V_Mx-10_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.216e-07x1.0e6  50000  50000.0
+dmv-10000-50     "DMV"                               DarkMatter_MonoPhoton_V_Mx-50_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -1.223e-07x1.0e6  50000  50000.0
+dmv-10000-500    "DMV"                               DarkMatter_MonoPhoton_V_Mx-500_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -8.307e-08x1.0e6  50000  50000.0
+dmv-10000-1000   "DMV"                               DarkMatter_MonoPhoton_V_Mx-1000_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM  -3.499e-08x1.0e6  50000  50000.0

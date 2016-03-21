@@ -206,6 +206,24 @@ def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], r
     if plotAcceptance:
         hist.Scale(1. / sample.nevents)
 
+    if sample.signal and sample.scale != 1.:
+        # print sname
+        # print hist.Integral()
+        hist.Scale(sample.scale)
+        # print hist.Integral()
+
+    # To figure out which samples we need to scale
+    """
+    if sample.signal:
+        norm = hist.Integral()
+        print sname, norm
+        if (norm < 0.05 or norm > 5000.) and norm != 0.:
+            scale = 25. / norm
+            print scale
+            hist.Scale(scale)
+            print hist.Integral()
+    """
+
     writeHist(hist)
 
     # we don't need the tree any more
@@ -451,6 +469,7 @@ if __name__ == '__main__':
                         continue
 
                     getHist(sample.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = outFile)
+                    
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 

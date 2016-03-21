@@ -96,7 +96,9 @@ class VariableDef(object):
                 # who would do this??
                 hist = ROOT.TH3D(self.name + '-' + hname, '', *tuple(args))
             else:
+                # I appreciate this error message
                 raise RuntimeError('What are you thinking')
+            
 
         gd.cd()
 
@@ -238,7 +240,7 @@ def getConfig(confName):
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
-        config.findGroup('halo').variations.append(Variation('haloShape', region = 'haloCSC'))
+        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
