@@ -62,6 +62,9 @@ class SampleDef(object):
         xsecstr = '%.{ndec}f'.format(ndec = ndec) % xsec
         if self.scale != 1.:
             xsecstr += 'x%.1e' % self.scale
+
+        if self.comments != '':
+            self.comments = "# "+self.comments
             
         print '%-16s %-35s %-20s %-10d %-20s %-10s %s %s' % (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
 

@@ -83,15 +83,16 @@ for mt in ['a', 'v']:
         for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000]:
             if mm == 2 * dm:
                 mm = mm - 5
-            sname = 'dm%s-%d-%d' % (mt, mm, dm)
-            try:
-                # print sname
-                allsamples[sname]
-            except KeyError:
-                # print "This combination is not part of the DMWG recommendations, moving onto next one."
-                continue;
+            for prod in ['', 'fs']:
+                sname = 'dm%s%s-%d-%d' % (mt, prod, mm, dm)
+                try:
+                    # print sname
+                    allsamples[sname]
+                except KeyError:
+                    # print "This combination is not part of the DMWG recommendations, moving onto next one."
+                    continue;
 
-            selectors[sname] = mc_cand
+                selectors[sname] = mc_cand
 
 for sname in ['zgr-750-%s' % width for width in ['0014', '5600']]:
     selectors[sname] = mc_cand
