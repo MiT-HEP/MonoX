@@ -59,7 +59,11 @@ class SampleDef(object):
         if self.signal:
             xsec *= -1.
 
-        xsecstr = '%.{ndec}f'.format(ndec = ndec) % xsec
+        if ndec >= 6:
+            xsecstr = '%.{ndec}e'.format(ndec = 3) % xsec
+        else:
+            xsecstr = '%.{ndec}f'.format(ndec = ndec) % xsec
+
         if self.scale != 1.:
             xsecstr += 'x%.1e' % self.scale
 
