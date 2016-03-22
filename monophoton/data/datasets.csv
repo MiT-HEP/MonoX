@@ -140,76 +140,75 @@ dmv-10000-1000   "DMV"                               -3.499e-08x1.0e6     50000 
 zgr-750-0014     "Z#gamma Resonance"                 -1.000               10000      10000.0              private    MZPhotonW0p014
 zgr-750-5600     "Z#gamma Resonance"                 -1.000               8050       8050.0               private    MZPhotonW5p6
 ### FastSim DM MC
-dmafs-10-1         "DMAFS"                               -5.202e-01           49800      49800.0              private       monophoton_med-10_dm-1_cv-0.0_ca-1.0_nev-30000_bambu	    		
-dmafs-10-10        "DMAFS"                               -2.898e-02           50000      50000.0              private       monophoton_med-10_dm-10_cv-0.0_ca-1.0_nev-30000_bambu			
-dmafs-10-50        "DMAFS"                               -7.734e-03           49200      49200.0              private       monophoton_med-10_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
-dmafs-10-150       "DMAFS"                               -1.284e-03           49600      49600.0              private       monophoton_med-10_dm-150_cv-0.0_ca-1.0_nev-30000_bambu	    		
-dmafs-10-500       "DMAFS"                               -3.674e-05x1.0e3     50000      50000.0              private       monophoton_med-10_dm-500_cv-0.0_ca-1.0_nev-30000_bambu		
-dmafs-10-1000      "DMAFS"                               -1.344e-06x1.0e4     49200      49200.0              private       monophoton_med-10_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu	 
-dmafs-15-10        "DMAFS"                               -1.000               1          1.0                  private       monophoton_med-15_dm-10_cv-0.0_ca-1.0_nev-30000_bambu  # not in official production		
-dmafs-20-1         "DMAFS"                               -4.870e-01           50000      50000.0              private       monophoton_med-20_dm-1_cv-0.0_ca-1.0_nev-30000_bambu	        	
-dmafs-50-1         "DMAFS"                               -4.468e-01           50000      50000.0              private       monophoton_med-50_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 			
-dmafs-50-10        "DMAFS"                               -3.952e-01           50000      50000.0              private       monophoton_med-50_dm-10_cv-0.0_ca-1.0_nev-30000_bambu    			
-dmafs-50-50        "DMAFS"                               -8.656e-03           50000      50000.0              private       monophoton_med-50_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
-dmafs-95-50        "DMAFS"                               -1.482e-02           50000      50000.0              private       monophoton_med-95_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
-dmafs-100-1        "DMAFS"                               -3.876e-01           50000      50000.0              private       monophoton_med-100_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
-dmafs-100-10       "DMAFS"                               -3.776e-01           50000      50000.0              private       monophoton_med-100_dm-10_cv-0.0_ca-1.0_nev-30000_bambu		
-dmafs-200-1        "DMAFS"                               -2.681e-01           50000      50000.0              private       monophoton_med-200_dm-1_cv-0.0_ca-1.0_nev-30000_bambu  
-dmafs-200-50       "DMAFS"                               -2.144e-01           50000      50000.0              private       monophoton_med-200_dm-150_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
-dmafs-200-150      "DMAFS"                               -1.800e-03           50000      50000.0              private       monophoton_med-200_dm-150_cv-0.0_ca-1.0_nev-30000_bambu		    
-dmafs-295-150      "DMAFS"                               -4.456e-03x1.0e5     50000      50000.0              private       monophoton_med-295_dm-150_cv-0.0_ca-1.0_nev-30000_bambu	    
-dmafs-300-1        "DMAFS"                               -1.783e-01x1.0e5     50000      50000.0              private       monophoton_med-300_dm-1_cv-0.0_ca-1.0_nev-30000_bambu  
-dmafs-300-50       "DMAFS"                               -1.631e-01           50000      50000.0              private       monophoton_med-300_dm-150_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
-dmafs-500-1        "DMAFS"                               -7.827e-02           46000      46000.0              private       monophoton_med-500_dm-1_cv-0.0_ca-1.0_nev-30000_bambu  		    
-dmafs-500-150      "DMAFS"                               -5.312e-02           50000      50000.0              private       monophoton_med-500_dm-150_cv-0.0_ca-1.0_nev-30000_bambu
-dmafs-500-500      "DMAFS"                               -4.725e-05x1.0e3     50000      50000.0              private       monophoton_med-500_dm-500_cv-0.0_ca-1.0_nev-30000_bambu
-dmafs-995-500      "DMAFS"                               -2.678e-04           50000      50000.0              private       monophoton_med-995_dm-500_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
-dmafs-1000-1       "DMAFS"                               -1.465e-02           50000      50000.0              private       monophoton_med-1000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu	 		    
-dmafs-1000-150     "DMAFS"                               -1.349e-02           50000      50000.0              private       monophoton_med-1000_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 		    
-dmafs-1000-1000    "DMAFS"                               -1.830e-06x1.0e4     50000      50000.0              private       monophoton_med-1000_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu		    
-dmafs-1995-1000    "DMAFS"                               -1.649e-05x1.0e3     50000      50000.0              private       monophoton_med-1995_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu		    
-dmafs-2000-1       "DMAFS"                               -1.000               1          1.0                  private       monophoton_med-2000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu # not in official production
-dmafs-2000-500     "DMAFS"                               -8.975e-04           50000      50000.0              private       monophoton_med-2000_dm-500_cv-0.0_ca-1.0_nev-30000_bambu
-dmafs-10000-1      "DMAFS"                               -1.218e-07x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu	  
-dmafs-10000-10     "DMAFS"                               -1.217e-07x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-10_cv-0.0_ca-1.0_nev-30000_bambu      
-dmafs-10000-50     "DMAFS"                               -1.198e-07x1.0e6     49200      49200.0              private       monophoton_med-10000_dm-50_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
-dmafs-10000-150    "DMAFS"                               -1.076e-07x1.0e6     49400      49400.0              private       monophoton_med-10000_dm-150_cv-0.0_ca-1.0_nev-30000_bambu     
-dmafs-10000-500    "DMAFS"                               -5.267e-08x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-500_cv-0.0_ca-1.0_nev-30000_bambu     
-dmafs-10000-1000   "DMAFS"                               -1.572e-08x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu    
+dmafs-10-1       "DMAFS"                             -0.5202              1258       1258.0               private    monophoton_med-10_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10-10      "DMAFS"                             -0.02898             1258       1258.0               private    monophoton_med-10_dm-10_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10-1000    "DMAFS"                             -1.344e-06x1.0e+04   1258       1258.0               private    monophoton_med-10_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10-150     "DMAFS"                             -1.284e-03           1258       1258.0               private    monophoton_med-10_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10-50      "DMAFS"                             -7.734e-03           1          1.0                  private    monophoton_med-10_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
+dmafs-10-500     "DMAFS"                             -3.674e-05x1.0e+03   1258       1258.0               private    monophoton_med-10_dm-500_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-100-1      "DMAFS"                             -0.3876              1258       1258.0               private    monophoton_med-100_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-100-10     "DMAFS"                             -0.3776              1258       1258.0               private    monophoton_med-100_dm-10_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-1000-1     "DMAFS"                             -0.01465             1258       1258.0               private    monophoton_med-1000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-1000-1000  "DMAFS"                             -1.830e-06x1.0e+04   1258       1258.0               private    monophoton_med-1000_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-1000-150   "DMAFS"                             -0.01349             1258       1258.0               private    monophoton_med-1000_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10000-1    "DMAFS"                             -1.218e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10000-10   "DMAFS"                             -1.217e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-10_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10000-1000 "DMAFS"                             -1.572e-08x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10000-150  "DMAFS"                             -1.076e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-10000-50   "DMAFS"                             -1.198e-07x1.0e6     1          1.0                  private    monophoton_med-10000_dm-50_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
+dmafs-10000-500  "DMAFS"                             -5.267e-08x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-500_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-15-10      "DMAFS"                             -1.000               1258       1258.0               private    monophoton_med-15_dm-10_cv-0.0_ca-1.0_nev-30000_bambu # not central production
+dmafs-1995-1000  "DMAFS"                             -1.649e-05x1.0e+03   1258       1258.0               private    monophoton_med-1995_dm-1000_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-20-1       "DMAFS"                             -0.4870              1258       1258.0               private    monophoton_med-20_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-200-1      "DMAFS"                             -0.2681              1258       1258.0               private    monophoton_med-200_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-200-150    "DMAFS"                             -1.800e-03           1258       1258.0               private    monophoton_med-200_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-200-50     "DMAFS"                             -0.2144              1258       1258.0               private    monophoton_med-200_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-2000-1     "DMAFS"                             -1.000               1258       1258.0               private    monophoton_med-2000_dm-1_cv-0.0_ca-1.0_nev-30000_bambu # not central production
+dmafs-2000-500   "DMAFS"                             -8.975e-04           1258       1258.0               private    monophoton_med-2000_dm-500_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-295-150    "DMAFS"                             -4.456e-03x1.0e+05   1258       1258.0               private    monophoton_med-295_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-300-1      "DMAFS"                             -0.1783x1.0e+05      1258       1258.0               private    monophoton_med-300_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-300-50     "DMAFS"                             -1.631e-01           1          1.0                  private    monophoton_med-300_dm-150_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
+dmafs-50-1       "DMAFS"                             -0.4468              1258       1258.0               private    monophoton_med-50_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-50-10      "DMAFS"                             -0.3952              1258       1258.0               private    monophoton_med-50_dm-10_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-50-50      "DMAFS"                             -8.656e-03           1          1.0                  private    monophoton_med-50_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
+dmafs-500-1      "DMAFS"                             -0.07827             1258       1258.0               private    monophoton_med-500_dm-1_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-500-150    "DMAFS"                             -0.05312             1258       1258.0               private    monophoton_med-500_dm-150_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-500-500    "DMAFS"                             -4.725e-05x1.0e+03   1258       1258.0               private    monophoton_med-500_dm-500_cv-0.0_ca-1.0_nev-30000_bambu 
+dmafs-95-50      "DMAFS"                             -1.482e-02           1          1.0                  private    monophoton_med-95_dm-50_cv-0.0_ca-1.0_nev-30000_bambu  # not produced yet...
+dmafs-995-500    "DMAFS"                             -2.678e-04           1          1.0                  private    monophoton_med-995_dm-500_cv-0.0_ca-1.0_nev-30000_bambu # not produced yet...
 ###
-dmvfs-10-1         "DMVFS"                               -5.114e-01           50000      50000.0              private       monophoton_med-10_dm-1_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-10-10        "DMVFS"                               -3.781e-02           50000      50000.0              private       monophoton_med-10_dm-10_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-10-50        "DMVFS"                               -1.238e-02           50000      50000.0              private       monophoton_med-10_dm-50_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-10-150       "DMVFS"                               -2.668e-03           50000      50000.0              private       monophoton_med-10_dm-150_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-10-500       "DMVFS"                               -1.087e-04           50000      50000.0              private       monophoton_med-10_dm-500_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-10-1000      "DMVFS"                               -5.262e-06x1.0e3     50000      50000.0              private       monophoton_med-10_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-15-10        "DMVFS"                               -4.527e-02           50000      50000.0              private       monophoton_med-15_dm-10_cv-1.0_ca-0.0_nev-30000_bambu   
-dmvfs-20-1         "DMVFS"                               -4.752e-01           50000      50000.0              private       monophoton_med-20_dm-1_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-50-1         "DMVFS"                               -4.451e-01           50000      50000.0              private       monophoton_med-50_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
-dmvfs-50-10        "DMVFS"                               -4.422e-01           50000      50000.0              private       monophoton_med-50_dm-10_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-50-50        "DMVFS"                               -1.464e-02           50000      50000.0              private       monophoton_med-50_dm-50_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-95-50        "DMVFS"                               -4.502e-02           50000      50000.0              private       monophoton_med-95_dm-50_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-100-1        "DMVFS"                               -3.877e-01           50000      50000.0              private       monophoton_med-100_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
-dmvfs-100-10       "DMVFS"                               -3.885e-01           50000      50000.0              private       monophoton_med-100_dm-10_cv-1.0_ca-0.0_nev-30000_bambu    
-dmvfs-150-100      "DMVFS"                               -1.000               1         1.0                  private       monophoton_med-150_dm-100_cv-1.0_ca-0.0_nev-100_bambu  # not in official production
-dmvfs-200-1        "DMVFS"                               -2.683e-01           50000      50000.0              private       monophoton_med-200_dm-1_cv-1.0_ca-0.0_nev-30000_bambu  
-dmvfs-200-50       "DMVFS"                               -2.646e-01           50000      50000.0              private       monophoton_med-200_dm-50_cv-1.0_ca-0.0_nev-30000_bambu     
-dmvfs-200-150      "DMVFS"                               -4.398e-03           50000      50000.0              private       monophoton_med-200_dm-150_cv-1.0_ca-0.0_nev-30000_bambu    
-dmvfs-295-150      "DMVFS"                               -2.901e-02           50000      50000.0              private       monophoton_med-295_dm-150_cv-1.0_ca-0.0_nev-30000_bambu	
-dmvfs-300-1        "DMVFS"                               -1.785e-01           50000      50000.0              private       monophoton_med-300_dm-1_cv-1.0_ca-0.0_nev-30000_bambu	    
-dmvfs-300-50       "DMVFS"                               -1.776e-01           50000      50000.0              private       monophoton_med-300_dm-50_cv-1.0_ca-0.0_nev-30000_bambu      
-dmvfs-500-1        "DMVFS"                               -7.464e-02           50000      50000.0              private       monophoton_med-500_dm-1_cv-1.0_ca-0.0_nev-30000_bambu  
-dmvfs-500-150      "DMVFS"                               -7.160e-02x1.0e6     50000      50000.0              private       monophoton_med-500_dm-150_cv-1.0_ca-0.0_nev-30000_bambu    
-dmvfs-500-500      "DMVFS"                               -1.000               1         1.0                  private       monophoton_med-500_dm-500_cv-1.0_ca-0.0_nev-30000_bambu  # not in official production
-dmvfs-995-500      "DMVFS"                               -3.136e-03x1.0e6     50000      50000.0              private       monophoton_med-995_dm-500_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-1000-1       "DMVFS"                               -1.446e-02           49200      49200.0              private       monophoton_med-1000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu	 
-dmvfs-1000-150     "DMVFS"                               -1.437e-02           50000      50000.0              private       monophoton_med-1000_dm-150_cv-1.0_ca-0.0_nev-30000_bambu     
-dmvfs-1000-1000    "DMVFS"                               -7.679e-06x1.0e3     50000      50000.0              private       monophoton_med-1000_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu    
-dmvfs-1995-1000    "DMVFS"                               -2.533e-04           50000      50000.0              private       monophoton_med-1995_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu
-dmvfs-2000-1       "DMVFS"                               -1.207e-03           50000      50000.0              private       monophoton_med-2000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu	     
-dmvfs-2000-500     "DMVFS"                               -1.152e-03           50000      50000.0              private       monophoton_med-2000_dm-500_cv-1.0_ca-0.0_nev-30000_bambu     
-dmvfs-10000-1      "DMVFS"                               -1.222e-07x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu	  
-dmvfs-10000-10     "DMVFS"                               -1.216e-07x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-10_cv-1.0_ca-0.0_nev-30000_bambu  
-dmvfs-10000-50     "DMVFS"                               -1.223e-07x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-50_cv-1.0_ca-0.0_nev-30000_bambu  
-dmvfs-10000-500    "DMVFS"                               -8.307e-08x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-500_cv-1.0_ca-0.0_nev-30000_bambu 
-dmvfs-10000-1000   "DMVFS"                               -3.499e-08x1.0e6     50000      50000.0              private       monophoton_med-10000_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu
+dmvfs-10-1       "DMVFS"                             -0.5114              1258       1258.0               private    monophoton_med-10_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10-10      "DMVFS"                             -0.03781             1258       1258.0               private    monophoton_med-10_dm-10_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10-1000    "DMVFS"                             -5.262e-06x1.0e+03   1258       1258.0               private    monophoton_med-10_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10-150     "DMVFS"                             -2.668e-03           1258       1258.0               private    monophoton_med-10_dm-150_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10-50      "DMVFS"                             -0.01238             1258       1258.0               private    monophoton_med-10_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10-500     "DMVFS"                             -1.087e-04           1258       1258.0               private    monophoton_med-10_dm-500_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-100-1      "DMVFS"                             -0.3877              1258       1258.0               private    monophoton_med-100_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-100-10     "DMVFS"                             -0.3885              1258       1258.0               private    monophoton_med-100_dm-10_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-1000-1     "DMVFS"                             -0.01446             1258       1258.0               private    monophoton_med-1000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-1000-1000  "DMVFS"                             -7.679e-06x1.0e+03   1258       1258.0               private    monophoton_med-1000_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-1000-150   "DMVFS"                             -0.01437             1258       1258.0               private    monophoton_med-1000_dm-150_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10000-1    "DMVFS"                             -1.222e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10000-10   "DMVFS"                             -1.216e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-10_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10000-1000 "DMVFS"                             -3.499e-08x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10000-50   "DMVFS"                             -1.223e-07x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-10000-500  "DMVFS"                             -8.307e-08x1.0e+06   1258       1258.0               private    monophoton_med-10000_dm-500_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-15-10      "DMVFS"                             -0.04527             1258       1258.0               private    monophoton_med-15_dm-10_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-1995-1000  "DMVFS"                             -2.533e-04           1258       1258.0               private    monophoton_med-1995_dm-1000_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-20-1       "DMVFS"                             -0.4752              1258       1258.0               private    monophoton_med-20_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-200-1      "DMVFS"                             -0.2683              1258       1258.0               private    monophoton_med-200_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-200-150    "DMVFS"                             -4.398e-03           1258       1258.0               private    monophoton_med-200_dm-150_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-200-50     "DMVFS"                             -0.2646              1258       1258.0               private    monophoton_med-200_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-2000-1     "DMVFS"                             -1.207e-03           1258       1258.0               private    monophoton_med-2000_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-2000-500   "DMVFS"                             -1.152e-03           1258       1258.0               private    monophoton_med-2000_dm-500_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-295-150    "DMVFS"                             -0.02901             1258       1258.0               private    monophoton_med-295_dm-150_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-300-1      "DMVFS"                             -0.1785              1258       1258.0               private    monophoton_med-300_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-300-50     "DMVFS"                             -0.1776              1258       1258.0               private    monophoton_med-300_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-50-1       "DMVFS"                             -0.4451              1258       1258.0               private    monophoton_med-50_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-50-10      "DMVFS"                             -0.4422              1258       1258.0               private    monophoton_med-50_dm-10_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-50-50      "DMVFS"                             -0.01464             1258       1258.0               private    monophoton_med-50_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-500-1      "DMVFS"                             -0.07464             1258       1258.0               private    monophoton_med-500_dm-1_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-500-150    "DMVFS"                             -0.07160x1.0e+06     1258       1258.0               private    monophoton_med-500_dm-150_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-500-500    "DMVFS"                             -1.000               1258       1258.0               private    monophoton_med-500_dm-500_cv-1.0_ca-0.0_nev-30000_bambu # not central production
+dmvfs-95-50      "DMVFS"                             -0.04502             1258       1258.0               private    monophoton_med-95_dm-50_cv-1.0_ca-0.0_nev-30000_bambu 
+dmvfs-995-500    "DMVFS"                             -3.136e-03x1.0e6     1          1.0                  private    monophoton_med-995_dm-500_cv-1.0_ca-0.0_nev-30000_bambu # not produced yet...
