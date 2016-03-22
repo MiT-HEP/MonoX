@@ -105,7 +105,7 @@ shutil.copy(opts.rootFile, rootFilePath)
 print datetime.datetime.now(), '\n'
 
 limits = {} # "dmv-500-150" : ( Obs, Exp )
-print "%-16s %15s %15s" % ('model', 'Observed (1/fb)', 'Expected (1/fb)')
+print "%-16s %15s %15s %15s %15s" % ('model', 'Observed (r)', 'Expected (r)', 'Observed (1/fb)', 'Expected (1/fb)')
 for iM, model in enumerate(modelList):
     try:
         allsamples[model]
@@ -130,14 +130,23 @@ for iM, model in enumerate(modelList):
         obs = obs * allsamples[model].scale
         exp = exp * allsamples[model].scale
 
-    obs = obs * allsamples[model].crosssection * 1000. # to 1/fb
-    exp = exp * allsamples[model].crosssection * 1000. # to 1/fb
+    obsXsec = obs * allsamples[model].crosssection * 1000. # to 1/fb
+    expXsec = exp * allsamples[model].crosssection * 1000. # to 1/fb
 
-    limits[model] = (obs, exp)
+    limits[model] = (obs, exp, obsXsec, expXsec)
 
+    limitString = "%-16s" % model
+    
     if obs < 0.1 or exp < 0.1:
-        print "%-16s %15.1E %15.1E" % (model, limits[model][0], limits[model][1])
+        limitString += " %15.1E %15.1E" % (obs, exp)
     else:
-        print "%-16s %15.1f %15.1f" % (model, limits[model][0], limits[model][1])
+        limitString += " %15.2f %15.2f" % (obs, exp)
+    if obsXsec < 0.1 or expXsec < 0.1:
+        limitString += " %15.1E %15.1E" % (obsXsec, expXsec)
+    else:
+        limitString += " %15.1f %15.1f" % (obsXsec, expXsec)
+
+    print limitString
+
 
 print datetime.datetime.now()
