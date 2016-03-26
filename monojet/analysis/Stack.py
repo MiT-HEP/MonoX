@@ -26,10 +26,10 @@ regionList = ['signal','Zmm','Zee','Wmn','Wen']
 
 def SetupArgs(theArray):
     return [
-        ['met',len(theArray)-1,array('d',theArray),'E_{T}^{miss} [GeV]', 'Events Per GeV',True],
-        ['jet1Pt',20,100,500,'Leading jet p_{T} [GeV]', 'Events Per GeV',False],
+#        ['met',len(theArray)-1,array('d',theArray),'E_{T}^{miss} [GeV]', 'Events Per GeV',True],
+#        ['jet1Pt',20,100,500,'Leading jet p_{T} [GeV]', 'Events Per GeV',False],
         ['n_cleanedjets',8,0,8,'Number of Jets', 'Events',False],
-        ['fatjet1PrunedM',20,0,200,'Pruned Mass [GeV]', 'Events Per GeV',False]
+#        ['fatjet1PrunedM',20,0,200,'Pruned Mass [GeV]', 'Events Per GeV',False]
         ]
             
 
@@ -46,13 +46,13 @@ def RunPlots2(categories,regions):
     MakePlots(categories,regions,SetupArgs(anArray))
 
     plotter.SetEventsPer(0.1)
-    MakePlots(categories,regions,[['jet1Eta',25,-2.5,2.5,'Leading jet #eta','Events Per 0.1',False]])
+#    MakePlots(categories,regions,[['jet1Eta',25,-2.5,2.5,'Leading jet #eta','Events Per 0.1',False]])
 
     plotter.SetLegendLocation(plotter.kUpper,plotter.kLeft,0.25,0.5)
-    MakePlots(categories,regions,[['minJetMetDPhi_clean',15,0,3.0,'#Delta #phi_{min}(j,E_{T}^{miss})', 'Events Per 0.1',False]])
+#    MakePlots(categories,regions,[['minJetMetDPhi_clean',15,0,3.0,'#Delta #phi_{min}(j,E_{T}^{miss})', 'Events Per 0.1',False]])
 
     plotter.SetEventsPer(0.05)
-    MakePlots(categories,regions,[['fatjet1tau21',20,0,1,'#tau_{2}/#tau_{1}', 'Events Per 0.05',False]])
+#    MakePlots(categories,regions,[['fatjet1tau21',20,0,1,'#tau_{2}/#tau_{1}', 'Events Per 0.05',False]])
     
     plotter.SetEventsPer(1.0)
     plotter.SetLegendLocation(plotter.kUpper,plotter.kRight,0.25,0.5)
