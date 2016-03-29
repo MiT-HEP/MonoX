@@ -2,6 +2,12 @@
 
 fresh=$1
 
+cd $CROMBIEPATH
+git checkout MonoJetMoriond2016
+cd -
+
+CrombieClean
+
 source CrombieSlimmingConfig.sh
 
 if [ "$fresh" = "fresh" ]
@@ -14,3 +20,9 @@ CrombieFlatSkimmer  --cut 'met > 200' --tree 'events' --copy 'htotal' --run 'run
 
 ./applyCorrections.py $CrombieSkimDir
 ./applyTriggers.py $CrombieSkimDir
+
+cd $CROMBIEPATH
+git checkout master
+cd -
+
+CrombieClean
