@@ -70,7 +70,7 @@ class SampleDef(object):
         if self.comments != '':
             self.comments = "# "+self.comments
             
-        print '%-16s %-35s %-20s %-10d %-20s %-10s %s %s' % (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
+        print '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
 
 
 class SampleDefList(object):
@@ -103,7 +103,7 @@ allsamples = SampleDefList()
 with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
     for line in dsSource:
         line = line.strip()
-
+        
         if line.startswith('#'):
             continue
 
@@ -181,11 +181,12 @@ if __name__ == '__main__':
 
         try:
             sample = allsamples[name]
-            fNames = [f for f in os.listdir(sourceDir + '/' + sample.book + '/' + sample.directory) if f.startswith('simpletree_')]
+            fullPath = sourceDir + '/' + sample.book + '/' + sample.directory
+            fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
 
             counter = None
             for fName in fNames:
-                source = ROOT.TFile.Open(sourceDir + '/' + sample.book + '/' + sample.directory + '/' + fName)
+                source = ROOT.TFile.Open(fullPath + '/' + fName)
                 if counter is None:
                     counter = source.Get('counter')
                     counter.SetDirectory(ROOT.gROOT)
