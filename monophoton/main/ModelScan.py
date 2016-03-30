@@ -103,14 +103,33 @@ if 'dmv' in opts.models:
     for sample in allsamples:
         if sample.signal and 'dmv' in sample.name and not 'fs' in sample.name:
             modelList.append(sample.name)
+if 'dmvfs' in opts.models:
+    for sample in allsamples:
+        if sample.signal and 'dmvfs' in sample.name:
+            modelList.append(sample.name)
 if 'dma' in opts.models:
     for sample in allsamples:
         if sample.signal and 'dma' in sample.name and not 'fs' in sample.name:
+            modelList.append(sample.name)
+if 'dmafs' in opts.models:
+    for sample in allsamples:
+        if sample.signal and 'dmafs' in sample.name:
             modelList.append(sample.name)
 if 'dmewk' in opts.models:
     for sample in allsamples:
         if sample.signal and 'dmewk' in sample.name:
             modelList.append(sample.name)
+
+for model in list(opts.models):
+    if model in ['add', 'dmv', 'dmvfs', 'dma', 'dmafs', 'dmewk']:
+        continue
+    try:
+        if allsamples[model].signal:
+            modelList.append(model)
+            opts.models.remove(model)
+    except KeyError:
+        print model, 'not in datasets.csv. Skipping!'
+        opts.models.remove(model)
 
 LimitToolDir = os.path.join(os.environ['CMSSW_BASE'], 'src/HiggsAnalysis/CombinedLimit')
 cardDir = os.path.join(LimitToolDir, 'data/monoph')

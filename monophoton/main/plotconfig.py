@@ -245,7 +245,7 @@ def getConfig(confName):
 
         # Specific systematic variations
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.79))
-        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
+        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
