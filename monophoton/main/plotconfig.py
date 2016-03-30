@@ -223,13 +223,17 @@ def getConfig(confName):
             if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
 
-            # group.variations.append(Variation('lumi', reweight = 0.027))
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('totalSF', reweight = 0.06))
 
             # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            # group.variations.append(Variation('worstIsoSF', reweight = 0.08))
+            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
 
-            # group.variations.append(Variation('leptonvetoSF', reweight = 0.08))
+            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+
+            group.variations.append(Variation('pdf', reweight = 'pdf'))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -240,6 +244,7 @@ def getConfig(confName):
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.79))
         config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 'egfakerate'))
