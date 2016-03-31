@@ -130,6 +130,20 @@ def candidate(sample, name, selector = None):
 
     return selector
 
+def signalRaw(sample, name, selector = None):
+    """
+    Ignore decisions of all cuts to compare shapes for different simulations.
+    """
+
+    selector = candidate(sample, name, selector)
+
+    cuts = ['MetFilters', 'PhotonSelection', 'ElectronVeto', 'MuonVeto', 'TauVeto', 'PhotonMetDPhi', 'JetMetDPhi', 'HighMet']
+    for cut in cuts:
+        # print cut
+        selector.findOperator(cut).setIgnoreDecision(True)
+
+    return selector
+
 def eleProxy(sample, name, selector = None):
     """
     Candidate-like but with inverted electron veto

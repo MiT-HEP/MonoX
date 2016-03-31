@@ -13,6 +13,7 @@ import config
 
 defaults = {
     'monoph': selectors.candidate,
+    'signalRaw': selectors.signalRaw,
     'efake': selectors.eleProxy,
     'hfake': selectors.hadProxy,
     'hfakeUp': selectors.hadProxyUp,
@@ -32,6 +33,7 @@ data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purit
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
+mc_sig = ['monoph', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
@@ -92,7 +94,10 @@ for mt in ['a', 'v']:
                     # print "This combination is not part of the DMWG recommendations, moving onto next one."
                     continue;
 
-                selectors[sname] = mc_cand
+                selectors[sname] = mc_sig
+
+for sname in ['dmewk-%d-%d' % (_lambda, mx) for _lambda in [3000] for mx in [1, 10, 50, 100, 200, 400, 800, 1300]]:
+    selectors[sname] = mc_cand
 
 for sname in ['zgr-750-%s' % width for width in ['0014', '5600']]:
     selectors[sname] = mc_cand
