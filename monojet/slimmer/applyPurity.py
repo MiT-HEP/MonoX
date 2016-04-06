@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-import Corrector
+from CrombieTools.SkimmingTools import Corrector
 import os,sys
 
 directory = sys.argv[1]

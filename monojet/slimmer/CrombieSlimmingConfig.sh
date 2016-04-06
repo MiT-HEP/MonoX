@@ -12,7 +12,7 @@ export CrombieEosDir=/store/user/zdemirag/fastsim
 export CrombieRegDir=/afs/cern.ch/work/d/dabercro/eos/cms$CrombieEosDir
 export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut_fastsim
 export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut_fastsim
-export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_fastsim
+export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_test
 #export CrombieDirList=SubDirList.txt
 #export CrombieDirList=GluGlu.txt
 

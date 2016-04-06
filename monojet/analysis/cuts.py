@@ -106,7 +106,7 @@ regionCuts = {
     'tt'  : top
     }
 
-defaultMCWeight = 'mcFactors'
+defaultMCWeight = 'mcFactors * postfit'
 
 additionKeys = ['signal','Zmm','Wmn','tt']
 additions    = { # key : [Data,MC]
