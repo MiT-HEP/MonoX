@@ -548,6 +548,65 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 }
 
 //--------------------------------------------------------------------
+// PhotonJetDPhi
+//--------------------------------------------------------------------
+
+void
+PhotonJetDPhi::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("photons.minJetDPhi", minDPhi_, "minJetDPhi[photons.size]/F");
+  _skimTree.Branch("photons.minJetDPhiJECUp", minDPhiJECUp_, "minJetDPhiJECUp[photons.size]/F");
+  _skimTree.Branch("photons.minJetDPhiJECDown", minDPhiJECDown_, "minJetDPhiJECDown[photons.size]/F");
+  _skimTree.Branch("jets.photonDPhi", dPhi_, "photonDPhi[jets.size]/F");
+}
+
+void
+PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  unsigned nJ(0);
+  unsigned nJCorrUp(0);
+  unsigned nJCorrDown(0);
+
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    auto& photon(_outEvent.photons[iP]);
+    
+    minDPhi_[iP] = 4.;
+    minDPhiJECUp_[iP] = 4.;
+    minDPhiJECDown_[iP] = 4.;
+    
+    for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+      auto& jet(_outEvent.jets[iJ]);
+
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - photon.phi)));
+
+      if (iP == 0)
+	dPhi_[iJ] = dPhi;
+      
+      if (jet.pt > 30. && nJ < 4) {
+	++nJ;
+	
+	if (dPhi < minDPhi_[iP])
+	  minDPhi_[iP] = dPhi;
+      }
+
+      if (metVar_) {
+	if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
+	  ++nJCorrUp;
+	  if (dPhi < minDPhiJECUp_[iP])
+	    minDPhiJECUp_[iP] = dPhi;
+	}
+
+	if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
+	  ++nJCorrDown;
+	  if (dPhi < minDPhiJECDown_[iP])
+	    minDPhiJECDown_[iP] = dPhi;
+	}
+      }
+    }
+  }
+}
+
+//--------------------------------------------------------------------
 // LeptonRecoil
 //--------------------------------------------------------------------
 

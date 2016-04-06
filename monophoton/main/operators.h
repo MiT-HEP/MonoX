@@ -262,6 +262,22 @@ class JetCleaning : public Modifier {
   std::bitset<nCollections> cleanAgainst_{};
 };
 
+class PhotonJetDPhi : public Modifier {
+ public:
+  PhotonJetDPhi(char const* name = "PhotonJetDPhi") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+
+  void setMetVariations(MetVariations* v) { metVar_ = v; }
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event&) override;
+
+  float dPhi_[simpletree::Particle::array_data::NMAX];
+  float minDPhi_[simpletree::Particle::array_data::NMAX];
+  float minDPhiJECUp_[simpletree::Particle::array_data::NMAX];
+  float minDPhiJECDown_[simpletree::Particle::array_data::NMAX];
+  MetVariations* metVar_{0};
+};
+
 class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}

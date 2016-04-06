@@ -86,6 +86,7 @@ def monophotonBase(sample, name, selector = None):
     operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
+        'PhotonJetDPhi',
         'HighMet'
     ]
 
@@ -99,6 +100,7 @@ def monophotonBase(sample, name, selector = None):
 
         selector.findOperator('PhotonMetDPhi').setMetVariations(metVar)
         selector.findOperator('JetMetDPhi').setMetVariations(metVar)
+        selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
