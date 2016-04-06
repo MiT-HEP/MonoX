@@ -105,6 +105,7 @@ def monophotonBase(sample, name, selector = None):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
 
