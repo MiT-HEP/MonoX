@@ -9,7 +9,6 @@ import re
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
-from plotstyle import *
 from datasets import allsamples
 import config
 from main.plotconfig import getConfig
@@ -111,6 +110,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
     for vhists in varhists.values():
         if len(vhists) == 1:
             vhist = vhists[0]
+            vhist.Add(hist, -1.)
         else:
             # take the average variation as uncertainty
             vhist = vhists[0].Clone(hist.GetName() + '_var')
@@ -190,6 +190,7 @@ def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], r
             weight += '*' + reweight
 
     tree.Draw(expr + '>>' + hist.GetName(), '%s*(%s)' % (weight, selection), 'goff')
+
     if vardef.overflow:
         iOverflow = hist.GetNbinsX()
         cont = hist.GetBinContent(iOverflow)
@@ -368,6 +369,8 @@ if __name__ == '__main__':
 
     import ROOT
     ROOT.gROOT.SetBatch(True)
+
+    from plotstyle import SimpleCanvas, DataMCCanvas
 
     plotConfig = getConfig(args.config)
 
