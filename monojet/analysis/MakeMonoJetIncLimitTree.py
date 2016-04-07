@@ -1,8 +1,6 @@
 #! /usr/bin/python
 
 from CrombieTools.AnalysisTools.LimitTreeMaker import *
-import CrombieTools.LoadConfig
-import os
 
 ltm = newLimitTreeMaker()
 
