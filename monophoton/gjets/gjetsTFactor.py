@@ -8,8 +8,6 @@ sys.path.append(basedir)
 from plotstyle import SimpleCanvas, RatioCanvas, DataMCCanvas
 import config
 
-canvas = DataMCCanvas(lumi = 2239.9)
-
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
 dtree = r.TChain('events')
@@ -41,9 +39,11 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
+fitMax = 170.
+
 regions = [
     ('Low', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)'),
-    ('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < 120.)')
+    ('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < '+str(fitMax)+')')
 ] 
 
 """
@@ -65,20 +65,20 @@ bmets = []
 gmets = []
 mcmets = []
 
+canvas = DataMCCanvas(lumi = 2239.9)
+
 for region, sel in regions:
     binning = binnings[region]
 
     dname = 'dmet'+region
     dmet = r.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
-    dmet.SetMinimum(0.02)
-    dmet.SetMaximum(3000.)
+    dmet.SetMinimum(0.002)
     dmet.Sumw2()
     dtree.Draw('t1Met.met>>'+dname, sel, 'goff')
 
     bname = 'bmet'+region
     bmet = r.TH1D(bname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
-    bmet.SetMinimum(0.02)
-    bmet.SetMaximum(3000.)
+    bmet.SetMinimum(0.002)
     bmet.Sumw2()
     btree.Draw('t1Met.met>>'+bname, 'weight * '+sel, 'goff')
 
@@ -94,8 +94,7 @@ for region, sel in regions:
 
     mcname = 'mcmet'+region
     mcmet = r.TH1D(mcname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
-    mcmet.SetMinimum(0.02)
-    mcmet.SetMaximum(3000.)
+    mcmet.SetMinimum(0.002)
     mcmet.Sumw2()
     mctree.Draw('t1Met.met>>'+mcname, '2239.9 * weight * '+sel, 'goff')
     
@@ -103,6 +102,11 @@ for region, sel in regions:
     bmet.Scale(1., 'width')
     gmet.Scale(1., 'width')
     mcmet.Scale(1., 'width')
+
+    for iBin in range(gmet.GetNbinsX()+2):
+        # print iBin, gmet.GetBinLowEdge(iBin)
+        if (gmet.GetBinContent(iBin) < 0.):
+            gmet.SetBinContent(iBin, 0.)
 
     outputFile.cd()
     dmet.Write()
@@ -116,11 +120,11 @@ for region, sel in regions:
     mcmets.append(mcmet)
 
     canvas.cd()
-    canvas.ylimits = (0.2, 2000.)
     canvas.Clear()
     canvas.legend.Clear()
 
-    canvas.ylimits = (0.2, 2000.)
+    canvas.ylimits = (0.002, 2500)
+
     canvas.SetLogy(True)
 
     canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
@@ -134,7 +138,7 @@ for region, sel in regions:
     canvas.xtitle = canvas.obsHistogram().GetXaxis().GetTitle()
     canvas.ytitle = canvas.obsHistogram().GetYaxis().GetTitle()
 
-    canvas.Update(logy = True, ymax = 2000.)
+    canvas.Update(logy = True)
 
     canvas.printWeb('monophoton/gjetsTFactor', 'distributions'+region)
 
@@ -237,8 +241,11 @@ smear = r.TF1("Smear", "[0] * TMath::Exp( -x**2/[1]**2)", 0., 600.)
 smear.SetParameters(1., 10.)
 smear.SetParLimits(1, 0.1, 150.)
 
+constant = r.TF1("constant", str(tfacts[0].GetBinContent(tfacts[0].FindBin(fitMax-1.))), 0., 600.)
+
+
 ## choosing model ##
-models = [ gauss, dexpo ] #, rpepe ] 
+models = [ gauss, dexpo ] # , constant] 
 colors = [ r.kRed, r.kBlue, r.kMagenta ] 
 """
 for model in models[:]:
@@ -252,7 +259,7 @@ tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
     print "\nFitting with", model.GetName(), "\n"
-    fit.Fit(model, "M WL B ", "goff", 30., 120.)
+    fit.Fit(model, "M WL B ", "goff", 30., fitMax)
 
     model.SetLineColor(colors[iM])
 
@@ -337,7 +344,7 @@ for iG, gmet in enumerate(gmets):
     gfits.append([])
     for iM, model in enumerate(models):
         gfit = model.Clone(gmet.GetName()+model.GetName())
-        gmet.Fit(gfit, "M WL B ", "goff", 0., 120.)
+        gmet.Fit(gfit, "M WL B ", "goff", 0., fitMax)
 
         gfit.SetLineColor(colors[iM])
 
