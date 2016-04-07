@@ -200,12 +200,12 @@ def getConfig(confName):
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (16, 0.004, 0.012)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
             VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
-            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.004, .016)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
-            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.)),
+            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
         ]
 
         for variable in list(config.variables): # need to clone the list first!
@@ -287,7 +287,7 @@ def getConfig(confName):
             if variable.name not in ['met', 'metWide']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
     
-    if confName == 'phodphi':
+    elif confName == 'phodphi':
         metCut = 't1Met.met > 170.'
         
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
@@ -313,6 +313,7 @@ def getConfig(confName):
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True, blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.', overflow = True),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
@@ -321,10 +322,16 @@ def getConfig(confName):
             VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (30, 0., math.pi), overflow = True),
             VariableDef('dPhiJetPho', '#Delta#phi(j, #gamma)', 'jets.photonDPhi', (30, 0., math.pi), cut = 'jets.pt > 30.', overflow = True),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
+            VariableDef('jetEta', '#eta^{j}', 'jets.eta', (40, -5.0, 5.0), cut = 'jets.pt > 30.'),
+            VariableDef('jetPhi', '#eta^{j}', 'jets.phi', (20, -math.pi, math.pi), cut = 'jets.pt > 30'),
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (16, 0.004, 0.012)), 
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
+            VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
+            VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
+            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
         ]
 
         for variable in list(config.variables): # need to clone the list first!
@@ -437,10 +444,10 @@ def getConfig(confName):
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (16, 0.004, 0.012)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
             VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
-            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.004, .016)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
             VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.)),
         ]
