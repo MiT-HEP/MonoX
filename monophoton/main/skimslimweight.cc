@@ -362,7 +362,7 @@ EventProcessor::selectPhotons(simpletree::Event const& _event, simpletree::Event
     // need to add sipip cut when available
     if (photonSelection(photon) && photonEVeto(photon) && pt > minPhotonPt_ &&
         photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
-        !(photon.eta > 0.076158 && photon.eta < 0.088094 && photon.phi > 0.527580 && photon.phi < 0.541795)) {
+        !(photon.eta > 0. && photon.eta < 0.14 && photon.phi > 0.527580 && photon.phi < 0.541795)) {
       // unsigned iM(0);
       // for (; iM != _event.muons.size(); ++iM) {
       //   if (_event.muons[iM].dR2(photon) < 0.01)
@@ -622,21 +622,25 @@ GenProcessor::calculateWeight(simpletree::Event const& _event, simpletree::Event
   }
 
   if (kfactors_.size() != 0) {
-    for (auto& parton : _event.partons) {
-      if (parton.pid != 22 || parton.status != 1)
+    double maxPt(0.);
+    for (auto& fs : _event.promptFinalStates) {
+      if (fs.pid != 22)
         continue;
 
-      // what if parton is out of eta acceptance?
+      if (fs.pt > maxPt)
+        maxPt = fs.pt;
+    }
+
+    if (maxPt > 0.) {
+      // what if the gen photon is out of eta acceptance?
       unsigned iBin(0);
-      while (iBin != kfactors_.size() && parton.pt >= kfactors_[iBin].first)
+      while (iBin != kfactors_.size() && maxPt >= kfactors_[iBin].first)
         ++iBin;
 
       if (iBin > 0)
         iBin -= 1;
 
       _outEvent.weight *= kfactors_[iBin].second;
-
-      break;
     }
   }
 
@@ -675,7 +679,7 @@ GenZnnProxyProcessor::vetoElectrons(simpletree::Event const& _event, simpletree:
   auto& electrons(_event.electrons);
 
   if (leptonId_ == 11) {
-    auto& finalStates(_event.partonFinalStates);
+    auto& finalStates(_event.promptFinalStates);
 
     for (unsigned iE(0); iE != electrons.size(); ++iE) {
       auto& electron(electrons[iE]);
@@ -726,7 +730,7 @@ GenZnnProxyProcessor::vetoMuons(simpletree::Event const& _event, simpletree::Eve
   auto& muons(_event.muons);
 
   if (leptonId_ == 13) {
-    auto& finalStates(_event.partonFinalStates);
+    auto& finalStates(_event.promptFinalStates);
 
     for (unsigned iM(0); iM != muons.size(); ++iM) {
       auto& muon(muons[iM]);
@@ -852,7 +856,11 @@ WenuProxyProcessor::selectPhotons(simpletree::Event const& _event, simpletree::E
     if (!photon.isEB)
       continue;
 
-    if (photonSelection(photon) && photon.pt > minPhotonPt_) {
+    if (photonSelection(photon) && photon.pt > minPhotonPt_ &&
+        photon.chWorstIso < simpletree::Photon::chIsoCuts[0][PHOTONWP] &&
+        photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
+        !(photon.eta > 0. && photon.eta < 0.14 && photon.phi > 0.527580 && photon.phi < 0.541795)) {
+
       if (photonEVeto(photon))
         break;
 

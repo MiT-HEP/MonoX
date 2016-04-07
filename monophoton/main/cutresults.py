@@ -24,10 +24,10 @@ branch.GetEntry(iEntry)
 bitmasks = [
     'passTrigger',
     'beginEvent',
+    'selectPhotons',
     'vetoMuons',
     'vetoElectrons',
     'vetoTaus',
-    'selectPhotons',
     'cleanJets',
     'selectMet',
     'highMet',
