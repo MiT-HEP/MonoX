@@ -18,23 +18,28 @@ impurityHist = inputFile.Get("ChIso50to80imp")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
-isos = [ ( '', 'pv'), ('Worst', '') ]
+isos = [ ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '') ]
 
-samples = [ ('', 't1Met.met < 60. && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
-            ,('Down', 't1Met.met < 60.')
-            ,('Up', 't1Met.met < 60.')
+baseSel = 't1Met.met < 60. && photons.size == 1 && photons.pixelVeto[0]'
+
+samples = [ ('',  baseSel+' && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
+            ,('Down', baseSel)
+            ,('Up', baseSel)
             ]
 
 for iso in isos:
     gtree = ROOT.TChain('events')
-    gtree.Add(config.skimDir + '/sph-d*_monoph'+iso[1]+'.root')
+    gtree.Add(config.skimDir + '/sph-d*_purity'+iso[1]+'.root')
 
     gname = 'gpt'+iso[0]
     gpt = ROOT.TH1D(gname, ';p_{T} (GeV)', len(binning) - 1, binning)
     gpt.Sumw2()
 
-    gtree.Draw('photons.pt[0]>>'+gname, 'Sum$(jets.pt > 100. && TMath::Abs(jets.eta) < 2.5) != 0 && photons.size == 1 && t1Met.met < 60.', 'goff')
+    gtree.Draw('photons.pt[0]>>'+gname, baseSel+' && photons.medium[0]', 'goff')
     gpt.Scale(1., 'width')
+
+    # inputFile = ROOT.TFile.Open(basedir+'/data/impurity'+iso[1]+'.root')
+    # impurityHist = inputFile.Get("ChIso50to80imp")
 
     fname = 'fpt'+iso[0]
     fpt = gpt.Clone(fname)
@@ -58,14 +63,14 @@ for iso in isos:
 
     for samp, sel in samples:
         htree = ROOT.TChain('events')
-        htree.Add(config.skimDir + '/sph-d*_purity'+samp+'.root')
+        htree.Add(config.skimDir + '/sph-d*_purity'+iso[1]+samp+'.root')
 
         hname = 'hpt'+iso[0]+samp
         hpt = ROOT.TH1D(hname, ';p_{T} (GeV)', len(binning) - 1, binning)
         hpt.Sumw2()
 
-        if iso[0] != '':
-            sel = sel.replace('chIso', 'chWorstIso')
+        # if iso[0] == 'Worst':
+        sel = sel.replace('chIso', 'chWorstIso')
         htree.Draw('photons.pt[0]>>'+hname, sel, 'goff')
         hpt.Scale(1., 'width')
 

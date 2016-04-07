@@ -16,35 +16,49 @@ dtree = r.TChain('events')
 dtree.Add(config.skimDir + '/sph-d*_monoph.root')
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-d*_hfakeWorst.root')
+btree.Add(config.skimDir + '/sph-d*_hfake.root')
 btree.Add(config.skimDir + '/sph-d*_efake.root')
 
 bmctree = r.TChain('events')
-bmctree.Add(config.skimDir + '/znng-130_monoph.root')
-bmctree.Add(config.skimDir + '/wnlg-130_monoph.root')
+# bmctree.Add(config.skimDir + '/znng-130_monoph.root')
+# bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
+bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
-bmctree.Add(config.skimDir + '/zllg-130_monoph.root')
+bmctree.Add(config.skimDir + '/zg_monoph.root')
+
+znntree = r.TChain('events')
+znntree.Add(config.skimDir + '/zg_dimu.root')
 
 mctree = r.TChain('events')
-mctree.Add(config.skimDir + '/g-40_monoph.root')
-mctree.Add(config.skimDir + '/g-100_monoph.root')
-mctree.Add(config.skimDir + '/g-200_monoph.root')
-mctree.Add(config.skimDir + '/g-400_monoph.root')
-mctree.Add(config.skimDir + '/g-600_monoph.root')
+mctree.Add(config.skimDir + '/gj-40_monoph.root')
+mctree.Add(config.skimDir + '/gj-100_monoph.root')
+mctree.Add(config.skimDir + '/gj-200_monoph.root')
+mctree.Add(config.skimDir + '/gj-400_monoph.root')
+mctree.Add(config.skimDir + '/gj-600_monoph.root')
 
 ###########################################
 ####### Get Data/MC Yields ################
 ###########################################
 
-regions = [ ( 'Low', '(photons.pt[0] > 175. && !t1Met.iso)')
-            ,('High', '(photons.pt[0] > 175. && t1Met.met < 120. && t1Met.iso)') 
-            ] 
+regions = [
+    ('Low', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)'),
+    ('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < 120.)')
+] 
 
-# binning = array.array('d', [0. + 10. * x for x in range(13)])
+"""
+binnings = {
+    'Low': array.array('d', [0. + 2. * x for x in range(100)]),
+    'High': array.array('d', [0. + 2. * x for x in range(65)])
+}
+"""
 
-binning = array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
-                      + [200. + 50. * x for x in range(9)] ) 
+binnings =  {
+    'Low': array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+                       + [200. + 50. * x for x in range(9)] ),
+    'High': array.array('d', [0. + 10. * x for x in range(10)] + [100., 120., 140., 170.]
+                       + [200. + 50. * x for x in range(9)] )
+}
 
 dmets = []
 bmets = []
@@ -52,6 +66,8 @@ gmets = []
 mcmets = []
 
 for region, sel in regions:
+    binning = binnings[region]
+
     dname = 'dmet'+region
     dmet = r.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     dmet.SetMinimum(0.02)
@@ -69,6 +85,7 @@ for region, sel in regions:
     bmcmet = r.TH1D(bname+'MC', ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     bmcmet.Sumw2()
     bmctree.Draw('t1Met.met>>'+bname, '2239.9 * weight * '+sel, 'goff')
+    znntree.Draw('t1Met.met>>+' + bname, '2239.9 * 6.112 * weight * ' + sel, 'goff')
     bmet.Add(bmcmet)
 
     gname ='gmet'+region
@@ -177,35 +194,67 @@ canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
 ####### Plain Root Attempt ################
 ###########################################
 
-expo = r.TF1("expo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
+expo = r.TF1("SingleExpo", "[0] * TMath::Exp([1] * x) + [2]", 0., 600.)
 expo.SetParameters(1., -0.1, 0.)
 expo.SetParLimits(1, -10., 0.)
 expo.SetParLimits(2, 0., 10.)
 
-rayleigh = r.TF1("rayleigh", "[0] * x * TMath::Exp( -x**2 / ( 2 * [1]**2))", 0., 600.)
+dexpo = r.TF1("Expo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
+dexpo.SetParameters(10., 0.1, -0.1, -0.1)
+dexpo.SetParLimits(2, -1., 0.)
+dexpo.SetParLimits(3, -1., 0.)
+
+rayleigh = r.TF1("Rayleigh", "[0] * x * TMath::Exp( -x**2 / ( 2 * [1]**2))", 0., 600.)
 rayleigh.SetParameters(1., 10.)
-rayleigh.SetParLimits(1, 0.001, 600.)
+rayleigh.SetParLimits(1, 0.1, 600.)
 
-pepe = r.TF1("pepe", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
-pepe.SetParameters(1., 10., 100.)
-pepe.SetParLimits(1, 0.001, 150.)
-pepe.SetParLimits(2, 0.1, 600.)
+pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
+pepe.SetParameters(1., 10., 10.)
+pepe.SetParLimits(1, 0.1, 150.)
+pepe.SetParLimits(2, 0.001, 10.)
 
-gauss = r.TF1("gauss", "[0] * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
+pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
+pepeplus.SetParLimits(1, 0.1, 1000.)
+pepeplus.SetParLimits(2, 0.001, 100.)
+pepeplus.SetParLimits(3, 0.00001, 1.)
+
+rpepe = r.TF1("RayleighRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
+rpepe.SetParameters(1., 10., 10., 0.1, 10., 10., 0.1)
+rpepe.SetParLimits(1, 0.1, 1000.)
+rpepe.SetParLimits(2, 0.001, 100.)
+rpepe.SetParLimits(3, 0.00001, 1.)
+rpepe.SetParLimits(4, 0.1, 1000.)
+rpepe.SetParLimits(5, 0.001, 100.)
+rpepe.SetParLimits(6, 0.00001, 1.)
+
+gauss = r.TF1("Gauss", "[0] * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
 gauss.SetParameters(1., 10., 100.)
 gauss.SetParLimits(1, 0.001, 150.)
 gauss.SetParLimits(2, 0.1, 600.)
 
+smear = r.TF1("Smear", "[0] * TMath::Exp( -x**2/[1]**2)", 0., 600.)
+smear.SetParameters(1., 10.)
+smear.SetParLimits(1, 0.1, 150.)
+
 ## choosing model ##
-models = [ gauss, expo, pepe, rayleigh ]
+models = [ gauss, dexpo ] #, rpepe ] 
+colors = [ r.kRed, r.kBlue, r.kMagenta ] 
+"""
+for model in models[:]:
+    convolve = r.TF1Convolution(model, smear)
+    smeared = r.TF1(model.GetName()+"Smeared", convolve, 0., 600., convolve.GetNpar())
+    models.append(smeared)
+"""
 
 tfacts[0].SetMinimum(0.0000000001)
 tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
-    fit.Fit(model, "M WL B V", "goff", 0., 120.)
+    print "\nFitting with", model.GetName(), "\n"
+    fit.Fit(model, "M WL B ", "goff", 30., 120.)
 
-    model.SetLineColor((iM+1)*2)
+    model.SetLineColor(colors[iM])
 
     outputFile.cd()
     model.Write()
@@ -249,16 +298,154 @@ for iBin in range(gmets[0].GetNbinsX()+2):
     if (gmets[0].GetBinContent(iBin) < 0.):
         gmets[0].SetBinContent(iBin, 0.)
 
-for model in models:
-    gmet = gmets[0].Clone('gmetScaled'+model.GetName())
+scanvas.Clear()
+scanvas.legend.Clear()
+
+scanvas.ylimits = (0.00000000005, 50000)
+scanvas.SetLogy(True)
+
+scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
+
+for iM, model in enumerate(models):
+    gname = 'gmetScaled'+model.GetName()
+    gmet = gmets[0].Clone(gname)
     gmet.Multiply(model)
+
+    scanvas.legend.add(gname, title = model.GetName(), lcolor = colors[iM], lwidth = 1, mcolor = colors[iM], mstyle = 8, msize = 0.8)
+
+    scanvas.legend.apply(gname, gmet)
+
+    scanvas.addHistogram(gmet, drawOpt = 'EP')
 
     outputFile.cd()
     gmet.Write()
 
     print '%s predicts %.4f events for MET > 170' % (model.GetName(), gmet.Integral(14, gmet.GetNbinsX()+1))
 
+scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 
+###########################################
+####### Fit MET Spectrum   ################
+###########################################
+
+gfits = []
+
+models = [ pepe, pepeplus ] 
+colors = [ r.kOrange-3, r.kGreen-3 ] 
+
+for iG, gmet in enumerate(gmets):
+    gfits.append([])
+    for iM, model in enumerate(models):
+        gfit = model.Clone(gmet.GetName()+model.GetName())
+        gmet.Fit(gfit, "M WL B ", "goff", 0., 120.)
+
+        gfit.SetLineColor(colors[iM])
+
+        outputFile.cd()
+        gfit.Write()
+        gfits[iG].append(gfit)
+
+    tcanvas.Clear()
+    
+    gmet.SetMinimum(0.001)
+    gmet.SetMarkerColor(1)
+    gmet.SetMarkerStyle(8)
+    gmet.SetMarkerSize(1.2)
+    gmet.GetListOfFunctions().RemoveLast()
+    gmet.Draw("PE")
+    for gfit in gfits[iG]:
+        gfit.Draw("same")
+
+    leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
+    leg.SetFillColor(r.kWhite)
+    leg.SetTextSize(0.03)
+    leg.AddEntry(gmet, "Measured", "P")
+    for iM, gfit in enumerate(gfits[iG]):
+        leg.AddEntry(gfit, models[iM].GetName(), "L")
+    leg.Draw("same")
+
+    tcanvas.SetLogy(False)
+
+    outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/'+gmet.GetName()+'Fit'
+    tcanvas.SaveAs(outName+'.pdf')
+    tcanvas.SaveAs(outName+'.png')
+
+    tcanvas.SetLogy(True)
+
+    outName = outName+'Logy'
+    tcanvas.SaveAs(outName+'.pdf')
+    tcanvas.SaveAs(outName+'.png')
+
+###########################################
+####### Get TF from Fits   ################
+###########################################
+
+tcanvas.Clear()
+scanvas.SetLogy(True)
+
+leg = r.TLegend(0.6, 0.7, 0.9, 0.9)
+leg.SetFillColor(r.kWhite)
+leg.SetTextSize(0.03)
+
+tfacts = []
+
+for iM, model in enumerate(models):
+    tname = 'tfact'+model.GetName()
+    fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
+    # print fstring
+    tfact = r.TF1(tname, fstring, 0., 600.)
+    tfact.SetLineColor(colors[iM])
+    tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
+    # tfact.SetMinimum(0.0001)
+
+    outputFile.cd()
+    tfact.Write()
+    tfacts.append(tfact)
+
+    tcanvas.cd()
+    if iM:
+        tfact.Draw("L same")
+    else:
+        tfact.Draw("L")
+
+    leg.AddEntry(tfact, models[iM].GetName(), "L")
+
+leg.Draw("same")
+
+outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactFitMet'
+tcanvas.SaveAs(outName+'.pdf')
+tcanvas.SaveAs(outName+'.png') 
+
+###########################################
+####### Apply new TFs      ################
+###########################################
+
+scanvas.Clear()
+scanvas.legend.Clear()
+
+scanvas.ylimits = (0.00000000005, 50000)
+scanvas.SetLogy(True)
+
+scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
+
+for iF, tfact in enumerate(tfacts):
+    gname = 'gmetScaledFit'+tfact.GetName().strip('tfact')
+    gmet = gmets[0].Clone(gname)
+    gmet.GetListOfFunctions().RemoveLast()
+    gmet.Multiply(tfact)
+
+    scanvas.legend.add(gname, title = tfact.GetName().strip('tfact'), lcolor = colors[iF], lwidth = 1, mcolor = colors[iF], mstyle = 8, msize = 0.8)
+
+    scanvas.legend.apply(gname, gmet)
+
+    scanvas.addHistogram(gmet, drawOpt = 'EP')
+
+    outputFile.cd()
+    gmet.Write()
+
+    print '%s predicts %.4f events for MET > 170' % (tfact.GetName(), gmet.Integral(14, gmet.GetNbinsX()+1))
+
+scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsFitPrediction')
 
 ###########################################
 ####### RooFit Attempt     ################
@@ -352,67 +539,4 @@ tcanvas.SetLogy(False)
 outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactExtrap'
 tcanvas.SaveAs(outName+'.pdf')
 tcanvas.SaveAs(outName+'.png')
-"""
-
-###########################################
-####### Numpy attempt at fitting ##########
-###########################################
-
-"""
-from pprint import pprint
-import numpy as np
-from scipy.optimize import leastsq
-import matplotlib.pyplot as plot
-import matplotlib.axes as axes
-
-print 'stuff'
-
-metVals = np.asarray( [5. + 10. * x for x in range(12) ])
-tVals = np.asarray( [ (tfacts[0].GetBinContent(iBin), tfacts[0].GetBinError(iBin)) 
-                      for iBin in range(tfacts[0].GetNbinsX()+1) ] )
-
-print 'stuff stuff'
-
-pprint(metVals)
-pprint(tVals)
-
-params = [-0.1, 0.]
-paramsInit = params
-
-print 'stuff stuff stuff'
-
-def fitFunc(_params, _met):
-    tfact_ = np.exp(_met / _params[0]) + _params[1]
-    return tfact_
-
-def resFunc(_params, _met, _tfact):
-    err_ = ( _tfact[0] - fitFunc(_params, _met) ) / _tfact[1]
-
-paramsFit = leastsq(resFunc, paramsInit, args=(metVals, tVals), full_output=1, warning=True)
-pprint(paramsFit)
-
-metFits = np.asarray( [5. + 10. * x for x in range(12)] + [130. + 20. * x for x in range (4) ] 
-                      + [225. + 50. * x for x in range(9)] )
-tFits = [ fitFunc(paramsFit[0], met) for met in metFits ]
-
-pprint(metFits)
-pprint(tFits)
-
-plot.figure()
-
-plot.errorbar(metVals, tVals[0], yerr=tVals[1], fmt='ko', markersize=8.0, capsize=8, solid_capstyle='projecting', elinewidth=2)
-plot.plot(metFits, tFits, 'r-', linewidth=1.0)
-
-plot.legend(['Measured','Fit'])
-
-plot.xlim(0.,600.)
-plot.ylim(0.0,1.0)
-
-plot.tick_params(axis='both', which='major', labelsize=16)
-plot.ylabel(r'Transfer Factor', fontsize=24)
-plot.xlabel(r'E_T^{miss} (GeV)', fontsize=24)
-
-outName = '/home/ballen/public_html/cmsplots/monophoton/gjetsTFactor/tfactPyFit'
-plot.savefig(outName+'.pdf', format='pdf')
-plot.savefig(outName+'.png', format='png')
 """

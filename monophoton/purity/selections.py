@@ -2,7 +2,7 @@ import os
 import array
 import ROOT
 
-Version = 'simpletree12'
+Version = 'simpletree13b'
 
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
@@ -322,10 +322,10 @@ PlotNames = { "Monophoton" : ("Photon Purity in SinglePhoton DataSet","Photon Pu
              
 # Skims for Purity Calculation
 Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-d3','sph-d4'],kPhoton,'Fit Template from SinglePhoton Data')
-                                 ,('TempSignalGJets',['g-40','g-100','g-200','g-400','g-600'],kPhoton,r'Signal Template from #gamma+jets MC')
-                                 ,('TempSidebandGJets',['g-40','g-100','g-200','g-400','g-600'],kPhoton,r'Sideband Template from #gamma+jets MC')
+                                 ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],kPhoton,r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],kPhoton,r'Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',['sph-d3','sph-d4'],kBackground,'Background Template from SinglePhoton Data')
-                                 ,('TempSidebandGJetsScaled',['g-40','g-100','g-200','g-400','g-600'],kPhoton,r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],kPhoton,r'Scaled Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',['sph-d3','sph-d4'],kBackground,'Background Template from SinglePhoton Data')
                                  ]
                 ,"MonophotonOld" : [ ( 'TempSignalGJets','TempSignalGJets',kPhoton,r'Signal Template from #gamma+jets MC')
