@@ -6,7 +6,7 @@
 
 class MonoJetTree
 {
-public:
+ public:
   MonoJetTree( TTree* tree );
   MonoJetTree( const char* name );
   MonoJetTree( const char* name, TString outFileName );
@@ -17,9 +17,9 @@ public:
   int   lumiNum;
   unsigned long eventNum;
   int   npv;
+  int   npvTrue;
   float rho;
   float mcWeight;
-  float npvWeight;
   float trueMet;
   float trueMetPhi;
   std::vector<int>*   triggerFired;
@@ -67,6 +67,7 @@ public:
   float leadingjetPhi;
   float leadingjetM;
   int   n_jets;
+  int   n_jetsCleanWithEndcap;
   float jet1Pt;
   float jet1Eta;
   float jet1Phi;
@@ -78,6 +79,8 @@ public:
   int   jet1isLooseMonoJetId;
   float jet1DPhiMet;
   float jet1DPhiTrueMet;
+  float jet1QGL;
+  int   jet1Flavor;
   float jet2Pt;
   float jet2Eta;
   float jet2Phi;
@@ -89,10 +92,11 @@ public:
   int   jet2isLooseMonoJetId;
   float jet2DPhiMet;
   float jet2DPhiTrueMet;
+  float jet2QGL;
   int   n_cleanedjets;
+  float ht_cleanedjets;
   float dPhi_j1j2;
   float minJetMetDPhi;
-  float minJetMetDPhi_clean;
   float minJetTrueMetDPhi;
   float minJetMetDPhi_withendcap;
   float minJetTrueMetDPhi_withendcap;
@@ -100,15 +104,12 @@ public:
   float boson_pt;
   float boson_phi;
   float genBos_pt;
+  float genBos_eta;
   float genBos_phi;
+  float genBos_mass;
   int   genBos_PdgId;
   float genMet;
   float genMetPhi;
-  float kfactor;
-  float ewk_z;
-  float ewk_a;
-  float ewk_w;
-  float wkfactor;
   float u_perpGen;
   float u_paraGen;
   float fatjet1Pt;
@@ -122,21 +123,58 @@ public:
   float fatjet1tau2;
   float fatjet1tau1;
   float fatjet1tau21;
-  int   fatjet1overlapB;
-  int   fatleading;
+  int   fatjet1MonojetId;
+  float fatjet1QGL;
+  float fatjet1QVol;
+  float fatjet1DRGenW;
+  float fatjet1GenWPt;
+  float fatjet1GenWMass;
+  float fatjet1DRLooseB;
+  float fatjet1DRMediumB;
+  float fatjet1DRTightB;
+  int   fatjet1isLeading;
+  float fatjet1DPhiMet;
+  float fatjet1DPhiTrueMet;
+  float genDM_pt;
+  float genDM_eta;
+  float genDM_phi;
+  float genDM_mass;
+  int   genDM_PdgId;
+  float genJet_pt;
+  float genJet_eta;
+  float genJet_phi;
+  float genJet_mass;
+  float genJetDRjet1;
+  float rawMet;
+  float rawMetPhi;
+  float genFatJet_pt;
+  float genFatJet_eta;
+  float genFatJet_phi;
+  float genFatJet_mass;
+  float genFatJetDRfatjet1;
+  bool  IsVBF;
+  float jot1Pt;
+  float jot1Eta;
+  float jot1Phi;
+  float jot1M;
+  float jot2Pt;
+  float jot2Eta;
+  float jot2Phi;
+  float jot2M;
+  float mjj;
+  float jjDEta;
+  float minJetMetDPhi_clean;
 
   TTree*  ReturnTree()                { return t;                             }
   void    Fill()                      { t->Fill(); Reset();                   }
+  void    Reset();
   void    WriteToFile   ( TFile *f )  { f->WriteTObject(t, t->GetName());     }
   void    Write()                     { fFile->WriteTObject(t, t->GetName());
                                         fFile->Close();                       }
 
-protected:
+ private:
   TFile* fFile;
   TTree* t;
-  void   Reset();
-
-private:
   void   SetupTree();
 
   ClassDef(MonoJetTree,1)

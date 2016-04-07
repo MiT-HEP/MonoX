@@ -54,6 +54,17 @@ float vectorSumMass(float pt1, float phi1, float eta1, float pt2, float phi2, fl
   return vec3.M();
 }
 
+float vectorSumMass(float pt1, float eta1, float phi1, float mass1, float pt2, float eta2, float phi2, float mass2)
+{
+  TLorentzVector vec1;
+  TLorentzVector vec2;
+  TLorentzVector vec3;
+  vec1.SetPtEtaPhiM(pt1,phi1,eta1,mass1);
+  vec2.SetPtEtaPhiM(pt2,phi2,eta2,mass2);
+  vec3 = vec1 + vec2;
+  return vec3.M();
+}
+
 float vectorSumEta(float pt1, float phi1, float eta1, float pt2, float phi2, float eta2) {
   TLorentzVector vec1;
   TLorentzVector vec2;

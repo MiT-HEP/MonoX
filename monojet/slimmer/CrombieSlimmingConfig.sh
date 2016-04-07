@@ -1,17 +1,20 @@
 export CrombieFilesPerJob=10
-export CrombieNumberProcs=1
+export CrombieNBatchProcs=1
 export CrombieQueue=1nh
 
 export CrombieNLocalProcs=5
 
 export CrombieFileBase=monojet
-export CrombieEosDir=/store/caf/user/yiiyama/nerov5
+#export CrombieEosDir=/store/user/dabercro/Nero/74X_MonojetSignalProduction
+#export CrombieEosDir=/store/user/dabercro/Nero/v1.2
+#export CrombieEosDir=/store/user/zdemirag/V0005
+export CrombieEosDir=/store/user/zdemirag/fastsim
 export CrombieRegDir=/afs/cern.ch/work/d/dabercro/eos/cms$CrombieEosDir
-export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut
-export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut
-export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut
+export CrombieTempDir=/afs/cern.ch/work/d/dabercro/public/Winter15/TempOut_fastsim
+export CrombieFullDir=/afs/cern.ch/work/d/dabercro/public/Winter15/FullOut_fastsim
+export CrombieSkimDir=/afs/cern.ch/work/d/dabercro/public/Winter15/SkimOut_test
 #export CrombieDirList=SubDirList.txt
-#export CrombieDirList=TestMET.txt
+#export CrombieDirList=GluGlu.txt
 
 export CrombieSlimmerScript=runSlimmer.py
 export CrombieJobScriptList=CrombieScriptList.txt

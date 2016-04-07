@@ -43,7 +43,7 @@ def plot_cms(preliminary,lumi):
     latex2.SetNDC()
     latex2.SetTextSize(0.035)
     latex2.SetTextAlign(31) # align right
-    latex2.DrawLatex(0.87, 0.95, str(lumi)+" pb^{-1} (13 TeV)");
+    latex2.DrawLatex(0.87, 0.95, str(lumi) +" fb^{-1} (13 TeV)");
 
     latex3 = TLatex()
     latex3.SetNDC()
