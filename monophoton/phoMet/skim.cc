@@ -4,6 +4,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TLorentzVector.h"
+#include "math.h"
 
 void
 skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npvweight = 0)
@@ -12,7 +13,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"weight", "electrons", "photons", "jets", "t1Met", "npv"});
+  event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "electrons", "photons", "jets", "t1Met"});
 
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
@@ -39,6 +40,9 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   float recoilPhi;
   float recoilMass;
 
+  output->Branch("run", &event.run, "run/i");
+  output->Branch("lumi", &event.lumi, "lumi/i");
+  output->Branch("event", &event.event, "event/i");
   output->Branch("weight", &weight, "weight/D");
   output->Branch("npv", &event.npv, "npv/s");
 
@@ -109,7 +113,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
       
       for (unsigned iPho(0); iPho != photons.size(); ++iPho) {
 	auto& pho(photons[iPho]);
-	if (!pho.medium)
+	if ( !(pho.medium && pho.isEB))
 	  continue;
 
 	// printf("Medium photon found for probe\n");
@@ -145,7 +149,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 	phoPy = pho.p4().Py() / phoE;
 	phoPz = pho.p4().Pz() / phoE;
 
-	probePtCorr = (massTheo*massTheo/2) / (eleE - elePx*phoPx - elePy*phoPy - elePz*phoPz);
+	probePtCorr = (massTheo*massTheo/2) / (eleE - elePx*phoPx - elePy*phoPy - elePz*phoPz) / cosh(pho.eta); 
 	probe.SetCoordinates(probePtCorr, pho.eta, pho.phi, 0.);	
 
 	zCorr = (ele.p4() + probe);
@@ -189,12 +193,26 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
     if (std::abs(TVector2::Phi_mpi_pi(recoil.Phi() - zCorr.Phi())) < 2.5)
       continue;
 
+    // printf("Pass back-to-back requirement\n");
+
     recoilPt = recoil.Pt();
     recoilEta = recoil.Eta();
     recoilPhi = recoil.Phi();
     recoilMass = recoil.M();
 
-    // printf("Pass back-to-back requirement\n");
+
+    /*
+    if (massCorr > 121.) {
+      printf("\nRun: %20i Lumi: %10i Event: %20i\n", event.run, event.lumi, event.event);
+      printf("%-15s E: %9.1f Px: %9.2f Py: %9.2f Pz: %9.2f\n", "Electron:", eleE, elePx, elePy, elePz);
+      printf("%-15s E: %9.1f Px: %9.2f Py: %9.2f Pz: %9.2f\n", "Photon:", phoE, phoPx, phoPy, phoPz);
+      printf("Reco Mass: %9.1f Corrected Mass: %9.1f\n", massReco, massCorr);
+      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Tag:", tagPt, tagEta, tagPhi);
+      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Reco Probe:", probePtReco, probeEta, probePhi);
+      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Corr Probe:", probePtCorr, probeEta, probePhi);
+    }
+    */
+
 
     weight = _sampleWeight * event.weight;
     if (_npvweight) {
