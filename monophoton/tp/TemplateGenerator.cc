@@ -38,6 +38,7 @@ public:
 
   void addInput(SkimType _type, char const* _fileName) { input_[_type]->Add(_fileName); }
   void setTemplateBinning(RooUniformBinning const*, Variable = kMass);
+  TH1D* makeEmptyTemplate(char const* name, Variable = kMass);
   TH1D* makeTemplate(SkimType, char const* name, char const* expr, Variable = kMass);
   TTree* makeUnbinnedTemplate(SkimType, char const* name, char const* expr, Variable = kMass);
 
@@ -71,6 +72,12 @@ TemplateGenerator::setTemplateBinning(RooUniformBinning const* _binning, Variabl
 }
 
 TH1D*
+TemplateGenerator::makeEmptyTemplate(char const* _name, Variable _var/*kMass*/)
+{
+  return new TH1D(_name, "", nBins_[_var], xmin_[_var], xmax_[_var]);
+}
+
+TH1D*
 TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _expr, Variable _var/* = kMass*/)
 {
   auto& tree(*input_[_type]);
@@ -101,7 +108,7 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
     return 0;
   };
 
-  auto* tmp = new TH1D(_name, "", nBins_[_var], xmin_[_var], xmax_[_var]);
+  auto* tmp = makeEmptyTemplate(_name, _var);
   tmp->Sumw2();
 
   tree.SetEntryList(elist);
