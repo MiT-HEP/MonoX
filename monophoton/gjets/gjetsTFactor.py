@@ -6,6 +6,7 @@ import ROOT as r
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
 from plotstyle import SimpleCanvas, RatioCanvas, DataMCCanvas
+from datasets import allsamples
 import config
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
@@ -65,7 +66,8 @@ bmets = []
 gmets = []
 mcmets = []
 
-canvas = DataMCCanvas(lumi = 2239.9)
+lumi = allsamples['sph-d3'] + allsamples['sph-d4']
+canvas = DataMCCanvas(lumi = lumi)
 
 for region, sel in regions:
     binning = binnings[region]
@@ -84,8 +86,8 @@ for region, sel in regions:
 
     bmcmet = r.TH1D(bname+'MC', ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     bmcmet.Sumw2()
-    bmctree.Draw('t1Met.met>>'+bname, '2239.9 * weight * '+sel, 'goff')
-    znntree.Draw('t1Met.met>>+' + bname, '2239.9 * 6.112 * weight * ' + sel, 'goff')
+    bmctree.Draw('t1Met.met>>'+bname, str(lumi)+' * weight * '+sel, 'goff')
+    znntree.Draw('t1Met.met>>+' + bname, str(lumi)+' * 6.112 * weight * ' + sel, 'goff')
     bmet.Add(bmcmet)
 
     gname ='gmet'+region
@@ -96,7 +98,7 @@ for region, sel in regions:
     mcmet = r.TH1D(mcname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     mcmet.SetMinimum(0.002)
     mcmet.Sumw2()
-    mctree.Draw('t1Met.met>>'+mcname, '2239.9 * weight * '+sel, 'goff')
+    mctree.Draw('t1Met.met>>'+mcname, str(lumi)+' * weight * '+sel, 'goff')
     
     dmet.Scale(1., 'width')
     bmet.Scale(1., 'width')
@@ -147,7 +149,7 @@ for region, sel in regions:
 ###########################################
 
 methods = [ ('Data', gmets), ('MC', mcmets) ]
-scanvas = SimpleCanvas(lumi = 2239.9)
+scanvas = SimpleCanvas(lumi = lumi)
 
 tfacts = []
 
