@@ -32,15 +32,8 @@ from main.plotconfig import getConfig
 monophConfig = getConfig('monoph')
 source = r.TFile.Open(args.input)
 
-xtitle = ''
 variable = args.variable
-if 'mtPhoMet' in variable:
-    xtitle = 'M_{T} (#gamma, E_{T}^{miss}) (GeV)'
-elif 'phoPt' in variable:
-    xtitle = 'E_{T}^{#gamma} (GeV)'
-elif 'met' in variable:
-    xtitle = 'E_{T}^{miss} (GeV)'
-
+xtitle = monophConfig.getVariable(variable).title
 
 lumi = 0.
 for sName in monophConfig.obs.samples:
