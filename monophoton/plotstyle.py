@@ -12,6 +12,7 @@ ROOT.gStyle.SetTitleSize(0.05, 'Y')
 ROOT.gStyle.SetTitleOffset(0.84, 'X')
 ROOT.gStyle.SetTitleOffset(1.3, 'Y')
 ROOT.gStyle.SetNdivisions(205, 'X')
+ROOT.gStyle.SetFillStyle(0)
 
 def makeText(x1, y1, x2, y2, textalign = 22, font = 42):
     pave = ROOT.TPaveText()
@@ -55,24 +56,6 @@ def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., v
     gaxis.SetGridLength(0.)
 
     return gaxis
-
-
-class PlotStyle(object):
-    def __init__(self, color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
-        if color >= 0:
-            self.lcolor = color
-            self.fcolor = color
-            self.mcolor = color
-        else:
-            self.lcolor = lcolor
-            self.fcolor = fcolor
-            self.mcolor = mcolor
-
-        self.lwidth = lwidth
-        self.lstyle = lstyle
-        self.fstyle = fstyle
-        self.msize = msize
-        self.mstyle = mstyle
 
 
 class Legend(object):
@@ -136,7 +119,7 @@ class Legend(object):
         args = [lwidth, lstyle, lcolor, fstyle, fcolor, msize, mstyle, mcolor]
         for iA in range(len(args)):
             at = Legend.Attributes[iA]
-            if args[iA] == -1 and at in modified:
+            if args[iA] == -1:
                 continue
 
             getattr(ent, 'Set' + at)(args[iA])

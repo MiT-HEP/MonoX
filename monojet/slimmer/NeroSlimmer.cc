@@ -12,7 +12,7 @@
 
 #include "functions.h"
 #include "MonoJetTree.h"
-#include "NeroTreeBambu.h"
+#include "NeroTree76.h"
 
 enum IsoType {
   kIsoVeto = 0,  
@@ -49,48 +49,7 @@ Bool_t PassIso(Float_t lepPt, Float_t lepEta, Float_t lepIso, Int_t lepPdgId, Is
   return (lepIso/lepPt) < isoCut;
 }
 
-void NeroSlimmer(TString inFileName, TString outFileName) {
-
-  TFile *elecSFFile  = new TFile("files/scalefactors_ele-2.root");
-  TH2D  *elecSFVeto  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Veto_ele");
-  TH2D  *elecSFLoose  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Loose_ele");
-  TH2D  *elecSFMedium = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Medium_ele");
-  TH2D  *elecSFTight  = (TH2D*) elecSFFile->Get("unfactorized_scalefactors_Tight_ele");
-
-  TFile *muonSFFile  = new TFile("files/scalefactors_mu-2.root");
-  TH2D  *muonSFLoose  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Loose_mu");
-  TH2D  *muonSFMedium = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Medium_mu");
-  TH2D  *muonSFTight  = (TH2D*) muonSFFile->Get("unfactorized_scalefactors_Tight_mu");
-  
-  Float_t SFEtaMin = 0;
-  Float_t SFEtaMax = 2.5;
-
-  Float_t SFPtMin = 10;
-  Float_t SFPtMax = 100;
-
-  TFile *puWeightFile = new TFile("files/puWeights_13TeV_25ns.root");
-  TH1D  *puWeightHist = (TH1D*) puWeightFile->Get("puWeights");
-  Int_t puMin = 1;
-  Int_t puMax = 30;
-  
-  TFile *kfactorFile  = new TFile("files/scalefactors_v3.root");
-  kfactorFile->cd("anlo1_over_alo");
-  TH1D  *kfactorHist  = (TH1D*) gDirectory->FindObjectAny("anlo1_over_alo");
-
-  kfactorFile->cd("wnlo012_over_wlo");
-  TH1D  *wkfactorHist  = (TH1D*) gDirectory->FindObjectAny("wnlo012_over_wlo");
-
-  kfactorFile->cd("z_ewkcorr");
-  TH1D *ewk_z_Hist = (TH1D*) gDirectory->FindObjectAny("z_ewkcorr");
-
-  kfactorFile->cd("w_ewkcorr");
-  TH1D *ewk_w_Hist = (TH1D*) gDirectory->FindObjectAny("w_ewkcorr");
-
-  kfactorFile->cd("a_ewkcorr");
-  TH1D *ewk_a_Hist = (TH1D*) gDirectory->FindObjectAny("a_ewkcorr");
-
-  Float_t minKPt = 100;
-  Float_t maxKPt = 1000;
+void NeroSlimmer(TString inFileName, TString outFileName, Bool_t isSig = false) {
 
   Float_t dROverlap  = 0.4;
   Float_t dRGenMatch = 0.2;
@@ -104,7 +63,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   TFile *inFile           = TFile::Open(inFileName);
   TTree *inTreeFetch      = (TTree*) inFile->Get("nero/events");
-  NeroTreeBambu *inTree   = new NeroTreeBambu(inTreeFetch);
+  NeroTree76 *inTree      = new NeroTree76(inTreeFetch);
   TTree *allTree          = (TTree*) inFile->Get("nero/all");
   Float_t mcWeight        = 0.;
   TBranch *mcWeightBranch = allTree->GetBranch("mcWeight");
@@ -114,6 +73,16 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   TLorentzVector vec2;
   TLorentzVector vec3;
 
+  TLorentzVector saveGenVec;
+  TLorentzVector saveDMVec;
+
+  Int_t nentries = inTreeFetch->GetEntriesFast();
+
+  std::vector<TLorentzVector*> leptonVecs;
+  std::vector<TLorentzVector*> photonVecs;
+
+  Float_t checkDR = 0.0;
+  
   for (Int_t iEntry = 0; iEntry < allTree->GetEntriesFast(); iEntry++) {
     mcWeightBranch->GetEntry(iEntry);
     if (mcWeight > 0)
@@ -124,11 +93,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
   outFile->WriteTObject(allHist,allHist->GetName());
 
-  Int_t nentries = inTreeFetch->GetEntriesFast();
-
-  std::vector<TLorentzVector*> leptonVecs;
-  std::vector<TLorentzVector*> photonVecs;
-  
   for (Int_t iEntry = 0; iEntry < nentries; iEntry++) {
     
     //// Clear out the saved vectors for cleaning ////
@@ -147,22 +111,23 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     outTree->lumiNum   = inTree->lumiNum;
     outTree->eventNum  = inTree->eventNum;
     outTree->npv       = inTree->npv;
+    outTree->npvTrue   = inTree->puTrueInt;
     outTree->rho       = inTree->rho;
 
-    if (outTree->npv < puMin)
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMin));
-    else if (outTree->npv > puMax)
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(puMax));
-    else
-      outTree->npvWeight = puWeightHist->GetBinContent(puWeightHist->FindBin(outTree->npv));
-
-    if (inTree->mcWeight < 0)
-      outTree->mcWeight = -1;
-    else
-      outTree->mcWeight = 1;
+    if (isSig)
+      outTree->mcWeight = inTree->mcWeight;
+    else {
+      if (inTree->mcWeight < 0)
+        outTree->mcWeight = -1;
+      else
+        outTree->mcWeight = 1;
+    }
 
     outTree->trueMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
     outTree->trueMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
+
+    outTree->rawMet    = ((TLorentzVector*)((*(inTree->metP4))[0]))->Pt();
+    outTree->rawMetPhi = ((TLorentzVector*)((*(inTree->metP4))[0]))->Phi();
 
     outTree->triggerFired = inTree->triggerFired;
     
@@ -236,72 +201,6 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       }
     }
     
-    //// Do the Scale Factor for one lepton, if there ////
-
-    if (outTree->n_looselep > 0) {
-      Double_t theEta = fabs(outTree->lep1Eta);
-      if (theEta > SFEtaMax)
-        theEta = SFEtaMax;
-      else if (theEta > SFEtaMin)
-        theEta = SFEtaMin;
-
-      Double_t thePt  = outTree->lep1Pt;
-      if (thePt > SFPtMax)
-        thePt = SFPtMax;
-      else if (thePt > SFPtMin)
-        thePt = SFPtMin;
-
-      if (abs(outTree->lep1PdgId) == 11) {
-        if (outTree->lep1IsTight)
-          outTree->leptonSF = elecSFTight->GetBinContent(elecSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep1IsMedium)
-          outTree->leptonSF = elecSFMedium->GetBinContent(elecSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = elecSFLoose->GetBinContent(elecSFLoose->FindBin(theEta,thePt));
-      }
-      else {
-        if (outTree->lep1IsTight)
-          outTree->leptonSF = muonSFTight->GetBinContent(muonSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep1IsMedium)
-          outTree->leptonSF = muonSFMedium->GetBinContent(muonSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
-      }
-    }
-
-    //// Do the Scale Factor for the second lepton, if there ////
-    
-    if (outTree->n_looselep > 1) {
-      Double_t theEta = fabs(outTree->lep2Eta);
-      if (theEta > SFEtaMax)
-        theEta = SFEtaMax;
-      else if (theEta > SFEtaMin)
-        theEta = SFEtaMin;
-
-      Double_t thePt  = outTree->lep2Pt;
-      if (thePt > SFPtMax)
-        thePt = SFPtMax;
-      else if (thePt > SFPtMin)
-        thePt = SFPtMin;
-
-      if (abs(outTree->lep2PdgId) == 11) {
-        if (outTree->lep2IsTight)
-          outTree->leptonSF = outTree->leptonSF * elecSFTight->GetBinContent(elecSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep2IsMedium)
-          outTree->leptonSF = outTree->leptonSF * elecSFMedium->GetBinContent(elecSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = outTree->leptonSF * elecSFLoose->GetBinContent(elecSFLoose->FindBin(theEta,thePt));
-      }
-      else {
-        if (outTree->lep2IsTight)
-          outTree->leptonSF = outTree->leptonSF * muonSFTight->GetBinContent(muonSFTight->FindBin(theEta,thePt));
-        else if (outTree->lep2IsMedium)
-          outTree->leptonSF = outTree->leptonSF * muonSFMedium->GetBinContent(muonSFMedium->FindBin(theEta,thePt));
-        else
-          outTree->leptonSF = outTree->leptonSF * muonSFLoose->GetBinContent(muonSFLoose->FindBin(theEta,thePt));
-      }
-    }
-
     //// If there are identified leptons, we will define our recoil using them ////
 
     if (outTree->n_looselep > 1) {
@@ -384,13 +283,19 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
     
     //// If we're in signal selection, fill MET, otherwise, fill recoil vars ////
 
-    if (outTree->met < 0) {
+    if (outTree->met < 100) {
       outTree->met    = outTree->trueMet;
       outTree->metPhi = outTree->trueMetPhi;
     }
     else {
       outTree->u_perp = uPerp(outTree->met,outTree->metPhi,outTree->boson_phi);
       outTree->u_para = uPara(outTree->met,outTree->metPhi,outTree->boson_phi);
+    }
+
+    // Place met cut here //
+    if (outTree->met < 150) {
+      outTree->Reset();
+      continue;
     }
 
     Double_t checkDPhi = 5.0;
@@ -408,41 +313,44 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       }
 
-      if (iJet < 5) {
-        checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
-        if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
-          outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
-
-        Bool_t match = false;
+      Bool_t match = false;
       
-        for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
-          if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
+          match = true;
+          break;
+        }
+      }
+      
+      if (match == false) {
+        for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+          if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
             match = true;
             break;
           }
         }
+      }
       
-        if (match == false) {
-          for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
-            if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
-              match = true;
-              break;
-            }
-          }
-        }
+      if (match == false && tempJet->Pt() > 30.0) {
+        outTree->n_jetsCleanWithEndcap++;
 
-        if (match == false) {
+        if (outTree->n_jetsCleanWithEndcap < 5) {
+
+          checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
+          if (checkDPhi < outTree->minJetTrueMetDPhi_withendcap)
+            outTree->minJetTrueMetDPhi_withendcap = checkDPhi;
+          
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (checkDPhi < outTree->minJetMetDPhi_withendcap)
             outTree->minJetMetDPhi_withendcap = checkDPhi;
         }
       }
 
-      if (iJet == 0 && fabs(tempJet->Eta()) > 2.5)
+      if (iJet == 0 && fabs(tempJet->Eta()) > 2.4)
         outTree->leadingJet_outaccp = 1;
 
       //// Ignore jets that are not in this region ////
-      if (fabs(tempJet->Eta()) > 2.5 || (*(inTree->jetPuId))[iJet] < -0.62 || tempJet->Pt() < 15.0)
+      if (fabs(tempJet->Eta()) > 2.4 || (*(inTree->jetPuId))[iJet] < -0.62 || tempJet->Pt() < 15.0)
         continue;
 
       //// Count jets for b-tagging ////
@@ -475,7 +383,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           // Check for delta phi from met for all jets
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->metPhi));
           if (checkDPhi < outTree->minJetMetDPhi)
-              outTree->minJetMetDPhi = checkDPhi;
+            outTree->minJetMetDPhi = checkDPhi;
 
           // Check for delta phi from true met for all jets
           checkDPhi = abs(deltaPhi(tempJet->Phi(),outTree->trueMetPhi));
@@ -494,7 +402,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
 
       //// Now do cleaning ////
       
-      Bool_t match = false;
+      match = false;
       
       for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
         if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempJet->Phi(),tempJet->Eta()) < dROverlap) {
@@ -517,6 +425,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         continue;
       
       outTree->n_cleanedjets++;
+      outTree->ht_cleanedjets += tempJet->Pt();
 
       if (outTree->n_cleanedjets < 5){
         // Check for delta phi from met for all jets:
@@ -539,6 +448,9 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           
           outTree->jet1DPhiMet     = abs(deltaPhi(outTree->jet1Phi,outTree->metPhi));
           outTree->jet1DPhiTrueMet = abs(deltaPhi(outTree->jet1Phi,outTree->trueMetPhi));
+
+          outTree->jet1QGL    = (*(inTree->jetQGL))[iJet];
+          outTree->jet1Flavor = (*(inTree->jetFlavour))[iJet];
       }
       
       else if (outTree->n_cleanedjets == 2) {
@@ -556,6 +468,8 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           outTree->jet2DPhiMet     = abs(deltaPhi(outTree->jet2Phi,outTree->metPhi));
           outTree->jet2DPhiTrueMet = abs(deltaPhi(outTree->jet2Phi,outTree->trueMetPhi));
           
+          outTree->jet2QGL = (*(inTree->jetQGL))[iJet];
+
           outTree->dPhi_j1j2 = abs(deltaPhi(outTree->jet1Phi,outTree->jet2Phi));
       }
     }
@@ -606,16 +520,39 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
       outTree->genMet = genMet->Pt();
       outTree->genMetPhi = genMet->Phi();
       
-      TLorentzVector saveGenVec;
-      
       saveGenVec.SetPtEtaPhiM(0,0,0,0);
+      saveDMVec.SetPtEtaPhiM(0,0,0,0);
+      Bool_t saveThisDM = false;
       
       Bool_t isFound = false;
       
       for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
         TLorentzVector* tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
         Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
-        
+      
+        if (checkPdgId == 25){
+          outTree->genDM_pt = tempGen->Pt();
+          outTree->genDM_eta = tempGen->Eta();
+          outTree->genDM_phi = tempGen->Phi();
+          outTree->genDM_mass = tempGen->M();
+          outTree->genDM_PdgId = checkPdgId;
+        }
+        else if (checkPdgId > 900000 && outTree->genDM_PdgId != 25) {
+          if (saveDMVec.Pt() > 1) {
+            if (saveThisDM)
+              std::cout << "Uh oh, found three DM particles... Fix slimmer." << std::endl;
+            saveThisDM = true;
+          }
+          saveDMVec = saveDMVec + *tempGen;
+          if (saveThisDM) {
+            outTree->genDM_pt = saveDMVec.Pt();
+            outTree->genDM_eta = saveDMVec.Eta();
+            outTree->genDM_phi = saveDMVec.Phi();
+            outTree->genDM_mass = saveDMVec.M();
+            outTree->genDM_PdgId = checkPdgId;
+          }
+        }
+  
         if ((checkPdgId != 11 && checkPdgId != 13 && checkPdgId != 22) && !(outTree->boson_pt < 0 && (checkPdgId == 23 || checkPdgId == 24)))
           continue;
         
@@ -649,8 +586,7 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
           if (outTree->photonPt > 0 && checkPdgId == 22) {
             // if (deltaR(tempGen->Phi(),tempGen->Eta(),outTree->photonPhi,outTree->photonEta) < dRGenMatch) {
             //// Look for highest pT for kfactor reasons ////
-            if (tempGen->Pt() > outTree->genBos_pt) {
-              outTree->genBos_pt = tempGen->Pt();
+            if (tempGen->Pt() > saveGenVec.Pt()) {
               saveGenVec = *tempGen;
               outTree->genBos_PdgId = 22;
             }        
@@ -658,73 +594,137 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
         }
         //// Look for Z to nunu here or perhaps a W with missed lepton ////
         else if (checkPdgId == 23 || checkPdgId == 24) {
-          if ((tempGen->Pt() > outTree->genBos_pt && !(checkPdgId == 24 && outTree->genBos_PdgId == 23)) || (abs(outTree->genBos_PdgId) == 24 && checkPdgId == 23)) {
+          if ((tempGen->Pt() > saveGenVec.Pt() && !(checkPdgId == 24 && outTree->genBos_PdgId == 23)) || (abs(outTree->genBos_PdgId) == 24 && checkPdgId == 23)) {
             saveGenVec = *tempGen;
             outTree->genBos_PdgId = abs((*(inTree->genPdgId))[iGen]);
           }
         }
       }
-      
-      if (outTree->genBos_PdgId != 0) {
-        outTree->genBos_pt  = saveGenVec.Pt();
-        outTree->genBos_phi = saveGenVec.Phi();
-        
-        outTree->u_perpGen = uPerp(outTree->met,outTree->metPhi,outTree->genBos_phi);
-        outTree->u_paraGen = uPara(outTree->met,outTree->metPhi,outTree->genBos_phi);
-      }
-      
-      
-      if (outTree->genBos_PdgId == 22 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->kfactor = kfactorHist->GetBinContent(kfactorHist->FindBin(outTree->genBos_pt));
-          outTree->ewk_a = ewk_a_Hist->GetBinContent(ewk_a_Hist->FindBin(outTree->genBos_pt));
-          
-      }
 
-      if (abs(outTree->genBos_PdgId) == 24 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->wkfactor = wkfactorHist->GetBinContent(wkfactorHist->FindBin(outTree->genBos_pt));      
-          outTree->ewk_w = ewk_w_Hist->GetBinContent(ewk_w_Hist->FindBin(outTree->genBos_pt));
-      }
-
-      if (outTree->genBos_PdgId == 23 && outTree->genBos_pt > minKPt && outTree->genBos_pt < maxKPt){
-          outTree->ewk_z = ewk_z_Hist->GetBinContent(ewk_z_Hist->FindBin(outTree->genBos_pt));
-      }
+      outTree->genBos_pt   = saveGenVec.Pt();
+      outTree->genBos_eta  = saveGenVec.Eta();
+      outTree->genBos_phi  = saveGenVec.Phi();
+      outTree->genBos_mass = saveGenVec.M();
     }
 
-    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetak8P4->GetEntries(); iFatJet++) {
-      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetak8P4->At(iFatJet);
+    for (Int_t iFatJet = 0; iFatJet < inTree->fatjetAK8CHSP4->GetEntries(); iFatJet++) {
+      TLorentzVector* tempFatJet = (TLorentzVector*) inTree->fatjetAK8CHSP4->At(iFatJet);
 
-      if (iFatJet == 0) {
+      Bool_t match = false;
+
+      for (UInt_t iLepton = 0; iLepton < leptonVecs.size(); iLepton++) {
+        if (deltaR(leptonVecs[iLepton]->Phi(),leptonVecs[iLepton]->Eta(),tempFatJet->Phi(),tempFatJet->Eta()) < 2.0 * dROverlap) {
+          match = true;
+          break;
+        }
+      }
+      
+      for (UInt_t iPhoton = 0; iPhoton < photonVecs.size(); iPhoton++) {
+        if (deltaR(photonVecs[iPhoton]->Phi(),photonVecs[iPhoton]->Eta(),tempFatJet->Phi(),tempFatJet->Eta()) < 2.0 * dROverlap) {
+          match = true;
+          break;
+        }
+      }
+
+      if (match)
+        continue;
+
+      if (outTree->fatjet1Pt < 0) {
         outTree->fatjet1Pt   = tempFatJet->Pt();
         outTree->fatjet1Eta  = tempFatJet->Eta();
         outTree->fatjet1Phi  = tempFatJet->Phi();
         outTree->fatjet1Mass = tempFatJet->M();
-        outTree->fatjet1TrimmedM  = (*(inTree->fatjetak8TrimmedMass))[iFatJet];
-        outTree->fatjet1PrunedM   = (*(inTree->fatjetak8PrunedMass))[iFatJet];
-        outTree->fatjet1FilteredM = (*(inTree->fatjetak8FilteredMass))[iFatJet];
-        outTree->fatjet1SoftDropM = (*(inTree->fatjetak8SoftdropMass))[iFatJet];
-        outTree->fatjet1tau1  = (*(inTree->fatjetak8Tau1))[iFatJet];
-        outTree->fatjet1tau2  = (*(inTree->fatjetak8Tau2))[iFatJet];
+        outTree->fatjet1TrimmedM  = (*(inTree->fatjetAK8CHSTrimmedMass))[iFatJet];
+        outTree->fatjet1PrunedM   = (*(inTree->fatjetAK8CHSPrunedMass))[iFatJet];
+        outTree->fatjet1FilteredM = (*(inTree->fatjetAK8CHSFilteredMass))[iFatJet];
+        outTree->fatjet1SoftDropM = (*(inTree->fatjetAK8CHSSoftdropMass))[iFatJet];
+        outTree->fatjet1tau1  = (*(inTree->fatjetAK8CHSTau1))[iFatJet];
+        outTree->fatjet1tau2  = (*(inTree->fatjetAK8CHSTau2))[iFatJet];
         outTree->fatjet1tau21 = outTree->fatjet1tau2/outTree->fatjet1tau1;
 
-        if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.5)
-          outTree->fatleading = 1;
-        else
-          outTree->fatleading = 0;
+        // outTree->fatjet1MonojetId = (*(inTree->fatjetAK8CHSMonojetid))[iFatJet];
 
-        outTree->fatjet1overlapB = 0;
+        if (deltaR(outTree->jet1Phi,outTree->jet1Eta,outTree->fatjet1Phi,outTree->fatjet1Eta) < 0.8)
+          outTree->fatjet1isLeading = 1;
+        else
+          outTree->fatjet1isLeading = 0;
+
+        outTree->fatjet1DPhiMet     = deltaPhi(outTree->metPhi,outTree->fatjet1Phi);
+        outTree->fatjet1DPhiTrueMet = deltaPhi(outTree->trueMetPhi,outTree->fatjet1Phi);
 
         for (Int_t iJet = 0; iJet < inTree->jetP4->GetEntries(); iJet++) {
           TLorentzVector* tempJet = (TLorentzVector*) inTree->jetP4->At(iJet);
-          if (deltaR(tempJet->Phi(),tempJet->Eta(),outTree->fatjet1Phi,outTree->fatjet1Eta) < 1.2) {
-            if ((*(inTree->jetBdiscr))[iJet] > bCutTight)
-              outTree->fatjet1overlapB = 3;
-            else if ((*(inTree->jetBdiscr))[iJet] > bCutMedium && outTree->fatjet1overlapB < 2)
-              outTree->fatjet1overlapB = 2;
-            else if ((*(inTree->jetBdiscr))[iJet] > bCutLoose && outTree->fatjet1overlapB < 1)
-              outTree->fatjet1overlapB = 1;
+          checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempJet->Phi(),tempJet->Eta());
+
+          // Check loose distance
+          if ((*(inTree->jetBdiscr))[iJet] > bCutLoose) {
+            if (checkDR < outTree->fatjet1DRLooseB)
+                outTree->fatjet1DRLooseB = checkDR;
+
+            // Check medium distance
+            if ((*(inTree->jetBdiscr))[iJet] > bCutMedium) {
+              if (checkDR < outTree->fatjet1DRMediumB)
+                outTree->fatjet1DRMediumB = checkDR;
+
+              // Check tight distance
+              if ((*(inTree->jetBdiscr))[iJet] > bCutTight) {
+                if (checkDR < outTree->fatjet1DRTightB)
+                  outTree->fatjet1DRTightB = checkDR;
+              }
+            }
+          }
+        }
+
+        if (inTree->metP4_GEN->GetEntries() > 0) {
+          for (Int_t iGen = 0; iGen < inTree->genP4->GetEntries(); iGen++) {
+            Int_t checkPdgId = abs((*(inTree->genPdgId))[iGen]);
+            if (checkPdgId != 23 && checkPdgId != 24)
+              continue;
+
+            TLorentzVector *tempGen = (TLorentzVector*) inTree->genP4->At(iGen);
+            checkDR = deltaR(outTree->fatjet1Phi,outTree->fatjet1Eta,tempGen->Phi(),tempGen->Eta());
+            if (checkDR < outTree->fatjet1DRGenW) {
+              outTree->fatjet1DRGenW   = checkDR;
+              outTree->fatjet1GenWPt   = tempGen->Pt();
+              outTree->fatjet1GenWMass = tempGen->M();
+            }
           }
         }
       }
+    }
+
+    if (inTree->metP4_GEN->GetEntries() > 0) {
+      // Loop through to find gen jet information matched to leading jets.
+      for (Int_t iGen = 0; iGen < inTree->genjetP4->GetEntries(); ++iGen) {
+        TLorentzVector *tempGenJet = (TLorentzVector*) inTree->genjetP4->At(iGen);
+        checkDR = deltaR(outTree->jet1Phi,outTree->jet1Eta,tempGenJet->Phi(),tempGenJet->Eta());
+        if (checkDR < outTree->genJetDRjet1) {
+          outTree->genJet_pt = tempGenJet->Pt();
+          outTree->genJet_eta = tempGenJet->Eta();
+          outTree->genJet_phi = tempGenJet->Phi();
+          outTree->genJet_mass = tempGenJet->M();
+          outTree->genJetDRjet1 = checkDR;
+        }
+      }
+    }
+
+    // Now do the VBF cut
+    if (outTree->n_jetsCleanWithEndcap > 1) {
+      TLorentzVector* tempJet1 = (TLorentzVector*) inTree->jetP4->At(0);
+      TLorentzVector* tempJet2 = (TLorentzVector*) inTree->jetP4->At(1);
+
+      outTree->jot1Pt = tempJet1->Pt();
+      outTree->jot1Eta = tempJet1->Eta();
+      outTree->jot1Phi = tempJet1->Phi();
+      outTree->jot1M = tempJet1->M();
+      outTree->jot2Pt = tempJet2->Pt();
+      outTree->jot2Eta = tempJet2->Eta();
+      outTree->jot2Phi = tempJet2->Phi();
+      outTree->jot2M = tempJet2->M();
+      outTree->mjj = vectorSumMass(tempJet1->Pt(), tempJet1->Eta(), tempJet1->Phi(), tempJet1->M(), tempJet2->Pt(), tempJet2->Eta(), tempJet2->Phi(), tempJet2->M());
+      outTree->jjDEta = fabs(tempJet1->Eta() - tempJet2->Eta());
+
+      outTree->IsVBF = tempJet1->Pt() > 80 && tempJet2->Pt() > 70 && vectorSumMass(tempJet1->Pt(), tempJet1->Eta(), tempJet1->Phi(), tempJet1->M(), tempJet2->Pt(), tempJet2->Eta(), tempJet2->Phi(), tempJet2->M()) > 1100 && fabs(tempJet1->Eta() - tempJet2->Eta()) > 3.6 && outTree->minJetMetDPhi_clean > 2.3;
     }
 
     outTree->Fill();
@@ -734,9 +734,4 @@ void NeroSlimmer(TString inFileName, TString outFileName) {
   outTree->WriteToFile(outFile);
   outFile->Close();
   inFile->Close();
-  
-  kfactorFile->Close();
-  puWeightFile->Close();
-  muonSFFile->Close();
-  elecSFFile->Close();
 }

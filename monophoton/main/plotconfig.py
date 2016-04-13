@@ -2,13 +2,11 @@ import sys
 import math
 import array
 
-needHelp = False
-for opt in ['-h', '--help']:
-    if opt in sys.argv:
-        needHelp = True
-        sys.argv.remove(opt)
-
+argv = list(sys.argv)
+sys.argv = []
 import ROOT
+black = ROOT.kBlack # need to load something from ROOT to actually import
+sys.argv = argv
 
 class GroupSpec(object):
     def __init__(self, name, title, samples = [], region = '', color = ROOT.kBlack):
@@ -147,6 +145,7 @@ class Variation(object):
     """
     Specifies alternative samples and cuts for systematic variation.
     Must specify either region or replacements or both as a two-component tuple corresponding to up and down variations.
+    Alternatively reweight can be specified as a string or a value. See comments below.
     """
 
     def __init__(self, name, region = None, replacements = None, reweight = None):
@@ -231,11 +230,11 @@ def getConfig(confName):
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
 
-            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
 
-            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
 
             group.variations.append(Variation('pdf', reweight = 'pdf'))
             
@@ -505,5 +504,3 @@ def getConfig(confName):
 
     return config
 
-if needHelp:
-    sys.argv.append('--help')

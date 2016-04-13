@@ -1,16 +1,17 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 import sys, os, string, re, time, datetime
 from multiprocessing import Process
 from array import *
 
 from config import *
 
-if ('signal' in channel_list) or ('Zmm' in channel_list) or ('Wmn' in channel_list):
-    from LoadData import *
+from LoadData import *
+if ('signal' in channel_list):
+    physics_processes['data']['files'] = [dataDir+"NotReallyThere.root"]
 elif ('gjets' in channel_list):
-    from LoadGJets import *
+    physics_processes['data']['files'] = [dataDir+"monojet_SinglePhoton.root"]
 elif ('Wen' in channel_list) or ('Zee' in channel_list):
-    from LoadElectron import *
+    physics_processes['data']['files'] = [dataDir+"monojet_SingleElectron.root"]
 
 from ROOT import *
 from math import *
@@ -18,8 +19,6 @@ from tdrStyle import *
 from selection import build_selection
 from datacard import dump_datacard
 from pretty import plot_ratio, plot_cms
-
-import numpy as n
 
 if not os.path.exists(folder):
     os.mkdir(folder)
@@ -45,7 +44,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     stack = THStack('a', 'a')
     if var is 'met':
         binLowE = [200,250,300,350,400,500,600,1000]
-        added = TH1D('added','added',7,array('d',binLowE))
+#        binLowE = [250,300,350,400,500,600,1000]
+        added = TH1D('added','added',len(binLowE)-1,array('d',binLowE))
     else:
         added = TH1D('added', 'added',bin,low,high)
     added.Sumw2()
@@ -79,7 +79,8 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         if var is 'met':
             #binLowE = [200,250,300,350,400,500,600,900,1500]
             binLowE = [200,250,300,350,400,500,600,1000]
-            Variables[Type] = TH1F(histName,histName,7,array('d',binLowE))
+#            binLowE = [250,300,350,400,500,600,1000]
+            Variables[Type] = TH1F(histName,histName,len(binLowE)-1,array('d',binLowE))
         else:
             Variables[Type] = TH1F(histName, histName, bin, low, high)
 
@@ -128,7 +129,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
         scale = float(lumi)*physics_processes[Type]['xsec']/total
         
         #print '\n'
-        print "type: ", Type,  "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
+#        print "type: ", Type,  "scale", scale, "lumi", lumi, physics_processes[Type]['xsec'], total
 
         if Type is not 'data' and Type is not 'signal_dm' and Type is not 'signal_dm_s' and Type is not 'signal_dm_ps' and Type is not 'signal_dm_v' and Type is not 'signal_dm_av_1_2':
             Variables[Type].SetFillColor(physics_processes[Type]['color'])
@@ -149,7 +150,7 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
                 if channel is 'signal' :
                     makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
                 else:                
-                    makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*leptonSF*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
+                    makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ")*mcWeight*"+str(wm_postfit)+"*"+str(wnlo012_over_wlo)+"*"+str(w_ewkcorr)+"*" +str(w)+"*"+str(w_trig),"goff")
             
             else:
                 makeTrees(Type,'events',channel).Draw(var + " >> " + histName,"(" + cut_standard + ") *mcWeight*" +str(w)+"*"+str(w_trig),"goff")
@@ -190,12 +191,14 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
             
     print 'INFO - Drawing the Legend', datetime.datetime.fromtimestamp( time.time())
 
-    if channel is 'Zmm' or channel is 'Zee':
-        legend = TLegend(.60,.65,.92,.92)
-    elif channel is 'gjets':
-        legend = TLegend(.60,.65,.82,.92)
-    else:
-        legend = TLegend(.60,.60,.92,.92)
+#    if channel is 'Zmm' or channel is 'Zee':
+#        legend = TLegend(.60,.65,.92,.92)
+#    elif channel is 'gjets':
+#        legend = TLegend(.60,.65,.82,.92)
+#    else:
+#        legend = TLegend(.60,.60,.92,.92)
+
+    legend = TLegend(.60,.70,.92,.92)
 
     lastAdded = ''
     for process in  ordered_physics_processes:
@@ -217,7 +220,10 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
 
     if setLog:
         c4.SetLogy()
-        stack.SetMaximum( stack.GetMaximum()  +  1e2*stack.GetMaximum() )
+        if var is 'fatjet1tau21' or var is 'fatjet1PrunedM':
+            stack.SetMaximum( stack.GetMaximum()  +  1e5*stack.GetMaximum() )
+        else:
+            stack.SetMaximum( stack.GetMaximum()  +  1e2*stack.GetMaximum() )
     else:
         stack.SetMaximum( stack.GetMaximum()  +  0.5*stack.GetMaximum() )
     
@@ -257,9 +263,10 @@ def plot_stack(channel, name,var, bin, low, high, ylabel, xlabel, setLog = False
     f1.SetLineWidth(2);
     f1.Draw("same")
 
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.pdf')
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.png')
-    c4.SaveAs(folder+'/Histo_' + name + '_'+channel+'.C')
+    outputName = folder+'/mj_Histo_' + name + '_'+channel
+    c4.SaveAs(outputName+'.pdf')
+    c4.SaveAs(outputName+'.png')
+    c4.SaveAs(outputName+'.C')
 
     del Variables
     del var
@@ -315,6 +322,11 @@ arguments['dilepEta'] = ['dilep_eta','dilep_eta',40,-3.0,3.0,'Events','#eta (ll)
 arguments['jet1Eta'] = ['jet1Eta','jet1Eta',40,-3.0,3.0,'Events','#eta (leading jet)',False]
 arguments['ht']          = ['ht','ht',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
 arguments['ht_cleaned']  = ['ht_cleaned','ht_cleaned',20,0,2000,'Events/GeV','H_{T} [GeV]',True]
+
+arguments['fatjet1Pt']    = ['fatjet1Pt','fatjet1Pt',20,100,1500,'Events/GeV','Fat Jet P_{T} [GeV]',True]
+arguments['fatjet1PrunedM'] = ['fatjet1PrunedM','fatjet1PrunedM',30,0,200,'Events/GeV','m_{pruned} [GeV]',True]
+arguments['fatjet1SoftDropM'] = ['fatjet1SoftDropM','fatjet1SoftDropM',30,0,200,'Events/GeV','m_{SB} [GeV]',True]
+arguments['fatjet1tau21'] = ['fatjet1tau21','fatjet1tau21',20,0.0,1.0,'Events/bin','#tau_{2}/#tau_{1}',True]
 
 start_time = time.time()
 

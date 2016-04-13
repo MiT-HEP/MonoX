@@ -18,8 +18,13 @@ for sname in snames:
     sample = allsamples[sname[:sname.rfind('_')]]
     ntotal += sample.nevents
 
-cutflow = [
-    ('HLTPhoton165HE10', 'MetFilters'),
+    data = sample.data
+
+cutflow = []
+if data:
+    cutflow.append(('HLTPhoton165HE10', 'MetFilters'))
+
+cutflow += [
     ('PhotonSelection',),
     ('HighMet',),
     ('PhotonMetDPhi',),

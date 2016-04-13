@@ -1,2 +1,1 @@
-MET+Run2015D-PromptReco-v3+AOD
-MET+Run2015D-PromptReco-v4+AOD
+MET
