@@ -981,8 +981,11 @@ class DataMCCanvas(RatioCanvas):
             # addHistogram calls _modified which clears temporaries - this line has to come after above
             self._temporaries += [borderHist, uncertHist]
 
-            hList = [0, iBorder, iUncert] + self._sigs + [self._obs]
-            rList = [iBorder, iUncert] + [self._obs]
+            hList = [0, iBorder, iUncert] + self._sigs
+            rList = [iBorder, iUncert]
+            if self._obs != -1:
+                hList.append(self._obs)
+                rList.append(self._obs)
 
             legendOrder = []
             if self._obs != -1:
