@@ -25,6 +25,12 @@ enum SkimType {
   nSkimTypes
 };
 
+TString skimTypes[nSkimTypes] = {
+  "[tag:e, probe:g]",
+  "[tag:m, probe:g]",
+  "[tag:mm, probe:g]"
+};
+
 enum Variable {
   kMass,
   kDRGen,
@@ -74,7 +80,9 @@ TemplateGenerator::setTemplateBinning(RooUniformBinning const* _binning, Variabl
 TH1D*
 TemplateGenerator::makeEmptyTemplate(char const* _name, Variable _var/*kMass*/)
 {
-  return new TH1D(_name, "", nBins_[_var], xmin_[_var], xmax_[_var]);
+  auto* temp = new TH1D(_name, "", nBins_[_var], xmin_[_var], xmax_[_var]);
+  temp->Sumw2();
+  return temp;
 }
 
 TH1D*
@@ -85,7 +93,7 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   tree.Draw(">>elist", _expr, "entrylistarray");
   auto* elist(static_cast<TEntryListArray*>(gDirectory->Get("elist")));
 
-  std::cout << "Tree " << _type << ": " << (elist ? elist->GetN() : 0) << " entries passing " << _expr << std::endl;
+  std::cout << "Tree " << skimTypes[_type] << ": making binned template from " << (elist ? elist->GetN() : 0) << " entries passing " << _expr << std::endl;
 
   if (!elist)
     return 0;
@@ -109,7 +117,6 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   };
 
   auto* tmp = makeEmptyTemplate(_name, _var);
-  tmp->Sumw2();
 
   tree.SetEntryList(elist);
 
@@ -151,7 +158,7 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
   tree.Draw(">>elist", _expr, "entrylistarray");
   auto* elist(static_cast<TEntryListArray*>(gDirectory->Get("elist")));
 
-  std::cout << "Tree " << _type << ": " << (elist ? elist->GetN() : 0) << " entries passing " << _expr << std::endl;
+  std::cout << "Tree " << skimTypes[_type] << ": making unbinned template from " << (elist ? elist->GetN() : 0) << " entries passing " << _expr << std::endl;
 
   if (!elist)
     return 0;
