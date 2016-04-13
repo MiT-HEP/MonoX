@@ -40,7 +40,7 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 ####### Get Data/MC Yields ################
 ###########################################
 
-fitMax = 170.
+fitMax = 120.
 
 regions = [
     ('Low', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)'),
@@ -66,7 +66,7 @@ bmets = []
 gmets = []
 mcmets = []
 
-lumi = allsamples['sph-d3'] + allsamples['sph-d4']
+lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
 canvas = DataMCCanvas(lumi = lumi)
 
 for region, sel in regions:
