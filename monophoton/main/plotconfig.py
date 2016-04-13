@@ -213,7 +213,7 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'dPhiJetMetMinHighMet', 'dPhiPhoMetHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
@@ -230,11 +230,11 @@ def getConfig(confName):
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
 
-            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
 
-            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
 
             group.variations.append(Variation('pdf', reweight = 'pdf'))
             
