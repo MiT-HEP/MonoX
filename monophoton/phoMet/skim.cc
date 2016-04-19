@@ -18,6 +18,9 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
 
+  simpletree::PhotonCollection outProbe("probe");
+  outProbe.init();
+
   double weight;
 
   float massTheo = 91.2;
@@ -28,10 +31,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   float tagEta;
   float tagPhi;
 
-  float probePtReco;
-  float probePtCorr;
-  float probeEta;
-  float probePhi;
+  float probePtCorr[1];
 
   unsigned short njets;
 
@@ -52,11 +52,10 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   output->Branch("tag.pt", &tagPt, "tag.pt/F");
   output->Branch("tag.eta", &tagEta, "tag.eta/F");
   output->Branch("tag.phi", &tagPhi, "tag.phi/F");
+
+  outProbe.book(*output);
   
-  output->Branch("probe.ptReco", &probePtReco, "probe.ptReco/F");
-  output->Branch("probe.ptCorr", &probePtCorr, "probe.ptCorr/F");
-  output->Branch("probe.eta", &probeEta, "probe.eta/F");
-  output->Branch("probe.phi", &probePhi, "probe.phi/F");
+  output->Branch("probe.ptCorr", probePtCorr, "probe.ptCorr[probe.size]/F");
 
   output->Branch("njets", &njets, "njets/s");
 
@@ -126,8 +125,10 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 	zReco = (ele.p4() + pho.p4());
 	massReco = zReco.M();
 
+	/*
 	if ( !(massReco > 61. && massReco < 121.))
 	  continue;
+	*/
 
 	// printf("On shell Z\n");
 
@@ -135,9 +136,8 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 	tagEta = ele.eta;
 	tagPhi = ele.phi;
 
-	probePtReco = pho.pt;
-	probeEta = pho.eta;
-	probePhi = pho.phi;
+	outProbe.resize(1);
+	outProbe[0] = pho;
 
 	eleE = ele.p4().E();
 	elePx = ele.p4().Px();
@@ -149,8 +149,8 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 	phoPy = pho.p4().Py() / phoE;
 	phoPz = pho.p4().Pz() / phoE;
 
-	probePtCorr = (massTheo*massTheo/2) / (eleE - elePx*phoPx - elePy*phoPy - elePz*phoPz) / cosh(pho.eta); 
-	probe.SetCoordinates(probePtCorr, pho.eta, pho.phi, 0.);	
+	probePtCorr[0] = (massTheo*massTheo/2) / (eleE - elePx*phoPx - elePy*phoPy - elePz*phoPz) / cosh(pho.eta); 
+	probe.SetCoordinates(probePtCorr[0], pho.eta, pho.phi, 0.);	
 
 	zCorr = (ele.p4() + probe);
 	massCorr = zCorr.M();
@@ -178,18 +178,11 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
       }
     }
 
-    /*
-    if (njets > 1)
-      continue;
-
-    // printf("Pass njets selection\n");
-    */
-
     if (recoil.Pt() < 170.)
       continue;
 
     // printf("Pass recoil selection\n");
-    
+
     if (std::abs(TVector2::Phi_mpi_pi(recoil.Phi() - zCorr.Phi())) < 2.5)
       continue;
 
@@ -199,20 +192,6 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
     recoilEta = recoil.Eta();
     recoilPhi = recoil.Phi();
     recoilMass = recoil.M();
-
-
-    /*
-    if (massCorr > 121.) {
-      printf("\nRun: %20i Lumi: %10i Event: %20i\n", event.run, event.lumi, event.event);
-      printf("%-15s E: %9.1f Px: %9.2f Py: %9.2f Pz: %9.2f\n", "Electron:", eleE, elePx, elePy, elePz);
-      printf("%-15s E: %9.1f Px: %9.2f Py: %9.2f Pz: %9.2f\n", "Photon:", phoE, phoPx, phoPy, phoPz);
-      printf("Reco Mass: %9.1f Corrected Mass: %9.1f\n", massReco, massCorr);
-      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Tag:", tagPt, tagEta, tagPhi);
-      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Reco Probe:", probePtReco, probeEta, probePhi);
-      printf("%-15s pT: %9.1f eta: %9.2f phi: %9.2f\n", "Corr Probe:", probePtCorr, probeEta, probePhi);
-    }
-    */
-
 
     weight = _sampleWeight * event.weight;
     if (_npvweight) {
