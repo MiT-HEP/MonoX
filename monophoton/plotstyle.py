@@ -208,10 +208,13 @@ class SimpleCanvas(object):
     YMIN = 0.12
     YMAX = 0.92
 
-    def __init__(self, name = 'cSimple', title = 'simple', lumi = -1., sim = False, cms = True):
+    def __init__(self, name = 'cSimple', title = 'simple', lumi = -1., sim = False, cms = True, xmax = None):
         self.canvas = ROOT.TCanvas(name, title, 600, 600)
         self.canvas.SetTopMargin(1. - SimpleCanvas.YMAX)
-        self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
+        if xmax is not None:
+            self.canvas.SetRightMargin(1. - xmax)
+        else:
+            self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
         self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
         self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
 
@@ -329,16 +332,19 @@ class SimpleCanvas(object):
             if hist.GetName() in self.legend.entries:
                 self.legend.apply(hist.GetName(), hist)
 
-    def Clear(self, full = False):
+    def Clear(self, full = False, xmax = None):
         name = self.canvas.GetName()
         title = self.canvas.GetTitle()
         ROOT.gROOT.GetListOfCanvases().Remove(self.canvas)
         self.canvas = None
         self.canvas = ROOT.TCanvas(name, title, 600, 600)
-        self.canvas.SetTopMargin(0.08)
-        self.canvas.SetRightMargin(0.05)
-        self.canvas.SetBottomMargin(0.12)
-        self.canvas.SetLeftMargin(0.15)
+        self.canvas.SetTopMargin(1. - SimpleCanvas.YMAX)
+        if xmax is not None:
+            self.canvas.SetRightMargin(1. - xmax)
+        else:
+            self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
+        self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
+        self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
 
         self.minimum = -1.
 
@@ -492,7 +498,6 @@ class SimpleCanvas(object):
 
         self.canvas.Print(targetDir + '/' + name + '.pdf', 'pdf')
         self.canvas.Print(targetDir + '/' + name + '.png', 'png')
-
 
 class RatioCanvas(SimpleCanvas):
 
