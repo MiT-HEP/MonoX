@@ -150,6 +150,8 @@ def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], r
     # quantity to be plotted
     if type(vardef.expr) is tuple:
         expr = ':'.join(vardef.expr)
+        print expr
+        print ' '
     else:
         expr = vardef.expr
 
@@ -198,11 +200,12 @@ def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], r
         hist.SetBinContent(iOverflow, cont + hist.GetBinContent(iOverflow + 1))
         hist.SetBinError(iOverflow, math.sqrt(err2 + math.pow(hist.GetBinError(iOverflow + 1), 2.)))
 
-    for iX in range(1, hist.GetNbinsX() + 1):
-        if hist.GetBinContent(iX) < 0.:
-            hist.SetBinContent(iX, 0.)
-        if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
-            hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
+    if vardef.ndim() == 1:
+        for iX in range(1, hist.GetNbinsX() + 1):
+            if hist.GetBinContent(iX) < 0.:
+                hist.SetBinContent(iX, 0.)
+            if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+                hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
 
     if plotAcceptance:
         hist.Scale(1. / sample.nevents)
