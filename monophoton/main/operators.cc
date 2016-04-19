@@ -505,6 +505,91 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 }
 
 //--------------------------------------------------------------------
+// EcalCrackVeto
+//--------------------------------------------------------------------
+
+void
+EcalCrackVeto::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("ecalCrackVeto", &ecalCrackVeto_, "ecalCrackVeto/O");
+}
+
+bool
+EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+
+    if (photon.pt < minPt_)
+      continue;
+
+    if (std::abs(photon.eta) > 1.4 && std::abs(photon.eta) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+  
+  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
+    auto& jet(_event.jets[iJ]);
+
+    if (jet.pt < minPt_)
+      continue;
+
+    if (std::abs(jet.eta) > 1.4 && std::abs(jet.eta) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+
+  ecalCrackVeto_ = true;
+  return true;
+}
+
+//--------------------------------------------------------------------
+// ExtraPhotons
+//--------------------------------------------------------------------
+
+void
+ExtraPhotons::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::ParticleCollection* cols[] = {
+    &_outEvent.photons,
+    &_outEvent.electrons,
+    &_outEvent.muons,
+    &_outEvent.taus
+    // &_outEvent.jets
+  };
+
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+
+    if (photon.isEB)
+      continue;
+    
+    if (photon.pt < minPt_)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(photon) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was a matching candidate
+        overlap = true;
+        break;
+      }
+    }
+    if (overlap)
+      continue;
+
+    _outEvent.photons.push_back(photon);
+  }
+}
+
+//--------------------------------------------------------------------
 // JetCleaning
 //--------------------------------------------------------------------
 
@@ -570,6 +655,9 @@ PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEve
   for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
     auto& photon(_outEvent.photons[iP]);
     
+    if ( !(photon.isEB) )
+      continue;
+
     minDPhi_[iP] = 4.;
     minDPhiJECUp_[iP] = 4.;
     minDPhiJECDown_[iP] = 4.;

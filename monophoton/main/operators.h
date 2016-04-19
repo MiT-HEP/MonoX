@@ -238,9 +238,34 @@ class HighPtJetSelection : public Cut {
   double min_{100.};
 };
 
+class EcalCrackVeto : public Cut {
+ public:
+  EcalCrackVeto(char const* name = "EcalCrackVeto") : Cut(name) {}
+  void addBranches(TTree& skimTree) override;
+  void setMinPt(double minPt) { minPt_ = minPt; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  
+  double minPt_{30.};
+  Bool_t ecalCrackVeto_{true};
+};
+
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
+
+class ExtraPhotons : public Modifier {
+ public:
+  ExtraPhotons(char const* name = "ExtraPhotons") : Modifier(name) {}
+  void setMinPt(double minPt) { minPt_ = minPt; }
+
+ protected:
+  double minPt_{30.};
+  
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+};
+
 
 class JetCleaning : public Modifier {
  public:

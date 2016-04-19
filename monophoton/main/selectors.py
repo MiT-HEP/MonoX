@@ -72,10 +72,12 @@ def monophotonBase(sample, name, selector = None):
 
     operators += [
         'MetFilters',
+        'EcalCrackVeto',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
+        # 'ExtraPhotons',
         'JetCleaning',
         'CopyMet'
     ]
@@ -105,6 +107,7 @@ def monophotonBase(sample, name, selector = None):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+    selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
