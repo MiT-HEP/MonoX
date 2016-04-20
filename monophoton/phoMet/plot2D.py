@@ -34,23 +34,29 @@ def ColorGrad():
 lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
 canvas =  SimpleCanvas(lumi = lumi, xmax = 0.90)
 
+samples = [ 'monoph', 'efake', 'hfake', 'halo', 'haloUp', 'haloDown']
+
+for sample in samples:
+    dataTree = ROOT.TChain('events')
+    dataTree.Add('/scratch5/ballen/hist/monophoton/skim/sph-d*_'+sample+'.root')
+
+    xString = "t1Met.photonDPhi"
+    yString = "( ( photons.e55[0] - photons.pt[0] ) / t1Met.met )"
+
+    dataHist = ROOT.TH2D(sample, "", 30, 0., math.pi, 14, -0.4, 2.4)
+    dataHist.GetXaxis().SetTitle('#Delta#phi(#gamma, E_{T}^{miss})')
+    dataHist.GetYaxis().SetTitle('(E_{55}^{#gamma} - E_{T}^{#gamma}) / E_{T}^{miss}')
+    dataHist.Sumw2()
+    dataTree.Draw(yString+":"+xString+">>"+sample, '(photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.)', 'goff')
+
+    ColorGrad()
+    canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
+    canvas.printWeb('monophoton/phoMet', 'DiffVsPhi'+'_'+sample, logy = False)
+
+    canvas.Clear(xmax = 0.90)
+
 dataTree = ROOT.TChain('events')
 dataTree.Add('/scratch5/ballen/hist/monophoton/skim/sph-d*_monoph.root')
-
-xString = "t1Met.photonDPhi"
-yString = "( ( photons.e55[0] - photons.pt[0] ) / t1Met.met )"
-
-dataHist = ROOT.TH2D("data", "", 30, 0., math.pi, 10, 0., 2.)
-dataHist.GetXaxis().SetTitle('#Delta#phi(#gamma, E_{T}^{miss})')
-dataHist.GetYaxis().SetTitle('(E_{55}^{#gamma} - E_{T}^{#gamma}) / E_{T}^{miss}')
-dataHist.Sumw2()
-dataTree.Draw(yString+":"+xString+">>data", 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.', 'goff')
-
-ColorGrad()
-canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
-canvas.printWeb('monophoton/phoMet', 'DiffVsPhi', logy = False)
-
-canvas.Clear(xmax = 0.90)
 
 xString = "photons.eta[0]"
 yString = "photons.phi[0]"
