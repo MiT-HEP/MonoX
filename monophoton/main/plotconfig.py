@@ -195,12 +195,14 @@ def getConfig(confName):
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 140.', overflow = True),
+            VariableDef('dPhiPhoMetLinear', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.', logy = False),
             VariableDef('dPhiPhoMetCrackVeto', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40. && !ecalCrackVeto', overflow = True),
             VariableDef('ecalCrackVeto', 'ECAL Crack Veto', "ecalCrackVeto", (2, -0.5, 1.5), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.'),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
+            VariableDef('dPhiJetMetMinLinear', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True, logy = False),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
@@ -216,11 +218,14 @@ def getConfig(confName):
 
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
-                config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                if variable.cut == '':
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                else:
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'dPhiJetMetMinHighMet', 'dPhiPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
@@ -291,7 +296,10 @@ def getConfig(confName):
 
         for variable in list(config.variables):
             if variable.name not in ['met', 'metWide']:
-                config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                if variable.cut == '':
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                else:
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
     
     elif confName == 'phodphi':
         metCut = 't1Met.met > 170.'
@@ -342,7 +350,10 @@ def getConfig(confName):
 
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
-                config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                if variable.cut == '':
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                else:
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
@@ -460,7 +471,10 @@ def getConfig(confName):
 
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
-                config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                if variable.cut == '':
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                else:
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
