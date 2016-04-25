@@ -13,8 +13,8 @@ import config
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
 
-skim = sys.argv[1]
-sname = sys.argv[2]
+skim = 'phi' # sys.argv[1]
+sname = sys.argv[1]
 
 samples = [allsamples[sname]] # for sname in snames ] 
 

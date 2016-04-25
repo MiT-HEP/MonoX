@@ -84,7 +84,7 @@ phi(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
 
     for (unsigned iTag(0); iTag != photons.size(); ++iTag) {
       auto& tag(photons[iTag]);
-      if ( !(tag.medium && tag.pt > 175. && tag.isEB && tag.pixelVeto))
+      if ( !(tag.medium && tag.pt > 175. && tag.isEB))
 	continue;
 
       // printf("Tag found\n");
