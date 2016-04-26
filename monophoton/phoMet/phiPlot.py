@@ -61,9 +61,10 @@ tagEtaCut = 'TMath::Abs(tag.eta) < 0.2'
 metCut = 't1Met.met > 100.'
 dPhiCut = 'TMath::Abs(TVector2::Phi_mpi_pi(tag.phi - probe.phi)) > 3.'
 unbalancedCut = 'TMath::Abs(probe.pt - tag.pt) > 150'
+probeLooseCut = 'probe.loose == 1'
+probeNhIsoCut = 'probe.nhIso < 1.06'
 
-
-cuts = [ dPhiCut ]
+cuts = [ dPhiCut, probeLooseCut ]
 
 variables = [ VariableDef('ptDiff', '|p_{T}^{tag} - p_{T}^{probe}|', 'TMath::Abs(probe.pt - tag.pt)', (20, 0., 500.), unit = 'GeV'),
               VariableDef('ptDiffOverMet', '|p_{T}^{tag} - p_{T}^{probe}| / E_T^{miss}', 'TMath::Abs(probe.pt - tag.pt) / t1Met.met', (50, 0., 5.), cut = metCut),
