@@ -70,11 +70,16 @@ selectors = {
     'gj-400': mc_gj,
     'gj-600': mc_gj,
     'ttg': mc_cand + mc_lep + mc_dilep,
+    'tt': mc_cand + mc_lep + mc_dilep,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu-100': mc_wlnu,
     'wlnu-200': mc_wlnu,
     'wlnu-400': mc_wlnu,
-    'wlnu-600': mc_wlnu
+    'wlnu-600': mc_wlnu,
+    'dy-50-100': mc_cand + mc_lep + mc_dilep,
+    'dy-50-200': mc_cand + mc_lep + mc_dilep,
+    'dy-50-400': mc_cand + mc_lep + mc_dilep,
+    'dy-50-600': mc_cand + mc_lep + mc_dilep
 }
 
 for sname in ['add-%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
