@@ -213,7 +213,7 @@ def getConfig(confName):
             VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2), logy = False),
             VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2), logy = False),
             VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020), logy = False),
-            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05), logy = False)
+            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05), logy = False),
             VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
             
         ]
