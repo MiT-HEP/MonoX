@@ -86,3 +86,20 @@ dataTree.Draw(yString+":"+xString+">>shower", 'photons.pt[0] > 175. && t1Met.min
 
 canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
 canvas.printWeb('monophoton/phoMet', 'EtaSieiePlane', logy = False)
+
+canvas.Clear(xmax = 0.90)
+
+dataTree = ROOT.TChain('events')
+dataTree.Add('/scratch5/ballen/hist/monophoton/skim/sph-d*_gjets.root')
+
+xString = "photons.chWorstIso[0]"
+yString = "photons.sieie[0]"
+
+dataHist = ROOT.TH2D("fakes", "", 20, 0., 10., 24, 0.000, 0.024)
+dataHist.GetXaxis().SetTitle('CH Worst Iso (GeV)')
+dataHist.GetYaxis().SetTitle('#sigma_{i#eta i#eta}')
+dataHist.Sumw2()
+dataTree.Draw(yString+":"+xString+">>fakes", 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170. && t1Met.photonDPhi < 0.5', 'goff')
+
+canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
+canvas.printWeb('monophoton/phoMet', 'IsoSieiePlane', logy = False)
