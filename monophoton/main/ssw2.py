@@ -33,7 +33,8 @@ defaults = {
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
-mc_cand = ['monoph'] 
+mc_cand = ['monoph']
+mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
 mc_sig = ['monoph', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
@@ -80,7 +81,12 @@ selectors = {
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
-    'dy-50-600': mc_cand + mc_lep + mc_dilep
+    'dy-50-600': mc_cand + mc_lep + mc_dilep,
+    'qcd-200': mc_cand + mc_qcd,
+    'qcd-300': mc_cand + mc_qcd,
+    'qcd-500': mc_cand + mc_qcd,
+    'qcd-700': mc_cand + mc_qcd,
+    'qcd-1000': mc_cand + mc_qcd
 }
 
 for sname in ['add-%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
