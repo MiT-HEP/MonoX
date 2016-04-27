@@ -21,6 +21,7 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
+    'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'diel': selectors.dielectron,
@@ -29,7 +30,7 @@ defaults = {
     'eefake': selectors.zee
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
@@ -47,12 +48,12 @@ haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4
 
 selectors = {
     # Data
-    'sph-d3': data_sph + [('halo', selectors.halo(haloNorms[0]))
-                          ,('haloUp', selectors.haloCSC(haloNorms[0]))
+    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
                           ,('haloDown', selectors.haloSieie(haloNorms[0]))
                           ],
-    'sph-d4': data_sph + [('halo', selectors.halo(haloNorms[1]))
-                          ,('haloUp', selectors.haloCSC(haloNorms[1]))
+    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
                           ,('haloDown', selectors.haloSieie(haloNorms[1]))
                           ],
     'smu-d3': data_smu,

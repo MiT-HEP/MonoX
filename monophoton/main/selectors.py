@@ -201,7 +201,8 @@ def purityBase(sample, name, selector = None):
     ]
 
     operators += [
-        'JetMetDPhi'
+        'JetMetDPhi',
+        'PhotonMetDPhi'
     ]
 
     for op in operators:
@@ -215,6 +216,7 @@ def purityBase(sample, name, selector = None):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
 
     return selector
 
@@ -393,6 +395,38 @@ def hadProxyDown(sample, name, selector = None):
 
     return selector
 
+def gjets(sample, name, selector = None):
+    """
+    Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
+    """
+    
+    selector = monophotonBase(sample, name, selector)
+
+    
+    selector.addOperator(ROOT.HighPtJetSelection())
+    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
+    
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('CHIso')
+    sels.remove('CHWorstIso')
+    sels.append('Sieie15')
+    sels.append('CHWorstIso11')
+    sels.append('CHIso11')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIso)
+    
+    return selector
+
 def gammaJets(sample, name, selector = None):
     """
     Candidate-like, but with inverted jet-met dPhi cut.
@@ -457,7 +491,7 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
     return normalized
 
 
-def halo(norm):
+def haloMIP(norm):
     """
     Wrapper to return the generator for the halo proxy sample normalized to norm.
     """
