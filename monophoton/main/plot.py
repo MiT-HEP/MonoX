@@ -508,4 +508,16 @@ if __name__ == '__main__':
         if plotDir and vardef.name != 'count':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
             canvas.ytitle = obshist.GetYaxis().GetTitle()
-            canvas.printWeb(plotDir, vardef.name, logy = vardef.logy, ymax = vardef.ymax)
+            if vardef.logy is None:
+                canvas.printWeb(plotDir, vardef.name, logy = True, ymax = vardef.ymax)                
+                
+
+                canvas.ylimits = (0., -1.)
+                canvas.minimum = -1.
+                vardef.ymax = -1.
+                canvas._needUpdate = True
+                canvas.Update(logy = False)
+                canvas.printWeb(plotDir, vardef.name+'Linear', logy = False, ymax = vardef.ymax)
+                
+            else:
+                canvas.printWeb(plotDir, vardef.name, logy = vardef.logy, ymax = vardef.ymax)
