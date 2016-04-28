@@ -181,8 +181,10 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('dytt', 'DY, tt', samples = ['tt', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x44, 0xCC)), 
-            # GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            GroupSpec('gjetsfake', '#gamma + jets (Data)', samples = ['sph-d3', 'sph-d4'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('qcdmc', 'QCD fakes (MC)', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('qcddata', 'QCD fakes (Data)', samples = ['sph-d3', 'sph-d4'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('gjetsfake', '#gamma + jets (Fakes)', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('halo', 'Beam halo', samples = ['sph-d3', 'sph-d4'], region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = ['sph-d3', 'sph-d4'], region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = ['sph-d3', 'sph-d4'], region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -190,31 +192,30 @@ def getConfig(confName):
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
-            # VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
-            # VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
-            # VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
-            # VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True, blind = (600., 2000.)),
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
+            VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True, blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
-            # VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
-            # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 60.', overflow = True),
-            # VariableDef('dPhiPhoMetLinear', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.', logy = False),
-            # VariableDef('dPhiPhoMetCrackVeto', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40. && !ecalCrackVeto', overflow = True),
-            # VariableDef('ecalCrackVeto', 'ECAL Crack Veto', "ecalCrackVeto", (2, -0.5, 1.5), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.'),
-            # VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            # VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
-            # VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
-            # VariableDef('dPhiJetMetMinLinear', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True, logy = False),
-            # VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
-            # VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
-            # VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
-            # VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            # VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
-            # VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
-            # VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
-            # VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
-            # VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
-            # VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
+            VariableDef('dPhiPhoMetCrackVeto', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40. && ecalCrackVeto', overflow = True),
+            VariableDef('ecalCrackVeto', 'ECAL Crack Veto', "ecalCrackVeto", (2, -0.5, 1.5), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.'),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 30.'),
+            VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 100.'),
+            VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
+            VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
+            VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
+            VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
+            VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
+            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
+            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
             
         ]
 
@@ -222,22 +223,22 @@ def getConfig(confName):
             if variable.name not in ['met', 'metWide', 'metHigh']:
                 if variable.cut == '':
                     config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
-                    if variable.name not in ['dPhiPhoMet']:
-                        config.variables.remove(variable)
+                    # if variable.name not in ['dPhiPhoMet', 'dPhiPhoMetMc', 'dPhiPhoMetFake']:
+                    config.variables.remove(variable)
                 else:
                     config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
-                    if variable.name not in ['dPhiPhoMet']:
-                        config.variables.remove(variable)
+                    # if variable.name not in ['dPhiPhoMet', 'dPhiPhoMetMc', 'dPhiPhoMetFake']:
+                    config.variables.remove(variable)
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
-            if group.name in ['efake', 'hfake', 'halo', 'gjetsfake']:
+            if group.name in ['efake', 'hfake', 'halo', 'qcdmc', 'qcddata', 'gjetsfake']:
                 continue
 
             ########################################################
@@ -296,7 +297,8 @@ def getConfig(confName):
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
-            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 30.'),
+            VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 100.'),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
         ]
 
@@ -328,30 +330,31 @@ def getConfig(confName):
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
-            # VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
-            # VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
-            # VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
-            # VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, [0. + 10. * x for x in range(21)], unit = 'GeV', overflow = True, blind = (600., 2000.)),
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
+            VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, [0. + 10. * x for x in range(21)], unit = 'GeV', overflow = True, blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
-            # VariableDef('phoEta', '#eta^{#gamma}', 'TMath::Abs(photons.eta[0])', (10, 0., 1.5)),
-            # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
-            # VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.', overflow = True),
-            # VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            # VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
-            # VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi < 2.', overflow = True),
-            # VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (30, 0., math.pi), overflow = True),
-            # VariableDef('dPhiJetPho', '#Delta#phi(j, #gamma)', 'jets.photonDPhi', (30, 0., math.pi), cut = 'jets.pt > 30.', overflow = True),
-            # VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
-            # VariableDef('jetEta', '#eta^{j}', 'jets.eta', (40, -5.0, 5.0), cut = 'jets.pt > 30.'),
-            # VariableDef('jetPhi', '#eta^{j}', 'jets.phi', (20, -math.pi, math.pi), cut = 'jets.pt > 30'),
-            # VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
-            # VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 4.)),
-            # VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            # VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
-            # VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
-            # VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
-            # VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
-            # VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
+            VariableDef('phoEta', '#eta^{#gamma}', 'TMath::Abs(photons.eta[0])', (10, 0., 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.', overflow = True),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi < 2.', overflow = True),
+            VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (30, 0., math.pi), overflow = True),
+            VariableDef('dPhiJetPho', '#Delta#phi(j, #gamma)', 'jets.photonDPhi', (30, 0., math.pi), cut = 'jets.pt > 30.', overflow = True),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 30.'),
+            VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 100.'),
+            VariableDef('jetEta', '#eta^{j}', 'jets.eta', (40, -5.0, 5.0), cut = 'jets.pt > 30.'),
+            VariableDef('jetPhi', '#eta^{j}', 'jets.phi', (20, -math.pi, math.pi), cut = 'jets.pt > 30'),
+            VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
+            VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 4.)),
+            VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
+            VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
+            VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
+            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
         ]
 
         for variable in list(config.variables): # need to clone the list first!

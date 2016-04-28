@@ -508,6 +508,21 @@ if __name__ == '__main__':
         if plotDir and vardef.name != 'count':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
             canvas.ytitle = obshist.GetYaxis().GetTitle()
+
+            cuts = ['1']
+            if vardef.applyBaseline and plotConfig.baseline:
+                cuts = [plotConfig.baseline]
+
+            if vardef.cut:
+                cuts.append(vardef.cut)
+
+            if prescale > 1 and vardef.blind is None:
+                cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
+
+            selection = '&&'.join(['(%s)' % c for c in cuts])
+
+            canvas.selection = selection
+
             if vardef.logy is None:
                 canvas.printWeb(plotDir, vardef.name, logy = True, ymax = vardef.ymax)                
                 
