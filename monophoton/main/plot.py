@@ -40,7 +40,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
             hname = ''
 
         # add up histograms from individual samples (saved to sampleDir)
-        shist = getHist(sname, region, vardef, plotConfig.baseline, hname = hname, postscale = postscale, outDir = sampleDir)
+        shist = getHist(sname, plotConfig, vardef, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
         hist.Add(shist)
         
     varhists = {}
@@ -62,7 +62,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
                 else:
                     hname = sname + '_' + varname
 
-                vhist.Add(getHist(sname, region, vardef, plotConfig.baseline, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir))
+                vhist.Add(getHist(sname, plotConfig, vardef, region = region, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir))
 
             varhists[variation.name] = (vhist,) # make it a tuple to align with rest
 
@@ -96,7 +96,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
                     else:
                         hname = sname + '_' + varname
     
-                    vhists[iV].Add(getHist(sname, vregion, vardef, plotConfig.baseline, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir))
+                    vhists[iV].Add(getHist(sname, plotConfig, vardef, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir))
 
             varhists[variation.name] = vhists
 
@@ -129,14 +129,17 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
     return hist
 
 
-def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
+def getHist(sname, plotConfig, vardef, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
     """
-    Create a histogram object for a given variable (vardef) from a given sample and region.
+    Create a histogram object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
     """
 
     if not hname:
         hname = sname
+
+    if not region:
+        region = plotConfig.name
 
     # open the source file
     sourceName = config.skimDir + '/' + sname + '_' + region + '.root'
@@ -154,17 +157,20 @@ def getHist(sname, region, vardef, baseline, hname = '', cutReplacements = [], r
         expr = vardef.expr
 
     # cuts and weights
-    cuts = ['1']
-    if vardef.applyBaseline and baseline:
-        cuts = [baseline]
+    cuts = []
+    if vardef.applyBaseline:
+        cuts.append(plotConfig.baseline)
 
     if vardef.cut:
         cuts.append(vardef.cut)
 
+    if vardef.applyFullSel:
+        cuts.append(plotConfig.fullSelection)
+
     if prescale > 1 and vardef.blind is None:
         cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
 
-    selection = '&&'.join(['(%s)' % c for c in cuts])
+    selection = '&&'.join(['(%s)' % c for c in cuts if c != ''])
 
     for repl in cutReplacements:
         # replace the variable names given in repl = ('original', 'new')
@@ -295,7 +301,7 @@ def printCounts(counters, plotConfig):
     bkgTotal = 0.
     bkgTotalErr2 = 0.
 
-    print 'Yields for ' + plotConfig.baseline + ' && ' + plotConfig.fullSelection
+    print 'Yields for ' + ' && '.join([plotConfig.baseline, plotConfig.fullSelection])
 
     for group in reversed(plotConfig.bkgGroups):
         counter = counters[group.name]
@@ -453,7 +459,7 @@ if __name__ == '__main__':
 
                 sigGroups.append(group.name)
 
-                hist = getHist(group.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = sampleDir)
+                hist = getHist(group.name, plotConfig, vardef, postscale = postscale, outDir = sampleDir)
 
                 hist.SetDirectory(outFile)
 
@@ -471,13 +477,13 @@ if __name__ == '__main__':
                     if not sample.signal or sample.name in sigGroups:
                         continue
 
-                    getHist(sample.name, plotConfig.name, vardef, plotConfig.baseline, postscale = postscale, outDir = outFile)
+                    getHist(sample.name, plotConfig, vardef, postscale = postscale, outDir = outFile)
                     
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 
         for sname in plotConfig.obs.samples:
-            obshist.Add(getHist(sname, plotConfig.name, vardef, plotConfig.baseline, prescale = prescale, outDir = sampleDir))
+            obshist.Add(getHist(sname, plotConfig, vardef, prescale = prescale, outDir = sampleDir))
 
         writeHist(obshist)
         formatHist(obshist, vardef)
@@ -492,7 +498,7 @@ if __name__ == '__main__':
 
         if vardef.name == 'count' or vardef.name == args.bbb:
             counters['data_obs'] = obshist
-        elif plotDir:
+        elif plotDir and not vardef.fullyBlinded():
             canvas.addObs(obshist, title = plotConfig.obs.title)
 
         if vardef.name == 'count':
@@ -505,4 +511,49 @@ if __name__ == '__main__':
         if plotDir and vardef.name != 'count':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
             canvas.ytitle = obshist.GetYaxis().GetTitle()
-            canvas.printWeb(plotDir, vardef.name, logy = vardef.logy, ymax = vardef.ymax)
+
+            canvas.Update(logy = vardef.logy, ymax = vardef.ymax)
+
+            if vardef.fullyBlinded():
+                # remove ratio pad
+                simple = SimpleCanvas(lumi = lumi)
+
+                garbage = []
+                cnv = ROOT.TCanvas('tmp', 'tmp', 600, 600)
+                cnv.cd()
+
+                plotPad = canvas.plotPad.DrawClone()
+                garbage.append(plotPad)
+                plotPad.SetTopMargin(simple.canvas.GetTopMargin())
+                plotPad.SetRightMargin(simple.canvas.GetRightMargin())
+                plotPad.SetBottomMargin(simple.canvas.GetBottomMargin())
+                plotPad.SetLeftMargin(simple.canvas.GetLeftMargin())
+
+                xaxis = canvas.xaxis.DrawClone()
+                garbage.append(xaxis)
+                xaxis.SetX1(simple.canvas.GetLeftMargin())
+                xaxis.SetX2(1. - simple.canvas.GetRightMargin())
+                xaxis.SetY1(simple.canvas.GetBottomMargin())
+                xaxis.SetY2(simple.canvas.GetBottomMargin())
+
+                yaxis = canvas.yaxis.DrawClone()
+                garbage.append(yaxis)
+                yaxis.SetX1(simple.canvas.GetLeftMargin())
+                yaxis.SetX2(simple.canvas.GetLeftMargin())
+                yaxis.SetY1(simple.canvas.GetBottomMargin())
+                yaxis.SetY2(1. - simple.canvas.GetTopMargin())
+
+                tmp = simple.canvas
+                simple.canvas = cnv
+                simple._needUpdate = False
+                simple.printWeb(plotDir, vardef.name)
+                simple.canvas = tmp
+
+                # cleanup the mess
+                for obj in garbage:
+                    obj.IsA().Destructor(obj)
+
+                cnv.IsA().Destructor(cnv)
+
+            else:
+                canvas.printWeb(plotDir, vardef.name)
