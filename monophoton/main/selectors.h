@@ -63,6 +63,14 @@ class WlnuSelector : public EventSelector {
   void selectEvent(simpletree::Event&) override;
 };
 
+class WenuSelector : public EventSelector {
+  // Special event selector that considers only electron decays of W
+ public:
+  WenuSelector(char const* name) : EventSelector(name) {}
+
+  void selectEvent(simpletree::Event&) override;
+};
+
 class NormalizingSelector : public EventSelector {
   // Special event selector that normalizes the output to a given total sumW at the end
  public:

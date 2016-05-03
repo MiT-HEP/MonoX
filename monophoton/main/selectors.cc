@@ -223,6 +223,25 @@ WlnuSelector::selectEvent(simpletree::Event& _event)
 }
 
 //--------------------------------------------------------------------
+// WenuSelector
+//--------------------------------------------------------------------
+
+void
+WenuSelector::selectEvent(simpletree::Event& _event)
+{
+  unsigned iP(0);
+  for (; iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
+    if (parton.status == 1 && std::abs(parton.pid) == 11)
+      break;
+  }
+  if (iP == _event.partons.size())
+    return;
+
+  EventSelector::selectEvent(_event);
+}
+
+//--------------------------------------------------------------------
 // NormalizingSelector
 //--------------------------------------------------------------------
 
