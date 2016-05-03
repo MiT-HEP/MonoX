@@ -72,7 +72,7 @@ for variable in args.variable:
         fastsim = getHist(fsProc)
 
         if not fullsim:
-            print "FullSim doesn't exit for", proc
+            print "FullSim doesn't exist for", proc
             print "Why are you asking for this sample?"
             continue
 

@@ -119,9 +119,13 @@ if 'dmewk' in opts.models:
     for sample in allsamples:
         if sample.signal and 'dmewk' in sample.name:
             modelList.append(sample.name)
+if 'zgr' in opts.models:
+    for sample in allsamples:
+        if sample.signal and 'zgr' in sample.name:
+            modelList.append(sample.name)
 
 for model in list(opts.models):
-    if model in ['add', 'dmv', 'dmvfs', 'dma', 'dmafs', 'dmewk']:
+    if model in ['add', 'dmv', 'dmvfs', 'dma', 'dmafs', 'dmewk', 'zgr']:
         continue
     try:
         if allsamples[model].signal:
@@ -152,6 +156,7 @@ for iM, model in enumerate(modelList):
 
     '''./datacard.py dma-500-1 limitsfile.root -o test.txt -O -v phoPtHighMet'''
     cardPath = os.path.join(cardDir, model+'_'+opts.variable+'.txt')
+    # print cardPath
     argList = ['./datacard.py', model, opts.rootFile, '-v', opts.variable, '-o', cardPath]
     if opts.shape:
         argList.append('-s')

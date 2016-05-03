@@ -78,10 +78,12 @@ def monophotonBase(sample, selector):
 
     operators += [
         'MetFilters',
+        'EcalCrackVeto',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
+        # 'ExtraPhotons',
         'JetCleaning',
         'CopyMet'
     ]
@@ -92,6 +94,7 @@ def monophotonBase(sample, selector):
     operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
+        'PhotonJetDPhi',
         'HighMet'
     ]
 
@@ -107,7 +110,7 @@ def monophotonBase(sample, selector):
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
         metVar.setJetCleaning(jetClean)
 
-        jetClean.setJetResolution(basedir + '/data/Summer15_25nsV6_MC_PtResolution_AK4PFchs.txt')
+#        jetClean.setJetResolution(basedir + '/data/Summer15_25nsV6_MC_PtResolution_AK4PFchs.txt')
 
         photonDPhi = selector.findOperator('PhotonMetDPhi')
         photonDPhi.setMetVariations(metVar)
@@ -116,11 +119,15 @@ def monophotonBase(sample, selector):
         jetDPhi.setMetVariations(metVar)
         jetDPhi.setJetCleaning(jetClean)
 
+        selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
+
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+    selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)

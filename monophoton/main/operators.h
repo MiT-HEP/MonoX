@@ -285,9 +285,34 @@ class HighPtJetSelection : public Cut {
   double min_{100.};
 };
 
+class EcalCrackVeto : public Cut {
+ public:
+  EcalCrackVeto(char const* name = "EcalCrackVeto") : Cut(name) {}
+  void addBranches(TTree& skimTree) override;
+  void setMinPt(double minPt) { minPt_ = minPt; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  
+  double minPt_{30.};
+  Bool_t ecalCrackVeto_{true};
+};
+
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
+
+class ExtraPhotons : public Modifier {
+ public:
+  ExtraPhotons(char const* name = "ExtraPhotons") : Modifier(name) {}
+  void setMinPt(double minPt) { minPt_ = minPt; }
+
+ protected:
+  double minPt_{30.};
+  
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+};
+
 
 class JetCleaning : public Modifier {
  public:
@@ -322,6 +347,22 @@ class JetCleaning : public Modifier {
 
   JER* jer_{0};
   TRandom3* rndm_{0};
+};
+
+class PhotonJetDPhi : public Modifier {
+ public:
+  PhotonJetDPhi(char const* name = "PhotonJetDPhi") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+
+  void setMetVariations(MetVariations* v) { metVar_ = v; }
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event&) override;
+
+  float dPhi_[simpletree::Particle::array_data::NMAX];
+  float minDPhi_[simpletree::Particle::array_data::NMAX];
+  float minDPhiJECUp_[simpletree::Particle::array_data::NMAX];
+  float minDPhiJECDown_[simpletree::Particle::array_data::NMAX];
+  MetVariations* metVar_{0};
 };
 
 class CopyMet : public Modifier {

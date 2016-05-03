@@ -1,6 +1,7 @@
 import sys
 import math
 import array
+from pprint import pprint
 
 argv = list(sys.argv)
 sys.argv = []
@@ -108,9 +109,12 @@ class VariableDef(object):
                     
                 args += [nbins, arr]
     
-            if ndim == 2:
+            if self.ndim() == 2:
+                pprint(args)
+                print " "
                 hist = ROOT.TH2D(self.name + '-' + hname, '', *tuple(args))
-            elif ndim == 3:
+                pprint(hist)
+            elif self.ndim() == 3:
                 # who would do this??
                 hist = ROOT.TH3D(self.name + '-' + hname, '', *tuple(args))
             else:
@@ -205,22 +209,27 @@ def getConfig(confName):
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True, blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
-            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), logy = False),
-            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), logy = False),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.photonDPhi', (20, -math.pi, math.pi), cut = 't1Met.met > 40.'),
-            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), logy = False),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 140.', overflow = True),
+            VariableDef('dPhiPhoMetLinear', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.', logy = False),
+            VariableDef('dPhiPhoMetCrackVeto', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40. && !ecalCrackVeto', overflow = True),
+            VariableDef('ecalCrackVeto', 'ECAL Crack Veto', "ecalCrackVeto", (2, -0.5, 1.5), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.'),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi)),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
+            VariableDef('dPhiJetMetMinLinear', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True, logy = False),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (16, 0.004, 0.012)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
             VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
-            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.004, .016)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
-            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.)),
+            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
+            
         ]
 
         for variable in list(config.variables): # need to clone the list first!
@@ -229,7 +238,7 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
@@ -238,15 +247,19 @@ def getConfig(confName):
             if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
                 continue
 
+            ########################################################
+            ### By hand reweights are still broken for plotting. ###
+            ########################################################
+
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
 
-            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
 
-            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
 
             group.variations.append(Variation('pdf', reweight = 'pdf'))
             
@@ -286,8 +299,8 @@ def getConfig(confName):
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi)),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi)),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
         ]
@@ -296,6 +309,105 @@ def getConfig(confName):
             if variable.name not in ['met', 'metWide']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
     
+    elif confName == 'phodphi':
+        metCut = 't1Met.met > 170.'
+        
+        config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
+        config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
+        config.fullSelection = metCut
+        config.sigGroups = [
+            # GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
+            # GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
+            # GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
+        ]
+        config.bkgGroups = [
+            GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('halo', 'Beam halo', samples = ['sph-d3', 'sph-d4'], region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = ['sph-d3', 'sph-d4'], region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = ['sph-d3', 'sph-d4'], region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
+            GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        ]
+        config.variables = [
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [130., 150., 170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
+            VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, [0. + 5. * x for x in range(41)], unit = 'GeV', overflow = True, blind = (600., 2000.)),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.', overflow = True),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi < 2.', overflow = True),
+            VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (30, 0., math.pi), overflow = True),
+            VariableDef('dPhiJetPho', '#Delta#phi(j, #gamma)', 'jets.photonDPhi', (30, 0., math.pi), cut = 'jets.pt > 30.', overflow = True),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
+            VariableDef('jetEta', '#eta^{j}', 'jets.eta', (40, -5.0, 5.0), cut = 'jets.pt > 30.'),
+            VariableDef('jetPhi', '#eta^{j}', 'jets.phi', (20, -math.pi, math.pi), cut = 'jets.pt > 30'),
+            VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
+            VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 4.)),
+            VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
+            VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
+            VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
+            VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
+        ]
+
+        for variable in list(config.variables): # need to clone the list first!
+            if variable.name not in ['met', 'metWide', 'metHigh']:
+                if variable.cut == '':
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
+                else:
+                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
+
+        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
+        
+        config.treeMaker = 'MonophotonTreeMaker'
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            if group.name == 'efake' or group.name == 'hfake' or group.name == 'halo':
+                continue
+
+            ########################################################
+            ### By hand reweights are still broken for plotting. ###
+            ########################################################
+
+            # group.variations.append(Variation('lumi', reweight = 0.027))
+
+            # group.variations.append(Variation('totalSF', reweight = 0.06))
+
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+
+            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+
+            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+
+            group.variations.append(Variation('pdf', reweight = 'pdf'))
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.pt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.pt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+        # Specific systematic variations
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.79))
+        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 'egfakerate'))
+        config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('zgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+
     elif confName == 'dimu':
         mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
         dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
@@ -404,9 +516,12 @@ def getConfig(confName):
         ]
 
     elif confName == 'nosel':
+        metCut = ''
+        
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
-        config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
-        config.fullSelection = 't1Met.met > 170.'
+        config.baseline = ''
+        config.fullSelection = metCut
+
         config.sigGroups = [
             GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
             GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
@@ -429,7 +544,7 @@ def getConfig(confName):
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.photonDPhi', (20, -math.pi, math.pi), cut = 't1Met.met > 40.'),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), cut = 't1Met.met > 40.'),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi)),
@@ -437,10 +552,10 @@ def getConfig(confName):
             VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
-            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (16, 0.004, 0.012)),
+            VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (50, 0.5, 1.)),
             VariableDef('s4', 's4', 'photons.s4[0]', (50, 0.5, 1.), logy = False),
-            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.004, .016)),
+            VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
             VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.)),
         ]

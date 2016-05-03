@@ -137,8 +137,8 @@ dmv-10000-50     "DMV"                               -1.223e-07x1.0e6     50000 
 dmv-10000-500    "DMV"                               -8.307e-08x1.0e6     50000      50000.0              filefi/043        DarkMatter_MonoPhoton_V_Mx-500_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM
 dmv-10000-1000   "DMV"                               -3.499e-08x1.0e6     50000      50000.0              filefi/043        DarkMatter_MonoPhoton_V_Mx-1000_Mv-10000_gDMgQ1_LO_13TeV-madgraph+RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1+AODSIM
 ### Zgamma Resonance MC
-zgr-750-0014     "Z#gamma Resonance"                 -1.000               10000      10000.0              filefi/private    MZPhotonW0p014
-zgr-750-5600     "Z#gamma Resonance"                 -1.000               8050       8050.0               filefi/private    MZPhotonW5p6
+zgr-750-0014     "Z#gamma Resonance"                 -6.084e-11x1.0e+07   10000      10000.0              filefi/private    MZPhotonW0p014
+zgr-750-5600     "Z#gamma Resonance"                 -2.506e-08x1.0e+04   8050       8050.0               filefi/private    MZPhotonW5p6
 ### FastSim DM MC
 dmafs-10-1       "DMAFS"                             -0.5202              40000      40000.0              fastsm/043           monophoton_med-10_dm-1_cv-0.0_ca-1.0 
 dmafs-10-10      "DMAFS"                             -0.02898             20000      20000.0              fastsm/043           monophoton_med-10_dm-10_cv-0.0_ca-1.0 

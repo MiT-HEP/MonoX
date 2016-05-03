@@ -562,6 +562,91 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 }
 
 //--------------------------------------------------------------------
+// EcalCrackVeto
+//--------------------------------------------------------------------
+
+void
+EcalCrackVeto::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("ecalCrackVeto", &ecalCrackVeto_, "ecalCrackVeto/O");
+}
+
+bool
+EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+
+    if (photon.pt < minPt_)
+      continue;
+
+    if (std::abs(photon.eta) > 1.4 && std::abs(photon.eta) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+  
+  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
+    auto& jet(_event.jets[iJ]);
+
+    if (jet.pt < minPt_)
+      continue;
+
+    if (std::abs(jet.eta) > 1.4 && std::abs(jet.eta) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+
+  ecalCrackVeto_ = true;
+  return true;
+}
+
+//--------------------------------------------------------------------
+// ExtraPhotons
+//--------------------------------------------------------------------
+
+void
+ExtraPhotons::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::ParticleCollection* cols[] = {
+    &_outEvent.photons,
+    &_outEvent.electrons,
+    &_outEvent.muons,
+    &_outEvent.taus
+    // &_outEvent.jets
+  };
+
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+
+    if (photon.isEB)
+      continue;
+    
+    if (photon.pt < minPt_)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(photon) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was a matching candidate
+        overlap = true;
+        break;
+      }
+    }
+    if (overlap)
+      continue;
+
+    _outEvent.photons.push_back(photon);
+  }
+}
+
+//--------------------------------------------------------------------
 // JetCleaning
 //--------------------------------------------------------------------
 
@@ -664,6 +749,68 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
       continue;
 
     _outEvent.jets.push_back(jet);
+  }
+}
+
+//--------------------------------------------------------------------
+// PhotonJetDPhi
+//--------------------------------------------------------------------
+
+void
+PhotonJetDPhi::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("photons.minJetDPhi", minDPhi_, "minJetDPhi[photons.size]/F");
+  _skimTree.Branch("photons.minJetDPhiJECUp", minDPhiJECUp_, "minJetDPhiJECUp[photons.size]/F");
+  _skimTree.Branch("photons.minJetDPhiJECDown", minDPhiJECDown_, "minJetDPhiJECDown[photons.size]/F");
+  _skimTree.Branch("jets.photonDPhi", dPhi_, "photonDPhi[jets.size]/F");
+}
+
+void
+PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  unsigned nJ(0);
+  unsigned nJCorrUp(0);
+  unsigned nJCorrDown(0);
+
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    auto& photon(_outEvent.photons[iP]);
+    
+    if ( !(photon.isEB) )
+      continue;
+
+    minDPhi_[iP] = 4.;
+    minDPhiJECUp_[iP] = 4.;
+    minDPhiJECDown_[iP] = 4.;
+    
+    for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+      auto& jet(_outEvent.jets[iJ]);
+
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - photon.phi)));
+
+      if (iP == 0)
+	dPhi_[iJ] = dPhi;
+      
+      if (jet.pt > 30. && nJ < 4) {
+	++nJ;
+	
+	if (dPhi < minDPhi_[iP])
+	  minDPhi_[iP] = dPhi;
+      }
+
+      if (metVar_) {
+	if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
+	  ++nJCorrUp;
+	  if (dPhi < minDPhiJECUp_[iP])
+	    minDPhiJECUp_[iP] = dPhi;
+	}
+
+	if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
+	  ++nJCorrDown;
+	  if (dPhi < minDPhiJECDown_[iP])
+	    minDPhiJECDown_[iP] = dPhi;
+	}
+      }
+    }
   }
 }
 
