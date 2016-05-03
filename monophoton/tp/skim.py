@@ -19,13 +19,14 @@ sys.argv = []
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
+# skim output directory
+outputDir = '/scratch5/yiiyama/studies/egfake_skim'
+
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
 ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
 lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi
-
-outputDir = '/scratch5/yiiyama/studies/egfake_new_skim'
 
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
@@ -75,7 +76,7 @@ for confName in skimConfig:
 
 suffix = {ROOT.kEG: 'eg', ROOT.kMG: 'mg', ROOT.kMMG: 'mmg'}
 
-npvSource = ROOT.TFile.Open('/scratch5/yiiyama/studies/monophoton/npv.root')
+npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
     print 'NPV reweight absent - run monophoton/ssw2.py'
     sys.exit(1)

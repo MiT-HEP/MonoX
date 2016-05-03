@@ -10,23 +10,27 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import skimDir, outputDir, roofitDictsDir, fitBins
+from tp.efake_conf import skimDir, outputDir, roofitDictsDir, getBinning
 
 # set to nonzero if you want to run toys in runMode single too
 nToys = 0
 
 dataType = sys.argv[1] # "data" or "mc"
+binningName = sys.argv[2] # see efake_conf
+
+fitBins = getBinning(binningName)[2]
 
 # switching runMode
 runMode = 'single'
+pdf = 'default'
 
-if len(sys.argv) == 6:
+if len(sys.argv) == 7:
     # batch toy generation
-    # args = <data/mc> <nToys> <ee/eg> <bin> <seed>
-    nToys = int(sys.argv[2])
-    conf = sys.argv[3]
-    binName = sys.argv[4]
-    seed = int(sys.argv[5])
+    # args = <data/mc> <binningName> <nToys> <ee/eg> <bin> <seed>
+    nToys = int(sys.argv[3])
+    conf = sys.argv[4]
+    binName = sys.argv[5]
+    seed = int(sys.argv[6])
 
     if conf not in ['ee', 'eg']:
         raise RuntimeError('Unknown conf ' + conf)
@@ -40,9 +44,12 @@ if len(sys.argv) == 6:
     runMode = 'batchtoy'
 
 else:
-    if len(sys.argv) > 2 and sys.argv[2] == 'combine':
-        # combine toy outputs
-        runMode = 'combine'
+    if len(sys.argv) > 3:
+        if sys.argv[3] == 'altsig':
+            pdf = 'altsig'
+        elif sys.argv[3] == 'altbkg':
+            # runMode single, bkgPdf alt
+            pdf = 'altbkg'
 
     seed = 12345
     confs = ['ee', 'eg']
@@ -59,33 +66,15 @@ ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
 if runMode == 'batchtoy':
-    outputName = outputDir + '/fityields_' + dataType + '_' + conf + '_' + binName + '_' + str(seed) + '.root'
+    outputName = outputDir + '/toys_' + dataType + '_' + conf + '_' + binName + '_' + str(seed) + '.root'
 else:
-    outputName = outputDir + '/fityields_' + dataType + '.root'
+    if pdf == 'default':
+        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '.root'
+    elif pdf == 'altbkg':
+        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altbkg.root'
+    elif pdf == 'altsig':
+        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altsig.root'
 
-if runMode == 'combine':
-    if os.path.exists(outputName):
-        # make a backup
-        shutil.copy(outputName, outputName.replace('.root', '_old.root'))
-
-    outputFile = ROOT.TFile.Open(outputName, 'update')
-    yields = outputFile.Get('yields')
-
-    for fname in os.listdir(outputDir):
-        if fname.startswith('fityields_' + dataType + '_'):
-            print fname
-            source = ROOT.TFile.Open(outputDir + '/' + fname)
-            tree = source.Get('yields')
-            yields.CopyAddresses(tree)
-            yields.CopyEntries(tree, -1)
-            source.Close()
-    
-    outputFile.cd()
-    yields.Write()
-
-    outputFile.Close()
-
-    sys.exit(0)
 
 fitBinning = ROOT.RooUniformBinning(60., 120., 60)
 compBinning = ROOT.RooUniformBinning(81., 101., 20)
@@ -110,40 +99,31 @@ vRaw = array.array('d', [0.])
 vParams = dict([(name, array.array('d', [0.])) for name in initVals])
 vNz = array.array('d', [0.])
 vToyNumber = array.array('i', [0])
+vSeed = array.array('i', [seed])
 
 if os.path.exists(outputName):
     # make a backup
     shutil.copy(outputName, outputName.replace('.root', '_old.root'))
 
-outputFile = ROOT.TFile.Open(outputName, 'update')
+outputFile = ROOT.TFile.Open(outputName, 'recreate')
 
-yields = outputFile.Get('yields')
-if yields:
-    yields.SetBranchAddress('tpconf', vTPconf)
-    yields.SetBranchAddress('binName', vBinName)
-    yields.SetBranchAddress('raw', vRaw)
-    yields.SetBranchAddress('nz', vNz)
-    yields.SetBranchAddress('toyNumber', vToyNumber)
-    for name, vParam in vParams.items():
-        yields.SetBranchAddress(name, vParam)
+yields = ROOT.TTree('yields', 'yields')
 
-else:
-    yields = ROOT.TTree('yields', 'yields')
-
-    yields.Branch('tpconf', vTPconf, 'tpconf/I')
-    yields.Branch('binName', vBinName, 'binName/C')
-    yields.Branch('raw', vRaw, 'raw/D')
-    yields.Branch('nz', vNz, 'nz/D')
-    yields.Branch('toyNumber', vToyNumber, 'toyNumber/I') # -1 for nominal fit
-    for name, vParam in vParams.items():
-        yields.Branch(name, vParam, name + '/D')
+yields.Branch('tpconf', vTPconf, 'tpconf/I')
+yields.Branch('binName', vBinName, 'binName/C')
+yields.Branch('raw', vRaw, 'raw/D')
+yields.Branch('nz', vNz, 'nz/D')
+yields.Branch('toyNumber', vToyNumber, 'toyNumber/I') # -1 for nominal fit
+yields.Branch('seed', vSeed, 'seed/I')
+for name, vParam in vParams.items():
+    yields.Branch(name, vParam, name + '/D')
 
 # template generator
 # mainly used in runMode single, but batchtoy mode also uses it to make empty histograms
 generator = ROOT.TemplateGenerator()
 
 if runMode == 'batchtoy':
-    source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '.root')
+    source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
 
     sourceYields = source.Get('yields')
     sourceYields.SetBranchAddress('tpconf', vTPconf)
@@ -179,7 +159,7 @@ elif runMode == 'single':
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
         # will need MC signal template
-        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc.root')
+        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
         mcWork = mcSource.Get('work')
 
     else:
@@ -267,15 +247,6 @@ for binName, fitCut in fitBins:
             # no smearing
             sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
 
-            # MC-truth background
-            hmcbkgName = 'mcbkg_' + binName
-
-            hmcbkg = generator.makeTemplate(ROOT.kEG, hmcbkgName, 'TMath::Abs(probes.matchedGen) != 11 && ({fitCut})'.format(fitCut = fitCut))
-            
-            hmcbkg.SetDirectory(outputFile)
-            outputFile.cd()
-            hmcbkg.Write()
-
         else:
             sigdata = mcWork.data(sigdataName)
             if not sigdata:
@@ -285,8 +256,11 @@ for binName, fitCut in fitBins:
             getattr(work, 'import')(sigdata, ROOT.RooFit.Rename(sigdataName))
 
             sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
-            res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-    #        res = work.factory('Gaussian::res(mass, m0, sigma)')
+            if pdf == 'altsig':
+                res = work.factory('Gaussian::res(mass, m0, sigma)')
+            else:
+                res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+
             sigModel = work.factory('FCONV::' + sigModelName + '(mass, sigCore_' + binName + ', res)')
 
     intComp = sigModel.createIntegral(massset, 'compWindow')
@@ -331,6 +305,7 @@ for binName, fitCut in fitBins:
                 cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
 
             if conf == 'ee' or conf == 'eg':
+                # USING BINNED FIT FOR ALL
                 htarg = generator.makeTemplate(ROOT.kEG, targName, cut)
                 htarg.SetDirectory(outputFile)
                 outputFile.cd()
@@ -362,26 +337,32 @@ for binName, fitCut in fitBins:
             getattr(work, 'import')(targ, ROOT.RooFit.Rename(targName))
 
             vRaw[0] = targ.sumEntries()
-        
-            tbkg = generator.makeUnbinnedTemplate(ROOT.kMG, 'bkgtree_' + binName, cut)
-    
-            # histogram for record purpose
-            bkgName = 'bkg_' + conf + '_' + binName
-            hbkg = generator.makeEmptyTemplate(bkgName)
-            tbkg.Draw('mass>>' + bkgName, 'weight', 'goff')
-            for iX in range(1, hbkg.GetNbinsX() + 1):
-                if hbkg.GetBinContent(iX) < 0.:
-                    hbkg.SetBinContent(iX, 0.)
-                    hbkg.SetBinError(iX, 0.)
-                elif hbkg.GetBinContent(iX) - hbkg.GetBinError(iX) < 0.:
-                    hbkg.SetBinError(iX, hbkg.GetBinContent(iX))
 
-            hbkg.SetDirectory(outputFile)
-            hbkg.Write()
-    
             bkgModelName = 'bkgModel_' + conf + '_' + binName
+
+            if pdf == 'altbkg':
+                slope = ROOT.RooRealVar('slope', 'slope', 0., -100., 100.)
+                bkgModel = ROOT.RooPolynomial(bkgModelName, 'bkgModel', mass, ROOT.RooArgList(slope))
+
+            else:
+                tbkg = generator.makeUnbinnedTemplate(ROOT.kMG, 'bkgtree_' + binName, cut)
+        
+                # histogram for record purpose
+                bkgName = 'bkg_' + conf + '_' + binName
+                hbkg = generator.makeEmptyTemplate(bkgName)
+                tbkg.Draw('mass>>' + bkgName, 'weight', 'goff')
+                for iX in range(1, hbkg.GetNbinsX() + 1):
+                    if hbkg.GetBinContent(iX) < 0.:
+                        hbkg.SetBinContent(iX, 0.)
+                        hbkg.SetBinError(iX, 0.)
+                    elif hbkg.GetBinContent(iX) - hbkg.GetBinError(iX) < 0.:
+                        hbkg.SetBinError(iX, hbkg.GetBinContent(iX))
     
-            bkgModel = ROOT.KeysShape(bkgModelName , 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
+                hbkg.SetDirectory(outputFile)
+                hbkg.Write()
+
+                bkgModel = ROOT.KeysShape(bkgModelName , 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
+
             getattr(work, 'import')(bkgModel, ROOT.RooFit.Silence())
    
             # full fit PDF
@@ -399,6 +380,16 @@ for binName, fitCut in fitBins:
         
             yields.Fill()
 
+            if dataType == 'mc':
+                # MC-truth background
+                hmcbkgName = 'mcbkg_' + conf + '_' + binName
+    
+                hmcbkg = generator.makeTemplate(ROOT.kEG, hmcbkgName, 'TMath::Abs(probes.matchedGen) != 11 && ({cut})'.format(cut = cut))
+                
+                hmcbkg.SetDirectory(outputFile)
+                outputFile.cd()
+                hmcbkg.Write()
+
             # plot fit
             frame = mass.frame(ROOT.RooFit.Range('fitWindow'), ROOT.RooFit.Bins(mass.getBins('fitWindow')))
             targHist.plotOn(frame)
@@ -412,7 +403,12 @@ for binName, fitCut in fitBins:
                 canvas.legend.apply('mcbkg', hmcbkg)
                 canvas.addHistogram(hmcbkg)
 
-            canvas.printWeb('efake', 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
+            if pdf == 'altbkg':
+                canvas.printWeb('efake', 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
+            elif pdf == 'altsig':
+                canvas.printWeb('efake', 'fit_' + dataType + '_sigbkg_' + conf + '_' + binName, logy = False)
+            else:
+                canvas.printWeb('efake', 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
 
         # run toys
         nNominal = vals['nsignal'] + vals['nbkg']
