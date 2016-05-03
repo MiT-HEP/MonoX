@@ -26,7 +26,8 @@ defaults = {
     'diel': selectors.dielectron,
     'monoel': selectors.monoelectron,
     'elmu': selectors.oppflavor,
-    'eefake': selectors.zee
+    'eefake': selectors.zee,
+    'wenu': selectors.wenuall
 }
 
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown']
@@ -40,7 +41,7 @@ mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
-mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand]
+mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
 
 sphLumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
 haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4'] ]
