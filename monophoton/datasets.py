@@ -1,6 +1,7 @@
 import re
 import os
 import math
+import ROOT
 
 class SampleDef(object):
     def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, comments = '', custom = {}):
@@ -70,7 +71,31 @@ class SampleDef(object):
         if self.comments != '':
             self.comments = "# "+self.comments
             
-        print '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
+        return '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % lineTuple
+    
+    def getWeights(self, sourceDir):
+        fullPath = sourceDir + '/' + self.book + '/' + self.directory
+        fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
+
+        if fNames == []:
+            return fullPath+' has no files'
+        
+        counter = None
+        for fName in fNames:
+            source = ROOT.TFile.Open(fullPath + '/' + fName)
+            if counter is None:
+                counter = source.Get('counter')
+                counter.SetDirectory(ROOT.gROOT)
+            else:
+                counter.Add(source.Get('counter'))
+            source.Close()
+
+        self.nevents = int(counter.GetBinContent(1))
+        if not self.data:
+            self.sumw = counter.GetBinContent(2)
+
+        return self.linedump()
 
 
 class SampleDefList(object):
@@ -172,7 +197,6 @@ if __name__ == '__main__':
     if args.recalculate:
         name = args.recalculate
 
-        import ROOT
         if args.sourceDir:
             sourceDir = args.sourceDir
         else:
@@ -181,24 +205,7 @@ if __name__ == '__main__':
 
         try:
             sample = allsamples[name]
-            fullPath = sourceDir + '/' + sample.book + '/' + sample.directory
-            fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
-
-            counter = None
-            for fName in fNames:
-                source = ROOT.TFile.Open(fullPath + '/' + fName)
-                if counter is None:
-                    counter = source.Get('counter')
-                    counter.SetDirectory(ROOT.gROOT)
-                else:
-                    counter.Add(source.Get('counter'))
-                source.Close()
-
-            sample.nevents = int(counter.GetBinContent(1))
-            if not sample.data:
-                sample.sumw = counter.GetBinContent(2)
-
-            sample.linedump()
+            print sample.getWeights(sourceDir)
     
         except:
             sys.stderr.write(name + '  NAN\n')
