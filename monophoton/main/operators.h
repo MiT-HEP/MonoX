@@ -5,9 +5,42 @@
 
 #include "TH1.h"
 #include "TH2.h"
+#include "TRandom3.h"
+
+#include "jer.h"
 
 #include <bitset>
 #include <map>
+
+//--------------------------------------------------------------------
+// Operator catalog
+// * = has addBranches
+// Operator
+//   Cut
+//     HLTPhoton165HE10
+//     HLTEle27eta2p1WPLooseGs
+//     HLTIsoMu27
+//     MetFilters
+//     PhotonSelection *
+//     ElectronVeto
+//     MuonVeto
+//     TauVeto
+//     PhotonMetDPhi *
+//     JetMetDPhi *
+//     LeptonSelection
+//     HighMet
+//     HighPtJetSelection
+//   Modifier
+//     JetCleaning *
+//     CopyMet
+//     LeptonRecoil *
+//     MetVariations *
+//     ConstantWeight *
+//     PhotonPtWeight *
+//     IDSFWeight *
+//     NPVWeight
+//     NNPDFVariation *
+//--------------------------------------------------------------------
 
 //--------------------------------------------------------------------
 // Base classes
@@ -167,6 +200,7 @@ class TauVeto : public Cut {
 };
 
 class MetVariations; // defined below
+class JetCleaning; // defined below
 
 class PhotonMetDPhi : public Cut {
  public:
@@ -182,6 +216,11 @@ class PhotonMetDPhi : public Cut {
   float dPhiJECDown_{0.};
   float dPhiGECUp_{0.};
   float dPhiGECDown_{0.};
+  float dPhiUnclUp_{0.};
+  float dPhiUnclDown_{0.};
+  float dPhiJER_{0.};
+  float dPhiJERUp_{0.};
+  float dPhiJERDown_{0.};
   MetVariations* metVar_{0};
 };
 
@@ -192,6 +231,8 @@ class JetMetDPhi : public Cut {
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
+  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
+
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
@@ -200,8 +241,14 @@ class JetMetDPhi : public Cut {
   float dPhiJECDown_{0.};
   float dPhiGECUp_{0.};
   float dPhiGECDown_{0.};
+  float dPhiUnclUp_{0.};
+  float dPhiUnclDown_{0.};
+  float dPhiJER_{0.};
+  float dPhiJERUp_{0.};
+  float dPhiJERDown_{0.};
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
+  JetCleaning* jetCleaning_{0};
 };
 
 class LeptonSelection : public Cut {
@@ -252,14 +299,29 @@ class JetCleaning : public Modifier {
     nCollections
   };
 
-  JetCleaning(char const* name = "JetCleaning") : Modifier(name) { cleanAgainst_.set(); }
+  JetCleaning(char const* name = "JetCleaning");
+  ~JetCleaning() { delete jer_; delete rndm_; }
+  void addBranches(TTree& skimTree) override;
 
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
+  void setJetResolution(char const* sourcePath);
+
+  double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; }
+  double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; }
+  double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; }
   
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
-
+  
   std::bitset<nCollections> cleanAgainst_{};
+
+  // will copy jer branches
+  float ptScaled_[simpletree::Particle::array_data::NMAX];
+  float ptScaledUp_[simpletree::Particle::array_data::NMAX];
+  float ptScaledDown_[simpletree::Particle::array_data::NMAX];
+
+  JER* jer_{0};
+  TRandom3* rndm_{0};
 };
 
 class CopyMet : public Modifier {
@@ -295,18 +357,28 @@ class MetVariations : public Modifier {
   void addBranches(TTree& skimTree) override;
 
   void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
+  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
   TVector2 gecUp() const { TVector2 v; v.SetMagPhi(metGECUp_, phiGECUp_); return v; }
   TVector2 gecDown() const { TVector2 v; v.SetMagPhi(metGECDown_, phiGECDown_); return v; }
+  TVector2 jer() const { TVector2 v; v.SetMagPhi(metJER_, phiJER_); return v; }
+  TVector2 jerUp() const { TVector2 v; v.SetMagPhi(metJERUp_, phiJERUp_); return v; }
+  TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; }
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
   
   PhotonSelection* photonSel_{0};
+  JetCleaning* jetCleaning_{0};
   float metGECUp_{0.};
   float phiGECUp_{0.};
   float metGECDown_{0.};
   float phiGECDown_{0.};
-  // add other met variation sources
+  float metJER_{0.};
+  float phiJER_{0.};
+  float metJERUp_{0.};
+  float phiJERUp_{0.};
+  float metJERDown_{0.};
+  float phiJERDown_{0.};
 };
 
 class ConstantWeight : public Modifier {
