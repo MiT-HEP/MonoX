@@ -86,3 +86,6 @@ for spin in ["dmafs", "dmvfs"]:
                 
             if float(sample.nevents) == 0.:
                 print "\tnevents == 0"
+
+print sorted(meds)
+print sorted(dms)

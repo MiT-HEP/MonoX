@@ -324,7 +324,6 @@ dmafs-10000-10   "DMAFS"                             -1.217e-07x1.0e+06   40000 
 dmafs-10000-150  "DMAFS"                             -1.076e-07x1.0e+06   30000      30000.0              fastsm/043           monophoton_med-10000_dm-150_cv-0.0_ca-1.0 
 dmafs-10000-500  "DMAFS"                             -5.267e-08x1.0e+06   40000      40000.0              fastsm/043           monophoton_med-10000_dm-500_cv-0.0_ca-1.0 
 dmafs-10000-1000 "DMAFS"                             -1.572e-08x1.0e+06   50000      50000.0              fastsm/043           monophoton_med-10000_dm-1000_cv-0.0_ca-1.0 
-
 ### Vector fastsim
 dmvfs-10-1       "DMVFS"                             -0.5091              20000      20000.0              fastsm/043           monophoton_med-10_dm-1_cv-1.0_ca-0.0 
 dmvfs-10-5       "DMVFS"                             -0.1958              40000      40000.0              fastsm/043           monophoton_med-10_dm-5_cv-1.0_ca-0.0 
