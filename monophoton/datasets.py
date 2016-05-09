@@ -97,7 +97,7 @@ class SampleDefList(object):
             for line in dsSource:
                 line = line.strip()
                 
-                if line.startswith('#'):
+                if not line or line.startswith('#'):
                     continue
         
                 matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.x+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
