@@ -1,5 +1,6 @@
 import sys
 import array
+import copy
 
 argv = list(sys.argv)
 sys.argv = []
@@ -19,7 +20,7 @@ class GroupSpec(object):
 
 
 class VariableDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = True, ymax = -1.):
+    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1.):
         self.name = name
         self.title = title
         self.unit = unit
@@ -36,7 +37,7 @@ class VariableDef(object):
     def clone(self, name, **keywords):
         for vname in ['title', 'unit', 'expr', 'cut', 'applyBaseline', 'applyFullSel', 'binning', 'blind', 'overflow', 'logy', 'ymax']:
             if vname not in keywords:
-                keywords[vname] = getattr(self, vname)
+                keywords[vname] = copy.copy(getattr(self, vname))
 
         vardef = VariableDef(name, **keywords)
 
@@ -128,6 +129,41 @@ class VariableDef(object):
         hist.Sumw2()
         return hist
 
+    def formSelection(self, plotConfig, prescale = 1, replacements = []):
+        cuts = []
+        if self.applyBaseline:
+            cuts.append(plotConfig.baseline)
+    
+        if self.cut:
+            cuts.append(self.cut)
+    
+        if self.applyFullSel:
+            cuts.append(plotConfig.fullSelection)
+    
+        if prescale > 1 and self.blind is None:
+            cuts.append('event % {prescale} == 0'.format(prescale = prescale))
+
+        selection = ' && '.join(['(%s)' % c for c in cuts if c != ''])
+
+        for repl in replacements:
+            # replace the variable names given in repl = ('original', 'new')
+            # enclose the original variable name with characters that would not be a part of the variable
+            selection = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', selection)
+    
+        return selection
+
+    def formExpression(self, replacements = []):
+        if type(self.expr) is tuple:
+            expr = ':'.join(self.expr)
+        else:
+            expr = vardef.expr
+
+        for repl in replacements:
+            # replace the variable names given in repl = ('original', 'new')
+            # enclose the original variable name with characters that would not be a part of the variable
+            expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
+
+        return expr
 
 class PlotConfig(object):
     def __init__(self, name, obsSamples):

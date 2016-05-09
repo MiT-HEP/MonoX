@@ -70,7 +70,31 @@ class SampleDef(object):
         if self.comments != '':
             self.comments = "# "+self.comments
             
-        print '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
+        return '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % lineTuple
+    
+    def getWeights(self, sourceDir):
+        fullPath = sourceDir + '/' + self.book + '/' + self.directory
+        fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
+
+        if fNames == []:
+            return fullPath+' has no files'
+        
+        counter = None
+        for fName in fNames:
+            source = ROOT.TFile.Open(fullPath + '/' + fName)
+            if counter is None:
+                counter = source.Get('counter')
+                counter.SetDirectory(ROOT.gROOT)
+            else:
+                counter.Add(source.Get('counter'))
+            source.Close()
+
+        self.nevents = int(counter.GetBinContent(1))
+        if not self.data:
+            self.sumw = counter.GetBinContent(2)
+
+        return self.linedump()
 
 
 class SampleDefList(object):
@@ -183,25 +207,8 @@ if __name__ == '__main__':
         for name in args.recalculate:
             try:
                 sample = samples[name]
-                fullPath = sourceDir + '/' + sample.book + '/' + sample.directory
-                fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
-    
-                counter = None
-                for fName in fNames:
-                    source = ROOT.TFile.Open(fullPath + '/' + fName)
-                    if counter is None:
-                        counter = source.Get('counter')
-                        counter.SetDirectory(ROOT.gROOT)
-                    else:
-                        counter.Add(source.Get('counter'))
-                    source.Close()
-    
-                sample.nevents = int(counter.GetBinContent(1))
-                if not sample.data:
-                    sample.sumw = counter.GetBinContent(2)
-    
-                sample.linedump()
-        
+                print sample.getWeights(sourceDir)
+
             except:
                 sys.stderr.write(name + '  NAN\n')
 

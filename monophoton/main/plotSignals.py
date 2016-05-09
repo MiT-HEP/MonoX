@@ -49,15 +49,22 @@ for sample in allsamples:
         continue
     if not 'dm' in sample.name:
         continue
-    if 'fs' in sample.name:
+    skips = [ 'fs', '10000', 'dma-200-50' ]
+    skipp = False
+    for skip in skips:
+        if skip in sample.name:
+            skipp = True
+            break
+    if skipp:
         continue
+
     processes.append(sample.name)
 
 rcanvas = RatioCanvas(lumi = lumi)
 
 for variable in args.variable:
     xtitle = monophConfig.getVariable(variable).title
-    plotDir = 'monophoton/fsValidation/noSel/' + variable
+    plotDir = 'monophoton/fsValidation/' + args.input.rstrip('.root') + '/' + variable
     for proc in processes:
         rcanvas.Clear()
         rcanvas.legend.Clear()
@@ -66,25 +73,34 @@ for variable in args.variable:
         rcanvas.ytitle = 'Events / Unit'
         
         fullsim = getHist(proc)
-        (model, med, dm) = proc.split('-')
-        fsProc = model+'fs-'+med+'-'+dm
-        # print proc, fsProc
-        fastsim = getHist(fsProc)
-
+        
         if not fullsim:
             print "FullSim doesn't exist for", proc
             print "Why are you asking for this sample?"
             continue
 
+        if not fullsim.Integral() > 0.:
+            print "FullSim integral is 0 for "+proc+". Skipping."
+            continue
+
+        (model, med, dm) = proc.split('-')
+        fsProc = model+'fs-'+med+'-'+dm
+        # print proc, fsProc
+        fastsim = getHist(fsProc)
+
         if not fastsim:
             print "FastSim doesn't exist for", fsProc
             continue
 
-        rcanvas.legend.add('fullsim', title = 'FullSim', lcolor = r.kBlack, lwidth = 2)
+        if not fastsim.Integral() > 0.:
+            print "FastSim integral is 0 for "+fsProc+". Skipping."
+            continue
+
+        rcanvas.legend.add('fullsim', title = 'FullSim', mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
         rcanvas.legend.apply('fullsim', fullsim)
         fullId = rcanvas.addHistogram(fullsim, drawOpt = 'L')
 
-        rcanvas.legend.add('fastsim', title = 'FastSim', lcolor = r.kRed, lwidth = 2)
+        rcanvas.legend.add('fastsim', title = 'FastSim', mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
         rcanvas.legend.apply('fastsim', fastsim)
         fastId = rcanvas.addHistogram(fastsim, drawOpt = 'L')
 

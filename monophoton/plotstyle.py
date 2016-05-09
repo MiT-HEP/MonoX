@@ -237,6 +237,8 @@ class SimpleCanvas(object):
         self.textside = 'left'
         self.lumi = lumi
 
+        self.selection = None
+
         self.titlePave = makeText(SimpleCanvas.XMIN, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1.)
 
         if cms:
@@ -511,6 +513,11 @@ class SimpleCanvas(object):
 
         self.canvas.Print(targetDir + '/' + name + '.pdf', 'pdf')
         self.canvas.Print(targetDir + '/' + name + '.png', 'png')
+
+        if self.selection is not None:
+            selFile = open(targetDir + '/' + name + '.txt', 'w')
+            selFile.write(self.selection)
+            selFile.close()
 
 class RatioCanvas(SimpleCanvas):
 

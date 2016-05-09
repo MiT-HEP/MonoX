@@ -152,34 +152,10 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
         return vardef.makeHist(hname)
 
     # quantity to be plotted
-    if type(vardef.expr) is tuple:
-        expr = ':'.join(vardef.expr)
-        print expr
-        print ' '
-    else:
-        expr = vardef.expr
+    expr = vardef.formExpression(replacements = cutReplacements)
 
     # cuts and weights
-    cuts = []
-    if vardef.applyBaseline:
-        cuts.append(plotConfig.baseline)
-
-    if vardef.cut:
-        cuts.append(vardef.cut)
-
-    if vardef.applyFullSel:
-        cuts.append(plotConfig.fullSelection)
-
-    if prescale > 1 and vardef.blind is None:
-        cuts.append('event % {prescale} == 0'.format(prescale = prescale))
-
-    selection = '&&'.join(['(%s)' % c for c in cuts if c != ''])
-
-    for repl in cutReplacements:
-        # replace the variable names given in repl = ('original', 'new')
-        # enclose the original variable name with characters that would not be a part of the variable
-        selection = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', selection)
-        expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
+    selection = vardef.formSelection(plotConfig, prescale = prescale, replacements = cutReplacements)
 
     source = ROOT.TFile.Open(sourceName)
     tree = source.Get('events')
@@ -533,10 +509,19 @@ if __name__ == '__main__':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
             canvas.ytitle = obshist.GetYaxis().GetTitle()
 
-            canvas.Update(logy = vardef.logy, ymax = vardef.ymax)
+            canvas.selection = vardef.formSelection(plotConfig, prescale = prescale)
+
+            if vardef.logy is None:
+                logy = True
+                addLinear = True
+            else:
+                logy = vardef.logy
+                addLinear = False
+
+            canvas.Update(logy = logy, ymax = vardef.ymax)
 
             if vardef.fullyBlinded():
-                # remove ratio pad
+                # remove ratio pad. Hack to use SimpleCanvas interface
                 simple = SimpleCanvas(lumi = lumi)
 
                 garbage = []
@@ -569,6 +554,13 @@ if __name__ == '__main__':
                 simple._needUpdate = False
                 simple.printWeb(plotDir, vardef.name)
 
+                if addLinear:
+                    simple.ylimits = (0., -1.)
+                    simple.minimum = -1.
+                    vardef.ymax = -1.
+                    simple._needUpdate = True
+                    simple.printWeb(plotDir, vardef.name + 'Linear', logy = False)
+
                 # cleanup the mess
                 for obj in garbage:
                     obj.IsA().Destructor(obj)
@@ -577,3 +569,10 @@ if __name__ == '__main__':
 
             else:
                 canvas.printWeb(plotDir, vardef.name)
+
+                if addLinear:
+                    canvas.ylimits = (0., -1.)
+                    canvas.minimum = -1.
+                    vardef.ymax = -1.
+                    canvas._needUpdate = True
+                    canvas.printWeb(plotDir, vardef.name + 'Linear', logy = False)

@@ -21,6 +21,7 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
+    'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'diel': selectors.dielectron,
@@ -30,12 +31,12 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
-mc_cand = ['monoph'] 
-#mc_sig = ['monoph', 'signalRaw']
-mc_sig = ['monoph']
+mc_cand = ['monoph']
+mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
+mc_sig = ['monoph', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
@@ -49,12 +50,12 @@ haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4
 
 selectors = {
     # Data
-    'sph-d3': data_sph + [('halo', selectors.halo(haloNorms[0]))
-                          ,('haloUp', selectors.haloCSC(haloNorms[0]))
+    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
                           ,('haloDown', selectors.haloSieie(haloNorms[0]))
                           ],
-    'sph-d4': data_sph + [('halo', selectors.halo(haloNorms[1]))
-                          ,('haloUp', selectors.haloCSC(haloNorms[1]))
+    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
                           ,('haloDown', selectors.haloSieie(haloNorms[1]))
                           ],
     'smu-d3': data_smu,
@@ -66,17 +67,27 @@ selectors = {
     'wnlg-130': mc_vgcand + mc_vglep,
     'zg': mc_cand + mc_lep + mc_dilep,
     'wg': mc_cand,
-    'gj-40': mc_gj,
-    'gj-100': mc_gj,
-    'gj-200': mc_gj,
-    'gj-400': mc_gj,
-    'gj-600': mc_gj,
+    'gj-40': mc_gj + mc_qcd,
+    'gj-100': mc_gj + mc_qcd,
+    'gj-200': mc_gj + mc_qcd,
+    'gj-400': mc_gj + mc_qcd,
+    'gj-600': mc_gj + mc_qcd,
     'ttg': mc_cand + mc_lep + mc_dilep,
+    'tt': mc_cand + mc_lep + mc_dilep,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
-    'wlnu-100': mc_wlnu,
-    'wlnu-200': mc_wlnu,
-    'wlnu-400': mc_wlnu,
-    'wlnu-600': mc_wlnu
+    'wlnu-100': mc_wlnu, # + mc_cand,
+    'wlnu-200': mc_wlnu, # + mc_cand,
+    'wlnu-400': mc_wlnu, # + mc_cand,
+    'wlnu-600': mc_wlnu, # + mc_cand,
+    'dy-50-100': mc_cand + mc_lep + mc_dilep,
+    'dy-50-200': mc_cand + mc_lep + mc_dilep,
+    'dy-50-400': mc_cand + mc_lep + mc_dilep,
+    'dy-50-600': mc_cand + mc_lep + mc_dilep,
+    'qcd-200': mc_cand + mc_qcd,
+    'qcd-300': mc_cand + mc_qcd,
+    'qcd-500': mc_cand + mc_qcd,
+    'qcd-700': mc_cand + mc_qcd,
+    'qcd-1000': mc_cand + mc_qcd
 }
 
 # all the rest are mc_sig
@@ -126,6 +137,9 @@ if __name__ == '__main__':
     elif 'add' in snames:
         snames.remove('add')
         snames += [key for key in selectors.keys() if key.startswith('add')]
+    if 'fs' in snames:
+        snames.remove('fs')
+        snames += [key for key in selectors.keys() if 'fs' in key]
 
     # filter out empty samples
     tmp = [name for name in snames if allsamples[name].sumw > 0.]
@@ -133,6 +147,8 @@ if __name__ == '__main__':
 
     if args.list:
         print ' '.join(sorted(snames))
+        # for sname in sorted(snames):
+            # print sname
         sys.exit(0)
     
     skimmer = ROOT.Skimmer()

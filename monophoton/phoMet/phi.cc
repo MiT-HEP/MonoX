@@ -84,14 +84,14 @@ phi(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
 
     for (unsigned iTag(0); iTag != photons.size(); ++iTag) {
       auto& tag(photons[iTag]);
-      if ( !(tag.medium && tag.pt > 175. && tag.isEB && tag.pixelVeto))
+      if ( !(tag.medium && tag.pt > 175. && tag.isEB))
 	continue;
 
       // printf("Tag found\n");
       
       for (unsigned iPho(0); iPho != photons.size(); ++iPho) {
 	auto& pho(photons[iPho]);
-	if ( !(pho.pt > 30. && pho.loose))
+	if ( !(pho.pt > 30.))
 	  continue;
 	
 	// printf("Medium photon found for probe\n");
