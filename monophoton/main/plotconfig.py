@@ -89,11 +89,11 @@ def getConfig(confName):
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
 
-            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
 
-            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
 
-            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
 
             group.variations.append(Variation('pdf', reweight = 'pdf'))
             
