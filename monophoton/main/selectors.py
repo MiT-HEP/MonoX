@@ -12,8 +12,13 @@ import ROOT
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+if basedir not in sys.path:
+    sys.path.append(basedir)
+
+import config
+
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + dataformats + '/interface')
 
 ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
