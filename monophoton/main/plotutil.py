@@ -8,12 +8,13 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', color = ROOT.kBlack):
+    def __init__(self, name, title, samples = [], region = '', color = ROOT.kBlack, scale = 1.):
         self.name = name
         self.title = title
         self.samples = samples
         self.region = region
         self.color = color
+        self.scale = scale # use for ad-hoc scaling of histograms
         self.variations = []
 
 
@@ -61,6 +62,9 @@ class VariableDef(object):
     def fullyBlinded(self):
         if not self.blind:
             return False
+
+        if self.blind == 'full':
+            return True
 
         xlow, xhigh = self.xlimits()
         return self.blind[0] <= xlow and self.blind[1] >= xhigh

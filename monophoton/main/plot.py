@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+sys.dont_write_bytecode = True
 import os
 import array
 import math
@@ -9,13 +10,10 @@ import re
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
-from datasets import allsamples
-import config
-from main.plotconfig import getConfig
 
 lumi = 0. # to be set in __main__
 
-def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
     """
@@ -40,7 +38,8 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
             hname = ''
 
         # add up histograms from individual samples (saved to sampleDir)
-        shist = getHist(sname, plotConfig, vardef, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+        shist.Scale(group.scale)
         hist.Add(shist)
         
     varhists = {}
@@ -62,8 +61,10 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
                 else:
                     hname = sname + '_' + varname
 
-                vhist.Add(getHist(sname, plotConfig, vardef, region = region, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir))
-
+                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                shist.Scale(group.scale)
+                vhist.Add(shist)
+                
             varhists[variation.name] = (vhist,) # make it a tuple to align with rest
 
         else:
@@ -96,7 +97,9 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
                     else:
                         hname = sname + '_' + varname
     
-                    vhists[iV].Add(getHist(sname, plotConfig, vardef, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir))
+                    shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                    shist.Scale(group.scale)
+                    vhists[iV].Add(shist)
 
             varhists[variation.name] = vhists
 
@@ -129,7 +132,7 @@ def groupHist(group, vardef, plotConfig, postscale = 1., outFile = None):
     return hist
 
 
-def getHist(sname, plotConfig, vardef, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
+def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
     """
     Create a histogram object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -142,13 +145,11 @@ def getHist(sname, plotConfig, vardef, region = '', hname = '', cutReplacements 
         region = plotConfig.name
 
     # open the source file
-    sourceName = config.skimDir + '/' + sname + '_' + region + '.root'
+    sourceName = skimDir + '/' + sname + '_' + region + '.root'
     if not os.path.exists(sourceName):
         print 'Error: Cannot open file', sourceName
         # return an empty histogram
         return vardef.makeHist(hname)
-
-    sample = allsamples[sname]
 
     # quantity to be plotted
     if type(vardef.expr) is tuple:
@@ -170,7 +171,7 @@ def getHist(sname, plotConfig, vardef, region = '', hname = '', cutReplacements 
         cuts.append(plotConfig.fullSelection)
 
     if prescale > 1 and vardef.blind is None:
-        cuts.append('event % {prescale} == 0'.format(prescale = args.prescale))
+        cuts.append('event % {prescale} == 0'.format(prescale = prescale))
 
     selection = '&&'.join(['(%s)' % c for c in cuts if c != ''])
 
@@ -372,6 +373,9 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
     argParser.add_argument('--out-file', '-o', metavar = 'PATH', dest = 'outFile', default = '', help = 'Histogram output file.')
     argParser.add_argument('--all-signal', '-S', action = 'store_true', dest = 'allSignal', help = 'Write histogram for all signal points.')
+    argParser.add_argument('--plot-configs', '-c', metavar = 'PATH', dest = 'plotConfigFile', help = 'Plot config file that defines a getConfig function which returns a PlotConfig.')
+    argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
+    argParser.add_argument('--samples-list', '-s', metavar = 'PATH', dest = 'samplesList', help = 'Dataset list CSV file.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -380,8 +384,23 @@ if __name__ == '__main__':
     ROOT.gROOT.SetBatch(True)
 
     from plotstyle import SimpleCanvas, DataMCCanvas
+    from datasets import SampleDefList
 
-    plotConfig = getConfig(args.config)
+    if not args.skimDir:
+        from config import skimDir
+        args.skimDir = skimDir
+
+    if args.plotConfigFile:
+        execfile(args.plotConfigFile)
+        plotConfig = getConfig(args.config)
+    else:
+        from main.plotconfig import getConfig
+        plotConfig = getConfig(args.config)
+
+    if args.samplesList:
+        allsamples = SampleDefList(listpath = args.samplesList)
+    else:
+        allsamples = SampleDefList(listpath = basedir + '/data/datasets.csv')
 
     if len(args.plots) == 0:
         args.plots = [v.name for v in plotConfig.variables]
@@ -410,7 +429,7 @@ if __name__ == '__main__':
         if args.plotDir == '-':
             plotDir = ''
         else:
-            plotDir = 'monophoton/' + args.plotDir
+            plotDir = args.plotDir
     else:
         plotDir = 'monophoton/' + args.config
 
@@ -447,7 +466,7 @@ if __name__ == '__main__':
 
         # make background histograms
         for group in plotConfig.bkgGroups:
-            hist = groupHist(group, vardef, plotConfig, postscale = postscale, outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, allsamples, args.skimDir, postscale = postscale, outFile = outFile)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
@@ -462,7 +481,7 @@ if __name__ == '__main__':
 
                 sigGroups.append(group.name)
 
-                hist = getHist(group.name, plotConfig, vardef, postscale = postscale, outDir = sampleDir)
+                hist = getHist(group.name, allsamples[group.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = sampleDir)
 
                 hist.SetDirectory(outFile)
 
@@ -480,13 +499,12 @@ if __name__ == '__main__':
                     if not sample.signal or sample.name in sigGroups:
                         continue
 
-                    getHist(sample.name, plotConfig, vardef, postscale = postscale, outDir = outFile)
-                    
+                    getHist(sample.name, allsamples[sample.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = outFile)
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 
         for sname in plotConfig.obs.samples:
-            obshist.Add(getHist(sname, plotConfig, vardef, prescale = prescale, outDir = sampleDir))
+            obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = prescale, outDir = sampleDir))
 
         writeHist(obshist)
         formatHist(obshist, vardef)
@@ -495,7 +513,7 @@ if __name__ == '__main__':
         if vardef.blind is not None:
             for i in range(1, obshist.GetNbinsX()+1):
                 binCenter = obshist.GetBinCenter(i)
-                if binCenter > vardef.blind[0] and binCenter < vardef.blind[1]:
+                if vardef.fullyBlinded() or (binCenter > vardef.blind[0] and (vardef.blind[1] == 'inf' or binCenter < vardef.blind[1])):
                     obshist.SetBinContent(i, 0.)
                     obshist.SetBinError(i, 0.)
 
@@ -546,11 +564,10 @@ if __name__ == '__main__':
                 yaxis.SetY1(simple.canvas.GetBottomMargin())
                 yaxis.SetY2(1. - simple.canvas.GetTopMargin())
 
-                tmp = simple.canvas
+                simple.canvas.IsA().Destructor(simple.canvas)
                 simple.canvas = cnv
                 simple._needUpdate = False
                 simple.printWeb(plotDir, vardef.name)
-                simple.canvas = tmp
 
                 # cleanup the mess
                 for obj in garbage:
