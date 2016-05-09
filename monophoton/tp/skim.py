@@ -22,8 +22,8 @@ ROOT.gROOT.SetBatch(True)
 # skim output directory
 outputDir = '/scratch5/yiiyama/studies/egfake_skim'
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
 lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi

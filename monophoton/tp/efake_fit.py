@@ -8,6 +8,7 @@ import shutil
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
+import config
 from datasets import allsamples
 from plotstyle import SimpleCanvas
 from tp.efake_conf import skimDir, outputDir, roofitDictsDir, getBinning
@@ -60,8 +61,8 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
