@@ -45,7 +45,7 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
     """
 
 
-    find = Popen(['egrep','Observed|50.0%'],stdin=HiggsTool.stdout,stdout=PIPE,stderr=PIPE)
+    find = Popen(['egrep','Observed|Expected'],stdin=HiggsTool.stdout,stdout=PIPE,stderr=PIPE)
     """ for debugging, will cause next step to crash
     (fout, ferr) = find.communicate()
     print fout, '\n'
@@ -55,8 +55,8 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
     lines = [line for line in find.stdout]
     # print lines
 
-    obs = -1.
-    exp = -1.
+    obs = (-1., -1., -1.)
+    exp = (-1., -1., -1.)
 
     for line in lines:
         # print line
@@ -64,9 +64,13 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
         # print tmp
         if tmp:
             if 'Observed' in tmp[0]:
-                obs = float(tmp[4])
-            elif "Expected" in tmp[0]:
-                exp = float(tmp[4])
+                obs = ( float(tmp[4]), float(tmp[4])/1.2, float(tmp[4])/0.8 )
+            elif "50.0%" in tmp[0]:
+                exp[0] = float(tmp[4])
+            elif "16.0%" in tmp[0]:
+                exp[1] = float(tmp[4])
+            elif "84.0%" in tmp[0]:
+                exp[2] = float(tmp[4])
 
     return (obs, exp)
 
@@ -170,20 +174,23 @@ for iM, model in enumerate(modelList):
     # (obs, exp) = (1.0, 1.0)
 
     if allsamples[model].scale != 1.:
-        obs = obs * allsamples[model].scale
-        exp = exp * allsamples[model].scale
+        obsNom =  obs[0] * allsamples[model].scale
+        expNom = exp[0] * allsamples[model].scale
+    else:
+        obsNom = obs[0]
+        expNom = exp[0]
 
-    obsXsec = obs * allsamples[model].crosssection * 1000. # to 1/fb
-    expXsec = exp * allsamples[model].crosssection * 1000. # to 1/fb
+    obsXsec = obsNom * allsamples[model].crosssection * 1000. # to 1/fb
+    expXsec = expNom * allsamples[model].crosssection * 1000. # to 1/fb
 
-    limits[model] = (obs, exp, obsXsec, expXsec)
+    limits[model] = (obsNom, expNom, obsXsec, expXsec)
 
     limitString = "%-16s" % model
     
-    if obs < 0.1 or exp < 0.1:
-        limitString += " %15.1E %15.1E" % (obs, exp)
+    if obsNom < 0.1 or expNom < 0.1:
+        limitString += " %15.1E %15.1E" % (obsNom, expNom)
     else:
-        limitString += " %15.2f %15.2f" % (obs, exp)
+        limitString += " %15.2f %15.2f" % (obsNom, expNom)
     if obsXsec < 0.1 or expXsec < 0.1:
         limitString += " %15.1E %15.1E" % (obsXsec, expXsec)
     else:
