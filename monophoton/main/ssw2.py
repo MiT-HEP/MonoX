@@ -34,7 +34,8 @@ data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purit
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph'] 
-mc_sig = ['monoph', 'signalRaw']
+#mc_sig = ['monoph', 'signalRaw']
+mc_sig = ['monoph']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
@@ -78,30 +79,11 @@ selectors = {
     'wlnu-600': mc_wlnu
 }
 
-for sname in ['add-%d-%d' % (nd, md) for md in [1, 2, 3] for nd in [3, 4, 5, 6, 8]]:
-    selectors[sname] = mc_cand
+# all the rest are mc_sig
+for sname in allsamples.names():
+    if sname not in selectors:
+        selectors[sname] = mc_sig
 
-for mt in ['a', 'v']:
-    for dm in [1, 10, 50, 150, 500, 1000]:
-        for mm in [10, 20, 50, 100, 200, 300, 500, 1000, 2000, 10000]:
-            if mm == 2 * dm:
-                mm = mm - 5
-            for prod in ['', 'fs']:
-                sname = 'dm%s%s-%d-%d' % (mt, prod, mm, dm)
-                try:
-                    # print sname
-                    allsamples[sname]
-                except KeyError:
-                    # print "This combination is not part of the DMWG recommendations, moving onto next one."
-                    continue;
-
-                selectors[sname] = mc_sig
-
-for sname in ['dmewk-%d-%d' % (_lambda, mx) for _lambda in [3000] for mx in [1, 10, 50, 100, 200, 400, 800, 1300]]:
-    selectors[sname] = mc_cand
-
-for sname in ['zgr-750-%s' % width for width in ['0014', '5600']]:
-    selectors[sname] = mc_cand
 
 if __name__ == '__main__':
 
@@ -117,8 +99,8 @@ if __name__ == '__main__':
 
     import ROOT
 
-    ROOT.gSystem.Load('libMitFlatDataFormats.so')
-    ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+    ROOT.gSystem.Load(config.libsimpletree)
+    ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
     
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
@@ -135,10 +117,13 @@ if __name__ == '__main__':
     if 'all' in snames:
         snames.remove('all')
         snames = selectors.keys()
-    if 'dm' in snames:
+    elif 'dmfs' in snames:
+        snames.remove('dmfs')
+        snames += [key for key in selectors.keys() if key.startswith('dm') and key[3:5] == 'fs']
+    elif 'dm' in snames:
         snames.remove('dm')
         snames += [key for key in selectors.keys() if key.startswith('dm')]
-    if 'add' in snames:
+    elif 'add' in snames:
         snames.remove('add')
         snames += [key for key in selectors.keys() if key.startswith('add')]
 
