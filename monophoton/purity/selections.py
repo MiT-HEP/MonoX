@@ -1,11 +1,20 @@
 import os
+import sys
 import array
 import ROOT
 
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
+
+if basedir not in sys.path:
+    sys.path.append(basedir)
+
+import config
+
 Version = 'simpletree13b'
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
 ROOT.gROOT.LoadMacro(TemplateGeneratorPath)
 

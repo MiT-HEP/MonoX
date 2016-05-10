@@ -9,35 +9,32 @@ run, lumi, event = event.split(':')
 source = ROOT.TFile.Open(fname)
 tree = source.Get('cutflow')
 
-bits = array.array('I', [0])
-tree.SetBranchAddress('cutBits', bits)
-branch = tree.GetBranch('cutBits')
+branches = tree.GetListOfBranches()
+results = {}
+for branch in branches:
+    bname = branch.GetName()
+    if bname == 'run' or bname == 'lumi' or bname == 'event':
+        continue
+
+    bit = array.array('B', [0])
+    tree.SetBranchAddress(bname, bit)
+    results[bname] = (branch, bit)
 
 tree.Draw('>>elist', 'run == %s && lumi == %s && event == %s' % (run, lumi, event), 'entrylist')
 elist = ROOT.gDirectory.Get('elist')
 
+if elist.GetN() == 0:
+    print 'No event %s:%s:%s found' % (run, lumi, event)
+    sys.exit(1)
+
 tree.SetEntryList(elist)
 iEntry = tree.GetEntryNumber(0)
 
-branch.GetEntry(iEntry)
+for bname in sorted(results.keys()):
+    branch, bit = results[bname]
 
-bitmasks = [
-    'passTrigger',
-    'beginEvent',
-    'selectPhotons',
-    'vetoMuons',
-    'vetoElectrons',
-    'vetoTaus',
-    'cleanJets',
-    'selectMet',
-    'highMet',
-    'metIso',
-]
-
-cutres = bits[0]
-for iB in range(len(bitmasks)):
-    if cutres & (1 << iB) != 0:
-        print bitmasks[iB]
+    branch.GetEntry(iEntry)
+    if bit[0] != 0:
+        print bname
     else:
-        print '!' + bitmasks[iB]
-
+        print '!' + bname

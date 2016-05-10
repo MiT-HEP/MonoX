@@ -226,6 +226,9 @@ class SimpleCanvas(object):
         self._logx = False
         self._logy = True
 
+        self.xtitle = ''
+        self.ytitle = ''
+
         self.ylimits = (0., -1.)
 
         self.minimum = -1.
@@ -317,17 +320,21 @@ class SimpleCanvas(object):
         else:
             self._objects.append(obj)
 
-    def addLine(self, x1, y1, x2, y2, color = ROOT.kBlack, width = 1, style = ROOT.kSolid):
-        line = ROOT.TLine(x1, y1, x2, y2)
+    def addLine(self, x1, y1, x2, y2, color = ROOT.kBlack, width = 1, style = ROOT.kSolid, cls = ROOT.TLine):
+        line = cls(x1, y1, x2, y2)
         line.SetLineColor(color)
         line.SetLineWidth(width)
         line.SetLineStyle(style)
         self._objects.append(line)
 
+        return line
+
     def addText(self, text, x1, y1, x2, y2, textalign = 22, font = 42):
         pave = makeText(x1, y1, x2, y2, textalign = textalign, font = font)
         pave.AddText(text)
         self._objects.append(pave)
+
+        return pave
 
     def applyStyles(self):
         for hist in self._histograms:
@@ -338,7 +345,8 @@ class SimpleCanvas(object):
         name = self.canvas.GetName()
         title = self.canvas.GetTitle()
         ROOT.gROOT.GetListOfCanvases().Remove(self.canvas)
-        self.canvas = None
+        self.canvas.IsA().Destructor(self.canvas)
+
         self.canvas = ROOT.TCanvas(name, title, 600, 600)
         self.canvas.SetTopMargin(1. - SimpleCanvas.YMAX)
         if xmax is not None:
@@ -427,6 +435,11 @@ class SimpleCanvas(object):
                         base.SetMaximum(hist.GetMaximum() * 1.3)
         
             self.canvas.Update()
+
+            if self.xtitle:
+                base.GetXaxis().SetTitle(self.xtitle)
+            if self.ytitle:
+                base.GetYaxis().SetTitle(self.ytitle)
 
             if self.ylimits[1] < self.ylimits[0]:
                 if logy:
@@ -520,10 +533,8 @@ class RatioCanvas(SimpleCanvas):
 
         self.xaxis = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMIN)
         self.xaxis.SetTitleOffset(self.xaxis.GetTitleOffset() * 1.1)
-        self.xtitle = ''
 
         self.yaxis = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMIN, vmin = 0.1, vmax = 1., log = True)
-        self.ytitle = ''
 
         self.raxis = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMIN, vmax = 2., titleSize = 0.036)
         self.rtitle = 'data / MC'
@@ -993,8 +1004,11 @@ class DataMCCanvas(RatioCanvas):
             # addHistogram calls _modified which clears temporaries - this line has to come after above
             self._temporaries += [borderHist, uncertHist]
 
-            hList = [0, iBorder, iUncert] + self._sigs + [self._obs]
-            rList = [iBorder, iUncert] + [self._obs]
+            hList = [0, iBorder, iUncert] + self._sigs
+            rList = [iBorder, iUncert]
+            if self._obs != -1:
+                hList.append(self._obs)
+                rList.append(self._obs)
 
             legendOrder = []
             if self._obs != -1:

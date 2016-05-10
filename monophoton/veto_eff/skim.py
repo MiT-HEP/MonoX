@@ -10,8 +10,8 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 skim = sys.argv[1]
 sname = sys.argv[2]

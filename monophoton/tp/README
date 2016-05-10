@@ -1,0 +1,39 @@
+[Installation]
+
+ The fit routines in this directory may use KeysShape, which is an
+ original implementation of 1D Gaussian kernel estimator
+ (hep-ex/0011057). It is functionally identical to RooKeysPdf, but
+ uses multiple threads (configurable) to speed the PDF construction
+ up. The source code is available at
+  https://github.com/yiiyama/RooFit.git
+ You need to check it out and build the library:
+  cd RooFit
+  make
+ then set roofitDictDir in efake_conf.py to the directory where
+ libCommonRooFit.so is.
+
+[efake]
+ 
+ The electron->photon fake rate measurement proceeds in three steps:
+
+ 1. skim (skim.py)
+ 2. fit (efake_fit.py)
+ 3. compute (efake_compute.py)
+
+ skim.py uses Skimmer.cc to produce a generic tag & probe skim from
+ simpletrees.
+
+ efake_fit.py is invoked three times:
+  efake_fit.py (data|mc) (binning)
+ runs a fit for the nominal Z yield estimates. Yields as well as
+ parameter values are recorded in the TTree yields in the file.
+ Then
+  efake_fit.py (data|mc) (binning) (N) (ee|eg) (bin name) (random seed)
+ runs N toy fits for (ee|eg)_(bin name) with the specified random seed.
+ This mode should be used in a batch system varying the seeds.
+ The output of toy generation should be combined with hadd into a file
+ named toys_(data|mc)_(binning).root.
+
+ efake_compute.py takes this ROOT file as an input and makes the fake
+ rate graph.
+ 

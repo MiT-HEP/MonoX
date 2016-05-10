@@ -1,7 +1,6 @@
 import re
 import os
 import math
-import ROOT
 
 class SampleDef(object):
     def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, comments = '', custom = {}):
@@ -99,8 +98,11 @@ class SampleDef(object):
 
 
 class SampleDefList(object):
-    def __init__(self, samples = []):
-        self.samples = samples
+    def __init__(self, samples = [], listpath = ''):
+        self.samples = list(samples)
+
+        if listpath:
+            self._load(listpath)
 
     def __iter__(self):
         return iter(self.samples)
@@ -114,6 +116,43 @@ class SampleDefList(object):
         except RuntimeError:
             raise KeyError(key + ' not defined')
 
+    def _load(self, listpath):
+        with open(listpath) as dsSource:
+            for line in dsSource:
+                line = line.strip()
+                
+                if not line or line.startswith('#'):
+                    continue
+        
+                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.x+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
+                if not matches:
+                    print 'Ill-formed line in datasets.csv'
+                    print line
+                    continue
+        
+                name, title, xsec, nevents, sumw, book, directory, comments = [matches.group(i) for i in range(1, 9)]
+        
+                if sumw == '-':
+                    sdef = SampleDef(name, title = title, book = book, directory = directory, lumi = float(xsec), nevents = int(nevents), data = True, comments = comments.lstrip(' #'))
+                else:
+                    if 'x' in xsec:
+                        (xsec, scale) = xsec.split('x')
+                        xsec = float(xsec) # * float(scale)
+                        scale = float(scale)
+                    else:
+                        xsec = float(xsec)
+                        scale = 1.
+        
+                    if xsec < 0.:
+                        signal = True
+                        xsec = -xsec
+                    else:
+                        signal = False
+        
+                    sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = xsec, scale = scale, nevents = int(nevents), sumw = float(sumw), signal = signal, comments = comments.lstrip(' #'))
+        
+                self.samples.append(sdef)
+
     def names(self):
         return [s.name for s in self.samples]
 
@@ -123,79 +162,41 @@ class SampleDefList(object):
         except StopIteration:
             raise RuntimeError('Sample ' + name + ' not found')
 
-allsamples = SampleDefList()
-
-with open(os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv') as dsSource:
-    for line in dsSource:
-        line = line.strip()
-        
-        if line.startswith('#'):
-            continue
-
-        matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.x+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
-        if not matches:
-            print 'Ill-formed line in datasets.csv'
-            print line
-            continue
-
-        name, title, xsec, nevents, sumw, book, directory, comments = [matches.group(i) for i in range(1, 9)]
-
-        if sumw == '-':
-            sdef = SampleDef(name, title = title, book = book, directory = directory, lumi = float(xsec), nevents = int(nevents), data = True, comments = comments.lstrip(' #'))
-        else:
-            if 'x' in xsec:
-                (xsec, scale) = xsec.split('x')
-                xsec = float(xsec) # * float(scale)
-                scale = float(scale)
-            else:
-                xsec = float(xsec)
-                scale = 1.
-
-            if xsec < 0.:
-                signal = True
-                xsec = -xsec
-            else:
-                signal = False
-
-            # print signal, xsec, scale
-
-            sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = xsec, scale = scale, nevents = int(nevents), sumw = float(sumw), signal = signal, comments = comments.lstrip(' #'))
-
-        allsamples.samples.append(sdef)
-
 if __name__ == '__main__':
     import sys
-    import os
     from argparse import ArgumentParser
 
     argParser = ArgumentParser(description = 'Dataset information management')
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List datasets with nevents > 0')
     argParser.add_argument('--all', '-A', action = 'store_true', dest = 'all', help = '(With --list) Show all datasets.')
     argParser.add_argument('--print', '-p', metavar = 'DATASET', dest = 'showInfo', help = 'Print information of DATASET.')
-    argParser.add_argument('--recalculate', '-r', metavar = 'DATASET', dest = 'recalculate', help = 'Recalculate nentries and sumw for DATASET.')
+    argParser.add_argument('--recalculate', '-r', metavar = 'DATASET', dest = 'recalculate', nargs = '+', help = 'Recalculate nentries and sumw for DATASET.')
     argParser.add_argument('--source-dir', '-d', metavar = 'DIR', dest = 'sourceDir', help = 'Source directory where simpletree files are.')
+    argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', default = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv', help = 'List CSV file to load data from.')
 
     args = argParser.parse_args()
     sys.argv = []
 
+    samples = SampleDefList(listpath = args.listPath)
+
     if args.list:
         if args.all:
-            print ' '.join([sample.name for sample in allsamples])
+            print ' '.join([sample.name for sample in samples])
         else:
-            print ' '.join([sample.name for sample in allsamples if sample.nevents > 0.])
+            print ' '.join([sample.name for sample in samples if sample.nevents > 0.])
 
         sys.exit(0)
 
     if args.showInfo:
         try:
-            allsamples[args.showInfo].dump()
+            samples[args.showInfo].dump()
         except:
             print 'No sample', args.showInfo
         
         sys.exit(0)
 
     if args.recalculate:
-        name = args.recalculate
+        import ROOT
 
         if args.sourceDir:
             sourceDir = args.sourceDir
@@ -203,11 +204,15 @@ if __name__ == '__main__':
             print 'Source dir?'
             sourceDir = sys.stdin.readline().strip()
 
-        try:
-            sample = allsamples[name]
-            print sample.getWeights(sourceDir)
-    
-        except:
-            sys.stderr.write(name + '  NAN\n')
+        for name in args.recalculate:
+            try:
+                sample = samples[name]
+                print sample.getWeights(sourceDir)
+
+            except:
+                sys.stderr.write(name + '  NAN\n')
 
         sys.exit(0)
+
+else: # when importing from another python script
+    allsamples = SampleDefList(listpath = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv')

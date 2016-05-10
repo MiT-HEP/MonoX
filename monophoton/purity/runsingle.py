@@ -3,9 +3,16 @@ import sys
 import ROOT
 #ROOT.gROOT.SetBatch(True)
 
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+if basedir not in sys.path:
+    sys.path.append(basedir)
+
+import config
+
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 TemplateGeneratorPath = os.path.join(os.environ['CMSSW_BASE'],'src/MitMonoX/monophoton/purity','TemplateGenerator.cc+')
 ROOT.gROOT.LoadMacro(TemplateGeneratorPath)
 
