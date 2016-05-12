@@ -1,6 +1,7 @@
 import sys
 import array
 import copy
+import re
 
 argv = list(sys.argv)
 sys.argv = []
@@ -156,7 +157,7 @@ class VariableDef(object):
         if type(self.expr) is tuple:
             expr = ':'.join(self.expr)
         else:
-            expr = vardef.expr
+            expr = self.expr
 
         for repl in replacements:
             # replace the variable names given in repl = ('original', 'new')

@@ -59,9 +59,11 @@ def getConfig(confName):
             # VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
             # VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 30.'),
             # VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (6, 0., 6.), cut = 'jets.pt > 100.'),
+            # VariableDef('jetPt', 'p_{T}^{jet}', 'jets.pt', (20, 30., 530.) , unit = 'GeV', cut = 'jets.pt > 30', overflow = True),
+            VariableDef('jetPtCorrection',  '#Delta p_{T}^{jet} (raw, corrected)', 'jets.pt - jets.ptRaw', (11, -10., 100.), unit = 'GeV', cut = 'jets.pt > 30'),
             # VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             # VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
-            VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
+            # VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
             # VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             # VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
@@ -76,6 +78,7 @@ def getConfig(confName):
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
+                config.variables.remove(variable)
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
@@ -151,6 +154,7 @@ def getConfig(confName):
         for variable in list(config.variables):
             if variable.name not in ['met', 'metWide']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
+                config.variables.remove(variable)
     
     elif confName == 'phodphi':
         metCut = 't1Met.met > 170.'
@@ -188,11 +192,13 @@ def getConfig(confName):
             # VariableDef('dPhiJetPho', '#Delta#phi(j, #gamma)', 'jets.photonDPhi', (30, 0., math.pi), cut = 'jets.pt > 30.', overflow = True),
             # VariableDef('njets', 'N_{jet}', 'jets.size', (8, 0., 8.), cut = 'jets.pt > 30.'), # , ymax = 1200.),
             # VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (8, 0., 8.), cut = 'jets.pt > 100.'), # , ymax = 1200.),
+            VariableDef('jetPt', 'p_{T}^{jet}', 'jets.pt', (20, 30., 1030.) , unit = 'GeV', cut = 'jets.pt > 30', overflow = True),
+            VariableDef('jetPtCorrection',  '#Delta p_{T}^{jet} (raw, corrected)', 'jets.pt - jets.ptRaw', (11, -10., 100.), unit = 'GeV', cut = 'jets.pt > 30'),
             # VariableDef('jetEta', '#eta^{j}', 'jets.eta', (40, -5.0, 5.0), cut = 'jets.pt > 30.'), # , ymax = 500.),
             # VariableDef('jetPhi', '#phi^{j}', 'jets.phi', (20, -math.pi, math.pi), cut = 'jets.pt > 30'), # , ymax = 250),
             # VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (20, 0., 4.)),
             # VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 4.)),
-            VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
+            # VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
             # VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
             # VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
@@ -205,13 +211,9 @@ def getConfig(confName):
 
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
-                if variable.cut == '':
-                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = metCut))
-                    config.variables.remove(variable)
-                else:
-                    config.variables.append(variable.clone(variable.name + 'HighMet', cut = variable.cut+' && '+metCut))
-                    config.variables.remove(variable)
-
+                config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
+                config.variables.remove(variable)
+                
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
         config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet']
@@ -412,6 +414,7 @@ def getConfig(confName):
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
+                config.variables.remove(variable)
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
