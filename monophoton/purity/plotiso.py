@@ -59,12 +59,12 @@ colors = [kBlue, kRed, kBlack]
 truthSel = '(photons.matchedGen == -22)'
 fullSel = baseSel+' && '+truthSel
 
-raw = HistExtractor(var[0],var[3][loc],skim,fullSel,skimDir,varBins)
+raw = HistExtractor(var[0],var[2][loc],skim,fullSel,skimDir,varBins)
 raw.SetName("rawmc")
 histograms[0].append(raw)
 
-nBins = len(var[3][loc][-1]) - 1
-binEdges = array('d',var[3][loc][-1])
+nBins = len(var[2][loc][-1]) - 1
+binEdges = array('d',var[2][loc][-1])
 eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[loc][pid]+' && '+metSel+" && "+sieieSels[loc][pid]+")"
 eSel = eSelScratch.replace("photons", "probes")
 print eSel

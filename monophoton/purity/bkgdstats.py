@@ -3,7 +3,7 @@ import sys
 from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
-from selections import Variables, Version, Measurement, SigmaIetaIetaSels, chIsoSels, ChIsoSbSels, PhotonPtSels, MetSels, cutMatchedToReal, HistExtractor, HistToTemplate, PlotNames,FitTemplates, SignalSubtraction
+import selections as s
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -17,7 +17,7 @@ met = sys.argv[5]
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 chIsoSel = '(1)'
-for chisosel in ChIsoSbSels:
+for chisosel in s.ChIsoSbSels:
     if 'ChIso'+chiso == chisosel[0]:
         chIsoSel = chisosel[1]
 if chIsoSel == '(1)':
@@ -25,7 +25,7 @@ if chIsoSel == '(1)':
     print 'Not applying any chIso selection!'
  
 ptSel = '(1)'
-for ptsel in PhotonPtSels:
+for ptsel in s.PhotonPtSels:
     if 'PhotonPt'+pt == ptsel[0]:
         ptSel = ptsel[1]
 if ptSel == '(1)':
@@ -33,7 +33,7 @@ if ptSel == '(1)':
     print 'Not applying any pt selection!'
 
 metSel = '(1)'
-for metsel in MetSels:
+for metsel in s.MetSels:
     if 'Met'+met == metsel[0]:
         metSel = metsel[1]
 if metSel == '(1)':
@@ -42,7 +42,7 @@ if metSel == '(1)':
 
 ### Directory stuff so that results are saved and such
 varName = 'chiso'
-versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
+versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
@@ -84,20 +84,20 @@ for label in labels:
 
 ### Get Purity (first time)
 varName = 'sieie'
-var = Variables[varName]
+var = s.Variables[varName]
 varBins = False
-versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
+versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 skimDir  = '/scratch5/ballen/hist/monophoton/skim'
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
-sigSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSels[loc][pid]+' && '+ptSel+' && '+metSel
-sbSel = SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
+sigSel = s.SigmaIetaIetaSels[loc][pid]+' && '+s.chIsoSels[loc][pid]+' && '+ptSel+' && '+metSel
+sbSel = s.SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
-skims = Measurement["Monophoton"]
+skims = s.Measurement["Monophoton"]
 sels = [ sigSel
          ,sigSel+' && '+truthSel
          ,sbSel+' && '+truthSel
@@ -111,9 +111,9 @@ print "\n\n##############################\n######## Doing initial skims ########
 initialHists = []
 initialTemplates = []
 for skim, sel in zip(skims,sels):
-    hist = HistExtractor(var[0],var[3][loc],skim,sel,skimDir,varBins)
+    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,skimDir,varBins)
     initialHists.append(hist)
-    template = HistToTemplate(hist,var[3][loc],skim,"v0_"+inputKey,plotDir)
+    template = s.HistToTemplate(hist,var[2][loc],skim,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
 
 print "\n\n##############################\n######## Doing initial purity calculation ########\n##############################\n\n"
@@ -126,7 +126,7 @@ nominalDir = os.path.join(plotDir,'nominal')
 if not os.path.exists(nominalDir):
     os.makedirs(nominalDir)
 
-nominalPurity = SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,nominalDir)
+nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,nominalDir)
 
 print "\n\n##############################\n######## Doing ch iso dist uncertainty ########\n##############################\n\n"
 ### Get chiso dist uncertainty
@@ -138,7 +138,7 @@ if not os.path.exists(scaledDir):
     os.makedirs(scaledDir)
 scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
 
-scaledPurity = SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[3][loc],var[4][loc][pid],inputKey,scaledDir)
+scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 
 print "\n\n##############################\n######## Doing background stat uncertainty ########\n##############################\n\n"
@@ -149,13 +149,13 @@ toysDir = os.path.join(plotDir,'toys')
 if not os.path.exists(toysDir):
     os.makedirs(toysDir)
 eventsToGenerate = initialTemplates[3].sumEntries()
-varToGen = RooArgSet(var[3][loc][0])
+varToGen = RooArgSet(var[2][loc][0])
 toyGenerator = RooHistPdf('bkg', 'bkg', varToGen, initialTemplates[3])
 #print "Expect events to generate:", toyGenerator.expectedEvents(varToGen)
 #toyGenSpec = toyGenerator.prepareMultiGen(varToGen) #,eventsToGenerate)
 
 tempCanvas = TCanvas()
-tempFrame = var[3][loc][0].frame()
+tempFrame = var[2][loc][0].frame()
 toyGenerator.plotOn(tempFrame)
 tempFrame.Draw()
 tempName = os.path.join(toysDir, 'GenDist')
@@ -174,7 +174,7 @@ for iToy in range(1,101):
 
     tempTemplate = toyGenerator.generateBinned(varToGen,eventsToGenerate)
     tempCanvas = TCanvas()
-    tempFrame = var[3][loc][0].frame()
+    tempFrame = var[2][loc][0].frame()
     tempTemplate.plotOn(tempFrame)
     tempFrame.Draw()
     tempName = os.path.join(toyDir, 'toydist')
@@ -183,13 +183,13 @@ for iToy in range(1,101):
     tempCanvas.SaveAs(tempName+'.C')
 
     toyData = RooDataSet.Class().DynamicCast(RooAbsData.Class(), tempTemplate)
-    toyHist = toyData.createHistogram("toyhist", var[3][loc][0], RooFit.Binning(var[3][loc][1], var[3][loc][0].getMin(), var[3][loc][0].getMax() ) )
+    toyHist = toyData.createHistogram("toyhist", var[2][loc][0], RooFit.Binning(var[2][loc][1], var[2][loc][0].getMin(), var[2][loc][0].getMax() ) )
     toyHists.append(toyHist)
 
-    toyTemplate = HistToTemplate(toyHist,var[3][loc],toySkims[3],"v0_"+inputKey,toyDir)
+    toyTemplate = s.HistToTemplate(toyHist,var[2][loc],toySkims[3],"v0_"+inputKey,toyDir)
     toyTemplates.append(toyTemplate)
 
-    toyPurity = SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,toyDir)
+    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,toyDir)
     purityDiff = toyPurity[0][0] - nominalPurity[0][0]
     print "Purity diff is:", purityDiff
     toyPlot.Fill(purityDiff)
@@ -221,15 +221,15 @@ if not os.path.exists(twobinDir):
 twobinSkims = skims[:4]
 twobinHists = []
 twobinTemplates = []
-nbins = len(var[3][loc][2])-1
+nbins = len(var[2][loc][2])-1
 for iH, hist in enumerate(initialHists[:4]):
     newHist = hist.Clone("newhist"+str(iH))
-    twobinHist = newHist.Rebin(nbins, "twobinhist"+str(iH), array('d', var[3][loc][2]))
+    twobinHist = newHist.Rebin(nbins, "twobinhist"+str(iH), array('d', var[2][loc][2]))
     twobinHists.append(twobinHist)
-    template = HistToTemplate(twobinHist,var[3][loc],twobinSkims[iH],"v0_"+inputKey,twobinDir)
+    template = s.HistToTemplate(twobinHist,var[2][loc],twobinSkims[iH],"v0_"+inputKey,twobinDir)
     twobinTemplates.append(template)
 
-twobinPurity = SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[3][loc],var[4][loc][pid],inputKey,twobinDir)
+twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,twobinDir)
 twobinUncertainty = abs( nominalPurity[0][0] - twobinPurity[0][0])
 
 
