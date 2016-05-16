@@ -510,7 +510,7 @@ dmvfs-10000-50   "DMVFS"                             -1.223e-07x1.0e+06   50000 
 dmvfs-10000-500  "DMVFS"                             -8.307e-08x1.0e+06   50000      50000.0              fastsm/043           monophoton_med-10000_dm-500_cv-1.0_ca-0.0 
 dmvfs-10000-1000 "DMVFS"                             -3.499e-08x1.0e+06   10000      10000.0              fastsm/043           monophoton_med-10000_dm-1000_cv-1.0_ca-0.0 
 dmafs-1000-125   "DMAFS"                             -0.01379             45000      45000.0              fastsm/043           monophoton_med-1000_dm-125_cv-0.0_ca-1.0 
-dmafs-1000-25    "DMAFS"                             -0.01461             0          0.0                  fastsm/043           monophoton_med-1000_dm-25_cv-0.0_ca-1.0 
+#dmafs-1000-25    "DMAFS"                             -0.01461             0          0.0                  fastsm/043           monophoton_med-1000_dm-25_cv-0.0_ca-1.0 
 dmafs-1000-600   "DMAFS"                             -4.467e-05           50000      50000.0              fastsm/043           monophoton_med-1000_dm-600_cv-0.0_ca-1.0 
 dmafs-1000-700   "DMAFS"                             -1.646e-05           50000      50000.0              fastsm/043           monophoton_med-1000_dm-700_cv-0.0_ca-1.0 
 dmafs-1125-125   "DMAFS"                             -9.765e-03           40000      40000.0              fastsm/043           monophoton_med-1125_dm-125_cv-0.0_ca-1.0 
