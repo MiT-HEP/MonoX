@@ -91,7 +91,9 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
 
     systList = {}
 
-    for syst, procs in nuisances.items():
+    for syst in sorted(nuisances.keys()):
+        procs = nuisances[syst]
+
         line = cols % syst
 
         words = []
