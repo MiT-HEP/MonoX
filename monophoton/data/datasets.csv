@@ -231,7 +231,7 @@ dmafs-400-150    "DMAFS"                             -0.05438             45000 
 dmafs-400-200    "DMAFS"                             -3.206e-03           40000      40000.0              fastsm/043           monophoton_med-400_dm-200_cv-0.0_ca-1.0 
 dmafs-500-1      "DMAFS"                             -0.07811             30000      30000.0              fastsm/043           monophoton_med-500_dm-1_cv-0.0_ca-1.0 
 dmafs-500-150    "DMAFS"                             -0.05318             20000      20000.0              fastsm/043           monophoton_med-500_dm-150_cv-0.0_ca-1.0 
-dmafs-500-500    "DMAFS"                             -4.711e-05x2.1e+01   20100      20100.0              fastsm/043           monophoton_med-500_dm-500_cv-0.0_ca-1.0 
+dmafs-500-500    "DMAFS"                             -1.516e-04           20100      20100.0              fastsm/043           monophoton_med-500_dm-500_cv-0.0_ca-1.0 
 dmafs-525-1      "DMAFS"                             -0.07070             30000      30000.0              fastsm/043           monophoton_med-525_dm-1_cv-0.0_ca-1.0 
 dmafs-525-5      "DMAFS"                             -0.07100             50000      50000.0              fastsm/043           monophoton_med-525_dm-5_cv-0.0_ca-1.0 
 dmafs-525-10     "DMAFS"                             -0.07091             50000      50000.0              fastsm/043           monophoton_med-525_dm-10_cv-0.0_ca-1.0 
