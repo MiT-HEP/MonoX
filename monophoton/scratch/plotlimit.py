@@ -119,8 +119,8 @@ for fname in os.listdir(sourcedir):
     mmed = float(matches.group(1))
     mdm = float(matches.group(2))
 
-    if mdm > mmed * 0.5 + 200.:
-        continue
+#    if mdm > mmed * 0.5 + 200.:
+#        continue
 
     point = (mmed, mdm)
 
@@ -189,11 +189,11 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
             hist.SetBinContent(iX, iY, z)
             
     # ad hoc fix
-    if model == 'dmvfs':
-        lowz = hist.GetBinContent(1, 5)
-        highz = hist.GetBinContent(1, 8)
-        hist.SetBinContent(1, 6, (2. * lowz + 1. * highz) / 3.)
-        hist.SetBinContent(1, 7, (1. * lowz + 2. * highz) / 3.)
+#    if model == 'dmvfs':
+#        lowz = hist.GetBinContent(1, 5)
+#        highz = hist.GetBinContent(1, 8)
+#        hist.SetBinContent(1, 6, (2. * lowz + 1. * highz) / 3.)
+#        hist.SetBinContent(1, 7, (1. * lowz + 2. * highz) / 3.)
 
     output.cd()
     hist.Write()

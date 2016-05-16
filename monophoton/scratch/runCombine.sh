@@ -14,5 +14,11 @@ eval `scram runtime -sh`
 
 cd -
 
-combine -M Asymptotic -m $(printf %d%04d $MMED $MDM) /scratch5/yiiyama/studies/monophoton/datacards/$POINT.dat
-cp *.root /scratch5/yiiyama/studies/monophoton/limits/$MODEL/$POINT.root
+DATACARD=/scratch5/yiiyama/studies/monophoton/datacards/$POINT.dat
+
+combine -M Asymptotic $DATACARD
+
+# take care of r value scaling
+fixLimit.py $DATACARD higgsCombineTest.Asymptotic.mH120.root
+
+mv higgsCombineTest.Asymptotic.mH120.root /scratch5/yiiyama/studies/monophoton/limits/$MODEL/$POINT.root
