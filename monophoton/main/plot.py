@@ -484,12 +484,14 @@ if __name__ == '__main__':
             hist = bkgTotal.Clone(group.name)
             hist.SetDirectory(outFile)
             hist.Scale(group.count / hist.GetSumOfWeights())
+            for iBin in range(hist.GetNcells()):
+                hist.SetBinError(iBin, 0.)
 
             writeHist(hist)
             formatHist(hist, vardef)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
-                counters[group.name] = counter
+                counters[group.name] = hist
 
         # plot signal distributions for sensitive variables
         if isSensitive or outFile:
