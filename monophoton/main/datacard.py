@@ -42,7 +42,8 @@ for sName in monophConfig.obs.samples:
     lumi += allsamples[sName].lumi
 
 # gather process names
-processes = [args.model] + [g.name for g in monophConfig.bkgGroups]
+signal = args.model
+processes = [signal] + [g.name for g in monophConfig.bkgGroups]
 
 # determine column widths (for human-readability)
 colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
@@ -67,13 +68,25 @@ def makeProcessBlock(processes, procs, binLow = 1):
         'rate                 '
     ]
 
+    signalScale = 1.
+
     for iP, process in enumerate(processes):
         if process == 'nomodel':
             rate = lumi / 1000. # sigma x A x eff = 1 fb
         else:
             hist = getHist(process)
-            rate = hist.Integral(binLow, hist.GetNbinsX())
-            if rate < 0.005:
+            integral = hist.Integral(binLow, hist.GetNbinsX())
+            rate = integral
+            if process == signal:
+                while rate < 0.01:
+                    signalScale *= 10.
+                    rate = integral * signalScale
+
+                while rate > 100.:
+                    signalScale *= 0.1
+                    rate = integral * signalScale
+
+            elif rate < 0.005:
                 continue
 
         procs.append(process)
@@ -83,7 +96,7 @@ def makeProcessBlock(processes, procs, binLow = 1):
         processBlock[2] += cold % iP
         processBlock[3] += colf % rate
 
-    return processBlock
+    return processBlock, signalScale
 
 
 def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
@@ -147,13 +160,17 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
         return (block, systList)
 
 
-def writeCard(outputName, blocks):
+def writeCard(outputName, blocks, signalScale = 1.):
     with open(outputName, 'w') as datacard:
         for block in blocks:
             for line in block:
                 datacard.write(line + '\n')
 
             datacard.write('---------------------------------\n')
+
+        if signalScale != 1.:
+            # signal yield is scaled by signalScale -> scale r factor back by 1/signalScale
+            datacard.write('# R x %.3e\n' % (1. / signalScale))
 
 
 obs = source.Get(variable + '-data_obs')
@@ -208,7 +225,8 @@ if args.model == 'nomodel':
         ]
 
         procs = []
-        processBlock = makeProcessBlock(processes, procs, binLow = binLow)
+        processBlock, signalScale = makeProcessBlock(processes, procs, binLow = binLow)
+        # this is nomodel; ignore signalScale (is 1 anyway)
 
         headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
@@ -260,13 +278,13 @@ elif args.shape:
     ]
 
     procs = []
-    processBlock = makeProcessBlock(processes, procs)
+    processBlock, signalScale = makeProcessBlock(processes, procs)
 
     headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
     nuisanceBlock = makeNuisanceBlock(nuisances, procs)
 
-    writeCard(outputName, [headerBlock, shapeBlock, obsBlock, processBlock, nuisanceBlock])
+    writeCard(outputName, [headerBlock, shapeBlock, obsBlock, processBlock, nuisanceBlock], signalScale = signalScale)
 
 else:
     obsBlock = [
@@ -275,10 +293,10 @@ else:
     ]
 
     procs = []
-    processBlock = makeProcessBlock(processes, procs)
+    processBlock, signalScale = makeProcessBlock(processes, procs)
 
     headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
     (nuisanceBlock, systList) = makeNuisanceBlock(nuisances, procs, shape = False)
 
-    writeCard(outputName, [headerBlock, obsBlock, processBlock, nuisanceBlock])
+    writeCard(outputName, [headerBlock, obsBlock, processBlock, nuisanceBlock], signalScale = signalScale)

@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 import os
 import sys
+import re
 from subprocess import Popen, PIPE
 import shutil
 from pprint import pprint
@@ -44,6 +45,12 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
     print herr, '\n'
     """
 
+    rscale = 1.
+    with open(TextPath) as datacard:
+        lines = datacard.read().strip().split('\n')
+        matches = re.match('# R x ([0-9.e+-]+)', lines[-1])
+        if matches:
+            rscale = float(matches.group(1))
 
     find = Popen(['egrep','Observed|Expected'],stdin=HiggsTool.stdout,stdout=PIPE,stderr=PIPE)
     """ for debugging, will cause next step to crash
@@ -64,13 +71,13 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
         # print tmp
         if tmp:
             if 'Observed' in tmp[0]:
-                obs = ( float(tmp[4]), float(tmp[4])/1.2, float(tmp[4])/0.8 )
+                obs = ( float(tmp[4]) * rscale, float(tmp[4])/1.2 * rscale, float(tmp[4])/0.8 * rscale )
             elif "50.0%" in tmp[0]:
-                exp[0] = float(tmp[4])
+                exp[0] = float(tmp[4]) * rscale
             elif "16.0%" in tmp[0]:
-                exp[1] = float(tmp[4])
+                exp[1] = float(tmp[4]) * rscale
             elif "84.0%" in tmp[0]:
-                exp[2] = float(tmp[4])
+                exp[2] = float(tmp[4]) * rscale
 
     return (obs, exp)
 
@@ -133,12 +140,8 @@ for iM, model in enumerate(modelList):
     (obs, exp) = RunHiggsTool(cardPath,LimitToolDir)
     # (obs, exp) = (1.0, 1.0)
 
-    if allsamples[model].scale != 1.:
-        obsNom =  obs[0] * allsamples[model].scale
-        expNom = exp[0] * allsamples[model].scale
-    else:
-        obsNom = obs[0]
-        expNom = exp[0]
+    obsNom = obs[0]
+    expNom = exp[0]
 
     obsXsec = obsNom * allsamples[model].crosssection * 1000. # to 1/fb
     expXsec = expNom * allsamples[model].crosssection * 1000. # to 1/fb

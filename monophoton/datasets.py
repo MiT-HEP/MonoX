@@ -4,13 +4,12 @@ import math
 import fnmatch
 
 class SampleDef(object):
-    def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
+    def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
         self.name = name
         self.title = title
         self.book = book
         self.directory = directory
         self.crosssection = crosssection
-        self.scale = scale
         self.nevents = nevents
         if sumw == 0.:
             self.sumw = float(nevents)
@@ -22,7 +21,7 @@ class SampleDef(object):
         self.custom = custom
 
     def clone(self):
-        return SampleDef(self.name, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, scale = self.scale, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
+        return SampleDef(self.name, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
 
     def dump(self):
         print 'name =', self.name
@@ -30,7 +29,6 @@ class SampleDef(object):
         print 'book =', self.book
         print 'directory =', self.directory
         print 'crosssection =', self.crosssection
-        print 'scale =', self.scale
         print 'nevents =', self.nevents
         print 'sumw =', self.sumw
         print 'lumi =', self.lumi
@@ -59,9 +57,6 @@ class SampleDef(object):
             xsecstr = '%.{ndec}e'.format(ndec = 3) % xsec
         else:
             xsecstr = '%.{ndec}f'.format(ndec = ndec) % xsec
-
-        if self.scale != 1.:
-            xsecstr += 'x%.1e' % self.scale
 
         if self.comments != '':
             self.comments = "# "+self.comments
@@ -120,7 +115,7 @@ class SampleDefList(object):
                 if not line or line.startswith('#'):
                     continue
         
-                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.x+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
+                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
                 if not matches:
                     print 'Ill-formed line in datasets.csv'
                     print line
@@ -131,15 +126,7 @@ class SampleDefList(object):
                 if sumw == '-':
                     sdef = SampleDef(name, title = title, book = book, directory = directory, lumi = float(xsec), nevents = int(nevents), data = True, comments = comments.lstrip(' #'))
                 else:
-                    if 'x' in xsec:
-                        (xsec, scale) = xsec.split('x')
-                        xsec = float(xsec) # * float(scale)
-                        scale = float(scale)
-                    else:
-                        xsec = float(xsec)
-                        scale = 1.
-        
-                    sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = xsec, scale = scale, nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
+                    sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = float(xsec), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
         
                 self.samples.append(sdef)
 
