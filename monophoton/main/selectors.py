@@ -58,9 +58,8 @@ hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
 #hadproxyupWeight = hadproxySource.Get('tfactJetPtUp')
 #hadproxydownWeight = hadproxySource.Get('tfactJetPtDown')
 
-
-eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
-eleproxyWeight = eleproxySource.Get('fraction')
+eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
+eleproxyWeight = eleproxySource.Get('frate')
 
 ##############################################################
 # Argument "selector" in all functions below can either be an
@@ -180,9 +179,11 @@ def eleProxy(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    weight = ROOT.ConstantWeight(eleproxyWeight.GetY()[0], 'egfakerate')
-    weight.setUncertaintyUp(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
-    weight.setUncertaintyDown(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
+    bin = eleproxyWeight.FindFixBin(175.)
+    
+    weight = ROOT.ConstantWeight(eleproxyWeight.GetBinContent(bin), 'egfakerate')
+    weight.setUncertaintyUp(eleproxyWeight.GetBinError(bin) / eleproxyWeight.GetY()[0])
+    weight.setUncertaintyDown(eleproxyWeight.GetBinError(bin) / eleproxyWeight.GetY()[0])
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
