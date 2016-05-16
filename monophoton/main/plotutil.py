@@ -1,6 +1,7 @@
 import sys
 import array
 import copy
+import re
 
 argv = list(sys.argv)
 sys.argv = []
@@ -9,11 +10,12 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', color = ROOT.kBlack, scale = 1.):
+    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, scale = 1.):
         self.name = name
         self.title = title
         self.samples = samples
         self.region = region
+        self.count = count
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
         self.variations = []
@@ -156,7 +158,7 @@ class VariableDef(object):
         if type(self.expr) is tuple:
             expr = ':'.join(self.expr)
         else:
-            expr = vardef.expr
+            expr = self.expr
 
         for repl in replacements:
             # replace the variable names given in repl = ('original', 'new')

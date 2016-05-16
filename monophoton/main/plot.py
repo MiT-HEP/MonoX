@@ -11,9 +11,11 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-lumi = 0. # to be set in __main__
+# global variables to be set in __main__
+lumi = 0.
+allsamples = None 
 
-def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, skimDir, postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
     """
@@ -233,7 +235,7 @@ def writeHist(hist):
 
 
 def formatHist(hist, vardef):
-    # Label the axes
+    # Label the axes and normalize bin contents by width
     if vardef.ndim() == 1:
         for iX in range(1, hist.GetNbinsX() + 1):
             cont = hist.GetBinContent(iX)
@@ -272,6 +274,23 @@ def formatHist(hist, vardef):
     if vardef.ndim() != 1:
         hist.GetZaxis().SetTitle(ztitle)
         hist.SetMinimum(0.)
+
+def unformatHist(hist, vardef):
+    # Recompute raw bin contents
+    if vardef.ndim() == 1:
+        for iX in range(1, hist.GetNbinsX() + 1):
+            cont = hist.GetBinContent(iX)
+            err = hist.GetBinError(iX)
+            w = hist.GetXaxis().GetBinWidth(iX)
+            if vardef.unit:
+                hist.SetBinContent(iX, cont * w)
+                hist.SetBinError(iX, err * w)
+            else:
+                if iX == 1:
+                    wnorm = w
+
+                hist.SetBinContent(iX, cont * (w / wnorm))
+                hist.SetBinError(iX, err * (w / wnorm))
 
 
 def printCounts(counters, plotConfig):
@@ -441,13 +460,36 @@ if __name__ == '__main__':
             postscale = 1.
 
         # make background histograms
-        for group in plotConfig.bkgGroups:
-            hist = groupHist(group, vardef, plotConfig, allsamples, args.skimDir, postscale = postscale, outFile = outFile)
+        # loop over groups with actual distributions
+        bkgTotal = vardef.makeHist('bkgtotal')
+
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
+            hist = groupHist(group, vardef, plotConfig, args.skimDir, postscale = postscale, outFile = outFile)
+
+            bkgTotal.Add(hist)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
             elif plotDir:
                 canvas.addStacked(hist, title = group.title, color = group.color)
+
+        # formatted histograms added to bkgTotal
+        unformatHist(bkgTotal, vardef)
+
+        # then over groups without distributions (no samples but count set)
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
+            if outFile:
+                outFile.cd()
+
+            hist = bkgTotal.Clone(group.name)
+            hist.SetDirectory(outFile)
+            hist.Scale(group.count / hist.GetSumOfWeights())
+
+            writeHist(hist)
+            formatHist(hist, vardef)
+
+            if vardef.name == 'count' or vardef.name == args.bbb:
+                counters[group.name] = counter
 
         # plot signal distributions for sensitive variables
         if isSensitive or outFile:
