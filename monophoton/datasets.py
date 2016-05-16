@@ -1,6 +1,7 @@
 import re
 import os
 import math
+import fnmatch
 
 class SampleDef(object):
     def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, comments = '', custom = {}):
@@ -161,6 +162,17 @@ class SampleDefList(object):
             return next(s for s in self.samples if s.name == name)
         except StopIteration:
             raise RuntimeError('Sample ' + name + ' not found')
+
+    def getmany(self, names):
+        samples = []
+        for name in names:
+            if '*' in name:
+                samples += [s for s in self.samples if fnmatch.fnmatch(s.name, name)]
+            else:
+                samples.append(self.get(name))
+
+        return samples
+
 
 if __name__ == '__main__':
     import sys

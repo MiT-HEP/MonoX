@@ -25,13 +25,20 @@ def getConfig(confName):
         config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 170.'
         config.sigGroups = [
-            GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
-            GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
-            GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
+#            GroupSpec('add', 'ADD', samples = ['add-*']),
+            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
+            GroupSpec('dma', 'DM A', samples = ['dma-*']),
+            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
+            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
+        ]            
+        config.signalPoints = [
+#            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
+            SampleSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('spike', 'spikes', count = 4., color = None),
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('spike', 'Spikes', count = 4., color = None),
+            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('dytt', 'DY, tt', samples = ['tt', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x44, 0xCC)), 
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('qcdmc', 'QCD fakes (MC)', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
@@ -156,9 +163,16 @@ def getConfig(confName):
         config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi < 0.5 && t1Met.minJetDPhi > 0.5'
         config.fullSelection = metCut
         config.sigGroups = [
-            # GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
-            # GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
-            # GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
+            # GroupSpec('add', 'ADD', samples = ['add-*']),
+            # GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
+            # GroupSpec('dma', 'DM A', samples = ['dma-*']),
+            # GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
+            # GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
+        ]
+        config.signalPoints = [
+            # SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
+            # SampleSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            # SampleSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
@@ -343,7 +357,7 @@ def getConfig(confName):
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
         config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 170.'
-        config.sigGroups = [
+        config.signalPoints = [
             GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
             GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
             GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
@@ -369,10 +383,18 @@ def getConfig(confName):
         config.fullSelection = metCut
 
         config.sigGroups = [
-            GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
-            GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
-            GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
+            GroupSpec('add', 'ADD', samples = ['add-*']),
+            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
+            GroupSpec('dma', 'DM A', samples = ['dma-*']),
+            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
+            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]
+        config.signalPoints = [
+            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
+            SampleSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
+        ]
+
         config.bkgGroups = [
             # GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),

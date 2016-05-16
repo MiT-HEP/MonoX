@@ -15,11 +15,12 @@ sys.path.append(basedir)
 lumi = 0.
 allsamples = None 
 
-def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', template = None, postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
     For normal group with a list of samples, stack up histograms from the samples.
     Needs a template histogram if the group has no shape (null list of samples).
+    Argument samples can be used to limit plotting to a subset of group samples.
     """
 
     if outFile:
@@ -32,12 +33,18 @@ def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscal
     else:
         region = plotConfig.name
 
-    hist = vardef.makeHist(group.name, outDir = outFile)
+    if len(samples) == 0:
+        samples = group.samples
+
+    if not name:
+        name = group.name
+
+    hist = vardef.makeHist(name, outDir = outFile)
     shists = {}
 
-    if len(group.samples) != 0:
+    if len(samples) != 0:
         # nominal. name: variable-group
-        for sname in group.samples:
+        for sname in samples:
             if group.region:
                 hname = sname + '_' + group.region
             else:
@@ -63,12 +70,12 @@ def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscal
 
             varname = variation.name + 'Var'
 
-            vhist = vardef.makeHist(group.name + '_' + varname, outDir = outFile)
+            vhist = vardef.makeHist(name + '_' + varname, outDir = outFile)
 
             reweight = 1. + variation.reweight
 
-            if len(group.samples) != 0:
-                for sname in group.samples:
+            if len(samples) != 0:
+                for sname in samples:
                     if group.region:
                         hname = sname + '_' + group.region + '_' + varname
                     else:
@@ -87,7 +94,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscal
         else:
             # up & down variations
 
-            vhists = tuple([vardef.makeHist(group.name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
+            vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
     
             for iV in range(2):
                 v = 'Up' if iV == 0 else 'Down'
@@ -108,7 +115,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscal
                 else:
                     reweight = None
    
-                for sname in group.samples:
+                for sname in samples:
                     if group.region:
                         hname = sname + '_' + group.region + '_' + varname
                     else:
@@ -332,9 +339,9 @@ def printCounts(counters, plotConfig):
     
     print '====================='
     
-    for group in plotConfig.sigGroups:
-        counter = counters[group.name]
-        print ('%+12s  ' + prec + ' +- ' + prec) % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
+    for sspec in plotConfig.signalPoints:
+        counter = counters[sspec.name]
+        print ('%+12s  ' + prec + ' +- ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1))
     
     print '====================='
     print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
@@ -429,6 +436,10 @@ if __name__ == '__main__':
         outFile = None
         sampleDir = None
 
+    if args.allSignal and not outFile:
+        print '--all-signal set but no output file is given.'
+        sys.exit(1)
+
     # lumi defined in the global scope for getHist function
     for sName in plotConfig.obs.samples:
         lumi += allsamples[sName].lumi
@@ -462,7 +473,7 @@ if __name__ == '__main__':
         else:
             # set up canvas
             canvas.Clear(full = True)
-            canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
+            canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints)), 0.92, SimpleCanvas.YMAX - 0.01)
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:
@@ -500,31 +511,24 @@ if __name__ == '__main__':
 
         # plot signal distributions for sensitive variables
         if isSensitive or outFile:
-            sigGroups = []
-            for group in plotConfig.sigGroups:
-                # signal groups should only have one sample
+            usedPoints = []
 
-                sigGroups.append(group.name)
+            for sspec in plotConfig.signalPoints:
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, postscale = postscale, outFile = outFile)
+                usedPoints.append(sspec.name)
 
-                hist = getHist(group.name, allsamples[group.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = sampleDir)
-
-                hist.SetDirectory(outFile)
-
-                writeHist(hist)
-                formatHist(hist, vardef)
-
-                if vardef.name == 'count':
-                    counters[group.name] = hist
+                if vardef.name == 'count' or vardef.name == args.bbb:
+                    counters[sspec.name] = hist
                 elif plotDir:
-                    canvas.addSignal(hist, title = group.title, color = group.color)
+                    canvas.addSignal(hist, title = sspec.title, color = sspec.color)
 
-            if args.allSignal:
-                # when output file is specified, make plots for all signal models
-                for sample in allsamples:
-                    if not sample.signal or sample.name in sigGroups:
-                        continue
-
-                    getHist(sample.name, allsamples[sample.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = outFile)
+        # write out all signal distributions if asked for
+        if isSensitive and args.allSignal:
+            for group in plotConfig.sigGroups:
+                for sample in allsamples.getmany(group.samples):
+                    if sample.name not in usedPoints:
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, postscale = postscale, outFile = outFile)
+                        usedPoints.append(sample.name)
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 

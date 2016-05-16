@@ -21,6 +21,16 @@ class GroupSpec(object):
         self.variations = []
 
 
+class SampleSpec(object):
+    # use for signal point spec
+
+    def __init__(self, name, title, group = None, color = ROOT.kBlack):
+        self.name = name
+        self.title = title
+        self.group = group
+        self.color = color
+
+
 class VariableDef(object):
     def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1.):
         self.name = name
@@ -177,6 +187,7 @@ class PlotConfig(object):
         self.fullSelection = ''
         self.obs = GroupSpec('data_obs', 'Observed', samples = obsSamples)
         self.sigGroups = []
+        self.signalPoints = []
         self.bkgGroups = []
         self.variables = []
         self.sensitiveVars = []
