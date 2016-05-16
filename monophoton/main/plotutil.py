@@ -72,6 +72,9 @@ class VariableDef(object):
         xlow, xhigh = self.xlimits()
         return self.blind[0] <= xlow and self.blind[1] >= xhigh
 
+    def histName(self, hname):
+        return self.name + '-' + hname
+
     def makeHist(self, hname, outDir = None):
         """
         Make an empty histogram from the specifications.
@@ -98,7 +101,7 @@ class VariableDef(object):
                 lastbinWidth = (arr[-1] - arr[0]) / 30.
                 arr += array.array('d', [self.binning[-1] + lastbinWidth])
     
-            hist = ROOT.TH1D(self.name + '-' + hname, '', nbins, arr)
+            hist = ROOT.TH1D(self.histName(hname), '', nbins, arr)
     
         else:
             args = []
@@ -117,11 +120,11 @@ class VariableDef(object):
             if self.ndim() == 2:
                 pprint(args)
                 print " "
-                hist = ROOT.TH2D(self.name + '-' + hname, '', *tuple(args))
+                hist = ROOT.TH2D(self.histName(hname), '', *tuple(args))
                 pprint(hist)
             elif self.ndim() == 3:
                 # who would do this??
-                hist = ROOT.TH3D(self.name + '-' + hname, '', *tuple(args))
+                hist = ROOT.TH3D(self.histName(hname), '', *tuple(args))
             else:
                 # I appreciate this error message
                 raise RuntimeError('What are you thinking')

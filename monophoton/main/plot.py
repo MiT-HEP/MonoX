@@ -15,9 +15,11 @@ sys.path.append(basedir)
 lumi = 0.
 allsamples = None 
 
-def groupHist(group, vardef, plotConfig, skimDir, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, skimDir = '', template = None, postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
+    For normal group with a list of samples, stack up histograms from the samples.
+    Needs a template histogram if the group has no shape (null list of samples).
     """
 
     if outFile:
@@ -30,20 +32,28 @@ def groupHist(group, vardef, plotConfig, skimDir, postscale = 1., outFile = None
     else:
         region = plotConfig.name
 
-    # nominal. name: variable-group
     hist = vardef.makeHist(group.name, outDir = outFile)
+    shists = {}
 
-    for sname in group.samples:
-        if group.region:
-            hname = sname + '_' + group.region
-        else:
-            hname = ''
+    if len(group.samples) != 0:
+        # nominal. name: variable-group
+        for sname in group.samples:
+            if group.region:
+                hname = sname + '_' + group.region
+            else:
+                hname = ''
+    
+            # add up histograms from individual samples (saved to sampleDir)
+            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+            shist.Scale(group.scale)
+            hist.Add(shist)
+            shists[sname] = shist
 
-        # add up histograms from individual samples (saved to sampleDir)
-        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
-        shist.Scale(group.scale)
-        hist.Add(shist)
-        
+    else:
+        norm = template.GetSumOfWeights()
+        for iC in range(template.GetNcells()):
+            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm)
+            
     varhists = {}
 
     # systematics variations
@@ -57,15 +67,20 @@ def groupHist(group, vardef, plotConfig, skimDir, postscale = 1., outFile = None
 
             reweight = 1. + variation.reweight
 
-            for sname in group.samples:
-                if group.region:
-                    hname = sname + '_' + group.region + '_' + varname
-                else:
-                    hname = sname + '_' + varname
-
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir)
-                shist.Scale(group.scale)
-                vhist.Add(shist)
+            if len(group.samples) != 0:
+                for sname in group.samples:
+                    if group.region:
+                        hname = sname + '_' + group.region + '_' + varname
+                    else:
+                        hname = sname + '_' + varname
+    
+                    shist = shists[sname].Clone(vardef.histName(hname))
+                    shist.SetDirectory(sampleDir)
+                    shist.Scale(reweight)
+                    vhist.Add(shist)
+            else:
+                for iC in range(template.GetNcells()):
+                    vhist.SetBinContent(iC, hist.GetBinContent(iC) * reweight)
                 
             varhists[variation.name] = (vhist,) # make it a tuple to align with rest
 
@@ -478,17 +493,7 @@ if __name__ == '__main__':
 
         # then over groups without distributions (no samples but count set)
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
-            if outFile:
-                outFile.cd()
-
-            hist = bkgTotal.Clone(group.name)
-            hist.SetDirectory(outFile)
-            hist.Scale(group.count / hist.GetSumOfWeights())
-            for iBin in range(hist.GetNcells()):
-                hist.SetBinError(iBin, 0.)
-
-            writeHist(hist)
-            formatHist(hist, vardef)
+            hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
