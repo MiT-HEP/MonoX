@@ -4,7 +4,7 @@ import math
 import fnmatch
 
 class SampleDef(object):
-    def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, signal = False, comments = '', custom = {}):
+    def __init__(self, name, title = '', book = '', directory = '', crosssection = 0., scale = 1., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
         self.name = name
         self.title = title
         self.book = book
@@ -18,12 +18,11 @@ class SampleDef(object):
             self.sumw = sumw
         self.lumi = lumi
         self.data = data
-        self.signal = signal
         self.comments = comments
         self.custom = custom
 
     def clone(self):
-        return SampleDef(self.name, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, scale = self.scale, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, signal = self.signal, comments = self.comments, custom = dict(self.custom.items()))
+        return SampleDef(self.name, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, scale = self.scale, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
 
     def dump(self):
         print 'name =', self.name
@@ -37,7 +36,6 @@ class SampleDef(object):
         print 'lumi =', self.lumi
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
-        print 'signal =', self.signal
 
     def linedump(self):
         title = '"%s"' % self.title
@@ -56,9 +54,6 @@ class SampleDef(object):
                 sumwstr = '%.1f' % self.sumw
             else:
                 sumwstr = '%.11e' % self.sumw
-
-        if self.signal:
-            xsec *= -1.
 
         if ndec >= 6:
             xsecstr = '%.{ndec}e'.format(ndec = 3) % xsec
@@ -144,13 +139,7 @@ class SampleDefList(object):
                         xsec = float(xsec)
                         scale = 1.
         
-                    if xsec < 0.:
-                        signal = True
-                        xsec = -xsec
-                    else:
-                        signal = False
-        
-                    sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = xsec, scale = scale, nevents = int(nevents), sumw = float(sumw), signal = signal, comments = comments.lstrip(' #'))
+                    sdef = SampleDef(name, title = title, book = book, directory = directory, crosssection = xsec, scale = scale, nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
         
                 self.samples.append(sdef)
 
@@ -179,8 +168,7 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     argParser = ArgumentParser(description = 'Dataset information management')
-    argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List datasets with nevents > 0')
-    argParser.add_argument('--all', '-A', action = 'store_true', dest = 'all', help = '(With --list) Show all datasets.')
+    argParser.add_argument('--list', '-L', metavar = 'SAMPLES', dest = 'list', default = [], nargs = '*', help = 'List datasets with nevents > 0 (no argument) or datasets with names matching to the argument')
     argParser.add_argument('--print', '-p', metavar = 'DATASET', dest = 'showInfo', help = 'Print information of DATASET.')
     argParser.add_argument('--recalculate', '-r', metavar = 'DATASET', dest = 'recalculate', nargs = '+', help = 'Recalculate nentries and sumw for DATASET.')
     argParser.add_argument('--source-dir', '-d', metavar = 'DIR', dest = 'sourceDir', help = 'Source directory where simpletree files are.')
@@ -191,11 +179,9 @@ if __name__ == '__main__':
 
     samples = SampleDefList(listpath = args.listPath)
 
-    if args.list:
-        if args.all:
-            print ' '.join([sample.name for sample in samples])
-        else:
-            print ' '.join([sample.name for sample in samples if sample.nevents > 0.])
+    if len(args.list) != 0:
+        matches = samples.getmany(args.list)
+        print ' '.join([sample.name for sample in matches])
 
         sys.exit(0)
 

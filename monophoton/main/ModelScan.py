@@ -80,65 +80,25 @@ def RunHiggsTool(DataCardPath,LimitToolDir):
 ###======================================================================================
 
 classes = {} # "dmv" : ( [mMed], [mDM] ) 
-for model in sorted(allsamples): 
-    if not model.signal:
-        continue
-    (name, xval, yval) = model.name.split('-')
-    if not name in classes.keys():
-        classes[name] = ( [], [] )
-    if not xval in classes[name][0]:
-        classes[name][0].append(xval)
-    if not yval in classes[name][1]:
-        classes[name][1].append(yval)
-
-# pprint(classes)
-
 modelList = []
+
 if opts.models == []:
-    for sample in allsamples:
-        if sample.signal:
-            modelList.append(sample.name)
+    opts.models = ['add', 'dmv', 'dmvfs', 'dma', 'dmafs', 'dmewk', 'zgr']
 
-if 'add' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'add' in sample.name:
-            modelList.append(sample.name)
-if 'dmv' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'dmv' in sample.name and not 'fs' in sample.name:
-            modelList.append(sample.name)
-if 'dmvfs' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'dmvfs' in sample.name:
-            modelList.append(sample.name)
-if 'dma' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'dma' in sample.name and not 'fs' in sample.name:
-            modelList.append(sample.name)
-if 'dmafs' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'dmafs' in sample.name:
-            modelList.append(sample.name)
-if 'dmewk' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'dmewk' in sample.name:
-            modelList.append(sample.name)
-if 'zgr' in opts.models:
-    for sample in allsamples:
-        if sample.signal and 'zgr' in sample.name:
-            modelList.append(sample.name)
+for model in opts.models:
+    samples = allsamples.getmany(model + '-*')
+    snames = [s.name for s in samples]
+    modelList += snames
 
-for model in list(opts.models):
-    if model in ['add', 'dmv', 'dmvfs', 'dma', 'dmafs', 'dmewk', 'zgr']:
-        continue
-    try:
-        if allsamples[model].signal:
-            modelList.append(model)
-            opts.models.remove(model)
-    except KeyError:
-        print model, 'not in datasets.csv. Skipping!'
-        opts.models.remove(model)
-
+    for sname in snames:
+        (name, xval, yval) = sname.split('-')
+        if not name in classes.keys():
+            classes[name] = ( [], [] )
+        if not xval in classes[name][0]:
+            classes[name][0].append(xval)
+        if not yval in classes[name][1]:
+            classes[name][1].append(yval)
+        
 LimitToolDir = os.path.join(os.environ['CMSSW_BASE'], 'src/HiggsAnalysis/CombinedLimit')
 cardDir = os.path.join(LimitToolDir, 'data/monoph')
 if not os.path.exists(cardDir):
