@@ -169,8 +169,8 @@ def writeCard(outputName, blocks, signalScale = 1.):
             datacard.write('---------------------------------\n')
 
         if signalScale != 1.:
-            # signal yield is scaled by signalScale -> scale r factor back by 1/signalScale
-            datacard.write('# R x %.3e\n' % (1. / signalScale))
+            # signal yield is scaled by signalScale -> scale r factor back by signalScale
+            datacard.write('# R x %.3e\n' % signalScale)
 
 
 obs = source.Get(variable + '-data_obs')
