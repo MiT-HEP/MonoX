@@ -11,11 +11,16 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-lumi = 0. # to be set in __main__
+# global variables to be set in __main__
+lumi = 0.
+allsamples = None 
 
-def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', template = None, postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
+    For normal group with a list of samples, stack up histograms from the samples.
+    Needs a template histogram if the group has no shape (null list of samples).
+    Argument samples can be used to limit plotting to a subset of group samples.
     """
 
     if outFile:
@@ -28,20 +33,34 @@ def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., ou
     else:
         region = plotConfig.name
 
-    # nominal. name: variable-group
-    hist = vardef.makeHist(group.name, outDir = outFile)
+    if len(samples) == 0:
+        samples = group.samples
 
-    for sname in group.samples:
-        if group.region:
-            hname = sname + '_' + group.region
-        else:
-            hname = ''
+    if not name:
+        name = group.name
 
-        # add up histograms from individual samples (saved to sampleDir)
-        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
-        shist.Scale(group.scale)
-        hist.Add(shist)
-        
+    hist = vardef.makeHist(name, outDir = outFile)
+    shists = {}
+
+    if len(samples) != 0:
+        # nominal. name: variable-group
+        for sname in samples:
+            if group.region:
+                hname = sname + '_' + group.region
+            else:
+                hname = ''
+    
+            # add up histograms from individual samples (saved to sampleDir)
+            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+            shist.Scale(group.scale)
+            hist.Add(shist)
+            shists[sname] = shist
+
+    else:
+        norm = template.GetSumOfWeights()
+        for iC in range(template.GetNcells()):
+            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm)
+            
     varhists = {}
 
     # systematics variations
@@ -51,26 +70,31 @@ def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., ou
 
             varname = variation.name + 'Var'
 
-            vhist = vardef.makeHist(group.name + '_' + varname, outDir = outFile)
+            vhist = vardef.makeHist(name + '_' + varname, outDir = outFile)
 
             reweight = 1. + variation.reweight
 
-            for sname in group.samples:
-                if group.region:
-                    hname = sname + '_' + group.region + '_' + varname
-                else:
-                    hname = sname + '_' + varname
-
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, reweight = reweight, postscale = postscale, outDir = sampleDir)
-                shist.Scale(group.scale)
-                vhist.Add(shist)
+            if len(samples) != 0:
+                for sname in samples:
+                    if group.region:
+                        hname = sname + '_' + group.region + '_' + varname
+                    else:
+                        hname = sname + '_' + varname
+    
+                    shist = shists[sname].Clone(vardef.histName(hname))
+                    shist.SetDirectory(sampleDir)
+                    shist.Scale(reweight)
+                    vhist.Add(shist)
+            else:
+                for iC in range(template.GetNcells()):
+                    vhist.SetBinContent(iC, hist.GetBinContent(iC) * reweight)
                 
             varhists[variation.name] = (vhist,) # make it a tuple to align with rest
 
         else:
             # up & down variations
 
-            vhists = tuple([vardef.makeHist(group.name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
+            vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
     
             for iV in range(2):
                 v = 'Up' if iV == 0 else 'Down'
@@ -91,7 +115,7 @@ def groupHist(group, vardef, plotConfig, allsamples, skimDir, postscale = 1., ou
                 else:
                     reweight = None
    
-                for sname in group.samples:
+                for sname in samples:
                     if group.region:
                         hname = sname + '_' + group.region + '_' + varname
                     else:
@@ -193,24 +217,6 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
     if plotAcceptance:
         hist.Scale(1. / sample.nevents)
 
-    if sample.signal and sample.scale != 1.:
-        # print sname
-        # print hist.Integral()
-        hist.Scale(sample.scale)
-        # print hist.Integral()
-
-    # To figure out which samples we need to scale
-    """
-    if sample.signal:
-        norm = hist.Integral()
-        print sname, norm
-        if (norm < 0.05 or norm > 5000.) and norm != 0.:
-            scale = 25. / norm
-            print scale
-            hist.Scale(scale)
-            print hist.Integral()
-    """
-
     writeHist(hist)
 
     # we don't need the tree any more
@@ -233,7 +239,7 @@ def writeHist(hist):
 
 
 def formatHist(hist, vardef):
-    # Label the axes
+    # Label the axes and normalize bin contents by width
     if vardef.ndim() == 1:
         for iX in range(1, hist.GetNbinsX() + 1):
             cont = hist.GetBinContent(iX)
@@ -273,6 +279,23 @@ def formatHist(hist, vardef):
         hist.GetZaxis().SetTitle(ztitle)
         hist.SetMinimum(0.)
 
+def unformatHist(hist, vardef):
+    # Recompute raw bin contents
+    if vardef.ndim() == 1:
+        for iX in range(1, hist.GetNbinsX() + 1):
+            cont = hist.GetBinContent(iX)
+            err = hist.GetBinError(iX)
+            w = hist.GetXaxis().GetBinWidth(iX)
+            if vardef.unit:
+                hist.SetBinContent(iX, cont * w)
+                hist.SetBinError(iX, err * w)
+            else:
+                if iX == 1:
+                    wnorm = w
+
+                hist.SetBinContent(iX, cont * (w / wnorm))
+                hist.SetBinError(iX, err * (w / wnorm))
+
 
 def printCounts(counters, plotConfig):
     prec = '%.2f'
@@ -298,9 +321,9 @@ def printCounts(counters, plotConfig):
     
     print '====================='
     
-    for group in plotConfig.sigGroups:
-        counter = counters[group.name]
-        print ('%+12s  ' + prec + ' +- ' + prec) % (group.name, counter.GetBinContent(1), counter.GetBinError(1))
+    for sspec in plotConfig.signalPoints:
+        counter = counters[sspec.name]
+        print ('%+12s  ' + prec + ' +- ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1))
     
     print '====================='
     print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
@@ -395,6 +418,10 @@ if __name__ == '__main__':
         outFile = None
         sampleDir = None
 
+    if args.allSignal and not outFile:
+        print '--all-signal set but no output file is given.'
+        sys.exit(1)
+
     # lumi defined in the global scope for getHist function
     for sName in plotConfig.obs.samples:
         lumi += allsamples[sName].lumi
@@ -428,7 +455,7 @@ if __name__ == '__main__':
         else:
             # set up canvas
             canvas.Clear(full = True)
-            canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.sigGroups)), 0.92, SimpleCanvas.YMAX - 0.01)
+            canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints)), 0.92, SimpleCanvas.YMAX - 0.01)
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:
@@ -441,41 +468,49 @@ if __name__ == '__main__':
             postscale = 1.
 
         # make background histograms
-        for group in plotConfig.bkgGroups:
-            hist = groupHist(group, vardef, plotConfig, allsamples, args.skimDir, postscale = postscale, outFile = outFile)
+        # loop over groups with actual distributions
+        bkgTotal = vardef.makeHist('bkgtotal')
+
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
+            hist = groupHist(group, vardef, plotConfig, args.skimDir, postscale = postscale, outFile = outFile)
+
+            bkgTotal.Add(hist)
 
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
             elif plotDir:
                 canvas.addStacked(hist, title = group.title, color = group.color)
 
+        # formatted histograms added to bkgTotal
+        unformatHist(bkgTotal, vardef)
+
+        # then over groups without distributions (no samples but count set)
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
+            hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
+
+            if vardef.name == 'count' or vardef.name == args.bbb:
+                counters[group.name] = hist
+
         # plot signal distributions for sensitive variables
         if isSensitive or outFile:
-            sigGroups = []
-            for group in plotConfig.sigGroups:
-                # signal groups should only have one sample
+            usedPoints = []
 
-                sigGroups.append(group.name)
+            for sspec in plotConfig.signalPoints:
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, postscale = postscale, outFile = outFile)
+                usedPoints.append(sspec.name)
 
-                hist = getHist(group.name, allsamples[group.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = sampleDir)
-
-                hist.SetDirectory(outFile)
-
-                writeHist(hist)
-                formatHist(hist, vardef)
-
-                if vardef.name == 'count':
-                    counters[group.name] = hist
+                if vardef.name == 'count' or vardef.name == args.bbb:
+                    counters[sspec.name] = hist
                 elif plotDir:
-                    canvas.addSignal(hist, title = group.title, color = group.color)
+                    canvas.addSignal(hist, title = sspec.title, color = sspec.color)
 
-            if args.allSignal:
-                # when output file is specified, make plots for all signal models
-                for sample in allsamples:
-                    if not sample.signal or sample.name in sigGroups:
-                        continue
-
-                    getHist(sample.name, allsamples[sample.name], plotConfig, vardef, args.skimDir, postscale = postscale, outDir = outFile)
+        # write out all signal distributions if asked for
+        if isSensitive and args.allSignal:
+            for group in plotConfig.sigGroups:
+                for sample in allsamples.getmany(group.samples):
+                    if sample.name not in usedPoints:
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, postscale = postscale, outFile = outFile)
+                        usedPoints.append(sample.name)
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 

@@ -297,9 +297,9 @@ for binName, fitCut in fitBins:
 
         elif runMode == 'single':
             if conf == 'ee':
-                # target is a histogram with !pixelVeto
+                # target is a histogram with !csafeVeto
                 # perform binned max L fit
-                cut = 'probes.medium && !probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
+                cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
             else:
                 # target is a tree with pixelVeto
                 # perform unbinned max L fit

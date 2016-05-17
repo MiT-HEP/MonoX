@@ -60,13 +60,7 @@ with open(xsecFilePath) as xsecFile:
         
         xsec = float(temps[1])
 
-        if xsec < 0.0001:
-            scale = round(0.001 / xsec)
-        else:
-            scale = 1
-
         samples[name].crosssection = xsec
-        samples[name].scale = scale
             
 # for sname, sample in sorted(samples.items()):
 for spin in ["dmafs", "dmvfs"]:

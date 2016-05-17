@@ -18,7 +18,7 @@ binningTitle, binning, fitBins = getBinning(binningName)
 
 sys.argv = []
 
-toyUncert = True
+toyUncert = False
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
@@ -181,7 +181,7 @@ canvas.printWeb('efake', 'frate_' + dataType + '_' + binningName, logy = False)
 for iBin, (binName, cut) in enumerate(fitBins):
     print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
 
-if binningName == 'pt':
+if toyUncert and binningName == 'pt':
     binName = 'pt_100_6500'
     for conf in ['ee', 'eg']:
         canvas.Clear(full = True)

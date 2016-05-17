@@ -45,10 +45,9 @@ def getHist(name, syst = ''):
 # gather process names
 processes = []
 for sample in allsamples:
-    if not sample.signal:
+    if not sample.name.startswith('dm'):
         continue
-    if not 'dm' in sample.name:
-        continue
+
     skips = [ 'fs', '10000', 'dma-200-50' ]
     skipp = False
     for skip in skips:

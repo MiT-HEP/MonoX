@@ -58,9 +58,8 @@ hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
 #hadproxyupWeight = hadproxySource.Get('tfactJetPtUp')
 #hadproxydownWeight = hadproxySource.Get('tfactJetPtDown')
 
-
-eleproxySource = ROOT.TFile.Open(basedir + '/data/egfake_data.root')
-eleproxyWeight = eleproxySource.Get('fraction')
+eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
+eleproxyWeight = eleproxySource.Get('frate')
 
 ##############################################################
 # Argument "selector" in all functions below can either be an
@@ -180,9 +179,15 @@ def eleProxy(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    weight = ROOT.ConstantWeight(eleproxyWeight.GetY()[0], 'egfakerate')
-    weight.setUncertaintyUp(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
-    weight.setUncertaintyDown(eleproxyWeight.GetErrorY(0) / eleproxyWeight.GetY()[0])
+    bin = eleproxyWeight.FindFixBin(175.)
+    if bin > eleproxyWeight.GetNbinsX():
+        bin = eleproxyWeight.GetNbinsX()
+
+    w = eleproxyWeight.GetBinContent(bin)
+
+    weight = ROOT.ConstantWeight(w, 'egfakerate')
+    weight.setUncertaintyUp(eleproxyWeight.GetBinError(bin) / w)
+    weight.setUncertaintyDown(eleproxyWeight.GetBinError(bin) / w)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -194,7 +199,8 @@ def eleProxy(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+#    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+    photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
     photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
 
     return selector
@@ -419,13 +425,12 @@ def hadProxyDown(sample, selector):
 
     return selector
 
-def gjets(sample, name, selector = None):
+def gjets(sample, selector):
     """
     Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
     """
     
-    selector = monophotonBase(sample, name)
-
+    selector = monophotonBase(sample, selector)
     
     selector.addOperator(ROOT.HighPtJetSelection())
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
