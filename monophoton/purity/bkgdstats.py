@@ -141,6 +141,7 @@ scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
 scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 
+"""
 print "\n\n##############################\n######## Doing background stat uncertainty ########\n##############################\n\n"
 ### Get background stat uncertainty
 toyPlot = TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
@@ -212,6 +213,7 @@ toyPlot.Draw()
 toyCanvas.SaveAs(toyPlotName+'.pdf')
 toyCanvas.SaveAs(toyPlotName+'.png')
 toyCanvas.SaveAs(toyPlotName+'.C')
+"""
 
 print "\n\n##############################\n######## Doing signal shape uncertainty ########\n##############################\n\n"
 ### Get signal shape uncertainty
@@ -237,6 +239,6 @@ print "\n\n##############################\n######## Showing results ########\n##
 print "Nominal purity is:", nominalPurity[0][0]
 print "Method uncertainty is:", scaledUncertainty
 print "Signal shape uncertainty is:", twobinUncertainty
-print "Background stat uncertainty is:", bkgdUncertainty
-totalUncertainty = ( (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
-print "Total uncertainty is:", totalUncertainty
+# print "Background stat uncertainty is:", bkgdUncertainty
+# totalUncertainty = ( (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
+# print "Total uncertainty is:", totalUncertainty

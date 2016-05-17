@@ -235,6 +235,7 @@ def purityBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+    selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
@@ -423,7 +424,7 @@ def gjets(sample, name, selector = None):
     Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
     """
     
-    selector = monophotonBase(sample, name, selector)
+    selector = monophotonBase(sample, name)
 
     
     selector.addOperator(ROOT.HighPtJetSelection())
