@@ -51,6 +51,7 @@ for sample in samples:
             dataTree.Draw(xString+">>"+sample+region, str(lumi)+'* weight * (photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.)', 'goff')
 
         print "Integrals for", sample, region
+        print "Events in dPhi < 0.52:", dataHist.Integral(1, 5)
         print "Events in dPhi < 1.05:", dataHist.Integral(1, 10)
         print "Events in dPhi > 1.99:", dataHist.Integral(19, dataHist.GetNbinsX()+1)
         print '\n'
