@@ -177,10 +177,11 @@ interpolations = {
         ((200., 100.), (300., 150.), (250., 125.)),
         ((200., 25.), (300., 50.), (250., 38.)),
         ((400., 150.), (525., 200), (450., 175.)),
-        ((300., 100.), (325., 150.), (310., 140.)),
+        ((300., 100.), (300., 150.), (300., 125.)),
         ((100., 50.), (200., 100.), (150., 75.)),
         ((200., 100.), (300., 150.), (280., 140.)),
-        ((200., 50.), (300., 100.), (220., 60.))
+        ((200., 50.), (300., 100.), (220., 60.)),
+        ((825., 100.), (825., 150.), (825., 125.))
     ],
     'dmafs': [
         ((725., 300.), (925., 400.), (825., 350.)),
@@ -191,7 +192,15 @@ interpolations = {
         ((200., 50.), (300., 100.), (230., 65.)),
         ((200., 25.), (300., 100.), (250., 65.)),
         ((10., 150.), (100., 50.), (90., 60.)),
-        ((175., 50.), (300., 100.), (200., 60.))
+        ((175., 50.), (300., 100.), (200., 60.)),
+        ((175., 50.), (300., 125.), (200., 70.)),
+        ((175., 50.), (300., 125.), (250., 110.)),
+        ((100., 50.), (200., 100.), (120., 60.)),
+        ((125., 50.), (200., 100.), (150., 70.)),
+        ((325., 100.), (400., 150.), (380., 140.)),
+        ((825., 100.), (825., 150.), (825., 125.)),
+        ((400., 100.), (400., 150.), (400., 125.)),
+        ((300., 125.), (400., 150.), (340., 130.))
     ]
 }
 
@@ -231,6 +240,15 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
         for iY in range(1, hist.GetNbinsY() + 1):
             z = gr.Interpolate(hist.GetXaxis().GetBinCenter(iX), hist.GetYaxis().GetBinCenter(iY))
             hist.SetBinContent(iX, iY, z)
+
+    for iX in range(1, hist.GetNbinsX() + 1):
+        for iY in range(1, hist.GetNbinsY() + 1):
+            if hist.GetBinContent(iX, iY) == 0.:
+                neighbors = [hist.GetBinContent(iX + 1, iY), hist.GetBinContent(iX - 1, iY), hist.GetBinContent(iX, iY + 1), hist.GetBinContent(iX, iY - 1)]
+                nonzero = [z for z in neighbors if z != 0.]
+                mean = sum(nonzero) / len(nonzero)
+
+                hist.SetBinContent(iX, iY, mean)
           
     output.cd()
     hist.Write()
@@ -246,21 +264,33 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
 
     if name == 'exp':
         pgr = ROOT.TGraph(len(limits))
-        agr = ROOT.TGraph(len(limits))
         for iP, point in enumerate(limits.keys()):
             pgr.SetPoint(iP, point[0], point[1])
-
-        for iP in range(len(limits), gr.GetN()):
-            agr.SetPoint(iP, gr.GetX()[iP], gr.GetY()[iP])
 
         pgr.SetMarkerStyle(4)
         pgr.SetMarkerColor(ROOT.kBlack)
 
+        pgr.Draw('P')
+
+        if model in interpolations:
+            interp = interpolations[model]
+            agr = ROOT.TGraph(len(interp))
+            segments = []
+
+            for iP in range(len(interp)):
+                agr.SetPoint(iP, gr.GetX()[iP + len(limits)], gr.GetY()[iP + len(limits)])
+                line = ROOT.TLine(*(interp[iP][0] + interp[iP][1]))
+                line.SetLineStyle(ROOT.kDashed)
+                line.SetLineColor(ROOT.kBlack)
+                line.SetLineWidth(1)
+                segments.append(line)
+
         agr.SetMarkerStyle(8)
         agr.SetMarkerColor(ROOT.kBlack)
 
-        pgr.Draw('P')
         agr.Draw('P')
+        for line in segments:
+            line.Draw()
 
         canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.pdf')
         canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.png')
@@ -343,4 +373,3 @@ canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_exclusion.
 canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_exclusion.png')
 
 output.Close()
-
