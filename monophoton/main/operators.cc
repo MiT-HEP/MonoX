@@ -153,6 +153,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[NHIso] = _photon.passNHIso(wp_);
   cutres[PhIso] = _photon.passPhIso(wp_);
   cutres[EVeto] = _photon.pixelVeto;
+  cutres[CSafeVeto] = _photon.csafeVeto;
   cutres[MIP49] = _photon.mipEnergy < 4.9;
   cutres[Time] = std::abs(_photon.time) < 3.;
   cutres[SieieNonzero] = _photon.sieie > 0.001;

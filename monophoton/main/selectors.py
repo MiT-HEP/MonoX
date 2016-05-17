@@ -180,10 +180,14 @@ def eleProxy(sample, selector):
     selector = monophotonBase(sample, selector)
 
     bin = eleproxyWeight.FindFixBin(175.)
-    
-    weight = ROOT.ConstantWeight(eleproxyWeight.GetBinContent(bin), 'egfakerate')
-    weight.setUncertaintyUp(eleproxyWeight.GetBinError(bin) / eleproxyWeight.GetY()[0])
-    weight.setUncertaintyDown(eleproxyWeight.GetBinError(bin) / eleproxyWeight.GetY()[0])
+    if bin > eleproxyWeight.GetNbinsX():
+        bin = eleproxyWeight.GetNbinsX()
+
+    w = eleproxyWeight.GetBinContent(bin)
+
+    weight = ROOT.ConstantWeight(w, 'egfakerate')
+    weight.setUncertaintyUp(eleproxyWeight.GetBinError(bin) / w)
+    weight.setUncertaintyDown(eleproxyWeight.GetBinError(bin) / w)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -195,7 +199,8 @@ def eleProxy(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+#    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+    photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
     photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
 
     return selector
@@ -419,12 +424,12 @@ def hadProxyDown(sample, selector):
 
     return selector
 
-def gjets(sample, name, selector = None):
+def gjets(sample, selector):
     """
     Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
     """
     
-    selector = monophotonBase(sample, name, selector)
+    selector = monophotonBase(sample, selector)
 
     
     selector.addOperator(ROOT.HighPtJetSelection())

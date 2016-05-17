@@ -135,6 +135,7 @@ class PhotonSelection : public Cut {
     NHIso,
     PhIso,
     EVeto,
+    CSafeVeto,
     MIP49,
     Time,
     SieieNonzero,
