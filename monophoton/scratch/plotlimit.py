@@ -119,9 +119,6 @@ for fname in os.listdir(sourcedir):
     mmed = float(matches.group(1))
     mdm = float(matches.group(2))
 
-#    if mdm > mmed * 0.5 + 200.:
-#        continue
-
     point = (mmed, mdm)
 
     source = ROOT.TFile.Open(sourcedir + '/' + fname)
@@ -169,6 +166,35 @@ colors = array.array('i', [pstart + i for i in range(255)])
 
 ROOT.gStyle.SetPalette(255, colors)
 
+interpolations = {
+    'dmvfs': [
+        ((600., 300.), (825., 400.), (725., 300.)),
+        ((825., 300.), (1000., 400.), (900., 350.)),
+        ((400., 200.), (600., 300.), (500., 250.)),
+        ((600., 200.), (725., 300.), (650., 250.)),
+        ((300., 150.), (400., 200.), (350., 175.)),
+        ((300., 100.), (400., 150.), (350., 125.)),
+        ((200., 100.), (300., 150.), (250., 125.)),
+        ((200., 25.), (300., 50.), (250., 38.)),
+        ((400., 150.), (525., 200), (450., 175.)),
+        ((300., 100.), (325., 150.), (310., 140.)),
+        ((100., 50.), (200., 100.), (150., 75.)),
+        ((200., 100.), (300., 150.), (280., 140.)),
+        ((200., 50.), (300., 100.), (220., 60.))
+    ],
+    'dmafs': [
+        ((725., 300.), (925., 400.), (825., 350.)),
+        ((825., 300.), (925., 400.), (875., 350.)),
+        ((525., 200.), (725., 300.), (625., 250.)),
+        ((600., 200.), (725., 300.), (650., 250.)),
+        ((400., 150.), (525., 200.), (450., 175.)),
+        ((200., 50.), (300., 100.), (230., 65.)),
+        ((200., 25.), (300., 100.), (250., 65.)),
+        ((10., 150.), (100., 50.), (90., 60.)),
+        ((175., 50.), (300., 100.), (200., 60.))
+    ]
+}
+
 histograms = {}
 contours = collections.defaultdict(list)
 
@@ -182,19 +208,30 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
     output.cd()
     gr.Write(name)
 
+    if model in interpolations:
+        iP = gr.GetN()
+        gr.Set(iP + len(interpolations[model]))
+
+        for edge1, edge2, point in interpolations[model]:
+            # add the point of closest approach to point on the line segment between edge1 and edge2
+            z1 = limits[edge1][iL]
+            z2 = limits[edge2][iL]
+
+            dx = edge1[0] - edge2[0]
+            dy = edge1[1] - edge2[1]
+            x = (dx * (point[0] * dx + point[1] * dy) + dy * (-edge1[0] * edge2[1] + edge1[1] * edge2[0])) / (dx * dx + dy * dy)
+            y = (dy * (point[0] * dx + point[1] * dy) - dx * (-edge1[0] * edge2[1] + edge1[1] * edge2[0])) / (dx * dx + dy * dy)
+            z = (z1 * edge2[0] + z2 * edge1[0]) / (edge1[0] + edge2[0])
+
+            gr.SetPoint(iP, x, y, z)
+            iP += 1
+
     hist = htemplate.Clone(name + '_int')
     for iX in range(1, hist.GetNbinsX() + 1):
         for iY in range(1, hist.GetNbinsY() + 1):
             z = gr.Interpolate(hist.GetXaxis().GetBinCenter(iX), hist.GetYaxis().GetBinCenter(iY))
             hist.SetBinContent(iX, iY, z)
-            
-    # ad hoc fix
-#    if model == 'dmvfs':
-#        lowz = hist.GetBinContent(1, 5)
-#        highz = hist.GetBinContent(1, 8)
-#        hist.SetBinContent(1, 6, (2. * lowz + 1. * highz) / 3.)
-#        hist.SetBinContent(1, 7, (1. * lowz + 2. * highz) / 3.)
-
+          
     output.cd()
     hist.Write()
 
@@ -209,13 +246,21 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
 
     if name == 'exp':
         pgr = ROOT.TGraph(len(limits))
+        agr = ROOT.TGraph(len(limits))
         for iP, point in enumerate(limits.keys()):
             pgr.SetPoint(iP, point[0], point[1])
+
+        for iP in range(len(limits), gr.GetN()):
+            agr.SetPoint(iP, gr.GetX()[iP], gr.GetY()[iP])
 
         pgr.SetMarkerStyle(4)
         pgr.SetMarkerColor(ROOT.kBlack)
 
+        agr.SetMarkerStyle(8)
+        agr.SetMarkerColor(ROOT.kBlack)
+
         pgr.Draw('P')
+        agr.Draw('P')
 
         canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.pdf')
         canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.png')
@@ -287,9 +332,9 @@ for cont in contours['obs1down']:
     cont.SetLineWidth(1)
     cont.Draw('CL')
 
-legend = ROOT.TLegend(0.15, 0.7, 0.4, 0.9)
+legend = ROOT.TLegend(0.1, 0.8, 0.4, 0.9)
 legend.SetBorderSize(0)
-legend.SetFillStyle(0)
+#legend.SetFillStyle(0)
 legend.AddEntry(contours['exp'][0], 'Expected #pm 1 #sigma_{exp}', 'L')
 legend.AddEntry(contours['obs'][0], 'Observed #pm 1 #sigma_{theory}', 'L')
 legend.Draw()

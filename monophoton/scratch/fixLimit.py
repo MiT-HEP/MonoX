@@ -60,4 +60,4 @@ outtree.Write('limit', ROOT.TObject.kOverwrite)
 source.Close()
 output.Close()
 
-shutil.copyfile('limittmp.root', sourcepath)
+os.rename('limittmp.root', sourcepath)
