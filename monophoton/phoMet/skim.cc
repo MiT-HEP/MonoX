@@ -15,8 +15,12 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   event.setStatus(*_input, false, {"*"});
   event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "electrons", "photons", "jets", "t1Met"});
 
+  simpletree::Event outEvent;
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
+  event.book(*output, {"run", "lumi", "event", "npv", "t1Met"});
+  outEvent.book(*output, {"jets"});
+
 
   simpletree::PhotonCollection outProbe("probe");
   outProbe.init();
@@ -34,17 +38,22 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   float probePtCorr[1];
 
   unsigned short njets;
+  short highPtIndex;
+  bool pass;
 
   float recoilPt;
   float recoilEta;
   float recoilPhi;
   float recoilMass;
 
+  /*
   output->Branch("run", &event.run, "run/i");
   output->Branch("lumi", &event.lumi, "lumi/i");
   output->Branch("event", &event.event, "event/i");
-  output->Branch("weight", &weight, "weight/D");
   output->Branch("npv", &event.npv, "npv/s");
+  */
+
+  output->Branch("weight", &weight, "weight/D");
 
   output->Branch("mass.reco", &massReco, "mass.reco/F");
   output->Branch("mass.corr", &massCorr, "mass.corr/F");
@@ -57,15 +66,20 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   
   output->Branch("probe.ptCorr", probePtCorr, "probe.ptCorr[probe.size]/F");
 
-  output->Branch("njets", &njets, "njets/s");
+  // output->Branch("njets", &njets, "njets/s");
+
+  output->Branch("jets.highPtIndex", &highPtIndex, "jets.highPtIndex/s");
 
   output->Branch("recoil.pt", &recoilPt, "recoil.pt/F");
   output->Branch("recoil.eta", &recoilEta, "recoil.eta/F");
   output->Branch("recoil.phi", &recoilPhi, "recoil.phi/F");
   output->Branch("recoil.mass", &recoilMass, "recoil.mass/F");
 
+  /*
   output->Branch("t1Met.met", &event.t1Met.met, "t1Met.met/F");
   output->Branch("t1Met.phi", &event.t1Met.phi, "t1Met.phi/F");
+  output->Branch("t1Met.sumEt", &event.t1Met.sumEt, "t1Met.sumEt/F");
+  */
 
   simpletree::LorentzVectorM probe;
   simpletree::LorentzVectorM zReco;
@@ -112,7 +126,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
       
       for (unsigned iPho(0); iPho != photons.size(); ++iPho) {
 	auto& pho(photons[iPho]);
-	if ( !(pho.medium && pho.isEB))
+	if ( !(pho.medium && pho.pt > 20.))
 	  continue;
 
 	// printf("Medium photon found for probe\n");
@@ -125,10 +139,11 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
 	zReco = (ele.p4() + pho.p4());
 	massReco = zReco.M();
 
-	/*
-	if ( !(massReco > 61. && massReco < 121.))
+	if ( !(massReco > 61. && massReco < 121.)) {
+	  // printf("Z mass: %.2f\n", massReco);
 	  continue;
-	*/
+	}
+	
 
 	// printf("On shell Z\n");
 
@@ -169,22 +184,40 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
     // printf("Pass TnP pair selection\n");
 
     njets = 0;
+    pass = false;
+    highPtIndex = -1;
 
     for (unsigned iJet(0); iJet != jets.size(); ++iJet) {
       auto& jet(jets[iJet]);
       if (jet.pt > 30.) {
 	njets++;
+	outEvent.jets.resize(njets);
+	outEvent.jets[njets-1] = jet;
+	// outEvent.jets.push_back(jet);
 	recoil += jet.p4();
+      }
+      if (jet.pt > 100. && std::abs(TVector2::Phi_mpi_pi(jet.phi - zReco.Phi())) > 2.5) {
+	highPtIndex = njets-1;
+	pass = true;
       }
     }
 
+    if (!pass)
+      continue;
+
+    printf("Z mass: %6.2f, jet mass: %6.2f\n", massReco, outEvent.jets[0].mass);
+
+    /*
     if (recoil.Pt() < 170.)
       continue;
+    */
 
     // printf("Pass recoil selection\n");
 
+    /*
     if (std::abs(TVector2::Phi_mpi_pi(recoil.Phi() - zCorr.Phi())) < 2.5)
       continue;
+    */
 
     // printf("Pass back-to-back requirement\n");
 
