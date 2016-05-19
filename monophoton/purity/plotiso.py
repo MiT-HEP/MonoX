@@ -92,11 +92,15 @@ for iBin in range(1,scaleHist.GetNbinsX()+1):
     mcValue = mcHist.GetBinContent(iBin)
     mcError = mcHist.GetBinError(iBin)
 
-    ratio = dataValue / mcValue 
+    if mcValue == 0 or dataValue == 0:
+        ratio = 1
+        error = 0.05
+    else:
+        ratio = dataValue / mcValue 
+        error = ratio * ( (dataError / dataValue)**2 + (mcError / mcValue)**2 )**(0.5)
+
     scaleHist.SetBinContent(iBin, ratio)
     scaled.SetBinContent(iBin, ratio * scaled.GetBinContent(iBin))
-
-    error = ratio * ( (dataError / dataValue)**2 + (mcError / mcValue)**2 )**(0.5)
     scaleHist.SetBinError(iBin, error)
 
 outFile.WriteTObject(scaleHist)

@@ -134,7 +134,7 @@ PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.pt > '+
 PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.pt > '+str(low)+') && (photons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
 PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((photons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
 
-cutMet = [000,60,120,180]
+cutMet = [000,60,120]
 MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))') ] 
 MetSels = MetSels + [ ('Met'+str(low)+'to'+str(high),'((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))') for low, high in zip(cutMet,cutMet[1:]) ]
 MetSels = MetSels + [ ('Met'+str(cutMet[-1])+'toInf', '((t1Met.met > '+str(cutMet[-1])+'))') ]
@@ -290,7 +290,7 @@ def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,
     ''' initialHists = [ fit template, signal template, subtraction template, background template ]'''
     nIter = 0
     purities = [ (1,1,1,1) ]
-    sigContams = [ (1,1) ]
+    # sigContams = [ (1,1) ]
     hists = list(_initialHists)
     templates = list(_initialTemplates)
 
@@ -302,7 +302,8 @@ def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,
         
         print _var[0]
         dataPurity = FitTemplates(dataName, dataTitle, _var[0], _cut, templates[0], templates[1], templates[-1])
-                
+       
+        """
         sbTotal = templates[3].sumEntries()
         sbTrue = templates[-2].sumEntries()
         trueContam = float(sbTrue) / float(sbTotal)
@@ -310,9 +311,10 @@ def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,
         sbTotalPass = templates[3].sumEntries(_varName+' < '+str(_cut))
         sbTruePass = templates[-2].sumEntries(_varName+' < '+str(_cut))
         trueContamPass = float(sbTruePass) / float(sbTotalPass)
-        
+
         print "Signal contamination:", trueContam, trueContamPass
         sigContams.append( (trueContam, trueContamPass) ) 
+        """
                 
         print "Purity:", dataPurity[0]
         purities.append( dataPurity )
@@ -344,9 +346,15 @@ def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,
         backTemp = HistToTemplate(backHist,_var,_skims[3],"v"+str(nIter)+"_"+_inputKey,_plotDir)
         templates.append(backTemp)
 
+    """
     for version, (purity, contam)  in enumerate(zip(purities[1:],sigContams[1:])):
         print "Purity for iteration", version, "is:", purity
         print "Signal contamination for iteration", version, "is:", contam
     
     return (purities[-1], sigContams[-1])
+    """
+
+    for version, purity  in enumerate(purities[1:]):
+        print "Purity for iteration", version, "is:", purity
+    return purities[-1]
 
