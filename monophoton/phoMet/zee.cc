@@ -23,30 +23,27 @@ zee(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
 
   double weight;
 
-  float massTheo = 91.2;
   float massReco;
-  float massCorr;
 
   float tagPt;
   float tagEta;
   float tagPhi;
+  bool tagPos;
 
   float probePt;
   float probeEta;
   float probePhi;
+  bool probePos;
 
   float zPt;
   float zEta;
   float zPhi;
+  bool zOppSign;
 
   unsigned short njets;
-  short highPtIndex;
   bool pass;
 
-  float recoilPt;
-  float recoilEta;
-  float recoilPhi;
-  float recoilMass;
+  float minJetDPhi;
 
   output->Branch("weight", &weight, "weight/D");
 
@@ -54,38 +51,24 @@ zee(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
   output->Branch("z.eta", &zEta, "z.eta/F");
   output->Branch("z.phi", &zPhi, "z.phi/F");
   output->Branch("z.mass", &massReco, "z.mass/F");
+  output->Branch("z.oppSign", &zOppSign, "z.oppSign/O");
 
   output->Branch("tag.pt", &tagPt, "tag.pt/F");
   output->Branch("tag.eta", &tagEta, "tag.eta/F");
   output->Branch("tag.phi", &tagPhi, "tag.phi/F");
+  output->Branch("tag.positive", &tagPos, "tag.positive/O");
 
   output->Branch("probe.pt", &probePt, "probe.pt/F");
   output->Branch("probe.eta", &probeEta, "probe.eta/F");
   output->Branch("probe.phi", &probePhi, "probe.phi/F");
+  output->Branch("probe.positive", &probePos, "probe.positive/O");
 
-  output->Branch("jets.highPtIndex", &highPtIndex, "jets.highPtIndex/s");
-
-  output->Branch("recoil.pt", &recoilPt, "recoil.pt/F");
-  output->Branch("recoil.eta", &recoilEta, "recoil.eta/F");
-  output->Branch("recoil.phi", &recoilPhi, "recoil.phi/F");
-  output->Branch("recoil.mass", &recoilMass, "recoil.mass/F");
+  output->Branch("t1Met.minJetDPhi", &minJetDPhi, "t1Met.minJetDPhi/F");
 
   simpletree::LorentzVectorM probe;
   simpletree::LorentzVectorM zReco;
-  simpletree::LorentzVectorM zCorr;
 
-  simpletree::LorentzVectorM recoil;
   simpletree::LorentzVectorM met;
-
-  float eleE;
-  float elePx;
-  float elePy;
-  float elePz;
-
-  float phoE;
-  float phoPx;
-  float phoPy;
-  float phoPz;
 
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
@@ -98,23 +81,21 @@ zee(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
     
     probe.SetCoordinates(0.,0.,0.,0.);
     zReco.SetCoordinates(0.,0.,0.,0.);
-    zCorr.SetCoordinates(0.,0.,0.,0.);
 
-    recoil.SetCoordinates(0.,0.,0.,0.);
     met.SetCoordinates(t1Met.met, 0., t1Met.phi, 0.);
 
     unsigned pair[] = {unsigned(-1), unsigned(-1)};
 
     for (unsigned iTag(0); iTag != electrons.size(); ++iTag) {
       auto& tag(electrons[iTag]);
-      if ( !(tag.tight && tag.pt > 30. && (tag.matchHLT23Loose || tag.matchHLT27Loose)))
+      if ( !(tag.tight && tag.pt > 30.))
 	continue;
 
       //printf("Tag electron found\n");
       
       for (unsigned iProbe(iTag); iProbe != electrons.size(); ++iProbe) {
 	auto& probe(electrons[iProbe]);
-	if ( !(probe.loose && probe.pt > 10.))
+	if ( !(probe.loose && probe.pt > 20.))
 	  continue;
 
 	//printf("Loose electron found for probe\n");
@@ -126,20 +107,23 @@ zee(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
 	  // printf("Z mass: %.2f\n", massReco);
 	  continue;
 	}
-	
+
 	//printf("On shell Z\n");
 
 	tagPt = tag.pt;
 	tagEta = tag.eta;
 	tagPhi = tag.phi;
+	tagPos = tag.positive;
 
 	probePt = probe.pt;
 	probeEta = probe.eta;
 	probePhi = probe.phi;
+	probePos = probe.positive;
 
 	zPt = zReco.Pt();
 	zEta = zReco.Eta();
 	zPhi = zReco.Phi();
+	zOppSign = ( (tag.positive == probe.positive) ? 0 : 1);
 
 	pair[0] = iTag;
 	pair[1] = iProbe;
@@ -156,33 +140,30 @@ zee(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npv
 
     njets = 0;
     pass = false;
-    highPtIndex = -1;
+    minJetDPhi = 4.;
 
     for (unsigned iJet(0); iJet != jets.size(); ++iJet) {
       auto& jet(jets[iJet]);
-      if (jet.pt > 30.) {
+      if (jet.pt > 30. ) {
 	njets++;
 	outEvent.jets.resize(njets);
 	outEvent.jets[njets-1] = jet;
 	// outEvent.jets.push_back(jet);
-	recoil += jet.p4();
-      }
-      if (jet.pt > 100. && std::abs(TVector2::Phi_mpi_pi(jet.phi - zPhi)) > 2.5) {
-	highPtIndex = njets-1;
-	pass = true;
+	if (njets < 5. && TMath::Abs(TVector2::Phi_mpi_pi(jet.phi - t1Met.phi)) < minJetDPhi )
+	  minJetDPhi = TMath::Abs(TVector2::Phi_mpi_pi(jet.phi - t1Met.phi));
+	if (std::abs(TVector2::Phi_mpi_pi(jet.phi - zPhi)) > 2.5)
+	  pass = true;
       }
     }
 
     if (!pass)
       continue;
 
+    // printf("tag charge %d, probe charge %d, opp sign %d \n", tagPos, probePos, zOppSign);
+
     // printf("Pass jet selection.\n");
 
-    recoilPt = recoil.Pt();
-    recoilEta = recoil.Eta();
-    recoilPhi = recoil.Phi();
-    recoilMass = recoil.M();
-
+    
     weight = _sampleWeight * event.weight;
     if (_npvweight) {
       int iX(_npvweight->FindFixBin(event.npv));
