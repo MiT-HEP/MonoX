@@ -77,9 +77,11 @@ def getConfig(confName):
             VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
             VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
+            VariableDef('eStripe9', 'E_{Strip}/E9', 'photons.e15[0] / photons.e33[0]', (40, 0.4, 1.4)),
             VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
-            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.))
+            VariableDef('time', 'time', 'photons.time[0]', (20, -5., 5.), unit = 'ns'),
+            VariableDef('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns')
             ]
 
         for variable in list(config.variables): # need to clone the list first!
@@ -216,8 +218,10 @@ def getConfig(confName):
             VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (30, 0.005, 0.020)), 
             VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
             VariableDef('s4', 's4', 'photons.s4[0]', (25, 0.7, 1.2)),
+            VariableDef('eStripe9', 'E_{Strip}/E9', 'photons.e15[0] / photons.e33[0]', (50, 0.4, 1.4)),
             VariableDef('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020)),
             VariableDef('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05)),
+            VariableDef('time', 'time', 'photons.time[0]', (20, -5., 5.), unit = 'ns'),
             VariableDef('runNumber', 'Run Number / 1000.', 'run / 1000.', (9, 256.5, 261.0)),
             VariableDef('lumiSection', 'Lumi Section', 'lumi', (10, 0., 2000.))
         ]
