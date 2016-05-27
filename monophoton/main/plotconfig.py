@@ -1,7 +1,6 @@
 import sys
 import os
 import math
-from pprint import pprint
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -57,6 +56,7 @@ def getConfig(confName):
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True, blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('phoPtVsPhoPhi', ('E_{T}^{#gamma}', '#phi^{#gamma}'), ('photons.pt[0]', 'TVector2::Phi_mpi_pi(2 * photons.phi[0])'), ( [175., 190., 250., 400., 700., 1000.], (6, -math.pi/2., math.pi/2.)), unit = ('GeV', ''), overflow = True),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
             VariableDef('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.)),
@@ -91,7 +91,7 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'phoPtVsPhoPhiHighMet'] # , 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 

@@ -919,8 +919,8 @@ class DataMCCanvas(RatioCanvas):
 
         return self._obs
 
-    def addStacked(self, bkg, title = '', color = 0, style = 1001, idx = -1):
-        idx = self.addHistogram(bkg, idx = idx)
+    def addStacked(self, bkg, title = '', color = 0, style = 1001, idx = -1, drawOpt = 'HIST'):
+        idx = self.addHistogram(bkg, drawOpt, idx = idx)
 
         if idx not in self._bkgs:
             # a new background
