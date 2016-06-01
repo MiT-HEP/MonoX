@@ -91,7 +91,7 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet', 'phoPtVsPhoPhiHighMet'] # , 'dPhiJetMetMinHighMet'] # , 'dPhiPhoMetHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
@@ -387,8 +387,8 @@ def getConfig(confName):
         metCut = ''
         
         config = PlotConfig('monoph', ['sph-d3', 'sph-d4'])
-        config.baseline = ''
-        config.fullSelection = metCut
+        config.baseline = '1'
+        config.fullSelection = '1'
 
         config.sigGroups = [
             GroupSpec('add', 'ADD', samples = ['add-*']),

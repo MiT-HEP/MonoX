@@ -452,7 +452,7 @@ if __name__ == '__main__':
         if ndim == 1:
             drawOpt = 'HIST'
         elif ndim == 2:
-            drawOpt = 'LEGO 0'
+            drawOpt = 'LEGO4 F 0'
 
         if vardef.name == 'count' or vardef.name == args.bbb:
             counters = {}
