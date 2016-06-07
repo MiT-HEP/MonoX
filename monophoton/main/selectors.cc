@@ -193,7 +193,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT27Loose))
+      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT))
         iElectron = iE;
       else
         break;
