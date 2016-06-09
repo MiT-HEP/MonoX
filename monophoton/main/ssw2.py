@@ -49,7 +49,9 @@ sphLumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
 haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4'] ]
 
 selectors = {
-    # Data
+    # Data 2016
+    'sph-b2': [ 'monoph','purity' ],
+    # Data 2015
     'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
                           ,('haloUp', selectors.haloMIP(haloNorms[0]))
                           ,('haloDown', selectors.haloSieie(haloNorms[0]))
@@ -105,6 +107,7 @@ if __name__ == '__main__':
     argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
+    argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -113,7 +116,11 @@ if __name__ == '__main__':
 
     ROOT.gSystem.Load(config.libsimpletree)
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-    
+    ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
+
+    ROOT.gSystem.Load(config.libnerocore)
+    ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
+
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
     snames = []
@@ -163,7 +170,10 @@ if __name__ == '__main__':
     
         skimmer.reset()
     
-        tree = ROOT.TChain('events')
+        if args.neroInput:
+            tree = ROOT.TChain('nero/events')
+        else:
+            tree = ROOT.TChain('events')
 
         if os.path.exists(config.phskimDir + '/' + sname + '.root'):
             print 'Reading', sname, 'from', config.phskimDir
@@ -176,7 +186,12 @@ if __name__ == '__main__':
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
 
             print 'Reading', sname, 'from', sourceDir
-            tree.Add(sourceDir + '/simpletree*.root')
+            if args.neroInput:
+                tree.Add(sourceDir + '/NeroNtuples_2*.root')
+            else:
+                tree.Add(sourceDir + '/simpletree*.root')
+
+        print tree.GetEntries()
     
         for selconf in selectors[sname]:
             if type(selconf) == str:
@@ -188,4 +203,4 @@ if __name__ == '__main__':
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
     
-        skimmer.run(tree, config.skimDir, sname, -1)
+        skimmer.run(tree, config.skimDir, sname, -1, args.neroInput)
