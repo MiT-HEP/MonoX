@@ -35,7 +35,7 @@ var = Variables[varName]
 varBins = True
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-skimDir  = '/scratch5/ballen/hist/monophoton/skim'
+skimDir  = '/scratch5/ballen/hist/monophoton/skim/2016'
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
