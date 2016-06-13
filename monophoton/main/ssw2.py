@@ -50,7 +50,7 @@ haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4
 
 selectors = {
     # Data 2016
-    'sph-b2': ['monoph', 'purity'],
+    'sph-b2': ['monoph', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown'],
     # Data 2015
     'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
                           ,('haloUp', selectors.haloMIP(haloNorms[0]))
