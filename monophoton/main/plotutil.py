@@ -2,6 +2,7 @@ import sys
 import array
 import copy
 import re
+from pprint import pprint
 
 argv = list(sys.argv)
 sys.argv = []
@@ -128,10 +129,7 @@ class VariableDef(object):
                 args += [nbins, arr]
     
             if self.ndim() == 2:
-                pprint(args)
-                print " "
                 hist = ROOT.TH2D(self.histName(hname), '', *tuple(args))
-                pprint(hist)
             elif self.ndim() == 3:
                 # who would do this??
                 hist = ROOT.TH3D(self.histName(hname), '', *tuple(args))
@@ -168,10 +166,12 @@ class VariableDef(object):
         return selection
 
     def formExpression(self, replacements = []):
-        if type(self.expr) is tuple:
-            expr = ':'.join(self.expr)
-        else:
+        if self.ndim() == 1:
             expr = self.expr
+        elif self.ndim() == 2:
+            expr = self.expr[1]+':'+self.expr[0]
+        else:
+            expr = ':'.join(self.expr)
 
         for repl in replacements:
             # replace the variable names given in repl = ('original', 'new')

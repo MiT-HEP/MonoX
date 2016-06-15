@@ -19,10 +19,11 @@ canvas =  SimpleCanvas(lumi = lumi)
 
 
 
-samples = {'sph' : [ 'monoph', 'efake', 'hfake', 'halo', 'gjets'],
-           'gj' : [ 'gjets' ],
-           'qcd' : [ 'gjets' ], 
-           'wlnu' : [ 'withel' ]
+samples = {'sph-*' : [ 'monoph', 'efake', 'hfake', 'halo', 'gjets'],
+           'gj-*' : [ 'gjets' ],
+           'qcd-*' : [ 'gjets' ], 
+           'wlnu-*' : [ 'wenu' ],
+           'wlnu': ['wenu']
            }
 
 
@@ -33,7 +34,7 @@ for sample in samples:
         canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 
         dataTree = ROOT.TChain('events')
-        dataTree.Add('/scratch5/ballen/hist/monophoton/skim/'+sample+'-*_'+region+'.root')
+        dataTree.Add('/scratch5/ballen/hist/monophoton/skim/'+sample+'_'+region+'.root')
 
         xString = "t1Met.photonDPhi"
 
@@ -41,11 +42,19 @@ for sample in samples:
         dataHist.GetXaxis().SetTitle('#Delta#phi(#gamma, E_{T}^{miss})')
         dataHist.GetYaxis().SetTitle('Events / 0.10')
         dataHist.Sumw2()
-        if sample == 'sph':
+
+        if sample == 'sph-*':
             dataTree.Draw(xString+">>"+sample+region, '(photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.)', 'goff')
+        elif sample == 'wlnu':
+            dataTree.Draw(xString+">>"+sample+region, str(lumi)+'* weight * (photons.pt[0] > 175. && !photons.pixelVeto[0] && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.)', 'goff')
         else:
             dataTree.Draw(xString+">>"+sample+region, str(lumi)+'* weight * (photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.)', 'goff')
 
+        print "Integrals for", sample, region
+        print "Events in dPhi < 0.52:", dataHist.Integral(1, 5)
+        print "Events in dPhi < 1.05:", dataHist.Integral(1, 10)
+        print "Events in dPhi > 1.99:", dataHist.Integral(19, dataHist.GetNbinsX()+1)
+        print '\n'
 
         canvas.legend.add('data', title = sample+region, mcolor = ROOT.kRed, msize = 1, lcolor = ROOT.kRed, lwidth = 4)
         canvas.legend.apply('data', dataHist)

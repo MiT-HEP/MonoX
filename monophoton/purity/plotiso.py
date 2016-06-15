@@ -59,12 +59,12 @@ colors = [kBlue, kRed, kBlack]
 truthSel = '(photons.matchedGen == -22)'
 fullSel = baseSel+' && '+truthSel
 
-raw = HistExtractor(var[0],var[3][loc],skim,fullSel,skimDir,varBins)
+raw = HistExtractor(var[0],var[2][loc],skim,fullSel,skimDir,varBins)
 raw.SetName("rawmc")
 histograms[0].append(raw)
 
-nBins = len(var[3][loc][-1]) - 1
-binEdges = array('d',var[3][loc][-1])
+nBins = len(var[2][loc][-1]) - 1
+binEdges = array('d',var[2][loc][-1])
 eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[loc][pid]+' && '+metSel+" && "+sieieSels[loc][pid]+")"
 eSel = eSelScratch.replace("photons", "probes")
 print eSel
@@ -92,11 +92,15 @@ for iBin in range(1,scaleHist.GetNbinsX()+1):
     mcValue = mcHist.GetBinContent(iBin)
     mcError = mcHist.GetBinError(iBin)
 
-    ratio = dataValue / mcValue 
+    if mcValue == 0 or dataValue == 0:
+        ratio = 1
+        error = 0.05
+    else:
+        ratio = dataValue / mcValue 
+        error = ratio * ( (dataError / dataValue)**2 + (mcError / mcValue)**2 )**(0.5)
+
     scaleHist.SetBinContent(iBin, ratio)
     scaled.SetBinContent(iBin, ratio * scaled.GetBinContent(iBin))
-
-    error = ratio * ( (dataError / dataValue)**2 + (mcError / mcValue)**2 )**(0.5)
     scaleHist.SetBinError(iBin, error)
 
 outFile.WriteTObject(scaleHist)

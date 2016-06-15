@@ -121,3 +121,38 @@ dataTree.Draw(yString+":"+xString+">>runlumi", 'photons.pt[0] > 175. && t1Met.mi
 canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
 # canvas.logx = True
 canvas.printWeb('monophoton/phoMet', 'RunLumiPlane', logy = False)
+
+canvas.Clear(xmax = 0.90)
+
+dataTree = ROOT.TChain('events')
+dataTree.Add('/scratch5/ballen/hist/monophoton/skim/sph-d*_monoph.root')
+
+yString = "t1Met.photonDPhi"
+xString = "std::abs(TVector2::Phi_mpi_pi(jets.phi[0] - t1Met.phi))"
+
+dataHist = ROOT.TH2D("dphisquared", "", 30, 0., math.pi, 30, 0., math.pi)
+dataHist.GetYaxis().SetTitle('#Delta#phi(#gamma, E_{T}^{miss})')
+dataHist.GetXaxis().SetTitle('#Delta#phi(leading jet, E_{T}^{miss})')
+dataHist.Sumw2()
+dataTree.Draw(yString+":"+xString+">>dphisquared", 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170.', 'goff')
+
+canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
+# canvas.logx = True
+canvas.printWeb('monophoton/phoMet', 'DoubleDPhiPlane', logy = False)
+
+canvas.Clear(xmax = 0.90)
+
+dataTree = ROOT.TChain('events')
+dataTree.Add('/scratch5/ballen/hist/monophoton/skim/sph-d*_monoph.root')
+
+xString = "jets.eta"
+yString = "jets.phi"
+
+dataHist = ROOT.TH2D("jetlego", "", 50, -5., 5., 30, -math.pi, math.pi)
+dataHist.GetXaxis().SetTitle('#eta_{jet}')
+dataHist.GetYaxis().SetTitle('#phi_{jet}')
+dataHist.Sumw2()
+dataTree.Draw(yString+":"+xString+">>jetlego", 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 170. && t1Met.photonDPhi < 0.5', 'goff')
+
+canvas.addHistogram(dataHist, drawOpt = 'COLZ TEXT')
+canvas.printWeb('monophoton/phoMet', 'JetEtaPhiPlane', logy = False)

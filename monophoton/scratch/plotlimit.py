@@ -6,6 +6,11 @@ import re
 import collections
 import ROOT
 
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
+sys.path.append(basedir)
+import config
+
 def truncateContour(contour, base):
     x = ROOT.Double()
     y = ROOT.Double()
@@ -146,7 +151,7 @@ mmeds = array.array('d', [100. + 20. * i for i in range(51)])
 mdms = array.array('d', [10. * i for i in range(51)])
 htemplate = ROOT.TH2D('template', ';M_{med} (GeV);M_{DM} (GeV)', len(mmeds) - 1, mmeds, len(mdms) - 1, mdms)
 
-output = ROOT.TFile.Open('/scratch5/yiiyama/studies/monophoton/limits/' + model + '.root', 'recreate')
+output = ROOT.TFile.Open('../data/' + model + '.root', 'recreate')
 
 #ROOT.gStyle.SetPalette(1)
 ROOT.gStyle.SetOptStat(0)
@@ -211,11 +216,16 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
     gr = ROOT.TGraph2D(len(limits))
     gr.SetName(name)
 
-    for iP, (point, larr) in enumerate(limits.items()):
+    textDump = open(config.webDir + '/limits/' + model + '_' + name + '.txt', 'w')
+    textDump.write('Fast Sim Points \n')
+    textDump.write('%-6s %5s %5s %6s \n' % ('point', 'mMed', 'mDM', 'limit'))
+    for iP, (point, larr) in enumerate(sorted(limits.items())):
         gr.SetPoint(iP, point[0], point[1], larr[iL])
+        textDump.write('%-6d %5d %5d %6.2f \n' % (iP, point[0], point[1], larr[iL]))
 
     output.cd()
     gr.Write(name)
+
 
     if model in interpolations:
         iP = gr.GetN()
@@ -235,6 +245,9 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
             gr.SetPoint(iP, x, y, z)
             iP += 1
 
+    textDump.write('\nInterpolated Points \n')
+    textDump.write('%5s %5s %6s \n' % ('mMed', 'mDM', 'limit'))
+
     hist = htemplate.Clone(name + '_int')
     for iX in range(1, hist.GetNbinsX() + 1):
         for iY in range(1, hist.GetNbinsY() + 1):
@@ -249,7 +262,10 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
                 mean = sum(nonzero) / len(nonzero)
 
                 hist.SetBinContent(iX, iY, mean)
-          
+                textDump.write('%5d %5d %6.2f \n' % (hist.GetXaxis().GetBinCenter(iX), hist.GetYaxis().GetBinCenter(iY), mean))
+
+        textDump.close()
+
     output.cd()
     hist.Write()
 
@@ -257,8 +273,8 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
     hist.SetMaximum(10.)
     hist.Draw('colz')
 
-    canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '.pdf')
-    canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '.png')
+    canvas.Print(config.webDir + '/limits/' + model + '_' + name + '.pdf')
+    canvas.Print(config.webDir + '/limits/' + model + '_' + name + '.png')
 
     histograms[name] = hist
 
@@ -292,8 +308,8 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
         for line in segments:
             line.Draw()
 
-        canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.pdf')
-        canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_' + name + '_points.png')
+        canvas.Print(config.webDir + '/limits/' + model + '_' + name + '_points.pdf')
+        canvas.Print(config.webDir + '/limits/' + model + '_' + name + '_points.png')
 
     clevel = array.array('d', [1.])
     contsource = hist.Clone('contsource_' + name)
@@ -369,7 +385,7 @@ legend.AddEntry(contours['exp'][0], 'Expected #pm 1 #sigma_{exp}', 'L')
 legend.AddEntry(contours['obs'][0], 'Observed #pm 1 #sigma_{theory}', 'L')
 legend.Draw()
 
-canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_exclusion.pdf')
-canvas.Print('/home/yiiyama/public_html/cmsplots/limits/' + model + '_exclusion.png')
+canvas.Print(config.webDir + '/limits/' + model + '_exclusion.pdf')
+canvas.Print(config.webDir + '/limits/' + model + '_exclusion.png')
 
 output.Close()

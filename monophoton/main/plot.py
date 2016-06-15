@@ -41,7 +41,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
     hist = vardef.makeHist(name, outDir = outFile)
     shists = {}
-
+    
     if len(samples) != 0:
         # nominal. name: variable-group
         for sname in samples:
@@ -448,6 +448,12 @@ if __name__ == '__main__':
 
         print vardef.name
 
+        ndim = vardef.ndim()
+        if ndim == 1:
+            drawOpt = 'HIST'
+        elif ndim == 2:
+            drawOpt = 'LEGO4 F 0'
+
         if vardef.name == 'count' or vardef.name == args.bbb:
             counters = {}
             isSensitive = True
@@ -470,7 +476,7 @@ if __name__ == '__main__':
         # make background histograms
         # loop over groups with actual distributions
         bkgTotal = vardef.makeHist('bkgtotal')
-
+        
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
             hist = groupHist(group, vardef, plotConfig, args.skimDir, postscale = postscale, outFile = outFile)
 
@@ -479,7 +485,7 @@ if __name__ == '__main__':
             if vardef.name == 'count' or vardef.name == args.bbb:
                 counters[group.name] = hist
             elif plotDir:
-                canvas.addStacked(hist, title = group.title, color = group.color)
+                canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
 
         # formatted histograms added to bkgTotal
         unformatHist(bkgTotal, vardef)
@@ -502,7 +508,7 @@ if __name__ == '__main__':
                 if vardef.name == 'count' or vardef.name == args.bbb:
                     counters[sspec.name] = hist
                 elif plotDir:
-                    canvas.addSignal(hist, title = sspec.title, color = sspec.color)
+                    canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
 
         # write out all signal distributions if asked for
         if isSensitive and args.allSignal:

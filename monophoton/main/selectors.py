@@ -241,6 +241,7 @@ def purityBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+    selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
@@ -430,7 +431,6 @@ def gjets(sample, selector):
     """
     
     selector = monophotonBase(sample, selector)
-
     
     selector.addOperator(ROOT.HighPtJetSelection())
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)

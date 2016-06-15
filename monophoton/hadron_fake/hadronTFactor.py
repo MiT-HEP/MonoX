@@ -7,9 +7,11 @@ import ROOT
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
 from plotstyle import SimpleCanvas
+from datasets import allsamples
 import config
 
-canvas = SimpleCanvas(lumi = 2239.9)
+lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
+canvas = SimpleCanvas(lumi = lumi)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 

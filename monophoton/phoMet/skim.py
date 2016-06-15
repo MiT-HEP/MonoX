@@ -13,8 +13,8 @@ import config
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-skim = 'phi' # sys.argv[1]
-sname = sys.argv[1]
+skim = sys.argv[1]
+sname = sys.argv[2]
 
 samples = [allsamples[sname]] # for sname in snames ] 
 
