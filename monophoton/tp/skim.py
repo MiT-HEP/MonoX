@@ -20,7 +20,7 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 # skim output directory
-outputDir = '/scratch5/yiiyama/studies/egfake_skim'
+outputDir = '/scratch5/yiiyama/studies/egfake_skim_s17'
 
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')

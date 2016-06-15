@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cstring>
 #include <bitset>
+#include <functional>
 
 enum SkimType {
   kEG,
@@ -150,9 +151,9 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
     &event.muons
   };
 
-  bool* leptonTriggerMatch[nLeptons] = {
-    event.electrons.data.matchHLT23Loose,
-    event.muons.data.matchHLT24
+  std::function<bool(unsigned)> leptonTriggerMatch[nLeptons] = {
+    [&event](unsigned iL)->bool { return event.electrons[iL].matchHLT[simpletree::fEl23Loose]; },
+    [&event](unsigned iL)->bool { return event.muons[iL].matchHLT[simpletree::fMu24]; }
   };
 
   long iEntry(0);
@@ -191,7 +192,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
           if (!lepton.tight)
             continue;
 
-          if (lepton.pt < 25. || (sampleId_ != 0 && !leptonTriggerMatch[iL]))
+          if (lepton.pt < 25. || (sampleId_ == 0 && !leptonTriggerMatch[iLepton](iL)))
             continue;
 
           double dEta(photon.eta - lepton.eta);

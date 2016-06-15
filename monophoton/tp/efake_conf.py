@@ -1,5 +1,5 @@
-skimDir = '/scratch5/yiiyama/studies/egfake_skim'
-outputDir = '/scratch5/yiiyama/studies/egfake'
+skimDir = '/scratch5/yiiyama/studies/egfake_skim_s17'
+outputDir = '/scratch5/yiiyama/studies/egfake_s17'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 def getBinning(binningName):
