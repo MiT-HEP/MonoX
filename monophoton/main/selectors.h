@@ -4,6 +4,7 @@
 #include "operators.h"
 
 #include "TTree.h"
+#include "TFile.h"
 #include "TString.h"
 #include "TF1.h"
 

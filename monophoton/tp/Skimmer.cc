@@ -31,7 +31,7 @@ public:
   void addSkim(SkimType, char const* fileName);
   void limitSkim(SkimType t) { enabled_.set(t); }
   void resetLimit() { enabled_.reset(); }
-  void fillSkim(TTree*, double weight, unsigned sampleId);
+  void fillSkim(TTree*, double weight, unsigned sampleId, long nEntries = -1);
   void writeSkim();
   void setReweight(TH1* _rwgt) { reweight_ = _rwgt; }
 
@@ -95,7 +95,7 @@ Skimmer::addSkim(SkimType _type, char const* _fileName)
 }
 
 void
-Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
+Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntries/* = -1*/)
 {
   std::bitset<nSkimTypes> fill;
   for (unsigned iT(0); iT != nSkimTypes; ++iT) {
@@ -153,11 +153,12 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
 
   std::function<bool(unsigned)> leptonTriggerMatch[nLeptons] = {
     [&event](unsigned iL)->bool { return event.electrons[iL].matchHLT[simpletree::fEl23Loose]; },
-    [&event](unsigned iL)->bool { return event.muons[iL].matchHLT[simpletree::fMu24]; }
+    [](unsigned)->bool { return true; }
+    //    [&event](unsigned iL)->bool { return event.muons[iL].matchHLT[simpletree::fMu24]; }
   };
 
   long iEntry(0);
-  while (_input->GetEntry(iEntry++) > 0) {
+  while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 1000000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
 
@@ -195,9 +196,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
           if (lepton.pt < 25. || (sampleId_ == 0 && !leptonTriggerMatch[iLepton](iL)))
             continue;
 
-          double dEta(photon.eta - lepton.eta);
-          double dPhi(TVector2::Phi_mpi_pi(photon.phi - lepton.phi));
-          if (dEta * dEta + dPhi * dPhi < 0.01)
+          if (photon.dR2(lepton) < 0.01)
             continue;
 
           // veto additional loose lepton
@@ -218,9 +217,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
             //   -> This is a fake photon.
             // Large angle is defined by the isolation cone of the lepton; if the photon is within the cone, the lepton will fail the
             // veto identification and therefore the event will stay in the candidate sample.
-            double dEtaVeto(photon.eta - veto.eta);
-            double dPhiVeto(TVector2::Phi_mpi_pi(photon.phi - veto.phi));
-            if (dEtaVeto * dEtaVeto + dPhiVeto * dPhiVeto < 0.09)
+            if (photon.dR2(veto) < 0.09)
               continue;
 
             if (iLepton == lElectron && static_cast<simpletree::Electron const&>(veto).veto)
@@ -261,9 +258,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
             if (!looseLepton.loose)
               continue;
 
-            dEta = photon.eta - looseLepton.eta;
-            dPhi = TVector2::Phi_mpi_pi(photon.phi - looseLepton.phi);
-            if (dEta * dEta + dPhi * dPhi < 0.01)
+            if (photon.dR2(looseLepton) < 0.01)
               continue;
 
             auto&& looseTagP(looseLepton.p4());
@@ -294,6 +289,8 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId)
 
     if (loadEvent)
       fullInput.GetEntry(iEntry - 1);
+    else
+      continue;
 
     fullEvent_.weight *= _weight;
     

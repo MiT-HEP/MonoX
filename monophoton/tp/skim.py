@@ -12,6 +12,8 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
+from efake_conf import skimDir, skimConfig, lumiSamples
+
 targets = sys.argv[1:]
 
 sys.argv = []
@@ -20,40 +22,32 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 # skim output directory
-outputDir = '/scratch5/yiiyama/studies/egfake_skim_s17'
+outputDir = skimDir
 
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
-lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi
-
-# Grouping of samples for convenience.
-# Argument targets can be individual sample names or the config names (eldata/mudata/mc).
-# Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
-skimConfig = {
-    'eldata': (['sel-d3', 'sel-d4'], [ROOT.kEG]),
-    'mudata': (['smu-d3', 'smu-d4'], [ROOT.kMG, ROOT.kMMG]),
-    'mc': (['dy-50', 'tt', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'ww', 'wz', 'zz'], [ROOT.kEG, ROOT.kMG, ROOT.kMMG])
-}
+lumi = 0.
+for sname in lumiSamples:
+    lumi += allsamples[sname].lumi
 
 # ID integers stored in the trees.
 # Comes handy when processing a pool of samples through TChain
 sampleIds = {
-    'sel-d3': 0,
-    'sel-d4': 0,
-    'smu-d3': 0,
-    'smu-d4': 0,
+    'sel-16b2': 0,
+    'smu-16b2': 0,
     'dy-50': 1,
-    'tt': 2,
-    'wlnu': 3,
-    'wlnu-100': 3,
-    'wlnu-200': 3,
-    'wlnu-400': 3,
-    'wlnu-600': 3,
-    'ww': 4,
-    'wz': 5,
-    'zz': 6
+    'gg-80': 2,
+    'tt': 3,
+    'wlnu': 4,
+    'wlnu-100': 4,
+    'wlnu-200': 4,
+    'wlnu-400': 4,
+    'wlnu-600': 4,
+    'ww': 5,
+    'wz': 6,
+    'zz': 7
 }
 
 # Special target names
@@ -74,7 +68,7 @@ for confName in skimConfig:
             if sname not in targets:
                 targets.append(sname)
 
-suffix = {ROOT.kEG: 'eg', ROOT.kMG: 'mg', ROOT.kMMG: 'mmg'}
+suffix = {'kEG': 'eg', 'kMG': 'mg', 'kMMG': 'mmg'}
 
 npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 if not npvSource:
@@ -99,7 +93,7 @@ for sname in targets:
         skimmer.setReweight(reweight)
 
     for skimType in skimTypes:
-        skimmer.addSkim(skimType, outputDir + '/' + sname + '_' + suffix[skimType] + '.root')
+        skimmer.addSkim(getattr(ROOT, skimType), outputDir + '/' + sname + '_' + suffix[skimType] + '.root')
 
     sampleId = sampleIds[sname]
 

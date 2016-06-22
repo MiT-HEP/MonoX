@@ -9,7 +9,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import outputDir, getBinning
+from tp.efake_conf import lumiSamples, outputDir, getBinning
 
 dataType = sys.argv[1]
 binningName = sys.argv[2]
@@ -168,7 +168,11 @@ frate.Write()
 yields['ee'].Write()
 yields['eg'].Write()
 
-canvas = SimpleCanvas(lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi, sim = (dataType == 'mc'))
+lumi = 0.
+for sname in lumiSamples:
+    lumi += allsamples[sname].lumi
+
+canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 canvas.legend.add('frate', 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.apply('frate', frate)

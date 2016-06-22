@@ -11,7 +11,7 @@ sys.path.append(basedir)
 import config
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import skimDir, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import skimDir, skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 # set to nonzero if you want to run toys in runMode single too
 nToys = 0
@@ -20,6 +20,10 @@ dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
 fitBins = getBinning(binningName)[2]
+
+lumi = 0.
+for sname in lumiSamples:
+    lumi += allsamples[sname].lumi
 
 # switching runMode
 runMode = 'single'
@@ -152,11 +156,11 @@ if runMode == 'batchtoy':
 elif runMode == 'single':
     if dataType == 'data':
         # target samples
-        for sname in ['sel-d3', 'sel-d4']:
+        for sname in skimConfig['eldata'][0]:
             generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
     
         # background samples
-        for sname in ['smu-d3', 'smu-d4']:
+        for sname in skimConfig['mudata'][0]:
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
         # will need MC signal template
@@ -164,7 +168,7 @@ elif runMode == 'single':
         mcWork = mcSource.Get('work')
 
     else:
-        for sname in ['dy-50', 'tt', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'ww', 'wz', 'zz']:
+        for sname in skimConfig['mc'][0]:
             generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
@@ -185,7 +189,7 @@ elif runMode == 'single':
         alpha = work.factory('alpha[0.01, 5.]')
         n = work.factory('n[1.01, 5.]')
 
-    canvas = SimpleCanvas(lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi, sim = (dataType == 'mc'))
+    canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
     canvas.titlePave.SetX2NDC(0.5)
     canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
     canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
