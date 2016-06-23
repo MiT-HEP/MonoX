@@ -8,20 +8,21 @@ sys.path.append(basedir)
 from plotstyle import SimpleCanvas, RatioCanvas, DataMCCanvas
 from datasets import allsamples
 import config
+from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
 dtree = r.TChain('events')
-dtree.Add(config.skimDir + '/sph-d*_monoph.root')
+dtree.Add(config.skimDir + '/sph-16*_monoph.root')
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-d*_hfake.root')
-btree.Add(config.skimDir + '/sph-d*_efake.root')
+btree.Add(config.skimDir + '/sph-16*_hfake.root')
+btree.Add(config.skimDir + '/sph-16*_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
-# bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
-bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
+bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
+# bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zg_monoph.root')
@@ -66,7 +67,7 @@ bmets = []
 gmets = []
 mcmets = []
 
-lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
+lumi = allsamples['sph-16b2'].lumi
 canvas = DataMCCanvas(lumi = lumi)
 
 for region, sel in regions:
@@ -256,7 +257,7 @@ for model in models[:]:
     models.append(smeared)
 """
 
-tfacts[0].SetMinimum(0.0000000001)
+tfacts[0].SetMinimum(0.00001)
 tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
@@ -310,7 +311,7 @@ for iBin in range(gmets[0].GetNbinsX()+2):
 scanvas.Clear()
 scanvas.legend.Clear()
 
-scanvas.ylimits = (0.00000000005, 50000)
+scanvas.ylimits = (0.000005, 50000)
 scanvas.SetLogy(True)
 
 scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
@@ -398,14 +399,20 @@ leg.SetTextSize(0.03)
 
 tfacts = []
 
+print '\n\n putting some space \n\n'
+
 for iM, model in enumerate(models):
     tname = 'tfact'+model.GetName()
     fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
     # print fstring
+    
+    print gfits[0][iM].GetParameter(1), gfits[0][iM].GetParameter(2), gfits[0][iM].GetParameter(3)
+    print gfits[1][iM].GetParameter(1), gfits[1][iM].GetParameter(2), gfits[1][iM].GetParameter(3)
+
     tfact = r.TF1(tname, fstring, 0., 600.)
     tfact.SetLineColor(colors[iM])
     tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
-    # tfact.SetMinimum(0.0001)
+    tfact.SetMinimum(0.0001)
 
     outputFile.cd()
     tfact.Write()
@@ -428,6 +435,8 @@ tcanvas.SaveAs(outName+'.png')
 ###########################################
 ####### Apply new TFs      ################
 ###########################################
+
+print "\nis it here\n"
 
 scanvas.Clear()
 scanvas.legend.Clear()

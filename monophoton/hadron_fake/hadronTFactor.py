@@ -122,3 +122,26 @@ for iso in isos:
         canvas.addHistogram(tfact, drawOpt = 'EP')
 
         canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+samp)
+
+    tfNom = outputFile.Get('tfact'+iso[0]+samples[0][0])
+    tfDown = outputFile.Get('tfact'+iso[0]+samples[1][0])
+    tfUp = outputFile.Get('tfact'+iso[0]+samples[2][0])
+    
+    canvas.cd()
+    canvas.Clear()
+    canvas.legend.Clear()
+    
+    canvas.legend.add('nom', title = 'Nominal', lcolor = ROOT.kBlack, lwidth = 2)
+    canvas.legend.add('up', title = 'Up', lcolor = ROOT.kRed, lwidth = 2)
+    canvas.legend.add('down', title = 'Down', lcolor = ROOT.kBlue, lwidth = 2)
+    canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
+    
+    canvas.legend.apply('nom', tfNom)
+    canvas.legend.apply('up', tfUp)
+    canvas.legend.apply('down', tfDown)
+    
+    canvas.addHistogram(tfNom, drawOpt = 'EP')
+    canvas.addHistogram(tfUp, drawOpt = 'HIST')
+    canvas.addHistogram(tfDown, drawOpt = 'HIST')
+
+    canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+'Comp')
