@@ -51,20 +51,21 @@ sphLumi = allsamples['sph-16b2'].lumi
 haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
-    # Data
-#    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-#                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
-#                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
-#                          ],
-#    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
-#                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
-#                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
-#                          ],
-#    'smu-d3': data_smu,
-#    'smu-d4': data_smu,
-#    'sel-d3': data_sel,
-#    'sel-d4': data_sel,
+    # Data 2016
     'sph-16b2': data_sph,
+    # Data 2015
+    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
+                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                          ],
+    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
+                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
+                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
+                          ],
+    'smu-d3': data_smu,
+    'smu-d4': data_smu,
+    'sel-d3': data_sel,
+    'sel-d4': data_sel,
     # MC for signal region
     'znng-130': mc_vgcand,
     'wnlg-130': mc_vgcand + mc_vglep,

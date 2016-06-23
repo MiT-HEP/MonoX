@@ -3,13 +3,13 @@ import sys
 import array
 import ROOT
 
-"""
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 
 if basedir not in sys.path:
     sys.path.append(basedir)
-"""
+
 
 ### Getting cut values from simple tree ###
 
@@ -58,7 +58,7 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-Version = 'simpletree13c'
+Version = 'simpletree17'
 
 from ROOT import *
 
@@ -73,12 +73,12 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-d3','sph-d4'],'Fit Template from SinglePhoton Data')
+Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-b2'],'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-d3','sph-d4'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-b2'],'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-d3','sph-d4'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-b2'],'Background Template from SinglePhoton Data')
                                  ]
                 }
 
@@ -129,7 +129,7 @@ cutIsTight = '(photons.tight)'
 cutMatchedToPhoton = '(TMath::Abs(photons.matchedGen) == 22)'
 cutMatchedToReal = '(photons.matchedGen == -22)'
 
-cutPhotonPtHigh = [100,140,175,200,250,300,350] 
+cutPhotonPtHigh = [175,200,250,300,350] 
 PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
 PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.pt > '+str(low)+') && (photons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
 PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((photons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
