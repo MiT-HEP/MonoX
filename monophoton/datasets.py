@@ -23,7 +23,7 @@ class SampleDef(object):
     def clone(self):
         return SampleDef(self.name, title = self.title, book = self.book, directory = self.directory, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
 
-    def dump(self):
+    def dump(self, sourceDirs):
         print 'name =', self.name
         print 'title =', self.title
         print 'book =', self.book
@@ -31,7 +31,7 @@ class SampleDef(object):
         print 'crosssection =', self.crosssection
         print 'nevents =', self.nevents
         print 'sumw =', self.sumw
-        print 'lumi =', self.lumi
+        print 'lumi =', self.effectiveLumi(sourceDirs), 'pb'
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
 
@@ -63,29 +63,71 @@ class SampleDef(object):
             
         lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.directory, self.comments)
         return '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % lineTuple
-    
-    def getWeights(self, sourceDir):
-        fullPath = sourceDir + '/' + self.book + '/' + self.directory
-        fNames = [f for f in os.listdir(fullPath) if f.startswith('simpletree_')]
 
-        if fNames == []:
-            return fullPath+' has no files'
-        
+    def _getCounter(self, dirs):
+        for dName in dirs:
+            fullPath = dName
+            if os.path.exists(fullPath + '/' + self.name + '.root'):
+                fNames = [self.name + '.root']
+                break
+
+            fullPath = dName + '/' + self.book + '/' + self.directory
+            if os.path.isdir(fullPath):
+                fNames = os.listdir(fullPath)
+                break
+
+        if len(fNames) == 0:
+            print fullPath + ' has no files'
+            return None
+
         counter = None
         for fName in fNames:
             source = ROOT.TFile.Open(fullPath + '/' + fName)
-            if counter is None:
-                counter = source.Get('counter')
-                counter.SetDirectory(ROOT.gROOT)
-            else:
-                counter.Add(source.Get('counter'))
+            if not source:
+                continue
+            
+            try:
+                if counter is None:
+                    counter = source.Get('counter')
+                    counter.SetDirectory(ROOT.gROOT)
+                else:
+                    counter.Add(source.Get('counter'))
+            except:
+                print path
+                raise
+
             source.Close()
+
+        return counter
+    
+    def recomputeWeight(self, sourceDirs):
+        counter = self._getCounter(sourceDirs)
+
+        if not counter:
+            return
 
         self.nevents = int(counter.GetBinContent(1))
         if not self.data:
             self.sumw = counter.GetBinContent(2)
 
-        return self.linedump()
+    def getSumw2(self, sourceDirs):
+        counter = self._getCounter(sourceDirs)
+
+        if not counter:
+            return 0.
+
+        return math.pow(counter.GetBinError(2), 2.)
+
+    def effectiveLumi(self, sourceDirs):
+        if self.lumi > 0.:
+            return self.lumi
+        else:
+            sumw2 = self.getSumw2(sourceDirs)
+            if sumw2 > 0.:
+                return math.pow(self.sumw, 2.) / sumw2 / self.crosssection
+            else:
+                print 'sumw2 is zero'
+                return 0.
 
 
 class SampleDefList(object):
@@ -142,60 +184,67 @@ class SampleDefList(object):
     def getmany(self, names):
         samples = []
         for name in names:
-            if '*' in name:
-                samples += [s for s in self.samples if fnmatch.fnmatch(s.name, name)]
-            else:
-                samples.append(self.get(name))
+            match = True
+            if name.startswith('!'):
+                name = name[1:]
+                match = False
 
-        return samples
+            if '*' in name:
+                matching = [s for s in self.samples if fnmatch.fnmatch(s.name, name)]
+            else:
+                matching = [self.get(name)]
+
+            if match:
+                samples += matching
+            else:
+                samples += [s for s in self.samples if s not in matching]
+
+        return sorted(list(set(samples)), key = lambda s: s.name)
 
 
 if __name__ == '__main__':
     import sys
     from argparse import ArgumentParser
+    import config
 
     argParser = ArgumentParser(description = 'Dataset information management')
-    argParser.add_argument('--list', '-L', metavar = 'SAMPLES', dest = 'list', default = [], nargs = '*', help = 'List datasets with nevents > 0 (no argument) or datasets with names matching to the argument')
+    argParser.add_argument('--list', '-L', metavar = 'SAMPLES', dest = 'list', nargs = '*', help = 'List datasets with nevents > 0 (no argument) or datasets with names matching to the argument')
     argParser.add_argument('--print', '-p', metavar = 'DATASET', dest = 'showInfo', help = 'Print information of DATASET.')
     argParser.add_argument('--recalculate', '-r', metavar = 'DATASET', dest = 'recalculate', nargs = '+', help = 'Recalculate nentries and sumw for DATASET.')
-    argParser.add_argument('--source-dir', '-d', metavar = 'DIR', dest = 'sourceDir', help = 'Source directory where simpletree files are.')
     argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', default = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv', help = 'List CSV file to load data from.')
 
     args = argParser.parse_args()
     sys.argv = []
 
+    import ROOT
+
     samples = SampleDefList(listpath = args.listPath)
 
-    if len(args.list) != 0:
-        matches = samples.getmany(args.list)
+    if args.list is not None:
+        if len(args.list) != 0:
+            matches = samples.getmany(args.list)
+        else:
+            matches = samples.getmany(['*'])
+
         print ' '.join([sample.name for sample in matches])
 
         sys.exit(0)
 
     if args.showInfo:
         try:
-            samples[args.showInfo].dump()
+            sample = samples[args.showInfo]
         except:
             print 'No sample', args.showInfo
+
+        sample.dump([config.photonSkimDir, config.ntuplesDir])
         
         sys.exit(0)
 
     if args.recalculate:
-        import ROOT
-
-        if args.sourceDir:
-            sourceDir = args.sourceDir
-        else:
-            print 'Source dir?'
-            sourceDir = sys.stdin.readline().strip()
-
         for name in args.recalculate:
-            try:
-                sample = samples[name]
-                print sample.getWeights(sourceDir)
-
-            except:
-                sys.stderr.write(name + '  NAN\n')
+            sample = samples[name]
+            sample.recomputeWeight([config.photonSkimDir, config.ntuplesDir])
+            print sample.linedump()
 
         sys.exit(0)
 

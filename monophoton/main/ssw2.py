@@ -45,25 +45,24 @@ mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dil
 mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
 
-sphLumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
-haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4'] ]
+sphLumi = allsamples['sph-16b2'].lumi
+haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
-    # Data 2016
-    'sph-b2': ['monoph', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown'],
-    # Data 2015
-    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
-                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
-                          ],
-    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
-                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
-                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
-                          ],
-    'smu-d3': data_smu,
-    'smu-d4': data_smu,
-    'sel-d3': data_sel,
-    'sel-d4': data_sel,
+    # Data
+#    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+#                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
+#                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
+#                          ],
+#    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
+#                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
+#                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
+#                          ],
+#    'smu-d3': data_smu,
+#    'smu-d4': data_smu,
+#    'sel-d3': data_sel,
+#    'sel-d4': data_sel,
+    'sph-16b2': data_sph,
     # MC for signal region
     'znng-130': mc_vgcand,
     'wnlg-130': mc_vgcand + mc_vglep,
@@ -107,6 +106,7 @@ if __name__ == '__main__':
     argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
+    argParser.add_argument('--nentries', '-n', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -167,9 +167,9 @@ if __name__ == '__main__':
     
         tree = ROOT.TChain('events')
 
-        if os.path.exists(config.phskimDir + '/' + sname + '.root'):
-            print 'Reading', sname, 'from', config.phskimDir
-            tree.Add(config.phskimDir + '/' + sname + '.root')
+        if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
+            print 'Reading', sname, 'from', config.photonSkimDir
+            tree.Add(config.photonSkimDir + '/' + sname + '.root')
 
         else:
             if sample.data:
@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
 
             print 'Reading', sname, 'from', sourceDir
-            tree.Add(sourceDir + '/simpletree*.root')
+            tree.Add(sourceDir + '/*.root')
     
         for selconf in selectors[sname]:
             if type(selconf) == str:
@@ -190,4 +190,4 @@ if __name__ == '__main__':
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
     
-        skimmer.run(tree, config.skimDir, sname, -1)
+        skimmer.run(tree, config.skimDir, sname, args.nentries)

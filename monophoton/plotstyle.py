@@ -3,6 +3,8 @@ import sys
 import math
 import ROOT
 
+WEBDIR = os.environ['HOME'] + '/public_html/cmsplots'
+
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetTextFont(42)
 ROOT.gStyle.SetLabelSize(0.05, 'X')
@@ -259,8 +261,6 @@ class SimpleCanvas(object):
         self._needUpdate = True
         self._temporaries = []
 
-        self.webdir = os.environ['HOME'] + '/public_html/cmsplots'
-
     def __getattr__(self, name):
         return getattr(self.canvas, name)
 
@@ -507,7 +507,7 @@ class SimpleCanvas(object):
     def printWeb(self, directory, name, **options):
         self.Update(**options)
 
-        targetDir = self.webdir + '/' + directory
+        targetDir = WEBDIR + '/' + directory
         if not os.path.isdir(targetDir):
             os.makedirs(targetDir)
 

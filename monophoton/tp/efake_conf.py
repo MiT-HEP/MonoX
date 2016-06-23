@@ -1,6 +1,17 @@
-skimDir = '/scratch5/yiiyama/studies/egfake_skim'
-outputDir = '/scratch5/yiiyama/studies/egfake'
+skimDir = '/scratch5/yiiyama/studies/monophoton16/efake_skim'
+outputDir = '/scratch5/yiiyama/studies/monophoton16/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
+
+# Grouping of samples for convenience.
+# Argument targets can be individual sample names or the config names (eldata/mudata/mc).
+# Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
+skimConfig = {
+    'eldata': (['sel-16b2'], ['kEG']),
+    'mudata': (['smu-16b2'], ['kMG', 'kMMG']),
+    'mc': (['dy-50', 'gg-80', 'wlnu'], ['kEG', 'kMG', 'kMMG'])
+}
+
+lumiSamples = ['sel-16b2']
 
 def getBinning(binningName):
     if binningName == 'pt':

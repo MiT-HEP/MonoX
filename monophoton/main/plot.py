@@ -11,6 +11,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
+DOSYSTEMATICS = False
+
 # global variables to be set in __main__
 lumi = 0.
 allsamples = None 
@@ -39,9 +41,11 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     if not name:
         name = group.name
 
+    print group.name, 'nominal'
+
     hist = vardef.makeHist(name, outDir = outFile)
     shists = {}
-    
+   
     if len(samples) != 0:
         # nominal. name: variable-group
         for sname in samples:
@@ -60,72 +64,75 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
         norm = template.GetSumOfWeights()
         for iC in range(template.GetNcells()):
             hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm)
-            
+
     varhists = {}
 
-    # systematics variations
-    for variation in group.variations:
-        if type(variation.reweight) is float:
-            # uniform variation by a constant
-
-            varname = variation.name + 'Var'
-
-            vhist = vardef.makeHist(name + '_' + varname, outDir = outFile)
-
-            reweight = 1. + variation.reweight
-
-            if len(samples) != 0:
-                for sname in samples:
-                    if group.region:
-                        hname = sname + '_' + group.region + '_' + varname
-                    else:
-                        hname = sname + '_' + varname
-    
-                    shist = shists[sname].Clone(vardef.histName(hname))
-                    shist.SetDirectory(sampleDir)
-                    shist.Scale(reweight)
-                    vhist.Add(shist)
-            else:
-                for iC in range(template.GetNcells()):
-                    vhist.SetBinContent(iC, hist.GetBinContent(iC) * reweight)
-                
-            varhists[variation.name] = (vhist,) # make it a tuple to align with rest
-
-        else:
-            # up & down variations
-
-            vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
-    
-            for iV in range(2):
-                v = 'Up' if iV == 0 else 'Down'
-                varname = variation.name + v
-
-                if variation.region is not None:
-                    vregion = variation.region[iV]
-                else:
-                    vregion = region
-    
-                if variation.replacements is not None:
-                    repl = variation.replacements[iV]
-                else:
-                    repl = []
-    
-                if type(variation.reweight) is str:
-                    reweight = 'reweight_' + variation.reweight + v
-                else:
-                    reweight = None
+    if DOSYSTEMATICS:
+        print group.name, 'variations'
    
-                for sname in samples:
-                    if group.region:
-                        hname = sname + '_' + group.region + '_' + varname
-                    else:
-                        hname = sname + '_' + varname
+        # systematics variations
+        for variation in group.variations:
+            if type(variation.reweight) is float:
+                # uniform variation by a constant
     
-                    shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
-                    shist.Scale(group.scale)
-                    vhists[iV].Add(shist)
-
-            varhists[variation.name] = vhists
+                varname = variation.name + 'Var'
+    
+                vhist = vardef.makeHist(name + '_' + varname, outDir = outFile)
+    
+                reweight = 1. + variation.reweight
+    
+                if len(samples) != 0:
+                    for sname in samples:
+                        if group.region:
+                            hname = sname + '_' + group.region + '_' + varname
+                        else:
+                            hname = sname + '_' + varname
+        
+                        shist = shists[sname].Clone(vardef.histName(hname))
+                        shist.SetDirectory(sampleDir)
+                        shist.Scale(reweight)
+                        vhist.Add(shist)
+                else:
+                    for iC in range(template.GetNcells()):
+                        vhist.SetBinContent(iC, hist.GetBinContent(iC) * reweight)
+                    
+                varhists[variation.name] = (vhist,) # make it a tuple to align with rest
+    
+            else:
+                # up & down variations
+    
+                vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
+        
+                for iV in range(2):
+                    v = 'Up' if iV == 0 else 'Down'
+                    varname = variation.name + v
+    
+                    if variation.region is not None:
+                        vregion = variation.region[iV]
+                    else:
+                        vregion = region
+        
+                    if variation.replacements is not None:
+                        repl = variation.replacements[iV]
+                    else:
+                        repl = []
+        
+                    if type(variation.reweight) is str:
+                        reweight = 'reweight_' + variation.reweight + v
+                    else:
+                        reweight = None
+       
+                    for sname in samples:
+                        if group.region:
+                            hname = sname + '_' + group.region + '_' + varname
+                        else:
+                            hname = sname + '_' + varname
+        
+                        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                        shist.Scale(group.scale)
+                        vhists[iV].Add(shist)
+    
+                varhists[variation.name] = vhists
 
     # write raw histograms before formatting (which includes bin width normalization)
     writeHist(hist)
@@ -382,7 +389,7 @@ if __name__ == '__main__':
     import ROOT
     ROOT.gROOT.SetBatch(True)
 
-    from plotstyle import SimpleCanvas, DataMCCanvas
+    from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
     from datasets import SampleDefList
 
     if not args.skimDir:
@@ -437,8 +444,8 @@ if __name__ == '__main__':
         plotDir = 'monophoton/' + args.config
 
     if plotDir and args.clearDir:
-        for plot in os.listdir(canvas.webdir + '/' + plotDir):
-            os.remove(canvas.webdir + '/' + plotDir + '/' + plot)
+        for plot in os.listdir(WEBDIR + '/' + plotDir):
+            os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
     print "Starting plot making."
     
@@ -517,6 +524,8 @@ if __name__ == '__main__':
                     if sample.name not in usedPoints:
                         groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, postscale = postscale, outFile = outFile)
                         usedPoints.append(sample.name)
+
+        print 'data_obs'
                     
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 

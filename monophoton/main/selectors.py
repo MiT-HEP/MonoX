@@ -20,7 +20,7 @@ import config
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
+#ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
 
@@ -35,6 +35,8 @@ photonFullSelection = [
     'MIP49',
     'Time',
     'SieieNonzero',
+    'SipipNonzero',
+    'E2E995',
     'NoisyRegion'
 ]
 
@@ -78,7 +80,7 @@ def monophotonBase(sample, selector):
     operators = []
 
     if sample.data:
-        operators.append('HLTPhoton165HE10')
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -112,7 +114,7 @@ def monophotonBase(sample, selector):
         metVar = selector.findOperator('MetVariations')
         jetClean = selector.findOperator('JetCleaning')
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
-        metVar.setJetCleaning(jetClean)
+#        metVar.setJetCleaning(jetClean)
 
 #        jetClean.setJetResolution(basedir + '/data/Summer15_25nsV6_MC_PtResolution_AK4PFchs.txt')
 
@@ -121,7 +123,7 @@ def monophotonBase(sample, selector):
         
         jetDPhi = selector.findOperator('JetMetDPhi')
         jetDPhi.setMetVariations(metVar)
-        jetDPhi.setJetCleaning(jetClean)
+#        jetDPhi.setJetCleaning(jetClean)
 
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
@@ -216,7 +218,7 @@ def purityBase(sample, selector):
     operators = []
 
     if sample.data:
-        operators.append('HLTPhoton165HE10')
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -235,7 +237,10 @@ def purityBase(sample, selector):
     ]
 
     for op in operators:
-        selector.addOperator(getattr(ROOT, op)())
+        if type(op) is tuple:
+            selector.addOperator(getattr(ROOT, op[0])(*op[1:]))
+        else:
+            selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
@@ -595,14 +600,15 @@ def leptonBase(sample, selector):
 def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
-    selector.addOperator(ROOT.HLTEle27eta2p1WPLooseGsf(), 0)
-
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele23_WPLoose_Gsf'), 0)
     return selector
 
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
-    selector.addOperator(ROOT.HLTIsoMu27(), 0)
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20'), 0)
 
     return selector
 

@@ -2,12 +2,13 @@
 #define operators_h
 
 #include "TreeEntries_simpletree.h"
+#include "SimpleTreeUtils.h"
 
 #include "TH1.h"
 #include "TH2.h"
 #include "TRandom3.h"
 
-#include "jer.h"
+//#include "jer.h"
 
 #include <bitset>
 #include <map>
@@ -93,25 +94,14 @@ class Modifier : public Operator {
 // Cuts
 //--------------------------------------------------------------------
 
-class HLTPhoton165HE10 : public Cut {
+class HLTFilter : public Cut {
  public:
-  HLTPhoton165HE10(char const* name = "HLTPhoton165HE10") : Cut(name) {}
- protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kPhoton165HE10].pass; }
-};
+  HLTFilter(char const* name = "PATHNAME") : Cut(name), helper_(name) {}
 
-class HLTEle27eta2p1WPLooseGsf : public Cut {
- public:
-  HLTEle27eta2p1WPLooseGsf(char const* name = "HLTEle27eta2p1WPLooseGsf") : Cut(name) {}
  protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kEle27Loose].pass; }
-};
+  bool pass(simpletree::Event const& _event, simpletree::Event&) override;
 
-class HLTIsoMu27 : public Cut {
- public:
-  HLTIsoMu27(char const* name = "HLTIsoMu27") : Cut(name) {}
- protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kMu27].pass; }
+  simpletree::TriggerHelper helper_;
 };
 
 class MetFilters : public Cut {
@@ -139,6 +129,8 @@ class PhotonSelection : public Cut {
     MIP49,
     Time,
     SieieNonzero,
+    SipipNonzero,
+    E2E995,
     NoisyRegion,
     Sieie12,
     Sieie15,
@@ -219,9 +211,9 @@ class PhotonMetDPhi : public Cut {
   float dPhiGECDown_{0.};
   float dPhiUnclUp_{0.};
   float dPhiUnclDown_{0.};
-  float dPhiJER_{0.};
-  float dPhiJERUp_{0.};
-  float dPhiJERDown_{0.};
+  /* float dPhiJER_{0.}; */
+  /* float dPhiJERUp_{0.}; */
+  /* float dPhiJERDown_{0.}; */
   MetVariations* metVar_{0};
 };
 
@@ -232,7 +224,7 @@ class JetMetDPhi : public Cut {
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
-  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
+  /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
 
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
@@ -244,12 +236,12 @@ class JetMetDPhi : public Cut {
   float dPhiGECDown_{0.};
   float dPhiUnclUp_{0.};
   float dPhiUnclDown_{0.};
-  float dPhiJER_{0.};
-  float dPhiJERUp_{0.};
-  float dPhiJERDown_{0.};
+  /* float dPhiJER_{0.}; */
+  /* float dPhiJERUp_{0.}; */
+  /* float dPhiJERDown_{0.}; */
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
-  JetCleaning* jetCleaning_{0};
+  /* JetCleaning* jetCleaning_{0}; */
 };
 
 class LeptonSelection : public Cut {
@@ -326,15 +318,15 @@ class JetCleaning : public Modifier {
   };
 
   JetCleaning(char const* name = "JetCleaning");
-  ~JetCleaning() { delete jer_; delete rndm_; }
+  ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
 
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
-  void setJetResolution(char const* sourcePath);
+  //  void setJetResolution(char const* sourcePath);
 
-  double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; }
-  double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; }
-  double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; }
+  /* double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; } */
+  /* double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; } */
+  /* double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; } */
   
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
@@ -342,12 +334,12 @@ class JetCleaning : public Modifier {
   std::bitset<nCollections> cleanAgainst_{};
 
   // will copy jer branches
-  float ptScaled_[simpletree::Particle::array_data::NMAX];
-  float ptScaledUp_[simpletree::Particle::array_data::NMAX];
-  float ptScaledDown_[simpletree::Particle::array_data::NMAX];
+  /* float ptScaled_[simpletree::Particle::array_data::NMAX]; */
+  /* float ptScaledUp_[simpletree::Particle::array_data::NMAX]; */
+  /* float ptScaledDown_[simpletree::Particle::array_data::NMAX]; */
 
-  JER* jer_{0};
-  TRandom3* rndm_{0};
+  //  JER* jer_{0};
+  //  TRandom3* rndm_{0};
 };
 
 class PhotonJetDPhi : public Modifier {
@@ -399,12 +391,12 @@ class MetVariations : public Modifier {
   void addBranches(TTree& skimTree) override;
 
   void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
-  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
+  /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
   TVector2 gecUp() const { TVector2 v; v.SetMagPhi(metGECUp_, phiGECUp_); return v; }
   TVector2 gecDown() const { TVector2 v; v.SetMagPhi(metGECDown_, phiGECDown_); return v; }
-  TVector2 jer() const { TVector2 v; v.SetMagPhi(metJER_, phiJER_); return v; }
-  TVector2 jerUp() const { TVector2 v; v.SetMagPhi(metJERUp_, phiJERUp_); return v; }
-  TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; }
+  /* TVector2 jer() const { TVector2 v; v.SetMagPhi(metJER_, phiJER_); return v; } */
+  /* TVector2 jerUp() const { TVector2 v; v.SetMagPhi(metJERUp_, phiJERUp_); return v; } */
+  /* TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; } */
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
@@ -415,12 +407,12 @@ class MetVariations : public Modifier {
   float phiGECUp_{0.};
   float metGECDown_{0.};
   float phiGECDown_{0.};
-  float metJER_{0.};
-  float phiJER_{0.};
-  float metJERUp_{0.};
-  float phiJERUp_{0.};
-  float metJERDown_{0.};
-  float phiJERDown_{0.};
+  /* float metJER_{0.}; */
+  /* float phiJER_{0.}; */
+  /* float metJERUp_{0.}; */
+  /* float phiJERUp_{0.}; */
+  /* float metJERDown_{0.}; */
+  /* float phiJERDown_{0.}; */
 };
 
 class ConstantWeight : public Modifier {
