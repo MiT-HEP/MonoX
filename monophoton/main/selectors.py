@@ -17,6 +17,8 @@ if basedir not in sys.path:
 
 import config
 
+ptmin = 185.
+
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
@@ -130,6 +132,11 @@ def monophotonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+        trigCorr = ROOT.TriggerEfficiency()
+        trigCorr.setMinPt(300.)
+        trigCorr.setFormula('1.025 - 0.0001163 * x')
+        selector.addOperator(trigCorr)
+
     selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
@@ -204,6 +211,38 @@ def eleProxy(sample, selector):
 #    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
     photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
     photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
+
+    return selector
+
+def lowmt(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = candidate(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
+
+    return selector
+
+def lowmtEleProxy(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = eleProxy(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
 
     return selector
 

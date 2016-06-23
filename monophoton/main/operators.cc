@@ -558,6 +558,23 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 }
 
 //--------------------------------------------------------------------
+// MtRange
+//--------------------------------------------------------------------
+
+bool
+MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  if (_outEvent.photons.size() == 0)
+    return false;
+
+  auto& photon(_outEvent.photons[0]);
+  auto& met(_outEvent.t1Met);
+
+  double mt(std::sqrt(2. * met.met * photon.pt * (1. - std::cos(met.phi - photon.phi))));
+  return mt > min_ && mt < max_;
+}
+
+//--------------------------------------------------------------------
 // HighPtJetSelection
 //--------------------------------------------------------------------
 
@@ -616,6 +633,30 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
 
   ecalCrackVeto_ = true;
   return true;
+}
+
+//--------------------------------------------------------------------
+// TriggerEfficiency
+//--------------------------------------------------------------------
+
+void
+TriggerEfficiency::setFormula(char const* formula)
+{
+  delete formula_;
+  formula_ = new TF1("TriggerEfficiency", formula, 0., 6500.);
+}
+
+void
+TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  if (!formula_ || _outEvent.photons.size() == 0)
+    return;
+
+  double pt(_outEvent.photons[0].pt);
+  if (pt < minPt_)
+    return;
+
+  _outEvent.weight *= formula_->Eval(pt);
 }
 
 //--------------------------------------------------------------------

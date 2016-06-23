@@ -21,6 +21,8 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
+    'lowmt': selectors.lowmt,
+    'lowmtEfake': selectors.lowmtEleProxy,
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -31,7 +33,7 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph']

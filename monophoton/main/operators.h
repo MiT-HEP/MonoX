@@ -6,6 +6,7 @@
 
 #include "TH1.h"
 #include "TH2.h"
+#include "TF1.h"
 #include "TRandom3.h"
 
 //#include "jer.h"
@@ -151,6 +152,7 @@ class PhotonSelection : public Cut {
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setWP(unsigned wp) { wp_ = wp; }
 
   double ptVariation(simpletree::Photon const&, bool up);
@@ -160,6 +162,7 @@ class PhotonSelection : public Cut {
   int selectPhoton(simpletree::Photon const&);
 
   double minPt_{175.};
+  double maxPt_{6500.};
   unsigned wp_{1}; // 1 -> medium
   float ptVarUp_[simpletree::Particle::array_data::NMAX];
   float ptVarDown_[simpletree::Particle::array_data::NMAX];
@@ -267,6 +270,18 @@ class HighMet : public Cut {
   double min_{170.};
 };
 
+class MtRange : public Cut {
+ public:
+  MtRange(char const* name = "MtRange") : Cut(name) {}
+  
+  void setRange(double min, double max) { min_ = min; max_ = max; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double min_{0.};
+  double max_{6500.};
+};
+
 class HighPtJetSelection : public Cut {
  public:
   HighPtJetSelection(char const* name = "HighPtJetSelection") : Cut(name) {}
@@ -294,6 +309,20 @@ class EcalCrackVeto : public Cut {
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
+
+class TriggerEfficiency : public Modifier {
+ public:
+  TriggerEfficiency(char const* name = "TriggerEfficiency") : Modifier(name) {}
+  ~TriggerEfficiency() { delete formula_; }
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setFormula(char const* formula);
+
+ protected:
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+
+  double minPt_{0.};
+  TF1* formula_{0};
+};
 
 class ExtraPhotons : public Modifier {
  public:

@@ -13,22 +13,22 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/Data
 
 ROOT.gROOT.LoadMacro('Skimmer.cc+')
 
-#tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SinglePhoton+Run2016B-PromptReco-v2+AOD/simpletree_*.root')
-#
-#ROOT.skim(tree, ROOT.kDiphoton, '/scratch5/yiiyama/studies/monophoton16/trigger_diphoton.root')
+tree = ROOT.TChain('events')
+tree.Add(config.ntuplesDir + 'filefi/044/SinglePhoton+Run2016B-PromptReco-v2+AOD/*.root')
+
+ROOT.skim(tree, ROOT.kDiphoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_diphoton.root')
 
 #tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SingleElectron+Run2016B-PromptReco-v2+AOD/simpletree_*.root')
+#tree.Add(config.ntuplesDir + 'filefi/044/SingleElectron+Run2016B-PromptReco-v2+AOD/*.root')
 #
-#ROOT.skim(tree, ROOT.kDielectron, '/scratch5/yiiyama/studies/monophoton16/trigger_dielectron.root')
+#ROOT.skim(tree, ROOT.kDielectron, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_dielectron.root')
 
 #tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SingleMuon+Run2016B-PromptReco-v2+AOD/simpletree_*.root')
+#tree.Add(config.ntuplesDir + 'filefi/044/SingleMuon+Run2016B-PromptReco-v2+AOD/*.root')
 #
-#ROOT.skim(tree, ROOT.kMuonPhoton, '/scratch5/yiiyama/studies/monophoton16/trigger_muonphoton.root')
+#ROOT.skim(tree, ROOT.kMuonPhoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_muonphoton.root')
 
 tree = ROOT.TChain('events')
-tree.Add(config.ntuplesDir + 'filefi/044/JetHT+Run2016B-PromptReco-v2+AOD/simpletree_*.root')
+tree.Add(config.ntuplesDir + 'filefi/044/JetHT+Run2016B-PromptReco-v2+AOD/*.root')
 
-ROOT.skim(tree, ROOT.kJets, '/scratch5/yiiyama/studies/monophoton16/trigger_muonphoton.root')
+ROOT.skim(tree, ROOT.kJetHT, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_jetht.root')
