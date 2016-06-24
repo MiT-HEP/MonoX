@@ -185,10 +185,11 @@ class SampleDefList(object):
 
         db.execute('SELECT `name`, `title`, `crosssection`, `nevents`, `sumw`, `book`, `fullname`, `comments` FROM `datasets`')
         for name, title, crosssection, nevents, sumw, book, fullname, comments in db.fetchall():
+            # cast strings to str from unicode
             if sumw < 0.:
-                sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = crosssection, nevents = nevents, sumw = sumw, data = True, comments = comments)
+                sdef = SampleDef(str(name), title = str(title), book = str(book), fullname = str(fullname), lumi = crosssection, nevents = nevents, sumw = sumw, data = True, comments = str(comments))
             else:
-                sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = crosssection, nevents = nevents, sumw = sumw, comments = comments)
+                sdef = SampleDef(str(name), title = str(title), book = str(book), fullname = str(fullname), crosssection = crosssection, nevents = nevents, sumw = sumw, comments = str(comments))
         
             self.samples.append(sdef)
 
