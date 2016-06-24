@@ -163,9 +163,9 @@ if __name__ == '__main__':
 
         else:
             if sample.data:
-                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
             else:
-                sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
             tree.Add(sourceDir + '/*.root')

@@ -13,7 +13,7 @@ def makeZGWGHistograms(sname, binning):
     sample = allsamples[sname]
 
     tree = ROOT.TChain('events')
-    tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
+    tree.Add(config.ntuplesDir + '/' + sample.fullname + '/simpletree_*.root')
 
     lo = ROOT.TH1D('lo', '', len(binning) - 1, binning)
     tree.Draw('promptFinalStates.pt>>lo', 'promptFinalStates.pid == 22 && TMath::Abs(promptFinalStates.eta) < 1.4442', 'goff')

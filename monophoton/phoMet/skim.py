@@ -23,7 +23,7 @@ npvweight = npvSource.Get('npvweight')
 
 source = ROOT.TChain('events')
 for sample in samples:
-    sampleString = config.ntuplesDir + sample.book + '/' + sample.directory + '/simpletree_*.root'
+    sampleString = config.ntuplesDir + sample.book + '/' + sample.fullname + '/simpletree_*.root'
     print sampleString
     source.Add(sampleString)
 

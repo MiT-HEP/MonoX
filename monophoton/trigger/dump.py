@@ -17,6 +17,6 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/Data
 ROOT.gROOT.LoadMacro('Dumper.cc+')
 
 tree = ROOT.TChain('events')
-tree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.directory + '/*.root')
+tree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 
 ROOT.triggerRates(tree, 'test.root', 10000)

@@ -155,7 +155,7 @@ def candidate(sample, selector):
     if not sample.data:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-        if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -707,7 +707,7 @@ def wenuall(sample, name):
 
     selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
     selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-    if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')

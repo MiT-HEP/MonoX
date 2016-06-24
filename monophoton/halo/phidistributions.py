@@ -47,7 +47,7 @@ dataTree = ROOT.TChain('events')
 dataTree.Add(config.photonSkimDir + '/sph-16b2.root')
 
 dataTreeAll = ROOT.TChain('events')
-dataTreeAll.Add(config.ntuplesDir + '/' + sph.book + '/' + sph.directory + '/*.root')
+dataTreeAll.Add(config.ntuplesDir + '/' + sph.book + '/' + sph.fullname + '/*.root')
 
 znngTree = ROOT.TChain('events')
 znngTree.Add(config.photonSkimDir + '/znng-130.root')

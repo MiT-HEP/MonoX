@@ -496,13 +496,13 @@ if not npvSource:
 
     dataDir = npvSource.mkdir('data')
     dataTree = ROOT.TChain('events')
-    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d3'].directory + '/simpletree_*.root')
-    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d4'].directory + '/simpletree_*.root')
+    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d3'].fullname + '/simpletree_*.root')
+    dataTree.Add(config.ntuplesDir + '/' + allsamples['smu-d4'].fullname + '/simpletree_*.root')
     ROOT.selectDimu(dataTree, dataDir)
 
     mcDir = npvSource.mkdir('mc')
     mcTree = ROOT.TChain('events')
-    mcTree.Add(config.ntuplesDir + '/' + allsamples['dy-50'].directory + '/simpletree_*.root')
+    mcTree.Add(config.ntuplesDir + '/' + allsamples['dy-50'].fullname + '/simpletree_*.root')
     ROOT.selectDimu(mcTree, mcDir)
 
     npvSource.cd()
@@ -570,7 +570,7 @@ for name in sampleNames:
 
     if sample.data:
         print 'Reading', name, 'from', dataSourceDir
-        tree.Add(dataSourceDir + '/' + sample.directory + '/simpletree_*.root')
+        tree.Add(dataSourceDir + '/' + sample.fullname + '/simpletree_*.root')
 
     elif name.startswith('dm'):
         if os.path.exists(config.phskimDir + '/' + name + '.root'):
@@ -579,7 +579,7 @@ for name in sampleNames:
         else:
             sourceDir = config.ntuplesDir.replace("042", "043")
             print 'Reading', name, 'from', sourceDir
-            tree.Add(sourceDir + '/' + sample.directory + '/simpletree_*.root')
+            tree.Add(sourceDir + '/' + sample.fullname + '/simpletree_*.root')
 
     else:
         if os.path.exists(config.phskimDir + '/' + name + '.root'):
@@ -587,7 +587,7 @@ for name in sampleNames:
             tree.Add(config.phskimDir + '/' + name + '.root')
         else:
             print 'Reading', name, 'from', config.ntuplesDir
-            tree.Add(config.ntuplesDir + '/' + sample.directory + '/simpletree_*.root')
+            tree.Add(config.ntuplesDir + '/' + sample.fullname + '/simpletree_*.root')
 
     for pname, gen in generators[name].items():
         processor = gen(sample)
