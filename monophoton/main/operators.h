@@ -69,7 +69,7 @@ class Cut : public Operator {
 
   bool exec(simpletree::Event const&, simpletree::Event&) override;
 
-  void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+  virtual void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
 
  protected:
@@ -148,6 +148,7 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
@@ -172,6 +173,8 @@ class PhotonSelection : public Cut {
   typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
+
+  bool nominalResult_{false};
 };
 
 class ElectronVeto : public Cut {
@@ -202,6 +205,7 @@ class PhotonMetDPhi : public Cut {
  public:
   PhotonMetDPhi(char const* name = "PhotonMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
@@ -218,12 +222,15 @@ class PhotonMetDPhi : public Cut {
   /* float dPhiJERUp_{0.}; */
   /* float dPhiJERDown_{0.}; */
   MetVariations* metVar_{0};
+
+  bool nominalResult_{false};
 };
 
 class JetMetDPhi : public Cut {
  public:
   JetMetDPhi(char const* name = "JetMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
@@ -245,6 +252,8 @@ class JetMetDPhi : public Cut {
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
   /* JetCleaning* jetCleaning_{0}; */
+
+  bool nominalResult_;
 };
 
 class LeptonSelection : public Cut {

@@ -150,6 +150,8 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     }
   }
 
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].pt > minPt_;
+
   return _outEvent.photons.size() != 0;
 }
 
@@ -397,6 +399,8 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
     }
   }
 
+  nominalResult_ = dPhi_ > 2.;
+
   // for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
   for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
     if (dPhi > 2.)
@@ -514,6 +518,8 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   }
 
   if (passIfIsolated_) {
+    nominalResult_ = dPhi_ > 0.5;
+
     //    for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
     for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
       if (dPhi > 0.5)
@@ -522,6 +528,8 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
     return false;
   }
   else {
+    nominalResult_ = dPhi_ < 0.5;
+
     //    for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
     for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
       if (dPhi < 0.5)
