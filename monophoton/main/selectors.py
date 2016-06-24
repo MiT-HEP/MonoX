@@ -17,8 +17,6 @@ if basedir not in sys.path:
 
 import config
 
-ptmin = 185.
-
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
@@ -520,7 +518,7 @@ def gjSmeared(sample, name):
 
     smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
     smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
-    selector.setNSamples(10)
+    selector.setNSamples(1)
     selector.setFunction(smearing)
 
     return selector
