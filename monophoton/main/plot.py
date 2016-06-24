@@ -390,7 +390,7 @@ if __name__ == '__main__':
     ROOT.gROOT.SetBatch(True)
 
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
-    from datasets import SampleDefList
+    from datasets import SampleDefList, allsamples
 
     if not args.skimDir:
         from config import skimDir
@@ -405,8 +405,6 @@ if __name__ == '__main__':
 
     if args.samplesList:
         allsamples = SampleDefList(listpath = args.samplesList)
-    else:
-        allsamples = SampleDefList(listpath = basedir + '/data/datasets.csv')
 
     if len(args.plots) == 0:
         args.plots = [v.name for v in plotConfig.variables]
