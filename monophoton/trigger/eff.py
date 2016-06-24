@@ -23,8 +23,8 @@ sourceDir = '/scratch5/yiiyama/studies/monophoton16/trigger'
 outputFile = ROOT.TFile.Open('/scratch5/yiiyama/studies/monophoton16/trigger/effplots.root', 'recreate')
 
 vconf = [
-#    ('pt', 'p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
-    ('ptzoom', 'p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+    ('pt', 'p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
+#    ('ptzoom', 'p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
 #    ('hOverE', 'H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
 #    ('hcalE', 'E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
 #    ('run', 'Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.))
@@ -45,12 +45,12 @@ fitter = ROOT.EfficiencyFitter.singleton()
 tmpfile = ROOT.TFile.Open('/tmp/trigeff_tmp.root', 'recreate')
 
 #for eventType in ['diphoton', 'dielectron', 'muonphoton', 'jetht']:
-#for eventType in ['jetht']:
-for eventType in ['dielectron']:
+for eventType in ['jetht']:
+#for eventType in ['dielectron']:
     for vname, vtitle, vexpr, baseline, binning in vconf:
         for name, passdef, denomdef, title in [
-            ('hlt', 'probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
-#            ('l1', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
+#            ('hlt', 'probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
+            ('l1', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
 #            ('l1eg', 'probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
         ]:
             if eventType == 'jetht' and vname == 'pt' and name == 'l1':
