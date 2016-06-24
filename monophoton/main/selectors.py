@@ -140,7 +140,6 @@ def monophotonBase(sample, selector):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
 
     return selector
