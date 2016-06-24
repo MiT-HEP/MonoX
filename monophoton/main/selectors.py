@@ -130,6 +130,11 @@ def monophotonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+        trigCorr = ROOT.TriggerEfficiency()
+        trigCorr.setMinPt(300.)
+        trigCorr.setFormula('1.025 - 0.0001163 * x')
+        selector.addOperator(trigCorr)
+
     selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
@@ -150,7 +155,7 @@ def candidate(sample, selector):
     if not sample.data:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-        if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -204,6 +209,38 @@ def eleProxy(sample, selector):
 #    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
     photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
     photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
+
+    return selector
+
+def lowmt(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = candidate(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
+
+    return selector
+
+def lowmtEleProxy(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = eleProxy(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
 
     return selector
 
@@ -481,7 +518,7 @@ def gjSmeared(sample, name):
 
     smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
     smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
-    selector.setNSamples(10)
+    selector.setNSamples(1)
     selector.setFunction(smearing)
 
     return selector
@@ -670,7 +707,7 @@ def wenuall(sample, name):
 
     selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
     selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-    if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')

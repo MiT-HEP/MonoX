@@ -99,7 +99,7 @@ for sname in targets:
 
     sample = allsamples[sname]
     inputTree = ROOT.TChain('events')
-    inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.directory + '/simpletree_*.root')
+    inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/simpletree_*.root')
 
     if sample.data:
         skimmer.fillSkim(inputTree, 1., sampleId)

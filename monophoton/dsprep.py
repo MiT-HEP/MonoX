@@ -32,7 +32,7 @@ for line in os.listdir(skimDirPath):
 
     name = spin+'-'+params[0]+'-'+params[1]
 
-    sdef = SampleDef(name, title = spin.upper(), book = book, directory = paramString, signal = True)
+    sdef = SampleDef(name, title = spin.upper(), book = book, fullname = paramString, signal = True)
     samples[name] = sdef
 
     med = int(params[0])

@@ -21,6 +21,8 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
+    'lowmt': selectors.lowmt,
+    'lowmtEfake': selectors.lowmtEleProxy,
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -31,7 +33,7 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph']
@@ -49,19 +51,7 @@ sphLumi = allsamples['sph-16b2'].lumi
 haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
-    # Data
-#    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-#                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
-#                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
-#                          ],
-#    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
-#                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
-#                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
-#                          ],
-#    'smu-d3': data_smu,
-#    'smu-d4': data_smu,
-#    'sel-d3': data_sel,
-#    'sel-d4': data_sel,
+    # Data 2016
     'sph-16b2': data_sph,
     # MC for signal region
     'znng-130': mc_vgcand,
@@ -173,9 +163,9 @@ if __name__ == '__main__':
 
         else:
             if sample.data:
-                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
             else:
-                sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
             tree.Add(sourceDir + '/*.root')

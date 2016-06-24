@@ -451,7 +451,7 @@ class SimpleCanvas(object):
                 base.GetYaxis().SetRangeUser(*self.ylimits)
 
         for obj in self._objects:
-            obj.Draw()
+            obj.Draw('SAME')
 
         self.drawText()
 

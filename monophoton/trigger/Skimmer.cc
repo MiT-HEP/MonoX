@@ -26,13 +26,15 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
   unsigned eventNum;
   float rho;
   unsigned short npv;
-  simpletree::PhotonCollection outPhotons("probes");
+  simpletree::PhotonCollection outPhotons("probe"); // will only have one element
   output->Branch("run", &runNum, "run/i");
   output->Branch("lumi", &lumiNum, "lumi/i");
   output->Branch("event", &eventNum, "event/i");
   output->Branch("rho", &rho, "rho/F");
   output->Branch("npv", &npv, "npv/s");
   outPhotons.book(*output);
+
+  outPhotons.resize(1);
 
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
@@ -53,27 +55,23 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     break;
   }
 
-  unsigned count[10]{};
-
   long iEntry(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << iEntry << std::endl;
 
-    if (trigger && !trigger->pass(event))
-      continue;
+    //    if (trigger && !trigger->pass(event))
+    //      continue;
 
-    ++count[0];
-
-    outPhotons.clear();
-
-    bool passCut[10]{};
+    runNum = event.run;
+    lumiNum = event.lumi;
+    eventNum = event.event;
+    rho = event.rho;
+    npv = event.npv;
 
     for (auto& photon : event.photons) {
       if (!photon.medium)
         continue;
-
-      passCut[0] = true;
 
       switch (_eventType) {
       case kDiphoton:
@@ -87,8 +85,6 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
       default:
         break;
       }
-
-      passCut[1] = true;
 
       if (_eventType == kDiphoton) {
         unsigned iTag(0);
@@ -130,30 +126,11 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
           continue;
       }
 
-      passCut[2] = true;
-
-      outPhotons.push_back(photon);
+      outPhotons[0] = photon;
+      
+      output->Fill();
     }
-
-    for (unsigned iP(0); iP != 3; ++iP) {
-      if (passCut[iP])
-        ++count[iP + 1];
-    }
-
-    if (outPhotons.size() == 0)
-      continue;
-
-    runNum = event.run;
-    lumiNum = event.lumi;
-    eventNum = event.event;
-    rho = event.rho;
-    npv = event.npv;
-
-    output->Fill();
   }
-
-  // for (unsigned c : count)
-  //   std::cout << c << std::endl;
 
   outputFile->cd();
   output->Write();

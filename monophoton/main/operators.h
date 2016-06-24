@@ -6,6 +6,7 @@
 
 #include "TH1.h"
 #include "TH2.h"
+#include "TF1.h"
 #include "TRandom3.h"
 
 //#include "jer.h"
@@ -68,7 +69,7 @@ class Cut : public Operator {
 
   bool exec(simpletree::Event const&, simpletree::Event&) override;
 
-  void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+  virtual void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
 
  protected:
@@ -147,10 +148,12 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setWP(unsigned wp) { wp_ = wp; }
 
   double ptVariation(simpletree::Photon const&, bool up);
@@ -160,6 +163,7 @@ class PhotonSelection : public Cut {
   int selectPhoton(simpletree::Photon const&);
 
   double minPt_{175.};
+  double maxPt_{6500.};
   unsigned wp_{1}; // 1 -> medium
   float ptVarUp_[simpletree::Particle::array_data::NMAX];
   float ptVarDown_[simpletree::Particle::array_data::NMAX];
@@ -169,6 +173,8 @@ class PhotonSelection : public Cut {
   typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
+
+  bool nominalResult_{false};
 };
 
 class ElectronVeto : public Cut {
@@ -199,6 +205,7 @@ class PhotonMetDPhi : public Cut {
  public:
   PhotonMetDPhi(char const* name = "PhotonMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
@@ -215,12 +222,15 @@ class PhotonMetDPhi : public Cut {
   /* float dPhiJERUp_{0.}; */
   /* float dPhiJERDown_{0.}; */
   MetVariations* metVar_{0};
+
+  bool nominalResult_{false};
 };
 
 class JetMetDPhi : public Cut {
  public:
   JetMetDPhi(char const* name = "JetMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
@@ -242,6 +252,8 @@ class JetMetDPhi : public Cut {
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
   /* JetCleaning* jetCleaning_{0}; */
+
+  bool nominalResult_;
 };
 
 class LeptonSelection : public Cut {
@@ -265,6 +277,18 @@ class HighMet : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event& outEvent) override { return outEvent.t1Met.met > min_; }
 
   double min_{170.};
+};
+
+class MtRange : public Cut {
+ public:
+  MtRange(char const* name = "MtRange") : Cut(name) {}
+  
+  void setRange(double min, double max) { min_ = min; max_ = max; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double min_{0.};
+  double max_{6500.};
 };
 
 class HighPtJetSelection : public Cut {
@@ -294,6 +318,20 @@ class EcalCrackVeto : public Cut {
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
+
+class TriggerEfficiency : public Modifier {
+ public:
+  TriggerEfficiency(char const* name = "TriggerEfficiency") : Modifier(name) {}
+  ~TriggerEfficiency() { delete formula_; }
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setFormula(char const* formula);
+
+ protected:
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+
+  double minPt_{0.};
+  TF1* formula_{0};
+};
 
 class ExtraPhotons : public Modifier {
  public:

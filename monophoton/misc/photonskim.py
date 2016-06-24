@@ -20,6 +20,6 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/Data
 
 ROOT.gROOT.LoadMacro(thisdir + '/PhotonSkim.cc+')
 
-ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.directory, '/tmp/' + sname + '.root', -1)
+ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', -1)
 
 shutil.copyfile('/tmp/' + sname + '.root', '/scratch5/yiiyama/hist/simpletree18/photonskim/' + sname + '.root')

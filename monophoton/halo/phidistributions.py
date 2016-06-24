@@ -26,11 +26,11 @@ def makeFullPlot(tree, name, sel):
     return plot
 
 def makeFoldedPlot(tree, name, sel):
-    plot = ROOT.TH1D(name, ";#phi''", 6, -math.pi * 0.5, math.pi * 0.5)
+    plot = ROOT.TH1D(name, ";#phi''", 15, 0., math.pi * 0.5)
     plot.Sumw2()
     plot.SetLineColor(ROOT.kBlack)
     plot.SetLineWidth(2)
-    tree.Draw('TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796>>' + name, selection.format(sel = sel), 'goff')
+    tree.Draw('TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796)>>' + name, selection.format(sel = sel), 'goff')
 
     return plot
 
@@ -47,7 +47,7 @@ dataTree = ROOT.TChain('events')
 dataTree.Add(config.photonSkimDir + '/sph-16b2.root')
 
 dataTreeAll = ROOT.TChain('events')
-dataTreeAll.Add(config.ntuplesDir + '/' + sph.book + '/' + sph.directory + '/*.root')
+dataTreeAll.Add(config.ntuplesDir + '/' + sph.book + '/' + sph.fullname + '/*.root')
 
 znngTree = ROOT.TChain('events')
 znngTree.Add(config.photonSkimDir + '/znng-130.root')
@@ -66,7 +66,7 @@ canvas.printWeb('monophoton/halo', 'phiHalo', logy = False)
 
 canvas.Clear()
 
-phiHalo = makeFoldedPlot(dataTree, 'phiHalo', 'photons.mipEnergy > 4.9 && photons.isEB')
+phiHalo = makeFoldedPlot(dataTree, 'phiHaloFolded', 'photons.mipEnergy > 4.9 && photons.isEB')
 phiHalo.SetDirectory(outputFile)
 outputFile.cd()
 phiHalo.Write()
@@ -80,7 +80,7 @@ canvas.Clear()
 
 ## halo EE
 
-phiHaloEE = makeFullPlot(dataTreeAll, 'phiHalo', '!photons.isEB')
+phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEE', '!photons.isEB')
 phiHaloEE.SetDirectory(outputFile)
 outputFile.cd()
 phiHaloEE.Write()
@@ -94,7 +94,7 @@ canvas.Clear()
 
 # MIP tag
 
-phiHaloEE = makeFullPlot(dataTreeAll, 'phiHalo', '!photons.isEB && photons.mipEnergy > 4.9')
+phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEEMIPtag', '!photons.isEB && photons.mipEnergy > 4.9')
 phiHaloEE.SetDirectory(outputFile)
 outputFile.cd()
 phiHaloEE.Write()
@@ -106,9 +106,23 @@ canvas.printWeb('monophoton/halo', 'phiHaloEEMIPtag', logy = False)
 
 canvas.Clear()
 
+# halo tag
+
+phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEECSCtag', '!photons.isEB && metFilters.cschalo')
+phiHaloEE.SetDirectory(outputFile)
+outputFile.cd()
+phiHaloEE.Write()
+
+canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
+
+canvas.addHistogram(phiHaloEE)
+canvas.printWeb('monophoton/halo', 'phiHaloEECSCtag', logy = False)
+
+canvas.Clear()
+
 ## cand EB
 
-phiCand = makeFullPlot(dataTree, 'phiHalo', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
+phiCand = makeFullPlot(dataTree, 'phiCand', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
 phiCand.SetDirectory(outputFile)
 outputFile.cd()
 phiCand.Write()
@@ -120,7 +134,7 @@ canvas.printWeb('monophoton/halo', 'phiCand', logy = False)
 
 canvas.Clear()
 
-phiCand = makeFoldedPlot(dataTree, 'phiHalo', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
+phiCand = makeFoldedPlot(dataTree, 'phiCandFolded', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
 phiCand.SetDirectory(outputFile)
 outputFile.cd()
 phiCand.Write()
@@ -134,7 +148,7 @@ canvas.Clear()
 
 ## znng EB
 
-phiZnng = makeFullPlot(znngTree, 'phiHalo', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
+phiZnng = makeFullPlot(znngTree, 'phiZnng', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
 phiZnng.SetDirectory(outputFile)
 outputFile.cd()
 phiZnng.Write()
@@ -146,7 +160,7 @@ canvas.printWeb('monophoton/halo', 'phiZnng', logy = False)
 
 canvas.Clear()
 
-phiZnng = makeFoldedPlot(znngTree, 'phiHalo', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
+phiZnng = makeFoldedPlot(znngTree, 'phiZnngFolded', 'photons.mipEnergy < 4.9 && photons.medium && photons.isEB')
 phiZnng.SetDirectory(outputFile)
 outputFile.cd()
 phiZnng.Write()

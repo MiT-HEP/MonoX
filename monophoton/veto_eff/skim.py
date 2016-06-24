@@ -22,7 +22,7 @@ npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
 npvweight = npvSource.Get('npvweight')
 
 source = ROOT.TChain('events')
-source.Add(config.ntuplesDir + '/' + sample.directory + '/*.root')
+source.Add(config.ntuplesDir + '/' + sample.fullname + '/*.root')
 
 ROOT.gROOT.LoadMacro(thisdir + '/' + skim + '.cc+')
 
