@@ -77,8 +77,8 @@ def monophotonBase(sample, selector):
 
     operators = []
 
-    # if sample.data:
-    #     operators.append('HLTPhoton165HE10')
+    if sample.data:
+        operators.append('HLTPhoton165HE10')
 
     operators += [
         'MetFilters',
@@ -128,12 +128,16 @@ def monophotonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
 
+    selector.findOperator('HLTPhoton165HE10').setIgnoreDecision(True)
+    selector.findOperator('MetFilters').setIgnoreDecision(True)
+    selector.findOperator('MuonVeto').setIgnoreDecision(True)
+    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
+
     selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
 
     return selector
@@ -155,6 +159,8 @@ def candidate(sample, selector):
 
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('PhotonSelection').setIgnoreDecision(True)
 
     return selector
 
