@@ -411,7 +411,7 @@ for binName, fitCut in fitBins:
             if pdf == 'altbkg':
                 canvas.printWeb('efake', 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
             elif pdf == 'altsig':
-                canvas.printWeb('efake', 'fit_' + dataType + '_sigbkg_' + conf + '_' + binName, logy = False)
+                canvas.printWeb('efake', 'fit_' + dataType + '_altsig_' + conf + '_' + binName, logy = False)
             else:
                 canvas.printWeb('efake', 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
 

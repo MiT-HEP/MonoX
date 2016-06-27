@@ -151,6 +151,8 @@ def candidate(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
+    selector.setPartialBlinding(5, 274422)
+
     if not sample.data:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))

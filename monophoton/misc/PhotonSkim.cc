@@ -6,12 +6,38 @@
 #include "TString.h"
 #include "TSystem.h"
 #include "TH1D.h"
-#include "TChain.h"
+#include "TKey.h"
 
 #include <vector>
 #include <map>
 #include <iostream>
 #include <stdexcept>
+#include <cstring>
+
+// fix for simpletree18 bug (latest cycle not necessarily the biggest tree)
+TTree*
+getLongestTree(TFile* _source, char const* _name)
+{
+  TTree* longestTree(0);
+  
+  auto* keys(_source->GetListOfKeys());
+  for (auto* keyObj : *keys) {
+    auto* key(static_cast<TKey*>(keyObj));
+    if (std::strcmp(key->GetName(), _name) != 0)
+      continue;
+
+    auto* tree(static_cast<TTree*>(key->ReadObj()));
+
+    if (!longestTree || tree->GetEntries() > longestTree->GetEntries()) {
+      delete longestTree;
+      longestTree = tree;
+    }
+    else
+      delete tree;
+  }
+
+  return longestTree;
+}
 
 void
 PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
@@ -37,21 +63,18 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
   std::cout << sourcePaths.size() << " files to merge" << std::endl;
 
   auto* outputFile(TFile::Open(_outputPath, "recreate"));
-
-  TChain inEventTree("events");
-  for (auto& path : sourcePaths)
-    inEventTree.Add(path);
+  TTree* outEventTree(0);
+  TH1D* allEvents(0);
+  TH1D* eventCounter(0);
 
   simpletree::Event event;
-  event.setAddress(inEventTree);
-
-  outputFile->cd();
-  auto* outEventTree(inEventTree.CloneTree(0));
-
-  bool hltPhoton165HE10(false);
-  outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
 
   simpletree::TriggerHelper hltPhoton165HE10Helper("HLT_Photon165_HE10");
+  bool hltPhoton165HE10(false);
+
+  simpletree::Run run;
+  std::vector<TString>* hltPaths(0);
+  std::map<unsigned, std::vector<TString>> hltMenus;
 
   auto pass([&event]()->bool {
       for (auto& photon : event.photons) {
@@ -63,41 +86,65 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
 
   std::cout << "skimming events" << std::endl;
 
+  long nTotal(0);
   long nPass(0);
-  long iEntry(0);
-  while (iEntry != _nEvents && inEventTree.GetEntry(iEntry++) > 0) {
-    if (iEntry % 100000 == 1)
-      std::cout << " " << iEntry << std::endl;
-
-    if (pass()) {
-      ++nPass;
-      hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
-      outEventTree->Fill();
-    }
-  }
-
-  std::cout << "Event reduction: " << nPass << " / " << iEntry << std::endl;
-
-  simpletree::Run run;
-  std::vector<TString>* hltPaths(0);
-  std::map<unsigned, std::vector<TString>> hltMenus;
-
-  TH1D* allEvents(0);
-  TH1D* eventCounter(0);
-
-  std::cout << "merging runs and counters" << std::endl;
 
   for (auto& path : sourcePaths) {
     auto* source(TFile::Open(path));
-    auto* inRunTree(static_cast<TTree*>(source->Get("runs")));
+
+    if (!allEvents) {
+      outputFile->cd();
+      allEvents = static_cast<TH1D*>(source->Get("hDAllEvents")->Clone());
+    }
+    else
+      allEvents->Add(static_cast<TH1D*>(source->Get("hDAllEvents")));
+
+    if (!eventCounter) {
+      outputFile->cd();
+      eventCounter = static_cast<TH1D*>(source->Get("counter")->Clone());
+    }
+    else
+      eventCounter->Add(static_cast<TH1D*>(source->Get("counter")));
+
+    TTree* inEventTree(getLongestTree(source, "events"));
+
+    TTree* inRunTree(getLongestTree(source, "runs"));
     run.setAddress(*inRunTree);
 
-    auto* inHLTTree(static_cast<TTree*>(source->Get("hlt")));
+    TTree* inHLTTree(getLongestTree(source, "hlt"));
     if (inHLTTree) {
       if (!hltPaths)
         hltPaths = new std::vector<TString>;
 
       inHLTTree->SetBranchAddress("paths", &hltPaths);
+    }
+
+    if (!outEventTree) {
+      outputFile->cd();
+      outEventTree = inEventTree->CloneTree(0);
+
+      // event branch addresses are copied through CloneTree
+      outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
+    }
+
+    event.setAddress(*outEventTree);
+    event.setAddress(*inEventTree);
+
+    if (inHLTTree)
+      hltPhoton165HE10Helper.reset();
+
+    long iEntry(0);
+    while (nTotal != _nEvents && inEventTree->GetEntry(iEntry++) > 0) {
+      ++nTotal;
+      if (nTotal % 100000 == 1)
+        std::cout << " " << nTotal << std::endl;
+
+      if (pass()) {
+        ++nPass;
+        if (inHLTTree)
+          hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
+        outEventTree->Fill();
+      }
     }
 
     iEntry = 0;
@@ -114,25 +161,13 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
         }
       }
       else
-        hltMenus.emplace(run.run, std::vector<TString>());
+        hltMenus[run.run];
     }
-
-    if (!allEvents) {
-      outputFile->cd();
-      allEvents = static_cast<TH1D*>(source->Get("hDAllEvents")->Clone());
-    }
-    else
-      allEvents->Add(static_cast<TH1D*>(source->Get("hDAllEvents")));
-
-    if (!eventCounter) {
-      outputFile->cd();
-      eventCounter = static_cast<TH1D*>(source->Get("counter")->Clone());
-    }
-    else
-      eventCounter->Add(static_cast<TH1D*>(source->Get("counter")));
 
     delete source;
   }
+
+  std::cout << "Event reduction: " << nPass << " / " << nTotal << std::endl;
 
   outputFile->cd();
   auto* outRunTree(new TTree("runs", "Runs"));

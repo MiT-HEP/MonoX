@@ -46,6 +46,8 @@ mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
+mc_lowmt = ['lowmt']
+mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
 sphLumi = allsamples['sph-16b2'].lumi
 haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
@@ -53,17 +55,19 @@ haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 selectors = {
     # Data 2016
     'sph-16b2': data_sph,
+    'smu-16b2': data_smu,
+    'sel-16b2': data_sel,
     # MC for signal region
-    'znng-130': mc_vgcand,
-    'wnlg-130': mc_vgcand + mc_vglep,
-    'zg': mc_cand + mc_lep + mc_dilep,
-    'wg': mc_cand,
-    'gj-40': mc_gj + mc_qcd,
-    'gj-100': mc_gj + mc_qcd,
-    'gj-200': mc_gj + mc_qcd,
-    'gj-400': mc_gj + mc_qcd,
-    'gj-600': mc_gj + mc_qcd,
-    'ttg': mc_cand + mc_lep + mc_dilep,
+    'znng-130': mc_vgcand + mc_vglowmt,
+    'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
+    'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wg': mc_cand + mc_lowmt,
+    'gj-40': mc_gj + mc_qcd + mc_lowmt,
+    'gj-100': mc_gj + mc_qcd + mc_lowmt,
+    'gj-200': mc_gj + mc_qcd + mc_lowmt,
+    'gj-400': mc_gj + mc_qcd + mc_lowmt,
+    'gj-600': mc_gj + mc_qcd + mc_lowmt,
+    'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu': mc_wlnu,
@@ -135,7 +139,7 @@ if __name__ == '__main__':
         snames += [key for key in selectors.keys() if 'fs' in key]
 
     # filter out empty samples
-    tmp = [name for name in snames if allsamples[name].sumw > 0.]
+    tmp = [name for name in snames if allsamples[name].sumw != 0.]
     snames = tmp
 
     if args.list:
@@ -179,5 +183,5 @@ if __name__ == '__main__':
 
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
-    
+
         skimmer.run(tree, config.skimDir, sname, args.nentries)

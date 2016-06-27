@@ -52,8 +52,9 @@ for eventType in ['jetht']:
 #            ('hlt', 'probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
             ('l1', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
 #            ('l1eg', 'probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
+#            ('l1hlt', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1 seed'),
         ]:
-            if eventType == 'jetht' and vname == 'pt' and name == 'l1':
+            if eventType == 'jetht' and vname == 'pt' and (name == 'l1' or name == 'l1hlt'):
                 binning = array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(14)])
 
             canvas.Clear()
@@ -85,14 +86,20 @@ for eventType in ['jetht']:
             canvas.legend.apply('eff', eff)
             
             canvas.addHistogram(eff, drawOpt = 'EP')
-            canvas.addLine(0., 1., 300., 1.)
-            if type(binning) is tuple:
-                eff.GetXaxis().SetLimits(binning[1], binning[2])
-            else:
-                eff.GetXaxis().SetLimits(binning[0], binning[-1])
-            
+           
             canvas.xtitle = vtitle
             canvas.ylimits = (0., 1.2)
+
+            canvas.Update()
+
+            if type(binning) is tuple:
+                canvas.addLine(binning[0], 1., binning[2], 1.)
+                eff.GetXaxis().SetLimits(binning[1], binning[2])
+            else:
+                canvas.addLine(binning[0], 1., binning[-1], 1.)
+                eff.GetXaxis().SetLimits(binning[0], binning[-1])
+
+            eff.GetYaxis().SetRangeUser(0., 1.2)
             
             canvas.printWeb('trigger', vname + '_' + name + '_' + eventType, logy = False)
 
@@ -102,7 +109,7 @@ for eventType in ['jetht']:
             if vname == 'pt' and name == 'l1' and eventType == 'jetht':
                 func = work.factory('PolyVar::func(x, {intercept[1.04,0.,2.], slope[-0.001,-0.01,0.]})')
                 params = ROOT.RooArgList(work.arg('intercept'), work.arg('slope'))
-                fitmin = 300.
+                fitmin = 450.
                 fitmax = 1000.
                 
             elif vname == 'ptzoom' and name == 'hlt' and eventType == 'dielectron':

@@ -327,6 +327,8 @@ class SimpleCanvas(object):
         line.SetLineStyle(style)
         self._objects.append(line)
 
+        self._modified()
+
         return line
 
     def addText(self, text, x1, y1, x2, y2, textalign = 22, font = 42):
