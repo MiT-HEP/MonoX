@@ -47,6 +47,9 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
 
+    if (translator)
+      translator->translate();
+
     for (auto* sel : selectors_)
       sel->selectEvent(event);
   }
