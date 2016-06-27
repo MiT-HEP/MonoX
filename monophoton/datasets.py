@@ -280,9 +280,9 @@ add INFO: Add a new dataset.'''
 
     elif command == 'print':
         try:
-            sample = samples[name]
+            sample = samples[arguments[0]]
         except:
-            print 'No sample', name
+            print 'No sample', arguments[0]
 
         sample.dump([config.photonSkimDir, config.ntuplesDir])
 
@@ -305,12 +305,16 @@ add INFO: Add a new dataset.'''
             print sample.linedump()
 
     elif command == 'add':
-        name, title, crosssection, nevents, sumw, book, fullname, comments = arguments
+        name, title, crosssection, nevents, sumw, book, fullname = arguments[:7]
+        try:
+            comments = arguments[7]
+        except IndexError:
+            comments = ''
         
         if sumw == '-':
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments.lstrip(' #'))
+            sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments)
         else:
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
+            sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments)
         
         samples.samples.append(sdef)
 
