@@ -23,6 +23,7 @@ bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
 bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
 # bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
+#bmctree.Add(config.skimDir + '/wglo_monoph.root')
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zg_monoph.root')
@@ -217,14 +218,14 @@ rayleigh.SetParLimits(1, 0.1, 600.)
 
 pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
 pepe.SetParameters(1., 10., 10.)
-pepe.SetParLimits(1, 0.1, 150.)
-pepe.SetParLimits(2, 0.001, 10.)
+pepe.SetParLimits(1, 0.1, 300.)
+pepe.SetParLimits(2, 0.000001, 10.)
 
 pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
 pepeplus.SetParameters(1., 10., 10., 0.1)
-pepeplus.SetParLimits(1, 0.1, 1000.)
-pepeplus.SetParLimits(2, 0.001, 100.)
-pepeplus.SetParLimits(3, 0.00001, 1.)
+pepeplus.SetParLimits(1, 0.1, 2000.)
+pepeplus.SetParLimits(2, 0.00001, 100.)
+pepeplus.SetParLimits(3, 0.000001, 1.)
 
 rpepe = r.TF1("RayleighRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
 rpepe.SetParameters(1., 10., 10., 0.1, 10., 10., 0.1)
@@ -334,12 +335,37 @@ for iM, model in enumerate(models):
 
 scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 
+print '\n\n\n\n'
+
 ###########################################
 ####### Fit MET Spectrum   ################
 ###########################################
 
 gfits = []
 
+pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
+pepe.SetParameters(1., 10., 10.)
+pepe.SetParLimits(1, 0.1, 150.)
+pepe.SetParLimits(2, 0.001, 10.)
+
+pepe2 = r.TF1("Rayleigh1Denom", "[3] * x * TMath::Exp( -x**2 /([4] + [5]*x)**2)", 0., 600.)
+pepe.SetParameters(0., 0., 0., 1., 10., 10.)
+pepe.SetParLimits(4, 0.1, 300.)
+pepe.SetParLimits(5, 0.001, 10.)
+
+pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
+pepeplus.SetParLimits(1, 0.1, 2000.)
+pepeplus.SetParLimits(2, 0.0001, 100.)
+pepeplus.SetParLimits(3, 0.0001, 1.)
+
+pepeplus2 = r.TF1("Rayleigh2Denom", "[4] * x * TMath::Exp( -x**2 /([5] + [6]*x + [7]*x**2))", 0., 600.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
+pepeplus.SetParLimits(5, 0.1, 1000.)
+pepeplus.SetParLimits(6, 0.001, 100.)
+pepeplus.SetParLimits(7, 0.0001, 1.)
+
+# models = [ (pepe2, pepe), (pepeplus2, pepeplus) ] 
 models = [ pepe, pepeplus ] 
 colors = [ r.kOrange-3, r.kGreen-3 ] 
 
@@ -399,20 +425,52 @@ leg.SetTextSize(0.03)
 
 tfacts = []
 
-print '\n\n putting some space \n\n'
+
 
 for iM, model in enumerate(models):
+    print '\n\n putting some space \n\n'
     tname = 'tfact'+model.GetName()
-    fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
-    # print fstring
-    
-    print gfits[0][iM].GetParameter(1), gfits[0][iM].GetParameter(2), gfits[0][iM].GetParameter(3)
-    print gfits[1][iM].GetParameter(1), gfits[1][iM].GetParameter(2), gfits[1][iM].GetParameter(3)
+    # print tname
+    #fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
 
-    tfact = r.TF1(tname, fstring, 0., 600.)
+    print gfits[0][iM].GetName()
+    print gfits[0][iM].GetParameter(0), gfits[0][iM].GetParameter(1), gfits[0][iM].GetParameter(2), gfits[0][iM].GetParameter(3)
+
+    print gfits[1][iM].GetName()
+    print gfits[1][iM].GetParameter(0), gfits[1][iM].GetParameter(1), gfits[1][iM].GetParameter(2), gfits[1][iM].GetParameter(3)
+
+    fstring = '('+str(gfits[1][iM].GetExpFormula()).replace('*x*', '*')+') / ('+str(gfits[0][iM].GetExpFormula()).replace('[p','[q').replace('*x*', '*')+')'
+    print fstring
+    tfact = r.TF1(tname, str(fstring), 0., 600.)
+    # print tfact
+
+    print tfact.GetExpFormula()
+
     tfact.SetLineColor(colors[iM])
+    
     tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
+    
     tfact.SetMinimum(0.0001)
+    
+
+    numPar = gfits[1][iM].GetNpar()
+    denPar = gfits[0][iM].GetNpar()
+    for iP in range(0, numPar+denPar):
+        if iP < numPar:
+            parVal = gfits[1][iM].GetParameter(iP)
+            parErr = gfits[1][iM].GetParError(iP)
+        else:
+            parVal = gfits[0][iM].GetParameter(iP - numPar)
+            parErr = gfits[0][iM].GetParError(iP - numPar)
+        
+        # print iP, parVal, parErr
+
+        tfact.SetParameter(iP, parVal)
+        tfact.SetParError(iP, parErr)
+        # print iP, tfact.GetParameter(iP), tfact.GetParError(iP)
+
+    # print fstring
+    print tfact.GetParameter(0), tfact.GetParameter(1), tfact.GetParameter(2), tfact.GetParameter(3), tfact.GetParameter(4), tfact.GetParameter(5), tfact.GetParameter(6), tfact.GetParameter(7)
 
     outputFile.cd()
     tfact.Write()
@@ -424,7 +482,7 @@ for iM, model in enumerate(models):
     else:
         tfact.Draw("L")
 
-    leg.AddEntry(tfact, models[iM].GetName(), "L")
+    leg.AddEntry(tfact, model.GetName(), "L")
 
 leg.Draw("same")
 
