@@ -21,9 +21,9 @@ btree.Add(config.skimDir + '/sph-16*_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
-bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
+# bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
 # bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
-#bmctree.Add(config.skimDir + '/wglo_monoph.root')
+bmctree.Add(config.skimDir + '/wglo_monoph.root')
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zg_monoph.root')
