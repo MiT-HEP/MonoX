@@ -45,7 +45,7 @@ nHalo = dataTree.Draw('TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(phot
 
 haloData = ROOT.RooDataSet('halo', 'halo', phiset)
 
-print nHalo, 'target events'
+print nHalo, 'halo events'
 haloPhi = dataTree.GetV1()
 for iHalo in range(nHalo):
     phi.setVal(haloPhi[iHalo])

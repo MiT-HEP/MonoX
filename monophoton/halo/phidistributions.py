@@ -78,47 +78,47 @@ canvas.printWeb('monophoton/halo', 'phiHaloFolded', logy = False)
 
 canvas.Clear()
 
-## halo EE
-
-phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEE', '!photons.isEB')
-phiHaloEE.SetDirectory(outputFile)
-outputFile.cd()
-phiHaloEE.Write()
-
-canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
-
-canvas.addHistogram(phiHaloEE)
-canvas.printWeb('monophoton/halo', 'phiHaloEE', logy = False)
-
-canvas.Clear()
-
-# MIP tag
-
-phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEEMIPtag', '!photons.isEB && photons.mipEnergy > 4.9')
-phiHaloEE.SetDirectory(outputFile)
-outputFile.cd()
-phiHaloEE.Write()
-
-canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
-
-canvas.addHistogram(phiHaloEE)
-canvas.printWeb('monophoton/halo', 'phiHaloEEMIPtag', logy = False)
-
-canvas.Clear()
-
-# halo tag
-
-phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEECSCtag', '!photons.isEB && metFilters.cschalo')
-phiHaloEE.SetDirectory(outputFile)
-outputFile.cd()
-phiHaloEE.Write()
-
-canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
-
-canvas.addHistogram(phiHaloEE)
-canvas.printWeb('monophoton/halo', 'phiHaloEECSCtag', logy = False)
-
-canvas.Clear()
+### halo EE
+#
+#phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEE', '!photons.isEB')
+#phiHaloEE.SetDirectory(outputFile)
+#outputFile.cd()
+#phiHaloEE.Write()
+#
+#canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
+#
+#canvas.addHistogram(phiHaloEE)
+#canvas.printWeb('monophoton/halo', 'phiHaloEE', logy = False)
+#
+#canvas.Clear()
+#
+## MIP tag
+#
+#phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEEMIPtag', '!photons.isEB && photons.mipEnergy > 4.9')
+#phiHaloEE.SetDirectory(outputFile)
+#outputFile.cd()
+#phiHaloEE.Write()
+#
+#canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
+#
+#canvas.addHistogram(phiHaloEE)
+#canvas.printWeb('monophoton/halo', 'phiHaloEEMIPtag', logy = False)
+#
+#canvas.Clear()
+#
+## halo tag
+#
+#phiHaloEE = makeFullPlot(dataTreeAll, 'phiHaloEECSCtag', '!photons.isEB && metFilters.cschalo')
+#phiHaloEE.SetDirectory(outputFile)
+#outputFile.cd()
+#phiHaloEE.Write()
+#
+#canvas.ylimits = (0., phiHaloEE.GetMaximum() * 1.5)
+#
+#canvas.addHistogram(phiHaloEE)
+#canvas.printWeb('monophoton/halo', 'phiHaloEECSCtag', logy = False)
+#
+#canvas.Clear()
 
 ## cand EB
 
