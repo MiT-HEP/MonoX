@@ -1090,7 +1090,7 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
     break;
   case kParton:
     for (auto& part : _event.partons) {
-      if (part.pid == 22 && part.status == 1 && part.pt > maxPt)
+      if (part.pid == 22 && part.pt > maxPt)
         maxPt = part.pt;
     }
     break;
