@@ -8,15 +8,15 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 ROOT.gROOT.LoadMacro('Skimmer.cc+')
 
-tree = ROOT.TChain('events')
-tree.Add(config.ntuplesDir + 'filefi/044/SinglePhoton+Run2016B-PromptReco-v2+AOD/*.root')
-
-ROOT.skim(tree, ROOT.kDiphoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_diphoton.root')
+#tree = ROOT.TChain('events')
+#tree.Add(config.ntuplesDir + 'filefi/044/SinglePhoton+Run2016B-PromptReco-v2+AOD/*.root')
+#
+#ROOT.skim(tree, ROOT.kDiphoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_diphoton.root')
 
 #tree = ROOT.TChain('events')
 #tree.Add(config.ntuplesDir + 'filefi/044/SingleElectron+Run2016B-PromptReco-v2+AOD/*.root')

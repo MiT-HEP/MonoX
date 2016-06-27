@@ -38,30 +38,52 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"run", "lumi", "event", "rho", "npv", "hlt", "photons", "electrons", "muons"});
+  event.setAddress(*_input, {"run", "lumi", "event", "rho", "npv", "hltBits", "photons", "electrons", "muons"});
 
-  simpletree::TriggerHelper* trigger(0);
+  std::vector<simpletree::TriggerHelper*> triggers;
   switch (_eventType) {
   case kDiphoton:
-    trigger = new simpletree::TriggerHelper("HLT_Photon36_R9Id90_HE10_Iso40_EBOnly_PFMET40");
+    triggers.push_back(new simpletree::TriggerHelper("HLT_Photon36_R9Id90_HE10_Iso40_EBOnly_PFMET40"));
     break;
   case kDielectron:
-    trigger = new simpletree::TriggerHelper("HLT_Ele23_WPLoose_Gsf");
+    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele23_WPLoose_Gsf"));
     break;
   case kMuonPhoton:
-    trigger = new simpletree::TriggerHelper("HLT_IsoMu20");
+    triggers.push_back(new simpletree::TriggerHelper("HLT_IsoMu20"));
+    break;
+  case kJetHT:
+    triggers.push_back(new simpletree::TriggerHelper("HLT_DiPFJetAve80"));
+    triggers.push_back(new simpletree::TriggerHelper("HLT_PFHT400_SixJet30"));
+    triggers.push_back(new simpletree::TriggerHelper("HLT_HT650"));
     break;
   default:
     break;
   }
+
+  auto passTrigger([&triggers, &event]()->bool {
+      if (triggers.size() == 0)
+        return true;
+
+      for (auto* h : triggers) {
+        if (h->pass(event))
+          return true;
+      }
+      return false;
+    });
 
   long iEntry(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << iEntry << std::endl;
 
-    //    if (trigger && !trigger->pass(event))
-    //      continue;
+    try {
+      if (!passTrigger())
+        continue;
+    }
+    catch (std::exception& ex) {
+      std::cerr << ex.what() << std::endl;
+      return;
+    }
 
     runNum = event.run;
     lumiNum = event.lumi;
