@@ -14,7 +14,7 @@ from main.plotconfig import VariableDef
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi
+lumi = allsamples['smu-16b2'].lumi
 canvas = DataMCCanvas(lumi = lumi)
 
 probePixel = '!probe.pixelVeto'
@@ -50,9 +50,9 @@ skims = [ 'zmumu_smu', 'zee_sel', 'z*_s*' ]
 samples = [ ('zllg', r.TColor.GetColor(0xff, 0x99, 0x33)), 
             ('ttg', r.TColor.GetColor(0xbb, 0xaa, 0xff)), 
             ('wlnu-', r.TColor.GetColor(0xff, 0xee, 0x99)), 
-            ('wg', r.TColor.GetColor(0x99, 0xee, 0xff)), 
+            ('wglo', r.TColor.GetColor(0x99, 0xee, 0xff)), 
             ('tt', r.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            ('dy-50-', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
+            ('dy-50', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
 
 

@@ -13,7 +13,7 @@ import config
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-skim = sys.argv[1]
+skim =  sys.argv[1]
 sname = sys.argv[2]
 
 samples = [allsamples[sname]] # for sname in snames ] 
@@ -23,7 +23,7 @@ npvweight = npvSource.Get('npvweight')
 
 source = ROOT.TChain('events')
 for sample in samples:
-    sampleString = config.ntuplesDir + sample.book + '/' + sample.fullname + '/simpletree_*.root'
+    sampleString = config.ntuplesDir + sample.book + '/' + sample.fullname + '/*.root'
     print sampleString
     source.Add(sampleString)
 
