@@ -58,6 +58,9 @@ EventSelector::finalize()
 void
 EventSelector::selectEvent(simpletree::Event& _event)
 {
+  if (blindPrescale_ > 1 && _event.run >= blindMinRun_ && _event.event % blindPrescale_ != 0)
+    return;
+
   outEvent_.init();
   outEvent_.weight = _event.weight;
 
