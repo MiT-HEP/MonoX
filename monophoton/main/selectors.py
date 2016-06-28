@@ -28,12 +28,12 @@ photonFullSelection = [
     'HOverE',
     'Sieie',
     'CHIso',
-    # 'CHWorstIso',
+    'CHWorstIso',
     'NHIso',
     'PhIso',
     'EVeto',
     'MIP49',
-    # 'Time',
+    'Time',
     'SieieNonzero',
     'NoisyRegion'
 ]
@@ -82,7 +82,7 @@ def monophotonBase(sample, selector):
 
     operators += [
         'MetFilters',
-        'EcalCrackVeto',
+        # 'EcalCrackVeto',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
@@ -130,10 +130,10 @@ def monophotonBase(sample, selector):
 
     selector.findOperator('HLTPhoton165HE10').setIgnoreDecision(True)
     selector.findOperator('MetFilters').setIgnoreDecision(True)
-    selector.findOperator('MuonVeto').setIgnoreDecision(True)
-    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
+    # selector.findOperator('MuonVeto').setIgnoreDecision(True)
+    # selector.findOperator('ElectronVeto').setIgnoreDecision(True)
 
-    selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
+    # selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
@@ -160,7 +160,7 @@ def candidate(sample, selector):
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
-    selector.findOperator('PhotonSelection').setIgnoreDecision(True)
+    # selector.findOperator('PhotonSelection').setIgnoreDecision(True)
 
     return selector
 

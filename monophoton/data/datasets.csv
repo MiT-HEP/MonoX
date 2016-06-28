@@ -6,7 +6,8 @@ sel-d4           "SingleElectron (2015D)"            1714.5               774374
 smu-d4           "SingleMuon (2015D)"                1714.5               45163000   -                    filefi/042        SingleMuon+Run2015D-PromptReco-v4+AOD
 sph-d4           "SinglePhoton (2015D)"              1714.5               18885644   -                    filefi/042        SinglePhoton+Run2015D-PromptReco-v4+AOD
 ### Data 2016
-sph-b2           "SinglePhoton (2016B)"              590.0                7000000    -                    setup80x/Nero/v1.4 SinglePhoton/SinglePhoton-Run2016B-v2/160606_232301/0000
+# sph-b2           "SinglePhoton (2016B)"              590.0                7000000    -                    setup80x/Nero/Data/zey_base SinglePhoton/SinglePhoton-Run2016B-v2/160621_081337/0000
+sph-b2           "SinglePhoton (2016B)"              590.0                7000000    -                    monotop80/v1.8    SinglePhoton/SinglePhoton_Run2016B-PromptReco-v2/160625_225347/0001
 ### SM MC
 dy-50            "Z#rightarrowll"                    6025.2               28827486   4.52749622302e+11    filefi/044        DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun_asymptotic_2016_v3-v1+AODSIM
 wlnu             "W"                                 60270.               24184766   3.73654308847e+12    filefi/044        WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM # GenXSecAnalyzer
