@@ -187,8 +187,8 @@ for method, hists in methods:
 canvas.Clear()
 canvas.legend.Clear()
 
-canvas.ylimits = (0.01, 2.5)
 canvas.SetLogy(True)
+canvas.ylimits = (0.01, 2.5)
 
 canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 
@@ -196,7 +196,7 @@ canvas.addObs(tfacts[0], 'Data')
 canvas.addSignal(tfacts[1], title = 'MC', color = r.kRed, idx = -1)
 canvas.addStacked(tfacts[1], title = 'MC', idx = -1)
 
-canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
+canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio', ymax = 2.5)
 
 ###########################################
 ####### Plain Root Attempt ################
@@ -209,6 +209,8 @@ expo.SetParLimits(2, 0., 10.)
 
 dexpo = r.TF1("Expo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
 dexpo.SetParameters(10., 0.1, -0.1, -0.1)
+dexpo.SetParLimits(0, 0., 10000.)
+dexpo.SetParLimits(1, 0., 10000.)
 dexpo.SetParLimits(2, -1., 0.)
 dexpo.SetParLimits(3, -1., 0.)
 

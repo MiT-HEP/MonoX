@@ -57,17 +57,35 @@ selectors = {
     'sph-16b2': data_sph,
     'smu-16b2': data_smu,
     'sel-16b2': data_sel,
+    # Data 2015 rereco
+    'sph-15d': data_sph,
+    'smu-15d': data_smu,
+    'sel-15d': data_sel,
+    # Data 2015 prompt reco
+    'sph-d3': data_sph,
+    'sph-d4': data_sph,
+    'smu-d3': data_smu,
+    'smu-d4': data_smu,
+    'sel-d3': data_sel,
+    'sel-d4': data_sel,
     # MC for signal region
     'znng-130': mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     # 'wg': mc_cand + mc_lowmt,
+    'wglo': mc_cand + mc_lowmt,
     'gj-40': mc_gj + mc_qcd + mc_lowmt,
     'gj-100': mc_gj + mc_qcd + mc_lowmt,
     'gj-200': mc_gj + mc_qcd + mc_lowmt,
     'gj-400': mc_gj + mc_qcd + mc_lowmt,
     'gj-600': mc_gj + mc_qcd + mc_lowmt,
+    'gg': mc_cand + mc_qcd, 
+    'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
     # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu': mc_wlnu,
@@ -75,6 +93,10 @@ selectors = {
     'wlnu-200': mc_wlnu, 
     'wlnu-400': mc_wlnu, 
     # 'wlnu-600': mc_wlnu, 
+    'wlnu-800': mc_wlnu,
+    'wlnu-1200': mc_wlnu,
+    'wlnu-2500': mc_wlnu,
+    'dy-50': mc_cand + mc_lep + mc_dielp,
     # 'dy-50-100': mc_cand + mc_lep + mc_dilep,
     # 'dy-50-200': mc_cand + mc_lep + mc_dilep,
     # 'dy-50-400': mc_cand + mc_lep + mc_dilep,
@@ -83,7 +105,9 @@ selectors = {
     'qcd-300': mc_cand + mc_qcd,
     'qcd-500': mc_cand + mc_qcd,
     'qcd-700': mc_cand + mc_qcd,
-    'qcd-1000': mc_cand + mc_qcd
+    'qcd-1000': mc_cand + mc_qcd,
+    'qcd-1500': mc_cand + mc_qcd,
+    'qcd-2000': mc_cand + mc_qcd
 }
 
 # all the rest are mc_sig
@@ -168,6 +192,8 @@ if __name__ == '__main__':
         else:
             if sample.data:
                 sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
+            elif 'dm' in sample.name:
+                sourceDir = config.ntuplesDir.replace('tree18', 'tree18a') + sample.book + '/' + sample.fullname
             else:
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
