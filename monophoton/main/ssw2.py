@@ -33,6 +33,7 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
+data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
@@ -50,24 +51,27 @@ mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
 sphLumi = allsamples['sph-16b2'].lumi
-haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
+haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
     # Data 2016
-    'sph-16b2': data_sph,
+    'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                            ,('haloUp', selectors.haloMIP(haloNorms[0]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
     'smu-16b2': data_smu,
     'sel-16b2': data_sel,
     # Data 2015 rereco
-    'sph-15d': data_sph,
-    'smu-15d': data_smu,
-    'sel-15d': data_sel,
+    'sph-15d': data_15,
+    'smu-15d': data_15,
+    'sel-15d': data_15,
     # Data 2015 prompt reco
-    'sph-d3': data_sph,
-    'sph-d4': data_sph,
-    'smu-d3': data_smu,
-    'smu-d4': data_smu,
-    'sel-d3': data_sel,
-    'sel-d4': data_sel,
+    'sph-d3': data_15,
+    'sph-d4': data_15,
+    'smu-d3': data_15,
+    'smu-d4': data_15,
+    'sel-d3': data_15,
+    'sel-d4': data_15,
     # MC for signal region
     'znng-130': mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
@@ -79,7 +83,7 @@ selectors = {
     'gj-200': mc_gj + mc_qcd + mc_lowmt,
     'gj-400': mc_gj + mc_qcd + mc_lowmt,
     'gj-600': mc_gj + mc_qcd + mc_lowmt,
-    'gg': mc_cand + mc_qcd, 
+    'gg-80': mc_cand + mc_qcd, 
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
@@ -96,7 +100,7 @@ selectors = {
     'wlnu-800': mc_wlnu,
     'wlnu-1200': mc_wlnu,
     'wlnu-2500': mc_wlnu,
-    'dy-50': mc_cand + mc_lep + mc_dielp,
+    'dy-50': mc_cand + mc_lep + mc_dilep,
     # 'dy-50-100': mc_cand + mc_lep + mc_dilep,
     # 'dy-50-200': mc_cand + mc_lep + mc_dilep,
     # 'dy-50-400': mc_cand + mc_lep + mc_dilep,
