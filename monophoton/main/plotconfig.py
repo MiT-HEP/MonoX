@@ -313,7 +313,8 @@ def getConfig(confName):
         config.baseline = 'photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
-            GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('top', 't/t#bar{t}+#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('vvg', 'multiboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0x66)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
