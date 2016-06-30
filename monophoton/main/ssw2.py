@@ -33,6 +33,7 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
+data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
@@ -51,44 +52,68 @@ mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
 sphLumi = allsamples['sph-16b2'].lumi
-haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
+haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
     # Data 2016
-    'sph-16b2': data_sph,
+    'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                            ,('haloUp', selectors.haloMIP(haloNorms[0]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
     'smu-16b2': data_smu,
     'sel-16b2': data_sel,
+    # Data 2015 rereco
+    'sph-15d': data_15,
+    'smu-15d': data_15,
+    'sel-15d': data_15,
+    # Data 2015 prompt reco
+    'sph-d3': data_15,
+    'sph-d4': data_15,
+    'smu-d3': data_15,
+    'smu-d4': data_15,
+    'sel-d3': data_15,
+    'sel-d4': data_15,
     # MC for signal region
     'znng-130': mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'wg': mc_cand + mc_lowmt,
+    # 'wg': mc_cand + mc_lowmt,
+    'wglo': mc_cand + mc_lowmt,
     'gj-40': mc_gj + mc_qcd + mc_lowmt,
     'gj-100': mc_gj + mc_qcd + mc_lowmt,
     'gj-200': mc_gj + mc_qcd + mc_lowmt,
     'gj-400': mc_gj + mc_qcd + mc_lowmt,
     'gj-600': mc_gj + mc_qcd + mc_lowmt,
+    'gg-80': mc_cand + mc_qcd, 
+    'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tg': mc_cand + mc_lep,
+    'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
-    'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
-    'wwg': mc_cand + mc_lep + mc_dilep,
-    'wz': mc_cand + mc_lep + mc_dilep,
-    'zz': mc_cand + mc_lep + mc_dilep,
+    # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu': mc_wlnu,
     'wlnu-100': mc_wlnu,
     'wlnu-200': mc_wlnu, 
     'wlnu-400': mc_wlnu, 
-    'wlnu-600': mc_wlnu, 
-    'dy-50-100': mc_cand + mc_lep + mc_dilep,
-    'dy-50-200': mc_cand + mc_lep + mc_dilep,
-    'dy-50-400': mc_cand + mc_lep + mc_dilep,
-    'dy-50-600': mc_cand + mc_lep + mc_dilep,
+    # 'wlnu-600': mc_wlnu, 
+    'wlnu-800': mc_wlnu,
+    'wlnu-1200': mc_wlnu,
+    'wlnu-2500': mc_wlnu,
+    'dy-50': mc_cand + mc_lep + mc_dilep,
+    # 'dy-50-100': mc_cand + mc_lep + mc_dilep,
+    # 'dy-50-200': mc_cand + mc_lep + mc_dilep,
+    # 'dy-50-400': mc_cand + mc_lep + mc_dilep,
+    # 'dy-50-600': mc_cand + mc_lep + mc_dilep,
     'qcd-200': mc_cand + mc_qcd,
     'qcd-300': mc_cand + mc_qcd,
     'qcd-500': mc_cand + mc_qcd,
     'qcd-700': mc_cand + mc_qcd,
-    'qcd-1000': mc_cand + mc_qcd
+    'qcd-1000': mc_cand + mc_qcd,
+    'qcd-1500': mc_cand + mc_qcd,
+    'qcd-2000': mc_cand + mc_qcd
 }
 
 # all the rest are mc_sig
@@ -173,6 +198,8 @@ if __name__ == '__main__':
         else:
             if sample.data:
                 sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
+            elif 'dm' in sample.name:
+                sourceDir = config.ntuplesDir.replace('tree18', 'tree18a') + sample.book + '/' + sample.fullname
             else:
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 

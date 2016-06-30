@@ -10,17 +10,12 @@ basedir = os.path.dirname(thisdir)
 if basedir not in sys.path:
     sys.path.append(basedir)
 
+import config
 
 ### Getting cut values from simple tree ###
 
-"""
-import config
-ROOT.gSystem.Load(config.libsimpletree)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-"""
-
 ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/interface')
+ROOT.gSystem.AddIncludePath('-I' + '../MitFlat/DataFormats/interface')
 
 Locations = [ 'barrel', 'endcap' ]
 PhotonIds = [ 'loose', 'medium', 'tight' ]
@@ -58,7 +53,7 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-Version = 'simpletree17'
+Version = 'simpletree18'
 
 from ROOT import *
 
@@ -73,12 +68,12 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-b2'],'Fit Template from SinglePhoton Data')
+Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2'],'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-b2'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2'],'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-b2'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2'],'Background Template from SinglePhoton Data')
                                  ]
                 }
 

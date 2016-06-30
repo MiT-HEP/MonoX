@@ -225,7 +225,7 @@ void
 WlnuSelector::selectEvent(simpletree::Event& _event)
 {
   for (auto& parton : _event.partons) {
-    if (parton.status == 1 && std::abs(parton.pid) == 11)
+    if (std::abs(parton.pid) == 11)
       return;
   }
 
@@ -242,7 +242,7 @@ WenuSelector::selectEvent(simpletree::Event& _event)
   unsigned iP(0);
   for (; iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
-    if (parton.status == 1 && std::abs(parton.pid) == 11)
+    if (std::abs(parton.pid) == 11)
       break;
   }
   if (iP == _event.partons.size())

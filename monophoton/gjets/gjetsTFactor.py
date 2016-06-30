@@ -8,20 +8,22 @@ sys.path.append(basedir)
 from plotstyle import SimpleCanvas, RatioCanvas, DataMCCanvas
 from datasets import allsamples
 import config
+from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
 dtree = r.TChain('events')
-dtree.Add(config.skimDir + '/sph-d*_monoph.root')
+dtree.Add(config.skimDir + '/sph-16*_monoph.root')
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-d*_hfake.root')
-btree.Add(config.skimDir + '/sph-d*_efake.root')
+btree.Add(config.skimDir + '/sph-16*_hfake.root')
+btree.Add(config.skimDir + '/sph-16*_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
 # bmctree.Add(config.skimDir + '/wnlg-130_monoph.root') 
-bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
+# bmctree.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/MET > 130 GeV cut on LO sample
+bmctree.Add(config.skimDir + '/wglo_monoph.root')
 bmctree.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmctree.Add(config.skimDir + '/ttg_monoph.root')
 bmctree.Add(config.skimDir + '/zg_monoph.root')
@@ -66,7 +68,7 @@ bmets = []
 gmets = []
 mcmets = []
 
-lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
+lumi = allsamples['sph-16b2'].lumi
 canvas = DataMCCanvas(lumi = lumi)
 
 for region, sel in regions:
@@ -185,8 +187,8 @@ for method, hists in methods:
 canvas.Clear()
 canvas.legend.Clear()
 
-canvas.ylimits = (0.01, 2.5)
 canvas.SetLogy(True)
+canvas.ylimits = (0.01, 2.5)
 
 canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 
@@ -194,7 +196,7 @@ canvas.addObs(tfacts[0], 'Data')
 canvas.addSignal(tfacts[1], title = 'MC', color = r.kRed, idx = -1)
 canvas.addStacked(tfacts[1], title = 'MC', idx = -1)
 
-canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio')
+canvas.printWeb('monophoton/gjetsTFactor', 'tfactorRatio', ymax = 2.5)
 
 ###########################################
 ####### Plain Root Attempt ################
@@ -207,6 +209,8 @@ expo.SetParLimits(2, 0., 10.)
 
 dexpo = r.TF1("Expo", "[0] * TMath::Exp([2] * x) + [1] * TMath::Exp([3] * x)", 0., 600.)
 dexpo.SetParameters(10., 0.1, -0.1, -0.1)
+dexpo.SetParLimits(0, 0., 10000.)
+dexpo.SetParLimits(1, 0., 10000.)
 dexpo.SetParLimits(2, -1., 0.)
 dexpo.SetParLimits(3, -1., 0.)
 
@@ -216,14 +220,14 @@ rayleigh.SetParLimits(1, 0.1, 600.)
 
 pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
 pepe.SetParameters(1., 10., 10.)
-pepe.SetParLimits(1, 0.1, 150.)
-pepe.SetParLimits(2, 0.001, 10.)
+pepe.SetParLimits(1, 0.1, 300.)
+pepe.SetParLimits(2, 0.000001, 10.)
 
 pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
 pepeplus.SetParameters(1., 10., 10., 0.1)
-pepeplus.SetParLimits(1, 0.1, 1000.)
-pepeplus.SetParLimits(2, 0.001, 100.)
-pepeplus.SetParLimits(3, 0.00001, 1.)
+pepeplus.SetParLimits(1, 0.1, 2000.)
+pepeplus.SetParLimits(2, 0.00001, 100.)
+pepeplus.SetParLimits(3, 0.000001, 1.)
 
 rpepe = r.TF1("RayleighRatio", "[0] * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2)) / TMath::Exp( -x**2 /([4] + [5]*x + [6]*x**2)) ", 0., 600.)
 rpepe.SetParameters(1., 10., 10., 0.1, 10., 10., 0.1)
@@ -256,7 +260,7 @@ for model in models[:]:
     models.append(smeared)
 """
 
-tfacts[0].SetMinimum(0.0000000001)
+tfacts[0].SetMinimum(0.00001)
 tfacts[0].SetMaximum(1.1)
 fit = tfacts[0].Clone('fit')
 for iM, model in enumerate(models):
@@ -310,7 +314,7 @@ for iBin in range(gmets[0].GetNbinsX()+2):
 scanvas.Clear()
 scanvas.legend.Clear()
 
-scanvas.ylimits = (0.00000000005, 50000)
+scanvas.ylimits = (0.000005, 50000)
 scanvas.SetLogy(True)
 
 scanvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
@@ -333,12 +337,37 @@ for iM, model in enumerate(models):
 
 scanvas.printWeb('monophoton/gjetsTFactor', 'gjetsPrediction')
 
+print '\n\n\n\n'
+
 ###########################################
 ####### Fit MET Spectrum   ################
 ###########################################
 
 gfits = []
 
+pepe = r.TF1("Rayleigh1", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x)**2)", 0., 600.)
+pepe.SetParameters(1., 10., 10.)
+pepe.SetParLimits(1, 0.1, 150.)
+pepe.SetParLimits(2, 0.001, 10.)
+
+pepe2 = r.TF1("Rayleigh1Denom", "[3] * x * TMath::Exp( -x**2 /([4] + [5]*x)**2)", 0., 600.)
+pepe.SetParameters(0., 0., 0., 1., 10., 10.)
+pepe.SetParLimits(4, 0.1, 300.)
+pepe.SetParLimits(5, 0.001, 10.)
+
+pepeplus = r.TF1("Rayleigh2", "[0] * x * TMath::Exp( -x**2 /([1] + [2]*x + [3]*x**2))", 0., 600.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
+pepeplus.SetParLimits(1, 0.1, 2000.)
+pepeplus.SetParLimits(2, 0.0001, 100.)
+pepeplus.SetParLimits(3, 0.0001, 1.)
+
+pepeplus2 = r.TF1("Rayleigh2Denom", "[4] * x * TMath::Exp( -x**2 /([5] + [6]*x + [7]*x**2))", 0., 600.)
+pepeplus.SetParameters(1., 10., 10., 0.1)
+pepeplus.SetParLimits(5, 0.1, 1000.)
+pepeplus.SetParLimits(6, 0.001, 100.)
+pepeplus.SetParLimits(7, 0.0001, 1.)
+
+# models = [ (pepe2, pepe), (pepeplus2, pepeplus) ] 
 models = [ pepe, pepeplus ] 
 colors = [ r.kOrange-3, r.kGreen-3 ] 
 
@@ -398,14 +427,52 @@ leg.SetTextSize(0.03)
 
 tfacts = []
 
+
+
 for iM, model in enumerate(models):
+    print '\n\n putting some space \n\n'
     tname = 'tfact'+model.GetName()
-    fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
-    # print fstring
-    tfact = r.TF1(tname, fstring, 0., 600.)
+    # print tname
+    #fstring = gfits[1][iM].GetName()+' / '+gfits[0][iM].GetName()
+
+    print gfits[0][iM].GetName()
+    print gfits[0][iM].GetParameter(0), gfits[0][iM].GetParameter(1), gfits[0][iM].GetParameter(2), gfits[0][iM].GetParameter(3)
+
+    print gfits[1][iM].GetName()
+    print gfits[1][iM].GetParameter(0), gfits[1][iM].GetParameter(1), gfits[1][iM].GetParameter(2), gfits[1][iM].GetParameter(3)
+
+    fstring = '('+str(gfits[1][iM].GetExpFormula()).replace('*x*', '*')+') / ('+str(gfits[0][iM].GetExpFormula()).replace('[p','[q').replace('*x*', '*')+')'
+    print fstring
+    tfact = r.TF1(tname, str(fstring), 0., 600.)
+    # print tfact
+
+    print tfact.GetExpFormula()
+
     tfact.SetLineColor(colors[iM])
+    
     tfact.GetXaxis().SetTitle("E_{T}^{miss} (GeV)")
-    # tfact.SetMinimum(0.0001)
+    
+    tfact.SetMinimum(0.0001)
+    
+
+    numPar = gfits[1][iM].GetNpar()
+    denPar = gfits[0][iM].GetNpar()
+    for iP in range(0, numPar+denPar):
+        if iP < numPar:
+            parVal = gfits[1][iM].GetParameter(iP)
+            parErr = gfits[1][iM].GetParError(iP)
+        else:
+            parVal = gfits[0][iM].GetParameter(iP - numPar)
+            parErr = gfits[0][iM].GetParError(iP - numPar)
+        
+        # print iP, parVal, parErr
+
+        tfact.SetParameter(iP, parVal)
+        tfact.SetParError(iP, parErr)
+        # print iP, tfact.GetParameter(iP), tfact.GetParError(iP)
+
+    # print fstring
+    print tfact.GetParameter(0), tfact.GetParameter(1), tfact.GetParameter(2), tfact.GetParameter(3), tfact.GetParameter(4), tfact.GetParameter(5), tfact.GetParameter(6), tfact.GetParameter(7)
 
     outputFile.cd()
     tfact.Write()
@@ -417,7 +484,7 @@ for iM, model in enumerate(models):
     else:
         tfact.Draw("L")
 
-    leg.AddEntry(tfact, models[iM].GetName(), "L")
+    leg.AddEntry(tfact, model.GetName(), "L")
 
 leg.Draw("same")
 
@@ -428,6 +495,8 @@ tcanvas.SaveAs(outName+'.png')
 ###########################################
 ####### Apply new TFs      ################
 ###########################################
+
+print "\nis it here\n"
 
 scanvas.Clear()
 scanvas.legend.Clear()
