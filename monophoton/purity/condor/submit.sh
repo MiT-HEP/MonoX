@@ -1,7 +1,7 @@
 #!/bin/bash
 
 jdlpath=${PURITY}/condor/
-scratch=/scratch5/ballen/hist/purity/simpletree13c/sieie/Plots/SignalContam
+scratch=/scratch5/ballen/hist/purity/simpletree18/sieie/Plots/SignalContam
 # scratch=${CMSPLOTS}/SignalContamTemp
 mkdir -p $scratch
 
@@ -10,9 +10,9 @@ locations="barrel"
 photonids="medium"
 #photonids="loose medium tight"
 chisosbcuts="20to50 50to80 80to110"
-ptcuts="100to140 140to175 175to200" # 200to250 250to300 300to350 350toInf"
-# metcuts="0toInf 0to60 60to120 120toInf"
-metcuts="60to120 120toInf"
+ptcuts="175to200 200to250 250to300 300to350 350toInf"
+metcuts="0toInf 0to60" # 60to120 120toInf"
+# metcuts="60to120 120toInf"
 
 for loc in $locations
 do

@@ -2,12 +2,14 @@
 #define operators_h
 
 #include "TreeEntries_simpletree.h"
+#include "SimpleTreeUtils.h"
 
 #include "TH1.h"
 #include "TH2.h"
+#include "TF1.h"
 #include "TRandom3.h"
 
-#include "jer.h"
+//#include "jer.h"
 
 #include <bitset>
 #include <map>
@@ -67,7 +69,7 @@ class Cut : public Operator {
 
   bool exec(simpletree::Event const&, simpletree::Event&) override;
 
-  void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+  virtual void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
 
  protected:
@@ -93,25 +95,14 @@ class Modifier : public Operator {
 // Cuts
 //--------------------------------------------------------------------
 
-class HLTPhoton165HE10 : public Cut {
+class HLTFilter : public Cut {
  public:
-  HLTPhoton165HE10(char const* name = "HLTPhoton165HE10") : Cut(name) {}
- protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kPhoton165HE10].pass; }
-};
+  HLTFilter(char const* name = "PATHNAME") : Cut(name), helper_(name) {}
 
-class HLTEle27eta2p1WPLooseGsf : public Cut {
- public:
-  HLTEle27eta2p1WPLooseGsf(char const* name = "HLTEle27eta2p1WPLooseGsf") : Cut(name) {}
  protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kEle27Loose].pass; }
-};
+  bool pass(simpletree::Event const& _event, simpletree::Event&) override;
 
-class HLTIsoMu27 : public Cut {
- public:
-  HLTIsoMu27(char const* name = "HLTIsoMu27") : Cut(name) {}
- protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override { return _event.hlt[simpletree::kMu27].pass; }
+  simpletree::TriggerHelper helper_;
 };
 
 class MetFilters : public Cut {
@@ -139,6 +130,8 @@ class PhotonSelection : public Cut {
     MIP49,
     Time,
     SieieNonzero,
+    SipipNonzero,
+    E2E995,
     NoisyRegion,
     Sieie12,
     Sieie15,
@@ -155,10 +148,12 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setWP(unsigned wp) { wp_ = wp; }
 
   double ptVariation(simpletree::Photon const&, bool up);
@@ -168,6 +163,7 @@ class PhotonSelection : public Cut {
   int selectPhoton(simpletree::Photon const&);
 
   double minPt_{175.};
+  double maxPt_{6500.};
   unsigned wp_{1}; // 1 -> medium
   float ptVarUp_[simpletree::Particle::array_data::NMAX];
   float ptVarDown_[simpletree::Particle::array_data::NMAX];
@@ -177,6 +173,8 @@ class PhotonSelection : public Cut {
   typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
+
+  bool nominalResult_{false};
 };
 
 class ElectronVeto : public Cut {
@@ -207,6 +205,7 @@ class PhotonMetDPhi : public Cut {
  public:
   PhotonMetDPhi(char const* name = "PhotonMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
@@ -219,20 +218,23 @@ class PhotonMetDPhi : public Cut {
   float dPhiGECDown_{0.};
   float dPhiUnclUp_{0.};
   float dPhiUnclDown_{0.};
-  float dPhiJER_{0.};
-  float dPhiJERUp_{0.};
-  float dPhiJERDown_{0.};
+  /* float dPhiJER_{0.}; */
+  /* float dPhiJERUp_{0.}; */
+  /* float dPhiJERDown_{0.}; */
   MetVariations* metVar_{0};
+
+  bool nominalResult_{false};
 };
 
 class JetMetDPhi : public Cut {
  public:
   JetMetDPhi(char const* name = "JetMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
-  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
+  /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
 
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
@@ -244,12 +246,14 @@ class JetMetDPhi : public Cut {
   float dPhiGECDown_{0.};
   float dPhiUnclUp_{0.};
   float dPhiUnclDown_{0.};
-  float dPhiJER_{0.};
-  float dPhiJERUp_{0.};
-  float dPhiJERDown_{0.};
+  /* float dPhiJER_{0.}; */
+  /* float dPhiJERUp_{0.}; */
+  /* float dPhiJERDown_{0.}; */
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
-  JetCleaning* jetCleaning_{0};
+  /* JetCleaning* jetCleaning_{0}; */
+
+  bool nominalResult_;
 };
 
 class LeptonSelection : public Cut {
@@ -273,6 +277,18 @@ class HighMet : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event& outEvent) override { return outEvent.t1Met.met > min_; }
 
   double min_{170.};
+};
+
+class MtRange : public Cut {
+ public:
+  MtRange(char const* name = "MtRange") : Cut(name) {}
+  
+  void setRange(double min, double max) { min_ = min; max_ = max; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double min_{0.};
+  double max_{6500.};
 };
 
 class HighPtJetSelection : public Cut {
@@ -303,6 +319,20 @@ class EcalCrackVeto : public Cut {
 // Modifiers
 //--------------------------------------------------------------------
 
+class TriggerEfficiency : public Modifier {
+ public:
+  TriggerEfficiency(char const* name = "TriggerEfficiency") : Modifier(name) {}
+  ~TriggerEfficiency() { delete formula_; }
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setFormula(char const* formula);
+
+ protected:
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+
+  double minPt_{0.};
+  TF1* formula_{0};
+};
+
 class ExtraPhotons : public Modifier {
  public:
   ExtraPhotons(char const* name = "ExtraPhotons") : Modifier(name) {}
@@ -326,15 +356,15 @@ class JetCleaning : public Modifier {
   };
 
   JetCleaning(char const* name = "JetCleaning");
-  ~JetCleaning() { delete jer_; delete rndm_; }
+  ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
 
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
-  void setJetResolution(char const* sourcePath);
+  //  void setJetResolution(char const* sourcePath);
 
-  double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; }
-  double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; }
-  double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; }
+  /* double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; } */
+  /* double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; } */
+  /* double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; } */
   
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
@@ -342,12 +372,12 @@ class JetCleaning : public Modifier {
   std::bitset<nCollections> cleanAgainst_{};
 
   // will copy jer branches
-  float ptScaled_[simpletree::Particle::array_data::NMAX];
-  float ptScaledUp_[simpletree::Particle::array_data::NMAX];
-  float ptScaledDown_[simpletree::Particle::array_data::NMAX];
+  /* float ptScaled_[simpletree::Particle::array_data::NMAX]; */
+  /* float ptScaledUp_[simpletree::Particle::array_data::NMAX]; */
+  /* float ptScaledDown_[simpletree::Particle::array_data::NMAX]; */
 
-  JER* jer_{0};
-  TRandom3* rndm_{0};
+  //  JER* jer_{0};
+  //  TRandom3* rndm_{0};
 };
 
 class PhotonJetDPhi : public Modifier {
@@ -399,12 +429,12 @@ class MetVariations : public Modifier {
   void addBranches(TTree& skimTree) override;
 
   void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
-  void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; }
+  /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
   TVector2 gecUp() const { TVector2 v; v.SetMagPhi(metGECUp_, phiGECUp_); return v; }
   TVector2 gecDown() const { TVector2 v; v.SetMagPhi(metGECDown_, phiGECDown_); return v; }
-  TVector2 jer() const { TVector2 v; v.SetMagPhi(metJER_, phiJER_); return v; }
-  TVector2 jerUp() const { TVector2 v; v.SetMagPhi(metJERUp_, phiJERUp_); return v; }
-  TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; }
+  /* TVector2 jer() const { TVector2 v; v.SetMagPhi(metJER_, phiJER_); return v; } */
+  /* TVector2 jerUp() const { TVector2 v; v.SetMagPhi(metJERUp_, phiJERUp_); return v; } */
+  /* TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; } */
 
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
@@ -415,12 +445,12 @@ class MetVariations : public Modifier {
   float phiGECUp_{0.};
   float metGECDown_{0.};
   float phiGECDown_{0.};
-  float metJER_{0.};
-  float phiJER_{0.};
-  float metJERUp_{0.};
-  float phiJERUp_{0.};
-  float metJERDown_{0.};
-  float phiJERDown_{0.};
+  /* float metJER_{0.}; */
+  /* float phiJER_{0.}; */
+  /* float metJERUp_{0.}; */
+  /* float phiJERUp_{0.}; */
+  /* float metJERDown_{0.}; */
+  /* float phiJERDown_{0.}; */
 };
 
 class ConstantWeight : public Modifier {

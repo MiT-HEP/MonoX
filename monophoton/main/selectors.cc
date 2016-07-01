@@ -14,11 +14,18 @@ void
 EventSelector::initialize(char const* _outputPath, simpletree::Event& _event)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
-  skimOut_ = new TTree("events", "events");
+
+  skimOut_ = new TTree("events", "Events");
   cutsOut_ = new TTree("cutflow", "cutflow");
 
-  _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "metFilters.cschalo"}); // branches to be directly copied
-  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+  if (_event.getInput()->GetBranch("weight")) { // is MC
+    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "promptFinalStates"}); // branches to be directly copied
+    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+  }
+  else {
+    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "metFilters.cschalo"}); // branches to be directly copied
+    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+  }
 
   cutsOut_->Branch("run", &_event.run, "run/i");
   cutsOut_->Branch("lumi", &_event.lumi, "lumi/i");
@@ -51,6 +58,9 @@ EventSelector::finalize()
 void
 EventSelector::selectEvent(simpletree::Event& _event)
 {
+  if (blindPrescale_ > 1 && _event.run >= blindMinRun_ && _event.event % blindPrescale_ != 0)
+    return;
+
   outEvent_.init();
   outEvent_.weight = _event.weight;
 
@@ -84,7 +94,7 @@ EventSelector::findOperator(char const* _name) const
 ZeeEventSelector::ZeeEventSelector(char const* name) :
   EventSelector(name)
 {
-  operators_.push_back(new HLTEle27eta2p1WPLooseGsf());
+  operators_.push_back(new HLTFilter("HLT_Ele23_WPLoose_Gsf"));
   operators_.push_back(new MetFilters());
   operators_.push_back(new EEPairSelection());
   operators_.push_back(new MuonVeto());
@@ -193,7 +203,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT))
+      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT[simpletree::fEl23Loose]))
         iElectron = iE;
       else
         break;
@@ -215,7 +225,7 @@ void
 WlnuSelector::selectEvent(simpletree::Event& _event)
 {
   for (auto& parton : _event.partons) {
-    if (parton.status == 1 && std::abs(parton.pid) == 11)
+    if (std::abs(parton.pid) == 11)
       return;
   }
 
@@ -232,7 +242,7 @@ WenuSelector::selectEvent(simpletree::Event& _event)
   unsigned iP(0);
   for (; iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
-    if (parton.status == 1 && std::abs(parton.pid) == 11)
+    if (std::abs(parton.pid) == 11)
       break;
   }
   if (iP == _event.partons.size())

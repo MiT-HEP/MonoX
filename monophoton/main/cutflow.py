@@ -22,7 +22,9 @@ for sname in snames:
 
 cutflow = []
 if data:
-    cutflow.append(('HLTPhoton165HE10', 'MetFilters'))
+    cutflow.append(('HLT_Photon165_HE10',))
+#    cutflow.append(('HLTPhoton165HE10',))
+    cutflow.append(('MetFilters',))
 
 cutflow += [
     ('PhotonSelection',),

@@ -9,7 +9,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import outputDir, getBinning
+from tp.efake_conf import lumiSamples, outputDir, getBinning
 
 dataType = sys.argv[1]
 binningName = sys.argv[2]
@@ -18,7 +18,7 @@ binningTitle, binning, fitBins = getBinning(binningName)
 
 sys.argv = []
 
-toyUncert = False
+toyUncert = True
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
@@ -86,6 +86,10 @@ for altname in ['altbkg', 'altsig']:
         
             sysshift[altname][conf][binName] = vNz[0]
 
+if dataType == 'mc':
+    # for mc truth background
+    histSource = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
+
 outputFile = ROOT.TFile.Open(outputDir + '/results_' + dataType + '_' + binningName + '.root', 'recreate')
 
 if binningName == 'pt':
@@ -103,6 +107,7 @@ toydists = {}
 contents = []
 staterrs = []
 systerrs = []
+mctruth = []
 
 for iBin, (binName, cut) in enumerate(fitBins):
     stat2 = 0.
@@ -163,12 +168,25 @@ for iBin, (binName, cut) in enumerate(fitBins):
     staterrs.append(ratio * math.sqrt(stat2))
     systerrs.append(ratio * math.sqrt(syst2))
 
+    if dataType == 'mc':
+        eehist = histSource.Get('target_ee_' + binName)
+        eghist = histSource.Get('target_eg_' + binName)
+        eehist.Add(histSource.Get('mcbkg_ee_' + binName), -1.)
+        eghist.Add(histSource.Get('mcbkg_eg_' + binName), -1.)
+
+        ratio = eghist.Integral(61, 120) / eehist.Integral(61, 120)
+        mctruth.append(ratio)
+
 outputFile.cd()
 frate.Write()
 yields['ee'].Write()
 yields['eg'].Write()
 
-canvas = SimpleCanvas(lumi = allsamples['sel-d3'].lumi + allsamples['sel-d4'].lumi, sim = (dataType == 'mc'))
+lumi = 0.
+for sname in lumiSamples:
+    lumi += allsamples[sname].lumi
+
+canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 canvas.legend.add('frate', 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.apply('frate', frate)
@@ -179,9 +197,12 @@ canvas.xtitle = binningTitle
 canvas.printWeb('efake', 'frate_' + dataType + '_' + binningName, logy = False)
 
 for iBin, (binName, cut) in enumerate(fitBins):
-    print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
+    if dataType == 'mc':
+        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2} (mc %.3f)' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100., mctruth[iBin] * 100.)
+    else:
+        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
 
-if toyUncert and binningName == 'pt':
+if toyUncert and binningName == 'highpt':
     binName = 'pt_100_6500'
     for conf in ['ee', 'eg']:
         canvas.Clear(full = True)
@@ -198,7 +219,12 @@ if toyUncert and binningName == 'pt':
         canvas.legend.apply('toys', toydist)
 
         canvas.addHistogram(toydist, drawOpt = 'HIST')
-        arrow = canvas.addLine(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0., width = 2, cls = ROOT.TArrow)
+        canvas.Update(logy = False)
+#        arrow = canvas.addLine(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0., width = 2, cls = ROOT.TArrow)
+#        arrow.SetArrowSize(0.1)
+
+        arrow = ROOT.TArrow(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0.)
+        arrow.Draw()
 
         canvas.legend.apply('nominal', arrow)
 

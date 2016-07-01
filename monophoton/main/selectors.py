@@ -20,7 +20,7 @@ import config
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
+#ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
 
@@ -35,6 +35,8 @@ photonFullSelection = [
     'MIP49',
     'Time',
     'SieieNonzero',
+    'SipipNonzero',
+    'E2E995',
     'NoisyRegion'
 ]
 
@@ -78,7 +80,7 @@ def monophotonBase(sample, selector):
     operators = []
 
     if sample.data:
-        operators.append('HLTPhoton165HE10')
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -112,7 +114,7 @@ def monophotonBase(sample, selector):
         metVar = selector.findOperator('MetVariations')
         jetClean = selector.findOperator('JetCleaning')
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
-        metVar.setJetCleaning(jetClean)
+#        metVar.setJetCleaning(jetClean)
 
 #        jetClean.setJetResolution(basedir + '/data/Summer15_25nsV6_MC_PtResolution_AK4PFchs.txt')
 
@@ -121,12 +123,17 @@ def monophotonBase(sample, selector):
         
         jetDPhi = selector.findOperator('JetMetDPhi')
         jetDPhi.setMetVariations(metVar)
-        jetDPhi.setJetCleaning(jetClean)
+#        jetDPhi.setJetCleaning(jetClean)
 
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.NPVWeight(npvWeight))
+
+        trigCorr = ROOT.TriggerEfficiency()
+        trigCorr.setMinPt(300.)
+        trigCorr.setFormula('1.025 - 0.0001163 * x')
+        selector.addOperator(trigCorr)
 
     selector.findOperator('HLTPhoton165HE10').setIgnoreDecision(True)
     selector.findOperator('MetFilters').setIgnoreDecision(True)
@@ -149,10 +156,12 @@ def candidate(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
+    selector.setPartialBlinding(5, 274422)
+
     if not sample.data:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-        if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -211,6 +220,38 @@ def eleProxy(sample, selector):
 
     return selector
 
+def lowmt(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = candidate(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
+
+    return selector
+
+def lowmtEleProxy(sample, selector):
+    """
+    Wenu-enriched control region.
+    """
+
+    selector = eleProxy(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(40., 150.)
+    selector.addOperator(mtCut)
+
+    return selector
+
 def purityBase(sample, selector):
     """
     Base selector for EM+Jet control region.
@@ -221,8 +262,8 @@ def purityBase(sample, selector):
 
     operators = []
 
-    # if sample.data:
-    #     operators.append('HLTPhoton165HE10')
+    if sample.data:
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -241,7 +282,10 @@ def purityBase(sample, selector):
     ]
 
     for op in operators:
-        selector.addOperator(getattr(ROOT, op)())
+        if type(op) is tuple:
+            selector.addOperator(getattr(ROOT, op[0])(*op[1:]))
+        else:
+            selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
@@ -482,7 +526,7 @@ def gjSmeared(sample, name):
 
     smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
     smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
-    selector.setNSamples(10)
+    selector.setNSamples(1)
     selector.setFunction(smearing)
 
     return selector
@@ -534,7 +578,7 @@ def haloMIP(norm):
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
-    return sampleDefiner(norm, inverts, removes, appends)
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
 
 def haloCSC(norm):
     """
@@ -556,7 +600,7 @@ def haloSieie(norm):
     removes = [ 'Sieie'] #, 'MIP49' ]
     appends = [] 
 
-    return sampleDefiner(norm, inverts, removes, appends)
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
 
 def leptonBase(sample, selector):
     """
@@ -601,14 +645,15 @@ def leptonBase(sample, selector):
 def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
-    selector.addOperator(ROOT.HLTEle27eta2p1WPLooseGsf(), 0)
-
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele23_WPLoose_Gsf'), 0)
     return selector
 
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
-    selector.addOperator(ROOT.HLTIsoMu27(), 0)
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20'), 0)
 
     return selector
 
@@ -670,7 +715,7 @@ def wenuall(sample, name):
 
     selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
     selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-    if 'amcatnlo' in sample.directory or 'madgraph' in sample.directory: # ouh la la..
+    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -692,7 +737,7 @@ def kfactor(generator):
         selector = generator(sample, name)
 
         qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
-        corr = qcdSource.Get(sample.name)
+        corr = qcdSource.Get(sample.name.replace('gj04', 'gj'))
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)

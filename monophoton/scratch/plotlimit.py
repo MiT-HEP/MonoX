@@ -9,7 +9,9 @@ import ROOT
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
-import config
+from plotstyle import WEBDIR
+
+plotDir = WEBDIR + '/monophoton/limits/'
 
 def truncateContour(contour, base):
     x = ROOT.Double()
@@ -216,7 +218,7 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
     gr = ROOT.TGraph2D(len(limits))
     gr.SetName(name)
 
-    textDump = open(config.webDir + '/limits/' + model + '_' + name + '.txt', 'w')
+    textDump = open(plotDir + model + '_' + name + '.txt', 'w')
     textDump.write('Fast Sim Points \n')
     textDump.write('%-6s %5s %5s %6s \n' % ('point', 'mMed', 'mDM', 'limit'))
     for iP, (point, larr) in enumerate(sorted(limits.items())):
@@ -273,8 +275,8 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
     hist.SetMaximum(10.)
     hist.Draw('colz')
 
-    canvas.Print(config.webDir + '/limits/' + model + '_' + name + '.pdf')
-    canvas.Print(config.webDir + '/limits/' + model + '_' + name + '.png')
+    canvas.Print(plotDir + model + '_' + name + '.pdf')
+    canvas.Print(plotDir + model + '_' + name + '.png')
 
     histograms[name] = hist
 
@@ -308,8 +310,8 @@ for iL, name in enumerate(['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'o
         for line in segments:
             line.Draw()
 
-        canvas.Print(config.webDir + '/limits/' + model + '_' + name + '_points.pdf')
-        canvas.Print(config.webDir + '/limits/' + model + '_' + name + '_points.png')
+        canvas.Print(plotDir + model + '_' + name + '_points.pdf')
+        canvas.Print(plotDir + model + '_' + name + '_points.png')
 
     clevel = array.array('d', [1.])
     contsource = hist.Clone('contsource_' + name)
@@ -385,7 +387,7 @@ legend.AddEntry(contours['exp'][0], 'Expected #pm 1 #sigma_{exp}', 'L')
 legend.AddEntry(contours['obs'][0], 'Observed #pm 1 #sigma_{theory}', 'L')
 legend.Draw()
 
-canvas.Print(config.webDir + '/limits/' + model + '_exclusion.pdf')
-canvas.Print(config.webDir + '/limits/' + model + '_exclusion.png')
+canvas.Print(plotDir + model + '_exclusion.pdf')
+canvas.Print(plotDir + model + '_exclusion.png')
 
 output.Close()

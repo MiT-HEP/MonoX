@@ -21,6 +21,8 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
+    'lowmt': selectors.lowmt,
+    'lowmtEfake': selectors.lowmtEleProxy,
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -31,7 +33,8 @@ defaults = {
     'wenu': selectors.wenuall
 }
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets']
+data_15 = []
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
 data_smu = ['dimu', 'monomu', 'elmu']
 data_sel = ['diel', 'monoel', 'eefake']
 mc_cand = ['monoph']
@@ -44,44 +47,65 @@ mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
+mc_lowmt = ['lowmt']
+mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
-haloNorms = [ 5.9 * allsamples[sph].lumi / sphLumi for sph in ['sph-d3', 'sph-d4'] ]
+sphLumi = allsamples['sph-16b2'].lumi
+haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
     # Data 2016
-    'sph-b2': [ 'monoph' ],
-    # Data 2015
-    'sph-d3': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-                          ,('haloUp', selectors.haloMIP(haloNorms[0]))
-                          ,('haloDown', selectors.haloSieie(haloNorms[0]))
-                          ],
-    'sph-d4': data_sph + [('halo', selectors.haloCSC(haloNorms[1]))
-                          ,('haloUp', selectors.haloMIP(haloNorms[1]))
-                          ,('haloDown', selectors.haloSieie(haloNorms[1]))
-                          ],
-    'smu-d3': data_smu,
-    'smu-d4': data_smu,
-    'sel-d3': data_sel,
-    'sel-d4': data_sel,
+    'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
+                            ,('haloUp', selectors.haloMIP(haloNorms[0]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
+    'smu-16b2': data_smu,
+    'sel-16b2': data_sel,
+    # Data 2015 rereco
+    'sph-15d': data_15,
+    'smu-15d': data_15,
+    'sel-15d': data_15,
+    # Data 2015 prompt reco
+    'sph-d3': data_15,
+    'sph-d4': data_15,
+    'smu-d3': data_15,
+    'smu-d4': data_15,
+    'sel-d3': data_15,
+    'sel-d4': data_15,
     # MC for signal region
-    'znng-130': mc_vgcand,
-    'wnlg-130': mc_vgcand + mc_vglep,
-    'zg': mc_cand + mc_lep + mc_dilep,
-    'wg': mc_cand,
-    'gj-40': mc_gj + mc_qcd,
-    'gj-100': mc_gj + mc_qcd,
-    'gj-200': mc_gj + mc_qcd,
-    'gj-400': mc_gj + mc_qcd,
-    'gj-600': mc_gj + mc_qcd,
-    'ttg': mc_cand + mc_lep + mc_dilep,
+    'znng-130': mc_vgcand + mc_vglowmt,
+    'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
+    'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    # 'wg': mc_cand + mc_lowmt,
+    'wglo': mc_cand + mc_lowmt,
+    'gj-40': mc_gj + mc_qcd + mc_lowmt,
+    'gj-100': mc_gj + mc_qcd + mc_lowmt,
+    'gj-200': mc_gj + mc_qcd + mc_lowmt,
+    'gj-400': mc_gj + mc_qcd + mc_lowmt,
+    'gj-600': mc_gj + mc_qcd + mc_lowmt,
+    'gj04-40': mc_gj + mc_qcd + mc_lowmt,
+    'gj04-100': mc_gj + mc_qcd + mc_lowmt,
+    'gj04-200': mc_gj + mc_qcd + mc_lowmt,
+    'gj04-400': mc_gj + mc_qcd + mc_lowmt,
+    'gj04-600': mc_gj + mc_qcd + mc_lowmt,
+    'gg-80': mc_cand + mc_qcd, 
+    'tg': mc_cand + mc_lep + mc_lowmt, 
+    'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
-    'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
+    # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
     'wlnu': mc_wlnu,
     'wlnu-100': mc_wlnu,
     'wlnu-200': mc_wlnu, 
     'wlnu-400': mc_wlnu, 
-    'wlnu-600': mc_wlnu, 
+    # 'wlnu-600': mc_wlnu, 
+    'wlnu-800': mc_wlnu,
+    'wlnu-1200': mc_wlnu,
+    'wlnu-2500': mc_wlnu,
+    'dy-50': mc_cand + mc_lep + mc_dilep,
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
@@ -90,7 +114,9 @@ selectors = {
     'qcd-300': mc_cand + mc_qcd,
     'qcd-500': mc_cand + mc_qcd,
     'qcd-700': mc_cand + mc_qcd,
-    'qcd-1000': mc_cand + mc_qcd
+    'qcd-1000': mc_cand + mc_qcd,
+    'qcd-1500': mc_cand + mc_qcd,
+    'qcd-2000': mc_cand + mc_qcd
 }
 
 # all the rest are mc_sig
@@ -108,6 +134,7 @@ if __name__ == '__main__':
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
     argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
+    argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -150,7 +177,7 @@ if __name__ == '__main__':
         snames += [key for key in selectors.keys() if 'fs' in key]
 
     # filter out empty samples
-    tmp = [name for name in snames if allsamples[name].sumw > 0.]
+    tmp = [name for name in snames if allsamples[name].sumw != 0.]
     snames = tmp
 
     if args.list:
@@ -175,24 +202,27 @@ if __name__ == '__main__':
         else:
             tree = ROOT.TChain('events')
 
-        if os.path.exists(config.phskimDir + '/' + sname + '.root'):
-            print 'Reading', sname, 'from', config.phskimDir
-            tree.Add(config.phskimDir + '/' + sname + '.root')
+        if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
+            print 'Reading', sname, 'from', config.photonSkimDir
+            tree.Add(config.photonSkimDir + '/' + sname + '.root')
 
         else:
             if sample.data:
-                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
+            elif 'dm' in sample.name:
+                sourceDir = config.ntuplesDir.replace('tree18', 'tree18a') + sample.book + '/' + sample.fullname
             else:
-                sourceDir = config.ntuplesDir + sample.book + '/' + sample.directory
+                sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
+
             if args.neroInput:
                 if sample.data:
                     tree.Add(sourceDir + '/NeroNtuples_Photon_9*.root')
                 else:
                     tree.Add(sourceDir + '/NeroNtuples_*.root')
             else:
-                tree.Add(sourceDir + '/simpletree*.root')
+                tree.Add(sourceDir + '/*.root')
 
         print tree.GetEntries()
     
@@ -206,4 +236,4 @@ if __name__ == '__main__':
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
     
-        skimmer.run(tree, config.skimDir, sname, -1, args.neroInput)
+        skimmer.run(tree, config.skimDir, sname, args.nentries, args.neroInput)

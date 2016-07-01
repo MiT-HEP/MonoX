@@ -6,6 +6,8 @@
 #include "NeroToSimple.h"
 
 #include <vector>
+#include <iostream>
+#include <stdexcept>
 
 class Skimmer {
 public:
@@ -43,6 +45,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     sel->initialize(outputDir + "/" + sampleName + "_" + sel->name() + ".root", event);
 
   long iEntry(0);
+  TFile* currentFile(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;

@@ -2,7 +2,7 @@ import os
 import sys
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor, config
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -35,7 +35,7 @@ var = Variables[varName]
 varBins = True
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
-skimDir  = '/scratch5/ballen/hist/monophoton/skim'
+skimDir  = config.skimDir
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)

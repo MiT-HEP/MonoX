@@ -4,6 +4,7 @@
 #include "operators.h"
 
 #include "TTree.h"
+#include "TFile.h"
 #include "TString.h"
 #include "TF1.h"
 
@@ -18,6 +19,7 @@ public:
   virtual void initialize(char const* outputPath, simpletree::Event& event);
   virtual void finalize();
   virtual void selectEvent(simpletree::Event&);
+  void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
 
   TString const& name() const { return name_; }
   unsigned size() const { return operators_.size(); }
@@ -30,6 +32,9 @@ public:
   TTree* skimOut_{0};
   TTree* cutsOut_{0};
   simpletree::Event outEvent_;
+
+  unsigned blindPrescale_{1};
+  unsigned blindMinRun_{0};
 };
 
 class ZeeEventSelector : public EventSelector {

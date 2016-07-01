@@ -8,7 +8,7 @@ MET=$5
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-cd /home/ballen/cms/cmssw/042/CMSSW_7_4_6
+cd /home/ballen/cms/cmssw/044/CMSSW_8_0_7_patch3
 eval `scram runtime -sh`
 cd -
 
