@@ -42,6 +42,11 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
   };
 
   for (unsigned iF(0); iF != 6; ++iF) {
+    /*
+      if (iF > 1) {
+      printf("filter %u %d \n", iF, fired[iF]);
+      }
+    */
     if (fired[iF]) {
       if (filterConfig_[iF] == 1)
         return false;
@@ -51,6 +56,8 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
         return false;
     }
   }
+
+  // printf("passed all filters \n");
 
   return true;
 }

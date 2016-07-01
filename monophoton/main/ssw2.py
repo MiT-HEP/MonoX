@@ -187,10 +187,10 @@ if __name__ == '__main__':
 
             print 'Reading', sname, 'from', sourceDir
             if args.neroInput:
-                # if sample.data:
-                #     tree.Add(sourceDir + '/NeroNtuples_Photon_9*.root')
-                # else:
-                tree.Add(sourceDir + '/NeroNtuples_*.root')
+                if sample.data:
+                    tree.Add(sourceDir + '/NeroNtuples_Photon_9*.root')
+                else:
+                    tree.Add(sourceDir + '/NeroNtuples_*.root')
             else:
                 tree.Add(sourceDir + '/simpletree*.root')
 

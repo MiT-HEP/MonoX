@@ -49,6 +49,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
     if (translator)
       translator->translate();
+    // std::cout << "Translated" << std::endl;
 
     for (auto* sel : selectors_)
       sel->selectEvent(event);
