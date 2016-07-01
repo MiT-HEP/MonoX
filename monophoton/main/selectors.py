@@ -730,7 +730,7 @@ def kfactor(generator):
         selector = generator(sample, name)
 
         qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
-        corr = qcdSource.Get(sample.name)
+        corr = qcdSource.Get(sample.name.replace('gj04', 'gj'))
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)

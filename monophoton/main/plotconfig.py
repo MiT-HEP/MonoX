@@ -38,13 +38,13 @@ def getConfig(confName):
 #            SampleSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('spike', 'Spikes', count = 4., color = None),
+            GroupSpec('spike', 'Spikes', count = 2.1, color = None),
 #            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('dytt', 'DY, tt', samples = ['tt', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x44, 0xCC)), 
-            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
+            GroupSpec('gjets', '#gamma + jets', samples = ['gj04-40', 'gj04-100', 'gj04-200', 'gj04-400', 'gj04-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('digam', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
             # GroupSpec('qcdmc', 'QCD fakes (MC)', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('qcddata', 'QCD fakes (Data)', samples = photonData, region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('gjetsfake', '#gamma + jets (Fakes)', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
@@ -66,8 +66,6 @@ def getConfig(confName):
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
             VariableDef('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.)),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 60.', overflow = True),
-            # VariableDef('dPhiPhoMetCrackVeto', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40. && ecalCrackVeto', overflow = True),
-            # VariableDef('ecalCrackVeto', 'ECAL Crack Veto', "ecalCrackVeto", (2, -0.5, 1.5), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.met > 40.'),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2.', overflow = True),
@@ -123,7 +121,7 @@ def getConfig(confName):
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
-        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.79))
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.81))
         # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
