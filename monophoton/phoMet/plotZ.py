@@ -52,13 +52,13 @@ samples = [ ('zllg', r.TColor.GetColor(0xff, 0x99, 0x33)),
             ('wlnu-', r.TColor.GetColor(0xff, 0xee, 0x99)), 
             ('wglo', r.TColor.GetColor(0x99, 0xee, 0xff)), 
             ('tt', r.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            ('dy-50', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
+            ('dy-50-', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
 
 
 for skim in skims:
     dataTree = r.TChain('skim')
-    dataTree.Add('/scratch5/ballen/hist/monophoton/phoMet/'+skim+'-*.root')
+    dataTree.Add('/scratch3/ballen/hist/monophoton/phoMet/'+skim+'-*.root')
     print dataTree.GetEntries()
 
     skimm = skim.split('_')[0]
@@ -66,7 +66,7 @@ for skim in skims:
     mcTrees = []
     for sample, color in samples:
         mcTree = r.TChain('skim')
-        mcTree.Add('/scratch5/ballen/hist/monophoton/phoMet/'+skimm+'_'+sample+'*.root')
+        mcTree.Add('/scratch3/ballen/hist/monophoton/phoMet/'+skimm+'_'+sample+'*.root')
         mcTrees.append( (sample, color, mcTree) )
 
     for jetsCut in jetsCuts:
