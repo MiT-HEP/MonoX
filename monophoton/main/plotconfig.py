@@ -344,6 +344,24 @@ def getConfig(confName):
             VariableDef('partonID', 'PGD ID', 'TMath::Abs(promptFinalStates.pid)', (25, 0., 25.), cut = dRPhoParton + ' < 0.3', overflow = True)
         ]
 
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('totalSF', reweight = 0.06))
+
+            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
+
+            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+        # Specific systematic variations
+        config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+
     elif confName == 'lowmt':
         config = PlotConfig('lowmt', photonData)
         config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5 && ' + mtPhoMet + ' > 40. && ' + mtPhoMet + ' < 150.'
