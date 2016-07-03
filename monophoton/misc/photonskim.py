@@ -11,15 +11,15 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-sname = sys.argv[1]
-
-sample = allsamples[sname]
-
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 ROOT.gROOT.LoadMacro(thisdir + '/PhotonSkim.cc+')
 
+sname = sys.argv[1]
+
+sample = allsamples[sname]
+
 ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', -1)
 
-shutil.copyfile('/tmp/' + sname + '.root', '/scratch5/yiiyama/hist/simpletree18/photonskim/' + sname + '.root')
+shutil.copyfile('/tmp/' + sname + '.root', config.photonSkimDir + '/' + sname + '.root')
