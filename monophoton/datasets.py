@@ -61,10 +61,12 @@ class SampleDef(object):
             xsecstr = '%.{ndec}f'.format(ndec = ndec) % crosssection
 
         if self.comments != '':
-            self.comments = "# "+self.comments
+            comments = " # " + self.comments
+        else:
+            comments = ''
             
-        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.fullname, self.comments)
-        return '%-16s %-35s %-20s %-10d %-20s %-20s %s %s' % lineTuple
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.fullname, comments)
+        return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
 
     def _getCounter(self, dirs):
         for dName in dirs:
