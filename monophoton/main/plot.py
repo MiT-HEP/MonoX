@@ -11,7 +11,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-DOSYSTEMATICS = False
+DOSYSTEMATICS = True
 
 # global variables to be set in __main__
 lumi = 0.
@@ -364,6 +364,32 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
     print '===================================================================================='
     print ('%+12s' % 'data_obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
 
+def printChi2(stack, plotConfig, precision = '.2f'):
+    obs = stack['data_obs']
+    nBins = obs.GetNbinsX()
+
+    residuals = [0.] * nBins
+    err2s = [0.] * nBins
+    for iX in range(1, nBins + 1):
+        o = obs.GetBinContent(iX) * obs.GetXaxis().GetBinWidth(iX)
+        residuals[iX - 1] = o
+        err2s[iX - 1] = o
+        
+        for group in plotConfig.bkgGroups:
+            x = stack[group.name].GetBinContent(iX) * obs.GetXaxis().GetBinWidth(iX)
+            e = stack[group.name].GetBinError(iX) * obs.GetXaxis().GetBinWidth(iX)
+
+            residuals[iX - 1] -= x
+            err2s[iX - 1] += e * e
+
+    chi2 = 0.
+    for iR, res in enumerate(residuals):
+        if err2s[iR] == 0.:
+            continue
+
+        chi2 += res * res / err2s[iR]
+
+    print chi2 / (nBins - 1)
 
 if __name__ == '__main__':
 
@@ -373,6 +399,7 @@ if __name__ == '__main__':
     argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot config name.')
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
+    argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--prescale', '-b', metavar = 'PRESCALE', dest = 'prescale', type = int, default = 1, help = 'Prescale for prescaling.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
@@ -415,6 +442,9 @@ if __name__ == '__main__':
 
     if args.bbb:
         args.plots = [args.bbb]
+
+    if args.chi2:
+        args.plots = [args.chi2]
 
     if args.outFile:
         outFile = ROOT.TFile.Open(args.outFile, 'recreate')
@@ -459,7 +489,7 @@ if __name__ == '__main__':
         elif ndim == 2:
             drawOpt = 'LEGO4 F 0'
 
-        if vardef.name == 'count' or vardef.name == args.bbb:
+        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
             counters = {}
             isSensitive = True
 
@@ -487,7 +517,7 @@ if __name__ == '__main__':
 
             bkgTotal.Add(hist)
 
-            if vardef.name == 'count' or vardef.name == args.bbb:
+            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                 counters[group.name] = hist
             elif plotDir:
                 canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
@@ -499,7 +529,7 @@ if __name__ == '__main__':
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
             hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
 
-            if vardef.name == 'count' or vardef.name == args.bbb:
+            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                 counters[group.name] = hist
 
         # plot signal distributions for sensitive variables
@@ -510,7 +540,7 @@ if __name__ == '__main__':
                 hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, postscale = postscale, outFile = outFile)
                 usedPoints.append(sspec.name)
 
-                if vardef.name == 'count' or vardef.name == args.bbb:
+                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                     counters[sspec.name] = hist
                 elif plotDir:
                     canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
@@ -541,7 +571,7 @@ if __name__ == '__main__':
                     obshist.SetBinContent(i, 0.)
                     obshist.SetBinError(i, 0.)
 
-        if vardef.name == 'count' or vardef.name == args.bbb:
+        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
             counters['data_obs'] = obshist
         elif plotDir and not vardef.fullyBlinded():
             canvas.addObs(obshist, title = plotConfig.obs.title)
@@ -552,6 +582,10 @@ if __name__ == '__main__':
         elif vardef.name == args.bbb:
             print 'Bin-by-bin yield for variable', args.bbb
             printBinByBin(counters, plotConfig)
+
+        elif vardef.name == args.chi2:
+            print 'Chi2 for variable', args.chi2
+            printChi2(counters, plotConfig)
 
         if plotDir and vardef.name != 'count':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
