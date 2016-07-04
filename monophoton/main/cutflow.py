@@ -1,7 +1,7 @@
 import os
 import sys
 sys.dont_write_bytecode = True
-import ROOT
+from argparse import ArgumentParser
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -9,16 +9,45 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-snames = sys.argv[1:]
+argParser = ArgumentParser(description = 'Print cut flow')
+argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
+argParser.add_argument('region', metavar = 'REGION', help = 'Control/signal egion name.')
+argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
+argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
+
+args = argParser.parse_args()
+sys.argv = []
+
+import ROOT
+ROOT.gROOT.SetBatch(True)
+
+data = False
+
+ntotal = 0
 
 tree = ROOT.TChain('cutflow')
-ntotal = 0
-for sname in snames:
-    tree.Add(config.skimDir + '/' + sname + '.root')
-    sample = allsamples[sname[:sname.rfind('_')]]
-    ntotal += sample.nevents
+for sname in args.snames:
+    tree.Add(args.skimDir + '/' + sname + '.root')
+    sample = allsamples[sname]
+    if sample.data:
+        data = True
 
-    data = sample.data
+    if args.skimDir == config.skimDir:
+        # default skim directory -> assume nevents in DB is accurate
+        ntotal += sample.nevents
+
+    else:
+        # otherwise open the original files
+        sdir = args.ntuplesDir + '/' + sample.book + '/' + sample.fullname
+        for fname in os.listdir(sdir):
+            source = ROOT.TFile.Open(sdir + '/' + fname)
+            counter = source.Get('counter')
+            if not counter:
+                source.Close()
+                continue
+    
+            ntotal += counter.GetBinContent(1)
+            source.Close()
 
 cutflow = []
 if data:
