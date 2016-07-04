@@ -45,7 +45,8 @@ mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
-mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
+#mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
+mc_gj = [('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
@@ -56,8 +57,8 @@ haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 selectors = {
     # Data 2016
     'sph-16b2-n': ['monoph'],
-    'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-                            ,('haloUp', selectors.haloMIP(haloNorms[0]))
+    'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
+                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
                              ],
     'smu-16b2': data_smu,
@@ -92,20 +93,21 @@ selectors = {
     'gg-80': mc_cand + mc_qcd, 
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'tg': mc_cand + mc_lep,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
     # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
-    'wlnu': mc_wlnu,
-    'wlnu-100': mc_wlnu,
-    'wlnu-200': mc_wlnu, 
-    'wlnu-400': mc_wlnu, 
-    # 'wlnu-600': mc_wlnu, 
-    'wlnu-800': mc_wlnu,
-    'wlnu-1200': mc_wlnu,
-    'wlnu-2500': mc_wlnu,
+    'wlnu': mc_wlnu + mc_lep,
+    'wlnu-100': mc_wlnu + mc_lep,
+    'wlnu-200': mc_wlnu + mc_lep, 
+    'wlnu-400': mc_wlnu + mc_lep, 
+    # 'wlnu-600': mc_wlnu + mc_lep, 
+    'wlnu-800': mc_wlnu + mc_lep,
+    'wlnu-1200': mc_wlnu + mc_lep,
+    'wlnu-2500': mc_wlnu + mc_lep,
     'dy-50': mc_cand + mc_lep + mc_dilep,
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
