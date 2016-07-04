@@ -55,6 +55,7 @@ haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
     # Data 2016
+    'sph-16b2-n': ['monoph'],
     'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
                             ,('haloUp', selectors.haloMIP(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
@@ -225,6 +226,10 @@ if __name__ == '__main__':
                 tree.Add(sourceDir + '/*.root')
 
         print tree.GetEntries()
+
+        if tree.GetEntries() == 0:
+            print 'No entries in the tree. Quitting!!.'
+            sys.exit(0)
     
         for selconf in selectors[sname]:
             if type(selconf) == str:

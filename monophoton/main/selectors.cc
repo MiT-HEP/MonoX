@@ -19,7 +19,7 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event)
   cutsOut_ = new TTree("cutflow", "cutflow");
 
   if (_event.getInput()->GetBranch("weight")) { // is MC
-    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "promptFinalStates"}); // branches to be directly copied
+    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons"}); // , "promptFinalStates"}); // branches to be directly copied
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {

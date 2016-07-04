@@ -31,28 +31,38 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   NeroToSimple* translator(0);
   if (_neroInput) {
+    std::cout << "Setting up translator" << std::endl;
     translator = new NeroToSimple(*_input, event);
     _input->LoadTree(0);
     auto* file(_input->GetCurrentFile());
     auto* triggerNames(file->Get("triggerNames"));
-    if (triggerNames)
+    if (triggerNames) {
+      std::cout << "Translating trigger names" << std::endl;
       translator->setTriggerNames(triggerNames->GetTitle());
+    }
+    std::cout << "Translator set up" << std::endl;
   }
   else
     event.setAddress(*_input);
   
-  for (auto* sel : selectors_)
-    sel->initialize(outputDir + "/" + sampleName + "_" + sel->name() + ".root", event);
+  for (auto* sel : selectors_) {
+    TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
+    std::cout << "Saving to " << outputPath << std::endl;
+    sel->initialize(outputPath, event);
+    std::cout << "Selector initialized" << std::endl;
+  }
+  
+  std::cout << "Selectors set up" << std::endl;
 
   long iEntry(0);
   TFile* currentFile(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
-    if (iEntry % 100000 == 1)
-      std::cout << " " << iEntry << std::endl;
+    //if (iEntry % 100000 == 1)
+    std::cout << " " << iEntry << std::endl;
 
     if (translator)
       translator->translate();
-    // std::cout << "Translated" << std::endl;
+    std::cout << "Translated" << std::endl;
 
     for (auto* sel : selectors_)
       sel->selectEvent(event);

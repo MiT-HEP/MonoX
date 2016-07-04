@@ -135,7 +135,7 @@ def monophotonBase(sample, selector):
         trigCorr.setFormula('1.025 - 0.0001163 * x')
         selector.addOperator(trigCorr)
 
-    selector.findOperator('HLTPhoton165HE10').setIgnoreDecision(True)
+    selector.findOperator('HLT_Photon165_HE10').setIgnoreDecision(True)
     selector.findOperator('MetFilters').setIgnoreDecision(True)
     # selector.findOperator('MuonVeto').setIgnoreDecision(True)
     # selector.findOperator('ElectronVeto').setIgnoreDecision(True)
