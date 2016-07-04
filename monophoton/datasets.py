@@ -2,7 +2,8 @@ import re
 import os
 import math
 import fnmatch
-import sqlite3
+
+defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
 
 class SampleDef(object):
     def __init__(self, name, title = '', book = '', fullname = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
@@ -137,14 +138,12 @@ class SampleDef(object):
 
 
 class SampleDefList(object):
-    def __init__(self, samples = [], dbpath = '', listpath = ''):
+    def __init__(self, samples = [], listpath = ''):
         self.samples = list(samples)
+        self._commentLines = [] # to reproduce comment lines from the source
 
-        if dbpath:
-            self._load(dbpath)
-
-        elif listpath:
-            self._loadCSV(listpath)
+        if listpath:
+            self._load(listpath)
 
     def __iter__(self):
         return iter(self.samples)
@@ -158,12 +157,14 @@ class SampleDefList(object):
         except RuntimeError:
             raise KeyError(key + ' not defined')
 
-    def _loadCSV(self, listpath):
+    def _load(self, listpath):
         with open(listpath) as dsSource:
+            name = ''
             for line in dsSource:
                 line = line.strip()
                 
                 if not line or line.startswith('#'):
+                    self._commentLines.append((name, line)) # dataset from one line above, line
                     continue
         
                 matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
@@ -181,37 +182,19 @@ class SampleDefList(object):
         
                 self.samples.append(sdef)
 
-    def _load(self, dbpath):
-        conn = sqlite3.connect(dbpath)
-        db = conn.cursor()
-
-        db.execute('SELECT `name`, `title`, `crosssection`, `nevents`, `sumw`, `book`, `fullname`, `comments` FROM `datasets`')
-        for name, title, crosssection, nevents, sumw, book, fullname, comments in db.fetchall():
-            # cast strings to str from unicode
-            if sumw < 0.:
-                sdef = SampleDef(str(name), title = str(title), book = str(book), fullname = str(fullname), lumi = crosssection, nevents = nevents, sumw = sumw, data = True, comments = str(comments))
-            else:
-                sdef = SampleDef(str(name), title = str(title), book = str(book), fullname = str(fullname), crosssection = crosssection, nevents = nevents, sumw = sumw, comments = str(comments))
-        
-            self.samples.append(sdef)
-
-        conn.close()
-
-    def save(self, dbpath):
-        conn = sqlite3.connect(dbpath)
-        db = conn.cursor()
-
-        values = []
-        for s in self.samples:
-            if s.data:
-                values.append((s.name, s.title, s.lumi, s.nevents, -1., s.book, s.fullname, s.comments))
-            else:
-                values.append((s.name, s.title, s.crosssection, s.nevents, s.sumw, s.book, s.fullname, s.comments))
-
-        db.executemany('INSERT OR REPLACE INTO `datasets` (`name`, `title`, `crosssection`, `nevents`, `sumw`, `book`, `fullname`, `comments`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', values)
-        conn.commit()
-
-        conn.close()
+    def save(self, listpath):
+        with open(listpath, 'w') as out:
+            iC = 0
+            while iC != len(self._commentLines) and self._commentLines[iC][0] == '':
+                out.write(self._commentLines[iC][1] + '\n')
+                iC += 1
+            
+            for sample in self.samples:
+                out.write(sample.linedump() + '\n')
+                
+                while iC != len(self._commentLines) and self._commentLines[iC][0] == sample.name:
+                    out.write(self._commentLines[iC][1] + '\n')
+                    iC += 1
 
     def names(self):
         return [s.name for s in self.samples]
@@ -255,19 +238,15 @@ dump DATASETS: Dump information of DATASETS in CSV form.
 recalculate DATASETS: Recalculate nentries and sumw for DATASETS.
 add INFO: Add a new dataset.'''
     argParser.add_argument('command', nargs = '+', help = commandHelp)
-    argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', help = 'CSV file to load data from.')
-    argParser.add_argument('--db-path', '-d', metavar = 'PATH', dest = 'dbPath', default = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.db', help = 'SQLite3 file to load data from.')
-    argParser.add_argument('--save', '-O', action = 'store_true', dest = 'saveDB', help = 'Save updated content to DB.')
+    argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', default = defaultList, help = 'CSV file to load data from.')
+    argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'outPath', nargs = '?', const = '', help = 'Save updated content to CSV file (no argument: save to original CSV).')
 
     args = argParser.parse_args()
     sys.argv = []
 
     import ROOT
 
-    if args.listPath:
-        samples = SampleDefList(listpath = args.listPath)
-    else:
-        samples = SampleDefList(dbpath = args.dbPath)
+    samples = SampleDefList(listpath = args.listPath)
 
     command = args.command[0]
     arguments = args.command[1:]
@@ -324,8 +303,11 @@ add INFO: Add a new dataset.'''
         print 'Unknown command', command
         sys.exit(1)
     
-    if args.saveDB and args.dbPath:
-        samples.save(args.dbPath)
+    if args.outPath is not None:
+        if args.outPath == '':
+            args.outPath = args.listPath
+
+        samples.save(args.outPath)
 
 else: # when importing from another python script
-    allsamples = SampleDefList(dbpath = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.db')
+    allsamples = SampleDefList(listpath = defaultList)
