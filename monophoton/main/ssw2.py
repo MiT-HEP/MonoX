@@ -55,8 +55,8 @@ haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
 
 selectors = {
     # Data 2016
-    'sph-16b2': data_sph + [('halo', selectors.haloCSC(haloNorms[0]))
-                            ,('haloUp', selectors.haloMIP(haloNorms[0]))
+    'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
+                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
                              ],
     'smu-16b2': data_smu,
@@ -97,14 +97,14 @@ selectors = {
     'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
     # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
-    'wlnu': mc_wlnu,
-    'wlnu-100': mc_wlnu,
-    'wlnu-200': mc_wlnu, 
-    'wlnu-400': mc_wlnu, 
-    # 'wlnu-600': mc_wlnu, 
-    'wlnu-800': mc_wlnu,
-    'wlnu-1200': mc_wlnu,
-    'wlnu-2500': mc_wlnu,
+    'wlnu': mc_wlnu + mc_lep,
+    'wlnu-100': mc_wlnu + mc_lep,
+    'wlnu-200': mc_wlnu + mc_lep, 
+    'wlnu-400': mc_wlnu + mc_lep, 
+    # 'wlnu-600': mc_wlnu + mc_lep, 
+    'wlnu-800': mc_wlnu + mc_lep,
+    'wlnu-1200': mc_wlnu + mc_lep,
+    'wlnu-2500': mc_wlnu + mc_lep,
     'dy-50': mc_cand + mc_lep + mc_dilep,
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,

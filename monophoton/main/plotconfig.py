@@ -43,8 +43,7 @@ def getConfig(confName):
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('dytt', 'DY, tt', samples = ['tt', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x44, 0xCC)), 
             GroupSpec('gjets', '#gamma + jets', samples = ['gj04-40', 'gj04-100', 'gj04-200', 'gj04-400', 'gj04-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            GroupSpec('digam', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('qcdmc', 'QCD fakes (MC)', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('qcddata', 'QCD fakes (Data)', samples = photonData, region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('gjetsfake', '#gamma + jets (Fakes)', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], region = 'gjets', color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
@@ -141,7 +140,7 @@ def getConfig(confName):
         config.fullSelection = 't1Met.met > 170.'
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
@@ -187,7 +186,7 @@ def getConfig(confName):
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('digam', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -290,9 +289,8 @@ def getConfig(confName):
         config.baseline = mass + ' > 50. && photons.pt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('wwgam', 'WW#gamma', samples = ['wwg'], color = ROOT.TColor.GetColor(0xff, 0xdd, 0xaa)),
-            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50'], color = ROOT.TColor(0x11, 0x99, 0xcc)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zgam', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
@@ -306,7 +304,36 @@ def getConfig(confName):
             VariableDef('dPhiPhoRecoil', '#Delta#phi(#gamma, U)', 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi))', (10, 0., math.pi)),
             VariableDef('dimumass', 'M_{#mu#mu}', mass, (30, 50., 200.), unit = 'GeV'),
             VariableDef('dRPhoMu', '#DeltaR(#gamma, #mu)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (20, 0., 4.)),
-            VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.))
+            VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
+            VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
+        ]
+
+    elif confName == 'diel':
+        mass = 'TMath::Sqrt(2. * electrons.pt[0] * electrons.pt[1] * (TMath::CosH(electrons.eta[0] - electrons.eta[1]) - TMath::Cos(electrons.phi[0] - electrons.phi[1])))'
+        dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
+        dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
+
+        config = PlotConfig('diel', ['sel-16b2'])
+        config.baseline = mass + ' > 50. && photons.pt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
+        config.fullSelection = ''
+        config.bkgGroups = [
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            GroupSpec('zgam', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        ]
+        config.variables = [
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [10. * x for x in range(6)] + [60. + 20. * x for x in range(3)], unit = 'GeV', overflow = True),
+            VariableDef('recoil', 'Recoil', 't1Met.met', [100. + 10. * x for x in range(6)] + [160. + 40. * x for x in range(7)], unit = 'GeV', overflow = True),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.photonDPhi', (10, 0., math.pi)),
+            VariableDef('dPhiPhoRecoil', '#Delta#phi(#gamma, U)', 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi))', (10, 0., math.pi)),
+            VariableDef('dielmass', 'M_{ee}', mass, (30, 50., 200.), unit = 'GeV'),
+            VariableDef('dRPhoEl', '#DeltaR(#gamma, e)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (20, 0., 4.)),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
+            VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
     elif confName == 'monomu':
@@ -320,10 +347,10 @@ def getConfig(confName):
         config.baseline = 'photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('wwgam', 'WW#gamma', samples = ['wwg'], color = ROOT.TColor.GetColor(0xff, 0xdd, 0xaa)),
-            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
-            GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
+            GroupSpec('tt', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
@@ -340,7 +367,41 @@ def getConfig(confName):
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', dPhiJetMetMin, (30, 0., math.pi), cut = 'jets.size != 0'),
             VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (30, 0., math.pi), cut = 'jets.size != 0'),
             VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
-            VariableDef('partonID', 'PGD ID', 'TMath::Abs(promptFinalStates.pid)', (25, 0., 25.), cut = dRPhoParton + ' < 0.3', overflow = True)
+            VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
+        ]
+
+    elif confName == 'monoel':
+
+        dPhiPhoMet = 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.realPhi))'
+        dPhiJetMetMin = '(jets.size == 0) * 4. + (jets.size == 1) * TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[0] - t1Met.realPhi)) + MinIf$(TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.realPhi)), jets.size > 1 && Iteration$ < 4)'
+        dRPhoParton  = 'TMath::Sqrt(TMath::Power(photons.eta[0] - promptFinalStates.eta, 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - promptFinalStates.phi), 2.))'
+        # MinIf$() somehow returns 0 when there is only one jet
+
+        config = PlotConfig('monoel', ['sel-16b2'])
+        config.baseline = 'photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config.fullSelection = ''
+        config.bkgGroups = [
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
+            GroupSpec('tt', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        ]
+        config.variables = [
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], unit = 'GeV', overflow = True),
+            VariableDef('recoil', 'Recoil', 't1Met.met', [10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], unit = 'GeV', overflow = True),
+            VariableDef('mt', 'M_{T}', 'TMath::Sqrt(2. * t1Met.realMet * electrons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.realPhi - electrons.phi[0]))))', [0. + 10. * x for x in range(16)] + [160. + 40. * x for x in range(3)], unit = 'GeV', overflow = True),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [60.] + [80. + 10. * x for x in range(22)] + [300. + 40. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi)),
+            VariableDef('elEta', '#eta^{e}', 'electrons.eta[0]', (20, -2.4, 2.4)),
+            VariableDef('elIso', 'I^{e}_{comb.}/p_{T}', 'electrons.combRelIso[0]', (20, 0., 0.4)),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', dPhiPhoMet, (30, 0., math.pi)),
+            VariableDef('dRPhoMu', '#DeltaR(#gamma, e)', 'TMath::Sqrt(TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.))', (20, 0., 4.)),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', dPhiJetMetMin, (30, 0., math.pi), cut = 'jets.size != 0'),
+            VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (30, 0., math.pi), cut = 'jets.size != 0'),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
+            VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
     elif confName == 'lowmt':
@@ -349,7 +410,7 @@ def getConfig(confName):
         config.fullSelection = 'photons.pt[0] < 400. && t1Met.met > 170.'
         config.bkgGroups = [
             GroupSpec('minor', 't#bar{t}, Z', samples = ['ttg', 'zg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfakelowmt', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'lowmtEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -380,8 +441,7 @@ def getConfig(confName):
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'zllg-130', 'wlnu-100','wlnu-200', 'wlnu-400', 'wlnu-600'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('diboson', 'Diboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xee, 0xff, 0xaa)),
-            GroupSpec('digam', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('multiboson', 'Multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),

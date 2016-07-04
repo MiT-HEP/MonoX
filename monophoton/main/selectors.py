@@ -571,7 +571,7 @@ def haloMIP(norm):
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
-    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
+    return sampleDefiner(norm, inverts, removes, appends)
 
 def haloCSC(norm):
     """
@@ -593,7 +593,7 @@ def haloSieie(norm):
     removes = [ 'Sieie', 'MIP49' ]
     appends = [] 
 
-    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
+    return sampleDefiner(norm, inverts, removes, appends)
 
 def leptonBase(sample, selector):
     """
