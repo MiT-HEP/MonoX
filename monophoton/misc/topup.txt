@@ -1,0 +1,58 @@
+. Get the run-lumi list from simpletree:
+  ~/yiiyama/cms/tools/bambuToJson.py /scratch5/yiiyama/hist/simpletreeXYZ/t2mit/filefi/044/Dataset
+
+. Copy the json file over to lxplus; compute the integrated luminosity and update datasets.csv
+
+. Compute the data pileup distribution and construct the PU weights
+  pileupCalc.py -i lumis.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 71300 --maxPileupBin 80 dataPileup.root
+  misc/puweight.py dataPileup.root 2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU $PWD/data/pileup.root
+
+. Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
+  condor-run $PWD/trigger/skim.py -j sel-X jht-X
+  trigger/eff.py sel ptzoom hlt
+  trigger/eff.py jht pt l1
+
+. Run the photon ID and lepton veto efficiency measurements. Propagate the SF and uncertainty to selectors.py
+  condor-run $PWD/veto_eff/skim.py dimu -j smu-16X dy-50 tt ww wz zz
+  veto_eff/skim.py monoph znng
+  veto_eff/compute.py
+
+. Run the e->photon fake rate study. Copy the output of compute to data/efake_data_pt.root
+  condor-run $PWD/tp/skim.py -j sel-X smu-X dy-50 gg-80 tt wlnu ww wz zz
+  tp/efake_fit.py mc highpt
+  tp/efake_fit.py data highpt
+  condor-run $PWD/tp/efake_fit.py -e "(data|mc) highpt 1000 (ee|eg) pt_100_6500" -j $(seq 1 200)
+  tp/efake_compute.py (data|mc) highpt # make sure toyUncert is set to True
+
+. Run the purity and hfake transfer factor measurements. Update data/hadronTFactor.root
+
+. Run method 1 and 2 of the gamma + jets background estimation.
+
+. At this point we need to run the skim for data once - halo estimate fits on candidate events.
+
+. Run the halo phi fit and update ssw2.py (haloNorms) - TODO change this to transfer factor in selectors.py
+  halo/phidistributions.py for plots
+  halo/phifit.py for actual fits
+
+. Run the sph skim again
+
+. Run method 3 of gamma + jets background estimation.
+  gjets/smearfit.py
+
+. Run gj-* skim again, after updating gjsmear parameters in selectors.py
+
+. Make plots and data card inputs
+  main/plot.py monoph
+  main/plot.py -p met -o monoph_met.root
+
+. Make data cards
+  main/datacard.py {model} monoph_met.root
+
+. Run combine
+  scratch/runCombine.sh {point}
+
+. Fix scaled samples
+  scratch/fixLimit.py
+
+. Plot limits
+  scratch/plotlimit.py
