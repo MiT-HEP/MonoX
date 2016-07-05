@@ -83,7 +83,7 @@ def getConfig(confName):
         for variable in list(config.variables): # need to clone the list first!
             if variable.name not in ['met', 'metWide', 'metHigh']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
-#                config.variables.remove(variable)
+                config.variables.remove(variable)
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
