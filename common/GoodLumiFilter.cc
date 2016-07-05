@@ -24,3 +24,12 @@ GoodLumiFilter::isGoodLumi(unsigned run, unsigned lumi) const
   currentStatus_ = false;
   return currentStatus_;
 }
+
+bool
+GoodLumiFilter::hasGoodLumi(unsigned run) const
+{
+  if (goodLumiList_.size() == 0)
+    return true;
+
+  return goodLumiList_.find(run) != goodLumiList_.end();
+}

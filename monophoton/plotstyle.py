@@ -16,13 +16,32 @@ ROOT.gStyle.SetTitleOffset(1.3, 'Y')
 ROOT.gStyle.SetNdivisions(205, 'X')
 ROOT.gStyle.SetFillStyle(0)
 
-def makeText(x1, y1, x2, y2, textalign = 22, font = 42):
+def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035):
+    if type(align) is str:
+        al = 0
+        if 'left' in align:
+            al += 10
+        elif 'right' in align:
+            al += 30
+        else:
+            al += 20
+
+        if 'bottom' in align:
+            al += 1
+        elif 'top' in align:
+            al += 3
+        else:
+            al += 2
+
+        align = al
+
     pave = ROOT.TPaveText()
     pave.SetX1NDC(x1)
     pave.SetX2NDC(x2)
     pave.SetY1NDC(y1)
     pave.SetY2NDC(y2)
-    pave.SetTextAlign(textalign)
+    pave.SetTextAlign(align)
+    pave.SetTextSize(size)
     pave.SetFillStyle(0)
     pave.SetBorderSize(0)
     pave.SetMargin(0.)
@@ -244,7 +263,7 @@ class SimpleCanvas(object):
         self.titlePave = makeText(SimpleCanvas.XMIN, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1.)
 
         if cms:
-            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX - 0.12, 0.3, SimpleCanvas.YMAX - 0.01, textalign = 11, font = 62)
+            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX - 0.12, 0.3, SimpleCanvas.YMAX - 0.01, align = 11, font = 62)
             if sim:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
             else:
@@ -331,8 +350,8 @@ class SimpleCanvas(object):
 
         return line
 
-    def addText(self, text, x1, y1, x2, y2, textalign = 22, font = 42):
-        pave = makeText(x1, y1, x2, y2, textalign = textalign, font = font)
+    def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035):
+        pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size)
         pave.AddText(text)
         self._objects.append(pave)
 
@@ -496,7 +515,7 @@ class SimpleCanvas(object):
             self.cmsPave.Draw()
 
             if self.lumi > 0.:
-                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., textalign = 32)
+                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., align = 32)
                 self._temporaries.append(lumiPave)
 
                 if self.lumi > 1000.:
@@ -664,6 +683,11 @@ class RatioCanvas(SimpleCanvas):
 
             if len(self.legend.entries) != 0:
                 self.legend.Draw()
+
+        for obj in self._objects:
+            obj.Draw('SAME')
+
+        self.drawText()
 
         # now ratio plots
         self.ratioPad.cd()
@@ -884,8 +908,8 @@ class RatioCanvas(SimpleCanvas):
 
 class DataMCCanvas(RatioCanvas):
 
-    def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1.):
-        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi)
+    def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1., sim = False, cms = True):
+        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms)
 
         self._obs = -1
         self._bkgs = []

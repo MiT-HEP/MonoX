@@ -142,9 +142,10 @@ def candidate(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    selector.setPartialBlinding(5, 274422)
+    if sample.data:
+        selector.setPartialBlinding(5, 274422)
 
-    if not sample.data:
+    else:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
@@ -215,7 +216,7 @@ def lowmt(sample, selector):
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(40., 150.)
+    mtCut.setRange(0., 150.)
     selector.addOperator(mtCut)
 
     return selector
@@ -231,7 +232,7 @@ def lowmtEleProxy(sample, selector):
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(40., 150.)
+    mtCut.setRange(0., 150.)
     selector.addOperator(mtCut)
 
     return selector
@@ -368,7 +369,8 @@ def hadProxy(sample, selector):
     Candidate-like but with inverted sieie or CHIso.
     """
 
-    selector = monophotonBase(sample, selector)
+    if type(selector) is str:
+        selector = monophotonBase(sample, selector)
 
     weight = ROOT.PhotonPtWeight(hadproxyWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
@@ -653,6 +655,14 @@ def monoelectron(sample, selector):
 
     return selector
 
+def monoelectronHadProxy(sample, selector):
+    selector = electronBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(1, 0)
+
+    selector = hadProxy(sample, selector)
+
+    return selector
+
 def dimuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
@@ -662,6 +672,14 @@ def dimuon(sample, selector):
 def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
+
+    return selector
+
+def monomuonHadProxy(sample, selector):
+    selector = muonBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(0, 1)
+
+    selector = hadProxy(sample, selector)
 
     return selector
 
