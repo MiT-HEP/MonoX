@@ -41,6 +41,8 @@
 
 . Run gj-* skim again, after updating gjsmear parameters in selectors.py
 
+. Run all other MC skims (needed if PU reweighting changed)
+
 . Make plots and data card inputs
   main/plot.py monoph
   main/plot.py -p met -o monoph_met.root
