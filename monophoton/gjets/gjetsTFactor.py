@@ -32,11 +32,11 @@ znntree = r.TChain('events')
 znntree.Add(config.skimDir + '/zg_dimu.root')
 
 mctree = r.TChain('events')
-mctree.Add(config.skimDir + '/gj04-40_monoph.root')
-mctree.Add(config.skimDir + '/gj04-100_monoph.root')
-mctree.Add(config.skimDir + '/gj04-200_monoph.root')
-mctree.Add(config.skimDir + '/gj04-400_monoph.root')
-mctree.Add(config.skimDir + '/gj04-600_monoph.root')
+mctree.Add(config.skimDir + '/gj-40_monoph.root')
+mctree.Add(config.skimDir + '/gj-100_monoph.root')
+mctree.Add(config.skimDir + '/gj-200_monoph.root')
+mctree.Add(config.skimDir + '/gj-400_monoph.root')
+mctree.Add(config.skimDir + '/gj-600_monoph.root')
 
 ###########################################
 ####### Get Data/MC Yields ################
