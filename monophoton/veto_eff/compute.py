@@ -12,17 +12,17 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 dataDimu = ROOT.TChain('skim')
-dataDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_smu*.root')
+dataDimu.Add(config.histDir + '/veto_eff/dimu_smu*.root')
 
 mcDimu = ROOT.TChain('skim')
-mcDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_dy-50.root')
-mcDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_tt.root')
-mcDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_ww.root')
-mcDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_wz.root')
-mcDimu.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/dimu_zz.root')
+mcDimu.Add(config.histDir + '/veto_eff/dimu_dy-50.root')
+mcDimu.Add(config.histDir + '/veto_eff/dimu_tt.root')
+mcDimu.Add(config.histDir + '/veto_eff/dimu_ww.root')
+mcDimu.Add(config.histDir + '/veto_eff/dimu_wz.root')
+mcDimu.Add(config.histDir + '/veto_eff/dimu_zz.root')
 
 mcMonoph = ROOT.TChain('skim')
-mcMonoph.Add('/scratch5/yiiyama/studies/monophoton/veto_eff/monoph_znng-130.root')
+mcMonoph.Add(config.histDir + '/veto_eff/monoph_znng-130.root')
 
 distCanvas = SimpleCanvas('cdist')
 distCanvas.legend.add('data', title = '2#mu data', opt = 'L', color = ROOT.kBlack, fstyle = 0)
@@ -46,7 +46,7 @@ configs = {
     'npv': ('npv', 'N_{vtx}', (20, 0., 40.))
 }
 
-outputFile = ROOT.TFile.Open('/scratch5/yiiyama/studies/monophoton/veto_eff/veto_eff.root', 'recreate')
+outputFile = ROOT.TFile.Open(config.histDir + '/veto_eff/veto_eff.root', 'recreate')
 
 for name, config in configs.items():
     expr, title, binning = config

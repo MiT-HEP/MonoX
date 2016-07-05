@@ -15,7 +15,11 @@ ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('/home/yiiyama/cms/studies/RooFit/libCommonRooFit.so')
 ROOT.gROOT.LoadMacro('metTree.cc+')
 
-lumi = allsamples['sph-d3'].lumi + allsamples['sph-d4'].lumi
+photonData = ['sph-16b2', 'sph-16b2s']
+
+lumi = 0.
+for sname in photonData:
+    lumi += allsamples[sname].lumi
 
 canvas = RatioCanvas(cms = False)
 
@@ -24,14 +28,14 @@ canvas = RatioCanvas(cms = False)
 outputFile = ROOT.TFile.Open(config.histDir + '/smearfit.root', 'recreate')
 
 dsource = ROOT.TChain('events')
-dsource.Add(config.skimDir + '/sph-d*_monoph.root')
-
 bsource = ROOT.TChain('events')
-bsource.Add(config.skimDir + '/sph-d*_hfake.root')
-bsource.Add(config.skimDir + '/sph-d*_efake.root')
+for sname in photonData:
+    dsource.Add(config.skimDir + '/' + sname + '_monoph.root')
+    bsource.Add(config.skimDir + '/' + sname + '_hfake.root')
+    bsource.Add(config.skimDir + '/' + sname + '_efake.root')
 
 bmcsource = ROOT.TChain('events')
-bmcsource.Add(config.skimDir + '/wg_monoph.root') # NLO sample to get around pT/ MET > 130 GeV cut on LO sample
+bmcsource.Add(config.skimDir + '/wglo_monoph.root') # inclusive sample - wg130 canno be used because we go lower in MET
 bmcsource.Add(config.skimDir + '/wlnu-*_monoph.root')
 bmcsource.Add(config.skimDir + '/ttg_monoph.root')
 bmcsource.Add(config.skimDir + '/zg_monoph.root')

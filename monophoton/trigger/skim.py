@@ -8,27 +8,29 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
+snames = sys.argv[1:]
+
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 ROOT.gROOT.LoadMacro('Skimmer.cc+')
 
-#tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SinglePhoton+Run2016B-PromptReco-v2+AOD/*.root')
-#
-#ROOT.skim(tree, ROOT.kDiphoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_diphoton.root')
-
-#tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SingleElectron+Run2016B-PromptReco-v2+AOD/*.root')
-#
-#ROOT.skim(tree, ROOT.kDielectron, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_dielectron.root')
-
-#tree = ROOT.TChain('events')
-#tree.Add(config.ntuplesDir + 'filefi/044/SingleMuon+Run2016B-PromptReco-v2+AOD/*.root')
-#
-#ROOT.skim(tree, ROOT.kMuonPhoton, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_muonphoton.root')
-
 tree = ROOT.TChain('events')
-tree.Add(config.ntuplesDir + 'filefi/044/JetHT+Run2016B-PromptReco-v2+AOD/*.root')
 
-ROOT.skim(tree, ROOT.kJetHT, '/scratch5/yiiyama/studies/monophoton16/trigger/trigger_jetht.root')
+for sname in snames:
+    sample = allsamples[sname]
+    tree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
+
+    if sname == snames[0]:
+        if sname.startswith('sph-'):
+            treeType = ROOT.kDiphoton
+        elif sname.startswith('sel-'):
+            treeType = ROOT.kDielectron
+        elif sname.startswith('smu-'):
+            treeType = ROOT.kMuonPhoton
+        elif sname.startswith('jht-'):
+            treeType = ROOT.kJetHT
+            
+        suffix = sname[:sname.find('-')]
+
+ROOT.skim(tree, treeType, config.histDir + '/trigger/trigger_' + suffix + '.root')
