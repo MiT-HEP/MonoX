@@ -11,6 +11,7 @@ public:
 
   void addLumi(unsigned run, unsigned lumi) { goodLumiList_[run].insert(lumi); }
   bool isGoodLumi(unsigned run, unsigned lumi) const;
+  bool hasGoodLumi(unsigned run) const;
 
 private:
   std::map<unsigned, std::set<unsigned>> goodLumiList_;
