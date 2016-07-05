@@ -34,12 +34,15 @@ for bin in range(1, mcDist.GetNbinsX() + 1):
 mcDist.Scale(1. / mcDist.GetSumOfWeights())
 
 dataDist = dataSource.Get('pileup').Clone('data')
+dataDist.Sumw2()
 dataDist.Scale(1. / dataDist.GetSumOfWeights())
 
 dataDist.Write()
 mcDist.Write()
 
-dataDist.Divide(mcDist)
-dataDist.Write('puweight')
+puweight = dataDist.Clone('puweight')
+
+puweight.Divide(mcDist)
+puweight.Write()
 
 outputFile.Close()
