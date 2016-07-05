@@ -26,8 +26,10 @@ defaults = {
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
+    'monomuHfake': selectors.monomuonHadProxy,
     'diel': selectors.dielectron,
     'monoel': selectors.monoelectron,
+    'monoelHfake': selectors.monoelectronHadProxy,
     'elmu': selectors.oppflavor,
     'eefake': selectors.zee,
     'wenu': selectors.wenuall
@@ -35,8 +37,8 @@ defaults = {
 
 data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
-data_smu = ['dimu', 'monomu', 'elmu']
-data_sel = ['diel', 'monoel', 'eefake']
+data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu']
+data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake']
 mc_cand = ['monoph']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
 mc_sig = ['monoph', 'signalRaw']
