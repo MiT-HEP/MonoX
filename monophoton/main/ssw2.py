@@ -53,14 +53,18 @@ mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + [
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = allsamples['sph-16b2'].lumi
-haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
+sphLumi = allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi
+haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16b2s'] ]
 
 selectors = {
     # Data 2016
     'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
                             ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
+    'sph-16b2s': data_sph + [('halo', selectors.haloMIP(haloNorms[1]))
+                            ,('haloUp', selectors.haloCSC(haloNorms[1]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[1]))
                              ],
     'smu-16b2': data_smu,
     'sel-16b2': data_sel,
