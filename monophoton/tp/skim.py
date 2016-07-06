@@ -70,14 +70,14 @@ for confName in skimConfig:
 
 suffix = {'kEG': 'eg', 'kMG': 'mg', 'kMMG': 'mmg'}
 
-npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
-if not npvSource:
+puSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
+if not puSource:
     print 'NPV reweight absent - run monophoton/ssw2.py'
     sys.exit(1)
 
-reweight = npvSource.Get('npvweight')
+reweight = puSource.Get('puweight')
 reweight.SetDirectory(ROOT.gROOT)
-npvSource.Close()
+puSource.Close()
 
 for sname in targets:
     skimmer = ROOT.Skimmer()

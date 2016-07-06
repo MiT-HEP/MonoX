@@ -655,6 +655,29 @@ TriggerEfficiency::setFormula(char const* formula)
 }
 
 void
+TriggerEfficiency::setUpFormula(char const* formula)
+{
+  delete upFormula_;
+  upFormula_ = new TF1("TriggerEfficiencyUp", formula, 0., 6500.);
+}
+
+void
+TriggerEfficiency::setDownFormula(char const* formula)
+{
+  delete downFormula_;
+  downFormula_ = new TF1("TriggerEfficiencyDown", formula, 0., 6500.);
+}
+
+void
+TriggerEfficiency::addBranches(TTree& _skimTree)
+{
+  if (upFormula_)
+    _skimTree.Branch("reweight_trigUp", &reweightUp_, "reweight_trigUp/D");
+  if (downFormula_)
+    _skimTree.Branch("reweight_trigDown", &reweightDown_, "reweight_trigDown/D");
+}
+
+void
 TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   if (!formula_ || _outEvent.photons.size() == 0)
@@ -665,6 +688,10 @@ TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _ou
     return;
 
   _outEvent.weight *= formula_->Eval(pt);
+  if (upFormula_)
+    reweightUp_ = upFormula_->Eval(pt);
+  if (downFormula_)
+    reweightDown_ = downFormula_->Eval(pt);
 }
 
 //--------------------------------------------------------------------
@@ -1206,6 +1233,22 @@ void
 NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npv));
+  if (iX == 0)
+    iX = 1;
+  if (iX > factors_->GetNbinsX())
+    iX = factors_->GetNbinsX();
+
+  _outEvent.weight *= factors_->GetBinContent(iX);
+}
+
+//--------------------------------------------------------------------
+// PUWeight
+//--------------------------------------------------------------------
+
+void
+PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  int iX(factors_->FindFixBin(_event.npvTrue));
   if (iX == 0)
     iX = 1;
   if (iX > factors_->GetNbinsX())

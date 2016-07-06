@@ -40,8 +40,8 @@ photonFullSelection = [
     'NoisyRegion'
 ]
 
-npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
-npvWeight = npvSource.Get('npvweight')
+puWeightSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
+puWeight = puWeightSource.Get('puweight')
 
 photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
@@ -53,6 +53,13 @@ hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
 eleproxyWeight = eleproxySource.Get('frate')
+
+trigCorrFormula = '1.025 - 0.0001163 * x'
+trigCorrUpFormula = '1.025 - 0.0001163 * x'
+trigCorrDownFormula = '1.025 - 0.0001163 * x'
+
+gjSmearingFormula = 'TMath::Landau(x, [0], [1])'
+gjSmearingParams = (-0.7314, 0.5095) # measured in gjets/smearfit.py
 
 ##############################################################
 # Argument "selector" in all functions below can either be an
@@ -119,11 +126,13 @@ def monophotonBase(sample, selector):
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
         trigCorr = ROOT.TriggerEfficiency()
         trigCorr.setMinPt(300.)
-        trigCorr.setFormula('1.025 - 0.0001163 * x')
+        trigCorr.setFormula(trigCorrFormula)
+        trigCorr.setUpFormula(trigCorrUpFormula)
+        trigCorr.setDownFormula(trigCorrDownFormula)
         selector.addOperator(trigCorr)
 
     selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
@@ -143,7 +152,7 @@ def candidate(sample, selector):
     selector = monophotonBase(sample, selector)
 
     if sample.data:
-        selector.setPartialBlinding(5, 274422)
+        selector.setPartialBlinding(4, 274422)
 
     else:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
@@ -274,7 +283,7 @@ def purityBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
@@ -510,8 +519,8 @@ def gjSmeared(sample, name):
 
     selector = candidate(sample, ROOT.SmearingSelector(name))
 
-    smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
-    smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
+    smearing = ROOT.TF1('smearing', gjSmearingFormula, 0., 40.)
+    smearing.SetParameters(*gjSmearingParams) # measured in gjets/smearfit.py
     selector.setNSamples(1)
     selector.setFunction(smearing)
 
@@ -613,7 +622,7 @@ def leptonBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(30.)

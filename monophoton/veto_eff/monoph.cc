@@ -5,11 +5,11 @@
 #include "TH1.h"
 
 void
-monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npvweight = 0)
+monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _puweight = 0)
 {
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"lumi", "event", "weight", "muons", "electrons", "jets", "npv", "promptFinalStates"});
+  event.setAddress(*_input, {"lumi", "event", "weight", "muons", "electrons", "jets", "npv", "npvTrue", "promptFinalStates"});
 
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
@@ -29,6 +29,7 @@ monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _
   output->Branch("njet", &njet, "njet/s");
   output->Branch("ht", &ht, "ht/F");
   output->Branch("npv", &event.npv, "npv/s");
+  output->Branch("npvTrue", &event.npvTrue, "npvTrue/F");
 
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
@@ -78,13 +79,13 @@ monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _
     }
 
     weight = _sampleWeight * event.weight;
-    if (_npvweight) {
-      int iX(_npvweight->FindFixBin(event.npv));
+    if (_puweight) {
+      int iX(_puweight->FindFixBin(event.npvTrue));
       if (iX == 0)
         iX = 1;
-      if (iX > _npvweight->GetNbinsX())
-        iX = _npvweight->GetNbinsX();
-      weight *= _npvweight->GetBinContent(iX);
+      if (iX > _puweight->GetNbinsX())
+        iX = _puweight->GetNbinsX();
+      weight *= _puweight->GetBinContent(iX);
     }
 
     output->Fill();

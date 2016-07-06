@@ -64,10 +64,10 @@ def getBinning(binningName):
     
     elif binningName == 'npv':
         binningTitle = 'N^{PV}'
-        binning = [1., 5., 8., 10., 12., 16., 26.]
+        binning = [1., 8., 10., 12., 16., 26.]
     
         fitBins = []
-        for low, high in [(1, 4), (5, 7), (8, 9), (10, 11), (12, 15), (16, 25)]:
+        for low, high in [(1, 7), (8, 9), (10, 11), (12, 15), (16, 25)]:
             repl = {'low': low, 'high': high}
             name = 'npv_{low}_{high}'.format(**repl)
             if low == high:

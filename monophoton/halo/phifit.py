@@ -31,12 +31,17 @@ work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))
 phiset = ROOT.RooArgSet(phi)
 
+sphnames = ['sph-16b2', 'sph-16b2s']
+sphs = [allsamples[sname] for sname in sphnames]
+
 dataTree = ROOT.TChain('events')
-dataTree.Add(config.photonSkimDir + '/sph-16b2.root')
+for sample in sphs:
+    dataTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
 dataTree.SetEstimate(dataTree.GetEntries() + 1)
 
 candTree = ROOT.TChain('events')
-candTree.Add(config.skimDir + '/sph-16b2_monoph.root')
+for sample in sphs:
+    candTree.Add(config.skimDir + '/' + sample.name + '_monoph.root')
 candTree.SetEstimate(candTree.GetEntries() + 1)
 
 # fit to halo distribution and parametrize
