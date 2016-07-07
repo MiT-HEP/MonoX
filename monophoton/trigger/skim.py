@@ -1,3 +1,5 @@
+#!/usr/bin/env python 
+
 import os
 import sys
 import ROOT
@@ -8,7 +10,8 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-snames = sys.argv[1:]
+obj = sys.argv[1]
+snames = sys.argv[2:]
 
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
@@ -19,13 +22,21 @@ tree = ROOT.TChain('events')
 
 for sname in snames:
     sample = allsamples[sname]
-    tree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
+    treePath = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/000*.root'
+    print "adding files from", treePath
+    tree.Add(treePath)
+
+    print tree.GetEntries()
 
     if sname == snames[0]:
-        if sname.startswith('sph-'):
+        if obj == 'muon':
+            treeType = ROOT.kDimuon
+        elif obj == 'electron':
+            treeType = ROOT.kDielectron
+        elif sname.startswith('sph-'):
             treeType = ROOT.kDiphoton
         elif sname.startswith('sel-'):
-            treeType = ROOT.kDielectron
+            treeType = ROOT.kElectronPhoton
         elif sname.startswith('smu-'):
             treeType = ROOT.kMuonPhoton
         elif sname.startswith('jht-'):
@@ -33,4 +44,8 @@ for sname in snames:
             
         suffix = sname[:sname.find('-')]
 
-ROOT.skim(tree, treeType, config.histDir + '/trigger/trigger_' + suffix + '.root')
+outDir = config.histDir + '/trigger'
+if not os.path.exists(outDir):
+    os.makedirs(outDir)
+
+ROOT.skim(tree, treeType, outDir + '/trigger_' + suffix + '_' + obj + '.root')

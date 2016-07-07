@@ -9,8 +9,8 @@ import array
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.Load('/home/yiiyama/cms/studies/fittools/libFitTools.so')
+# ROOT.gSystem.Load('libRooFit.so')
+# ROOT.gSystem.Load('/home/yiiyama/cms/studies/fittools/libFitTools.so')
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -19,11 +19,12 @@ from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
 
-sname = sys.argv[1]
-vname = sys.argv[2]
-tname = sys.argv[3]
+oname = sys.argv[1]
+sname = sys.argv[2]
+vname = sys.argv[3]
+tname = sys.argv[4]
 try:
-    outname = sys.argv[4]
+    outname = sys.argv[5]
 except IndexError:
     outname = ''
 
@@ -41,7 +42,8 @@ vconf = {
     'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
     'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
     'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
-    'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.))
+    'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
+    'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
 }
 
 vtitle, vexpr, baseline, binning = vconf[vname]
@@ -50,8 +52,9 @@ tconf = {
     'hlt': ('probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
     'l1': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
     'l1eg': ('probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
-    'l1hlt': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1&HLT')
-}
+    'l1hlt': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1&HLT'),
+    'lephlt': ('probe.matchHLT[0][0]', '1', 'HLT')
+    }
 
 passdef, denomdef, title = tconf[tname]
 
@@ -59,6 +62,14 @@ if sname == 'jht' and vname == 'pt' and (tname == 'l1' or tname == 'l1hlt'):
     binning = array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(14)])
 
 ## OBJECT DEFS
+
+lumi = 0.
+for sample in allsamples:
+    if not sample.data:
+        continue
+    if not sname+'-16' in sample.name:
+        continue
+    lumi += sample.lumi
 
 canvas = SimpleCanvas(lumi = lumi)
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
@@ -69,12 +80,12 @@ canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 work = ROOT.RooWorkspace('work', 'work')
 xvar = work.factory('x[-6500.,6500.]')
 
-fitter = ROOT.EfficiencyFitter.singleton()
+# fitter = ROOT.EfficiencyFitter.singleton()
 tmpfile = ROOT.TFile.Open('/tmp/trigeff_tmp.root', 'recreate')
 
 canvas.Clear()
 
-source = ROOT.TFile.Open(workDir + '/trigger_' + sname + '.root')
+source = ROOT.TFile.Open(workDir + '/trigger_' + sname + '_' + oname + '.root')
 tree = source.Get('triggerTree')
 
 if type(binning) is tuple:
@@ -91,8 +102,9 @@ print passing.GetEntries(), denom.GetEntries()
 
 eff = ROOT.TGraphAsymmErrors(passing, denom)
 
-outputFile.cd()
-eff.Write(vname + '_' + tname + '_' + sname)
+if outname:
+    outputFile.cd()
+    eff.Write(vname + '_' + tname + '_' + sname)
 
 canvas.SetGrid()
 
@@ -116,7 +128,7 @@ else:
 
 eff.GetYaxis().SetRangeUser(0., 1.2)
 
-canvas.printWeb('trigger', vname + '_' + tname + '_' + sname, logy = False)
+canvas.printWeb('trigger', vname + '_' + tname + '_' + sname + '_' + oname, logy = False)
 
 func = None
 marker = None
