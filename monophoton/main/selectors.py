@@ -219,14 +219,27 @@ def lowmt(sample, selector):
     Wenu-enriched control region.
     """
 
-    selector = candidate(sample, selector)
+    selector = monophotonBase(sample, selector)
+
+    if not sample.data:
+        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
+
+    for sel in photonFullSelection:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
     mtCut.setRange(0., 150.)
     selector.addOperator(mtCut)
+
+    dphi = selector.findOperator('PhotonMetDPhi')
+    dphi.invert(True)
 
     return selector
 
