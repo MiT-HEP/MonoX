@@ -127,9 +127,12 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 	  if (&tag == &muon)
 	    continue;
 	  
-	  if (tag.matchHLT[simpletree::fMu20])
+	  if ( !(tag.pt > 25. && tag.tight && tag.matchHLT[simpletree::fMu20]))
+	    continue;
+
+	  float mass = (muon.p4() + tag.p4()).M();
+	  if (mass > 61. && mass < 121.)
 	    break;
-	  
 	}
 	if (iTag == event.muons.size())
 	  continue;
@@ -150,9 +153,12 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 	  if (&tag == &electron)
 	    continue;
 	  
-	  if (tag.matchHLT[simpletree::fEl23Loose])
+	  if ( !(tag.pt > 25. && tag.tight && tag.matchHLT[simpletree::fEl23Loose]))
+	    continue;
+
+	  float mass = (electron.p4() + tag.p4()).M();
+	  if (mass > 61. && mass < 121.)
 	    break;
-	  
 	}
 	if (iTag == event.electrons.size())
 	  continue;
