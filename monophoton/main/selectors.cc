@@ -11,25 +11,33 @@
 //--------------------------------------------------------------------
 
 void
-EventSelector::initialize(char const* _outputPath, simpletree::Event& _event)
+EventSelector::initialize(char const* _outputPath, simpletree::Event& _event, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
   skimOut_ = new TTree("events", "Events");
   cutsOut_ = new TTree("cutflow", "cutflow");
 
-  if (_event.getInput()->GetBranch("weight")) { // is MC
+  // printf("Made files and trees. \n");
+
+  if (_isMC) { // is MC
     _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons"}); // , "promptFinalStates"}); // branches to be directly copied
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {
     _event.book(*skimOut_, {"run", "lumi", "event", "npv", "metFilters.cschalo"}); // branches to be directly copied
+    // printf("Copied the right stuff. \n");
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+    // printf("Made the empty branches. \n");
   }
+
+  // printf("Booked trees. \n");
 
   cutsOut_->Branch("run", &_event.run, "run/i");
   cutsOut_->Branch("lumi", &_event.lumi, "lumi/i");
   cutsOut_->Branch("event", &_event.event, "event/i");
+
+  // printf("Did run lumi event. \n");
 
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
@@ -37,6 +45,9 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event)
     if (cut)
       cut->registerCut(*cutsOut_);
   }
+
+  // printf("Added all the operators. \n");
+
 }
 
 void

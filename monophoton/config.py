@@ -1,6 +1,7 @@
 skimDir = '/afs/cern.ch/user/b/ballen/cms/hist/monophoton/skim/2016'
 histDir = '/home/ballen/cms/hist'
-ntuplesDir = '/afs/cern.ch/user/b/ballen/eos/cms/store/user/zdemirag/'
+# ntuplesdDir = '/afs/cern.ch/user/b/ballen/eos/cms/store/user/zdemirag/'
+ntuplesDir = '/eos/cms/store/user/zdemirag/'
 # ntuplesDir = '/afs/cern.ch/user/b/ballen/cernbox/user/s/snarayan/'
 dataNtuplesDir = ntuplesDir 
 photonSkimDir = ''

@@ -10,6 +10,7 @@ from datasets import allsamples
 import main.selectors as selectors
 import main.plotconfig as plotconfig
 import config
+from subprocess import Popen, PIPE
 
 defaults = {
     'monoph': selectors.candidate,
@@ -220,10 +221,18 @@ if __name__ == '__main__':
             print 'Reading', sname, 'from', sourceDir
 
             if args.neroInput:
-                if sample.data:
-                    tree.Add(sourceDir + '/NeroNtuples_Photon_9*.root')
-                else:
-                    tree.Add(sourceDir + '/NeroNtuples_*.root')
+
+                listFiles = Popen(['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/NeroNtuples_*.root'], stdout=PIPE, stderr=PIPE)
+
+                # (lout, lerr) = listFiles.communicate()
+                # print lout, '\n'
+                # print lerr, '\n'
+            
+                for line in listFiles.stdout:
+                    line = line.strip(' \n')
+                    print line
+                    tree.Add('root:://eoscms/' + sourceDir + '/' + line)
+
             else:
                 tree.Add(sourceDir + '/*.root')
 

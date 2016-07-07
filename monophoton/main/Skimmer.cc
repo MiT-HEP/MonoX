@@ -2,6 +2,7 @@
 
 #include "TString.h"
 #include "TTree.h"
+#include "TLeaf.h"
 
 #include "NeroToSimple.h"
 
@@ -29,40 +30,53 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   simpletree::Event event;
 
+  bool isMC = false;
+
   NeroToSimple* translator(0);
   if (_neroInput) {
     std::cout << "Setting up translator" << std::endl;
     translator = new NeroToSimple(*_input, event);
     _input->LoadTree(0);
+    //  _input->Draw("isRealData", "Entry$ == 0", "goff");
+    // if (_input->GetV1()[0] == 0.)
+    auto* br = _input->GetBranch("isRealData");
+    br->GetEntry(0);
+    if (br->GetLeaf("isRealData")->GetValue() == 0.)
+      isMC = true;
     auto* file(_input->GetCurrentFile());
-    auto* triggerNames(file->Get("triggerNames"));
+    auto* triggerNames(file->Get("nero/triggerNames"));
     if (triggerNames) {
       std::cout << "Translating trigger names" << std::endl;
       translator->setTriggerNames(triggerNames->GetTitle());
     }
     std::cout << "Translator set up" << std::endl;
   }
-  else
+  else {
     event.setAddress(*_input);
-  
-  for (auto* sel : selectors_) {
-    TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
-    std::cout << "Saving to " << outputPath << std::endl;
-    sel->initialize(outputPath, event);
-    std::cout << "Selector initialized" << std::endl;
+    if (_input->GetBranch("weight"))
+      isMC = true;
   }
   
-  std::cout << "Selectors set up" << std::endl;
+  printf("isMC %u \n", isMC);
+
+  for (auto* sel : selectors_) {
+    TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
+    // std::cout << "Saving to " << outputPath << std::endl;
+    sel->initialize(outputPath, event, isMC);
+    // std::cout << "Selector initialized" << std::endl;
+  }
+  
+  // std::cout<< "Selectors set up" << std::endl;
 
   long iEntry(0);
   TFile* currentFile(0);
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
-    //if (iEntry % 100000 == 1)
-    std::cout << " " << iEntry << std::endl;
+    if (iEntry % 100000 == 1)
+      std::cout << " " << iEntry << std::endl;
 
     if (translator)
       translator->translate();
-    std::cout << "Translated" << std::endl;
+    // std::cout << "Translated" << std::endl;
 
     for (auto* sel : selectors_)
       sel->selectEvent(event);
