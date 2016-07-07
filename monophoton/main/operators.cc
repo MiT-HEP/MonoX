@@ -39,6 +39,12 @@ HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
 // MetFilters
 //--------------------------------------------------------------------
 
+void
+MetFilters::setEventList(char const* _path, int _decision)
+{
+  eventLists_.emplace_back(EventList(_path), _decision);
+}
+
 bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 {
@@ -58,6 +64,17 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
     }
     else {
       if (filterConfig_[iF] == -1)
+        return false;
+    }
+  }
+
+  for (auto& eventList : eventLists_) {
+    if (eventList.first.inList(_event)) {
+      if (eventList.second == 1)
+        return false;
+    }
+    else {
+      if (eventList.second == -1)
         return false;
     }
   }
@@ -399,12 +416,21 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
     }
   }
 
-  nominalResult_ = dPhi_ > 2.;
+  if (invert_)
+    nominalResult_ = dPhi_ < 2.;
+  else
+    nominalResult_ = dPhi_ > 2.;
 
   // for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
   for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
-    if (dPhi > 2.)
-      return true;
+    if (invert_) {
+      if (dPhi > 2.)
+        return true;
+    }
+    else {
+      if (dPhi < 2.)
+        return true;
+    }
   }
   return false;
 }
