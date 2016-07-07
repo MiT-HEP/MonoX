@@ -338,7 +338,7 @@ def getConfig(confName):
         # MinIf$() somehow returns 0 when there is only one jet
 
         config = PlotConfig('monomu', ['smu-16b2'])
-        config.baseline = 'photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config.baseline = 'photons.medium[0] && photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'multiboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
