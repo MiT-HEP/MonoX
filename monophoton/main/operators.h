@@ -10,9 +10,12 @@
 #include "TRandom3.h"
 
 //#include "jer.h"
+#include "eventlist.h"
 
 #include <bitset>
 #include <map>
+#include <vector>
+#include <utility>
 
 //--------------------------------------------------------------------
 // Operator catalog
@@ -111,10 +114,12 @@ class MetFilters : public Cut {
 
   // 1->require pass, -1->require fail, 0->ignore
   void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
+  void setEventList(char const* path, int decision);
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   int filterConfig_[6]{1, 1, 1, 1, 1, 1};
+  std::vector<std::pair<EventList, int>> eventLists_;
 };
 
 class PhotonSelection : public Cut {
@@ -208,6 +213,7 @@ class PhotonMetDPhi : public Cut {
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
+  void invert(bool i) { invert_ = i; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
@@ -224,6 +230,7 @@ class PhotonMetDPhi : public Cut {
   MetVariations* metVar_{0};
 
   bool nominalResult_{false};
+  bool invert_{false};
 };
 
 class JetMetDPhi : public Cut {

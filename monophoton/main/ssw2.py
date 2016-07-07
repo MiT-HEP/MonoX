@@ -95,7 +95,7 @@ selectors = {
     'gj04-200': mc_gj + mc_qcd + mc_lowmt,
     'gj04-400': mc_gj + mc_qcd + mc_lowmt,
     'gj04-600': mc_gj + mc_qcd + mc_lowmt,
-    'gg-80': mc_cand + mc_qcd, 
+    'gg-80': mc_cand + mc_qcd + mc_lowmt,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tg': mc_cand + mc_lep,
