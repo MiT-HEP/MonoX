@@ -12,12 +12,15 @@ from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
+lumi = allsamples['sph-16b2'].lumi
+canvas = DataMCCanvas(lumi = lumi)
+
 dtree = r.TChain('events')
-dtree.Add(config.skimDir + '/sph-16*_monoph.root')
+dtree.Add(config.skimDir + '/sph-16b2_monoph.root')
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-16*_hfake.root')
-btree.Add(config.skimDir + '/sph-16*_efake.root')
+btree.Add(config.skimDir + '/sph-16b2_hfake.root')
+btree.Add(config.skimDir + '/sph-16b2_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
@@ -67,9 +70,6 @@ dmets = []
 bmets = []
 gmets = []
 mcmets = []
-
-lumi = allsamples['sph-16b2'].lumi
-canvas = DataMCCanvas(lumi = lumi)
 
 for region, sel in regions:
     binning = binnings[region]
