@@ -68,13 +68,8 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
     }
   }
 
-  //printf("Through filters, before lists \n");
-
-  // printf("run lumi event: %7u %10u %15u \n", _event.run, _event.lumi, _event.event);
-
   unsigned iList(0);
   for (auto& eventList : eventLists_) {
-    // printf("Filter %u \n", iList);
     iList++;
     if (eventList.first.inList(_event)) {
       if (eventList.second == 1)
@@ -84,10 +79,7 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
       if (eventList.second == -1)
         return false;
     }
-    // printf("pass \n");
   }
-
-  // printf("Through lists \n");
 
   return true;
 }
@@ -95,6 +87,14 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 //--------------------------------------------------------------------
 // PhotonSelection
 //--------------------------------------------------------------------
+
+void
+PhotonSelection::registerCut(TTree& cutsTree)
+{
+  cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
+
+  cutsTree.Branch(name_ + "Bits", cutRes_, name_ + TString::Format("Bits[%d]/O", nSelections));
+}
 
 void
 PhotonSelection::addBranches(TTree& _skimTree)
@@ -197,7 +197,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[Time] = std::abs(_photon.time) < 3.;
   cutres[SieieNonzero] = _photon.sieie > 0.001;
   cutres[SipipNonzero] = _photon.sipip > 0.001;
-  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33;
+  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33 < 0.95;
   cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
@@ -208,6 +208,9 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIsoTight] = _photon.passPhIso(2);
   cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_]);
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
+
+  for (unsigned iC(0); iC != nSelections; ++iC)
+    cutRes_[iC] = cutres[iC];
 
   // Wisconsin denominator def
   // if (photon.passHOverE(wp_) && photon.pixelVeto && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&

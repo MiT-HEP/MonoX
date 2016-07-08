@@ -153,7 +153,7 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
-  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
+  void registerCut(TTree& cutsTree) override;
 
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
@@ -178,6 +178,7 @@ class PhotonSelection : public Cut {
   typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
+  bool cutRes_[nSelections];
 
   bool nominalResult_{false};
 };
