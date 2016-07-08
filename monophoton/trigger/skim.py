@@ -22,7 +22,7 @@ tree = ROOT.TChain('events')
 
 for sname in snames:
     sample = allsamples[sname]
-    treePath = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/000*.root'
+    treePath = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root'
     print "adding files from", treePath
     tree.Add(treePath)
 
