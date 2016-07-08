@@ -23,19 +23,19 @@ def getConfig(confName):
 
     if confName == 'monoph':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
+        config.baseline = 'photons.pt[0] > 200. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 170.'
         config.sigGroups = [
 #            GroupSpec('add', 'ADD', samples = ['add-*']),
-#            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
-#            GroupSpec('dma', 'DM A', samples = ['dma-*']),
+            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
+            GroupSpec('dma', 'DM A', samples = ['dma-*']),
 #            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
 #            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-#            SampleSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-#            SampleSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
+            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
             GroupSpec('spike', 'Spikes', count = 2.1, color = None),
