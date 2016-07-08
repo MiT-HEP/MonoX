@@ -11,6 +11,7 @@ argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', 
 argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
 argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
 argParser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
+argParser.add_argument('--scale', '-S', action = 'store', metavar = 'LUMI (1/fb)', dest = 'lumi', type=float, default = -1., help = 'Lumi to scale to for projecting.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -40,6 +41,9 @@ variable = args.variable
 lumi = 0.
 for sName in monophConfig.obs.samples:
     lumi += allsamples[sName].lumi
+
+if args.lumi > 0.:
+    lumiScale = args.lumi * 1000. / lumi
 
 # gather process names
 signal = args.model
@@ -91,6 +95,9 @@ def makeProcessBlock(processes, procs, binLow = 1):
 
         procs.append(process)
 
+        if args.lumi > 0.:
+            rate *= lumiScale
+
         processBlock[0] += cols % variable
         processBlock[1] += cols % process
         processBlock[2] += cold % iP
@@ -136,6 +143,9 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
                         up = getHist(proc, syst + 'Up').Integral(binLow, hist.GetNbinsX())
                         down = getHist(proc, syst + 'Down').Integral(binLow, hist.GetNbinsX())
                         relunc = (up - down) * 0.5 / nominal
+
+                    if args.lumi > 0. and proc in ['efake', 'halo']:
+                        relunc *= 1 / math.sqrt(lumiScale)
 
                     words.append('%.3f' % (1. + relunc))
                     vals[proc] = 1. + relunc
@@ -206,7 +216,10 @@ for key in source.GetListOfKeys():
 # set the output name
 outputName = args.outputName
 if not outputName:
-    outputName = args.model + '-' + variable + '.dat'
+    if args.lumi > 0.:
+        outputName = args.model + '-' + variable + '-' + str(int(args.lumi)) + '.dat'
+    else:
+        outputName = args.model + '-' + variable +'.dat'
 
 # start writing cards
 

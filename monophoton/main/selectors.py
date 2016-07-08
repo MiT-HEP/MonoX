@@ -46,6 +46,10 @@ puWeight = puWeightSource.Get('puweight')
 photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
+eventFiltersPath = '/scratch5/yiiyama/eventlists'
+eventLists = os.listdir(eventFiltersPath)
+print eventLists
+
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyWeight = hadproxySource.Get('tfactWorst')
 hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
@@ -82,7 +86,6 @@ def monophotonBase(sample, selector):
 
     operators += [
         'MetFilters',
-        'EcalCrackVeto',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
@@ -135,7 +138,6 @@ def monophotonBase(sample, selector):
         trigCorr.setDownFormula(trigCorrDownFormula)
         selector.addOperator(trigCorr)
 
-    selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
@@ -150,6 +152,10 @@ def candidate(sample, selector):
     """
 
     selector = monophotonBase(sample, selector)
+
+    if sample.data:
+        for eventList in eventLists:
+            selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
 
     if sample.data:
         selector.setPartialBlinding(4, 274422)
@@ -551,8 +557,17 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
         selector = monophotonBase(sample, selector)
 
         # 0->CSC halo tagger
-        if not CSCFilter:
-            selector.findOperator('MetFilters').setFilter(0, -1)
+        # if not CSCFilter:
+            # selector.findOperator('MetFilters').setFilter(0, -1)
+
+        if sample.data:
+            for eventList in eventLists:
+                if 'Halo' in eventList and CSCFilter is None:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 0)
+                elif 'Halo' in eventList and not CSCFilter:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), -1)
+                else:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
 
         photonSel = selector.findOperator('PhotonSelection')
 
@@ -586,7 +601,7 @@ def haloMIP(norm):
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
-    return sampleDefiner(norm, inverts, removes, appends)
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = None)
 
 def haloCSC(norm):
     """

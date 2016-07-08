@@ -83,8 +83,8 @@ selectors = {
     'znng-130': mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    # 'wg': mc_cand + mc_lowmt,
-    'wglo': mc_cand + mc_lowmt,
+    # 'wg': mc_cand + mc_lep + mc_lowmt,
+    'wglo': mc_cand + mc_lep + mc_lowmt,
     'gj-40': mc_gj + mc_qcd + mc_lowmt,
     'gj-100': mc_gj + mc_qcd + mc_lowmt,
     'gj-200': mc_gj + mc_qcd + mc_lowmt,
@@ -216,6 +216,11 @@ if __name__ == '__main__':
 
             print 'Reading', sname, 'from', sourceDir
             tree.Add(sourceDir + '/*.root')
+
+        print tree.GetEntries()
+        if tree.GetEntries() == 0:
+            print "Tree has no entries. QUITTING!!"
+            sys.exit()
     
         for selconf in selectors[sname]:
             if type(selconf) == str:

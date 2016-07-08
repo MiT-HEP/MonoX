@@ -17,6 +17,8 @@
   veto_eff/skim.py monoph znng
   veto_eff/compute.py
 
+. At this point, all the weights for MC samples have been updated and you can reskim all the MC samples
+
 . Run the e->photon fake rate study. Copy the output of compute to data/efake_data_pt.root
   condor-run $PWD/tp/skim.py -j sel-X smu-X dy-50 gg-80 tt wlnu ww wz zz
   tp/efake_fit.py mc highpt

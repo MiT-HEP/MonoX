@@ -7,5 +7,6 @@ photonSkimDir = '/scratch5/yiiyama/hist/simpletree18/photonskim/'
 import os
 basedir = os.path.dirname(os.path.realpath(__file__))
 
-libsimpletree = 'libMitFlatDataFormats.so'
+# libsimpletree = 'libMitFlatDataFormats.so'
+libsimpletree = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/obj/libsimpletree.so'
 dataformats = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats'
