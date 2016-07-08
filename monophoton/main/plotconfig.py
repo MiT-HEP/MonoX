@@ -14,7 +14,7 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b2', 'sph-16b2s']
+photonData = ['sph-16b2'] # , 'sph-16b2s']
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'

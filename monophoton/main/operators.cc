@@ -47,7 +47,7 @@ MetFilters::setEventList(char const* _path, int _decision)
 
 bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
-{
+{ 
   bool fired[] = {
     _event.metFilters.cschalo,
     _event.metFilters.hbhe,
@@ -68,7 +68,14 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
     }
   }
 
+  //printf("Through filters, before lists \n");
+
+  // printf("run lumi event: %7u %10u %15u \n", _event.run, _event.lumi, _event.event);
+
+  unsigned iList(0);
   for (auto& eventList : eventLists_) {
+    // printf("Filter %u \n", iList);
+    iList++;
     if (eventList.first.inList(_event)) {
       if (eventList.second == 1)
         return false;
@@ -77,7 +84,10 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
       if (eventList.second == -1)
         return false;
     }
+    // printf("pass \n");
   }
+
+  // printf("Through lists \n");
 
   return true;
 }

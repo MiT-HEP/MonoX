@@ -216,6 +216,11 @@ if __name__ == '__main__':
 
             print 'Reading', sname, 'from', sourceDir
             tree.Add(sourceDir + '/*.root')
+
+        print tree.GetEntries()
+        if tree.GetEntries() == 0:
+            print "Tree has no entries. QUITTING!!"
+            sys.exit()
     
         for selconf in selectors[sname]:
             if type(selconf) == str:
