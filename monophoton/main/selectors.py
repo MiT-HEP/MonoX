@@ -36,7 +36,7 @@ photonFullSelection = [
     'Time',
     'SieieNonzero',
     'SipipNonzero',
-    'E2E995',
+#    'E2E995',
     'NoisyRegion'
 ]
 
