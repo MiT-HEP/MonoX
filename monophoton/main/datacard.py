@@ -217,7 +217,7 @@ for key in source.GetListOfKeys():
 outputName = args.outputName
 if not outputName:
     if args.lumi > 0.:
-        outputName = args.model + '-' + variable + '-' + str(round(args.lumi, 0)) + '.dat'
+        outputName = args.model + '-' + variable + '-' + str(int(args.lumi)) + '.dat'
     else:
         outputName = args.model + '-' + variable +'.dat'
 
