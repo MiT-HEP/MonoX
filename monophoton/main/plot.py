@@ -331,6 +331,7 @@ def printCounts(counters, plotConfig):
     for sspec in plotConfig.signalPoints:
         counter = counters[sspec.name]
         print ('%+12s  ' + prec + ' +- ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1))
+        # print ('%+12s  ' + prec + ' +- ' + prec + '  S/sqrt(B): ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1), counter.GetBinContent(1) / math.sqrt(bkgTotal) )
     
     print '====================='
     print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
