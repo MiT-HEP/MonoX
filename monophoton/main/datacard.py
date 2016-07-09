@@ -12,6 +12,7 @@ argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'addObs
 argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
 argParser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
 argParser.add_argument('--scale', '-S', action = 'store', metavar = 'LUMI (1/fb)', dest = 'lumi', type=float, default = -1., help = 'Lumi to scale to for projecting.')
+argParser.add_argument('--binbybin', '-b', action ='store_true', dest = 'bbb', default = False, help = 'Make a datacard per bin in histogram (upwards inclusive).')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -223,7 +224,7 @@ if not outputName:
 
 # start writing cards
 
-if args.model == 'nomodel':
+if args.model == 'nomodel' or args.bbb:
     # Model independent
     
     nBins = obs.GetNbinsX()
@@ -238,11 +239,12 @@ if args.model == 'nomodel':
         if args.addObs:
             obsBlock.append('observation %.0f' % obs.Integral(binLow, nBins))
         else:
-            obsBlock.append('observation 0' % obs.Integral(binLow, nBins))
+            obsBlock.append('observation 0')
 
         procs = []
         processBlock, signalScale = makeProcessBlock(processes, procs, binLow = binLow)
         # this is nomodel; ignore signalScale (is 1 anyway)
+        # now allowing this scan for any model, so is important again
 
         headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
@@ -261,7 +263,7 @@ if args.model == 'nomodel':
         else:
             outName += ('_%f' % bound) + ext
 
-        writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock])
+        writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock], signalScale = signalScale)
         systLists[bound] = systList
 
     header = "%-20s" % " "
