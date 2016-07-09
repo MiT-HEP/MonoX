@@ -14,7 +14,8 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b2'] # , 'sph-16b2s']
+photonData = ['sph-16b2', 'sph-16b2s']
+photonDataPrescaled = [('sph-16b2', 1)] # , ('sph-16b2s', 4)]
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
@@ -22,19 +23,22 @@ mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photon
 def getConfig(confName):
 
     if confName == 'monoph':
-        config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.pt[0] > 200. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
+        config = PlotConfig('monoph')
+        for sname, prescale in photonDataPrescaled:
+            config.addObs(sname, prescale = prescale)
+
+        config.baseline = 'photons.pt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 170.'
         config.sigGroups = [
 #            GroupSpec('add', 'ADD', samples = ['add-*']),
-            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
+#            GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
             GroupSpec('dma', 'DM A', samples = ['dma-*']),
 #            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
 #            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+#            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
             SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [

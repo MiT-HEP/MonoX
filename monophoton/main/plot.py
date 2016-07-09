@@ -14,10 +14,9 @@ sys.path.append(basedir)
 DOSYSTEMATICS = True
 
 # global variables to be set in __main__
-lumi = 0.
 allsamples = None 
 
-def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', template = None, postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', template = None, lumi = 0., postscale = 1., outFile = None):
     """
     Fill and write the group histogram and its systematic variations.
     For normal group with a list of samples, stack up histograms from the samples.
@@ -55,7 +54,12 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                 hname = ''
     
             # add up histograms from individual samples (saved to sampleDir)
-            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+            sample = allsamples[sname]
+            if sample.data:
+                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+            else:
+                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, lumi = lumi, outDir = sampleDir)
+
             shist.Scale(group.scale)
             hist.Add(shist)
             shists[sname] = shist
@@ -63,7 +67,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     else:
         norm = template.GetSumOfWeights()
         for iC in range(template.GetNcells()):
-            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm)
+            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm / postscale)
 
     varhists = {}
 
@@ -127,8 +131,14 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                             hname = sname + '_' + group.region + '_' + varname
                         else:
                             hname = sname + '_' + varname
+
+                        sample = allsamples[sname]
         
-                        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                        if sample.data:
+                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                        else:
+                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, lumi = lumi, outDir = sampleDir)
+
                         shist.Scale(group.scale)
                         vhists[iV].Add(shist)
     
@@ -163,7 +173,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     return hist
 
 
-def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., outDir = None, plotAcceptance = False):
+def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., lumi = 0., outDir = None, plotAcceptance = False):
     """
     Create a histogram object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
     Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
@@ -400,7 +410,6 @@ if __name__ == '__main__':
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
-    argParser.add_argument('--prescale', '-b', metavar = 'PRESCALE', dest = 'prescale', type = int, default = 1, help = 'Prescale for prescaling.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
@@ -457,11 +466,13 @@ if __name__ == '__main__':
         print '--all-signal set but no output file is given.'
         sys.exit(1)
 
-    # lumi defined in the global scope for getHist function
+    fullLumi = 0.
+    effLumi = 0.
     for sName in plotConfig.obs.samples:
-        lumi += allsamples[sName].lumi
+        fullLumi += allsamples[sName].lumi
+        effLumi += allsamples[sName].lumi / plotConfig.prescales[sName]
 
-    canvas = DataMCCanvas(lumi = lumi)
+    canvas = DataMCCanvas()
 
     if args.plotDir:
         if args.plotDir == '-':
@@ -500,12 +511,14 @@ if __name__ == '__main__':
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:
-            canvas.lumi = lumi / args.prescale
-            prescale = args.prescale
-            postscale = float(args.prescale)
+            canvas.lumi = effLumi
+            lumi = effLumi
+            # for data-driven background estimates under presence of prescales
+            # multiply the yields by 1/postscale
+            postscale = fullLumi / effLumi
         else:
-            canvas.lumi = lumi
-            prescale = 1
+            canvas.lumi = fullLumi
+            lumi = fullLumi
             postscale = 1.
 
         # make background histograms
@@ -513,7 +526,7 @@ if __name__ == '__main__':
         bkgTotal = vardef.makeHist('bkgtotal')
         
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
-            hist = groupHist(group, vardef, plotConfig, args.skimDir, postscale = postscale, outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
 
             bkgTotal.Add(hist)
 
@@ -527,6 +540,7 @@ if __name__ == '__main__':
 
         # then over groups without distributions (no samples but count set)
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
+            # cannot use lumi because cross section is not set
             hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
 
             if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
@@ -537,7 +551,7 @@ if __name__ == '__main__':
             usedPoints = []
 
             for sspec in plotConfig.signalPoints:
-                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, postscale = postscale, outFile = outFile)
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
                 usedPoints.append(sspec.name)
 
                 if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
@@ -550,7 +564,7 @@ if __name__ == '__main__':
             for group in plotConfig.sigGroups:
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
-                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, postscale = postscale, outFile = outFile)
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
                         usedPoints.append(sample.name)
 
         print 'data_obs'
@@ -558,7 +572,7 @@ if __name__ == '__main__':
         obshist = vardef.makeHist('data_obs', outDir = outFile)
 
         for sname in plotConfig.obs.samples:
-            obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = prescale, outDir = sampleDir))
+            obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
 
         writeHist(obshist)
         formatHist(obshist, vardef)
@@ -591,7 +605,7 @@ if __name__ == '__main__':
             canvas.xtitle = obshist.GetXaxis().GetTitle()
             canvas.ytitle = obshist.GetYaxis().GetTitle()
 
-            canvas.selection = vardef.formSelection(plotConfig, prescale = prescale)
+            canvas.selection = vardef.formSelection(plotConfig)
 
             if vardef.logy is None:
                 logy = True
@@ -604,7 +618,7 @@ if __name__ == '__main__':
 
             if vardef.fullyBlinded():
                 # remove ratio pad. Hack to use SimpleCanvas interface
-                simple = SimpleCanvas(lumi = lumi)
+                simple = SimpleCanvas(lumi = canvas.lumi)
 
                 garbage = []
                 cnv = ROOT.TCanvas('tmp', 'tmp', 600, 600)

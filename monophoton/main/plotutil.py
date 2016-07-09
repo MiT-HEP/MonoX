@@ -181,17 +181,22 @@ class VariableDef(object):
         return expr
 
 class PlotConfig(object):
-    def __init__(self, name, obsSamples):
+    def __init__(self, name, obsSamples = []):
         self.name = name # name serves as the default region selection (e.g. monoph)
         self.baseline = '1'
         self.fullSelection = ''
         self.obs = GroupSpec('data_obs', 'Observed', samples = obsSamples)
+        self.prescales = dict([(s, 1) for s in obsSamples])
         self.sigGroups = []
         self.signalPoints = []
         self.bkgGroups = []
         self.variables = []
         self.sensitiveVars = []
         self.treeMaker = ''
+
+    def addObs(self, sample, prescale = 1):
+        self.obs.samples.append(sample)
+        self.prescales[sample] = prescale
 
     def getVariable(self, name):
         return next(variable for variable in self.variables if variable.name == name)
