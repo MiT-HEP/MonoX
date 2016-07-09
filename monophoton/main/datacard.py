@@ -8,7 +8,7 @@ argParser = ArgumentParser(description = 'Write combine data card.')
 argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name. Use "nomodel" for model-independent limits.')
 argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
-argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
+argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'addObs', help = 'Add observed information.')
 argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
 argParser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
 argParser.add_argument('--scale', '-S', action = 'store', metavar = 'LUMI (1/fb)', dest = 'lumi', type=float, default = -1., help = 'Lumi to scale to for projecting.')
@@ -40,7 +40,7 @@ variable = args.variable
 
 lumi = 0.
 for sName in monophConfig.obs.samples:
-    lumi += allsamples[sName].lumi
+    lumi += allsamples[sName].lumi / monophConfig.prescales[sName]
 
 if args.lumi > 0.:
     lumiScale = args.lumi * 1000. / lumi
@@ -233,9 +233,12 @@ if args.model == 'nomodel':
     # iterate over bins and make one datacard for each integral
     for binLow in range(1, nBins + 1):
         obsBlock = [
-            'bin         ' + variable,
-            'observation %.0f' % obs.Integral(binLow, nBins)
+            'bin         ' + variable
         ]
+        if args.addObs:
+            obsBlock.append('observation %.0f' % obs.Integral(binLow, nBins))
+        else:
+            obsBlock.append('observation 0' % obs.Integral(binLow, nBins))
 
         procs = []
         processBlock, signalScale = makeProcessBlock(processes, procs, binLow = binLow)
@@ -286,9 +289,12 @@ elif args.shape:
     ]
 
     obsBlock = [
-        'bin         ' + variable,
-        'observation %.0f' % obs.GetSumOfWeights(),
+        'bin         ' + variable
     ]
+    if args.addObs:
+        obsBlock.append('observation %.0f' % obs.GetSumOfWeights())
+    else:
+        obsBlock.append('observation 0')
 
     procs = []
     processBlock, signalScale = makeProcessBlock(processes, procs)
@@ -302,8 +308,11 @@ elif args.shape:
 else:
     obsBlock = [
         'bin         ' + variable,
-        'observation %.0f' % obs.GetSumOfWeights(),
     ]
+    if args.addObs:
+        obsBlock.append('observation %.0f' % obs.GetSumOfWeights())
+    else:
+        obsBlock.append('observation 0')
 
     procs = []
     processBlock, signalScale = makeProcessBlock(processes, procs)

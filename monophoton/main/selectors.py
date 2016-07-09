@@ -36,7 +36,7 @@ photonFullSelection = [
     'Time',
     'SieieNonzero',
     'SipipNonzero',
-    'E2E995',
+#    'E2E995',
     'NoisyRegion'
 ]
 
@@ -156,10 +156,6 @@ def candidate(sample, selector):
     if sample.data:
         for eventList in eventLists:
             selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
-
-    if sample.data:
-        selector.setPartialBlinding(4, 274422)
-
     else:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
