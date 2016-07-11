@@ -9,10 +9,10 @@ sel-15d          "SingleElectron (2015D)"            1714.5               774374
 smu-15d          "SingleMuon (2015D)"                1714.5               45163000   -                    filefi/043           SingleMuon+Run2015D-16Dec2015-v1+AOD
 sph-15d          "SinglePhoton (2015D)"              1714.5               18885644   -                    filefi/043           SinglePhoton+Run2015D-16Dec2015-v1+AOD
 ### Data 2016
-sph-16b2         "SinglePhoton (2016B)"              2099.5               22332938   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
+sph-16b2         "SinglePhoton (2016B)"              2253.2               22332938   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
 sel-16b2         "SingleElectron (2016B)"            4624.2               83767591   -                    filefi/044           SingleElectron+Run2016B-PromptReco-v2+AOD
 smu-16b2         "SingleMuon (2016B)"                5064.5               54814033   -                    filefi/044           SingleMuon+Run2016B-PromptReco-v2+AOD
-sph-16b2s        "SinglePhoton (2016B)"              2373.7               22332938   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
+sph-16b2s        "SinglePhoton (2016B)"              2591.5               22332938   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
 ### SM MC
 dy-50            "Z#rightarrowll"                    6025                 28619775   4.49461518006e+11    filefi/044           DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 dy-50-100        "Z#rightarrowll"                    148.2                8408282    8.40828174738e+06    filefi/044           DYJetsToLL_M-50_HT-100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3_ext1-v1+AODSIM
