@@ -14,7 +14,8 @@ import config
 
 ### Getting cut values from simple tree ###
 
-ROOT.gSystem.Load('libMitFlatDataFormats.so')
+# ROOT.gSystem.Load('libMitFlatDataFormats.so')
+ROOT.gSystem.Load('../MitFlat/DataFormats/obj/libsimpletree.so')
 ROOT.gSystem.AddIncludePath('-I' + '../MitFlat/DataFormats/interface')
 
 Locations = [ 'barrel', 'endcap' ]
@@ -68,12 +69,12 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2'],'Fit Template from SinglePhoton Data')
+Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s'],'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
                                  ]
                 }
 
@@ -160,9 +161,10 @@ def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
 
     print 'Applying selection:'
     if _sel:
+        _sel = _sel + ' && !(run > %s)' % config.runCutOff
         _sel = 'weight * (%s)' % _sel
     else:
-        _sel = 'weight'
+        _sel = 'weight * (%s)' % ('!(run > %s)' % config.runCutOff)
     print _sel, '\n'
     
     tree.Draw(_temp+">>"+_skim[0], _sel, "goff")

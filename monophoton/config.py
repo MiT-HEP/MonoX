@@ -4,6 +4,10 @@ ntuplesDir = '/scratch5/yiiyama/hist/simpletree18/t2mit/'
 dataNtuplesDir = ntuplesDir 
 photonSkimDir = '/scratch5/yiiyama/hist/simpletree18/photonskim/'
 
+lumiDict = { '275125' : 4000.0 }
+runCutOff = '275125'
+jsonLumi = lumiDict[runCutOff]
+
 import os
 basedir = os.path.dirname(os.path.realpath(__file__))
 
