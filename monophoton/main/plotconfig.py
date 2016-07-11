@@ -57,6 +57,7 @@ def getConfig(confName):
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
             VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', [170., 230., 290., 350., 410., 500., 600., 700., 1000.], unit = 'GeV', overflow = True),
+            VariableDef('metScan', 'E_{T}^{miss}', 't1Met.met', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True), # blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.pt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
             VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.pt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
@@ -86,7 +87,7 @@ def getConfig(confName):
         ]
 
         for variable in list(config.variables): # need to clone the list first!
-            if variable.name not in ['met', 'metWide', 'metHigh']:
+            if variable.name not in ['met', 'metWide', 'metHigh', 'metScan']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
                 config.variables.remove(variable)
 
