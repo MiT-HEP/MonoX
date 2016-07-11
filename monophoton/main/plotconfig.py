@@ -15,7 +15,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 photonData = ['sph-16b2', 'sph-16b2s']
-photonDataPrescaled = [('sph-16b2', 1)] # , ('sph-16b2s', 4)]
+photonDataPrescaled = [('sph-16b2', 1), ('sph-16b2s', 4)]
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.pt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
@@ -24,6 +24,7 @@ def getConfig(confName):
 
     if confName == 'monoph':
         config = PlotConfig('monoph')
+        config.blind = True
         for sname, prescale in photonDataPrescaled:
             config.addObs(sname, prescale = prescale)
 
@@ -95,7 +96,7 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
 
-        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'phoPtHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
+        config.sensitiveVars = ['met', 'metWide', 'metHigh', 'metScan', 'phoPtHighMet', 'phoPtScanHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
         
         config.treeMaker = 'MonophotonTreeMaker'
 
