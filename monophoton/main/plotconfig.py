@@ -33,13 +33,15 @@ def getConfig(confName):
 #            GroupSpec('add', 'ADD', samples = ['add-*']),
             GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
             GroupSpec('dma', 'DM A', samples = ['dma-*']),
+            GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
 #            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
 #            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
             SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-            SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30) # 0.07827/pb 
+            SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30), # 0.07827/pb 
+            SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
             GroupSpec('spike', 'Spikes', count = 2.1, color = None),
@@ -71,7 +73,7 @@ def getConfig(confName):
             VariableDef('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt > 100.'),
             VariableDef('jetPt', 'p_{T}^{jet}', 'jets.pt', (20, 30., 530.) , unit = 'GeV', cut = 'jets.pt > 30', overflow = True),
             VariableDef('jetPtCorrection',  '#Delta p_{T}^{jet} (raw, corrected)', 'jets.pt - jets.ptRaw', (11, -10., 100.), unit = 'GeV', cut = 'jets.pt > 30'),
-            VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (15, 0., 3.)),
+            VariableDef('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.pt[0] / t1Met.met', (30, 0., 3.)),
             VariableDef('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.pt[0] / jets.pt[0]', (20, 0., 10.)),
             VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
