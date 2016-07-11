@@ -219,8 +219,8 @@ if __name__ == '__main__':
 
         print tree.GetEntries()
         if tree.GetEntries() == 0:
-            print "Tree has no entries. QUITTING!!"
-            sys.exit()
+            print "Tree has no entries. Skipping."
+            continue
     
         for selconf in selectors[sname]:
             if type(selconf) == str:
