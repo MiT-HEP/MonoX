@@ -28,7 +28,7 @@ import config
 import ROOT
 
 normtag = '/afs/cern.ch/user/l/lumipro/public/normtag_file/normtag_DATACERT.json'
-samples = ['sph-16b2', 'sph-16b2s']
+samples = ['sph-16b2']
 
 print 'Calculating integrated luminosity for', samples, 'from', config.ntuplesDir
 print 'Normtag is', normtag
@@ -81,12 +81,12 @@ for run in sorted(allLumis.keys()):
 with open('_lumis_tmp.txt', 'w') as json:
     json.write('{' + text[:-1] + '\n}')
 
-sshOpts = '-oGSSAPIDelegateCredentials=yes -oGSSAPITrustDns=yes'
+sshOpts = ['-oGSSAPIDelegateCredentials=yes', '-oGSSAPITrustDns=yes']
 
-proc = subprocess.Popen(['scp', sshOpts, '_lumis_tmp.txt', 'lxplus.cern.ch:./_lumis_tmp.txt'])
+proc = subprocess.Popen(['scp'] + sshOpts + ['_lumis_tmp.txt', 'lxplus.cern.ch:./_lumis_tmp.txt'])
 proc.communicate()
 
-proc = subprocess.Popen(['ssh', sshOpts, 'lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.0.3/bin:$PATH;brilcalc lumi --normtag ' + normtag + ' -i _lumis_tmp.txt'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.0.3/bin:$PATH;brilcalc lumi --normtag ' + normtag + ' -i _lumis_tmp.txt'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 
 out = proc.communicate()[0]
 
@@ -124,9 +124,9 @@ for run in sorted(allLumis.keys()):
 
     text += '%d]\n' % current
     text += '    ]\n'
-    text += '  },\n'
+    text += '  },'
 
 with open(basedir + '/data/lumis.txt', 'w') as json:
-    json.write('{' + text[:-1] + '\n}')
+    json.write('{' + text[:-1] + '\n}\n')
 
 os.remove('_lumis_tmp.txt')
