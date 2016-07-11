@@ -52,10 +52,11 @@ processes = [signal] + [g.name for g in monophConfig.bkgGroups]
 
 # determine column widths (for human-readability)
 colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
-cols = '%-' + str(colw) + 's'
+cols = '%' + str(colw) + 's'
+coln = '%-' + str(colw) + 's'
 colsr = '%' + str(colw) + 's'
-colf = '%-' + str(colw) + '.2f'
-cold = '%-' + str(colw) + 'd'
+colf = '%' + str(colw) + '.2f'
+cold = '%' + str(colw) + 'd'
 
 
 def getHist(name, syst = ''):
@@ -115,7 +116,7 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
     for syst in sorted(nuisances.keys()):
         procs = nuisances[syst]
 
-        line = cols % syst
+        line = coln % syst
 
         words = []
 
@@ -237,14 +238,16 @@ if args.model == 'nomodel' or args.bbb:
             'bin         ' + variable
         ]
         if args.addObs:
-            obsBlock.append('observation %.0f' % obs.Integral(binLow, nBins))
+            nObs = int(obs.Integral(binLow, nBins))
+            if args.lumi > 0.:
+                nObs = int(nObs * lumiScale)
+
+            obsBlock.append('observation %d' % nObs)
         else:
             obsBlock.append('observation 0')
 
         procs = []
         processBlock, signalScale = makeProcessBlock(processes, procs, binLow = binLow)
-        # this is nomodel; ignore signalScale (is 1 anyway)
-        # now allowing this scan for any model, so is important again
 
         headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
@@ -294,7 +297,11 @@ elif args.shape:
         'bin         ' + variable
     ]
     if args.addObs:
-        obsBlock.append('observation %.0f' % obs.GetSumOfWeights())
+        nObs = int(obs.GetSumOfWeights())
+        if args.lumi > 0.:
+            nObs = int(nObs * lumiScale)
+
+        obsBlock.append('observation %d' % nObs)
     else:
         obsBlock.append('observation 0')
 
@@ -312,7 +319,11 @@ else:
         'bin         ' + variable,
     ]
     if args.addObs:
-        obsBlock.append('observation %.0f' % obs.GetSumOfWeights())
+        nObs = int(obs.GetSumOfWeights())
+        if args.lumi > 0.:
+            nObs = int(nObs * lumiScale)
+
+        obsBlock.append('observation %d' % nObs)
     else:
         obsBlock.append('observation 0')
 
