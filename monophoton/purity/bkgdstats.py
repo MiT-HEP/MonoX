@@ -163,7 +163,7 @@ tempName = os.path.join(toysDir, 'GenDist')
 tempCanvas.SaveAs(tempName+'.pdf')
 tempCanvas.SaveAs(tempName+'.png')
 tempCanvas.SaveAs(tempName+'.C')
-
+ 
 for iToy in range(1,101):
     print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
     toyHists = initialHists[:3]

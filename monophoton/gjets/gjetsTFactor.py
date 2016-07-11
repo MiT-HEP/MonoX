@@ -12,15 +12,16 @@ from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
-lumi = allsamples['sph-16b2'].lumi
+lumi = min(config.jsonLumi, allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 dtree = r.TChain('events')
-dtree.Add(config.skimDir + '/sph-16b2_monoph.root')
+dtree.Add(config.skimDir + '/sph-16*_monoph.root')
+print dtree.GetEntries()
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-16b2_hfake.root')
-btree.Add(config.skimDir + '/sph-16b2_efake.root')
+btree.Add(config.skimDir + '/sph-16*_hfake.root')
+btree.Add(config.skimDir + '/sph-16*_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
@@ -74,17 +75,19 @@ mcmets = []
 for region, sel in regions:
     binning = binnings[region]
 
+    dataSel = sel + ' && !(run > %s)' % config.runCutOff
+
     dname = 'dmet'+region
     dmet = r.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     dmet.SetMinimum(0.002)
     dmet.Sumw2()
-    dtree.Draw('t1Met.met>>'+dname, sel, 'goff')
+    dtree.Draw('t1Met.met>>'+dname, dataSel, 'goff')
 
     bname = 'bmet'+region
     bmet = r.TH1D(bname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     bmet.SetMinimum(0.002)
     bmet.Sumw2()
-    btree.Draw('t1Met.met>>'+bname, 'weight * '+sel, 'goff')
+    btree.Draw('t1Met.met>>'+bname, 'weight * (%s)' % dataSel, 'goff')
 
     bmcmet = r.TH1D(bname+'MC', ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
     bmcmet.Sumw2()
