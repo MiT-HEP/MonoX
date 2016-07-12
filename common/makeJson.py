@@ -3,18 +3,24 @@
 #-------------------------------------------------------------------------------
 # makeJson.py
 #
-# This script is used to make a lumi list JSON file out of the output from
-# the RunLumiListMod.
+# This script is used to make a lumi list JSON file out of the output from 
+# generic ntuples.
 # Usage: makeJson.py <ROOT file> [<ROOT file2> ...]
 # Wildcard * is allowed for the ROOT file path specification.
 #
 #-------------------------------------------------------------------------------
 
 import sys
+import os
 import array
 from argparse import ArgumentParser
 import ROOT
 ROOT.gROOT.SetBatch(True)
+
+thisdir = os.path.dirname(os.path.realpath(__file__))
+
+ROOT.gROOT.LoadMacro(thisdir + '/GoodLumiFilter.cc+')
+ROOT.gROOT.LoadMacro(thisdir + '/MakeLumiList.cc+')
 
 argParser = ArgumentParser(description = 'Make JSON lumi list')
 argParser.add_argument('paths', metavar = 'PATH', nargs = '*', help = 'Paths to ROOT files (wildcard allowed) containing lumi list trees.')
@@ -30,18 +36,23 @@ sys.argv = []
 
 mask = {}
 if args.mask:
+    mask = ROOT.GoodLumiFilter()
     try:
         with open(args.mask) as maskFile:
             maskJSON = eval(maskFile.read())
 
         for runStr, lumiRanges in maskJSON.items():
             run = int(runStr)
-            mask[run] = []
             for begin, end in lumiRanges:
-                mask[run] += range(begin, end + 1)
+                for lumi in range(begin, end + 1):
+                    mask.addLumi(run, lumi)
+
     except:
         print 'Could not parse mask JSON', args.mask
         sys.exit(1)
+
+else:
+    mask = None
 
 source = ROOT.TChain(args.treeName)
 if args.listFile:
@@ -55,51 +66,4 @@ else:
     for path in args.paths:
         source.Add(path)
 
-runArr = array.array('i', [0])
-lumiArr = array.array('i', [0])
-
-source.SetBranchAddress(args.runBranchName, runArr)
-source.SetBranchAddress(args.lumiBranchName, lumiArr)
-
-allLumis = {}
-
-iEntry = 0
-while source.GetEntry(iEntry) > 0:
-    iEntry += 1
-
-    run = int(runArr[0])
-    lumi = int(lumiArr[0])
-
-    if len(mask):
-        if run not in mask or lumi not in mask[run]:
-            continue
-
-    if run not in allLumis:
-        allLumis[run] = []
-        
-    lumis = allLumis[run]
-
-    if lumi not in lumis:
-        lumis.append(lumi)
-
-text = ''
-for run in sorted(allLumis.keys()):
-    text += '\n  "%d": [\n' % run
-
-    current = -1
-    for lumi in sorted(allLumis[run]):
-        if lumi == current + 1:
-            current = lumi
-            continue
-
-        if current > 0:
-            text += '%d],\n' % current
-
-        current = lumi
-        text += '    [%d, ' % current
-
-    text += '%d]\n' % current
-    text += '  ],'
-
-with open(args.outputFile, 'w') as json:
-    json.write('{' + text[:-1] + '\n}')
+ROOT.makeJson(source, args.outputFile, mask, args.runBranchName, args.lumiBranchName)
