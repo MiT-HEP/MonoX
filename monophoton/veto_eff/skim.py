@@ -18,17 +18,17 @@ sname = sys.argv[2]
 
 sample = allsamples[sname]
 
-npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
-npvweight = npvSource.Get('npvweight')
+puSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
+puweight = npvSource.Get('puweight')
 
 source = ROOT.TChain('events')
-source.Add(config.ntuplesDir + '/' + sample.fullname + '/*.root')
+source.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 
 ROOT.gROOT.LoadMacro(thisdir + '/' + skim + '.cc+')
 
-outName = '/scratch5/yiiyama/studies/monophoton/veto_eff/' + skim +'_' + sname + '.root'
+outName = config.histDir + '/veto_eff/' + skim +'_' + sname + '.root'
 
 if sample.data:
     getattr(ROOT, skim)(source, outName)
 else:
-    getattr(ROOT, skim)(source, outName, sample.crosssection / sample.sumw, npvweight)
+    getattr(ROOT, skim)(source, outName, sample.crosssection / sample.sumw, puweight)

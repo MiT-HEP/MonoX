@@ -18,8 +18,8 @@ sname = sys.argv[2]
 
 samples = [allsamples[sname]] # for sname in snames ] 
 
-npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
-npvweight = npvSource.Get('npvweight')
+puSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
+puweight = puSource.Get('puweight')
 
 source = ROOT.TChain('events')
 for sample in samples:
@@ -35,4 +35,4 @@ outName = '/scratch5/ballen/hist/monophoton/phoMet/' + skim +'_' + sname + '.roo
 if sample.data:
     getattr(ROOT, skim)(source, outName)
 else:
-    getattr(ROOT, skim)(source, outName, sample.crosssection / sample.sumw, npvweight)
+    getattr(ROOT, skim)(source, outName, sample.crosssection / sample.sumw, puweight)

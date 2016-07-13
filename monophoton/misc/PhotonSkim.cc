@@ -1,6 +1,8 @@
 #include "TreeEntries_simpletree.h"
 #include "SimpleTreeUtils.h"
 
+#include "GoodLumiFilter.h"
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TString.h"
@@ -40,7 +42,7 @@ getLongestTree(TFile* _source, char const* _name)
 }
 
 void
-PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
+PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, GoodLumiFilter* _goodlumi = 0)
 {
   std::vector<TString> sourcePaths;
 
@@ -139,6 +141,9 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
       if (nTotal % 100000 == 1)
         std::cout << " " << nTotal << std::endl;
 
+      if (_goodlumi && !_goodlumi->isGoodLumi(event.run, event.lumi))
+        continue;
+
       if (pass()) {
         ++nPass;
         if (inHLTTree)
@@ -149,6 +154,9 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1)
 
     iEntry = 0;
     while (inRunTree->GetEntry(iEntry++) > 0) {
+      if (_goodlumi && !_goodlumi->hasGoodLumi(run.run))
+        continue;
+
       if (inHLTTree) {
         inHLTTree->GetEntry(run.hltMenu);
 

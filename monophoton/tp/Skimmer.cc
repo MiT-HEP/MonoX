@@ -130,7 +130,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
     fullInput.Add(_input->GetCurrentFile()->GetName());
   }
 
-  bList = {"run", "lumi", "event", "weight", "rho", "npv", "jets", "t1Met", "hlt"};
+  bList = {"run", "lumi", "event", "weight", "rho", "npv", "npvTrue", "jets", "t1Met", "hlt"};
 
   fullEvent_.setStatus(fullInput, false);
   fullEvent_.setAddress(fullInput, bList);
@@ -295,7 +295,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
     fullEvent_.weight *= _weight;
     
     if (reweight_) {
-      int iBin(reweight_->FindFixBin(fullEvent_.npv));
+      int iBin(reweight_->FindFixBin(fullEvent_.npvTrue));
       if (iBin == 0)
         iBin = 1;
       else if (iBin >= reweight_->GetNbinsX())

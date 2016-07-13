@@ -10,9 +10,12 @@
 #include "TRandom3.h"
 
 //#include "jer.h"
+#include "eventlist.h"
 
 #include <bitset>
 #include <map>
+#include <vector>
+#include <utility>
 
 //--------------------------------------------------------------------
 // Operator catalog
@@ -111,10 +114,12 @@ class MetFilters : public Cut {
 
   // 1->require pass, -1->require fail, 0->ignore
   void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
+  void setEventList(char const* path, int decision);
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   int filterConfig_[6]{1, 1, 1, 1, 1, 1};
+  std::vector<std::pair<EventList, int>> eventLists_;
 };
 
 class PhotonSelection : public Cut {
@@ -148,7 +153,7 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
-  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
+  void registerCut(TTree& cutsTree) override;
 
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
@@ -173,6 +178,7 @@ class PhotonSelection : public Cut {
   typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
+  bool cutRes_[nSelections];
 
   bool nominalResult_{false};
 };
@@ -208,6 +214,7 @@ class PhotonMetDPhi : public Cut {
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
+  void invert(bool i) { invert_ = i; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
@@ -224,6 +231,7 @@ class PhotonMetDPhi : public Cut {
   MetVariations* metVar_{0};
 
   bool nominalResult_{false};
+  bool invert_{false};
 };
 
 class JetMetDPhi : public Cut {
@@ -323,14 +331,21 @@ class TriggerEfficiency : public Modifier {
  public:
   TriggerEfficiency(char const* name = "TriggerEfficiency") : Modifier(name) {}
   ~TriggerEfficiency() { delete formula_; }
+  void addBranches(TTree& skimTree) override;
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setFormula(char const* formula);
+  void setUpFormula(char const* formula);
+  void setDownFormula(char const* formula);
 
  protected:
   void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
 
   double minPt_{0.};
   TF1* formula_{0};
+  TF1* upFormula_{0};
+  TF1* downFormula_{0};
+  double reweightUp_;
+  double reweightDown_;
 };
 
 class ExtraPhotons : public Modifier {
@@ -516,8 +531,18 @@ class IDSFWeight : public Modifier {
 };
 
 class NPVWeight : public Modifier {
+ // DEPRECATED - USE PUWeight
  public:
   NPVWeight(TH1* factors, char const* name = "NPVWeight") : Modifier(name), factors_(factors) {}
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+
+  TH1* factors_;
+};
+
+class PUWeight : public Modifier {
+ public:
+  PUWeight(TH1* factors, char const* name = "PUWeight") : Modifier(name), factors_(factors) {}
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 

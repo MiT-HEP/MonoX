@@ -18,7 +18,7 @@ binningTitle, binning, fitBins = getBinning(binningName)
 
 sys.argv = []
 
-toyUncert = True
+toyUncert = False
 
 import ROOT
 ROOT.gROOT.SetBatch(True)

@@ -70,15 +70,16 @@ class SampleDef(object):
         return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
 
     def _getCounter(self, dirs):
+        fNames = []
         for dName in dirs:
             fullPath = dName
             if os.path.exists(fullPath + '/' + self.name + '.root'):
-                fNames = [self.name + '.root']
+                fNames.append(self.name + '.root')
                 break
 
             fullPath = dName + '/' + self.book + '/' + self.fullname
             if os.path.isdir(fullPath):
-                fNames = os.listdir(fullPath)
+                fNames.extend(os.listdir(fullPath))
                 break
 
         if len(fNames) == 0:
@@ -98,7 +99,7 @@ class SampleDef(object):
                 else:
                     counter.Add(source.Get('counter'))
             except:
-                print path
+                print fullPath + '/' + fName
                 raise
 
             source.Close()

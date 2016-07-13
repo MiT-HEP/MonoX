@@ -366,7 +366,7 @@ for binName, fitCut in fitBins:
                 hbkg.SetDirectory(outputFile)
                 hbkg.Write()
 
-                bkgModel = ROOT.KeysShape(bkgModelName , 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
+                bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
 
             getattr(work, 'import')(bkgModel, ROOT.RooFit.Silence())
    

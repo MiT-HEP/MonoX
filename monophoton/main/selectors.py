@@ -36,32 +36,34 @@ photonFullSelection = [
     'Time',
     'SieieNonzero',
     'SipipNonzero',
-    'E2E995',
+#    'E2E995',
     'NoisyRegion'
 ]
 
-npvSource = ROOT.TFile.Open(basedir + '/data/npv.root')
-npvWeight = npvSource.Get('npvweight')
+puWeightSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
+puWeight = puWeightSource.Get('puweight')
 
 photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
+eventFiltersPath = '/scratch5/yiiyama/eventlists'
+eventLists = os.listdir(eventFiltersPath)
+print eventLists
+
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
-#hadproxyWeight = hadproxySource.Get('tfact')
-#hadproxyupWeight = hadproxySource.Get('tfactUp')
-#hadproxydownWeight = hadproxySource.Get('tfactDown')
-#hadproxyworstWeight = hadproxySource.Get('tfactWorst')
-#hadproxyworstupWeight = hadproxySource.Get('tfactWorstUp')
-#hadproxyworstdownWeight = hadproxySource.Get('tfactWorstDown')
 hadproxyWeight = hadproxySource.Get('tfactWorst')
 hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
 hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
-#hadproxyWeight = hadproxySource.Get('tfactJetPt')
-#hadproxyupWeight = hadproxySource.Get('tfactJetPtUp')
-#hadproxydownWeight = hadproxySource.Get('tfactJetPtDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
 eleproxyWeight = eleproxySource.Get('frate')
+
+trigCorrFormula = '1.025 - 0.0001163 * x'
+trigCorrUpFormula = '1.025 - 0.0001163 * x'
+trigCorrDownFormula = '1.025 - 0.0001163 * x'
+
+gjSmearingFormula = 'TMath::Landau(x, [0], [1])'
+gjSmearingParams = (-0.7314, 0.5095) # measured in gjets/smearfit.py
 
 ##############################################################
 # Argument "selector" in all functions below can either be an
@@ -84,12 +86,10 @@ def monophotonBase(sample, selector):
 
     operators += [
         'MetFilters',
-        # 'EcalCrackVeto',
         'PhotonSelection',
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
-        # 'ExtraPhotons',
         'JetCleaning',
         'CopyMet'
     ]
@@ -128,19 +128,18 @@ def monophotonBase(sample, selector):
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
         trigCorr = ROOT.TriggerEfficiency()
         trigCorr.setMinPt(300.)
-        trigCorr.setFormula('1.025 - 0.0001163 * x')
+        trigCorr.setFormula(trigCorrFormula)
+        trigCorr.setUpFormula(trigCorrUpFormula)
+        trigCorr.setDownFormula(trigCorrDownFormula)
         selector.addOperator(trigCorr)
 
     selector.findOperator('HLT_Photon165_HE10').setIgnoreDecision(True)
     selector.findOperator('MetFilters').setIgnoreDecision(True)
-    # selector.findOperator('MuonVeto').setIgnoreDecision(True)
-    # selector.findOperator('ElectronVeto').setIgnoreDecision(True)
 
-    # selector.findOperator('EcalCrackVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
@@ -156,9 +155,10 @@ def candidate(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    selector.setPartialBlinding(5, 274422)
-
-    if not sample.data:
+    if sample.data:
+        for eventList in eventLists:
+            selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
+    else:
         selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
@@ -225,14 +225,27 @@ def lowmt(sample, selector):
     Wenu-enriched control region.
     """
 
-    selector = candidate(sample, selector)
+    selector = monophotonBase(sample, selector)
+
+    if not sample.data:
+        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
+
+    for sel in photonFullSelection:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(40., 150.)
+    mtCut.setRange(0., 150.)
     selector.addOperator(mtCut)
+
+    dphi = selector.findOperator('PhotonMetDPhi')
+    dphi.invert(True)
 
     return selector
 
@@ -247,7 +260,7 @@ def lowmtEleProxy(sample, selector):
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(40., 150.)
+    mtCut.setRange(0., 150.)
     selector.addOperator(mtCut)
 
     return selector
@@ -289,7 +302,7 @@ def purityBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
@@ -384,7 +397,8 @@ def hadProxy(sample, selector):
     Candidate-like but with inverted sieie or CHIso.
     """
 
-    selector = monophotonBase(sample, selector)
+    if type(selector) is str:
+        selector = monophotonBase(sample, selector)
 
     weight = ROOT.PhotonPtWeight(hadproxyWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
@@ -524,8 +538,8 @@ def gjSmeared(sample, name):
 
     selector = candidate(sample, ROOT.SmearingSelector(name))
 
-    smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
-    smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
+    smearing = ROOT.TF1('smearing', gjSmearingFormula, 0., 40.)
+    smearing.SetParameters(*gjSmearingParams) # measured in gjets/smearfit.py
     selector.setNSamples(1)
     selector.setFunction(smearing)
 
@@ -543,8 +557,17 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
         selector = monophotonBase(sample, selector)
 
         # 0->CSC halo tagger
-        if not CSCFilter:
-            selector.findOperator('MetFilters').setFilter(0, -1)
+        # if not CSCFilter:
+            # selector.findOperator('MetFilters').setFilter(0, -1)
+
+        if sample.data:
+            for eventList in eventLists:
+                if 'Halo' in eventList and CSCFilter is None:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 0)
+                elif 'Halo' in eventList and not CSCFilter:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), -1)
+                else:
+                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
 
         photonSel = selector.findOperator('PhotonSelection')
 
@@ -578,7 +601,7 @@ def haloMIP(norm):
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
-    return sampleDefiner(norm, inverts, removes, appends)
+    return sampleDefiner(norm, inverts, removes, appends, CSCFilter = None)
 
 def haloCSC(norm):
     """
@@ -627,7 +650,7 @@ def leptonBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        selector.addOperator(ROOT.NPVWeight(npvWeight))
+        selector.addOperator(ROOT.PUWeight(puWeight))
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(30.)
@@ -669,6 +692,14 @@ def monoelectron(sample, selector):
 
     return selector
 
+def monoelectronHadProxy(sample, selector):
+    selector = electronBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(1, 0)
+
+    selector = hadProxy(sample, selector)
+
+    return selector
+
 def dimuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
@@ -678,6 +709,14 @@ def dimuon(sample, selector):
 def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
+
+    return selector
+
+def monomuonHadProxy(sample, selector):
+    selector = muonBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(0, 1)
+
+    selector = hadProxy(sample, selector)
 
     return selector
 

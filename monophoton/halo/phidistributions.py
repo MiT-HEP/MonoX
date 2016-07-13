@@ -40,14 +40,18 @@ canvas.legend.SetTextSize(0.03)
 
 outputFile = ROOT.TFile.Open(config.histDir + '/halo/phidistributions.root', 'recreate')
 
-sph = allsamples['sph-16b2']
+sphnames = ['sph-16b2', 'sph-16b2s']
+
+sphs = [allsamples[sname] for sname in sphnames]
 znng = allsamples['znng-130']
 
 dataTree = ROOT.TChain('events')
-dataTree.Add(config.photonSkimDir + '/sph-16b2.root')
+for sample in sphs:
+    dataTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
 
 dataTreeAll = ROOT.TChain('events')
-dataTreeAll.Add(config.ntuplesDir + '/' + sph.book + '/' + sph.fullname + '/*.root')
+for sample in sphs:
+    dataTreeAll.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 
 znngTree = ROOT.TChain('events')
 znngTree.Add(config.photonSkimDir + '/znng-130.root')

@@ -8,9 +8,11 @@ argParser = ArgumentParser(description = 'Write combine data card.')
 argParser.add_argument('model', metavar = 'MODEL', help = 'Signal model name. Use "nomodel" for model-independent limits.')
 argParser.add_argument('input', metavar = 'PATH', help = 'Histogram ROOT file.')
 argParser.add_argument('--output', '-o', metavar = 'PATH', dest = 'outputName', default = '', help = 'Data card name.')
-argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'outFile', help = 'Add observed information.')
+argParser.add_argument('--observed', '-O', action = 'store_true', dest = 'addObs', help = 'Add observed information.')
 argParser.add_argument('--variable', '-v', action = 'store', metavar = 'VARIABLE', dest = 'variable', default = 'phoPtHighMet', help = 'Discriminating variable.')
 argParser.add_argument('--shape', '-s', action = 'store_true', dest = 'shape', default = False, help = 'Turn on shape analysis.')
+argParser.add_argument('--scale', '-S', action = 'store', metavar = 'LUMI (1/fb)', dest = 'lumi', type=float, default = -1., help = 'Lumi to scale to for projecting.')
+argParser.add_argument('--binbybin', '-b', action ='store_true', dest = 'bbb', default = False, help = 'Make a datacard per bin in histogram (upwards inclusive).')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -37,9 +39,12 @@ source = ROOT.TFile.Open(args.input)
 
 variable = args.variable
 
-lumi = 0.
-for sName in monophConfig.obs.samples:
-    lumi += allsamples[sName].lumi
+lumi = config.jsonLumiBlinded
+# for sName in monophConfig.obs.samples:
+#     lumi += allsamples[sName].lumi / monophConfig.prescales[sName]
+
+if args.lumi > 0.:
+    lumiScale = args.lumi * 1000. / lumi
 
 # gather process names
 signal = args.model
@@ -47,10 +52,11 @@ processes = [signal] + [g.name for g in monophConfig.bkgGroups]
 
 # determine column widths (for human-readability)
 colw = max(10, max([len(p) for p in processes]) + 1, len(variable)+1)
-cols = '%-' + str(colw) + 's'
+cols = '%' + str(colw) + 's'
+coln = '%-' + str(colw) + 's'
 colsr = '%' + str(colw) + 's'
-colf = '%-' + str(colw) + '.2f'
-cold = '%-' + str(colw) + 'd'
+colf = '%' + str(colw) + '.2f'
+cold = '%' + str(colw) + 'd'
 
 
 def getHist(name, syst = ''):
@@ -91,6 +97,9 @@ def makeProcessBlock(processes, procs, binLow = 1):
 
         procs.append(process)
 
+        if args.lumi > 0.:
+            rate *= lumiScale
+
         processBlock[0] += cols % variable
         processBlock[1] += cols % process
         processBlock[2] += cold % iP
@@ -107,7 +116,7 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
     for syst in sorted(nuisances.keys()):
         procs = nuisances[syst]
 
-        line = cols % syst
+        line = coln % syst
 
         words = []
 
@@ -136,6 +145,9 @@ def makeNuisanceBlock(nuisances, processes, binLow = 1, shape = True):
                         up = getHist(proc, syst + 'Up').Integral(binLow, hist.GetNbinsX())
                         down = getHist(proc, syst + 'Down').Integral(binLow, hist.GetNbinsX())
                         relunc = (up - down) * 0.5 / nominal
+
+                    if args.lumi > 0. and proc in ['efake', 'halo']:
+                        relunc *= 1 / math.sqrt(lumiScale)
 
                     words.append('%.3f' % (1. + relunc))
                     vals[proc] = 1. + relunc
@@ -206,11 +218,14 @@ for key in source.GetListOfKeys():
 # set the output name
 outputName = args.outputName
 if not outputName:
-    outputName = args.model + '-' + variable + '.dat'
+    if args.lumi > 0.:
+        outputName = args.model + '-' + variable + '_' + str(int(args.lumi)) + '.dat'
+    else:
+        outputName = args.model + '-' + variable +'.dat'
 
 # start writing cards
 
-if args.model == 'nomodel':
+if args.model == 'nomodel' or args.bbb:
     # Model independent
     
     nBins = obs.GetNbinsX()
@@ -220,13 +235,19 @@ if args.model == 'nomodel':
     # iterate over bins and make one datacard for each integral
     for binLow in range(1, nBins + 1):
         obsBlock = [
-            'bin         ' + variable,
-            'observation %.0f' % obs.Integral(binLow, nBins)
+            'bin         ' + variable
         ]
+        if args.addObs:
+            nObs = int(obs.Integral(binLow, nBins))
+            if args.lumi > 0.:
+                nObs = int(nObs * lumiScale)
+
+            obsBlock.append('observation %d' % nObs)
+        else:
+            obsBlock.append('observation 0')
 
         procs = []
         processBlock, signalScale = makeProcessBlock(processes, procs, binLow = binLow)
-        # this is nomodel; ignore signalScale (is 1 anyway)
 
         headerBlock[1] = 'jmax %d' % (len(procs) - 1) # -1 for signal
 
@@ -245,7 +266,7 @@ if args.model == 'nomodel':
         else:
             outName += ('_%f' % bound) + ext
 
-        writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock])
+        writeCard(outName, [headerBlock, obsBlock, processBlock, nuisanceBlock], signalScale = signalScale)
         systLists[bound] = systList
 
     header = "%-20s" % " "
@@ -273,9 +294,16 @@ elif args.shape:
     ]
 
     obsBlock = [
-        'bin         ' + variable,
-        'observation %.0f' % obs.GetSumOfWeights(),
+        'bin         ' + variable
     ]
+    if args.addObs:
+        nObs = int(obs.GetSumOfWeights())
+        if args.lumi > 0.:
+            nObs = int(nObs * lumiScale)
+
+        obsBlock.append('observation %d' % nObs)
+    else:
+        obsBlock.append('observation 0')
 
     procs = []
     processBlock, signalScale = makeProcessBlock(processes, procs)
@@ -289,8 +317,15 @@ elif args.shape:
 else:
     obsBlock = [
         'bin         ' + variable,
-        'observation %.0f' % obs.GetSumOfWeights(),
     ]
+    if args.addObs:
+        nObs = int(obs.GetSumOfWeights())
+        if args.lumi > 0.:
+            nObs = int(nObs * lumiScale)
+
+        obsBlock.append('observation %d' % nObs)
+    else:
+        obsBlock.append('observation 0')
 
     procs = []
     processBlock, signalScale = makeProcessBlock(processes, procs)

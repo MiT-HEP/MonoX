@@ -39,9 +39,15 @@ HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
 // MetFilters
 //--------------------------------------------------------------------
 
+void
+MetFilters::setEventList(char const* _path, int _decision)
+{
+  eventLists_.emplace_back(EventList(_path), _decision);
+}
+
 bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
-{
+{ 
   bool fired[] = {
     _event.metFilters.cschalo,
     _event.metFilters.hbhe,
@@ -52,11 +58,6 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
   };
 
   for (unsigned iF(0); iF != 6; ++iF) {
-    /*
-      if (iF > 1) {
-      printf("filter %u %d \n", iF, fired[iF]);
-      }
-    */
     if (fired[iF]) {
       if (filterConfig_[iF] == 1)
         return false;
@@ -67,7 +68,18 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
     }
   }
 
-  // printf("passed all filters \n");
+  unsigned iList(0);
+  for (auto& eventList : eventLists_) {
+    iList++;
+    if (eventList.first.inList(_event)) {
+      if (eventList.second == 1)
+        return false;
+    }
+    else {
+      if (eventList.second == -1)
+        return false;
+    }
+  }
 
   return true;
 }
@@ -75,6 +87,14 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 //--------------------------------------------------------------------
 // PhotonSelection
 //--------------------------------------------------------------------
+
+void
+PhotonSelection::registerCut(TTree& cutsTree)
+{
+  cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
+
+  cutsTree.Branch(name_ + "Bits", cutRes_, name_ + TString::Format("Bits[%d]/O", nSelections));
+}
 
 void
 PhotonSelection::addBranches(TTree& _skimTree)
@@ -179,7 +199,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[Time] = std::abs(_photon.time) < 3.;
   cutres[SieieNonzero] = _photon.sieie > 0.001;
   cutres[SipipNonzero] = _photon.sipip > 0.001;
-  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33;
+  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33 < 0.95;
   cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
@@ -190,6 +210,9 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIsoTight] = _photon.passPhIso(2);
   cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_]);
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
+
+  for (unsigned iC(0); iC != nSelections; ++iC)
+    cutRes_[iC] = cutres[iC];
 
   // Wisconsin denominator def
   // if (photon.passHOverE(wp_) && photon.pixelVeto && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
@@ -408,12 +431,21 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
     }
   }
 
-  nominalResult_ = dPhi_ > 2.;
+  if (invert_)
+    nominalResult_ = dPhi_ < 2.;
+  else
+    nominalResult_ = dPhi_ > 2.;
 
   // for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
   for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
-    if (dPhi > 2.)
-      return true;
+    if (invert_) {
+      if (dPhi > 2.)
+        return true;
+    }
+    else {
+      if (dPhi < 2.)
+        return true;
+    }
   }
   return false;
 }
@@ -664,6 +696,29 @@ TriggerEfficiency::setFormula(char const* formula)
 }
 
 void
+TriggerEfficiency::setUpFormula(char const* formula)
+{
+  delete upFormula_;
+  upFormula_ = new TF1("TriggerEfficiencyUp", formula, 0., 6500.);
+}
+
+void
+TriggerEfficiency::setDownFormula(char const* formula)
+{
+  delete downFormula_;
+  downFormula_ = new TF1("TriggerEfficiencyDown", formula, 0., 6500.);
+}
+
+void
+TriggerEfficiency::addBranches(TTree& _skimTree)
+{
+  if (upFormula_)
+    _skimTree.Branch("reweight_trigUp", &reweightUp_, "reweight_trigUp/D");
+  if (downFormula_)
+    _skimTree.Branch("reweight_trigDown", &reweightDown_, "reweight_trigDown/D");
+}
+
+void
 TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   if (!formula_ || _outEvent.photons.size() == 0)
@@ -674,6 +729,10 @@ TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _ou
     return;
 
   _outEvent.weight *= formula_->Eval(pt);
+  if (upFormula_)
+    reweightUp_ = upFormula_->Eval(pt);
+  if (downFormula_)
+    reweightDown_ = downFormula_->Eval(pt);
 }
 
 //--------------------------------------------------------------------
@@ -1227,6 +1286,22 @@ void
 NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npv));
+  if (iX == 0)
+    iX = 1;
+  if (iX > factors_->GetNbinsX())
+    iX = factors_->GetNbinsX();
+
+  _outEvent.weight *= factors_->GetBinContent(iX);
+}
+
+//--------------------------------------------------------------------
+// PUWeight
+//--------------------------------------------------------------------
+
+void
+PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  int iX(factors_->FindFixBin(_event.npvTrue));
   if (iX == 0)
     iX = 1;
   if (iX > factors_->GetNbinsX())

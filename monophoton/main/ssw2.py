@@ -27,8 +27,10 @@ defaults = {
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
+    'monomuHfake': selectors.monomuonHadProxy,
     'diel': selectors.dielectron,
     'monoel': selectors.monoelectron,
+    'monoelHfake': selectors.monoelectronHadProxy,
     'elmu': selectors.oppflavor,
     'eefake': selectors.zee,
     'wenu': selectors.wenuall
@@ -36,8 +38,8 @@ defaults = {
 
 data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
-data_smu = ['dimu', 'monomu', 'elmu']
-data_sel = ['diel', 'monoel', 'eefake']
+data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu']
+data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake']
 mc_cand = ['monoph']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
 mc_sig = ['monoph', 'signalRaw']
@@ -46,14 +48,14 @@ mc_dilep = ['dimu', 'diel', 'elmu']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
-#mc_gj = [('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
-mc_gj = [('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
+#mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
+mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = allsamples['sph-16b2'].lumi
-haloNorms = [ 7.3 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2'] ]
+sphLumi = allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi
+haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16b2s'] ]
 
 selectors = {
     # Data 2016
@@ -61,6 +63,10 @@ selectors = {
     'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
                             ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
+    'sph-16b2s': data_sph + [('halo', selectors.haloMIP(4*haloNorms[1]))
+                            ,('haloUp', selectors.haloCSC(4*haloNorms[1]))
+                            ,('haloDown', selectors.haloSieie(4*haloNorms[1]))
                              ],
     'smu-16b2': data_smu,
     'sel-16b2': data_sel,
@@ -79,8 +85,8 @@ selectors = {
     'znng-130': mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    # 'wg': mc_cand + mc_lowmt,
-    'wglo': mc_cand + mc_lowmt,
+    # 'wg': mc_cand + mc_lep + mc_lowmt,
+    'wglo': mc_cand + mc_lep + mc_lowmt,
     'gj-40': mc_gj + mc_qcd + mc_lowmt,
     'gj-100': mc_gj + mc_qcd + mc_lowmt,
     'gj-200': mc_gj + mc_qcd + mc_lowmt,
@@ -91,7 +97,7 @@ selectors = {
     'gj04-200': mc_gj + mc_qcd + mc_lowmt,
     'gj04-400': mc_gj + mc_qcd + mc_lowmt,
     'gj04-600': mc_gj + mc_qcd + mc_lowmt,
-    'gg-80': mc_cand + mc_qcd, 
+    'gg-80': mc_cand + mc_qcd + mc_lowmt,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tg': mc_cand + mc_lep,
@@ -219,6 +225,7 @@ if __name__ == '__main__':
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
+<<<<<<< HEAD
 
             if args.neroInput:
 
@@ -237,10 +244,9 @@ if __name__ == '__main__':
                 tree.Add(sourceDir + '/*.root')
 
         print tree.GetEntries()
-
         if tree.GetEntries() == 0:
-            print 'No entries in the tree. Quitting!!.'
-            sys.exit(0)
+            print 'Tree has no entries. Skipping.'
+            continue
     
         for selconf in selectors[sname]:
             if type(selconf) == str:

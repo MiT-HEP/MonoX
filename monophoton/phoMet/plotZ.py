@@ -1,4 +1,4 @@
-B1;2501;0c#!/usr/bin/env python
+#!/usr/bin/env python
 import sys
 import os
 import math
@@ -14,7 +14,7 @@ from main.plotconfig import VariableDef
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = allsamples['smu-16b2'].lumi
+lumi = min(config.jsonLumi, allsamples['smu-16b2'].lumi + allsamples['smu-16b2s'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 probePixel = '!probe.pixelVeto'
@@ -95,6 +95,8 @@ for skim in skims:
                     dataHist.GetXaxis().SetTitle(varDef.title + ' (' + varDef.unit +')')
                 else:
                     dataHist.GetXaxis().SetTitle(varDef.title)
+
+                dataCutString = cutString + ' && !(run > %s)' % config.runCutOff
 
                 dataTree.Draw(varDef.expr+'>>'+varDef.name+'-'+dataName, 'weight * ('+cutString+')', 'goff')
                 print dataHist.Integral()

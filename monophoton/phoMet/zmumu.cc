@@ -7,18 +7,18 @@
 #include "math.h"
 
 void
-zmumu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _npvweight = 0)
+zmumu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _puweight = 0)
 {
   printf("Running skim\n");
 
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "muons", "electrons", "photons", "jets", "t1Met"});
+  event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "npvTrue", "muons", "electrons", "photons", "jets", "t1Met"});
 
   simpletree::Event outEvent;
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
-  event.book(*output, {"run", "lumi", "event", "npv", "t1Met"});
+  event.book(*output, {"run", "lumi", "event", "npv", "npvTrue", "t1Met"});
   outEvent.book(*output, {"jets"});
 
   double weight;
@@ -165,13 +165,13 @@ zmumu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _n
 
     
     weight = _sampleWeight * event.weight;
-    if (_npvweight) {
-      int iX(_npvweight->FindFixBin(event.npv));
+    if (_puweight) {
+      int iX(_puweight->FindFixBin(event.npvTrue));
       if (iX == 0)
 	iX = 1;
-      if (iX > _npvweight->GetNbinsX())
-	iX = _npvweight->GetNbinsX();
-      weight *= _npvweight->GetBinContent(iX);
+      if (iX > _puweight->GetNbinsX())
+	iX = _puweight->GetNbinsX();
+      weight *= _puweight->GetBinContent(iX);
     }
 
     output->Fill();
