@@ -123,7 +123,7 @@ def getConfig(confName):
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         # Specific systematic variations
-        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.81))
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.69))
         # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))

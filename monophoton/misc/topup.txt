@@ -56,8 +56,8 @@
 
 . Run combine
   scratch/runCombine.sh {point}
-  for f in /scratch5/ballen/hist/monophoton/datacards/*; do echo $f; done
-  ~/bin/condor-run scratch/runCombine.sh -a fileDump.txt
+  for f in /scratch5/ballen/hist/monophoton/datacards/*; do echo $f >> cards.txt; done
+  ~/bin/condor-run scratch/runCombine.sh -a cards.txt
 
 . Fix scaled samples
   scratch/fixLimit.py
