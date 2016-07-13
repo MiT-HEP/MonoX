@@ -99,7 +99,7 @@ class SampleDef(object):
                 else:
                     counter.Add(source.Get('counter'))
             except:
-                print path
+                print fullPath + '/' + fName
                 raise
 
             source.Close()
