@@ -3,6 +3,18 @@ import sys
 import subprocess
 import collections
 import re
+import json
+import shutil
+from argparse import ArgumentParser
+
+argParser = ArgumentParser(description = 'Calculate integrated luminosity from Bambu output')
+argParser.add_argument('snames', nargs = '*', help = 'Sample names.')
+argParser.add_argument('--list', '-l', metavar = 'PATH', dest = 'list', default = '', help = 'Supply a good lumi list and skip lumi extraction from Bambu files.')
+argParser.add_argument('--mask', '-m', metavar = 'PATH', dest = 'mask', default = '', help = 'Good lumi list to apply.')
+argParser.add_argument('--save', '-S', action = 'store_true', dest = 'save', help = 'Save the json file to data/lumis.txt.')
+
+args = argParser.parse_args()
+sys.argv = []
 
 try:
     proc = subprocess.Popen(['klist'], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
@@ -28,58 +40,68 @@ import config
 import ROOT
 
 normtag = '/afs/cern.ch/user/l/lumipro/public/normtag_file/normtag_DATACERT.json'
-samples = ['sph-16b2']
 
-print 'Calculating integrated luminosity for', samples, 'from', config.ntuplesDir
+print 'Calculating integrated luminosity for', args.snames, 'from', config.ntuplesDir
 print 'Normtag is', normtag
 
 allLumis = collections.defaultdict(set)
+sampleRuns = collections.defaultdict(set)
 
-def readFile(path):
-    source = ROOT.TFile.Open(path)
-    if not source:
-        return
+if not args.list:
+    def readFile(path, sname):
+        source = ROOT.TFile.Open(path)
+        if not source:
+            return
+    
+        gr = source.Get('ProcessedRunsLumis')
+    
+        for iP in range(gr.GetN()):
+            run = int(gr.GetX()[iP])
+            lumi = int(gr.GetY()[iP])
+    
+            allLumis[run].add(lumi)
+            sampleRuns[sname].add(run)
+    
+        source.Close()
+    
+    for sname in args.snames:
+        sample = allsamples[sname]
 
-    gr = source.Get('ProcessedRunsLumis')
-
-    for iP in range(gr.GetN()):
-        run = int(gr.GetX()[iP])
-        lumi = int(gr.GetY()[iP])
-
-        allLumis[run].add(lumi)
-
-    source.Close()
-
-for sname in samples:
-    sample = allsamples[sname]
-
-    dname = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
-
-    for fname in os.listdir(dname):
-        if fname.endswith('.root'):
-            readFile(dname + '/' + fname)
-
-text = ''
-for run in sorted(allLumis.keys()):
-    text += '\n  "%d": [\n' % run
-
-    current = -1
-    for lumi in sorted(allLumis[run]):
-        if lumi == current + 1:
+        dname = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
+    
+        for fname in os.listdir(dname):
+            if fname.endswith('.root'):
+                readFile(dname + '/' + fname, sname)
+    
+    text = ''
+    for run in sorted(allLumis.keys()):
+        text += '\n  "%d": [\n' % run
+    
+        current = -1
+        for lumi in sorted(allLumis[run]):
+            if lumi == current + 1:
+                current = lumi
+                continue
+    
+            if current > 0:
+                text += '%d],\n' % current
+    
             current = lumi
-            continue
+            text += '    [%d, ' % current
+    
+        text += '%d]\n' % current
+        text += '  ],'
+    
+    with open('_lumis_tmp.txt', 'w') as json:
+        json.write('{' + text[:-1] + '\n}')
 
-        if current > 0:
-            text += '%d],\n' % current
+else:
+    source = json.load(open(args.list))
+    for run, ranges in source.items():
+        for begin, end in ranges:
+            allLumis[int(run)] |= set(range(begin, end + 1))
 
-        current = lumi
-        text += '    [%d, ' % current
-
-    text += '%d]\n' % current
-    text += '  ],'
-
-with open('_lumis_tmp.txt', 'w') as json:
-    json.write('{' + text[:-1] + '\n}')
+    shutil.copyfile(args.list, '_lumis_tmp.txt')
 
 sshOpts = ['-oGSSAPIDelegateCredentials=yes', '-oGSSAPITrustDns=yes']
 
@@ -87,6 +109,8 @@ proc = subprocess.Popen(['scp'] + sshOpts + ['_lumis_tmp.txt', 'lxplus.cern.ch:.
 proc.communicate()
 
 proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.0.3/bin:$PATH;brilcalc lumi --normtag ' + normtag + ' -i _lumis_tmp.txt'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+
+os.remove('_lumis_tmp.txt')
 
 out = proc.communicate()[0]
 
@@ -104,29 +128,35 @@ for line in out.split('\n'):
 
     integrated[run] = recorded
 
-text = ''
-for run in sorted(allLumis.keys()):
-    text += '\n  "%d": {\n' % run
-    text += '    "integrated": %f,\n' % integrated[run]
-    text += '    "lumisections": [\n' 
+for sname in sorted(sampleRuns.keys()):
+    total = 0.
+    for run in sampleRuns[sname]:
+        total += integrated[run]
 
-    current = -1
-    for lumi in sorted(allLumis[run]):
-        if lumi == current + 1:
+    print '%s: %.1f' % (sname, total)
+
+if args.save:    
+    text = ''
+    for run in sorted(allLumis.keys()):
+        text += '\n  "%d": {\n' % run
+        text += '    "integrated": %f,\n' % integrated[run]
+        text += '    "lumisections": [\n' 
+    
+        current = -1
+        for lumi in sorted(allLumis[run]):
+            if lumi == current + 1:
+                current = lumi
+                continue
+    
+            if current > 0:
+                text += '%d],\n' % current
+    
             current = lumi
-            continue
-
-        if current > 0:
-            text += '%d],\n' % current
-
-        current = lumi
-        text += '      [%d, ' % current
-
-    text += '%d]\n' % current
-    text += '    ]\n'
-    text += '  },'
-
-with open(basedir + '/data/lumis.txt', 'w') as json:
-    json.write('{' + text[:-1] + '\n}\n')
-
-os.remove('_lumis_tmp.txt')
+            text += '      [%d, ' % current
+    
+        text += '%d]\n' % current
+        text += '    ]\n'
+        text += '  },'
+    
+    with open(basedir + '/data/lumis.txt', 'w') as json:
+        json.write('{' + text[:-1] + '\n}\n')
