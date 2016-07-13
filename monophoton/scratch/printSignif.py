@@ -2,10 +2,19 @@ import os
 import sys
 import ROOT as r
 
-limitsPath = '/scratch5/ballen/hist/monophoton/limits/dmv'
+Model = sys.argv[1]
+
+limitsPath = '/scratch5/ballen/hist/monophoton/limits/' + Model
 
 for tfile in sorted(os.listdir(limitsPath)):
     (model, mmed, mdm, var, method) = tfile.split('-')
+
+    if not mmed == '500':
+        continue
+
+    if not mdm == '150':
+        continue
+
     if not 'ProfileLikelihood' in method:
     # if not 'Asymptotic' in method:
         continue

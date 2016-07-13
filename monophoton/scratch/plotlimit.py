@@ -116,44 +116,43 @@ def closeContour(contour, base):
 
 model = sys.argv[1]
 try:
-    var = sys.argv[2] # limit or signif
+    result = sys.argv[2] # limit or signif
 except:
-    var = 'limit'
+    result = 'limit'
+try:
+    var = sys.argv[3] # variable used to set limit / extract signif
+except:
+    var = 'phoPtHighMet'
 
-obs = False
-
-if var == 'limit':
+if result == 'limit':
     method = 'Asymptotic'
     entryNames = ['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up']
-elif var == 'signif':
+elif result == 'signif':
     method = 'ProfileLikelihood'
     entryNames = ['exp']
 
+obs = False
 if obs:
     entryNames.append('obs')
 
 expectedEntries = len(entryNames)
 
+compare = True
+
 sourcedir = '/scratch5/ballen/hist/monophoton/limits/' + model
 
 limits = {}
 
-nEntries = 0.
-
-for fname in os.listdir(sourcedir):
-    matches = re.match(model+'-([0-9]+)-([0-9]+)', fname)
+for fname in sorted(os.listdir(sourcedir)):
+    matches = re.match(model+'-([0-9]+)-([0-9]+)-(.*)-(\w*).(.*)', fname)
     if not matches:
-        continue
-
-    if '_10' in fname:
         continue        
-    
-    if not method in fname:
+
+    if matches.group(3) != var:
         continue
 
-    # print "Matched ", fname
-
-    print matches.groups()
+    if matches.group(4) != method:
+        continue
 
     mmed = float(matches.group(1))
     mdm = float(matches.group(2))
@@ -162,7 +161,6 @@ for fname in os.listdir(sourcedir):
 
     source = ROOT.TFile.Open(sourcedir + '/' + fname)
     tree = source.Get('limit')
-    # print tree.GetEntries()
     if tree.GetEntries() != expectedEntries:
         print "File", fname, "has wrong number of entries. Skipping."
         source.Close()
@@ -172,9 +170,34 @@ for fname in os.listdir(sourcedir):
     tree.Draw('limit', '', 'goff')
     limit = tree.GetV1()
 
-    limits[point] = tuple([limit[i] for i in range(expectedEntries)])
+    if compare:
+        compName = model + '-' + str(int(mmed)) + '-' + str(int(mdm)) + '-' + var + '_10-' + method + '.' + matches.group(5) 
+        compSource = ROOT.TFile.Open(sourcedir + '/' + compName)
+        compTree = compSource.Get('limit')
+        if compTree.GetEntries() != expectedEntries:
+            print "File", fname, "has wrong number of entries. Skipping."
+            compSource.Close()
+            continue
+        
+        compTree.SetEstimate(7)
+        compTree.Draw('limit', '', 'goff')
+        compLimit = compTree.GetV1()
+
+        limits[point] = tuple([ math.fabs((compLimit[i] / limit[i] - 1) * 100.)  for i in range(expectedEntries)])
+    else:
+        limits[point] = tuple([limit[i] for i in range(expectedEntries)])
+
+    if result == 'limit':
+        print '%5s %4s  %15.2f %15.2f  %4.1f' % (matches.group(1), matches.group(2), limit[2], compLimit[2], limits[point][2])
+    elif result == 'signif':
+        print '%5s %4s  %6.2f %6.2f  %4.1f' % (matches.group(1), matches.group(2), limit[0], compLimit[0], limits[point][0])
+    else:
+        print '%5s %4s  ' % (matches.group(1), matches.group(2)), limits[point]
+        
 
     source.Close()
+    if compare:
+        compSource.Close()
 
 if len(limits) == 0:
     print "Found no points with limits. Quitting."
@@ -256,7 +279,7 @@ for iL, name in enumerate(entryNames):
     gr = ROOT.TGraph2D(len(limits))
     gr.SetName(name)
 
-    textDump = open(plotDir + model + '_' + var + '_' + name + '.txt', 'w')
+    textDump = open(plotDir + model + '_' + result + '_' + name + '.txt', 'w')
     textDump.write('Fast Sim Points \n')
     textDump.write('%-6s %5s %5s %6s \n' % ('point', 'mMed', 'mDM', 'limit'))
     for iP, (point, larr) in enumerate(sorted(limits.items())):
@@ -309,12 +332,16 @@ for iL, name in enumerate(entryNames):
     output.cd()
     hist.Write()
 
-    hist.SetMinimum(0.01)
-    hist.SetMaximum(10.)
+    if compare:
+        hist.SetMinimum(20.)
+        hist.SetMaximum(50.)
+    else:
+        hist.SetMinimum(0.01)
+        hist.SetMaximum(10.)
     hist.Draw('colz')
 
-    canvas.Print(plotDir + model + '_' + var + '_' + name + '.pdf')
-    canvas.Print(plotDir + model + '_' + var + '_' + name + '.png')
+    canvas.Print(plotDir + model + '_' + result + '_' + name + '.pdf')
+    canvas.Print(plotDir + model + '_' + result + '_' + name + '.png')
 
     histograms[name] = hist
 
@@ -348,8 +375,8 @@ for iL, name in enumerate(entryNames):
             for line in segments:
                 line.Draw()
 
-        canvas.Print(plotDir + model + '_' + var + '_' + name + '_points.pdf')
-        canvas.Print(plotDir + model + '_' + var + '_' + name + '_points.png')
+        canvas.Print(plotDir + model + '_' + result + '_' + name + '_points.pdf')
+        canvas.Print(plotDir + model + '_' + result + '_' + name + '_points.png')
 
     clevel = array.array('d', [1.])
     contsource = hist.Clone('contsource_' + name)
@@ -389,7 +416,7 @@ for iL, name in enumerate(entryNames):
             
             contsource.Delete()
         
-if var == 'limit':
+if result == 'limit':
     if obs:
         histograms['obs'].Draw('COLZ')
     else:
@@ -433,7 +460,7 @@ if var == 'limit':
     canvas.Print(plotDir + model + '_exclusion.pdf')
     canvas.Print(plotDir + model + '_exclusion.png')
 
-elif var == 'signif':
+elif result == 'signif':
     if obs:
         histograms['obs'].Draw('COLZ')
     else:
@@ -446,7 +473,7 @@ elif var == 'signif':
     legend = ROOT.TLegend(0.1, 0.8, 0.4, 0.9)
     legend.SetBorderSize(0)
     #legend.SetFillStyle(0)
-    legend.AddEntry(contours['exp'][0], 'Expected #pm 1 #sigma_{exp}', 'L')
+    # legend.AddEntry(contours['exp'][0], 'Expected #pm 1 #sigma_{exp}', 'L')
     if obs:
         legend.AddEntry(contours['obs'][0], 'Observed #pm 1 #sigma_{theory}', 'L')
     legend.Draw()
