@@ -14,13 +14,8 @@ import sys
 import os
 import array
 from argparse import ArgumentParser
-import ROOT
-ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
-
-ROOT.gROOT.LoadMacro(thisdir + '/GoodLumiFilter.cc+')
-ROOT.gROOT.LoadMacro(thisdir + '/MakeLumiList.cc+')
 
 argParser = ArgumentParser(description = 'Make JSON lumi list')
 argParser.add_argument('paths', metavar = 'PATH', nargs = '*', help = 'Paths to ROOT files (wildcard allowed) containing lumi list trees.')
@@ -33,6 +28,12 @@ argParser.add_argument('--lumi-branch', '-l', metavar = 'NAME', dest = 'lumiBran
 
 args = argParser.parse_args()
 sys.argv = []
+
+import ROOT
+ROOT.gROOT.SetBatch(True)
+
+ROOT.gROOT.LoadMacro(thisdir + '/GoodLumiFilter.cc+')
+ROOT.gROOT.LoadMacro(thisdir + '/MakeLumiList.cc+')
 
 mask = {}
 if args.mask:
