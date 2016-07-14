@@ -11,6 +11,7 @@ import main.selectors as selectors
 import main.plotconfig as plotconfig
 import config
 from subprocess import Popen, PIPE
+import shutil
 
 defaults = {
     'monoph': selectors.candidate,
@@ -59,7 +60,9 @@ haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-
 
 selectors = {
     # Data 2016
-    'sph-16b2-n': ['monoph'],
+    'sph-16b2-n': data_sph,
+    'sph-16c2-n': data_sph,
+    'sph-16d2-n': data_sph,
     'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
                             ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
@@ -145,6 +148,7 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
     argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
+    argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -201,6 +205,13 @@ if __name__ == '__main__':
     if not os.path.exists(config.skimDir):
         os.makedirs(config.skimDir)
 
+    if args.files:
+        nStart = args.files[0]
+        nEnd = args.files[1]
+    else:
+        nStart = 1000000
+        nEnd = -1
+
     for sname in snames:
         sample = allsamples[sname]
         print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
@@ -225,29 +236,37 @@ if __name__ == '__main__':
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
-<<<<<<< HEAD
 
             if args.neroInput:
-
-                listFiles = Popen(['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/NeroNtuples_*.root'], stdout=PIPE, stderr=PIPE)
-
-                # (lout, lerr) = listFiles.communicate()
-                # print lout, '\n'
-                # print lerr, '\n'
-            
-                for line in listFiles.stdout:
-                    line = line.strip(' \n')
-                    print line
-                    tree.Add('root:://eoscms/' + sourceDir + '/' + line)
-
+                cmdList = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select']
+                pathPrefix = 'root:://eoscms/'
             else:
-                tree.Add(sourceDir + '/*.root')
+                cmdList = []
+                pathPrefix = ''
+
+            cmdList += ['ls', sourceDir + '/*.root']
+            listFiles = Popen(cmdList, stdout=PIPE, stderr=PIPE)
+
+            # (lout, lerr) = listFiles.communicate()
+            # print lout, '\n'
+            # print lerr, '\n'
+
+            for iF, File in enumerate(listFiles.stdout):
+                if iF < nStart:
+                    continue
+                if iF > nEnd:
+                    break
+                File = File.strip(' \n')
+                print File
+                
+                tree.Add(pathPrefix + sourceDir + '/' + File)
 
         print tree.GetEntries()
         if tree.GetEntries() == 0:
             print 'Tree has no entries. Skipping.'
             continue
-    
+
+        selnames = []
         for selconf in selectors[sname]:
             if type(selconf) == str:
                 rname = selconf
@@ -255,7 +274,14 @@ if __name__ == '__main__':
             else:
                 rname, gen = selconf
 
+            selnames.append(rname)
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
-    
-        skimmer.run(tree, config.skimDir, sname, args.nentries, args.neroInput)
+
+        if nEnd > 0:
+            sname = sname + '_' + str(nStart) + '-' + str(nEnd)
+            skimmer.run(tree, '.', sname, args.nentries, args.neroInput)
+            for selname in selnames:
+                shutil.move(sname + '_' + selname + '.root', config.skimDir)
+        else:
+            skimmer.run(tree, config.skimDir, sname, args.nentries, args.neroInput)

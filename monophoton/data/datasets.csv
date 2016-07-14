@@ -9,8 +9,9 @@ sel-15d          "SingleElectron (2015D)"            1714.5               774374
 smu-15d          "SingleMuon (2015D)"                1714.5               45163000   -                    filefi/043           SingleMuon+Run2015D-16Dec2015-v1+AOD
 sph-15d          "SinglePhoton (2015D)"              1714.5               18885644   -                    filefi/043           SinglePhoton+Run2015D-16Dec2015-v1+AOD
 ### Data 2016
-sph-16b2-n           "SinglePhoton (2016B)"              590.0                7000000    -                    setup80x/Nero/Data/zey_base SinglePhoton/SinglePhoton-Run2016B-v2/160621_081337/0000
-# sph-16b2-n           "SinglePhoton (2016B)"              590.0                7000000    -                    monotop80/v1.8    SinglePhoton/SinglePhoton_Run2016B-PromptReco-v2/16062
+sph-16b2-n       "SinglePhoton (2016B)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016B-v2/160709_170349/0000/
+sph-16c2-n       "SinglePhoton (2016C)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016C-v2/160709_170605/0000/
+sph-16d2-n       "SinglePhoton (2016D)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016D-v2/160709_170812/0000/
 sph-16b2         "SinglePhoton (2016B)"              2253.2               47380811   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
 sph-16b2s        "SinglePhoton (2016B)"              2901.5               47380811   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
 sph-16c2         "SinglePhoton (2016C)"              354.3                15748358   -                    filefi/044           SinglePhoton+Run2016C-PromptReco-v2+AOD
