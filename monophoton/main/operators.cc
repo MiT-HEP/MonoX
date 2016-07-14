@@ -49,7 +49,7 @@ bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 { 
   bool fired[] = {
-    _event.metFilters.cschalo,
+    _event.metFilters.globalHalo16,
     _event.metFilters.hbhe,
     _event.metFilters.hbheIso,
     _event.metFilters.badsc,

@@ -25,7 +25,7 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event, bo
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {
-    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "metFilters.cschalo"}); // branches to be directly copied
+    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
     // printf("Copied the right stuff. \n");
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
     // printf("Made the empty branches. \n");

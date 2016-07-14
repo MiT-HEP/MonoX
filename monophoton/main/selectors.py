@@ -47,7 +47,10 @@ photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
 eventFiltersPath = '/scratch5/yiiyama/eventlists'
-eventLists = os.listdir(eventFiltersPath)
+if os.path.exists(eventFiltersPath):
+    eventLists = os.listdir(eventFiltersPath)
+else:
+    eventLists = []
 print eventLists
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
@@ -556,9 +559,9 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
 
         selector = monophotonBase(sample, selector)
 
-        # 0->CSC halo tagger
-        # if not CSCFilter:
-            # selector.findOperator('MetFilters').setFilter(0, -1)
+        # 0->GlobalHalo16 tagger
+        if not CSCFilter:
+            selector.findOperator('MetFilters').setFilter(0, -1)
 
         if sample.data:
             for eventList in eventLists:
