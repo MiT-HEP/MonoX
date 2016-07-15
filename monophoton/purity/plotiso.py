@@ -40,7 +40,8 @@ plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
-skimName = "Monophoton"
+# skimName = "Monophoton"
+skimName = 'Nero'
 skim = Measurement[skimName][1]
 
 baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel

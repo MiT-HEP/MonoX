@@ -54,7 +54,8 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-Version = 'simpletree18'
+# Version = 'simpletree18'
+Version = 'nero76fb'
 
 from ROOT import *
 
@@ -75,6 +76,13 @@ Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s'],'F
                                  ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
+                                 ],
+                "Nero" : [ ('FitSinglePhoton',['sph-16b2-n', 'sph-16c2-n', 'sph-16d2-n'],'Fit Template from SinglePhoton Data')
+                                 ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2-n', 'sph-16c2-n', 'sph-16d2-n'],'Background Template from SinglePhoton Data')
+                                 ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2-n', 'sph-16c2-n', 'sph-16d2-n'],'Background Template from SinglePhoton Data')
                                  ]
                 }
 
@@ -174,6 +182,8 @@ def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
             if not tempH.GetBinContent(iBin) > 0:
                 tempH.SetBinContent(iBin, 0.0000001)
 
+    print tempH.Integral()
+
     return tempH
         
 def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
@@ -186,6 +196,7 @@ def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
         binErrorLow = _hist.GetBinErrorLow(bin)
         if ( (binContent - binErrorLow) < 0.):
             _hist.SetBinError(bin, binContent)
+
 
     print _selName
     tempname = 'template_'+_skim[0]+'_'+_selName
