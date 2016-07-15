@@ -49,7 +49,7 @@ bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 { 
   bool fired[] = {
-    _event.metFilters.cschalo,
+    _event.metFilters.globalHalo16,
     _event.metFilters.hbhe,
     _event.metFilters.hbheIso,
     _event.metFilters.badsc,
@@ -162,6 +162,8 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     }
 
     int selection(selectPhoton(photon));
+
+    // printf("Photon %u returned selection %d \n", iP, selection);
 
     if (selection < 0) {
       // vetoed
@@ -817,10 +819,16 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
+    // printf("jet %u \n", iJ);
+
     if (std::abs(jet.eta) > 5.)
       continue;
 
-    double maxPt(jet.ptCorrUp);
+    // printf(" pass eta cut \n");
+
+    // No JEC info stored in nero right now (at least samples I am using)
+    // double maxPt(jet.ptCorrUp);
+    double maxPt(jet.pt);
 
     // if (jer_) {
     //   double res(jer_->resolution(jet.pt, jet.eta, _event.rho));
@@ -860,6 +868,8 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 
     if (maxPt < 30.)
       continue;
+
+    // printf(" pass pt selection \n");
    
     unsigned iC(0);
     for (; iC != nCollections; ++iC) {
@@ -879,7 +889,11 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
     if (iC != nCollections)
       continue;
 
+    // printf(" pass cleaning \n");
+
     _outEvent.jets.push_back(jet);
+    
+    // printf(" added \n");
   }
 }
 
