@@ -140,8 +140,8 @@ def monophotonBase(sample, selector):
         trigCorr.setDownFormula(trigCorrDownFormula)
         selector.addOperator(trigCorr)
 
-    selector.findOperator('HLT_Photon165_HE10').setIgnoreDecision(True)
-    selector.findOperator('MetFilters').setIgnoreDecision(True)
+    selector.findOperator('HLT_Photon165_HE10').setIgnoreDecision(False)
+    selector.findOperator('MetFilters').setIgnoreDecision(False)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
@@ -171,8 +171,6 @@ def candidate(sample, selector):
 
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-
-    # selector.findOperator('PhotonSelection').setIgnoreDecision(True)
 
     return selector
 
@@ -211,13 +209,13 @@ def eleProxy(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
-    # sels.remove('EVeto')
+    sels.remove('EVeto')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-#    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
     photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
     photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
 
@@ -328,7 +326,7 @@ def purity(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('Sieie15')
     sels.append('CHIso11')
 
@@ -349,19 +347,19 @@ def purityUp(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('Sieie15')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12)# , ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
 
     return selector
 
@@ -379,9 +377,9 @@ def purityDown(sample, selector):
     sels.remove('PhIso')
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('Sieie15')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
     sels.append('NHIso11')
     sels.append('PhIso3')
 
@@ -412,17 +410,17 @@ def hadProxy(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('Sieie15')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12)#, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
 
     return selector
 
@@ -442,19 +440,19 @@ def hadProxyUp(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
     sels.append('Sieie15')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12)#, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
 
     return selector
 
@@ -474,11 +472,11 @@ def hadProxyDown(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.remove('NHIso')
     sels.remove('PhIso')
     sels.append('Sieie15')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
     sels.append('NHIso11')
     sels.append('PhIso3')
 
@@ -507,18 +505,18 @@ def gjets(sample, selector):
     sels = list(photonFullSelection)
     sels.remove('Sieie')
     sels.remove('CHIso')
-    # sels.remove('CHWorstIso')
+    sels.remove('CHWorstIso')
     sels.append('Sieie15')
-    # sels.append('CHWorstIso11')
+    sels.append('CHWorstIso11')
     sels.append('CHIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12)#, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHWorstIso)
     photonSel.addVeto(True, ROOT.PhotonSelection.CHIso)
     
     return selector
@@ -559,9 +557,9 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
 
         selector = monophotonBase(sample, selector)
 
-        # 0->GlobalHalo16 tagger
-        if not CSCFilter:
-            selector.findOperator('MetFilters').setFilter(0, -1)
+        # 0->GlobalHalo16 tagger - not in st18 samples
+        # if not CSCFilter:
+        #     selector.findOperator('MetFilters').setFilter(0, -1)
 
         if sample.data:
             for eventList in eventLists:
@@ -600,7 +598,7 @@ def haloMIP(norm):
     Wrapper to return the generator for the halo proxy sample normalized to norm.
     """
 
-    inverts = [] #[ 'MIP49' ]
+    inverts = [ 'MIP49' ]
     removes = [ 'Sieie' ]
     appends = [ 'Sieie15' ] 
 
@@ -612,7 +610,7 @@ def haloCSC(norm):
     """
 
     inverts = []
-    removes = [ 'Sieie'] #, 'MIP49' ]
+    removes = [ 'Sieie', 'MIP49' ]
     appends = [ 'Sieie15' ] 
 
     return sampleDefiner(norm, inverts, removes, appends, CSCFilter = False)
@@ -623,7 +621,7 @@ def haloSieie(norm):
     """
 
     inverts = [ 'Sieie15' ]
-    removes = [ 'Sieie'] #, 'MIP49' ]
+    removes = [ 'Sieie', 'MIP49' ]
     appends = [] 
 
     return sampleDefiner(norm, inverts, removes, appends)
@@ -736,7 +734,7 @@ def zee(sample, name):
     eeSel.setMinPt(140.)
 
     sels = list(photonFullSelection)
-    # sels.remove('EVeto')
+    sels.remove('EVeto')
 
     for sel in sels:
         eeSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
