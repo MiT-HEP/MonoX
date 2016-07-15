@@ -12,6 +12,7 @@ argParser.add_argument('snames', nargs = '*', help = 'Sample names.')
 argParser.add_argument('--list', '-l', metavar = 'PATH', dest = 'list', default = '', help = 'Supply a good lumi list and skip lumi extraction from Bambu files.')
 argParser.add_argument('--mask', '-m', metavar = 'PATH', dest = 'mask', default = '', help = 'Good lumi list to apply.')
 argParser.add_argument('--save', '-S', action = 'store_true', dest = 'save', help = 'Save the json file to data/lumis.txt.')
+argParser.add_argument('--save-plain', '-P', action = 'store_true', dest = 'savePlain', help = 'Also save just the list of lumis (i.e. CMS-standard JSON).')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -135,7 +136,7 @@ for sname in sorted(sampleRuns.keys()):
 
     print '%s: %.1f' % (sname, total)
 
-if args.save:    
+if args.save:
     text = ''
     for run in sorted(allLumis.keys()):
         text += '\n  "%d": {\n' % run
@@ -159,4 +160,26 @@ if args.save:
         text += '  },'
     
     with open(basedir + '/data/lumis.txt', 'w') as json:
+        json.write('{' + text[:-1] + '\n}\n')
+
+if args.savePlain:
+    text = ''
+    for run in sorted(allLumis.keys()):
+        text += '\n  "%d": [\n' % run
+        current = -1
+        for lumi in sorted(allLumis[run]):
+            if lumi == current + 1:
+                current = lumi
+                continue
+    
+            if current > 0:
+                text += '%d],\n' % current
+    
+            current = lumi
+            text += '    [%d, ' % current
+    
+        text += '%d]\n' % current
+        text += '  ],'
+    
+    with open(basedir + '/data/lumis_plain.txt', 'w') as json:
         json.write('{' + text[:-1] + '\n}\n')

@@ -1,14 +1,19 @@
-. Get the run-lumi list from simpletree:
-  ~/yiiyama/cms/tools/bambuToJson.py /scratch5/yiiyama/hist/simpletreeXYZ/t2mit/filefi/044/Dataset
+. Make photon skims
+  misc/photonskim.py
 
-. Copy the json file over to lxplus; compute the integrated luminosity and update datasets.csv
+. Compute the luminosity (uses source simpletree)
+  misc/lumilist.py <samples> [--mask <lumimask>] --save --save-plain
+
+. Update the number of events for the data samples (technically not necessary)
+  python datasets.py recalculate <samples> --save
 
 . Compute the data pileup distribution and construct the PU weights
-  pileupCalc.py -i lumis.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 71300 --maxPileupBin 80 dataPileup.root
+  pileupCalc.py -i data/lumis_plain.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 71300 --maxPileupBin 80 dataPileup.root
   misc/puweight.py dataPileup.root 2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU $PWD/data/pileup.root
 
 . Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
-  condor-run $PWD/trigger/skim.py -j sel-X jht-X
+  condor-run $PWD/trigger/skim.py -j "electron sel-X" "muon smu-X"
+  condor-run $PWD/trigger/skim.py -e photon -j sel-X jht-X
   trigger/eff.py sel ptzoom hlt
   trigger/eff.py jht pt l1
 
