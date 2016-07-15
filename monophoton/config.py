@@ -1,4 +1,4 @@
-skimDir = '/afs/cern.ch/user/b/ballen/cms/hist/monophoton/skim/2016'
+skimDir = '/afs/cern.ch/work/b/ballen/hist/monophoton/skim/2016'
 histDir = '/home/ballen/cms/hist'
 ntuplesDir = '/eos/cms/store/group/phys_exotica/monojet/zdemirag/'
 dataNtuplesDir = ntuplesDir 
