@@ -39,9 +39,9 @@ source = ROOT.TFile.Open(args.input)
 
 variable = args.variable
 
-lumi = 0.
-for sName in monophConfig.obs.samples:
-    lumi += allsamples[sName].lumi / monophConfig.prescales[sName]
+lumi = config.jsonLumiBlinded
+# for sName in monophConfig.obs.samples:
+#     lumi += allsamples[sName].lumi / monophConfig.prescales[sName]
 
 if args.lumi > 0.:
     lumiScale = args.lumi * 1000. / lumi

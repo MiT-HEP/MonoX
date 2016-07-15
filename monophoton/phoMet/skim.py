@@ -19,7 +19,7 @@ sname = sys.argv[2]
 samples = [allsamples[sname]] # for sname in snames ] 
 
 puSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
-puweight = npvSource.Get('puweight')
+puweight = puSource.Get('puweight')
 
 source = ROOT.TChain('events')
 for sample in samples:
