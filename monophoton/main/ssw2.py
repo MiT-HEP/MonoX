@@ -165,7 +165,8 @@ if __name__ == '__main__':
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
 
-    ROOT.gSystem.Load(config.libnerocore)
+    if args.neroInput:
+        ROOT.gSystem.Load(config.libnerocore)
     ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
 
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')

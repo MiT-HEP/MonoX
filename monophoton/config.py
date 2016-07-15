@@ -1,17 +1,17 @@
 # tier3 set up
-"""
 skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
-histdir = '/scratch5/ballen/hist/monophoton'
+histDir = '/scratch5/ballen/hist/monophoton'
 ntuplesDir = '/scratch5/yiiyama/hist/simpletree18/t2mit/'
 dataNtuplesDir = ntuplesDir
 photonSkimDir = '/scratch5/yiiyama/hist/simpletree18/photonskim/'
-"""
 # lxplus set up
+"""
 skimDir = '/afs/cern.ch/work/b/ballen/hist/monophoton/skim/2016'
 histDir = '/afs/cern.ch/work/b/ballen/hist'
 ntuplesDir = '/eos/cms/store/group/phys_exotica/monojet/zdemirag/'
 dataNtuplesDir = ntuplesDir 
 photonSkimDir = ''
+"""
 
 import os
 basedir = os.path.dirname(os.path.realpath(__file__))
