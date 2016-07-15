@@ -16,7 +16,7 @@ public:
   virtual ~EventSelector() {}
 
   void addOperator(Operator* _op, unsigned idx = -1) { if (idx >= operators_.size()) operators_.push_back(_op); else operators_.insert(operators_.begin() + idx, _op); }
-  virtual void initialize(char const* outputPath, simpletree::Event& event);
+  virtual void initialize(char const* outputPath, simpletree::Event& event, bool _isMC);
   virtual void finalize();
   virtual void selectEvent(simpletree::Event&);
   void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
