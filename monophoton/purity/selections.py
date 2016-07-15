@@ -15,7 +15,7 @@ import config
 ### Getting cut values from simple tree ###
 
 # ROOT.gSystem.Load('libMitFlatDataFormats.so')
-ROOT.gSystem.Load('../MitFlat/DataFormats/obj/libsimpletree.so')
+ROOT.gSystem.Load(os.environ['CMSSW_BASE'] + '/src/MitMonoX/monophoton/MitFlat/DataFormats/obj/libsimpletree.so')
 ROOT.gSystem.AddIncludePath('-I' + '../MitFlat/DataFormats/interface')
 
 Locations = [ 'barrel', 'endcap' ]
@@ -54,8 +54,8 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-# Version = 'simpletree18'
-Version = 'nero76fb'
+Version = 'simpletree18topup1'
+# Version = 'nero76fb'
 
 from ROOT import *
 
@@ -70,12 +70,12 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s'],'Fit Template from SinglePhoton Data')
+Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2'],'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2'],'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s'],'Background Template from SinglePhoton Data')
+                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2'],'Background Template from SinglePhoton Data')
                                  ],
                 "Nero" : [ ('FitSinglePhoton',['sph-16b2-n', 'sph-16c2-n', 'sph-16d2-n'],'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')

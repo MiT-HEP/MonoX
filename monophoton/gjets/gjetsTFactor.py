@@ -12,7 +12,7 @@ from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
-lumi = min(config.jsonLumi, allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi)
+lumi = min(config.jsonLumi, allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi + allsamples['sph-16c2'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 dtree = r.TChain('events')
