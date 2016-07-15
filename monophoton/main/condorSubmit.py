@@ -8,7 +8,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 import config
-from ssw2 import processSampleNames, selectors
+from ssw2 import selectors, processSampleNames
 
 from glob import glob
 from subprocess import Popen, PIPE
@@ -23,49 +23,47 @@ argParser.add_argument('--files', '-f', metavar = 'nFilesPerJob', dest = 'nFiles
 args = argParser.parse_args()
 sys.argv = []
 
-queue = '1nh' # '2nw4cores'
-
 snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
 if not os.path.exists(config.skimDir):
     os.makedirs(config.skimDir)
 
-logDir = config.skimDir + '/logs'
-if not os.path.exists(logDir):
-    os.makedirs(logDir)
-
 for sname in snames:
     sample = allsamples[sname]
     print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
 
-    stdOut = logDir + '/' + sname + '.out'
-    stdErr = logDir + '/' + sname + '.err'
+    argFile = file('condorArgs.txt', 'w')
+    condorCmd = ['/home/ballen/bin/condor-run', 'ssw2.py', '-a', 'condorArgs.txt']
 
-    cmdList = ['bsub','-o',stdOut,'-e',stdErr,'-q',queue,'ssw2.py',sname]
+    argList = [sname]
     if args.neroInput:
-        cmdList.append('-n')
+        argList.append('-n')
 
     if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
         print 'Using photon skim.'
-        submit = Popen(mdList, stdout=PIPE, stderr=PIPE)
-        (lout, lerr) = submit.communicate()
-        print lout, '\n'
-        print lerr, '\n'
-        continue
+        arguments = ' '.join(argList)
+        argFile.write(arguments + '\n')
+        argFile.close()
+
+        condor = Popen(condorCmd, stdout=PIPE, stderr=PIPE)
+        (cout, cerr) = condor.communicate()
+        print cout, '\n'
+        # print cerr, '\n'
 
     elif args.nFiles < 0:
         print 'Not splitting into smaller jobs.'
-        submit = Popen(cmdList, stdout=PIPE, stderr=PIPE)
-        (lout, lerr) = submit.communicate()
-        print lout, '\n'
-        print lerr, '\n'
-        continue
+        arguments = ' '.join(argList)
+        argFile.write(arguments + '\n')
+        argFile.close()
+
+        condor = Popen(condorCmd, stdout=PIPE, stderr=PIPE)
+        (cout, cerr) = condor.communicate()
+        print cout, '\n'
+        # print cerr, '\n'
 
     else:
         if sample.data:
             sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
-        elif 'dm' in sample.name:
-            sourceDir = config.ntuplesDir.replace('tree18', 'tree18a') + sample.book + '/' + sample.fullname
         else:
             sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
             
@@ -91,15 +89,15 @@ for sname in snames:
         for nStart in range(0, nFiles, args.nFiles):
             nEnd = nStart + args.nFiles - 1
             nEnd = min(nFiles, nEnd)
-            stdOut = logDir + '/' + sname + '_' + str(nStart) + '-' + str(nEnd) + '.out'
-            stdErr = logDir + '/' + sname + '_' + str(nStart) + '-' + str(nEnd) + '.err'
+            arglist = argList + ['-f', str(nStart), str(nEnd)]
+            logname = sname + '_' + str(nStart) + '-' + str(nEnd)
 
-            cmdList = ['bsub','-o',stdOut,'-e',stdErr,'-q',queue,'ssw2.py',sname, '-f', str(nStart), str(nEnd)]
-            if args.neroInput:
-                cmdList.append('-n')
+            arguments = ' '.join(arglist)
+            argFile.write(arguments + '\n')
+        
+        argFile.close()
 
-            print cmdList
-            submit = Popen(cmdList, stdout=PIPE, stderr=PIPE)
-            (lout, lerr) = submit.communicate()
-            # print lout, '\n'
-            # print lerr, '\n'
+        condor = Popen(condorCmd, stdout=PIPE, stderr=PIPE)
+        (cout, cerr) = condor.communicate()
+        print cout, '\n'
+        # print cerr, '\n'

@@ -140,9 +140,6 @@ def monophotonBase(sample, selector):
         trigCorr.setDownFormula(trigCorrDownFormula)
         selector.addOperator(trigCorr)
 
-    selector.findOperator('HLT_Photon165_HE10').setIgnoreDecision(False)
-    selector.findOperator('MetFilters').setIgnoreDecision(False)
-
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)

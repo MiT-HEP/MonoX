@@ -8,7 +8,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 import config
-from ssw2 import defaults, selectors
+from ssw2 import defaults, selectors, processSampleNames
 
 from glob import glob
 from subprocess import Popen, PIPE
@@ -23,36 +23,10 @@ args = argParser.parse_args()
 sys.argv = []
 
 tmpDir = '/tmp/ballen'
+if not os.path.exists(tmpDir):
+    os.makedirs(tmpDir)
 
-snames = []
-
-if args.plotConfig:
-    # if a plot config is specified, use the samples for that
-    snames = plotconfig.getConfig(args.plotConfig).samples()
-    
-else:
-    snames = args.snames
-
-# handle special group names
-if 'all' in snames:
-    snames.remove('all')
-    snames = selectors.keys()
-elif 'dmfs' in snames:
-    snames.remove('dmfs')
-    snames += [key for key in selectors.keys() if key.startswith('dm') and key[3:5] == 'fs']
-elif 'dm' in snames:
-    snames.remove('dm')
-    snames += [key for key in selectors.keys() if key.startswith('dm')]
-elif 'add' in snames:
-    snames.remove('add')
-    snames += [key for key in selectors.keys() if key.startswith('add')]
-if 'fs' in snames:
-    snames.remove('fs')
-    snames += [key for key in selectors.keys() if 'fs' in key]
-
-# filter out empty samples
-tmp = [name for name in snames if allsamples[name].sumw != 0.]
-snames = tmp
+snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
 for sname in snames:
     sample = allsamples[sname]

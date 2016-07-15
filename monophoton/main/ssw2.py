@@ -12,6 +12,7 @@ import main.plotconfig as plotconfig
 import config
 from subprocess import Popen, PIPE
 import shutil
+from glob import glob
 
 defaults = {
     'monoph': selectors.candidate,
@@ -143,6 +144,38 @@ for sname in allsamples.names():
     if sname not in selectors:
         selectors[sname] = mc_sig
 
+def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
+    snames = []
+
+    if _plotConfig:
+        # if a plot config is specified, use the samples for that
+        snames = plotconfig.getConfig(_plotConfig).samples()
+
+    else:
+        snames = _inputNames
+
+    # handle special group names
+    if 'all' in snames:
+        snames.remove('all')
+        snames = _selectorKeys
+    elif 'dmfs' in snames:
+        snames.remove('dmfs')
+        snames += [key for key in _selectorKeys if key.startswith('dm') and key[3:5] == 'fs']
+    elif 'dm' in snames:
+        snames.remove('dm')
+        snames += [key for key in _selectorKeys if key.startswith('dm')]
+    elif 'add' in snames:
+        snames.remove('add')
+        snames += [key for key in _selectorKeys if key.startswith('add')]
+    if 'fs' in snames:
+        snames.remove('fs')
+        snames += [key for key in _selectorKeys if 'fs' in key]
+
+    # filter out empty samples
+    tmp = [name for name in snames if allsamples[name].sumw != 0.]
+    snames = tmp
+
+    return snames
 
 if __name__ == '__main__':
 
@@ -171,35 +204,7 @@ if __name__ == '__main__':
 
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
-    snames = []
-
-    if args.plotConfig:
-        # if a plot config is specified, use the samples for that
-        snames = plotconfig.getConfig(args.plotConfig).samples()
-
-    else:
-        snames = args.snames
-
-    # handle special group names
-    if 'all' in snames:
-        snames.remove('all')
-        snames = selectors.keys()
-    elif 'dmfs' in snames:
-        snames.remove('dmfs')
-        snames += [key for key in selectors.keys() if key.startswith('dm') and key[3:5] == 'fs']
-    elif 'dm' in snames:
-        snames.remove('dm')
-        snames += [key for key in selectors.keys() if key.startswith('dm')]
-    elif 'add' in snames:
-        snames.remove('add')
-        snames += [key for key in selectors.keys() if key.startswith('add')]
-    if 'fs' in snames:
-        snames.remove('fs')
-        snames += [key for key in selectors.keys() if 'fs' in key]
-
-    # filter out empty samples
-    tmp = [name for name in snames if allsamples[name].sumw != 0.]
-    snames = tmp
+    snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
     if args.list:
         print ' '.join(sorted(snames))
@@ -237,28 +242,26 @@ if __name__ == '__main__':
         else:
             if sample.data:
                 sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
-            elif 'dm' in sample.name:
-                sourceDir = config.ntuplesDir.replace('tree18', 'tree18a') + sample.book + '/' + sample.fullname
             else:
                 sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
             print 'Reading', sname, 'from', sourceDir
 
             if args.neroInput:
-                cmdList = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select']
+                lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
+                listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
+                
+                # (lout, lerr) = listFiles.communicate()
+                # print lout, '\n'
+                # print lerr, '\n'
+                
+                filesList = listFiles.stdout
                 pathPrefix = 'root:://eoscms/'
             else:
-                cmdList = []
+                filesList = sorted(glob(sourceDir + '/*.root'))
                 pathPrefix = ''
-
-            cmdList += ['ls', sourceDir + '/*.root']
-            listFiles = Popen(cmdList, stdout=PIPE, stderr=PIPE)
-
-            # (lout, lerr) = listFiles.communicate()
-            # print lout, '\n'
-            # print lerr, '\n'
-
-            for iF, File in enumerate(listFiles.stdout):
+                
+            for iF, File in enumerate(filesList):
                 if iF < nStart:
                     continue
                 if iF > nEnd:
@@ -266,7 +269,10 @@ if __name__ == '__main__':
                 File = File.strip(' \n')
                 print File
                 
-                tree.Add(pathPrefix + sourceDir + '/' + File)
+                if args.neroInput:
+                    tree.Add(pathPrefix + sourceDir + '/' + File)
+                else:
+                    tree.Add(File)
 
         print tree.GetEntries()
         if tree.GetEntries() == 0:
@@ -287,8 +293,13 @@ if __name__ == '__main__':
 
         if nEnd > 0:
             sname = sname + '_' + str(nStart) + '-' + str(nEnd)
-            skimmer.run(tree, '.', sname, args.nentries, args.neroInput)
+            tmpDir = '/tmp/ballen'
+            if not os.path.exists(tmpDir):
+                os.makedirs(tmpDir)
+            skimmer.run(tree, tmpDir, sname, args.nentries, args.neroInput)
             for selname in selnames:
-                shutil.move(sname + '_' + selname + '.root', config.skimDir)
+                if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
+                    os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')
+                shutil.move(tmpDir + '/' + sname + '_' + selname + '.root', config.skimDir)
         else:
             skimmer.run(tree, config.skimDir, sname, args.nentries, args.neroInput)
