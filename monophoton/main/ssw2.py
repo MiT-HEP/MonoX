@@ -221,8 +221,8 @@ if __name__ == '__main__':
         nStart = args.files[0]
         nEnd = args.files[1]
     else:
-        nStart = 1000000
-        nEnd = -1
+        nStart = -1
+        nEnd = 100000
 
     for sname in snames:
         sample = allsamples[sname]
@@ -291,7 +291,7 @@ if __name__ == '__main__':
             selector = gen(sample, rname)
             skimmer.addSelector(selector)
 
-        if nEnd > 0:
+        if nStart >= 0:
             sname = sname + '_' + str(nStart) + '-' + str(nEnd)
             tmpDir = '/tmp/ballen'
             if not os.path.exists(tmpDir):
