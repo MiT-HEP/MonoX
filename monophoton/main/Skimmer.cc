@@ -52,7 +52,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     std::cout << "Translator set up" << std::endl;
   }
   else {
-    event.setAddress(*_input);
+    event.setAddress(*_input, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
     if (_input->GetBranch("weight"))
       isMC = true;
   }
