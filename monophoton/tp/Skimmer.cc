@@ -111,8 +111,9 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
 
   simpletree::Event event;
   event.setStatus(*_input, false);
-  flatutils::BranchList bList;
-  bList.push_back("photons");
+  flatutils::BranchList bList{"photons.pt", "photons.eta", "photons.phi", "photons.scRawPt",
+      "photons.chIso", "photons.nhIso", "photons.phIso", "photons.sieie", "photons.sipip", "photons.sieip",
+      "photons.hOverE", "photons.pixelVeto", "photons.csafeVeto", "photons.medium"};
   if (fill[kEG])
     bList.push_back("electrons");
   if (fill[kMG] || fill[kMMG])

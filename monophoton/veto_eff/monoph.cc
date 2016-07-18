@@ -9,7 +9,7 @@ monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _
 {
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"lumi", "event", "weight", "muons", "electrons", "jets", "npv", "npvTrue", "promptFinalStates"});
+  event.setAddress(*_input, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
 
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));

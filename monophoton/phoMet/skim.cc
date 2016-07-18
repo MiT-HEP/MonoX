@@ -12,8 +12,7 @@ skim(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _np
   printf("Running skim\n");
 
   simpletree::Event event;
-  event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "electrons", "photons", "jets", "t1Met"});
+  event.setAddress(*_input, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
 
   simpletree::Event outEvent;
   TFile* outputFile(TFile::Open(_outputName, "recreate"));

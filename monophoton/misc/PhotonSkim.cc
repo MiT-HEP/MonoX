@@ -130,7 +130,7 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
     }
 
     event.setAddress(*outEventTree);
-    event.setAddress(*inEventTree);
+    event.setAddress(*inEventTree, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
 
     if (inHLTTree)
       hltPhoton165HE10Helper.reset();
