@@ -23,8 +23,9 @@ import json
 # 275125 ~ june 22 ~ 4.1/fb unblind - 2.7/fb blind
 # 275583 ~ july 08 ~ 6.9/fb unblind - !! not full json lumi
 # 276097 ~ july 15 ~ 9.2/fb unblind - hopefully
+# 276811 ~ july 20 ~ 13/fb unblind - full ichep dataset
 blindCutOff = '274421'
-runCutOff = '276097'
+runCutOff = '276811'
 jsonLumi = 0.
 jsonLumiBlinded = 0.
 with open(basedir + '/data/lumis.txt') as lumiFile:
