@@ -12,11 +12,11 @@ sph-15d          "SinglePhoton (2015D)"              1714.5               188856
 sph-16b2-n       "SinglePhoton (2016B)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016B-v2/160709_170349/0000/
 sph-16c2-n       "SinglePhoton (2016C)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016C-v2/160709_170605/0000/
 sph-16d2-n       "SinglePhoton (2016D)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016D-v2/160709_170812/0000/
-sph-16b2         "SinglePhoton (2016B)"              2253.6               47469916   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
-sph-16b2s        "SinglePhoton (2016B)"              2910.9               47380811   -                    filefi/044           SinglePhoton+Run2016B-PromptReco-v2+AOD
-sph-16c2         "SinglePhoton (2016C)"              1759.8               13587526   -                    filefi/044           SinglePhoton+Run2016C-PromptReco-v2+AOD
-sel-16b2         "SingleElectron (2016B)"            5073.4               207772423  -                    filefi/044           SingleElectron+Run2016B-PromptReco-v2+AOD
-sel-16c2         "SingleElectron (2016C)"            1790.4               64183076   -                    filefi/044           SingleElectron+Run2016C-PromptReco-v2+AOD
+sph-16b2         "SinglePhoton (2016B)"              2253.6               47469916   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
+sph-16b2s        "SinglePhoton (2016B)"              2910.9               47380811   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
+sph-16c2         "SinglePhoton (2016C)"              1759.8               13587526   -                    filefi/045           SinglePhoton+Run2016C-PromptReco-v2+AOD
+sel-16b2         "SingleElectron (2016B)"            5073.4               207772423  -                    filefi/045           SingleElectron+Run2016B-PromptReco-v2+AOD
+sel-16c2         "SingleElectron (2016C)"            1790.4               64183076   -                    filefi/045           SingleElectron+Run2016C-PromptReco-v2+AOD
 smu-16b2         "SingleMuon (2016B)"                5500.4               142473467  -                    filefi/044           SingleMuon+Run2016B-PromptReco-v2+AOD
 smu-16c2         "SingleMuon (2016C)"                0.0                  0          -                    filefi/044           SingleMuon+Run2016C-PromptReco-v2+AOD
 jht-16b2         "JetHT (2016B)"                     0.0                  0          -                    filefi/044           JetHT+Run2016B-PromptReco-v2+AOD

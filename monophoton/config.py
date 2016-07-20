@@ -1,9 +1,10 @@
 # tier3 set up
+simpletreeVersion = 'simpletree18rawE'
 skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
 histDir = '/scratch5/ballen/hist/monophoton'
-ntuplesDir = '/scratch5/yiiyama/hist/simpletree18/t2mit/'
+ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
 dataNtuplesDir = ntuplesDir
-photonSkimDir = '/scratch5/yiiyama/hist/simpletree18/photonskim/'
+photonSkimDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
 # lxplus set up
 """
 skimDir = '/afs/cern.ch/work/b/ballen/hist/monophoton/skim/2016'
@@ -20,9 +21,10 @@ import json
 # 274421 ~ june 10 ~ 2.3/fb unblind - fully unblinded
 # 274443 ~ june 16 ~ 2.8/fb unblind - 2.4/fb blind
 # 275125 ~ june 22 ~ 4.1/fb unblind - 2.7/fb blind
-# 275583 ~ july 08 ~ 6.9/fb unblund - !! not full json lumi
+# 275583 ~ july 08 ~ 6.9/fb unblind - !! not full json lumi
+# 276097 ~ july 15 ~ 9.2/fb unblind - hopefully
 blindCutOff = '274421'
-runCutOff = '275583'
+runCutOff = '276097'
 jsonLumi = 0.
 jsonLumiBlinded = 0.
 with open(basedir + '/data/lumis.txt') as lumiFile:

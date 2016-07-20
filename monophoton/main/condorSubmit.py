@@ -100,4 +100,4 @@ for sname in snames:
         condor = Popen(condorCmd, stdout=PIPE, stderr=PIPE)
         (cout, cerr) = condor.communicate()
         print cout, '\n'
-        # print cerr, '\n'
+        print cerr, '\n'
