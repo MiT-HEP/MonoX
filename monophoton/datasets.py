@@ -70,6 +70,8 @@ class SampleDef(object):
         return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
 
     def _getCounter(self, dirs):
+        import ROOT
+
         fNames = []
         for dName in dirs:
             fullPath = dName

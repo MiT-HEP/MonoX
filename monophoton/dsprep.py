@@ -7,18 +7,19 @@ from subprocess import Popen, PIPE
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
+print basedir
 sys.path.append(basedir)
-from datasets import SampleDef
+from datasets import SampleDef, allsamples, defaultList
 import config
 
 book = sys.argv[1]
 xsecFilePath = sys.argv[2]
 
-skimDirPath = config.ntuplesDir + book
+skimDirPath = config.ntuplesDir + '/' + book
 
 samples = {}
-meds = []
-dms = []
+meds = set()
+dms = set() 
 
 for line in os.listdir(skimDirPath):
     paramString = line.strip()
@@ -32,15 +33,15 @@ for line in os.listdir(skimDirPath):
 
     name = spin+'-'+params[0]+'-'+params[1]
 
-    sdef = SampleDef(name, title = spin.upper(), book = book, fullname = paramString, signal = True)
-    samples[name] = sdef
+    try:
+        sdef = allsamples[name]
+    except:
+        sdef = SampleDef(name, title = spin.upper(), book = book, fullname = paramString)
+        samples[name] = sdef
+        # not appending to allsamples here to have a proper ordering
 
-    med = int(params[0])
-    if not med in meds:
-        meds.append(med)
-    dm = int(params[1])
-    if not dm in dms:
-        dms.append(dm)
+    meds.add(int(params[0]))
+    dms.add(int(params[1]))
 
 with open(xsecFilePath) as xsecFile:
     for line in xsecFile:
@@ -57,11 +58,19 @@ with open(xsecFilePath) as xsecFile:
             spin = 'dmvfs'
         
         name = spin+'-'+med+'-'+dm
-        
-        xsec = float(temps[1])
 
-        samples[name].crosssection = xsec
-            
+        try:
+            sample = samples[name]
+        except:
+            continue
+
+        sample.crosssection = float(temps[1])
+
+        sample.recomputeWeight([config.ntuplesDir])
+
+        if sample.crosssection == 0. or sample.sumw == 0.:
+            samples.pop(name)
+
 # for sname, sample in sorted(samples.items()):
 for spin in ["dmafs", "dmvfs"]:
     for med in sorted(meds):
@@ -72,14 +81,7 @@ for spin in ["dmafs", "dmvfs"]:
             except:
                 continue
 
-            # print sname
-            print sample.getWeights(config.ntuplesDir)
-            
-            if float(sample.crosssection) == 0.:
-                print "\txsec == 0"
-                
-            if float(sample.nevents) == 0.:
-                print "\tnevents == 0"
+            if sample not in allsamples.samples:
+                allsamples.samples.append(sample)
 
-print sorted(meds)
-print sorted(dms)
+allsamples.save(defaultList)
