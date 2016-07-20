@@ -47,6 +47,10 @@ for sname in snames:
         inputs = glob(config.skimDir + '/' + inName)
         # print inputs
 
+        if inputs == []:
+            print "Nothing to merge."
+            continue
+
         haddCmd = ['hadd', '-f', tmpDir + '/' + outName] + inputs
         hadd = Popen(haddCmd, stdout=PIPE, stderr=PIPE)
         (hout, herr) = hadd.communicate()

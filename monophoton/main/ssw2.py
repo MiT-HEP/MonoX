@@ -73,13 +73,13 @@ selectors = {
                             ,('haloDown', selectors.haloSieie(4*haloNorms[1]))
                              ],
     'sph-16c2': data_sph,
-    # 'sph-16d2': data_sph,
+    'sph-16d2': data_sph,
     'smu-16b2': data_smu,
     'smu-16c2': data_smu,
     # 'smu-16d2': data_smu,
     'sel-16b2': data_sel,
     'sel-16c2': data_sel,
-    # 'sel-16d2': data_sel,
+    'sel-16d2': data_sel,
     # Data 2015 rereco
     'sph-15d': data_15,
     'smu-15d': data_15,
