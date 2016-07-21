@@ -51,7 +51,7 @@ mcsource.Add(config.skimDir + '/gj-400_monoph.root')
 mcsource.Add(config.skimDir + '/gj-600_monoph.root')
 
 binning = array.array('d', [4. * x for x in range(51)])
-sel = '(photons.pt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi > 2.)'
+sel = '(photons.scRawPt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi > 2.)'
 
 dname = 'dmetLow'
 dmet = ROOT.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)

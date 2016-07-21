@@ -37,7 +37,7 @@ for iso in isos:
     gpt = ROOT.TH1D(gname, ';p_{T} (GeV)', len(binning) - 1, binning)
     gpt.Sumw2()
 
-    gtree.Draw('photons.pt[0]>>'+gname, baseSel+' && photons.medium[0]', 'goff')
+    gtree.Draw('photons.scRawPt[0]>>'+gname, baseSel+' && photons.medium[0]', 'goff')
     gpt.Scale(1., 'width')
 
     # inputFile = ROOT.TFile.Open(basedir+'/data/impurity'+iso[1]+'.root')
@@ -73,7 +73,7 @@ for iso in isos:
 
         # if iso[0] == 'Worst':
         sel = sel.replace('chIso', 'chWorstIso')
-        htree.Draw('photons.pt[0]>>'+hname, sel, 'goff')
+        htree.Draw('photons.scRawPt[0]>>'+hname, sel, 'goff')
         hpt.Scale(1., 'width')
 
         tname = 'tfact'+iso[0]+samp

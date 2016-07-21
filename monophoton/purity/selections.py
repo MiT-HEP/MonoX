@@ -134,9 +134,9 @@ cutMatchedToPhoton = '(TMath::Abs(photons.matchedGen) == 22)'
 cutMatchedToReal = '(photons.matchedGen == -22)'
 
 cutPhotonPtHigh = [175,200,250,300,350] 
-PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.pt > '+str(cutPhotonPtHigh[0])+'))') ]
-PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.pt > '+str(low)+') && (photons.pt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
-PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((photons.pt > '+str(cutPhotonPtHigh[-1])+'))') ]
+PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))') ]
+PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
+PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((photons.scRawPt > '+str(cutPhotonPtHigh[-1])+'))') ]
 
 cutMet = [000,60,120]
 MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))') ] 

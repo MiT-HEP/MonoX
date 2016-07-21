@@ -49,8 +49,8 @@ mctree.Add(config.skimDir + '/gj-600_monoph.root')
 fitMax = 120.
 
 regions = [
-    ('Low', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)'),
-    ('High', '(photons.pt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < '+str(fitMax)+')')
+    ('Low', '(photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi < 0.5)'),
+    ('High', '(photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5 && t1Met.met < '+str(fitMax)+')')
 ] 
 
 """
