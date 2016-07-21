@@ -29,10 +29,31 @@ Modifier::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
 // HLTFilter
 //--------------------------------------------------------------------
 
+HLTFilter::HLTFilter(char const* name) :
+  Cut(name),
+  helpers_()
+{
+  TString pathNames(name);
+  Ssiz_t pos(0);
+  TString path;
+  while (pathNames.Tokenize(path, pos, "_OR_"))
+    helpers_.push_back(new simpletree::TriggerHelper(path.Data()));
+}
+
+HLTFilter::~HLTFilter()
+{
+  for (auto* helper : helpers_) 
+    delete helper;
+}
+
 bool
 HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
 {
-  return helper_.pass(_event);
+  for (auto* helper : helpers_) {
+    if (helper->pass(_event))
+      return true;
+  }
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -137,9 +158,9 @@ double
 PhotonSelection::ptVariation(simpletree::Photon const& _photon, bool up)
 {
   if (up)
-    return _photon.pt * 1.015;
+    return _photon.scRawPt * 1.015;
   else
-    return _photon.pt * 0.985;
+    return _photon.scRawPt * 0.985;
 }
 
 bool
@@ -157,7 +178,7 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
         continue;
     }
     else {
-      if (photon.pt < minPt_)
+      if (photon.scRawPt < minPt_)
         continue;
     }
 
@@ -179,7 +200,7 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     }
   }
 
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].pt > minPt_;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
 
   return _outEvent.photons.size() != 0;
 }
@@ -619,7 +640,7 @@ MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   auto& photon(_outEvent.photons[0]);
   auto& met(_outEvent.t1Met);
 
-  double mt(std::sqrt(2. * met.met * photon.pt * (1. - std::cos(met.phi - photon.phi))));
+  double mt(std::sqrt(2. * met.met * photon.scRawPt * (1. - std::cos(met.phi - photon.phi))));
   return mt > min_ && mt < max_;
 }
 
@@ -659,7 +680,7 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
 
-    if (photon.pt < minPt_)
+    if (photon.scRawPt < minPt_)
       continue;
 
     if (std::abs(photon.eta) > 1.4 && std::abs(photon.eta) < 1.6) {
@@ -724,7 +745,7 @@ TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _ou
   if (!formula_ || _outEvent.photons.size() == 0)
     return;
 
-  double pt(_outEvent.photons[0].pt);
+  double pt(_outEvent.photons[0].scRawPt);
   if (pt < minPt_)
     return;
 
@@ -756,7 +777,7 @@ ExtraPhotons::apply(simpletree::Event const& _event, simpletree::Event& _outEven
     if (photon.isEB)
       continue;
     
-    if (photon.pt < minPt_)
+    if (photon.scRawPt < minPt_)
       continue;
 
     bool overlap(false);
@@ -1047,7 +1068,7 @@ MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
     auto& photon(_outEvent.photons[0]);
 
     TVector2 nominal;
-    nominal.SetMagPhi(photon.pt, photon.phi);
+    nominal.SetMagPhi(photon.scRawPt, photon.phi);
 
     TVector2 photonUp;
     photonUp.SetMagPhi(photonSel_->ptVariation(photon, true), photon.phi);
@@ -1164,8 +1185,8 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
   switch (photonType_) {
   case kReco:
     for (auto& photon : _outEvent.photons) {
-      if (photon.pt > maxPt)
-        maxPt = photon.pt;
+      if (photon.scRawPt > maxPt)
+        maxPt = photon.scRawPt;
     }
     break;
   case kParton:

@@ -73,6 +73,8 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
   simpletree::TriggerHelper hltPhoton165HE10Helper("HLT_Photon165_HE10");
   bool hltPhoton165HE10(false);
+  simpletree::TriggerHelper hltPhoton135PFMET100Helper("HLT_Photon135_PFMET100");
+  bool hltPhoton135PFMET100(false);
 
   simpletree::Run run;
   std::vector<TString>* hltPaths(0);
@@ -80,7 +82,7 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
   auto pass([&event]()->bool {
       for (auto& photon : event.photons) {
-        if (photon.isEB && photon.pt > 175.)
+        if (photon.isEB && photon.scRawPt > 150.)
           return true;
       }
       return false;
@@ -127,13 +129,16 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
       // event branch addresses are copied through CloneTree
       outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
+      outEventTree->Branch("hlt.photon135PFMET100", &hltPhoton135PFMET100, "photon135PFMET100/O");
     }
 
     event.setAddress(*outEventTree);
     event.setAddress(*inEventTree, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
 
-    if (inHLTTree)
+    if (inHLTTree) {
       hltPhoton165HE10Helper.reset();
+      hltPhoton135PFMET100Helper.reset();
+    }
 
     long iEntry(0);
     while (nTotal != _nEvents && inEventTree->GetEntry(iEntry++) > 0) {
@@ -146,8 +151,10 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
       if (pass()) {
         ++nPass;
-        if (inHLTTree)
+        if (inHLTTree) {
           hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
+          hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
+        }
         outEventTree->Fill();
       }
     }

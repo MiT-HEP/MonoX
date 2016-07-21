@@ -21,7 +21,7 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event, bo
   // printf("Made files and trees. \n");
 
   if (_isMC) { // is MC
-    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons"}); // , "promptFinalStates"}); // branches to be directly copied
+    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "promptFinalStates"}); // , "promptFinalStates"}); // branches to be directly copied
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {
@@ -185,7 +185,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
 
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
-    if (!photon.isEB || photon.pt < minPt_)
+    if (!photon.isEB || photon.scRawPt < minPt_)
       continue;
 
     int selection(selectPhoton(photon));

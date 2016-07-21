@@ -100,12 +100,13 @@ class Modifier : public Operator {
 
 class HLTFilter : public Cut {
  public:
-  HLTFilter(char const* name = "PATHNAME") : Cut(name), helper_(name) {}
+  HLTFilter(char const* name = "PATHNAME");
+  ~HLTFilter();
 
  protected:
   bool pass(simpletree::Event const& _event, simpletree::Event&) override;
 
-  simpletree::TriggerHelper helper_;
+  std::vector<simpletree::TriggerHelper*> helpers_;
 };
 
 class MetFilters : public Cut {
