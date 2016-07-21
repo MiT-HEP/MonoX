@@ -86,7 +86,7 @@ def monophotonBase(sample, selector):
     operators = []
 
     if sample.data:
-        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10_OR_HLT_Photon135_PFMET100'))
 
     operators += [
         'MetFilters',
