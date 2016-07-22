@@ -3,7 +3,7 @@ simpletreeVersion = 'simpletree18rawE'
 skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
 histDir = '/scratch5/ballen/hist/monophoton'
 ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
-dataNtuplesDir = ntuplesDir
+dataNtuplesDir = '/scratch5/ballen/hist/nero160722'
 photonSkimDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
 # lxplus set up
 """
@@ -23,7 +23,7 @@ import json
 # 275125 ~ june 22 ~ 4.1/fb unblind - 2.7/fb blind
 # 275583 ~ july 08 ~ 6.9/fb unblind - !! not full json lumi
 # 276097 ~ july 15 ~ 9.2/fb unblind - hopefully
-# 276811 ~ july 20 ~ 13/fb unblind - full ichep dataset
+# 276811 ~ july 20 ~ 12.9/fb unblind - 4.95/fb blind - full ichep dataset
 blindCutOff = '274421'
 runCutOff = '276811'
 jsonLumi = 0.
@@ -43,6 +43,10 @@ for run in lumiList:
 # Temporary fix to match lumis used at preapproval
 # jsonLumiBlinded = 2182.5
 # jsonLumi = 2566.7
+
+# Temporary fix to use full ichep json lumi
+jsonLumiBlinded = 4950.0
+jsonLumi = 12900.0
 
 # libsimpletree = 'libMitFlatDataFormats.so'
 libsimpletree = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/obj/libsimpletree.so'
