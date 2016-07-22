@@ -18,6 +18,7 @@ argParser = ArgumentParser(description = 'Plot and count')
 argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
 argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
 argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
+argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
 argParser.add_argument('--files', '-f', metavar = 'nFilesPerJob', dest = 'nFiles', type = int, default = -1, help = 'Number of files to run on')
 
 args = argParser.parse_args()
@@ -45,6 +46,9 @@ for sname in snames:
     if args.neroInput:
         cmdList.append('-n')
 
+    if args.eosInput:
+        cmdList.append('-e')
+
     if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
         print 'Using photon skim.'
         submit = Popen(mdList, stdout=PIPE, stderr=PIPE)
@@ -71,7 +75,7 @@ for sname in snames:
             
         print 'Reading', sname, 'from', sourceDir
 
-        if args.neroInput:
+        if args.eosInput:
             lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
             listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
 
