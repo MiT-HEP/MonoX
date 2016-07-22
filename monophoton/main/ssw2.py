@@ -2,6 +2,7 @@
 
 import sys
 import os
+import socket
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -210,6 +211,8 @@ if __name__ == '__main__':
 
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
+    eosSource = args.neroInput and 'cern.ch' in socket.gethostname()
+
     snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
     if args.list:
@@ -253,10 +256,10 @@ if __name__ == '__main__':
 
             print 'Reading', sname, 'from', sourceDir
 
-            if args.neroInput:
+            if eosSource:
                 lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
                 listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
-                
+            
                 # (lout, lerr) = listFiles.communicate()
                 # print lout, '\n'
                 # print lerr, '\n'
@@ -273,9 +276,8 @@ if __name__ == '__main__':
                 if iF > nEnd:
                     break
                 File = File.strip(' \n')
-                print File
                 
-                if args.neroInput:
+                if eosSource:
                     tree.Add(pathPrefix + sourceDir + '/' + File)
                 else:
                     tree.Add(File)
