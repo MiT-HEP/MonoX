@@ -611,14 +611,14 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   bool foundTight(false);
 
   for (auto& electron : _event.electrons) {
-    if (nEl_ != 0 && electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT[simpletree::fEl23Loose]))
+    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
       foundTight = true;
     if (electron.loose && electron.pt > 10.)
       _outEvent.electrons.push_back(electron);
   }
 
   for (auto& muon : _event.muons) {
-    if (nMu_ != 0 && muon.tight && muon.pt > 30. && (_event.run == 1 || muon.matchHLT[simpletree::fMu20]))
+    if (nMu_ != 0 && muon.tight && muon.pt > 30.)
       foundTight = true;
     if (muon.loose && muon.pt > 10.)
       _outEvent.muons.push_back(muon);

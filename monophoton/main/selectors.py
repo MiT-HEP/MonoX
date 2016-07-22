@@ -86,7 +86,7 @@ def monophotonBase(sample, selector):
     operators = []
 
     if sample.data:
-        operators.append(('HLTFilter', 'HLT_Photon165_HE10_OR_HLT_Photon135_PFMET100'))
+        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -668,14 +668,14 @@ def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele23_WPLoose_Gsf'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
     return selector
 
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     return selector
 
