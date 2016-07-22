@@ -3,7 +3,7 @@ simpletreeVersion = 'simpletree18rawE'
 skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
 histDir = '/scratch5/ballen/hist/monophoton'
 ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
-dataNtuplesDir = '/scratch5/ballen/hist/nero160722'
+dataNtuplesDir = '/scratch5/ballen/hist/nero160722/'
 photonSkimDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
 # lxplus set up
 """
