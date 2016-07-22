@@ -565,7 +565,7 @@ if __name__ == '__main__':
                     canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
 
         # write out all signal distributions if asked for
-        if isSensitive and args.allSignal:
+        if args.allSignal:
             for group in plotConfig.sigGroups:
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
