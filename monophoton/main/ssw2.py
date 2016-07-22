@@ -163,13 +163,13 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
         snames += [key for key in _selectorKeys if '16' in key and allsamples[key].data]
     if 'bkgd' in snames:
         snames.remove('bkgd')
-        snames += [key for key in _selectorKeys if not allsamples[key].data and not 'dm' in key and not 'add' in key]
+        snames += [key for key in _selectorKeys if not allsamples[key].data and not key.startswith('dm') and not key.startswith('add')]
     if 'dmfs' in snames:
         snames.remove('dmfs')
         snames += [key for key in _selectorKeys if key.startswith('dm') and key[3:5] == 'fs']
     if 'dm' in snames:
         snames.remove('dm')
-        snames += [key for key in _selectorKeys if key.startswith('dm')]
+        snames += [key for key in _selectorKeys if key.startswith('dm') and not key[3:5] == 'fs']
     if 'add' in snames:
         snames.remove('add')
         snames += [key for key in _selectorKeys if key.startswith('add')]
