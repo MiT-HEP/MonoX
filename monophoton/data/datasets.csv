@@ -14,15 +14,15 @@ sph-16b2-n       "SinglePhoton (2016B)"              590.0                700000
 sph-16c2-n       "SinglePhoton (2016C)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016C-v2/160709_170605/0000/
 sph-16d2-n       "SinglePhoton (2016D)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016D-v2/160709_170812/0000/
 ### dima
-sph-16b2-d       "SinglePhoton (2016B)"              5564.4               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016B-v2
-sph-16c2-d       "SinglePhoton (2016C)"              2016.7               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016C-v2
-sph-16d2-d       "SinglePhoton (2016D)"              2438.0               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016D-v2
-sel-16b2-d       "SingleElectron (2016B)"            5564.4               7000000    -                    nero160722/SingleElectron       SingleElectron-2016B-v2
-sel-16c2-d       "SingleElectron (2016C)"            2016.7               7000000    -                    nero160722/SingleElectron       SingleElectron-2016C-v2
-sel-16d2-d       "SingleElectron (2016D)"            2438.0               7000000    -                    nero160722/SingleElectron       SingleElectron-2016D-v2
-smu-16b2-d       "SingleMuon (2016B)"                5564.4               7000000    -                    nero160722/SingleMuon           SingleMuon-2016B-v2
-smu-16c2-d       "SingleMuon (2016C)"                2016.7               7000000    -                    nero160722/SingleMuon           SingleMuon-2016C-v2
-smu-16d2-d       "SingleMuon (2016D)"                2438.0               7000000    -                    nero160722/SingleMuon           SingleMuon-2016D-v2
+sph-16b2-d       "SinglePhoton (2016B)"              5942.4               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016B-v2
+sph-16c2-d       "SinglePhoton (2016C)"              2646.1               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016C-v2
+sph-16d2-d       "SinglePhoton (2016D)"              4329.6               7000000    -                    nero160722/SinglePhoton         SinglePhoton-2016D-v2
+sel-16b2-d       "SingleElectron (2016B)"            5942.4               7000000    -                    nero160722/SingleElectron       SingleElectron-2016B-v2
+sel-16c2-d       "SingleElectron (2016C)"            2646.1               7000000    -                    nero160722/SingleElectron       SingleElectron-2016C-v2
+sel-16d2-d       "SingleElectron (2016D)"            4329.6               7000000    -                    nero160722/SingleElectron       SingleElectron-2016D-v2
+smu-16b2-d       "SingleMuon (2016B)"                5942.4               7000000    -                    nero160722/SingleMuon           SingleMuon-2016B-v2
+smu-16c2-d       "SingleMuon (2016C)"                2646.1               7000000    -                    nero160722/SingleMuon           SingleMuon-2016C-v2
+smu-16d2-d       "SingleMuon (2016D)"                4329.6               7000000    -                    nero160722/SingleMuon           SingleMuon-2016D-v2
 ### simpletree
 sph-16b2         "SinglePhoton (2016B)"              2097.4               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
 sph-16b2s        "SinglePhoton (2016B)"              3467.0               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
