@@ -205,7 +205,7 @@ if __name__ == '__main__':
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
     argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
-    # argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
+    argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
     
@@ -223,8 +223,6 @@ if __name__ == '__main__':
     ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
 
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
-
-    eosSource = args.neroInput and 'cern.ch' in socket.gethostname()
 
     snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
@@ -269,8 +267,7 @@ if __name__ == '__main__':
 
             print 'Reading', sname, 'from', sourceDir
 
-            # if args.eosInput:
-            if eosSource:
+            if args.eosInput:
                 lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
                 listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
             
@@ -291,8 +288,7 @@ if __name__ == '__main__':
                     break
                 File = File.strip(' \n')
                 
-                # if args.eosInput:
-                if eosSource:
+                if args.eosInput:
                     tree.Add(pathPrefix + sourceDir + '/' + File)
                 else:
                     tree.Add(File)
