@@ -10,7 +10,7 @@ from plotstyle import SimpleCanvas
 from datasets import allsamples
 import config
 
-lumi = min(config.jsonLumi, allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi + allsamples['sph-16c2'].lumi + allsamples['sph-16d2'].lumi)
+lumi = min(config.jsonLumi, allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi)
 canvas = SimpleCanvas(lumi = lumi)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
@@ -104,7 +104,7 @@ for iso in isos:
         canvas.addHistogram(fpt, drawOpt = 'HIST')
         canvas.addHistogram(hpt, drawOpt = 'HIST')
 
-        canvas.ylimits = (1., 25000.)
+        canvas.ylimits = (1., 250000.)
         canvas.SetLogy(True)
 
         canvas.printWeb('monophoton/hadronTFactor', 'distributions'+iso[0]+samp)
@@ -112,7 +112,7 @@ for iso in isos:
         canvas.Clear()
         canvas.legend.Clear()
 
-        canvas.ylimits = (0., -1.)
+        canvas.ylimits = (0., 0.1)
         canvas.SetLogy(False)
 
         canvas.legend.add(tname, title = 'Transfer factor', lcolor = ROOT.kBlack, lwidth = 1)
