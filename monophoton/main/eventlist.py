@@ -11,7 +11,7 @@ from datasets import allsamples
 import config
 
 snames = sys.argv[1:]
-data = False
+data = True
 
 tree = ROOT.TChain('cutflow')
 for sr in snames:
@@ -33,6 +33,7 @@ cuts = []
 
 if data:
     cuts += ['HLT_Photon165_HE10', 'MetFilters']
+    # cuts += [ 'MetFilters']
 
 cuts += [
     'PhotonSelection',
