@@ -31,7 +31,7 @@ samples = [ ('',  baseSel+' && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1
 
 for iso in isos:
     gtree = ROOT.TChain('events')
-    gtree.Add(config.skimDir + '/sph-16*_purity'+iso[1]+'.root')
+    gtree.Add(config.skimDir + '/sph-16*2-d_purity'+iso[1]+'.root')
 
     gname = 'gpt'+iso[0]
     gpt = ROOT.TH1D(gname, ';p_{T} (GeV)', len(binning) - 1, binning)
@@ -65,7 +65,7 @@ for iso in isos:
 
     for samp, sel in samples:
         htree = ROOT.TChain('events')
-        htree.Add(config.skimDir + '/sph-16*_purity'+iso[1]+samp+'.root')
+        htree.Add(config.skimDir + '/sph-16*2-d_purity'+iso[1]+samp+'.root')
 
         hname = 'hpt'+iso[0]+samp
         hpt = ROOT.TH1D(hname, ';p_{T} (GeV)', len(binning) - 1, binning)
