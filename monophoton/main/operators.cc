@@ -1251,6 +1251,13 @@ IDSFWeight::addBranches(TTree& _skimTree)
 }
 
 void
+IDSFWeight::setVariable(Variable vx, Variable vy)
+{
+  variables_[0] = vx;
+  variables_[1] = vy;
+}
+
+void
 IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
@@ -1276,27 +1283,54 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (!part)
     return;
 
-  int iPt(factors_->GetXaxis()->FindFixBin(part->pt));
-  int iEta(factors_->GetYaxis()->FindFixBin(part->eta));
+  int iCell(0);
 
-  if (iPt == 0)
-    iPt = 1;
-  if (iPt > factors_->GetXaxis()->GetNbins())
-    iPt = factors_->GetXaxis()->GetNbins();
+  TAxis* axis(0);
+  int rowSize(1);
+  for (unsigned iV(0); iV != 2; ++iV) {
+    if (variables_[iV] == nVariables)
+      break;
 
-  if (iEta == 0)
-    iEta = 1;
-  if (iEta > factors_->GetYaxis()->GetNbins())
-    iEta = factors_->GetYaxis()->GetNbins();
+    switch (iV) {
+    case 0:
+      axis = factors_->GetXaxis();
+      break;
+    case 1:
+      axis = factors_->GetYaxis();
+      break;
+    };
 
-  int iBin(factors_->GetBin(iPt, iEta));
+    int iBin(0);
+    switch (variables_[iV]) {
+    case kPt:
+      iBin = axis->FindFixBin(part->pt);
+      break;
+    case kEta:
+      iBin = axis->FindFixBin(part->eta);
+      break;
+    case kAbsEta:
+      iBin = axis->FindFixBin(std::abs(part->eta));
+      break;
+    default:
+      break;
+    }
 
-  double weight(factors_->GetBinContent(iBin));
+    if (iBin == 0)
+      iBin = 1;
+    if (iBin > axis->GetNbins())
+      iBin = axis->GetNbins();
+
+    iCell += iBin * rowSize;
+
+    rowSize *= axis->GetNbins() + 2;
+  }
+
+  double weight(factors_->GetBinContent(iCell));
 
   _outEvent.weight *= weight;
 
-  weightUp_ = 1. + factors_->GetBinError(iBin) / weight;
-  weightDown_ = 1. - factors_->GetBinError(iBin) / weight;
+  weightUp_ = 1. + factors_->GetBinError(iCell) / weight;
+  weightDown_ = 1. - factors_->GetBinError(iCell) / weight;
 }
 
 //--------------------------------------------------------------------

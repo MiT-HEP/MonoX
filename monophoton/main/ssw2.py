@@ -199,6 +199,7 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
+    import json
     
     argParser = ArgumentParser(description = 'Plot and count')
     argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
@@ -217,11 +218,13 @@ if __name__ == '__main__':
     ROOT.gSystem.Load(config.libsimpletree)
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
+    ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
+    ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
 
     if args.neroInput:
         ROOT.gSystem.Load(config.libnerocore)
-    ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
-
+        ROOT.gROOT.LoadMacro(os.path.dirname(basedir) + '/common/GoodLumiFilter.cc+')
+     
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
     snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
@@ -233,6 +236,20 @@ if __name__ == '__main__':
         sys.exit(0)
     
     skimmer = ROOT.Skimmer()
+
+    if args.neroInput:
+        goodLumi = ROOT.GoodLumiFilter()
+
+        with open(os.environ['MIT_JSON_DIR'] + '/Cert_271036-276811_13TeV_PromptReco_Collisions16_JSON_NoL1T.txt') as source:
+            lumiList = json.loads(source.read())
+
+            for run, lumiranges in lumiList.items():
+                for lumirange in lumiranges:
+                    lumirange[1] += 1
+                    for lumi in range(*tuple(lumirange)):
+                        goodLumi.addLumi(int(run), lumi)
+
+        skimmer.addGoodLumiFilter(goodLumi)
     
     if not os.path.exists(config.skimDir):
         os.makedirs(config.skimDir)

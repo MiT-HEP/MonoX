@@ -6,6 +6,8 @@
 
 #include "NeroToSimple.h"
 
+#include "GoodLumiFilter.h"
+
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -16,10 +18,12 @@ public:
 
   void reset() { selectors_.clear(); }
   void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
+  void addGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1, bool neroInput = false);
 
 private:
   std::vector<EventSelector*> selectors_{};
+  GoodLumiFilter* goodLumiFilter_{};
 };
 
 void
@@ -77,6 +81,9 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     if (translator)
       translator->translate();
     // std::cout << "Translated" << std::endl;
+
+    if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
+      continue;
 
     for (auto* sel : selectors_)
       sel->selectEvent(event);
