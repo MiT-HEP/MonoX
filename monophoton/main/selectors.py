@@ -69,6 +69,9 @@ trigCorrDownFormula = '1.025 - 0.0001163 * x'
 gjSmearingFormula = 'TMath::Landau(x, [0], [1])'
 gjSmearingParams = (-0.7314, 0.5095) # measured in gjets/smearfit.py
 
+muonSFSource = ROOT.TFile.Open(basedir + '/data/muonsf.root')
+muonSF = muonSFSource.Get('mutrksfptg10')
+
 ##############################################################
 # Argument "selector" in all functions below can either be an
 # actual Selector object or a name for the selector.
@@ -160,7 +163,9 @@ def candidate(sample, selector):
         for eventList in eventLists:
             selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
     else:
-        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
+        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        selector.addOperator(idsf)
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
@@ -227,7 +232,9 @@ def lowmt(sample, selector):
     selector = monophotonBase(sample, selector)
 
     if not sample.data:
-        selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
+        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        selector.addOperator(idsf)
         selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
@@ -240,7 +247,7 @@ def lowmt(sample, selector):
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(0., 150.)
+    mtCut.setRange(50., 150.)
     selector.addOperator(mtCut)
 
     dphi = selector.findOperator('PhotonMetDPhi')
@@ -259,7 +266,7 @@ def lowmtEleProxy(sample, selector):
     photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
-    mtCut.setRange(0., 150.)
+    mtCut.setRange(50., 150.)
     selector.addOperator(mtCut)
 
     return selector
@@ -674,7 +681,9 @@ def electronBase(sample, selector):
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
+
     if sample.data:
+        # for MC apply inefficiency depending on the number of muons
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     return selector
@@ -708,6 +717,12 @@ def dimuon(sample, selector):
 def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
+
+    # single muon trigger efficiency ~ 90%
+    selector.addOperator(ROOT.ConstantWeight(0.9))
+    trackscale = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, muonSF)
+    trackscale.setVariable(ROOT.IDSFWeight.kEta)
+    selector.addOperator(trackscale)
 
     return selector
 

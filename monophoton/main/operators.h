@@ -519,14 +519,23 @@ class IDSFWeight : public Modifier {
     nObjects
   };
 
-  IDSFWeight(Object obj, TH2* factors, char const* name = "IDSFWeight") : Modifier(name), object_(obj), factors_(factors) {}
+  enum Variable {
+    kPt,
+    kEta,
+    kAbsEta,
+    nVariables
+  };
+
+  IDSFWeight(Object obj, TH1* factors, char const* name = "IDSFWeight") : Modifier(name), object_(obj), factors_(factors) {}
 
   void addBranches(TTree& skimTree) override;
+  void setVariable(Variable, Variable = nVariables);
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   Object object_;
-  TH2* factors_;
+  Variable variables_[2];
+  TH1* factors_;
   double weightUp_;
   double weightDown_;
 };
