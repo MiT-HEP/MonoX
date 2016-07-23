@@ -28,7 +28,7 @@ makeJson(TTree* _input, char const* _outName, GoodLumiFilter* _mask = 0, char co
 
   long iEntry(0);
   while (_input->GetEntry(iEntry++) > 0) {
-    if (iEntry % 10000 == 1)
+    if (iEntry % 10000000 == 1)
       std::cout << iEntry << std::endl;
 
     if (_mask && !_mask->isGoodLumi(run, lumi))
