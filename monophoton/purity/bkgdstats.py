@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 from pprint import pprint
@@ -97,8 +99,8 @@ sbSel = s.SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
-# skims = s.Measurement["Monophoton"]
-skims = s.Measurement["Nero"]
+skims = s.Measurement["Monophoton"]
+# skims = s.Measurement["Nero"]
 sels = [ sigSel
          ,sigSel+' && '+truthSel
          ,sbSel+' && '+truthSel
@@ -244,3 +246,13 @@ print "Signal shape uncertainty is:", twobinUncertainty
 print "Background stat uncertainty is:", bkgdUncertainty
 totalUncertainty = ( (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
 print "Total uncertainty is:", totalUncertainty
+
+outFile = file(plotDir + '/results.out', 'w')
+
+outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
+outFile.write( "Method uncertainty is: "+str(scaledUncertainty)+'\n' ) 
+outFile.write( "Signal shape uncertainty is: "+str(twobinUncertainty)+'\n' ) 
+outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )
+outFile.write( "Total uncertainty is: "+str(totalUncertainty)+'\n' )
+
+outFile.close()
