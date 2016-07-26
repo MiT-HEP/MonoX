@@ -99,8 +99,8 @@ sbSel = s.SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
-skims = s.Measurement["Monophoton"]
-# skims = s.Measurement["Nero"]
+# skims = s.Measurement["Monophoton"]
+skims = s.Measurement["Nero"]
 sels = [ sigSel
          ,sigSel+' && '+truthSel
          ,sbSel+' && '+truthSel

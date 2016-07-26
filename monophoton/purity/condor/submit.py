@@ -18,9 +18,9 @@ for loc in s.Locations[:1]:
 	for chiso in s.ChIsoSbSels[:]:
 	    for pt in s.PhotonPtSels[1:]:
 		for met in s.MetSels[1:2]:
-                    print loc, sel, chiso[0], pt[0], met[0]
+                    # print loc, sel, chiso[0], pt[0], met[0]
 		    outDir = scratchPath + '/' + loc + '_' + sel + '_' + chiso[0] + '_' + pt[0] + '_' + met[0]
-                    print outDir
+                    # print outDir
                     if not os.path.exists(outDir):
                         os.makedirs(outDir)
                     argFile.write(loc + ' ' + sel + ' ' + chiso[0].replace('ChIso', '') + ' ' + pt[0].replace('PhotonPt', '') + ' ' + met[0].replace('Met', '') + ' \n')

@@ -54,8 +54,8 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-# Version = config.simpletreeVersion
-Version = 'monojet10fb'
+Version = config.simpletreeVersion
+# Version = 'monojet10fb'
 
 from ROOT import *
 
