@@ -18,53 +18,57 @@ from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
 
-writePlot = True
-nominalFit = True
-toys = False
-nToys = 1000
+from plotstyle import SimpleCanvas
+canvas = SimpleCanvas()
+plotName = 'fit'
 
-if writePlot:
-    from plotstyle import SimpleCanvas
-    canvas = SimpleCanvas()
-
+# set up a workspace and the main variable
 work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))
 phiset = ROOT.RooArgSet(phi)
 
-sphnames = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
-sphs = [allsamples[sname] for sname in sphnames]
+# TTree expression
+phivar = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796'
 
-sphnamesNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
-sphsNero = [allsamples[sname] for sname in sphnames]
+# targnames: sample names for target trees (monoph skim)
+# halonames: sample names for halo templates (can be a photon skim)
+targnames = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
+halonames = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
+targs = [allsamples[sname] for sname in targnames]
+halos = [allsamples[sname] for sname in halonames]
 
 dataTree = ROOT.TChain('events')
-for sample in sphs:
+for sample in halos:
     dataTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
 dataTree.SetEstimate(dataTree.GetEntries() + 1)
 
 candTree = ROOT.TChain('events')
-for sample in sphsNero:
+for sample in targs:
+    print config.skimDir + '/' + sample.name + '_monoph.root'
     candTree.Add(config.skimDir + '/' + sample.name + '_monoph.root')
 candTree.SetEstimate(candTree.GetEntries() + 1)
 
-# fit to halo distribution and parametrize
+### fit to halo distribution and parametrize
 
-nHalo = dataTree.Draw('TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796', 'photons.mipEnergy > 4.9 && photons.isEB && photons.pt > 175. && t1Met.met > 140.', 'goff')
-
-haloData = ROOT.RooDataSet('halo', 'halo', phiset)
-
+# first get the halo phi values
+nHalo = dataTree.Draw(phivar, 'photons.mipEnergy > 4.9 && photons.isEB && photons.scRawPt > 175. && t1Met.met > 140. && photons.chWorstIso < 1.37 && photons.nhIso < 1.06', 'goff')
 print nHalo, 'halo events'
+
+# dump them into a RooDataSet
+haloData = ROOT.RooDataSet('halo', 'halo', phiset)
 haloPhi = dataTree.GetV1()
 for iHalo in range(nHalo):
     phi.setVal(haloPhi[iHalo])
     haloData.add(phiset)
 
+# then fit with gaus + gaus + uniform
 base = work.factory('Uniform::base({phi})')
 peak = work.factory('SUM::peak(p1[0.1,0.,1.]*Gaussian::peak1(phi, mean1[0.,-3.,3.], sigma1[0.1,0.,1.]),Gaussian::peak2(phi, mean2[0.,-3.,3.], sigma2[0.001,0.,0.1]))')
 haloModel = work.factory('SUM::haloModel(fbase[0.1,0.,1.]*base, peak)')
 
 haloModel.fitTo(haloData)
 
+# fix the halo template parameters
 leaves = ROOT.RooArgSet()
 haloModel.leafNodeServerList(leaves)
 litr = leaves.fwdIterator()
@@ -75,157 +79,57 @@ while True:
 
     leaf.setConstant(True)
 
-# fit to candidates
+### fit to candidates
 
-nTarg = candTree.Draw('TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796', 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
-
-targData = ROOT.RooDataSet('targ', 'targ', phiset)
-
+# candidate phi values
+nTarg = candTree.Draw(phivar, 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
 print nTarg, 'target events'
+
+# dump into a RooDataSet
+targData = ROOT.RooDataSet('targ', 'targ', phiset)
 targPhi = candTree.GetV1()
 for iTarg in range(nTarg):
     phi.setVal(targPhi[iTarg])
     targData.add(phiset)
 
+# fit with halo + uniform
 uniform = work.factory('Uniform::uniform({phi})')
 model = work.factory('SUM::model(nhalo[0.5,0.,{maximum}]*haloModel, nuniform[{init},0.,{maximum}]*uniform)'.format(maximum = nTarg * 1.1, init = nTarg * 0.95))
 
-if nominalFit:
-    model.fitTo(targData)
+model.fitTo(targData)
 
-    if writePlot:
-        phi.setBins(20)
-        frame = phi.frame()
-        frame.SetTitle('')
-        targData.plotOn(frame)
-        model.plotOn(frame, ROOT.RooFit.LineColor(ROOT.kGreen))
-        model.plotOn(frame, ROOT.RooFit.Components('uniform'), ROOT.RooFit.LineColor(ROOT.kBlue))
+# plot
+nbins = 25
 
-        canvas.Clear(full = True)
+phi.setBins(nbins)
+frame = phi.frame()
+frame.SetTitle('')
+targData.plotOn(frame)
+model.plotOn(frame, ROOT.RooFit.LineColor(ROOT.kGreen))
+model.plotOn(frame, ROOT.RooFit.Components('uniform'), ROOT.RooFit.LineColor(ROOT.kBlue))
 
-        canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
-        canvas.legend.add('fit', title = 'Fit result', lcolor = ROOT.kBlue, lwidth = 2, opt = 'L')
-        canvas.legend.add('halo', title = 'Halo template', lcolor = ROOT.kGreen, lwidth = 1, opt = 'L')
-        canvas.legend.add('obs', title = 'Data', mcolor = ROOT.kBlack, mstyle = 8, msize = 1, lcolor = ROOT.kBlack, lwidth = 1, opt = 'LP')
+canvas.Clear(full = True)
 
-        canvas.addHistogram(frame)
-        canvas.printWeb('monophoton/halo', 'fit', logy = False)
+canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+canvas.legend.add('fit', title = 'Uniform', lcolor = ROOT.kBlue, lwidth = 2, opt = 'L')
+canvas.legend.add('halo', title = 'Halo template', lcolor = ROOT.kGreen, lwidth = 1, opt = 'L')
+canvas.legend.add('obs', title = 'Data', mcolor = ROOT.kBlack, mstyle = 8, msize = 1, lcolor = ROOT.kBlack, lwidth = 1, opt = 'LP')
 
-if toys:
-    hypo = float(sys.argv[1])
+canvas.ytitle = 'Events / (#pi/%d)' % nbins
 
-    outfile = ROOT.TFile.Open('toys.root', 'recreate')
-    ROOT.TObjString(str(hypo)).Write('hypothesis')
+canvas.addHistogram(frame)
+canvas.printWeb('monophoton/halo', plotName, logy = False)
 
-    toyTree = ROOT.TTree('toys', 'toys')
-    a_nll = array.array('d', [0.])
-    a_fhalo = array.array('d', [0.])
-    toyTree.Branch('nll', a_nll, 'nll/D')
-    toyTree.Branch('fhalo', a_fhalo, 'fhalo/D')
+# generate 10 toy distributions - does your target distribution look "normal"?
 
-    # observed
-    fhalo.setVal(hypo)
-    nll = model.createNLL(targData).getVal()
-
-    if writePlot:
-        frame = phi.frame()
-        targData.plotOn(frame)
-        model.plotOn(frame)
-        
-        canvas.Clear(full = True)
-        canvas.addHistogram(frame)
-        canvas.printWeb('monophoton/halo', 'hypo', logy = False)
-
-    fhalo.setVal(hypo / 2.)
-    fhalo.setMax(hypo)
-    result = model.fitTo(targData, ROOT.RooFit.Save(True))
-#    print 'Obs NLL', nll, 'minNLL', result.minNll()
-    obs = 2. * (nll - result.minNll())
-
-    psig = 0.
-#    pbkg = 0.
-
-    hsig = ROOT.TH1D('hsig', '', 100, 0., 2.)
-#    hbkg = ROOT.TH1D('hbkg', '', 100, 0., 2.)
-
-    iToy = 0
-    while iToy < nToys:
-        iToy += 1
-
-        fhalo.setVal(hypo)
-        sigtoy = model.generate(phiset, nTarg)
-
-        fhalo.setVal(hypo)
-        nll = model.createNLL(sigtoy)
-        signll = nll.getVal()
-
-        fhalo.setVal(hypo / 2.)
-        fhalo.setMax(hypo)
-        result = model.fitTo(sigtoy, ROOT.RooFit.Verbose(False), ROOT.RooFit.PrintLevel(-1), ROOT.RooFit.Save(True))
-#        print 'Toy', iToy, ' sig NLL', signll, 'minNLL', result.minNll()
-
-        if writePlot and iToy == 1:
-            frame = phi.frame()
-            sigtoy.plotOn(frame)
-            model.plotOn(frame)
-            
-            canvas.Clear(full = True)
-            canvas.addHistogram(frame)
-            canvas.printWeb('monophoton/halo', 'sigtoy', logy = False)
-
-        sig = 2. * (signll - result.minNll())
-        hsig.Fill(sig)
-
-        if sig > obs:
-            psig += 1.
-
-        # now fit with no bound on fhalo
-        fhalo.setMax(1.)
-        model.fitTo(sigtoy, ROOT.RooFit.Verbose(False), ROOT.RooFit.PrintLevel(-1), ROOT.RooFit.Save(True))
-#        print 'Toy', iToy, ' sig NLL', nll, 'minNLL', result.minNll()
-
-        a_nll[0] = nll.getVal()
-        a_fhalo[0] = fhalo.getVal()
-        toyTree.Fill()
-
-#        fhalo.setVal(0.)
-#        bkgtoy = model.generate(phiset, nTarg)
-#
-#        fhalo.setVal(hypo)
-#        nll = model.createNLL(bkgtoy).getVal()
-#
-#        fhalo.setVal(hypo / 2.)
-#        result = model.fitTo(bkgtoy, ROOT.RooFit.Verbose(False), ROOT.RooFit.PrintLevel(-1), ROOT.RooFit.Save(True))
-#        print 'Toy', iToy, ' bkg NLL', nll, 'minNLL', result.minNll()
-
-#        bkg = 2. * (nll - result.minNll())
-#        hbkg.Fill(bkg)
-
-#        if bkg > obs:
-#            pbkg += 1.
-
-#        frame = phi.frame()
-#        toydata.plotOn(frame)
-#        model.plotOn(frame)
-        
-#        canvas.Clear(full = True)
-#        canvas.addHistogram(frame)
-#        canvas.printWeb('monophoton/halo', 'toy' + str(iToy), logy = False)
-
-#    if pbkg != 0.:
-#        cls = psig / pbkg
-#    else:
-#        cls = 'inf'
-
-#    print hypo, psig / nToys, pbkg / nToys, cls
-    print hypo, psig / nToys
-
-    toyTree.Write()
-
-    if writePlot:
-#        hbkg.SetLineColor(ROOT.kRed)
+for iT in range(10):
+    toyData = model.generate(phiset, nTarg)
     
-        canvas.Clear(full = True)
-        canvas.addHistogram(hsig)
-#        canvas.addHistogram(hbkg)
-        canvas.printWeb('monophoton/halo', 'pmu')
+    frame = phi.frame()
+    frame.SetTitle('')
+    toyData.plotOn(frame)
+    
+    canvas.Clear(full = True)
+    canvas.ytitle = 'Events / (#pi/25)'
+    canvas.addHistogram(frame)
+    canvas.printWeb('monophoton/halo', 'toy%d' % iT, logy = False)
