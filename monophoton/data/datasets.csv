@@ -15,8 +15,8 @@ sph-16c2-n       "SinglePhoton (2016C)"              590.0                700000
 sph-16d2-n       "SinglePhoton (2016D)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016D-v2/160709_170812/0000/
 ### dima
 sph-16b2-d       "SinglePhoton (2016B)"              5930.5               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016B-v2
-sph-16c2-d       "SinglePhoton (2016C)"              2646.1               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016C-v2 ### didn't run lumi calc but all files are there now
-sph-16d2-d       "SinglePhoton (2016D)"              4241.3               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016D-v2
+sph-16c2-d       "SinglePhoton (2016C)"              2646.1               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016C-v2
+sph-16d2-d       "SinglePhoton (2016D)"              4329.6               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016D-v2
 sel-16b2-d       "SingleElectron (2016B)"            5888.6               7000000    -                    nero160723/SingleElectron       SingleElectron-2016B-v2
 sel-16c2-d       "SingleElectron (2016C)"            2554.0               7000000    -                    nero160723/SingleElectron       SingleElectron-2016C-v2
 sel-16d2-d       "SingleElectron (2016D)"            4221.2               7000000    -                    nero160723/SingleElectron       SingleElectron-2016D-v2
@@ -31,8 +31,9 @@ sph-16d2         "SinglePhoton (2016D)"              2438.0               172304
 sel-16b2         "SingleElectron (2016B)"            2055.8               83278806   -                    filefi/045           SingleElectron+Run2016B-PromptReco-v2+AOD
 sel-16c2         "SingleElectron (2016C)"            889.6                31906093   -                    filefi/045           SingleElectron+Run2016C-PromptReco-v2+AOD
 sel-16d2         "SingleElectron (2016D)"            527.3                17641747   -                    filefi/045           SingleElectron+Run2016D-PromptReco-v2+AOD
-smu-16b2         "SingleMuon (2016B)"                5537.9               142010532  -                    filefi/044           SingleMuon+Run2016B-PromptReco-v2+AOD
-smu-16c2         "SingleMuon (2016C)"                1834.6               44762517   -                    filefi/044           SingleMuon+Run2016C-PromptReco-v2+AOD
+smu-16b2         "SingleMuon (2016B)"                5836.1               1          -                    filefi/044           SingleMuon+Run2016B-PromptReco-v2+AOD
+smu-16c2         "SingleMuon (2016C)"                2619.6               1          -                    filefi/044           SingleMuon+Run2016C-PromptReco-v2+AOD
+smu-16d2         "SingleMuon (2016D)"                841.6                1          -                    filefi/045           SingleMuon+Run2016D-PromptReco-v2+AOD
 jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/044           JetHT+Run2016B-PromptReco-v2+AOD
 jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/044           JetHT+Run2016C-PromptReco-v2+AOD
 ### SM MC
