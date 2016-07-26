@@ -31,8 +31,11 @@ work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))
 phiset = ROOT.RooArgSet(phi)
 
-sphnames = ['sph-16b2', 'sph-16b2s']
+sphnames = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
 sphs = [allsamples[sname] for sname in sphnames]
+
+sphnamesNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
+sphsNero = [allsamples[sname] for sname in sphnames]
 
 dataTree = ROOT.TChain('events')
 for sample in sphs:
@@ -40,7 +43,7 @@ for sample in sphs:
 dataTree.SetEstimate(dataTree.GetEntries() + 1)
 
 candTree = ROOT.TChain('events')
-for sample in sphs:
+for sample in sphsNero:
     candTree.Add(config.skimDir + '/' + sample.name + '_monoph.root')
 candTree.SetEstimate(candTree.GetEntries() + 1)
 
