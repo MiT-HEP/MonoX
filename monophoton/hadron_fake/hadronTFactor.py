@@ -112,7 +112,7 @@ for iso in isos:
         canvas.Clear()
         canvas.legend.Clear()
 
-        canvas.ylimits = (0., 0.1)
+        canvas.ylimits = (0., -1)
         canvas.SetLogy(False)
 
         canvas.legend.add(tname, title = 'Transfer factor', lcolor = ROOT.kBlack, lwidth = 1)
@@ -123,6 +123,7 @@ for iso in isos:
 
         canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+samp)
 
+    """
     tfNom = outputFile.Get('tfact'+iso[0]+samples[0][0])
     tfDown = outputFile.Get('tfact'+iso[0]+samples[1][0])
     tfUp = outputFile.Get('tfact'+iso[0]+samples[2][0])
@@ -145,3 +146,4 @@ for iso in isos:
     canvas.addHistogram(tfDown, drawOpt = 'HIST')
 
     canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+'Comp')
+    """
