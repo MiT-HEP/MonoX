@@ -12,16 +12,16 @@ from pprint import pprint
 
 outputFile = r.TFile.Open(basedir+'/data/gjetsTFactor.root', 'recreate')
 
-lumi = min(config.jsonLumi, allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi + allsamples['sph-16c2'].lumi)
+lumi = min(config.jsonLumi, allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 dtree = r.TChain('events')
-dtree.Add(config.skimDir + '/sph-16*_monoph.root')
+dtree.Add(config.skimDir + '/sph-16*2-d_monoph.root')
 print dtree.GetEntries()
 
 btree = r.TChain('events')
-btree.Add(config.skimDir + '/sph-16*_hfake.root')
-btree.Add(config.skimDir + '/sph-16*_efake.root')
+btree.Add(config.skimDir + '/sph-16*2-d_hfake.root')
+btree.Add(config.skimDir + '/sph-16*2-d_efake.root')
 
 bmctree = r.TChain('events')
 # bmctree.Add(config.skimDir + '/znng-130_monoph.root')
