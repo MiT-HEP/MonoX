@@ -789,28 +789,33 @@ def kfactor(generator):
     def scaled(sample, name):
         selector = generator(sample, name)
 
+        sname = sample.name.replace('gj04', 'gj').replace('znng-d', 'znng-130').replace('wnlg-d', 'wnlg-130').replace('0-d', '0')
+
         qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
-        corr = qcdSource.Get(sample.name.replace('gj04', 'gj'))
+        corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
-            vcorr = qcdSource.Get(sample.name + '_' + variation)
+            vcorr = qcdSource.Get(sname + '_' + variation)
             if vcorr:
+                print 'applying qcd var', variation, sample.name
                 qcd.addVariation('qcd' + variation, vcorr)
 
         selector.addOperator(qcd)
 
         ewkSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
-        corr = ewkSource.Get(sample.name)
+        corr = ewkSource.Get(sname)
         if corr:
+            print 'applying ewk', sample.name
             ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
             ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
             for variation in ['Up', 'Down']:
-                vcorr = ewkSource.Get(sample.name + '_' + variation)
+                vcorr = ewkSource.Get(sname + '_' + variation)
                 if vcorr:
+                    print 'applying ewk var', variation, sample.name
                     ewk.addVariation('ewk' + variation, vcorr)
 
             selector.addOperator(ewk)

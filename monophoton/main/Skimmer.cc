@@ -16,14 +16,16 @@ class Skimmer {
 public:
   Skimmer() {}
 
-  void reset() { selectors_.clear(); }
+  void reset() { selectors_.clear(); useLumiFilter_ = false; }
   void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
   void addGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
+  void setUseLumiFilter(bool _setFilter) { useLumiFilter_ = _setFilter; }
   void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1, bool neroInput = false);
 
 private:
   std::vector<EventSelector*> selectors_{};
   GoodLumiFilter* goodLumiFilter_{};
+  bool useLumiFilter_ = false;
 };
 
 void
@@ -82,7 +84,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
       translator->translate();
     // std::cout << "Translated" << std::endl;
 
-    if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
+    if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
       continue;
 
     for (auto* sel : selectors_)

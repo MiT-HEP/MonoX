@@ -77,8 +77,9 @@ EventSelector::selectEvent(simpletree::Event& _event)
 
   bool pass(true);
   for (auto* op : operators_) {
-    if (!op->exec(_event, outEvent_))
+    if (!op->exec(_event, outEvent_)) {
       pass = false;
+    }
   }
 
   if (pass)
