@@ -733,6 +733,7 @@ TriggerEfficiency::setDownFormula(char const* formula)
 void
 TriggerEfficiency::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   if (upFormula_)
     _skimTree.Branch("reweight_trigUp", &reweightUp_, "reweight_trigUp/D");
   if (downFormula_)
@@ -1133,6 +1134,7 @@ MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
 void
 ConstantWeight::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   if (weightUp_ >= 0.)
     _skimTree.Branch("reweight_" + name_ + "Up", &weightUp_, "reweight_" + name_ + "Up/D");
   if (weightDown_ >= 0.)
@@ -1164,6 +1166,7 @@ PhotonPtWeight::~PhotonPtWeight()
 void
 PhotonPtWeight::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   for (auto& var : varWeights_)
     _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
 }
@@ -1233,6 +1236,7 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
     });
 
   double weight(calcWeight(nominal_));
+  weight_ = weight;
   _outEvent.weight *= weight;
 
   for (auto& var : varWeights_)
@@ -1246,6 +1250,7 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
 void
 IDSFWeight::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   _skimTree.Branch("reweight_" + name_ + "Up", &weightUp_, "reweight_" + name_ + "Up/D");
   _skimTree.Branch("reweight_" + name_ + "Down", &weightDown_, "reweight_" + name_ + "Down/D");
 }
@@ -1327,6 +1332,7 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
   double weight(factors_->GetBinContent(iCell));
 
+  weight_ = weight;
   _outEvent.weight *= weight;
 
   weightUp_ = 1. + factors_->GetBinError(iCell) / weight;
@@ -1354,6 +1360,12 @@ NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 void
+PUWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+}
+
+void
 PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npvTrue));
@@ -1362,6 +1374,7 @@ PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (iX > factors_->GetNbinsX())
     iX = factors_->GetNbinsX();
 
+  weight_ = factors_->GetBinContent(iX);
   _outEvent.weight *= factors_->GetBinContent(iX);
 }
 

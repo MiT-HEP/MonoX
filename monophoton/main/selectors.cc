@@ -33,6 +33,8 @@ EventSelector::initialize(char const* _outputPath, simpletree::Event& _event, bo
 
   // printf("Booked trees. \n");
 
+  skimOut_->Branch("weight_Input", &inWeight_, "weight_Input/D");
+
   cutsOut_->Branch("run", &_event.run, "run/i");
   cutsOut_->Branch("lumi", &_event.lumi, "lumi/i");
   cutsOut_->Branch("event", &_event.event, "event/i");
@@ -73,6 +75,7 @@ EventSelector::selectEvent(simpletree::Event& _event)
     return;
 
   outEvent_.init();
+  inWeight_ = _event.weight;
   outEvent_.weight = _event.weight;
 
   bool pass(true);

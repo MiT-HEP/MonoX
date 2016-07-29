@@ -27,7 +27,9 @@ ntotal = 0
 
 tree = ROOT.TChain('cutflow')
 for sname in args.snames:
-    tree.Add(args.skimDir + '/' + sname + '.root')
+    filePath = args.skimDir + '/' + sname + '_' + args.region + '.root'
+    print filePath
+    tree.Add(filePath)
     sample = allsamples[sname]
     if sample.data:
         data = True

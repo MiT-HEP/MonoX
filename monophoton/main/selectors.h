@@ -35,6 +35,7 @@ public:
 
   unsigned blindPrescale_{1};
   unsigned blindMinRun_{0};
+  double inWeight_{1.};
 };
 
 class ZeeEventSelector : public EventSelector {

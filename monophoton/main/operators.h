@@ -345,6 +345,7 @@ class TriggerEfficiency : public Modifier {
   TF1* formula_{0};
   TF1* upFormula_{0};
   TF1* downFormula_{0};
+  double weight_;
   double reweightUp_;
   double reweightDown_;
 };
@@ -505,6 +506,7 @@ class PhotonPtWeight : public Modifier {
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   TObject* nominal_;
+  double weight_;
   std::map<TString, TObject*> variations_;
   std::map<TString, double*> varWeights_;
   unsigned photonType_{kReco};
@@ -536,6 +538,7 @@ class IDSFWeight : public Modifier {
   Object object_;
   Variable variables_[2];
   TH1* factors_;
+  double weight_;
   double weightUp_;
   double weightDown_;
 };
@@ -553,10 +556,13 @@ class NPVWeight : public Modifier {
 class PUWeight : public Modifier {
  public:
   PUWeight(TH1* factors, char const* name = "PUWeight") : Modifier(name), factors_(factors) {}
+
+  void addBranches(TTree& _skimTree) override;
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   TH1* factors_;
+  double weight_;
 };
 
 class NNPDFVariation : public Modifier {
