@@ -795,7 +795,8 @@ def kfactor(generator):
         corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
-        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
+        # qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kReco)
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sname + '_' + variation)
