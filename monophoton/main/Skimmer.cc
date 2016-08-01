@@ -65,6 +65,9 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   
   printf("isMC %u \n", isMC);
 
+  if (goodLumiFilter_ && useLumiFilter_)
+    printf("Appyling good lumi filter. \n");
+
   for (auto* sel : selectors_) {
     TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
     // std::cout << "Saving to " << outputPath << std::endl;

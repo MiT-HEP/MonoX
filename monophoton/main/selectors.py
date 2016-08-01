@@ -558,7 +558,7 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
 
     def normalized(sample, name):
         selector = ROOT.NormalizingSelector(name)
-        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+        selector.setNormalization(norm, 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
 
         selector = monophotonBase(sample, selector)
 

@@ -63,6 +63,8 @@ haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
 neroHaloNorms = [ 4.7 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
+print neroHaloNorms
+
 selectors = {
     # Data 2016
     # zeynep
