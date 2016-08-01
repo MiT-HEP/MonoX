@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
@@ -47,6 +48,9 @@ varName = 'chiso'
 versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
+    os.makedirs(plotDir)
+else:
+    shutil.rmtree(plotDir)
     os.makedirs(plotDir)
 
 ### Get ChIso Curve for true photons

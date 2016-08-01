@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from array import array
 from pprint import pprint
 from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor, config
@@ -38,6 +39,9 @@ versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = config.skimDir
 plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
+    os.makedirs(plotDir)
+else:
+    shutil.rmtree(plotDir)
     os.makedirs(plotDir)
 
 # skimName = "Monophoton"

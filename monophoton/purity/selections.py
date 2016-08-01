@@ -54,7 +54,8 @@ for loc in Locations:
 
 ### Now start actual parameters that need to be changed ###
 
-Version = config.simpletreeVersion
+# Version = config.simpletreeVersion
+Version = 'nerogjets'
 # Version = 'monojet10fb'
 
 from ROOT import *
@@ -78,10 +79,10 @@ Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s', 's
                                  ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2'],'Background Template from SinglePhoton Data')
                                  ],
                 "Nero" : [ ('FitSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Fit Template from SinglePhoton Data')
-                                 ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
-                                 ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
+                                 ,('TempSignalGJets',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Background Template from SinglePhoton Data')
-                                 ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempSidebandGJetsScaled',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Scaled Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Background Template from SinglePhoton Data')
                                  ]
                 }
