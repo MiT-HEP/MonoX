@@ -16,6 +16,9 @@ sys.argv = argv
 
 photonData = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] # , 'sph-16b2s']
 photonDataPrescaled = [('sph-16b2-d', 1), ('sph-16c2-d', 1), ('sph-16d2-d', 1)]
+muonData = ['smu-16b2-d', 'smu-16c2-d', 'smu-16d2-d']
+electronData = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
+
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
@@ -45,9 +48,12 @@ def getConfig(confName):
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('spike', 'Spikes', count = 32.8, color = None),
-#            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zg', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('spike', 'Spikes', count = 26.8, color = None),
+            GroupSpec('ttg', 'Minor SM', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('tg', 'Minor SM', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('zllg', 'Minor SM', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('wlnu', 'Minor SM', samples = ['wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('multiboson', 'multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -134,8 +140,16 @@ def getConfig(confName):
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
         config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
-        config.findGroup('minor').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        # config.findGroup('minor').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        # config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        config.findGroup('wlnu').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        config.findGroup('wlnu').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        config.findGroup('zllg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        config.findGroup('zllg').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        config.findGroup('tg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        config.findGroup('tg').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        config.findGroup('ttg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        config.findGroup('ttg').variations.append(Variation('minorQCDscale', reweight = 0.033))
     
     elif confName == 'lowdphi':
         config = PlotConfig('monoph', photonData)
@@ -288,7 +302,7 @@ def getConfig(confName):
         dR2_00 = 'TMath::Power(photons.eta[0] - muons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[0]), 2.)'
         dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
 
-        config = PlotConfig('dimu', ['smu-16b2'])
+        config = PlotConfig('dimu', muonData)
         config.baseline = mass + ' > 50. && photons.scRawPt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
@@ -316,7 +330,7 @@ def getConfig(confName):
         dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
         dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
-        config = PlotConfig('diel', ['sel-16b2'])
+        config = PlotConfig('diel', electronData)
         config.baseline = mass + ' > 50. && photons.scRawPt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
@@ -346,7 +360,7 @@ def getConfig(confName):
         dRPhoParton  = 'TMath::Sqrt(TMath::Power(photons.eta[0] - promptFinalStates.eta, 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - promptFinalStates.phi), 2.))'
         # MinIf$() somehow returns 0 when there is only one jet
 
-        config = PlotConfig('monomu', ['smu-16b2'])
+        config = PlotConfig('monomu', muonData)
         config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
@@ -380,7 +394,7 @@ def getConfig(confName):
         dRPhoParton  = 'TMath::Sqrt(TMath::Power(photons.eta[0] - promptFinalStates.eta, 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - promptFinalStates.phi), 2.))'
         # MinIf$() somehow returns 0 when there is only one jet
 
-        config = PlotConfig('monoel', ['sel-16b2'])
+        config = PlotConfig('monoel', electronData)
         config.baseline = 'photons.scRawPt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [

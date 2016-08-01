@@ -14,15 +14,15 @@ sph-16b2-n       "SinglePhoton (2016B)"              590.0                700000
 sph-16c2-n       "SinglePhoton (2016C)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016C-v2/160709_170605/0000/
 sph-16d2-n       "SinglePhoton (2016D)"              590.0                7000000    -                    setup80x/Nero/zey_base SinglePhoton/SinglePhoton-Run2016D-v2/160709_170812/0000/
 ### dima
-sph-16b2-d       "SinglePhoton (2016B)"              5930.5               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016B-v2
-sph-16c2-d       "SinglePhoton (2016C)"              2646.1               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016C-v2
-sph-16d2-d       "SinglePhoton (2016D)"              4329.6               7000000    -                    nero160723/SinglePhoton         SinglePhoton-2016D-v2
-sel-16b2-d       "SingleElectron (2016B)"            5888.6               7000000    -                    nero160723/SingleElectron       SingleElectron-2016B-v2
-sel-16c2-d       "SingleElectron (2016C)"            2554.0               7000000    -                    nero160723/SingleElectron       SingleElectron-2016C-v2
-sel-16d2-d       "SingleElectron (2016D)"            4221.2               7000000    -                    nero160723/SingleElectron       SingleElectron-2016D-v2
-smu-16b2-d       "SingleMuon (2016B)"                5929.6               7000000    -                    nero160723/SingleMuon           SingleMuon-2016B-v2
-smu-16c2-d       "SingleMuon (2016C)"                2608.1               7000000    -                    nero160723/SingleMuon           SingleMuon-2016C-v2
-smu-16d2-d       "SingleMuon (2016D)"                4329.6               7000000    -                    nero160723/SingleMuon           SingleMuon-2016D-v2
+sph-16b2-d       "SinglePhoton (2016B)"              5930.5               7000000    -                    nero160723/SinglePhoton SinglePhoton-2016B-v2
+sph-16c2-d       "SinglePhoton (2016C)"              2646.1               7000000    -                    nero160723/SinglePhoton SinglePhoton-2016C-v2
+sph-16d2-d       "SinglePhoton (2016D)"              4329.6               7000000    -                    nero160723/SinglePhoton SinglePhoton-2016D-v2
+sel-16b2-d       "SingleElectron (2016B)"            5888.6               7000000    -                    nero160723/SingleElectron SingleElectron-2016B-v2
+sel-16c2-d       "SingleElectron (2016C)"            2554.0               7000000    -                    nero160723/SingleElectron SingleElectron-2016C-v2
+sel-16d2-d       "SingleElectron (2016D)"            4221.2               7000000    -                    nero160723/SingleElectron SingleElectron-2016D-v2
+smu-16b2-d       "SingleMuon (2016B)"                5929.6               7000000    -                    nero160723/SingleMuon SingleMuon-2016B-v2
+smu-16c2-d       "SingleMuon (2016C)"                2608.1               7000000    -                    nero160723/SingleMuon SingleMuon-2016C-v2
+smu-16d2-d       "SingleMuon (2016D)"                4329.6               7000000    -                    nero160723/SingleMuon SingleMuon-2016D-v2
 ### simpletree
 sph-16b2         "SinglePhoton (2016B)"              2097.4               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
 sph-16b2s        "SinglePhoton (2016B)"              3467.0               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
@@ -37,8 +37,8 @@ smu-16d2         "SingleMuon (2016D)"                841.6                1     
 jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/044           JetHT+Run2016B-PromptReco-v2+AOD
 jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/044           JetHT+Run2016C-PromptReco-v2+AOD
 ### Dima MC
-znng-d           "Z_{inv}#gamma"                     0.1903               375920     375920               nero160723/ZNuNuG    ZNuNuG           
-wnlg-d           "W#gamma"                           0.6637               483496     483496               nero160723/WLNuG     WLNuG
+znng-d           "Z_{inv}#gamma"                     0.1903               375920     375920.0             nero160723/ZNuNuG    ZNuNuG
+wnlg-d           "W#gamma"                           0.6637               483496     483496.0             nero160723/WLNuG     WLNuG
 gj-40-d          "#gamma+jet"                        20730                4468724    4468724.0            nero160723/GJets     HT_040-100
 gj-100-d         "#gamma+jet"                        9226                 5142782    5142782.0            nero160723/GJets     HT_100-200
 gj-200-d         "#gamma+jet"                        2300                 10196719   10196719.0           nero160723/GJets     HT_200-400
@@ -92,6 +92,7 @@ znn-2500         "Z#rightarrow#nu#nu"                0.000e+00            405752
 wnlg-130         "W#gamma"                           0.6637               499186     5.07412982100e+05    filefi/044           WGJets_MonoPhoton_PtG-130_TuneCUETP8M1_13TeV-madgraph+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 znng-130         "Z_{inv}#gamma"                     0.1903               370033     3.74567180325e+05    filefi/044           ZNuNuGJets_MonoPhoton_PtG-130_TuneCUETP8M1_13TeV-madgraph+RunIISpring16DR80-PUSpring16RAWAODSIM_80X_mcRun2_asymptotic_2016_v3-v1+RAWAODSIM
 znng-40          "Z_{inv}#gamma"                     2.806                4758134    4.79072541880e+06    filefi/044           ZNuNuGJets_MonoPhoton_PtG-40to130_TuneCUETP8M1_13TeV-madgraph+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
+zllg-130         "Z#rightarrowll#gamma"              0.1487               489448     4.96522885182e+05    filefi/044           ZLLGJets_MonoPhoton_PtG-130_TuneCUETP8M1_13TeV-madgraph+RunIISpring16DR80-PUSpring16RAWAODSIM_80X_mcRun2_asymptotic_2016_v3-v1+RAWAODSIM
 ### Axial MC
 dma-10-1         "DMA"                               0.5202               50000      4.93849757916e+04    filefi/044           DarkMatter_MonoPhoton_AV_Mx-1_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring16DR80-PUSpring16RAWAODSIM_80X_mcRun2_asymptotic_2016_v3-v1+RAWAODSIM
 dma-10-10        "DMA"                               0.02898              50000      4.92629814132e+04    filefi/044           DarkMatter_MonoPhoton_AV_Mx-10_Mv-10_gDMgQ1_LO_13TeV-madgraph+RunIISpring16DR80-PUSpring16RAWAODSIM_80X_mcRun2_asymptotic_2016_v3-v1+RAWAODSIM

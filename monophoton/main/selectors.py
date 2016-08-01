@@ -43,7 +43,8 @@ photonFullSelection = [
 puWeightSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
 puWeight = puWeightSource.Get('puweight')
 
-photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
+# photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
+photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_sf16.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
 # eventFiltersPath = '/scratch5/yiiyama/eventlists'

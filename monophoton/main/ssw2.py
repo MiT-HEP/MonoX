@@ -61,7 +61,7 @@ sphLumi = allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi
 haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16b2s'] ]
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
-neroHaloNorms = [ 4.7 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
+neroHaloNorms = [ 0.47 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
 print neroHaloNorms
 
@@ -197,7 +197,7 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
         snames += [key for key in _selectorKeys if '16' in key and allsamples[key].data]
     if 'bkgd' in snames:
         snames.remove('bkgd')
-        snames += [key for key in _selectorKeys if not allsamples[key].data and not key.startswith('dm') and not key.startswith('add')]
+        snames += [key for key in _selectorKeys if not allsamples[key].data and not key.startswith('dm') and not key.startswith('add') and not key.endswith('-d')]
     if 'dmfs' in snames:
         snames.remove('dmfs')
         snames += [key for key in _selectorKeys if key.startswith('dm') and key[3:5] == 'fs']
