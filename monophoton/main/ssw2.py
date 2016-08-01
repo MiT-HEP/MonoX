@@ -62,8 +62,10 @@ haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
 neroHaloNorms = [ 0.47 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
+neroSpikeNorms = [ 1. * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
 print neroHaloNorms
+print neroSpikeNorms
 
 selectors = {
     # Data 2016
@@ -73,17 +75,26 @@ selectors = {
     'sph-16d2-n': data_sph,
     # dima
     'sph-16b2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[0]))
-                            ,('haloUp', selectors.haloCSC(neroHaloNorms[0]))
-                            ,('haloDown', selectors.haloSieie(neroHaloNorms[0]))
-                             ],
+                              ,('haloUp', selectors.haloCSC(neroHaloNorms[0]))
+                              ,('haloDown', selectors.haloSieie(neroHaloNorms[0]))
+                              ,('spike', selectors.spike(neroSpikeNorms[0]))
+                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[0]))
+                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[0]))
+                              ],
     'sph-16c2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[1]))
-                            ,('haloUp', selectors.haloCSC(neroHaloNorms[1]))
-                            ,('haloDown', selectors.haloSieie(neroHaloNorms[1]))
-                             ],
+                              ,('haloUp', selectors.haloCSC(neroHaloNorms[1]))
+                              ,('haloDown', selectors.haloSieie(neroHaloNorms[1]))
+                              ,('spike', selectors.spike(neroSpikeNorms[1]))
+                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[1]))
+                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[1]))
+                              ],
     'sph-16d2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[2]))
-                            ,('haloUp', selectors.haloCSC(neroHaloNorms[2]))
-                            ,('haloDown', selectors.haloSieie(neroHaloNorms[2]))
-                             ],
+                              ,('haloUp', selectors.haloCSC(neroHaloNorms[2]))
+                              ,('haloDown', selectors.haloSieie(neroHaloNorms[2]))
+                              ,('spike', selectors.spike(neroSpikeNorms[2]))
+                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[2]))
+                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[2]))
+                              ],
     'smu-16b2-d': data_smu,
     'smu-16c2-d': data_smu,
     'smu-16d2-d': data_smu,

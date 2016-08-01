@@ -632,6 +632,39 @@ def haloSieie(norm):
 
     return sampleDefiner(norm, inverts, removes, appends)
 
+def spike(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = [ 'SieieNonzero', 'SipipNonzero']
+    removes = []
+    appends = []
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def spikeSieie(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = [ 'SieieNonzero' ]
+    removes = [ 'SipipNonzero' ]
+    appends = []
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def spikeSipip(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = [ 'SipipNonzero' ]
+    removes = [ 'SieieNonzero' ]
+    appends = []
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
 def leptonBase(sample, selector):
     """
     Base for n-lepton + photon selection
