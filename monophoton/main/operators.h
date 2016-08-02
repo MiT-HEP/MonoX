@@ -148,6 +148,8 @@ class PhotonSelection : public Cut {
     PhIsoTight,
     CHWorstIso,
     CHWorstIso11,
+    Sieie05,
+    Sipip05,
     nSelections
   };
 

@@ -632,14 +632,14 @@ def haloSieie(norm):
 
     return sampleDefiner(norm, inverts, removes, appends)
 
-def spike(norm):
+def spikeE2E9(norm):
     """
     Wrapper to return the generator for the spike proxy sample normalized to norm.
     """
     
-    inverts = [ 'SieieNonzero', 'SipipNonzero']
-    removes = []
-    appends = []
+    inverts = [ 'E2E995' ]
+    removes = [ 'SieieNonzero', 'SipipNonzero']
+    appends = [] 
 
     return sampleDefiner(norm, inverts, removes, appends)
 
@@ -648,9 +648,9 @@ def spikeSieie(norm):
     Wrapper to return the generator for the spike proxy sample normalized to norm.
     """
     
-    inverts = [ 'SieieNonzero' ]
-    removes = [ 'SipipNonzero' ]
-    appends = []
+    inverts = []
+    removes = [ 'SipipNonzero', 'SieieNonzero' ]
+    appends = [ 'Sieie05' ]
 
     return sampleDefiner(norm, inverts, removes, appends)
 
@@ -659,9 +659,9 @@ def spikeSipip(norm):
     Wrapper to return the generator for the spike proxy sample normalized to norm.
     """
     
-    inverts = [ 'SipipNonzero' ]
-    removes = [ 'SieieNonzero' ]
-    appends = []
+    inverts = []
+    removes = [ 'SieieNonzero', 'SipipNonzero' ]
+    appends = [ 'Sipip05' ]
 
     return sampleDefiner(norm, inverts, removes, appends)
 
