@@ -38,8 +38,8 @@ def getConfig(confName):
             GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
             GroupSpec('dma', 'DM A', samples = ['dma-*']),
             GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
-#            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
-#            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
+            GroupSpec('dmvfs', 'DM V', samples = ['dmvfs-*']),
+            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
@@ -49,11 +49,11 @@ def getConfig(confName):
         ]
         config.bkgGroups = [
             GroupSpec('spike', 'Spikes', count = 26.8, color = None),
-            GroupSpec('ttg', 'Minor SM', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('tg', 'Minor SM', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zllg', 'Minor SM', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('wlnu', 'Minor SM', samples = ['wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('ttg', 'Minor SM', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('tg', 'Minor SM', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('zllg', 'Minor SM', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('wlnu', 'Minor SM', samples = ['wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('multiboson', 'multiboson', samples = ['wwg', 'wz', 'zz', 'gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -86,6 +86,7 @@ def getConfig(confName):
             VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (15, 0., 30.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             VariableDef('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020)),
+            VariableDef('sipip', '#sigma_{i#phi i#phi}', 'photons.sipip[0]', (40, 0., 0.020)),
             VariableDef('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2)),
             VariableDef('e2e9', 'E2/E9', '(photons.emax[0] + photons.e2nd[0]) / photons.e33[0]', (25, 0.7, 1.2)),
             VariableDef('eStripe9', 'E_{Strip}/E9', 'photons.e15[0] / photons.e33[0]', (40, 0.4, 1.4)),
@@ -140,16 +141,16 @@ def getConfig(confName):
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
         config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
-        # config.findGroup('minor').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        # config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
-        config.findGroup('wlnu').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        config.findGroup('wlnu').variations.append(Variation('minorQCDscale', reweight = 0.033))
-        config.findGroup('zllg').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        config.findGroup('zllg').variations.append(Variation('minorQCDscale', reweight = 0.033))
-        config.findGroup('tg').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        config.findGroup('tg').variations.append(Variation('minorQCDscale', reweight = 0.033))
-        config.findGroup('ttg').variations.append(Variation('minorPDF', reweight = 'pdf'))
-        config.findGroup('ttg').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        config.findGroup('minor').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        # config.findGroup('wlnu').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        # config.findGroup('wlnu').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        # config.findGroup('zllg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        # config.findGroup('zllg').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        # config.findGroup('tg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        # config.findGroup('tg').variations.append(Variation('minorQCDscale', reweight = 0.033))
+        # config.findGroup('ttg').variations.append(Variation('minorPDF', reweight = 'pdf'))
+        # config.findGroup('ttg').variations.append(Variation('minorQCDscale', reweight = 0.033))
     
     elif confName == 'lowdphi':
         config = PlotConfig('monoph', photonData)

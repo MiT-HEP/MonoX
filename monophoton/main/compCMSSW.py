@@ -20,6 +20,9 @@ from pprint import pprint
 
 r.gROOT.SetBatch(True)
 
+sys.path.append("/home/ballen/cms/cmssw/042/CMSSW_7_4_6/src/MitMonoX/monophoton")
+from datasets import allsamples as allsamples74
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
@@ -75,11 +78,11 @@ plot74.Sumw2()
 plot80 = r.TH3D('plot80', ';M_{med} (GeV);M_{DM} (GeV)', len(mmeds)-1, mmeds, len(mdms)-1, mdms, len(spins)-1, spins)
 plot80.Sumw2()
 
-rcanvas = RatioCanvas(lumi = lumi)
+rcanvas = RatioCanvas()
 
 for variable in args.variable:
     xtitle = monophConfig.getVariable(variable).title
-    plotDir = 'monophoton/cmsswValidation/' + args.input[0].rstrip('.root') + '/' + variable
+    plotDir = 'monophoton/cmsswfsValidation/' + args.input[0].rstrip('.root') + '/' + variable
     
     for iP, proc in enumerate(processes):
         rcanvas.Clear()
@@ -99,14 +102,17 @@ for variable in args.variable:
             print "Dist80 integral is 0 for "+proc+". Skipping."
             continue
 
-        dist74 = source74.Get(variable + '-' + proc)
+        (model, med, dm) = proc.split('-')
+        fsProc = model+'fs-'+med+'-'+dm
+
+        dist74 = source74.Get(variable + '-' + fsProc)
 
         if not dist74:
-            print "Dist74 doesn't exist for", proc
+            print "Dist74 doesn't exist for", fsProc
             continue
 
         if not dist74.Integral() > 0.:
-            print "Dist74 integral is 0 for "+proc+". Skipping."
+            print "Dist74 integral is 0 for "+fsProc+". Skipping."
             continue
 
         rcanvas.legend.add('dist80', title = '80X', mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
@@ -131,7 +137,7 @@ for variable in args.variable:
             int74 = dist74.GetEntries() 
             int80 = dist80.GetEntries() 
 
-            total74 = 50000. # allsamples[proc].nevents # hacky because it is hard to read 74X 
+            total74 = allsamples74[fsProc].nevents # hacky because it is hard to read 74X 
             total80 = allsamples[proc].nevents
 
             eff74 = int74 / total74
@@ -175,10 +181,12 @@ for variable in args.variable:
 sfPlot = plot80.Clone('sfPlot')
 sfPlot.Divide(plot74)
 
+"""
 for iX in range(1, sfPlot.GetNbinsX()+1):
     for iY in range(1, sfPlot.GetNbinsY()+1):
         for iZ in range(1, sfPlot.GetNbinsZ()+1):
             print sfPlot.GetXaxis().GetBinLowEdge(iX), sfPlot.GetYaxis().GetBinLowEdge(iY), sfPlot.GetZaxis().GetBinLowEdge(iZ), sfPlot.GetBinContent(iX, iY, iZ), sfPlot.GetBinError(iX, iY,iZ)
+"""
 
 canvas = SimpleCanvas(lumi = lumi, xmax = 0.90)
 
@@ -191,7 +199,7 @@ for iS, spin in enumerate(spins):
 
     sfMDM1 = sfPlot.ProjectionX('sfMDM1'+spin, 1, 1, iS+1, iS+1, 'e')
     sfMDM1.SetTitle('')
-    sfMDM1.GetYaxis().SetTitle('80X/74X Scale Factor')
+    sfMDM1.GetYaxis().SetTitle('80X FullSim/74X FastSim Scale Factor')
     fitMDM1 = sfMDM1.Clone('fitMDM1'+spin)
     fitMDM1.Fit(flat, "M WL B", "goff", 0., 2000.)
 
@@ -229,7 +237,7 @@ for iS, spin in enumerate(spins):
     canvas.legend.apply('fit', flat)
     canvas.addHistogram(flat, drawOpt = 'L')
 
-    canvas.printWeb('monophoton/cmsswValidation/' + args.input[0].rstrip('.root') + '/scaleFactors', 'sfMDM1'+spin, logx = True, logy = False)
+    canvas.printWeb('monophoton/cmsswfsValidation/' + args.input[0].rstrip('.root') + '/scaleFactors', 'sfMDM1'+spin, logx = True, logy = False)
 
     flat2 = r.TF1('Flat2'+spin, '[0]', 0., 2000.)
     flat2.SetParameter(0, 1.)
@@ -237,7 +245,7 @@ for iS, spin in enumerate(spins):
 
     sfMMED10 = sfPlot.ProjectionY('sfMMED10'+spin, 1, 1, iS+1, iS+1, 'e')
     sfMMED10.SetTitle('')
-    sfMMED10.GetYaxis().SetTitle('80X/74X Scale Factor')
+    sfMMED10.GetYaxis().SetTitle('80X FullSim/74X FastSim Scale Factor')
     fitMMED10 = sfMMED10.Clone('fitMMED10'+spin)
     fitMMED10.Fit(flat2, "M WL B", "goff", 0., 2000.)
 
@@ -276,4 +284,4 @@ for iS, spin in enumerate(spins):
     canvas.legend.apply('fit', flat2)
     canvas.addHistogram(flat2, drawOpt = 'L')
 
-    canvas.printWeb('monophoton/cmsswValidation/' + args.input[0].rstrip('.root') + '/scaleFactors', 'sfMMED10'+spin, logx = True, logy = False)
+    canvas.printWeb('monophoton/cmsswfsValidation/' + args.input[0].rstrip('.root') + '/scaleFactors', 'sfMMED10'+spin, logx = True, logy = False)

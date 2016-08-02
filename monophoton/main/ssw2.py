@@ -61,7 +61,7 @@ sphLumi = allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi
 haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16b2s'] ]
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
-neroHaloNorms = [ 0.47 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
+neroHaloNorms = [ 1.54 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 neroSpikeNorms = [ 1. * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
 print neroHaloNorms
