@@ -22,10 +22,10 @@ cd -
 
 DATACARD=$CARDDIR/$POINT.dat
 
-# combine -M Asymptotic --run blind $DATACARD
-# METHOD=Asymptotic
-combine -M ProfileLikelihood --significance $DATACARD -t -1 --expectSignal=1 # --toysFreq
-METHOD=ProfileLikelihood
+combine -M Asymptotic --run blind $DATACARD
+METHOD=Asymptotic
+# combine -M ProfileLikelihood --significance $DATACARD -t -1 --expectSignal=1 # --toysFreq
+# METHOD=ProfileLikelihood
 
 # take care of r value scaling
 python $SCRIPTDIR/fixLimit.py $DATACARD higgsCombineTest.$METHOD.mH120.root
