@@ -36,18 +36,20 @@ defaults = {
     'monoelHfake': selectors.monoelectronHadProxy,
     'elmu': selectors.oppflavor,
     'eefake': selectors.zee,
-    'wenu': selectors.wenuall
+    'wenu': selectors.wenuall,
+    'zeeJets': selectors.zeeJets,
+    'zmmJets': selectors.zmmJets
 }
 
 data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
-data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu']
-data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake']
+data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets']
+data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets']
 mc_cand = ['monoph']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
 mc_sig = ['monoph', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
-mc_dilep = ['dimu', 'diel', 'elmu']
+mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
@@ -63,9 +65,6 @@ haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
 neroHaloNorms = [ 1.54 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 neroSpikeNorms = [ 1. * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
-
-print neroHaloNorms
-print neroSpikeNorms
 
 selectors = {
     # Data 2016
@@ -155,7 +154,6 @@ selectors = {
     'gg-80': mc_cand + mc_qcd + mc_lowmt,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'tg': mc_cand + mc_lep,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,

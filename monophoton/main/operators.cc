@@ -708,6 +708,121 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
 }
 
 //--------------------------------------------------------------------
+// TagAndProbePairZ
+//--------------------------------------------------------------------
+
+void
+TagAndProbePairZ::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("z.pt", &zPt_, "z.pt/F");
+  _skimTree.Branch("z.eta", &zEta_, "z.eta/F");
+  _skimTree.Branch("z.phi", &zPhi_, "z.phi/F");
+  _skimTree.Branch("z.mass", &zMass_, "z.mass/F");
+  _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
+
+  _skimTree.Branch("tag.pt", &tagPt_, "tag.pt/F");
+  _skimTree.Branch("tag.eta", &tagEta_, "tag.eta/F");
+  _skimTree.Branch("tag.phi", &tagPhi_, "tag.phi/F");
+  _skimTree.Branch("tag.positive", &tagPos_, "tag.positive/O");
+
+  _skimTree.Branch("probe.pt", &probePt_, "probe.pt/F");
+  _skimTree.Branch("probe.eta", &probeEta_, "probe.eta/F");
+  _skimTree.Branch("probe.phi", &probePhi_, "probe.phi/F");
+  _skimTree.Branch("probe.positive", &probePos_, "probe.positive/O");
+}
+
+bool
+TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::LeptonCollection* inTags(0);
+  simpletree::LeptonCollection* inProbes(0);
+  simpletree::LorentzVectorM tnpPair;
+  tnpPair.SetCoordinates(0., 0., 0., 0.);
+
+  switch (tagSpecies_) {
+  case kMuon:
+    inTags = &_outEvent.muons;
+    break;
+  case kElectron:
+    inTags = &_outEvent.electrons;
+    break;
+    /*
+      case kPhoton:
+      inTags = _outEvent.photons;
+      break;
+    */
+  }
+  
+  switch (probeSpecies_) {
+  case kMuon:
+    inProbes = &_outEvent.muons;
+    break;
+  case kElectron:
+    inProbes = &_outEvent.electrons;
+    break;
+    /*
+      case kPhoton:
+      inProbes = _outEvent.photons; 
+      break;
+    */
+  }
+
+  for (auto& tag : *inTags) {
+    if ( !(tag.tight && tag.pt > 30.))
+      continue;
+    
+    for (auto& probe : *inProbes) {
+      if ( !(probe.loose && probe.pt > 20.))
+	continue;
+
+      // don't want the same object in case the tag and probe collections are the same
+      // currently going with dR < 0.3, maybe change?
+      if (tag.dR2(probe) < 0.09 ) 
+	continue;
+
+      tnpPair = (tag.p4() + probe.p4());
+      zMass_ = tnpPair.M();
+      if ( !(zMass_ > 61. && zMass_ < 121.))
+	continue;
+
+      tagPt_ = tag.pt;
+      tagEta_ = tag.eta;
+      tagPhi_ = tag.phi;
+      tagPos_ = tag.positive;
+      
+      probePt_ = probe.pt;
+      probeEta_ = probe.eta;
+      probePhi_ = probe.phi;
+      probePos_ = probe.positive;
+      
+      zPt_ = tnpPair.Pt();
+      zEta_ = tnpPair.Eta();
+      zPhi_ = tnpPair.Phi();
+      zOppSign_ = ( (tag.positive == probe.positive) ? 0 : 1);
+
+      return true;
+    }
+  }
+  return false;
+}
+
+//--------------------------------------------------------------------
+// ZJetBackToBack
+//--------------------------------------------------------------------
+
+bool
+ZJetBackToBack::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& jet : _outEvent.jets) {
+    if ( jet.pt < minJetPt_)
+      continue;
+    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi - tnp_->getPhiZ())) > dPhiMin_ )
+      return true;
+  }
+  return false;
+}
+
+//--------------------------------------------------------------------
 // TriggerEfficiency
 //--------------------------------------------------------------------
 

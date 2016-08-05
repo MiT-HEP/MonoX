@@ -43,12 +43,12 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     std::cout << "Setting up translator" << std::endl;
     translator = new NeroToSimple(*_input, event);
     _input->LoadTree(0);
-    //  _input->Draw("isRealData", "Entry$ == 0", "goff");
-    // if (_input->GetV1()[0] == 0.)
+
     auto* br = _input->GetBranch("isRealData");
     br->GetEntry(0);
     if (br->GetLeaf("isRealData")->GetValue() == 0.)
       isMC = true;
+
     auto* file(_input->GetCurrentFile());
     auto* triggerNames(file->Get("nero/triggerNames"));
     if (triggerNames) {
@@ -63,7 +63,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
       isMC = true;
   }
   
-  printf("isMC %u \n", isMC);
+  // printf("isMC %u \n", isMC);
 
   if (goodLumiFilter_ && useLumiFilter_)
     printf("Appyling good lumi filter. \n");
@@ -85,7 +85,6 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
     if (translator)
       translator->translate();
-    // std::cout << "Translated" << std::endl;
 
     if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
       continue;

@@ -326,6 +326,63 @@ class EcalCrackVeto : public Cut {
   Bool_t ecalCrackVeto_{true};
 };
 
+class TagAndProbePairZ : public Cut {
+ public:
+  enum Species {
+    kMuon,
+    kElectron,
+    kPhoton, // doesn't work currently
+    nSpecies 
+  };
+
+  TagAndProbePairZ(char const* name = "TagAndProbePairZ") : Cut(name) {}
+  void addBranches(TTree& skimTree) override;
+  void setTagSpecies(unsigned species) { tagSpecies_ = species; }
+  void setProbeSpecies(unsigned species) { probeSpecies_ = species; }
+
+  float getPhiZ() { return zPhi_; }
+  
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  unsigned tagSpecies_{0};
+  unsigned probeSpecies_{0};
+
+  float tagPt_{-1.};
+  float tagEta_{-1.};
+  float tagPhi_{-1.};
+  bool tagPos_{-1.};
+  
+  float probePt_{-1.};
+  float probeEta_{-1.};
+  float probePhi_{-1.};
+  bool probePos_{0};
+
+  float zMass_{-1.};
+  float zPt_{-1.};
+  float zEta_{-1.};
+  float zPhi_{-1.};
+  bool zOppSign_{0};
+};
+
+class ZJetBackToBack: public Cut {
+ public:
+  ZJetBackToBack(char const* name = "ZJetBackToBack") : Cut(name) {}
+  
+  void setTagAndProbePairZ(TagAndProbePairZ* tnp) {tnp_ = tnp; }
+  void setMinDeltaPhi(float dPhiMin) { dPhiMin_ = dPhiMin; }
+  void setMinJetPt(float minJetPt) { minJetPt_ = minJetPt; }
+
+ private:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  float minJetPt_{30.};
+  float dPhiMin_{2.5};
+  TagAndProbePairZ* tnp_{0};
+
+};
+
+
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
