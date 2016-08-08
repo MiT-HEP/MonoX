@@ -55,7 +55,7 @@ mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 #mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
-mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu']
+mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu', 'zmmJets', 'zeeJets']
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
@@ -367,13 +367,12 @@ if __name__ == '__main__':
 
         if nStart >= 0:
             sname = sname + '_' + str(nStart) + '-' + str(nEnd)
-            tmpDir = '/tmp/ballen'
-            if not os.path.exists(tmpDir):
-                os.makedirs(tmpDir)
-            skimmer.run(tree, tmpDir, sname, args.nentries, args.neroInput)
-            for selname in selnames:
-                if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
-                    os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')
-                shutil.move(tmpDir + '/' + sname + '_' + selname + '.root', config.skimDir)
-        else:
-            skimmer.run(tree, config.skimDir, sname, args.nentries, args.neroInput)
+
+        tmpDir = '/tmp/ballen'
+        if not os.path.exists(tmpDir):
+            os.makedirs(tmpDir)
+        skimmer.run(tree, tmpDir, sname, args.nentries, args.neroInput)
+        for selname in selnames:
+            if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
+                os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')
+            shutil.move(tmpDir + '/' + sname + '_' + selname + '.root', config.skimDir)
