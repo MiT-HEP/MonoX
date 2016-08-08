@@ -10,11 +10,12 @@ sys.path.append(basedir)
 from plotstyle import DataMCCanvas
 from datasets import allsamples
 from main.plotconfig import VariableDef
+import config
 
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = min(config.jsonLumi, allsamples['smu-16b2'].lumi + allsamples['smu-16b2s'].lumi)
+lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 probePixel = '!probe.pixelVeto'
@@ -45,28 +46,28 @@ jetsCuts = [ ('monojet30', [njetsCut]),
             ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
             ]
 
-skims = [ 'zmumu_smu', 'zee_sel', 'z*_s*' ]
+skims = [ 'smu-16*2-d_zmmJets', 'sel-16*2-d_zeeJets', 's*-16*2-d_z*Jets' ]
 
 samples = [ ('zllg', r.TColor.GetColor(0xff, 0x99, 0x33)), 
             ('ttg', r.TColor.GetColor(0xbb, 0xaa, 0xff)), 
+            ('wglo', r.TColor.GetColor(0x99, 0xee, 0xff)),
             ('wlnu-', r.TColor.GetColor(0xff, 0xee, 0x99)), 
-            ('wglo', r.TColor.GetColor(0x99, 0xee, 0xff)), 
             ('tt', r.TColor.GetColor(0xff, 0xaa, 0xcc)),
             ('dy-50-', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
 
 
 for skim in skims:
-    dataTree = r.TChain('skim')
-    dataTree.Add('/scratch5/ballen/hist/monophoton/phoMet/'+skim+'-*.root')
+    dataTree = r.TChain('events')
+    dataTree.Add(config.skimDir+'/'+skim+'.root')
     print dataTree.GetEntries()
 
-    skimm = skim.split('_')[0]
+    skimm = skim.split('_')[1]
 
     mcTrees = []
     for sample, color in samples:
-        mcTree = r.TChain('skim')
-        mcTree.Add('/scratch5/ballen/hist/monophoton/phoMet/'+skimm+'_'+sample+'*.root')
+        mcTree = r.TChain('events')
+        mcTree.Add(config.skimDir+'/'+sample+'*_'+skimm+'.root')
         mcTrees.append( (sample, color, mcTree) )
 
     for jetsCut in jetsCuts:
@@ -112,4 +113,4 @@ for skim in skims:
                 canvas.xtitle = varDef.title
                 canvas.ytitle = 'Events'
 
-                canvas.printWeb('monophoton/phoMet/'+skim, sign+'_'+jetsCut[0]+'_'+varDef.name, logy = False)
+                canvas.printWeb('monophoton/phoMet/'+skim, sign+'_'+jetsCut[0]+'_'+varDef.name, logy = True)
