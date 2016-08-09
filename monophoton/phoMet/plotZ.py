@@ -15,7 +15,7 @@ import config
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
+lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi) #  + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 probePixel = '!probe.pixelVeto'
@@ -31,8 +31,8 @@ variables = [ VariableDef('Met', 'E_{T}^{miss}', 't1Met.met', [10 * x for x in r
               VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
               VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
               VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi) ),
-              VariableDef('jetEta', '|#eta_{j}|', 'TMath::Abs(jets.eta[0])', (10, 0., 5.), applyFullSel = True),
-              # VariableDef('njets', 'N_{jets}', 'jets.size', (6, 0., 6.), applyFullSel = True),
+              # VariableDef('jetEta', '|#eta_{j}|', 'TMath::Abs(jets.eta[0])', (10, 0., 5.), applyFullSel = True),
+              VariableDef('njets', 'N_{jets}', 'jets.size', (6, 0., 6.), applyFullSel = True),
               VariableDef('minDPhiJetMet', 'min #Delta#phi(jet, E_{T}^{miss})', 't1Met.minJetDPhi', (15, 0., math.pi))
               ]
 
@@ -40,20 +40,18 @@ baseCuts = [ dPhiCut, metCut, zMassCut ]
 
 zSignCuts = [ ('os', 'z.oppSign == 1'), ('ss', 'z.oppSign == 0') ]
 
-jetsCuts = [ ('monojet30', [njetsCut]),
+jetsCuts = [ # ('monojet30', [njetsCut]),
             ('monojet100', [njetsCut, jetPtCut]),
-            ('multijet', [jetPtCut]),
+            # ('multijet', [jetPtCut]),
             ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
             ]
 
-skims = [ 'smu-16*2-d_zmmJets', 'sel-16*2-d_zeeJets', 's*-16*2-d_z*Jets' ]
+skims = [ 'smu-16b2-d_zmmJets' ] # , 'sel-16b2-d_zeeJets', 's*-16b2-d_z*Jets' ]
 
-samples = [ ('zllg', r.TColor.GetColor(0xff, 0x99, 0x33)), 
-            ('ttg', r.TColor.GetColor(0xbb, 0xaa, 0xff)), 
-            ('wglo', r.TColor.GetColor(0x99, 0xee, 0xff)),
-            ('wlnu-', r.TColor.GetColor(0xff, 0xee, 0x99)), 
-            ('tt', r.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            ('dy-50-', r.TColor.GetColor(0x99, 0xff, 0xaa)) 
+samples = [ ('w+jets', ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], r.TColor.GetColor(0xff, 0x44, 0x99)),
+            ('diboson', ['ww', 'wz', 'zz'], r.TColor.GetColor(0xff, 0xee, 0x99)), 
+            ('tt', ['tt'], r.TColor.GetColor(0x55, 0x44, 0xff)),
+            ('z+jets', ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], r.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
 
 
@@ -65,10 +63,11 @@ for skim in skims:
     skimm = skim.split('_')[1]
 
     mcTrees = []
-    for sample, color in samples:
+    for group, slist, color in samples:
         mcTree = r.TChain('events')
-        mcTree.Add(config.skimDir+'/'+sample+'*_'+skimm+'.root')
-        mcTrees.append( (sample, color, mcTree) )
+        for sample in slist:
+            mcTree.Add(config.skimDir+'/'+sample+'_'+skimm+'.root')
+        mcTrees.append( (group, color, mcTree) )
 
     for jetsCut in jetsCuts:
         cuts = baseCuts + jetsCut[1]
@@ -113,4 +112,4 @@ for skim in skims:
                 canvas.xtitle = varDef.title
                 canvas.ytitle = 'Events'
 
-                canvas.printWeb('monophoton/phoMet/'+skim, sign+'_'+jetsCut[0]+'_'+varDef.name, logy = True)
+                canvas.printWeb('monophoton/phoMet/'+skim, skimm[:3]+'_'+jetsCut[0]+'_'+sign+'_'+varDef.name, logy = False)

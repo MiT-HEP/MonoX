@@ -903,6 +903,7 @@ def zeeJets(sample, selector):
 
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(tnp)
+    b2b.setMinJetPt(100.)
     selector.addOperator(b2b)
 
     return selector
@@ -918,6 +919,7 @@ def zmmJets(sample, selector):
 
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(tnp)
+    b2b.setMinJetPt(100.)
     selector.addOperator(b2b)
 
     return selector

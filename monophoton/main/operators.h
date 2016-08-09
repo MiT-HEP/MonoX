@@ -351,7 +351,7 @@ class TagAndProbePairZ : public Cut {
   float tagPt_{-1.};
   float tagEta_{-1.};
   float tagPhi_{-1.};
-  bool tagPos_{-1.};
+  bool tagPos_{0};
   
   float probePt_{-1.};
   float probeEta_{-1.};

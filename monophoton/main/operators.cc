@@ -813,6 +813,9 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 bool
 ZJetBackToBack::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
+  if (tnp_->getPhiZ() == -1.)
+    return false;
+
   for (auto& jet : _outEvent.jets) {
     if ( jet.pt < minJetPt_)
       continue;
