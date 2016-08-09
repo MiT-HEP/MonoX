@@ -782,7 +782,7 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 
       tnpPair = (tag.p4() + probe.p4());
       zMass_ = tnpPair.M();
-      if ( !(zMass_ > 61. && zMass_ < 121.))
+      if ( !(zMass_ > 81. && zMass_ < 101.))
 	continue;
 
       tagPt_ = tag.pt;

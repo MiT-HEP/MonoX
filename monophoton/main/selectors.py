@@ -874,7 +874,8 @@ def TagAndProbeBase(sample, selector):
         'TagAndProbePairZ',
         'JetCleaning',
         'CopyMet',
-        'JetMetDPhi'
+        'JetMetDPhi',
+        'HighMet'
         ]
     
     for op in operators:
@@ -888,7 +889,11 @@ def TagAndProbeBase(sample, selector):
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kElectrons, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kMuons, False)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('HighMet').setThreshold(50.)
+    selector.findOperator('HighMet').setIgnoreDecision(True)
 
     return selector
 
@@ -904,6 +909,7 @@ def zeeJets(sample, selector):
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(tnp)
     b2b.setMinJetPt(100.)
+    b2b.setMinDeltaPhi(3.)
     selector.addOperator(b2b)
 
     return selector
@@ -920,6 +926,7 @@ def zmmJets(sample, selector):
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(tnp)
     b2b.setMinJetPt(100.)
+    b2b.setMinDeltaPhi(3.)
     selector.addOperator(b2b)
 
     return selector

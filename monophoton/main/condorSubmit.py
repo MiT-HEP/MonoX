@@ -10,6 +10,7 @@ from datasets import allsamples
 import config
 from ssw2 import selectors, processSampleNames
 
+from time import sleep
 from glob import glob
 from subprocess import Popen, PIPE
 from argparse import ArgumentParser
@@ -30,6 +31,7 @@ if not os.path.exists(config.skimDir):
     os.makedirs(config.skimDir)
 
 for sname in snames:
+    sleep(1)
     sample = allsamples[sname]
     print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
 
