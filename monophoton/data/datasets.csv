@@ -36,6 +36,9 @@ smu-16c2         "SingleMuon (2016C)"                2619.6               1     
 smu-16d2         "SingleMuon (2016D)"                841.6                1          -                    filefi/045           SingleMuon+Run2016D-PromptReco-v2+AOD
 jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/044           JetHT+Run2016B-PromptReco-v2+AOD
 jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/044           JetHT+Run2016C-PromptReco-v2+AOD
+### Dima MC
+znng-d           "Z_{inv}#gamma"                     0.1903               375920     375920               nero160723/ZNuNuG    ZNuNuG
+wnlg-d           "W#gamma"                           0.6637               483496     483496               nero160723/WLNuG     WLNuG
 ### SM MC
 dy-50            "Z#rightarrowll"                    6025                 28619775   4.49461518006e+11    filefi/044           DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 dy-50-100        "Z#rightarrowll"                    148.2                8408282    8.40828174738e+06    filefi/044           DYJetsToLL_M-50_HT-100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3_ext1-v1+AODSIM
