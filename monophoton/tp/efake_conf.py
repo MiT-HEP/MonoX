@@ -1,22 +1,23 @@
-skimDir = '/scratch5/yiiyama/studies/monophoton16/efake_skim'
-outputDir = '/scratch5/yiiyama/studies/monophoton16/efake'
+skimDir = '/scratch5/yiiyama/studies/monophoton16/efake_skim_nero'
+outputDir = '/scratch5/yiiyama/studies/monophoton16/efake_nero'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
 # Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
 skimConfig = {
-    'eldata': (['sel-16b2'], ['kEG']),
-    'mudata': (['smu-16b2'], ['kMG', 'kMMG']),
-    'mc': (['dy-50', 'gg-80', 'wlnu'], ['kEG', 'kMG', 'kMMG'])
+    'eldata': (['sel-16b2', 'sel-16c2', 'sel-16d2'], ['kEG']),
+    'mudata': (['smu-16b2', 'smu-16c2'], ['kMG', 'kMMG']),
+    'mc': (['dy-50', 'wlnu', 'tt'], ['kEG', 'kMG', 'kMMG']),
+    'mcgg': (['gg-80'], ['kEG'])
 }
 
-lumiSamples = ['sel-16b2']
+lumiSamples = ['sel-16b2', 'sel-16c2', 'sel-16d2']
 
 def getBinning(binningName):
     if binningName == 'pt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [40., 50., 60., 80., 100., 6500.]
+        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -27,7 +28,7 @@ def getBinning(binningName):
 
     elif binningName == 'highpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [100., 6500.]
+        binning = [160., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

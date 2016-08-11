@@ -18,14 +18,15 @@ binningTitle, binning, fitBins = getBinning(binningName)
 
 sys.argv = []
 
-toyUncert = False
+toyUncert = True
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
 inputTree = ROOT.TChain('yields')
 inputTree.Add(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
-inputTree.Add(outputDir + '/toys_' + dataType + '_' + binningName + '.root')
+if toyUncert:
+    inputTree.Add(outputDir + '/toys_' + dataType + '_' + binningName + '.root')
 
 vTPconf = array.array('i', [0])
 vBinName = array.array('c', '\0' * 128)
@@ -93,7 +94,7 @@ if dataType == 'mc':
 outputFile = ROOT.TFile.Open(outputDir + '/results_' + dataType + '_' + binningName + '.root', 'recreate')
 
 if binningName == 'pt':
-    binning[-1] = 150.
+    binning[-1] = binning[-2] + 20.
 
 yields = {
     'ee': ROOT.TH1D('ee', '', len(binning) - 1, array.array('d', binning)),
@@ -121,6 +122,9 @@ for iBin, (binName, cut) in enumerate(fitBins):
         yields[conf].SetBinContent(iBin + 1, nom)
 
         if toyUncert:
+            if binName != 'pt_160_6500':
+                continue
+
             tvals = toys[conf][binName]
 
             tvals.sort()
@@ -202,8 +206,8 @@ for iBin, (binName, cut) in enumerate(fitBins):
     else:
         print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
 
-if toyUncert and binningName == 'highpt':
-    binName = 'pt_100_6500'
+if toyUncert and binningName == 'pt':
+    binName = 'pt_160_6500'
     for conf in ['ee', 'eg']:
         canvas.Clear(full = True)
         canvas.ylimits = (0., 0.05)

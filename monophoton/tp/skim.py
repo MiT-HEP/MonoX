@@ -36,7 +36,10 @@ for sname in lumiSamples:
 # Comes handy when processing a pool of samples through TChain
 sampleIds = {
     'sel-16b2': 0,
+    'sel-16c2': 0,
+    'sel-16d2': 0,
     'smu-16b2': 0,
+    'smu-16c2': 0,
     'dy-50': 1,
     'gg-80': 2,
     'tt': 3,
@@ -99,7 +102,7 @@ for sname in targets:
 
     sample = allsamples[sname]
     inputTree = ROOT.TChain('events')
-    inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/simpletree_*.root')
+    inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 
     if sample.data:
         skimmer.fillSkim(inputTree, 1., sampleId)

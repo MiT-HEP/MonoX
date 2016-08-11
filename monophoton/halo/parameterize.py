@@ -29,6 +29,8 @@ sph = allsamples['sph-16b2']
 
 targTree = ROOT.TChain('events')
 targTree.Add(config.photonSkimDir + '/sph-16b2.root')
+targTree.Add(config.photonSkimDir + '/sph-16c2.root')
+targTree.Add(config.photonSkimDir + '/sph-16d2.root')
 
 work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))

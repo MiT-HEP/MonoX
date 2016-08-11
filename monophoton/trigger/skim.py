@@ -16,9 +16,11 @@ snames = sys.argv[2:]
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-ROOT.gROOT.LoadMacro('Skimmer.cc+')
+ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
 tree = ROOT.TChain('events')
+
+st19 = False
 
 for sname in snames:
     sample = allsamples[sname]
@@ -33,6 +35,8 @@ for sname in snames:
             treeType = ROOT.kDimuon
         elif obj == 'electron':
             treeType = ROOT.kDielectron
+        elif obj == 'met':
+            treeType = ROOT.kSingleElectron
         elif sname.startswith('sph-'):
             treeType = ROOT.kDiphoton
         elif sname.startswith('sel-'):
@@ -42,10 +46,14 @@ for sname in snames:
         elif sname.startswith('jht-'):
             treeType = ROOT.kJetHT
             
-        suffix = sname[:sname.find('-')]
+#        suffix = sname[:sname.find('-')]
+        suffix = sname
+
+        # TEMPORARY
+        st19 = (sample.book == 'filefi/045')
 
 outDir = config.histDir + '/trigger'
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-ROOT.skim(tree, treeType, outDir + '/trigger_' + suffix + '_' + obj + '.root')
+ROOT.skim(tree, treeType, outDir + '/trigger_' + suffix + '_' + obj + '.root', st19, 50000000)

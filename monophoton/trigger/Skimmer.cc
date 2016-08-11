@@ -14,11 +14,12 @@ enum EventType {
   kJetHT,
   kDimuon,
   kDielectron,
+  kSingleElectron,
   nEventTypes
 };
 
 void
-skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntries = -1)
+skim(TTree* _input, EventType _eventType, char const* _outputName, bool st19, long _nEntries = -1)
 {
   auto* outputFile(TFile::Open(_outputName, "recreate"));
   auto* output(new TTree("triggerTree", "trigger matching"));
@@ -28,10 +29,13 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
   unsigned eventNum;
   float rho;
   unsigned short npv;
+  bool hltPhoton135PFMET100;
 
   simpletree::MuonCollection outMuons("probe");
   simpletree::ElectronCollection outElectrons("probe");
   simpletree::PhotonCollection outPhotons("probe"); // will only have one element
+  simpletree::CorrectedMet outMet("probe");
+  simpletree::TriggerHelper hltPhoton135PFMET100Helper("HLT_Photon135_PFMET100");
 
   output->Branch("run", &runNum, "run/i");
   output->Branch("lumi", &lumiNum, "lumi/i");
@@ -48,6 +52,10 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     outElectrons.book(*output);
     outElectrons.resize(1);
     break;
+  case kSingleElectron:
+    outMet.book(*output);
+    output->Branch("hltPhoton135PFMET100", &hltPhoton135PFMET100, "hltPhoton135PFMET100/O");
+    break;
   default:
     outPhotons.book(*output);
     outPhotons.resize(1);
@@ -56,7 +64,11 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"run", "lumi", "event", "rho", "npv", "hltBits", "photons", "electrons", "muons"});
+  event.setAddress(*_input, {"run", "lumi", "event", "rho", "npv", "hltBits", "photons", "electrons", "muons", "t1Met"});
+
+  bool matchL1[simpletree::Particle::array_data::NMAX][simpletree::nPhotonL1Objects];
+  if (st19)
+    _input->SetBranchAddress("photons.matchL1", matchL1);
 
   std::vector<simpletree::TriggerHelper*> triggers;
   switch (_eventType) {
@@ -64,7 +76,7 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     triggers.push_back(new simpletree::TriggerHelper("HLT_Photon36_R9Id90_HE10_Iso40_EBOnly_PFMET40"));
     break;
   case kElectronPhoton:
-    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele23_WPLoose_Gsf"));
+    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele27_WPTight_Gsf"));
     break;
   case kMuonPhoton:
     triggers.push_back(new simpletree::TriggerHelper("HLT_IsoMu20"));
@@ -76,9 +88,13 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     break;
   case kDimuon:
     triggers.push_back(new simpletree::TriggerHelper("HLT_IsoMu20"));
+    triggers.push_back(new simpletree::TriggerHelper("HLT_IsoTkMu20"));
     break;
   case kDielectron:
-    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele23_WPLoose_Gsf"));
+    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele27_WPTight_Gsf"));
+    break;
+  case kSingleElectron:
+    triggers.push_back(new simpletree::TriggerHelper("HLT_Ele27_WPTight_Gsf"));
     break;
   default:
     break;
@@ -115,8 +131,7 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     rho = event.rho;
     npv = event.npv;
 
-    switch (_eventType) {
-    case kDimuon:
+    if (_eventType == kDimuon) {
       for (auto& muon : event.muons) {
 	if (!muon.tight)
 	  continue;
@@ -140,9 +155,8 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 	outMuons[0] = muon;
 	output->Fill();
       }
-      break;
-      
-    case kDielectron:
+    }      
+    else if (_eventType == kDielectron) {
       for (auto& electron : event.electrons) {
 	if (!electron.tight)
 	  continue;
@@ -166,10 +180,26 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 	outElectrons[0] = electron;
 	output->Fill();
       }
-      break;
-      
-    default:
+    }
+    else if (_eventType == kSingleElectron) {
+      unsigned iTag(0);
+      for (; iTag != event.electrons.size(); ++iTag) {
+        auto& electron(event.electrons[iTag]);
+	if (electron.tight && electron.pt > 140.)
+	  break;
+      }
+      if (iTag == event.electrons.size())
+        continue;
+
+      hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
+
+      outMet = event.t1Met;
+      output->Fill();
+    }
+    else {
+      int iPh(-1);
       for (auto& photon : event.photons) {
+        ++iPh;
 	if (!photon.medium)
 	  continue;
 	
@@ -219,17 +249,25 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
 	    if (tag.dR2(photon) < 0.09)
 	      continue;
 
-	    if (tag.matchHLT[simpletree::fMu20])
+	    if (tag.matchHLT[simpletree::fMu20] || tag.matchHLT[simpletree::fMuTrk20])
 	      break;
 	  }
 	  if (iTag == event.muons.size())
 	    continue;
 	}
+        
+        if (st19) {
+          for (unsigned iL1(0); iL1 != simpletree::nPhotonL1Objects; ++iL1) {
+            if (matchL1[iPh][iL1])
+              photon.matchL1[iL1] = 0.1;
+            else
+              photon.matchL1[iL1] = 3.0;
+          }
+        }
 	
 	outPhotons[0] = photon;
 	output->Fill();
       } // probe photons
-      break;
     } // skim switch
   } // nEntries
 

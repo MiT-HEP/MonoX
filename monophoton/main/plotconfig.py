@@ -14,7 +14,7 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b2-d'] # , 'sph-16b2s']
+photonData = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] # , 'sph-16b2s']
 photonDataPrescaled = [('sph-16b2', 1)] # , ('sph-16b2s', 1)]
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
@@ -346,8 +346,8 @@ def getConfig(confName):
         dRPhoParton  = 'TMath::Sqrt(TMath::Power(photons.eta[0] - promptFinalStates.eta, 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - promptFinalStates.phi), 2.))'
         # MinIf$() somehow returns 0 when there is only one jet
 
-        config = PlotConfig('monomu', ['smu-16b2'])
-        config.baseline = 'photons.medium[0] && photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config = PlotConfig('monomu', ['smu-16b2-d', 'smu-16c2-d', 'smu-16d2-d'])
+        config.baseline = 'photons.medium[0] && photons.pt[0] > 150. && ((t1Met.met > 140. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 140. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'multiboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -380,8 +380,8 @@ def getConfig(confName):
         dRPhoParton  = 'TMath::Sqrt(TMath::Power(photons.eta[0] - promptFinalStates.eta, 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - promptFinalStates.phi), 2.))'
         # MinIf$() somehow returns 0 when there is only one jet
 
-        config = PlotConfig('monoel', ['sel-16b2'])
-        config.baseline = 'photons.pt[0] > 140. && ((t1Met.met > 100. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 100. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config = PlotConfig('monoel', ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d'])
+        config.baseline = 'electrons.pt[0] > 50. && photons.medium[0] && photons.pt[0] > 150. && ((t1Met.met > 140. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 140. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('dy', 'DY', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),

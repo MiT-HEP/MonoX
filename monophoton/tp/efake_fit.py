@@ -19,6 +19,10 @@ nToys = 0
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
+#varType = 'kSCRawMass'
+varType = 'kMass'
+plotDir = 'efake'
+
 fitBins = getBinning(binningName)[2]
 
 lumi = 0.
@@ -127,6 +131,8 @@ for name, vParam in vParams.items():
 # mainly used in runMode single, but batchtoy mode also uses it to make empty histograms
 generator = ROOT.TemplateGenerator()
 
+weightExpr = 'weight' if dataType == 'mc' else '1'
+
 if runMode == 'batchtoy':
     source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
 
@@ -164,13 +170,15 @@ elif runMode == 'single':
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
         # will need MC signal template
-        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
+        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
         mcWork = mcSource.Get('work')
 
     else:
         for sname in skimConfig['mc'][0]:
             generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
+        for sname in skimConfig['mcgg'][0]:
+            generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
 
     work = ROOT.RooWorkspace('work', 'work')
     
@@ -239,9 +247,9 @@ for binName, fitCut in fitBins:
             hsigName = 'sig_' + binName
     
             # make signal template
-            generator.setTemplateBinning(ROOT.RooUniformBinning(20., 160., 140)) # avoid boundary effect
-            hsig = generator.makeTemplate(ROOT.kEG, hsigName, 'sample == 1 && TMath::Abs(probes.matchedGen) == 11 && ({fitCut})'.format(fitCut = fitCut))
-    
+            generator.setTemplateBinning(ROOT.RooUniformBinning(20., 160., 140), getattr(ROOT, varType)) # avoid boundary effect
+            hsig = generator.makeTemplate(ROOT.kEG, hsigName, 'sample == 1 && TMath::Abs(probes.matchedGen) == 11 && ({fitCut})'.format(fitCut = fitCut), getattr(ROOT, varType))
+
             hsig.SetDirectory(outputFile)
             outputFile.cd()
             hsig.Write()
@@ -311,20 +319,22 @@ for binName, fitCut in fitBins:
 
             if conf == 'ee' or conf == 'eg':
                 # USING BINNED FIT FOR ALL
-                htarg = generator.makeTemplate(ROOT.kEG, targName, cut)
+                htarg = generator.makeTemplate(ROOT.kEG, targName, cut, getattr(ROOT, varType))
                 htarg.SetDirectory(outputFile)
                 outputFile.cd()
                 htarg.Write()
+
+                print 'htarg limits:', htarg.GetXaxis().GetXmin(), htarg.GetXaxis().GetXmax(), htarg.GetSumOfWeights()
             
                 targ = ROOT.RooDataHist(targName, 'target', masslist, htarg)
                 targHist = targ
 
             else:
-                ttarg = generator.makeUnbinnedTemplate(ROOT.kEG, 'targtree_' + binName, cut)
+                ttarg = generator.makeUnbinnedTemplate(ROOT.kEG, 'targtree_' + binName, cut, getattr(ROOT, varType))
                 
                 # histogram for record purpose
-                htarg = generator.makeEmptyTemplate(targName)
-                ttarg.Draw('mass>>' + targName, 'weight', 'goff')
+                htarg = generator.makeEmptyTemplate(targName, getattr(ROOT, varType))
+                ttarg.Draw('mass>>' + targName, weightExpr, 'goff')
                 for iX in range(1, htarg.GetNbinsX() + 1):
                     if htarg.GetBinContent(iX) < 0.:
                         htarg.SetBinContent(iX, 0.)
@@ -335,8 +345,12 @@ for binName, fitCut in fitBins:
                 htarg.SetDirectory(outputFile)
                 outputFile.cd()
                 htarg.Write()
-    
-                targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass, weight), '', 'weight')
+
+                if dataType == 'mc':
+                    targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass, weight), '', 'weight')
+                else:
+                    targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass))
+
                 targHist = ROOT.RooDataHist(targName, 'target', masslist, htarg)
     
             getattr(work, 'import')(targ, ROOT.RooFit.Rename(targName))
@@ -350,12 +364,12 @@ for binName, fitCut in fitBins:
                 bkgModel = ROOT.RooPolynomial(bkgModelName, 'bkgModel', mass, ROOT.RooArgList(slope))
 
             else:
-                tbkg = generator.makeUnbinnedTemplate(ROOT.kMG, 'bkgtree_' + binName, cut)
+                tbkg = generator.makeUnbinnedTemplate(ROOT.kMG, 'bkgtree_' + binName, cut, getattr(ROOT, varType))
         
                 # histogram for record purpose
                 bkgName = 'bkg_' + conf + '_' + binName
-                hbkg = generator.makeEmptyTemplate(bkgName)
-                tbkg.Draw('mass>>' + bkgName, 'weight', 'goff')
+                hbkg = generator.makeEmptyTemplate(bkgName, getattr(ROOT, varType))
+                tbkg.Draw('mass>>' + bkgName, weightExpr, 'goff')
                 for iX in range(1, hbkg.GetNbinsX() + 1):
                     if hbkg.GetBinContent(iX) < 0.:
                         hbkg.SetBinContent(iX, 0.)
@@ -366,7 +380,10 @@ for binName, fitCut in fitBins:
                 hbkg.SetDirectory(outputFile)
                 hbkg.Write()
 
-                bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
+                if dataType == 'mc':
+                    bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
+                else:
+                    bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, '', 0.5, 8)
 
             getattr(work, 'import')(bkgModel, ROOT.RooFit.Silence())
    
@@ -389,7 +406,7 @@ for binName, fitCut in fitBins:
                 # MC-truth background
                 hmcbkgName = 'mcbkg_' + conf + '_' + binName
     
-                hmcbkg = generator.makeTemplate(ROOT.kEG, hmcbkgName, 'TMath::Abs(probes.matchedGen) != 11 && ({cut})'.format(cut = cut))
+                hmcbkg = generator.makeTemplate(ROOT.kEG, hmcbkgName, 'TMath::Abs(probes.matchedGen) != 11 && ({cut})'.format(cut = cut), getattr(ROOT, varType))
                 
                 hmcbkg.SetDirectory(outputFile)
                 outputFile.cd()
@@ -409,11 +426,11 @@ for binName, fitCut in fitBins:
                 canvas.addHistogram(hmcbkg)
 
             if pdf == 'altbkg':
-                canvas.printWeb('efake', 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
+                canvas.printWeb(plotDir, 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
             elif pdf == 'altsig':
-                canvas.printWeb('efake', 'fit_' + dataType + '_altsig_' + conf + '_' + binName, logy = False)
+                canvas.printWeb(plotDir, 'fit_' + dataType + '_altsig_' + conf + '_' + binName, logy = False)
             else:
-                canvas.printWeb('efake', 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
+                canvas.printWeb(plotDir, 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
 
         # run toys
         nNominal = vals['nsignal'] + vals['nbkg']
@@ -430,7 +447,7 @@ for binName, fitCut in fitBins:
             toydata = model.generate(massset, random.Poisson(nNominal))
 
             if conf == 'ee':
-                htarg = generator.makeEmptyTemplate('htarg')
+                htarg = generator.makeEmptyTemplate('htarg', getattr(ROOT, varType))
                 toydata.fillHistogram(htarg, masslist)
                 targ = ROOT.RooDataHist('target', 'target', masslist, htarg)
                 htarg.Delete()
@@ -461,4 +478,6 @@ outputFile.cd()
 yields.Write()
 if runMode == 'single':
     work.Write()
+
+work = None
 outputFile.Close()

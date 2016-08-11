@@ -1,5 +1,5 @@
 # Trigger efficiency measurement using X+photon events
-#   eff.py sname vname tname [output name]
+#   eff.py object sname vname tname [output name]
 # can use wildcard for any of the three
 
 import os
@@ -37,24 +37,53 @@ workDir = config.histDir + '/trigger'
 if outname:
     outputFile = ROOT.TFile.Open(outname, 'recreate')
 
-vconf = {
-    'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
-    'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
-    'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
-    'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
-    'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
-    'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
-}
+if oname == 'photon':
+    vconf = {
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
+        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
+        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+    }
+
+    tconf = {
+        'hlt': ('probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
+        'l1': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
+        'l1eg': ('probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
+        'l1hlt': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1&HLT'),
+        'lephlt': ('probe.matchHLT[0][0]', '1', 'HLT')
+    }
+
+elif oname == 'muon':
+    vconf = {
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', (50, 0., 50.)),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
+        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
+        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+    }
+
+    tconf = {
+        'hlt': ('probe.matchHLT[0][0] || probe.matchHLT[0][1]', '1', ''),
+    }
+
+elif oname == 'electron':
+    vconf = {
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', (50, 0., 50.)),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
+        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
+        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+    }
+
+    tconf = {
+        'hlt': ('probe.matchHLT[0][1]', '1', ''),
+    }
 
 vtitle, vexpr, baseline, binning = vconf[vname]
-
-tconf = {
-    'hlt': ('probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
-    'l1': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
-    'l1eg': ('probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
-    'l1hlt': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1&HLT'),
-    'lephlt': ('probe.matchHLT[0][0]', '1', 'HLT')
-    }
 
 passdef, denomdef, title = tconf[tname]
 
@@ -85,8 +114,11 @@ tmpfile = ROOT.TFile.Open('/tmp/trigeff_tmp.root', 'recreate')
 
 canvas.Clear()
 
-source = ROOT.TFile.Open(workDir + '/trigger_' + sname + '_' + oname + '.root')
-tree = source.Get('triggerTree')
+tree = ROOT.TChain('triggerTree')
+for fname in os.listdir(workDir):
+    if fname.startswith('trigger_' + sname) and fname.endswith(oname + '.root'):
+        print fname
+        tree.Add(workDir + '/' + fname)
 
 if type(binning) is tuple:
     passing = ROOT.TH1D('passing', ';' + vtitle, *binning)
@@ -109,8 +141,12 @@ if outname:
 canvas.SetGrid()
 
 canvas.legend.Clear()
-canvas.legend.add('eff', title = title, opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-canvas.legend.apply('eff', eff)
+if title:
+    canvas.legend.add('eff', title = title, opt = 'LP', color = ROOT.kBlack, mstyle = 8)
+    canvas.legend.apply('eff', eff)
+else:
+    eff.SetMarkerColor(ROOT.kBlack)
+    eff.SetMarkerStyle(8)
 
 canvas.addHistogram(eff, drawOpt = 'EP')
 

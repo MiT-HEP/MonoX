@@ -33,6 +33,7 @@ TString skimTypes[nSkimTypes] = {
 
 enum Variable {
   kMass,
+  kSCRawMass,
   kDRGen,
   nVariables
 };
@@ -52,9 +53,9 @@ public:
 
 private:
   TChain* input_[nSkimTypes];
-  int nBins_[nVariables]{60, 40};
-  double xmin_[nVariables]{60., 0.};
-  double xmax_[nVariables]{120., 2.5};
+  int nBins_[nVariables]{60, 60, 40};
+  double xmin_[nVariables]{60., 60., 0.};
+  double xmax_[nVariables]{120., 120., 2.5};
 };
 
 TemplateGenerator::TemplateGenerator()
@@ -103,14 +104,28 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   unsigned size(0);
   double weight(0.);
   unsigned short npv(0);
-  float value[NMAX];
+  float mass[NMAX];
+  float probeScRawPt[NMAX];
+  float probeEta[NMAX];
+  float probePhi[NMAX];
+  float tagPt[NMAX];
+  float tagEta[NMAX];
+  float tagPhi[NMAX];
 
   tree.SetBranchAddress("tp.size", &size);
   tree.SetBranchAddress("weight", &weight);
   tree.SetBranchAddress("npv", &npv);
   switch (_var) {
   case kMass:
-    tree.SetBranchAddress("tp.mass", value);
+    tree.SetBranchAddress("tp.mass", mass);
+    break;
+  case kSCRawMass:
+    tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
+    tree.SetBranchAddress("probes.eta", probeEta);
+    tree.SetBranchAddress("probes.phi", probePhi);
+    tree.SetBranchAddress("tags.pt", tagPt);
+    tree.SetBranchAddress("tags.eta", tagEta);
+    tree.SetBranchAddress("tags.phi", tagPhi);
     break;
   default:
     return 0;
@@ -133,8 +148,25 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
       throw std::runtime_error("entrylist");
     }
 
-    for (int iE(0); iE != pList->GetN(); ++iE)
-      tmp->Fill(value[pList->GetEntry(iE)], weight);
+    for (int iE(0); iE != pList->GetN(); ++iE) {
+      unsigned iP(pList->GetEntry(iE));
+
+      if (_var == kSCRawMass) {
+        //        std::cout << probeScRawPt[iP] << " " << probeEta[iP] << " " << probePhi[iP] << " " << tagPt[iP] << " " << tagEta[iP] << " " << tagPhi[iP] << std::endl;
+        double pX(probeScRawPt[iP] * std::cos(probePhi[iP]));
+        double pY(probeScRawPt[iP] * std::sin(probePhi[iP]));
+        double pZ(probeScRawPt[iP] * std::sinh(probeEta[iP]));
+        double pE(probeScRawPt[iP] * std::cosh(probeEta[iP]));
+        double tX(tagPt[iP] * std::cos(tagPhi[iP]));
+        double tY(tagPt[iP] * std::sin(tagPhi[iP]));
+        double tZ(tagPt[iP] * std::sinh(tagEta[iP]));
+        double tE(tagPt[iP] * std::cosh(tagEta[iP]));
+        //        std::cout << std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ)) << std::endl;
+        mass[iP] = std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ));
+      }
+
+      tmp->Fill(mass[iP], weight);
+    }
   }
 
   for (int iX(1); iX != nBins_[_var] + 1; ++iX) {
@@ -178,7 +210,13 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
   unsigned size(0);
   double weight(0.);
   unsigned short npv(0);
-  float value[NMAX];
+  float mass[NMAX];
+  float probeScRawPt[NMAX];
+  float probeEta[NMAX];
+  float probePhi[NMAX];
+  float tagPt[NMAX];
+  float tagEta[NMAX];
+  float tagPhi[NMAX];
 
   double var(0.);
 
@@ -189,7 +227,16 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
   tree.SetBranchAddress("npv", &npv);
   switch (_var) {
   case kMass:
-    tree.SetBranchAddress("tp.mass", value);
+    tree.SetBranchAddress("tp.mass", mass);
+    tempTree->Branch("mass", &var, "mass/D");
+    break;
+  case kSCRawMass:
+    tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
+    tree.SetBranchAddress("probes.eta", probeEta);
+    tree.SetBranchAddress("probes.phi", probePhi);
+    tree.SetBranchAddress("tags.pt", tagPt);
+    tree.SetBranchAddress("tags.eta", tagEta);
+    tree.SetBranchAddress("tags.phi", tagPhi);
     tempTree->Branch("mass", &var, "mass/D");
     break;
   default:
@@ -212,7 +259,22 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
     }
 
     for (int iE(0); iE != pList->GetN(); ++iE) {
-      var = value[pList->GetEntry(iE)];
+      unsigned iP(pList->GetEntry(iE));
+
+      if (_var == kSCRawMass) {
+        double pX(probeScRawPt[iP] * std::cos(probePhi[iP]));
+        double pY(probeScRawPt[iP] * std::sin(probePhi[iP]));
+        double pZ(probeScRawPt[iP] * std::sinh(probeEta[iP]));
+        double pE(probeScRawPt[iP] * std::cosh(probeEta[iP]));
+        double tX(tagPt[iP] * std::cos(tagPhi[iP]));
+        double tY(tagPt[iP] * std::sin(tagPhi[iP]));
+        double tZ(tagPt[iP] * std::sinh(tagEta[iP]));
+        double tE(tagPt[iP] * std::cosh(tagEta[iP]));
+        var = std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ));
+      }
+      else if (_var == kMass)
+        var = mass[iP];
+
       tempTree->Fill();
     }
   }

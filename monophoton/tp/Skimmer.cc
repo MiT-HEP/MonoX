@@ -76,7 +76,7 @@ Skimmer::addSkim(SkimType _type, char const* _fileName)
   file->cd();
 
   auto* tree(new TTree("skimmedEvents", "template skim"));
-  fullEvent_.book(*tree, {"run", "lumi", "event", "weight", "rho", "npv", "jets", "t1Met", "hlt"});
+  fullEvent_.book(*tree, {"run", "lumi", "event", "weight", "rho", "npv", "jets", "t1Met"});
 
   tree->Branch("tp.size", nPairs_ + _type, "size/i");
   tree->Branch("tp.mass", mass_[_type], "mass[tp.size]/F");
@@ -111,9 +111,9 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
 
   simpletree::Event event;
   event.setStatus(*_input, false);
-  flatutils::BranchList bList{"photons.pt", "photons.eta", "photons.phi", "photons.scRawPt",
+  flatutils::BranchList bList{"photons.pt", "photons.eta", "photons.phi", "photons.scRawPt", "photons.isEB",
       "photons.chIso", "photons.nhIso", "photons.phIso", "photons.sieie", "photons.sipip", "photons.sieip",
-      "photons.hOverE", "photons.pixelVeto", "photons.csafeVeto", "photons.medium"};
+      "photons.hOverE", "photons.pixelVeto", "photons.csafeVeto", "photons.medium", "photons.matchedGen"};
   if (fill[kEG])
     bList.push_back("electrons");
   if (fill[kMG] || fill[kMMG])
@@ -152,8 +152,11 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
     &event.muons
   };
 
+  // TEMPORARY
   std::function<bool(unsigned)> leptonTriggerMatch[nLeptons] = {
-    [&event](unsigned iL)->bool { return event.electrons[iL].matchHLT[simpletree::fEl23Loose]; },
+    [](unsigned)->bool { return true; },
+    //    [&event](unsigned iL)->bool { return event.electrons[iL].ecalIso < 0.1 && event.electrons[iL].hcalIso < 0.1; },
+    //    [&event](unsigned iL)->bool { return event.electrons[iL].matchHLT[simpletree::fEl23Loose]; },
     [](unsigned)->bool { return true; }
     //    [&event](unsigned iL)->bool { return event.muons[iL].matchHLT[simpletree::fMu24]; }
   };
@@ -194,7 +197,8 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
           if (!lepton.tight)
             continue;
 
-          if (lepton.pt < 25. || (sampleId_ == 0 && !leptonTriggerMatch[iLepton](iL)))
+          //          if ((lepton.pt < 27. && std::abs(lepton.eta) < 2.1) || (sampleId_ == 0 && !leptonTriggerMatch[iLepton](iL)))
+          if (lepton.pt < 27. || std::abs(lepton.eta) > 2.1)
             continue;
 
           if (photon.dR2(lepton) < 0.01)
