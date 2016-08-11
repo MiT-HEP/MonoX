@@ -118,11 +118,11 @@ for variable in args.variable:
             print "FastSim integral is 0 for "+fsProc+". Skipping."
             continue
 
-        rcanvas.legend.add('fullsim', title = 'FullSim', mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
+        rcanvas.legend.add('fullsim', title = '80X FullSim', mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
         rcanvas.legend.apply('fullsim', fullsim)
         fullId = rcanvas.addHistogram(fullsim, drawOpt = 'L')
 
-        rcanvas.legend.add('fastsim', title = 'FastSim', mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
+        rcanvas.legend.add('fastsim', title = '74X FastSim', mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
         rcanvas.legend.apply('fastsim', fastsim)
         fastId = rcanvas.addHistogram(fastsim, drawOpt = 'L')
 
@@ -237,7 +237,7 @@ for iS, spin in enumerate(spins):
 
     sfMDM1 = sfPlot.ProjectionX('sfMDM1'+spin, 1, 1, iS+1, iS+1, 'e')
     sfMDM1.SetTitle('')
-    sfMDM1.GetYaxis().SetTitle('FullSim/FastSim Scale Factor')
+    sfMDM1.GetYaxis().SetTitle('80X FullSim/74X FastSim Scale Factor')
     fitMDM1 = sfMDM1.Clone('fitMDM1'+spin)
     fitMDM1.Fit(flat, "M WL B", "goff", 0., 2000.)
 
@@ -258,7 +258,7 @@ for iS, spin in enumerate(spins):
     mean = mean / nbins
     error = math.sqrt(error) / nbins
 
-    # flat.SetParameter(0, mean)
+    flat.SetParameter(0, mean)
 
     canvas.Clear()
     canvas.legend.Clear()
@@ -283,7 +283,7 @@ for iS, spin in enumerate(spins):
 
     sfMMED10 = sfPlot.ProjectionY('sfMMED10'+spin, 1, 1, iS+1, iS+1, 'e')
     sfMMED10.SetTitle('')
-    sfMMED10.GetYaxis().SetTitle('FullSim/FastSim Scale Factor')
+    sfMMED10.GetYaxis().SetTitle('80X FullSim/74X FastSim Scale Factor')
     fitMMED10 = sfMMED10.Clone('fitMMED10'+spin)
     fitMMED10.Fit(flat2, "M WL B", "goff", 0., 2000.)
 
@@ -304,8 +304,7 @@ for iS, spin in enumerate(spins):
     mean = mean / nbins
     error = math.sqrt(error) / nbins
 
-    if iS == 0:
-        flat2.SetParameter(0, mean)
+    flat2.SetParameter(0, mean)
 
     canvas.Clear()
     canvas.legend.Clear()

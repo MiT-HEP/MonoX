@@ -43,7 +43,8 @@ photonFullSelection = [
 puWeightSource = ROOT.TFile.Open(basedir + '/data/pileup.root')
 puWeight = puWeightSource.Get('puweight')
 
-photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
+# photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_scalefactor.root')
+photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_sf16.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
 # eventFiltersPath = '/scratch5/yiiyama/eventlists'
@@ -526,17 +527,6 @@ def gjets(sample, selector):
     
     return selector
 
-def gammaJets(sample, selector):
-    """
-    Candidate-like, but with inverted jet-met dPhi cut.
-    """
-
-    selector = candidate(sample, selector)
-
-    selector.findOperator('JetMetDPhi').setPassIfIsolated(False)
-
-    return selector
-
 def gjSmeared(sample, name):
     """
     Candidate-like, with a smeared MET distribution.
@@ -558,7 +548,7 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
 
     def normalized(sample, name):
         selector = ROOT.NormalizingSelector(name)
-        selector.setNormalization(norm, 'photons.pt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+        selector.setNormalization(norm, 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
 
         selector = monophotonBase(sample, selector)
 
@@ -628,6 +618,39 @@ def haloSieie(norm):
     inverts = [ 'Sieie15' ]
     removes = [ 'Sieie', 'MIP49' ]
     appends = [] 
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def spikeE2E9(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = [ 'E2E995' ]
+    removes = [ 'SieieNonzero', 'SipipNonzero']
+    appends = [] 
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def spikeSieie(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = []
+    removes = [ 'SipipNonzero', 'SieieNonzero' ]
+    appends = [ 'Sieie05' ]
+
+    return sampleDefiner(norm, inverts, removes, appends)
+
+def spikeSipip(norm):
+    """
+    Wrapper to return the generator for the spike proxy sample normalized to norm.
+    """
+    
+    inverts = []
+    removes = [ 'SieieNonzero', 'SipipNonzero' ]
+    appends = [ 'Sipip05' ]
 
     return sampleDefiner(norm, inverts, removes, appends)
 
@@ -789,28 +812,34 @@ def kfactor(generator):
     def scaled(sample, name):
         selector = generator(sample, name)
 
+        sname = sample.name.replace('gj04', 'gj').replace('znng-d', 'znng-130').replace('wnlg-d', 'wnlg-130').replace('0-d', '0')
+
         qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
-        corr = qcdSource.Get(sample.name.replace('gj04', 'gj'))
+        corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
-        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
+        # qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kReco) # because nero doesn't have gen info saved
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
-            vcorr = qcdSource.Get(sample.name + '_' + variation)
+            vcorr = qcdSource.Get(sname + '_' + variation)
             if vcorr:
+                # print 'applying qcd var', variation, sample.name
                 qcd.addVariation('qcd' + variation, vcorr)
 
         selector.addOperator(qcd)
 
         ewkSource = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
-        corr = ewkSource.Get(sample.name)
+        corr = ewkSource.Get(sname)
         if corr:
+            # print 'applying ewk', sample.name
             ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
             ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
             for variation in ['Up', 'Down']:
-                vcorr = ewkSource.Get(sample.name + '_' + variation)
+                vcorr = ewkSource.Get(sname + '_' + variation)
                 if vcorr:
+                    # print 'applying ewk var', variation, sample.name
                     ewk.addVariation('ewk' + variation, vcorr)
 
             selector.addOperator(ewk)
@@ -829,6 +858,78 @@ def wlnu(generator):
 
     return filtered
 
+def TagAndProbeBase(sample, selector):
+    """
+    Base for Z->ll tag and probe stuff.
+    """
+
+    if type(selector) is str: # this is a name for the selector
+        selector = ROOT.EventSelector(selector)
+
+    operators = [
+        'MetFilters',
+        'MuonVeto',
+        'ElectronVeto',
+        'TauVeto',
+        'TagAndProbePairZ',
+        'JetCleaning',
+        'CopyMet',
+        'JetMetDPhi',
+        'HighMet'
+        ]
+    
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
+        selector.addOperator(ROOT.PUWeight(puWeight))
+
+    selector.findOperator('MuonVeto').setIgnoreDecision(True)
+    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kElectrons, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kMuons, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('HighMet').setThreshold(50.)
+    selector.findOperator('HighMet').setIgnoreDecision(True)
+
+    return selector
+
+def zeeJets(sample, selector):
+    selector = TagAndProbeBase(sample, selector)
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
+
+    tnp = selector.findOperator('TagAndProbePairZ')
+    tnp.setTagSpecies(ROOT.TagAndProbePairZ.kElectron)
+    tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kElectron)
+
+    b2b = ROOT.ZJetBackToBack()
+    b2b.setTagAndProbePairZ(tnp)
+    b2b.setMinJetPt(100.)
+    b2b.setMinDeltaPhi(3.)
+    selector.addOperator(b2b)
+
+    return selector
+
+def zmmJets(sample, selector):
+    selector = TagAndProbeBase(sample, selector)
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
+
+    tnp = selector.findOperator('TagAndProbePairZ')
+    tnp.setTagSpecies(ROOT.TagAndProbePairZ.kMuon)
+    tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kMuon)
+
+    b2b = ROOT.ZJetBackToBack()
+    b2b.setTagAndProbePairZ(tnp)
+    b2b.setMinJetPt(100.)
+    b2b.setMinDeltaPhi(3.)
+    selector.addOperator(b2b)
+
+    return selector
 
 if needHelp:
     sys.argv.append('--help')

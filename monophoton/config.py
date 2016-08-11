@@ -3,7 +3,8 @@ simpletreeVersion = 'simpletree18rawE'
 skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
 histDir = '/scratch5/ballen/hist/monophoton'
 ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
-dataNtuplesDir = ntuplesDir # '/scratch5/ballen/hist/nero160723/'
+# ntuplesDir = '/scratch5/ballen/hist/'
+dataNtuplesDir = ntuplesDir # '/scratch5/ballen/hist/'
 photonSkimDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
 # lxplus set up
 """
@@ -22,7 +23,7 @@ import json
 # 274443 ~ june 16 ~ 2.8/fb unblind - 2.4/fb blind
 # 275125 ~ june 22 ~ 4.1/fb unblind - 2.7/fb blind
 # 275583 ~ july 08 ~ 6.9/fb unblind - !! not full json lumi
-# 276097 ~ july 15 ~ 9.2/fb unblind - hopefully
+# 276097 ~ july 15 ~ 7.2/fb unblind - hopefully ?
 # 276811 ~ july 20 ~ 12.9/fb unblind - 4.95/fb blind - full ichep dataset
 blindCutOff = '274421'
 runCutOff = '276811'

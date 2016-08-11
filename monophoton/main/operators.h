@@ -148,6 +148,8 @@ class PhotonSelection : public Cut {
     PhIsoTight,
     CHWorstIso,
     CHWorstIso11,
+    Sieie05,
+    Sipip05,
     nSelections
   };
 
@@ -324,6 +326,63 @@ class EcalCrackVeto : public Cut {
   Bool_t ecalCrackVeto_{true};
 };
 
+class TagAndProbePairZ : public Cut {
+ public:
+  enum Species {
+    kMuon,
+    kElectron,
+    kPhoton, // doesn't work currently
+    nSpecies 
+  };
+
+  TagAndProbePairZ(char const* name = "TagAndProbePairZ") : Cut(name) {}
+  void addBranches(TTree& skimTree) override;
+  void setTagSpecies(unsigned species) { tagSpecies_ = species; }
+  void setProbeSpecies(unsigned species) { probeSpecies_ = species; }
+
+  float getPhiZ() { return zPhi_; }
+  
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  unsigned tagSpecies_{0};
+  unsigned probeSpecies_{0};
+
+  float tagPt_{-1.};
+  float tagEta_{-1.};
+  float tagPhi_{-1.};
+  bool tagPos_{0};
+  
+  float probePt_{-1.};
+  float probeEta_{-1.};
+  float probePhi_{-1.};
+  bool probePos_{0};
+
+  float zMass_{-1.};
+  float zPt_{-1.};
+  float zEta_{-1.};
+  float zPhi_{-1.};
+  bool zOppSign_{0};
+};
+
+class ZJetBackToBack: public Cut {
+ public:
+  ZJetBackToBack(char const* name = "ZJetBackToBack") : Cut(name) {}
+  
+  void setTagAndProbePairZ(TagAndProbePairZ* tnp) {tnp_ = tnp; }
+  void setMinDeltaPhi(float dPhiMin) { dPhiMin_ = dPhiMin; }
+  void setMinJetPt(float minJetPt) { minJetPt_ = minJetPt; }
+
+ private:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  float minJetPt_{30.};
+  float dPhiMin_{2.5};
+  TagAndProbePairZ* tnp_{0};
+
+};
+
+
 //--------------------------------------------------------------------
 // Modifiers
 //--------------------------------------------------------------------
@@ -345,6 +404,7 @@ class TriggerEfficiency : public Modifier {
   TF1* formula_{0};
   TF1* upFormula_{0};
   TF1* downFormula_{0};
+  double weight_;
   double reweightUp_;
   double reweightDown_;
 };
@@ -505,6 +565,7 @@ class PhotonPtWeight : public Modifier {
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   TObject* nominal_;
+  double weight_;
   std::map<TString, TObject*> variations_;
   std::map<TString, double*> varWeights_;
   unsigned photonType_{kReco};
@@ -536,6 +597,7 @@ class IDSFWeight : public Modifier {
   Object object_;
   Variable variables_[2];
   TH1* factors_;
+  double weight_;
   double weightUp_;
   double weightDown_;
 };
@@ -553,10 +615,13 @@ class NPVWeight : public Modifier {
 class PUWeight : public Modifier {
  public:
   PUWeight(TH1* factors, char const* name = "PUWeight") : Modifier(name), factors_(factors) {}
+
+  void addBranches(TTree& _skimTree) override;
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   TH1* factors_;
+  double weight_;
 };
 
 class NNPDFVariation : public Modifier {

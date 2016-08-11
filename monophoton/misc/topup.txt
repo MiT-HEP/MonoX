@@ -54,10 +54,11 @@
 
 . Make plots and data card inputs
   main/plot.py monoph
-  main/plot.py -p met -o monoph_met.root
+  main/plot.py -p met -o monoph_met.root --allsignal
 
 . Make data cards
   main/datacard.py {model} monoph_met.root
+  for model in ; do python datacard.py $model monoph_met.root; done
 
 . Run combine
   scratch/runCombine.sh {point}

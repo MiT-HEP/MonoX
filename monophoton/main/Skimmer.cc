@@ -16,14 +16,16 @@ class Skimmer {
 public:
   Skimmer() {}
 
-  void reset() { selectors_.clear(); }
+  void reset() { selectors_.clear(); useLumiFilter_ = false; }
   void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
   void addGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
+  void setUseLumiFilter(bool _setFilter) { useLumiFilter_ = _setFilter; }
   void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1, bool neroInput = false);
 
 private:
   std::vector<EventSelector*> selectors_{};
   GoodLumiFilter* goodLumiFilter_{};
+  bool useLumiFilter_ = false;
 };
 
 void
@@ -41,12 +43,12 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     std::cout << "Setting up translator" << std::endl;
     translator = new NeroToSimple(*_input, event);
     _input->LoadTree(0);
-    //  _input->Draw("isRealData", "Entry$ == 0", "goff");
-    // if (_input->GetV1()[0] == 0.)
+
     auto* br = _input->GetBranch("isRealData");
     br->GetEntry(0);
     if (br->GetLeaf("isRealData")->GetValue() == 0.)
       isMC = true;
+
     auto* file(_input->GetCurrentFile());
     auto* triggerNames(file->Get("nero/triggerNames"));
     if (triggerNames) {
@@ -61,7 +63,10 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
       isMC = true;
   }
   
-  printf("isMC %u \n", isMC);
+  // printf("isMC %u \n", isMC);
+
+  if (goodLumiFilter_ && useLumiFilter_)
+    printf("Appyling good lumi filter. \n");
 
   for (auto* sel : selectors_) {
     TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
@@ -80,9 +85,8 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
     if (translator)
       translator->translate();
-    // std::cout << "Translated" << std::endl;
 
-    if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
+    if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
       continue;
 
     for (auto* sel : selectors_)

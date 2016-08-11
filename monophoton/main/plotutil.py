@@ -170,7 +170,7 @@ class VariableDef(object):
             # replace the variable names given in repl = ('original', 'new')
             # enclose the original variable name with characters that would not be a part of the variable
             selection = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', selection)
-    
+            
         return selection
 
     def formExpression(self, replacements = []):

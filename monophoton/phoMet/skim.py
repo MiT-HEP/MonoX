@@ -32,6 +32,8 @@ ROOT.gROOT.LoadMacro(thisdir + '/' + skim + '.cc+')
 ## names after last samples
 outName = '/scratch5/ballen/hist/monophoton/phoMet/' + skim +'_' + sname + '.root'
 
+print source.GetEntries()
+
 if sample.data:
     getattr(ROOT, skim)(source, outName)
 else:

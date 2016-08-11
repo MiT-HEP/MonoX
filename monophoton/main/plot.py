@@ -11,8 +11,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-# DOSYSTEMATICS = True
-DOSYSTEMATICS = False
+DOSYSTEMATICS = True
+# DOSYSTEMATICS = False
 
 # global variables to be set in __main__
 allsamples = None 
@@ -508,7 +508,7 @@ if __name__ == '__main__':
 
         if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
             counters = {}
-            isSensitive = True
+            isSensitive = False # True
 
         else:
             # set up canvas

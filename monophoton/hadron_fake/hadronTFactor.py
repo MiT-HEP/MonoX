@@ -16,7 +16,7 @@ canvas = SimpleCanvas(lumi = lumi)
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
-impurityHist = inputFile.Get("ChIso50to80imp")
+impurityHist = inputFile.Get("FinalImpurity")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
