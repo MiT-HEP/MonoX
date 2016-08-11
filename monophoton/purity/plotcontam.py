@@ -7,6 +7,12 @@ from ROOT import *
 from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels
 # gROOT.SetBatch(True)
 
+basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if basedir not in sys.path:
+    sys.path.append(basedir)
+import config
+from plotstyle import SimpleCanvas
+
 varName = 'sieie'
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 plotDir = os.path.join(versDir, 'Plots', 'SignalContam') 
@@ -145,9 +151,16 @@ for loc in Locations[:1]:
                     print conout[1]
 pprint(purities)
 
+canvas = SimpleCanvas(lumi = config.jsonLumi)
+
 for loc in Locations[:1]:
     for pid in PhotonIds[1:2]:
         for metCut in MetSels[1:2]:
+            canvas.cd()
+            canvas.Clear()
+            canvas.legend.Clear()
+            canvas.legend.setPosition(0.525,0.65,0.875,0.85)
+
             purityFileName = "purity_data_"+loc+"_"+pid+"_ptbinned_table.tex"
             purityFilePath = os.path.join(outDir,purityFileName)
             purityFile = open(purityFilePath, "w")
@@ -182,10 +195,6 @@ for loc in Locations[:1]:
             
             histograms = [ [], [] ]
             
-            leg = TLegend(0.525,0.65,0.875,0.85)
-            leg.SetFillColor(kWhite)
-            leg.SetTextSize(0.045)
-                
             lineColors = [ kBlue, kBlack, kRed ]
             
             bins = [175, 200, 250, 300, 350, 500]
@@ -198,16 +207,17 @@ for loc in Locations[:1]:
                 
                 hists = [] 
 
-                himp =  TH1F(chiso[0]+"imp",chiso[0]+"imp",(len(bins)-1),array('d',bins))
+                himp =  TH1F(chiso[0]+"imp",chiso[0]+"imp;#gamma p_{T} (GeV)",(len(bins)-1),array('d',bins))
                 himp.GetYaxis().SetTitle("Impurity (%)")
-                himp.SetMaximum(10.)
+                # himp.SetMaximum(10.)
                 hists.append(himp)
 
-                herr = TH1F(chiso[0]+"err",chiso[0]+"err",(len(bins)-1),array('d',bins))
+                herr = TH1F(chiso[0]+"err",chiso[0]+"err;#gamma p_{T} (GeV)",(len(bins)-1),array('d',bins))
                 herr.GetYaxis().SetTitle("Relative Error on Impurity (%)")
-                herr.SetMaximum(100.)
+                # herr.SetMaximum(100.)
                 hists.append(herr)
                 
+                """
                 for hist in hists:
                     hist.GetXaxis().SetTitle("#gamma p_{T} (GeV)")
                     
@@ -221,16 +231,20 @@ for loc in Locations[:1]:
                     hist.GetXaxis().SetTitleSize(0.045)
                     hist.GetYaxis().SetLabelSize(0.045)
                     hist.GetYaxis().SetTitleSize(0.045)
+                """
 
-                leg.AddEntry(hist,chIsoLabel.replace("$",""),'L')
-            
+                canvas.legend.add(chiso[0], title = chIsoLabel.replace("$",""), 
+                                  lcolor = lineColors[ChIsoSbSels.index(chiso)], lwidth = 3)
+                canvas.legend.apply(chiso[0], hists[0])
+                canvas.legend.apply(chiso[0], hists[1])
+                
                 for ptCut in PhotonPtSels[1:]:
                     lowEdge = int(ptCut[0].split("t")[2])
                     binNumber = 0
                     for bin in bins:
                         if bin == lowEdge:
                             binNumber = bins.index(bin) + 1
-   
+                            
                     impurity = float(purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]][0])
                     uncertainty = float(purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]][-1])
                     # print binNumber, purity, uncertainty
@@ -240,13 +254,28 @@ for loc in Locations[:1]:
                     hists[1].SetBinContent(binNumber, uncertainty/impurity * 100)
 
                 outputFile.cd()
-                hists[0].SetTitle("Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
+                hists[0].SetTitle(str(loc)+" "+str(pid))
                 hists[0].Write()
                 histograms[0].append(hists[0])
-                hists[1].SetTitle("Relative Error on Impurity for "+str(loc)+" "+str(pid)+" Photons in data")
+                hists[1].SetTitle(str(loc)+" "+str(pid))
                 histograms[1].append(hists[1])
                 purityFile.write(r"\\")
                 purityFile.write("\n")
+
+            purityFile.write(r"\hline")
+            purityFile.write("\n")
+            purityFile.write("Final Impurity ")
+
+            finalHist = histograms[0][1].Clone("FinalImpurity")
+            for iBin in range(1, finalHist.GetNbinsX()+1):
+                sbUnc = max(abs(finalHist.GetBinContent(iBin) - histograms[0][0].GetBinContent(iBin)),
+                            abs(finalHist.GetBinContent(iBin) - histograms[0][2].GetBinContent(iBin)))
+                totalUnc = ( sbUnc**2 + finalHist.GetBinError(iBin)**2)**(0.5)
+                finalHist.SetBinError(iBin, totalUnc)
+                purityFile.write(r"& %.2f $\pm$ %.2f " % (finalHist.GetBinContent(iBin), totalUnc))
+            finalHist.Write()
+            purityFile.write(r"\\")
+            purityFile.write("\n")
             
             purityFile.write(r"\hline")
             purityFile.write("\n")
@@ -257,19 +286,29 @@ for loc in Locations[:1]:
 
             
             suffix = [ "central", "error" ] 
-            for hlist in histograms:
-                canvas = TCanvas()
-                hlist[0].Draw("hist")
-                hlist[2].Draw("samehist")
-                hlist[1].Draw("samehist")
-        
-                leg.Draw()
-                plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_"+suffix[histograms.index(hlist)] 
-                plotPath = os.path.join(outDir,plotName)
-                canvas.SaveAs(plotPath+".pdf")
-                canvas.SaveAs(plotPath+".png")
-                canvas.SaveAs(plotPath+".C")
-            
+            for iH, hList in enumerate(histograms):
+                canvas.Clear()
+
+                canvas.addHistogram(hList[0], drawOpt = 'HIST')
+                canvas.addHistogram(hList[2], drawOpt = 'HIST')
+                canvas.addHistogram(hList[1], drawOpt = 'HIST')
+                if iH:
+                    canvas.ylimits = (0., 100.)
+                else:
+                    canvas.ylimits = (0., 10.)
+
+                plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_"+suffix[iH] 
+                canvas.printWeb('purity/'+Version+'/Fitting', plotName, logy = False)
+
+            canvas.Clear()
+            canvas.legend.Clear()
+            canvas.legend.add("final", title = str(loc)+" "+str(pid), lcolor = kBlack, lwidth = 2)
+            canvas.legend.apply("final", finalHist)
+            canvas.addHistogram(finalHist, drawOpt = 'EP')
+            canvas.ylimits = (0., 10.)
+            plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_final" 
+            canvas.printWeb('purity/'+Version+'/Fitting', plotName, logy = False)
+                
             pdflatex = Popen( ["pdflatex",purityFilePath,"-interaction nonstopmode"]
                               ,stdout=PIPE,stderr=PIPE,cwd=outDir)
             pdfout = pdflatex.communicate()
