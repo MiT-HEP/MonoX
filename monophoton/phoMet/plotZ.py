@@ -15,7 +15,7 @@ import config
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi) #  + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
+lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
 probePixel = '!probe.pixelVeto'
@@ -28,8 +28,8 @@ dPhiJetCut = 't1Met.minJetDPhi > 0.5'
 njetsCut = 'jets.size == 1'
 
 variables = [ VariableDef('Met', 'E_{T}^{miss}', 't1Met.met', [10 * x for x in range(0, 10)] + [100 + 20 * x for x in range(0,5)] + [200, 250, 300], unit = 'GeV', overflow = True),
-              VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
-              VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
+              # VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
+              # VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
               VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi) ),
               # VariableDef('jetEta', '|#eta_{j}|', 'TMath::Abs(jets.eta[0])', (10, 0., 5.), applyFullSel = True),
               VariableDef('njets', 'N_{jets}', 'jets.size', (6, 0., 6.), applyFullSel = True),
@@ -46,7 +46,7 @@ jetsCuts = [ # ('monojet30', [njetsCut]),
             ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
             ]
 
-skims = [ 'smu-16b2-d_zmmJets' ] # , 'sel-16b2-d_zeeJets', 's*-16b2-d_z*Jets' ]
+skims = [ 'smu-16*2-d_zmmJets', 'sel-16*2-d_zeeJets', 's*-16*2-d_z*Jets' ]
 
 samples = [ ('w+jets', ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], r.TColor.GetColor(0xff, 0x44, 0x99)),
             ('diboson', ['ww', 'wz', 'zz'], r.TColor.GetColor(0xff, 0xee, 0x99)), 
