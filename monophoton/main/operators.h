@@ -335,12 +335,14 @@ class TagAndProbePairZ : public Cut {
     nSpecies 
   };
 
-  TagAndProbePairZ(char const* name = "TagAndProbePairZ") : Cut(name) {}
+  TagAndProbePairZ(char const* name = "TagAndProbePairZ");
+  ~TagAndProbePairZ();
   void addBranches(TTree& skimTree) override;
   void setTagSpecies(unsigned species) { tagSpecies_ = species; }
   void setProbeSpecies(unsigned species) { probeSpecies_ = species; }
 
-  float getPhiZ() { return zPhi_; }
+  unsigned getNUniqueZ() const { return nUniqueZ_; }
+  float getPhiZ(unsigned idx) const { return zs_[idx].phi; }
   
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
@@ -348,21 +350,12 @@ class TagAndProbePairZ : public Cut {
   unsigned tagSpecies_{0};
   unsigned probeSpecies_{0};
 
-  float tagPt_{-1.};
-  float tagEta_{-1.};
-  float tagPhi_{-1.};
-  bool tagPos_{0};
-  
-  float probePt_{-1.};
-  float probeEta_{-1.};
-  float probePhi_{-1.};
-  bool probePos_{0};
-
-  float zMass_{-1.};
-  float zPt_{-1.};
-  float zEta_{-1.};
-  float zPhi_{-1.};
+  simpletree::ParticleCollection* tags_{0};
+  simpletree::ParticleCollection* probes_{0};
+  simpletree::ParticleMCollection zs_;
   bool zOppSign_{0};
+
+  unsigned nUniqueZ_{0};
 };
 
 class ZJetBackToBack: public Cut {

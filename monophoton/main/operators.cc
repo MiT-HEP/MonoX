@@ -6,6 +6,7 @@
 //#include "jer.h"
 
 #include <iostream>
+#include <functional>
 
 //--------------------------------------------------------------------
 // Base
@@ -711,61 +712,109 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
 // TagAndProbePairZ
 //--------------------------------------------------------------------
 
+TagAndProbePairZ::TagAndProbePairZ(char const* name) :
+  Cut(name),
+  zs_("z")
+{
+}
+
+TagAndProbePairZ::~TagAndProbePairZ()
+{
+  delete tags_;
+  delete probes_;
+}
+
 void
 TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("z.pt", &zPt_, "z.pt/F");
-  _skimTree.Branch("z.eta", &zEta_, "z.eta/F");
-  _skimTree.Branch("z.phi", &zPhi_, "z.phi/F");
-  _skimTree.Branch("z.mass", &zMass_, "z.mass/F");
+  switch (tagSpecies_) {
+  case kMuon:
+    tags_ = new simpletree::MuonCollection("tag");
+    break;
+  case kElectron:
+    tags_ = new simpletree::ElectronCollection("tag");
+    break;
+  case kPhoton:
+    tags_ = new simpletree::PhotonCollection("tag");
+    break;
+  }
+
+  switch (probeSpecies_) {
+  case kMuon:
+    probes_ = new simpletree::MuonCollection("probe");
+    break;
+  case kElectron:
+    probes_ = new simpletree::ElectronCollection("probe");
+    break;
+  case kPhoton:
+    probes_ = new simpletree::PhotonCollection("probe");
+    break;
+  }
+
+  zs_.book(_skimTree);
   _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
 
-  _skimTree.Branch("tag.pt", &tagPt_, "tag.pt/F");
-  _skimTree.Branch("tag.eta", &tagEta_, "tag.eta/F");
-  _skimTree.Branch("tag.phi", &tagPhi_, "tag.phi/F");
-  _skimTree.Branch("tag.positive", &tagPos_, "tag.positive/O");
-
-  _skimTree.Branch("probe.pt", &probePt_, "probe.pt/F");
-  _skimTree.Branch("probe.eta", &probeEta_, "probe.eta/F");
-  _skimTree.Branch("probe.phi", &probePhi_, "probe.phi/F");
-  _skimTree.Branch("probe.positive", &probePos_, "probe.positive/O");
+  tags_->book(_skimTree);
+  probes_->book(_skimTree);
 }
 
 bool
 TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  simpletree::LeptonCollection* inTags(0);
-  simpletree::LeptonCollection* inProbes(0);
+  simpletree::LeptonCollection const* inTags(0);
+  simpletree::LeptonCollection const* inProbes(0);
   simpletree::LorentzVectorM tnpPair;
   tnpPair.SetCoordinates(0., 0., 0., 0.);
 
+  // OK, object-orientation and virtual methods cannot quite solve the problem at hand (push back the objects with full info).
+  // We will cheat.
+  std::function<void(simpletree::Particle const&)> push_back_tag;
+  std::function<void(simpletree::Particle const&)> push_back_probe;
+
   switch (tagSpecies_) {
   case kMuon:
-    inTags = &_outEvent.muons;
+    inTags = &_event.muons;
+    push_back_tag = [this](simpletree::Particle const& tag) {
+      static_cast<simpletree::MuonCollection*>(this->tags_)->push_back(static_cast<simpletree::Muon const&>(tag));
+    };
     break;
   case kElectron:
-    inTags = &_outEvent.electrons;
+    inTags = &_event.electrons;
+    push_back_tag = [this](simpletree::Particle const& tag) {
+      static_cast<simpletree::ElectronCollection*>(this->tags_)->push_back(static_cast<simpletree::Electron const&>(tag));
+    };
     break;
     /*
       case kPhoton:
-      inTags = _outEvent.photons;
+      inTags = _event.photons;
       break;
     */
   }
   
   switch (probeSpecies_) {
   case kMuon:
-    inProbes = &_outEvent.muons;
+    inProbes = &_event.muons;
+    push_back_probe = [this](simpletree::Particle const& probe) {
+      static_cast<simpletree::MuonCollection*>(this->probes_)->push_back(static_cast<simpletree::Muon const&>(probe));
+    };
     break;
   case kElectron:
-    inProbes = &_outEvent.electrons;
+    inProbes = &_event.electrons;
+    push_back_probe = [this](simpletree::Particle const& probe) {
+      static_cast<simpletree::ElectronCollection*>(this->probes_)->push_back(static_cast<simpletree::Electron const&>(probe));
+    };
     break;
     /*
       case kPhoton:
-      inProbes = _outEvent.photons; 
+      inProbes = _event.photons; 
       break;
     */
   }
+
+  zs_.clear();
+  tags_->clear();
+  probes_->clear();
+  nUniqueZ_ = 0;
 
   for (auto& tag : *inTags) {
     if ( !(tag.tight && tag.pt > 30.))
@@ -781,29 +830,37 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 	continue;
 
       tnpPair = (tag.p4() + probe.p4());
-      zMass_ = tnpPair.M();
-      if ( !(zMass_ > 81. && zMass_ < 101.))
+      double mass(tnpPair.M());
+      // this is too tight - want at least 60 - 120 for a reliable mass fit
+      if ( !(mass > 81. && mass < 101.))
 	continue;
 
-      tagPt_ = tag.pt;
-      tagEta_ = tag.eta;
-      tagPhi_ = tag.phi;
-      tagPos_ = tag.positive;
-      
-      probePt_ = probe.pt;
-      probeEta_ = probe.eta;
-      probePhi_ = probe.phi;
-      probePos_ = probe.positive;
-      
-      zPt_ = tnpPair.Pt();
-      zEta_ = tnpPair.Eta();
-      zPhi_ = tnpPair.Phi();
+      push_back_tag(tag);
+      push_back_probe(probe);
+
+      // cannot push back here; resize and use the last element
+      zs_.resize(zs_.size() + 1);
+      auto& z(zs_.back());
+      z.pt = tnpPair.Pt();
+      z.eta = tnpPair.Eta();
+      z.phi = tnpPair.Phi();
+      z.mass = mass;
       zOppSign_ = ( (tag.positive == probe.positive) ? 0 : 1);
 
-      return true;
+      // check if other tag-probe pairs match this pair
+      unsigned iZ(0);
+      for (; iZ != zs_.size() - 1; ++iZ) {
+        if ((tag.dR2(tags_->at(iZ)) < 0.09 && probe.dR2(probes_->at(iZ)) < 0.09) ||
+            (tag.dR2(probes_->at(iZ)) < 0.09 && probe.dR2(tags_->at(iZ)) < 0.09))
+          break;
+      }
+      // if not, increment unique Z counter
+      if (iZ == zs_.size() -1)
+        ++nUniqueZ_;
     }
   }
-  return false;
+
+  return zs_.size() != 0;
 }
 
 //--------------------------------------------------------------------
@@ -813,13 +870,14 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 bool
 ZJetBackToBack::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  if (tnp_->getPhiZ() == -1.)
+  if (tnp_->getNUniqueZ() != 1)
     return false;
 
   for (auto& jet : _outEvent.jets) {
     if ( jet.pt < minJetPt_)
       continue;
-    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi - tnp_->getPhiZ())) > dPhiMin_ )
+
+    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi - tnp_->getPhiZ(0))) > dPhiMin_ )
       return true;
   }
   return false;
