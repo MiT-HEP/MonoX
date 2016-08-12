@@ -784,11 +784,12 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
       static_cast<simpletree::ElectronCollection*>(this->tags_)->push_back(static_cast<simpletree::Electron const&>(tag));
     };
     break;
-    /*
-      case kPhoton:
-      inTags = _event.photons;
-      break;
-    */
+  case kPhoton:
+    // inTags = &_event.photons;
+    push_back_tag = [this](simpletree::Particle const& tag) {
+      static_cast<simpletree::PhotonCollection*>(this->tags_)->push_back(static_cast<simpletree::Photon const&>(tag));
+    };
+    break;
   }
   
   switch (probeSpecies_) {
@@ -804,11 +805,12 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
       static_cast<simpletree::ElectronCollection*>(this->probes_)->push_back(static_cast<simpletree::Electron const&>(probe));
     };
     break;
-    /*
-      case kPhoton:
-      inProbes = _event.photons; 
-      break;
-    */
+  case kPhoton:
+    // inProbes = &_event.photons; 
+    push_back_probe = [this](simpletree::Particle const& probe) {
+      static_cast<simpletree::PhotonCollection*>(this->probes_)->push_back(static_cast<simpletree::Photon const&>(probe));
+    };
+    break;
   }
 
   zs_.clear();
@@ -831,8 +833,8 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 
       tnpPair = (tag.p4() + probe.p4());
       double mass(tnpPair.M());
-      // this is too tight - want at least 60 - 120 for a reliable mass fit
-      if ( !(mass > 81. && mass < 101.))
+      // tighter mass range was just so I could use cutresult to debug, switched backed
+      if ( !(mass > 60. && mass < 120.))
 	continue;
 
       push_back_tag(tag);

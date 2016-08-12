@@ -255,7 +255,12 @@ if __name__ == '__main__':
         ROOT.gSystem.Load(config.libnerocore)
         ROOT.gROOT.LoadMacro(os.path.dirname(basedir) + '/common/GoodLumiFilter.cc+')
      
-    ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+    compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+    print compiled
+    # doesn't seem to be returning different values if compilation fails :(
+    if (compiled < 0 ):
+        print "Couldn't compile Skimmer.cc. Quitting."
+        sys.exit()
 
     snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 
