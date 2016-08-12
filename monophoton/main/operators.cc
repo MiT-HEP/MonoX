@@ -1419,8 +1419,9 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
   weight_ = weight;
   _outEvent.weight *= weight;
 
-  for (auto& var : varWeights_)
+  for (auto& var : varWeights_) {
     *var.second = calcWeight(variations_[var.first]) / weight;
+  }
 }
 
 //--------------------------------------------------------------------

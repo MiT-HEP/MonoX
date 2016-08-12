@@ -59,6 +59,8 @@ hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyWeight = hadproxySource.Get('tfactWorst')
 hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
 hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
+hadproxyPurityUpWeight = hadproxySource.Get('tfactWorstPurityUp')
+hadproxyPurityDownWeight = hadproxySource.Get('tfactWorstPurityDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
 eleproxyWeight = eleproxySource.Get('frate')
@@ -407,8 +409,10 @@ def hadProxy(sample, selector):
     if type(selector) is str:
         selector = monophotonBase(sample, selector)
 
-    weight = ROOT.PhotonPtWeight(hadproxyWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
@@ -818,8 +822,8 @@ def kfactor(generator):
         corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
-        # qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
-        qcd.setPhotonType(ROOT.PhotonPtWeight.kReco) # because nero doesn't have gen info saved
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
+        # qcd.setPhotonType(ROOT.PhotonPtWeight.kReco) # because nero doesn't have gen info saved
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sname + '_' + variation)

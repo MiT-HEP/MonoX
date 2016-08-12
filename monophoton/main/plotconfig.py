@@ -141,6 +141,7 @@ def getConfig(confName):
         config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 0.079))
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
         config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))

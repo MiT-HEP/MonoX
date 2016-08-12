@@ -45,6 +45,8 @@ for iso in isos:
 
     fname = 'fpt'+iso[0]
     fpt = gpt.Clone(fname)
+    fptUp = gpt.Clone(fname+'PurityUp')
+    fptDown = gpt.Clone(fname+'PurityDown')
     for iX in range(1, fpt.GetNbinsX() + 1):
         cent = fpt.GetXaxis().GetBinCenter(iX)
         bin = impurityHist.FindBin(cent)
@@ -54,14 +56,29 @@ for iso in isos:
         cont = fpt.GetBinContent(iX) * imp 
         stat = fpt.GetBinError(iX) * imp 
         syst = fpt.GetBinContent(iX) * err
+
         fpt.SetBinContent(iX, cont)
-        fpt.SetBinError(iX, math.sqrt(stat * stat + syst * syst))
+        fpt.SetBinError(iX, math.sqrt(stat * stat)) # + syst * syst))
+        
+        contUp = fptUp.GetBinContent(iX) * (imp + err) 
+        statUp = fptUp.GetBinError(iX) * (imp + err)
+
+        fptUp.SetBinContent(iX, contUp)
+        fptUp.SetBinError(iX, math.sqrt(statUp * statUp)) # + syst * syst))
+
+        contDown = fptDown.GetBinContent(iX) * (imp - err) 
+        statDown = fptDown.GetBinError(iX) * (imp - err)
+
+        fptDown.SetBinContent(iX, contDown)
+        fptDown.SetBinError(iX, math.sqrt(statDown * statDown)) # + syst * syst))
 
         print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
 
     outputFile.cd()
     gpt.Write()
     fpt.Write()
+    fptUp.Write()
+    fptDown.Write()
 
     for samp, sel in samples:
         htree = ROOT.TChain('events')
@@ -80,31 +97,44 @@ for iso in isos:
         tfact = fpt.Clone(tname)
         tfact.Divide(hpt)
 
+        tfactUp = fptUp.Clone(tname+'PurityUp')
+        tfactUp.Divide(hpt)
+        
+        tfactDown = fptDown.Clone(tname+'PurityDown')
+        tfactDown.Divide(hpt)
+
         for iX in range(1, fpt.GetNbinsX() + 1):
             print "gjets: %6.1f, fake: %6.1f, hadron: %6.1f, tfact: %4.2f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX)*100)
 
         outputFile.cd()
         hpt.Write()
         tfact.Write()
+        tfactUp.Write()
+        tfactDown.Write()
 
         canvas.cd()
         canvas.Clear()
         canvas.legend.Clear()
 
         canvas.legend.add(gname, title = '#gamma + jet', lcolor = ROOT.kBlack, lwidth = 2)
-        canvas.legend.add(fname, title = '#gamma + jet #times impurity', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
+        canvas.legend.add(fname, title = '#gamma + jet #times impurity', lcolor = ROOT.kRed, lwidth = 2)
+        canvas.legend.add(fname+'Syst', title = 'impurity #pm 1#sigma', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
         canvas.legend.add(hname, title = 'EMobject + jet', lcolor = ROOT.kBlue, lwidth = 2)
         canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
 
         canvas.legend.apply(gname, gpt)
         canvas.legend.apply(fname, fpt)
+        canvas.legend.apply(fname+'Syst', fptUp)
+        canvas.legend.apply(fname+'Syst', fptDown)
         canvas.legend.apply(hname, hpt)
 
         canvas.addHistogram(gpt, drawOpt = 'HIST')
         canvas.addHistogram(fpt, drawOpt = 'HIST')
+        canvas.addHistogram(fptUp, drawOpt = 'HIST')
+        canvas.addHistogram(fptDown, drawOpt = 'HIST')
         canvas.addHistogram(hpt, drawOpt = 'HIST')
 
-        canvas.ylimits = (1., 250000.)
+        canvas.ylimits = (0.1, 250000.)
         canvas.SetLogy(True)
 
         canvas.printWeb('monophoton/hadronTFactor', 'distributions'+iso[0]+samp)
@@ -112,38 +142,18 @@ for iso in isos:
         canvas.Clear()
         canvas.legend.Clear()
 
-        canvas.ylimits = (0., -1)
+        canvas.ylimits = (0., 0.15)
         canvas.SetLogy(False)
 
-        canvas.legend.add(tname, title = 'Transfer factor', lcolor = ROOT.kBlack, lwidth = 1)
+        canvas.legend.add(tname, title = 'transfer factor', lcolor = ROOT.kBlack, lwidth = 2)
+        canvas.legend.add(tname+'Syst', title = 'impurity #pm 1#sigma', lcolor = ROOT.kBlack, lwidth = 2, lstyle = ROOT.kDashed)
 
         canvas.legend.apply(tname, tfact)
+        canvas.legend.apply(tname+'Syst', tfactUp)
+        canvas.legend.apply(tname+'Syst', tfactDown)
 
-        canvas.addHistogram(tfact, drawOpt = 'EP')
+        canvas.addHistogram(tfact, drawOpt = 'HIST')
+        canvas.addHistogram(tfactUp, drawOpt = 'HIST')
+        canvas.addHistogram(tfactDown, drawOpt = 'HIST')
 
         canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+samp)
-
-    """
-    tfNom = outputFile.Get('tfact'+iso[0]+samples[0][0])
-    tfDown = outputFile.Get('tfact'+iso[0]+samples[1][0])
-    tfUp = outputFile.Get('tfact'+iso[0]+samples[2][0])
-    
-    canvas.cd()
-    canvas.Clear()
-    canvas.legend.Clear()
-    
-    canvas.legend.add('nom', title = 'Nominal', lcolor = ROOT.kBlack, lwidth = 2)
-    canvas.legend.add('up', title = 'Up', lcolor = ROOT.kRed, lwidth = 2)
-    canvas.legend.add('down', title = 'Down', lcolor = ROOT.kBlue, lwidth = 2)
-    canvas.legend.setPosition(0.6, 0.7, 0.95, 0.9)
-    
-    canvas.legend.apply('nom', tfNom)
-    canvas.legend.apply('up', tfUp)
-    canvas.legend.apply('down', tfDown)
-    
-    canvas.addHistogram(tfNom, drawOpt = 'EP')
-    canvas.addHistogram(tfUp, drawOpt = 'HIST')
-    canvas.addHistogram(tfDown, drawOpt = 'HIST')
-
-    canvas.printWeb('monophoton/hadronTFactor', 'tfactor'+iso[0]+'Comp')
-    """
