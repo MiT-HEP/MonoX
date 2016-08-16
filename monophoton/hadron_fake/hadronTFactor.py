@@ -59,20 +59,22 @@ for iso in isos:
 
         fpt.SetBinContent(iX, cont)
         fpt.SetBinError(iX, math.sqrt(stat * stat)) # + syst * syst))
-        
-        contUp = fptUp.GetBinContent(iX) * (imp + err) 
-        statUp = fptUp.GetBinError(iX) * (imp + err)
+
+        impUp = imp + err
+        contUp = fptUp.GetBinContent(iX) * impUp 
+        statUp = fptUp.GetBinError(iX) * impUp
 
         fptUp.SetBinContent(iX, contUp)
         fptUp.SetBinError(iX, math.sqrt(statUp * statUp)) # + syst * syst))
-
-        contDown = fptDown.GetBinContent(iX) * (imp - err) 
-        statDown = fptDown.GetBinError(iX) * (imp - err)
+        
+        impDown = imp - err
+        contDown = fptDown.GetBinContent(iX) * impDown
+        statDown = fptDown.GetBinError(iX) * impDown
 
         fptDown.SetBinContent(iX, contDown)
         fptDown.SetBinError(iX, math.sqrt(statDown * statDown)) # + syst * syst))
 
-        print "Bin center: %.2f, imp: %.2f,  err: %.2f" % (cent, imp*100, err*100)
+        print "Bin center: %.2f, imp: %.2f,  err: %.2f (%2.0f), up: %.2f, down %.2f" % (cent, imp*100, err*100, err/imp*100, impUp*100, impDown*100)
 
     outputFile.cd()
     gpt.Write()
@@ -104,7 +106,12 @@ for iso in isos:
         tfactDown.Divide(hpt)
 
         for iX in range(1, fpt.GetNbinsX() + 1):
-            print "gjets: %6.1f, fake: %6.1f, hadron: %6.1f, tfact: %4.2f" % (gpt.GetBinContent(iX), fpt.GetBinContent(iX), hpt.GetBinContent(iX), tfact.GetBinContent(iX)*100)
+            print "pt: %3.0f gjets: %7.1f, fake:     %7.1f, hadron: %7.1f, tfact:     %4.2f" % (fpt.GetBinLowEdge(iX), gpt.GetBinContent(iX), fpt.GetBinContent(iX), 
+                                                                                        hpt.GetBinContent(iX), tfact.GetBinContent(iX)*100)
+            print "pt: %3.0f gjets: %7.1f, fakeUp:   %7.1f, hadron: %7.1f, tfactUp:   %4.2f" % (fpt.GetBinLowEdge(iX), gpt.GetBinContent(iX), fptUp.GetBinContent(iX)
+                                                                                            , hpt.GetBinContent(iX), tfactUp.GetBinContent(iX)*100)
+            print "pt: %3.0f gjets: %7.1f, fakeDown: %7.1f, hadron: %7.1f, tfactDown: %4.2f" % (fpt.GetBinLowEdge(iX), gpt.GetBinContent(iX), fptDown.GetBinContent(iX)
+                                                                                            , hpt.GetBinContent(iX), tfactDown.GetBinContent(iX)*100)
 
         outputFile.cd()
         hpt.Write()
@@ -142,7 +149,11 @@ for iso in isos:
         canvas.Clear()
         canvas.legend.Clear()
 
-        canvas.ylimits = (0., 0.15)
+        if samp == 'Down':
+            canvas.ylimits = (0., -1.)
+        else:
+            canvas.ylimits = (0., 0.15)
+        
         canvas.SetLogy(False)
 
         canvas.legend.add(tname, title = 'transfer factor', lcolor = ROOT.kBlack, lwidth = 2)
