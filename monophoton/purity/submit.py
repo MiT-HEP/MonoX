@@ -14,7 +14,7 @@ scratchPath = '/scratch5/ballen/hist/purity/'+s.Version+'/sieie/Plots/SignalCont
 argFile = file('condorArgs.txt', 'w')
 
 for loc in s.Locations[:1]:
-    for sel in s.PhotonIds[1:2]:
+    for sel in s.PhotonIds[:1]+s.PhotonIds[2:3]:
 	for chiso in s.ChIsoSbSels[:]:
 	    for pt in s.PhotonPtSels[1:]:
 		for met in s.MetSels[1:2]:

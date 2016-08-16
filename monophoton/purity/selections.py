@@ -19,7 +19,7 @@ ROOT.gSystem.Load(os.environ['CMSSW_BASE'] + '/src/MitMonoX/monophoton/MitFlat/D
 ROOT.gSystem.AddIncludePath('-I' + '../MitFlat/DataFormats/interface')
 
 Locations = [ 'barrel', 'endcap' ]
-PhotonIds = [ 'loose', 'medium', 'tight' ]
+PhotonIds = [ 'none', 'loose', 'medium', 'tight' ]
 
 hOverECuts = {}
 sieieCuts = {}
@@ -28,27 +28,30 @@ nhIsoCuts = {}
 phIsoCuts = {}
 
 ROOT.gROOT.ProcessLine("double cut;")
-for loc in Locations:
+for iLoc, loc in enumerate(Locations):
     hOverECuts[loc] = {}
     sieieCuts[loc] = {}
     chIsoCuts[loc] = {}
     nhIsoCuts[loc] = {}
     phIsoCuts[loc] = {}
+
+    for cuts in [sieieCuts]:
+        cuts[loc]['none'] = 1.
     
-    for pid in PhotonIds:
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::hOverECuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+    for iId, pid in enumerate(PhotonIds[1:]):
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::hOverECuts["+str(iLoc)+"]["+str(iId)+"];")
         # print "hOverE", loc, pid, ROOT.cut
         hOverECuts[loc][pid] = ROOT.cut
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::sieieCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::sieieCuts["+str(iLoc)+"]["+str(iId)+"];")
         # print "sieie", loc, pid, ROOT.cut
         sieieCuts[loc][pid] = ROOT.cut
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::chIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::chIsoCuts["+str(iLoc)+"]["+str(iId)+"];")
         # print "chIso", loc, pid, ROOT.cut
         chIsoCuts[loc][pid] = ROOT.cut
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(iLoc)+"]["+str(iId)+"];")
         # print "nhIso", loc, pid, ROOT.cut
         nhIsoCuts[loc][pid] = ROOT.cut
-        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(Locations.index(loc))+"]["+str(PhotonIds.index(pid))+"];")
+        ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(iLoc)+"]["+str(iId)+"];")
         # print "phIso", loc, pid, ROOT.cut
         phIsoCuts[loc][pid] = ROOT.cut
 
@@ -71,19 +74,24 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2'],'Fit Template from SinglePhoton Data')
-                                 ,('TempSignalGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Signal Template from #gamma+jets MC')
-                                 ,('TempSidebandGJets',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2'],'Background Template from SinglePhoton Data')
-                                 ,('TempSidebandGJetsScaled',['gj-40','gj-100','gj-200','gj-400','gj-600'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2'],'Background Template from SinglePhoton Data')
+sphData = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
+gjetsMc = ['gj-40','gj-100','gj-200','gj-400','gj-600']
+sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
+gjetsMcNero = ['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d']
+
+Measurement = { "Monophoton" : [ ('FitSinglePhoton',sphData,'Fit Template from SinglePhoton Data')
+                                 ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
+                                 ,('TempSidebandGJetsScaled',gjetsMc,r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
                                  ],
-                "Nero" : [ ('FitSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Fit Template from SinglePhoton Data')
-                                 ,('TempSignalGJets',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Signal Template from #gamma+jets MC')
-                                 ,('TempSidebandGJets',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Background Template from SinglePhoton Data')
-                                 ,('TempSidebandGJetsScaled',['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d'],r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'],'Background Template from SinglePhoton Data')
+                "Nero" : [ ('FitSinglePhoton',sphDataNero,'Fit Template from SinglePhoton Data')
+                                 ,('TempSignalGJets',gjetsMcNero,r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',gjetsMcNero,r'Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',sphDataNero,'Background Template from SinglePhoton Data')
+                                 ,('TempSidebandGJetsScaled',gjetsMcNero,r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',sphDataNero,'Background Template from SinglePhoton Data')
                                  ]
                 }
 
@@ -108,8 +116,11 @@ for loc in Locations:
     phIsoSels[loc] = {}
     SigmaIetaIetaSels[loc] = {}
     PhotonIsolationSels[loc] = {}
+
+    for sel in [hOverESels, sieieSels, chIsoSels, nhIsoSels, phIsoSels, SigmaIetaIetaSels, PhotonIsolationSels]:
+        sel[loc]['none'] = '(1)'
     
-    for pid in PhotonIds:
+    for pid in PhotonIds[1:]:
         hOverESel = '(photons.hOverE < '+str(hOverECuts[loc][pid])+')'
         sieieSel = '(photons.sieie < '+str(sieieCuts[loc][pid])+')'
         sieieSelWeighted = '( (0.891832 * photons.sieie + 0.0009133) < '+str(sieieCuts[loc][pid])+')'
@@ -127,6 +138,8 @@ for loc in Locations:
         SigmaIetaIetaSels[loc][pid] = SigmaIetaIetaSel
         PhotonIsolationSels[loc][pid] = PhotonIsolationSel
         
+
+
 cutIsLoose = '(photons.loose)'
 cutIsMedium = '(photons.medium)'
 cutIsTight = '(photons.tight)'

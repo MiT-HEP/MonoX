@@ -253,6 +253,8 @@ print "Total uncertainty is:", totalUncertainty
 
 outFile = file(plotDir + '/results.out', 'w')
 
+outFile.write( "# of real photons is: "+str(nominalPurity[2])+'\n' )
+outFile.write( "# of fake photons is: "+str(nominalPurity[3])+'\n' )
 outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
 outFile.write( "Method uncertainty is: "+str(scaledUncertainty)+'\n' ) 
 outFile.write( "Signal shape uncertainty is: "+str(twobinUncertainty)+'\n' ) 

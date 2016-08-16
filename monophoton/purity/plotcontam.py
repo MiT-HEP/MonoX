@@ -26,7 +26,7 @@ purities = {}
 
 for loc in Locations[:1]:
     purities[loc] = {}
-    for pid in PhotonIds[1:2]:
+    for pid in PhotonIds[:1]+PhotonIds[2:3]:
         purities[loc][pid] = {}
         for ptCut in PhotonPtSels[1:]:
             purities[loc][pid][ptCut[0]] = {}
@@ -154,7 +154,7 @@ pprint(purities)
 canvas = SimpleCanvas(lumi = config.jsonLumi)
 
 for loc in Locations[:1]:
-    for pid in PhotonIds[1:2]:
+    for pid in PhotonIds[:1]+PhotonIds[2:3]:
         for metCut in MetSels[1:2]:
             canvas.cd()
             canvas.Clear()
@@ -295,7 +295,10 @@ for loc in Locations[:1]:
                 if iH:
                     canvas.ylimits = (0., 100.)
                 else:
-                    canvas.ylimits = (0., 10.)
+                    if pid == 'none':
+                        canvas.ylimits = (0., 15.)
+                    else:
+                        canvas.ylimits = (0., 10.)
 
                 plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_"+suffix[iH] 
                 canvas.printWeb('purity/'+Version+'/Fitting', plotName, logy = False)
@@ -305,7 +308,10 @@ for loc in Locations[:1]:
             canvas.legend.add("final", title = str(loc)+" "+str(pid), lcolor = kBlack, lwidth = 2)
             canvas.legend.apply("final", finalHist)
             canvas.addHistogram(finalHist, drawOpt = 'EP')
-            canvas.ylimits = (0., 10.)
+            if pid == 'none':
+                canvas.ylimits = (0., 15.)
+            else:
+                canvas.ylimits = (0., 10.)
             plotName = "purity_data_"+str(loc)+"_"+str(pid)+"_ptbinned_final" 
             canvas.printWeb('purity/'+Version+'/Fitting', plotName, logy = False)
                 
