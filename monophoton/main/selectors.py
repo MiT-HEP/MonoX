@@ -901,7 +901,10 @@ def TagAndProbeBase(sample, selector):
 
     return selector
 
-def zeeJets(sample, selector):
+def zeeBase(sample, selector):
+    """
+    Select Z->ee events.
+    """
     selector = TagAndProbeBase(sample, selector)
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
@@ -910,15 +913,26 @@ def zeeJets(sample, selector):
     tnp.setTagSpecies(ROOT.TagAndProbePairZ.kElectron)
     tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kElectron)
 
+    return selector
+
+def zeeJets(sample, selector):
+    """
+    Require Z->ee plus at least one high pt jet.
+    """
+    selector = zeeBase(sample, selector)
+
     b2b = ROOT.ZJetBackToBack()
-    b2b.setTagAndProbePairZ(tnp)
+    b2b.setTagAndProbePairZ(selector.findOperator('TagAndProbePairZ'))
     b2b.setMinJetPt(100.)
     b2b.setMinDeltaPhi(3.)
     selector.addOperator(b2b)
 
     return selector
 
-def zmmJets(sample, selector):
+def zmmBase(sample, selector):
+    """
+    Select Z->mumu events.
+    """
     selector = TagAndProbeBase(sample, selector)
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
@@ -926,9 +940,17 @@ def zmmJets(sample, selector):
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.TagAndProbePairZ.kMuon)
     tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kMuon)
+    
+    return selector
+
+def zmmJets(sample, selector):
+    """
+    Require Z->mumu plus at least one high pt jet.
+    """
+    selector = TagAndProbeBase(sample, selector)
 
     b2b = ROOT.ZJetBackToBack()
-    b2b.setTagAndProbePairZ(tnp)
+    b2b.setTagAndProbePairZ(selector.findOperator('TagAndProbePairZ'))
     b2b.setMinJetPt(100.)
     b2b.setMinDeltaPhi(3.)
     selector.addOperator(b2b)
