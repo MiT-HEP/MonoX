@@ -102,7 +102,6 @@ class Legend(object):
 
         self.entries = {}
         self.defaultOrder = []
-        self.autoPosition = True
         self._modified = False
 
     def setPosition(self, x1, y1, x2, y2, fix = True):
@@ -110,9 +109,6 @@ class Legend(object):
         self.legend.SetY1(y1)
         self.legend.SetX2(x2)
         self.legend.SetY2(y2)
-
-        if fix:
-            self.autoPosition = False
 
     def add(self, obl, title = '', opt = 'LFP', color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
         ent = ROOT.TLegendEntry(0)
@@ -294,7 +290,7 @@ class SimpleCanvas(object):
 
         self._temporaries = []
 
-    def addHistogram(self, hist, drawOpt = 'HIST', idx = -1, clone = True, asymErr = False):
+    def addHistogram(self, hist, drawOpt = None, idx = -1, clone = True, asymErr = False):
         """
         Any object with the following methods can be added as a "histogram":
         Draw, Get/SetMaximum/Minimum, GetX/Yaxis()
@@ -308,7 +304,15 @@ class SimpleCanvas(object):
         if idx > len(self._histograms):
             raise RuntimeError('Invalid histogram index ' + str(idx))
 
-        elif idx == len(self._histograms):
+        if drawOpt is None:
+            if hist.InheritsFrom(ROOT.TH1.Class()):
+                drawOpt = 'HIST'
+            elif hist.InheritsFrom(ROOT.TGraph.Class()):
+                drawOpt = 'P'
+            else:
+                drawOpt = ''
+
+        if idx == len(self._histograms):
             # new histogram
             if clone:
                 self._hStore.cd()
@@ -412,19 +416,39 @@ class SimpleCanvas(object):
         if logy is None:
             logy = self._logy
 
-        gPad = ROOT.gPad
-        self.canvas.cd()
-        self.canvas.SetLogx(logx)
-        self.canvas.SetLogy(logy)
+        base = self._updateMainPad(self.canvas, hList, logx, logy, ymax)
 
+        if base:
+            if self.xtitle:
+                base.GetXaxis().SetTitle(self.xtitle)
+            if self.ytitle:
+                base.GetYaxis().SetTitle(self.ytitle)
+
+        self.canvas.Update()
+
+        self._needUpdate = False
+
+    def _updateMainPad(self, pad, hList, logx, logy, ymax, rooHists = None):
+        gPad = ROOT.gPad
+
+        pad.cd()
+        pad.SetLogx(logx)
+        pad.SetLogy(logy)
+
+        # list of histograms to draw
         if len(hList) == 0:
-            hList = range(len(self._histograms))
+            hList.extend(range(len(self._histograms)))
+
+        base = None
 
         if len(hList) > 0:
+            # draw base
             base = self._histograms[hList[0]]
             if base.useRooHist:
                 graph = ROOT.RooHist(base.histogram)
                 self._temporaries.append(graph)
+                if rooHists is not None:
+                    rooHists[base] = graph
                 graph.Draw('A' + base.drawOpt)
             else:
                 drawOpt = base.drawOpt
@@ -436,11 +460,16 @@ class SimpleCanvas(object):
             if ymax > 0.:
                 base.SetMaximum(ymax)
 
+            pad.Update()
+    
+            # draw other histograms
             for ih in hList[1:]:
                 hist = self._histograms[ih]
                 if hist.useRooHist:
                     graph = ROOT.RooHist(hist.histogram)
                     self._temporaries.append(graph)
+                    if rooHists is not None:
+                        rooHists[hist] = graph
                     graph.Draw(hist.drawOpt)
                 else:
                     drawOpt = hist.drawOpt
@@ -454,13 +483,8 @@ class SimpleCanvas(object):
                         base.SetMaximum(hist.GetMaximum() * 5.)
                     else:
                         base.SetMaximum(hist.GetMaximum() * 1.3)
-        
-            self.canvas.Update()
 
-            if self.xtitle:
-                base.GetXaxis().SetTitle(self.xtitle)
-            if self.ytitle:
-                base.GetYaxis().SetTitle(self.ytitle)
+            pad.Update()
 
             if self.ylimits[1] < self.ylimits[0]:
                 if logy:
@@ -471,23 +495,17 @@ class SimpleCanvas(object):
             else:
                 base.GetYaxis().SetRangeUser(*self.ylimits)
 
+            if len(self.legend.entries) != 0:
+                self.legend.Draw()
+
         for obj in self._objects:
             obj.Draw('SAME')
 
         self.drawText()
 
-        if len(self.legend.entries) != 0:
-            if self.legend.autoPosition:
-                maxlen = max([len(e.GetLabel()) for e in self.legend.entries.values()])
-                self.legend.legend.SetX1(0.95 - 0.015 * maxlen)
-                self.legend.legend.SetY1(SimpleCanvas.YMAX - 0.03 - 0.04 * len(self.legend.entries))
-
-            self.legend.Draw()
-
-        self.canvas.Update()
         gPad.cd()
 
-        self._needUpdate = False
+        return base
 
     def SetLogx(self, logx):
         self._logx = logx
@@ -617,81 +635,91 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.cd()
         self.canvas.Update()
 
-        self.plotPad.cd()
-        self.plotPad.SetLogx(logx)
-        self.plotPad.SetLogy(logy)
-
         # map the original histograms to RooHists
         rooHists = {}
 
-        # list of histograms to draw
-        if len(hList) == 0:
-            hList = range(len(self._histograms))
+        base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists)
 
-        if len(hList) > 0:
-            # draw base
-            base = self._histograms[hList[0]]
-            if base.useRooHist:
-                graph = ROOT.RooHist(base.histogram)
-                self._temporaries.append(graph)
-                rooHists[base] = graph
-                graph.Draw('A' + base.drawOpt)
-            else:
-                base.Draw(base.drawOpt)
-
-            if ymax > 0.:
-                base.SetMaximum(ymax)
-
-            self.plotPad.Update()
-    
-            # draw other histograms
-            for ih in hList[1:]:
-                hist = self._histograms[ih]
-    
-                if ymax < 0. and hist.GetMaximum() > base.GetMaximum():
-                    if logy:
-                        base.SetMaximum(hist.GetMaximum() * 5.)
-                    else:
-                        base.SetMaximum(hist.GetMaximum() * 1.3)
-
-                if hist.useRooHist:
-                    graph = ROOT.RooHist(hist.histogram)
-                    self._temporaries.append(graph)
-                    rooHists[hist] = graph
-                    graph.Draw(hist.drawOpt)
-                else:
-                    hist.Draw(hist.drawOpt + ' SAME')
-
-            self.plotPad.Update()
-
-            if self.ylimits[1] < self.ylimits[0]:
-                if logy:
-                    if self.minimum > 0.:
-                        base.SetMinimum(self.minimum)
-                else:
-                    base.SetMinimum(0.)
-            else:
-                base.GetYaxis().SetRangeUser(*self.ylimits)
-
+        if base:
             base.GetYaxis().SetTitle('')
             base.GetYaxis().SetLabelSize(0.)
             base.GetXaxis().SetTitle('')
             base.GetXaxis().SetLabelSize(0.)
-
+    
             # will be overridden by self.ytitle
             self.yaxis.SetTitle(base.GetYaxis().GetTitle())
-
-            if len(self.legend.entries) != 0:
-                self.legend.Draw()
-
-        for obj in self._objects:
-            obj.Draw('SAME')
-
-        self.drawText()
 
         # now ratio plots
         self.ratioPad.cd()
         self.ratioPad.SetLogx(logx)
+
+        # set later depending on what rbase is
+        norm = None
+
+        def getNorm(key1, key2 = None):
+            if key2 is None:
+                if type(norm) is not dict:
+                    raise RuntimeError('Cannot find normalization with a single key')
+
+                minDist = -1.
+                minN = 0.
+                for key, n in norm.items():
+                    if type(key) is tuple:
+                        if key1 >= key[0] and key1 <= key[1]:
+                            return n
+                    else:
+                        d = abs(key - key1)
+                        if minDist < 0. or d < minDist:
+                            minDist = d
+                            minN = n
+
+                return minN
+
+            else:
+                if type(norm) is dict:
+                    for edges, n in norm.items():
+                        if abs(key1 - edges[0]) < 1.e-5 and abs(key2 - edges[1]) < 1.e-5:
+                            return n
+                    else:
+                        raise RuntimeError('Bin edges not found')
+
+                else:
+                    return norm(key1, key2)
+
+        def normalize(obj):
+            if obj.InheritsFrom(ROOT.TH1.Class()):
+                axis = obj.GetXaxis()
+                for iX in range(1, obj.GetNbinsX() + 1):
+                    n = getNorm(axis.GetBinLowEdge(iX), axis.GetBinUpEdge(iX))
+                    if n > 0.:
+                        obj.SetBinError(iX, obj.GetBinError(iX) / n)
+                        obj.SetBinContent(iX, 1.)
+                    else:
+                        obj.SetBinError(iX, 0.)
+                        obj.SetBinContent(iX, 0.)
+
+            elif obj.InheritsFrom(ROOT.TGraph.Class()):
+                for iP in range(0, obj.GetN()):
+                    x = obj.GetX()[iP]
+                    n = getNorm(x)
+                    if n > 0.:
+                        if obj.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                            obj.SetPointEYlow(iP, obj.GetErrorYlow(iP) / n)
+                            obj.SetPointEYhigh(iP, obj.GetErrorYhigh(iP) / n)
+                        elif obj.InheritsFrom(ROOT.TGraphErrors.Class()):
+                            obj.SetPointError(iP, obj.GetErrorX(iP), obj.GetErrorY(iP) / n)
+
+                        obj.SetPoint(iP, x, obj.GetY()[iP] / n)
+
+                    else:
+                        if obj.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                            obj.SetPointEYlow(iP, 0.)
+                            obj.SetPointEYhigh(iP, 0.)
+                        elif obj.InheritsFrom(ROOT.TGraphErrors.Class()):
+                            obj.SetPointError(iP, obj.GetErrorX(iP), 0.)
+
+                        obj.SetPoint(iP, x, 0.)
+                        
 
         # list of ratio histograms
         if len(rList) == 0:
@@ -705,98 +733,87 @@ class RatioCanvas(SimpleCanvas):
             rbase.SetMinimum()
             self._temporaries.append(rbase)
 
-            # normalize rbase and keep the bin contents
-            rnorms = []
-            if rbase.InheritsFrom(ROOT.TH1.Class()):
-                for iX in range(1, rbase.GetNbinsX() + 1):
-                    norm = rbase.GetBinContent(iX)
-                    rnorms.append(norm)
-                    if norm > 0.:
-                        rbase.SetBinError(iX, rbase.GetBinError(iX) / norm)
-                        rbase.SetBinContent(iX, 1.)
-                    else:
-                        rbase.SetBinError(iX, 0.)
-                        rbase.SetBinContent(iX, 0.)
+            if rbase.InheritsFrom(ROOT.TF1.Class()):
+                norm = lambda binlow, binhigh: rbase.Integral(binlow, binhigh)
 
-            elif rbase.InheritsFrom(ROOT.TGraph.Class()):
-                for iX in range(0, rbase.GetN()):
-                    norm = rbase.GetY()[iX]
-                    rnorms.append(norm)
-                    if norm > 0.:
-                        rbase.SetPoint(iX, rbase.GetX()[iX], 1.)
-                        rbase.SetPointError(iX, rbase.GetErrorXlow(iX), rbase.GetErrorXhigh(iX), rbase.GetErrorYlow(iX) / norm, rbase.GetErrorYhigh(iX) / norm)
-                    else:
-                        rbase.SetPoint(iX, rbase.GetX()[iX], 0.)
-                        rbase.SetPointError(iX, rbase.GetErrorX(iX), rbase.GetErrorX(iX), 0., 0.)
+            else:
+                norm = {}
 
-            # draw rbase
-            rbase.Draw(rbase.drawOpt)
+                if rbase.InheritsFrom(ROOT.TH1.Class()):
+                    axis = rbase.GetXaxis()
+                    for iX in range(1, rbase.GetNbinsX() + 1):
+                        norm[(axis.GetBinLowEdge(iX), axis.GetBinUpEdge(iX))] = rbase.GetBinContent(iX)
 
+                elif rbase.InheritsFrom(ROOT.TGraph.Class()):
+                    for iP in range(0, rbase.GetN()):
+                        norm[rbase.GetX()[iP]] = rbase.GetY()[iP]
+
+            rframe = ROOT.TH1F('rframe', '', 1, rbase.GetXaxis().GetXmin(), rbase.GetXaxis().GetXmax())
+            rframe.SetMinimum(self.rlimits[0])
+            rframe.SetMaximum(self.rlimits[1])
+            self._temporaries.append(rframe)
+
+            rframe.Draw()
+            
             # draw the base line
-            if not ('HIST' in rbase.drawOpt and rbase.GetLineWidth() > 0):
-                rline = ROOT.TLine(0., 1., 1., 1.)
+            if not ('P' in rbase.drawOpt or rbase.GetLineWidth() == 0):
+                rline = ROOT.TLine(rframe.GetXaxis().GetXmin(), 1., rframe.GetXaxis().GetXmax(), 1.)
+                rline.SetLineColor(rbase.GetLineColor())
+                rline.SetLineStyle(rbase.GetLineStyle())
+                rline.SetLineWidth(rbase.GetLineWidth())
                 rline.Draw()
                 self._temporaries.append(rline)
-    
+   
             # use rnorms to normalize others
             for ir in rList[1:]:
                 hist = self._histograms[ir]
-    
+   
                 self._hStore.cd()
-                ratio = hist.Clone('ratio_' + hist.GetName())
+                if hist.useRooHist:
+                    ratio = ROOT.TGraphAsymmErrors(hist.GetNbinsX())
+                else:
+                    ratio = hist.Clone('ratio_' + hist.GetName())
+
                 ratio.SetTitle('')
-                ratio.Reset('M')
                 self._temporaries.append(ratio)
-    
-                for iX in range(1, ratio.GetNbinsX() + 1):
-                    try:
-                        norm = rnorms[iX - 1]
-                        if norm > 0.:
-                            ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
-                            ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
-                        else:
-                            ratio.SetBinError(iX, 0.)
-                            ratio.SetBinContent(iX, 0.)
 
-                    except IndexError:
-                        # rbase is a TF1
-                        norm = rbase.Integral(ratio.GetXaxis().GetBinLowEdge(iX), ratio.GetXaxis().GetBinUpEdge(iX))
-                        if norm > 0.:
-                            ratio.SetBinError(iX, hist.GetBinError(iX) / norm)
-                            ratio.SetBinContent(iX, hist.GetBinContent(iX) / norm)
-                        else:
-                            ratio.SetBinError(iX, 0.)
-                            ratio.SetBinContent(iX, 0.)
+                normalize(ratio)
 
-                if 'P' in ratio.drawOpt or ratio.useRooHist:
-                    # graph or using RooHist
-                    graph = ROOT.TGraphAsymmErrors(ratio.GetNbinsX())
-                    self._temporaries.append(graph)
-                    Legend.copyStyle(ratio, graph)
+                if ratio.InheritsFrom(ROOT.TGraph.Class()):
+                    ratio.Draw(ratio.drawOpt + 'Z')
+                else:
+                    ratio.Draw(ratio.drawOpt + ' SAME')
 
-                    for iP in range(graph.GetN()):
-                        norm = rnorms[iP]
+                if 'P' in ratio.drawOpt or ratio.InheritsFrom(ROOT.TGraph.Class()):
+                    # draw arrows and error bars for over and undershoots
+                    rmed = (self.rlimits[0] + self.rlimits[1]) * 0.5
+                    extrema = []
 
-                        x = ratio.GetXaxis().GetBinCenter(iP + 1)
-                        y = ratio.GetBinContent(iP + 1)
-                        
-                        if ratio.useRooHist:
-                            if norm > 0.:
-                                errhigh = rooHists[hist].GetErrorYhigh(iP) / norm
-                                errlow = rooHists[hist].GetErrorYlow(iP) / norm
-                            else:
-                                errhigh = 0.
-                                errlow = 0.
-                        else:
-                            errhigh = ratio.GetBinError(iP + 1)
-                            errlow = ratio.GetBinError(iP + 1)
+                    if ratio.InheritsFrom(ROOT.TH1.Class()):
+                        for iX in range(1, ratio.GetNbinsX() + 1):
+                            y = ratio.GetBinContent(iX)
+                            if y < self.rlimits[0] or y > self.rlimits[1]:
+                                ey = ratio.GetBinError(iX)
+                                extrema.append((ratio.GetXaxis().GetBinCenter(iX), y, ey, ey))
 
-                        graph.SetPoint(iP, x, y)
-                        graph.SetPointEYhigh(iP, errhigh)
-                        graph.SetPointEYlow(iP, errlow)
+                    else:
+                        for iP in range(ratio.GetN()):
+                            y = ratio.GetY()[iP]
+                            if y < self.rlimits[0] or y > self.rlimits[1]:
+                                if ratio.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                                    eyhigh = ratio.GetErrorYhigh(iP)
+                                    eylow = ratio.GetErrorYlow(iP)
+                                elif ratio.InheritsFrom(ROOT.TGraphErrors.Class()):
+                                    eyhigh = ratio.GetErrorY(iP)
+                                    eylow = eyhigh
+                                else:
+                                    eyhigh = 0.
+                                    eylow = 0.
 
-                        rmed = (self.rlimits[0] + self.rlimits[1]) * 0.5
-                        if (y < self.rlimits[0] and y + errhigh < rmed - 0.8 * (rmed - self.rlimits[0])) or (y > self.rlimits[1] and y - errlow > rmed + 0.8 * (self.rlimits[1] - rmed)):
+                                extrema.append((ratio.GetX()[iP], y, eyhigh, eylow))
+
+                    for x, y, eyhigh, eylow in extrema:
+                        if (y < self.rlimits[0] and y + eyhigh < rmed - 0.8 * (rmed - self.rlimits[0])) or (y > self.rlimits[1] and y - eylow > rmed + 0.8 * (self.rlimits[1] - rmed)):
                             if y < self.rlimits[0]:
                                 end = 1. - (1. - self.rlimits[0]) * 0.95
                             else:
@@ -814,9 +831,9 @@ class RatioCanvas(SimpleCanvas):
                         elif y < self.rlimits[0] or y > self.rlimits[1]:
                             if y < self.rlimits[0]:
                                 low = self.rlimits[0]
-                                high = min(y + errhigh, self.rlimits[1])
+                                high = min(y + eyhigh, self.rlimits[1])
                             else:
-                                low = max(y - errlow, self.rlimits[0])
+                                low = max(y - eylow, self.rlimits[0])
                                 high = self.rlimits[1]
 
                             bar = ROOT.TLine(x, low, x, high)
@@ -824,18 +841,14 @@ class RatioCanvas(SimpleCanvas):
                             self._temporaries.append(bar)
                             bar.Draw()
 
-                    graph.Draw(ratio.drawOpt + 'Z')
-                else:
-                    ratio.Draw(ratio.drawOpt + ' SAME')
-
-            rbase.SetTitle('')
-            rbase.GetXaxis().SetTitle('')
-            rbase.GetXaxis().SetLabelSize(0.)
-            rbase.GetXaxis().SetNdivisions(205)
-            rbase.GetYaxis().SetTitle('')
-            rbase.GetYaxis().SetLabelSize(0.)
-            rbase.GetYaxis().SetNdivisions(302)
-            rbase.GetYaxis().SetRangeUser(*self.rlimits)
+            rframe.SetTitle('')
+            rframe.GetXaxis().SetTitle('')
+            rframe.GetXaxis().SetLabelSize(0.)
+            rframe.GetXaxis().SetNdivisions(205)
+            rframe.GetYaxis().SetTitle('')
+            rframe.GetYaxis().SetLabelSize(0.)
+            rframe.GetYaxis().SetNdivisions(302)
+            rframe.GetYaxis().SetRangeUser(*self.rlimits)
 
             # will be overridden by self.xtitle
             self.xaxis.SetTitle(rbase.GetXaxis().GetTitle())
@@ -847,8 +860,6 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.cd()
         self.canvas.Update()
         self.plotPad.Update()
-
-        ratio = self._temporaries[-1]
 
         self._updateAxis('x', logx)
         self._updateAxis('y', logy)
