@@ -148,10 +148,12 @@ scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
 scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][loc][pid],inputKey,scaledDir)
 # scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )
+scaledUncYield = abs( nominalPurity[2] - scaledPurity[2] )
 
 print "\n\n##############################\n######## Doing background stat uncertainty ########\n##############################\n\n"
 ### Get background stat uncertainty
 toyPlot = TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
+toyPlotYield = TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
 toySkims = skims[:4]
 toysDir = os.path.join(plotDir,'toys')
 if not os.path.exists(toysDir):
@@ -203,7 +205,12 @@ for iToy in range(1,101):
     print "Purity diff is:", purityDiff
     toyPlot.Fill(purityDiff)
 
+    yieldDiff = toyPurity[2] - nominalPurity[2]
+    print "Yield diff is:", yieldDiff
+    toyPlotYield.Fill(yieldDiff)
+
 bkgdUncertainty = toyPlot.GetStdDev()
+bkgdUncYield = toyPlotYield.GetStdDev()
 toyPlot.GetXaxis().SetTitle("Impurity Difference")
 toyPlot.GetYaxis().SetTitle("# of Toys")
 
@@ -241,6 +248,7 @@ for iH, hist in enumerate(initialHists[:4]):
 twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,twobinDir)
 # twobinUncertainty = abs( nominalPurity[0][0] - twobinPurity[0][0])
 twobinUncertainty = abs( nominalPurity[0] - twobinPurity[0])
+twobinUncYield = abs( nominalPurity[2] - twobinPurity[2])
 
 
 print "\n\n##############################\n######## Showing results ########\n##############################\n\n"
@@ -249,12 +257,18 @@ print "Method uncertainty is:", scaledUncertainty
 print "Signal shape uncertainty is:", twobinUncertainty
 print "Background stat uncertainty is:", bkgdUncertainty
 totalUncertainty = ( (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
+totalUncYield = ( (scaledUncYield)**2 + (twobinUncYield)**2 + (bkgdUncYield)**2 )**(0.5)
+
 print "Total uncertainty is:", totalUncertainty
 
 outFile = file(plotDir + '/results.out', 'w')
 
 outFile.write( "# of real photons is: "+str(nominalPurity[2])+'\n' )
-outFile.write( "# of fake photons is: "+str(nominalPurity[3])+'\n' )
+outFile.write( "Method unc yield is: "+str(scaledUncYield)+'\n' ) 
+outFile.write( "Signal shape unc yield is: "+str(twobinUncYield)+'\n' ) 
+outFile.write( "Background stat unc yield is: "+str(bkgdUncYield)+'\n' )
+outFile.write( "Total unc yield is: "+str(totalUncYield)+'\n' )
+
 outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
 outFile.write( "Method uncertainty is: "+str(scaledUncertainty)+'\n' ) 
 outFile.write( "Signal shape uncertainty is: "+str(twobinUncertainty)+'\n' ) 

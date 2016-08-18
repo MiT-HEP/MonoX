@@ -127,7 +127,7 @@ for loc in Locations[:1]:
 
                     if not match:
                         print "No purity found for skim:", dirName
-                        purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]] = (1.025, 0.0)
+                        purities[loc][pid][ptCut[0]][metCut[0]][chiso[0]] = (102.5, 0.0)
                     condorFile.close()
                 purityFile.write(r"\hline")
                 purityFile.write("\n")

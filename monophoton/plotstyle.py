@@ -724,10 +724,10 @@ class RatioCanvas(SimpleCanvas):
                     rnorms.append(norm)
                     if norm > 0.:
                         rbase.SetPoint(iX, rbase.GetX()[iX], 1.)
-                        rbase.SetPointError(iX, rbase.GetErrorX(iX), GetErrorY(iX) / norm)
+                        rbase.SetPointError(iX, rbase.GetErrorXlow(iX), rbase.GetErrorXhigh(iX), rbase.GetErrorYlow(iX) / norm, rbase.GetErrorYhigh(iX) / norm)
                     else:
                         rbase.SetPoint(iX, rbase.GetX()[iX], 0.)
-                        rbase.SetPointError(iX, rbase.GetErrorX(iX), 0.)
+                        rbase.SetPointError(iX, rbase.GetErrorX(iX), rbase.GetErrorX(iX), 0., 0.)
 
             # draw rbase
             rbase.Draw(rbase.drawOpt)
