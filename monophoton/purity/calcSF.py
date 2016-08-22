@@ -67,7 +67,8 @@ for loc in s.Locations[:1]:
 
 pprint(yields)
 
-canvas = RatioCanvas(lumi = config.jsonLumi)
+canvas = SimpleCanvas(lumi = config.jsonLumi)
+rcanvas = RatioCanvas(lumi = config.jsonLumi)
 
 for loc in s.Locations[:1]:
     for pid in s.PhotonIds[2:3]:
@@ -75,7 +76,12 @@ for loc in s.Locations[:1]:
             canvas.cd()
             canvas.Clear()
             canvas.legend.Clear()
-            canvas.legend.setPosition(0.525,0.65,0.875,0.85)
+            canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
+
+            rcanvas.cd()
+            rcanvas.Clear()
+            rcanvas.legend.Clear()
+            canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
             bins = [175, 200, 250, 300, 350, 500]
 
@@ -91,7 +97,7 @@ for loc in s.Locations[:1]:
             
                 passes = yields[loc][pid][ptCut[0]][metCut[0]]
                 totals = yields[loc]['none'][ptCut[0]][metCut[0]]
-                
+
                 nTrue = passes[s.ChIsoSbSels[1][0]][0]
                 uncTrue = passes[s.ChIsoSbSels[1][0]][1]
                 sbUncTrue = max(abs(nTrue - passes[s.ChIsoSbSels[0][0]][0]),
@@ -101,11 +107,15 @@ for loc in s.Locations[:1]:
                 hTrue.SetBinContent(binNumber, nTrue)
                 hTrue.SetBinError(binNumber, totalUncTrue)
 
-                nTotal = passes[s.ChIsoSbSels[1][0]][0]
-                uncTotal = passes[s.ChIsoSbSels[1][0]][1]
+                nTotal = totals[s.ChIsoSbSels[1][0]][0]
+                uncTotal = totals[s.ChIsoSbSels[1][0]][1]
                 sbUncTotal = max(abs(nTotal - passes[s.ChIsoSbSels[0][0]][0]),
                                 abs(nTotal - passes[s.ChIsoSbSels[2][0]][0]))
                 totalUncTotal = (uncTotal**2 + sbUncTotal**2)**(0.5)
+
+                print lowEdge
+                print "pass:  %10.1f pm %5.1f" % (nTrue, totalUncTrue)
+                print "total: %10.1f pm %5.1f" % (nTotal, totalUncTotal)
 
                 hTotal.SetBinContent(binNumber, nTotal)
                 hTotal.SetBinError(binNumber, totalUncTotal)
@@ -113,13 +123,27 @@ for loc in s.Locations[:1]:
                 # eff = nTrue / nTotal
                 # sigma(eff) = sqrt(eff*(1-eff)/nTotal)
 
+            rcanvas.legend.add("total", title = "All Photons", lcolor = r.kBlack, lwidth = 2, mcolor = r.kBlack)
+            rcanvas.legend.apply("total", hTotal)
+            rcanvas.addHistogram(hTotal, drawOpt = 'EP')
+
+            rcanvas.legend.add("true", title = "True Photons", lcolor = r.kRed, lwidth = 2, mcolor = r.kRed)
+            rcanvas.legend.apply("true", hTrue)
+            passId = rcanvas.addHistogram(hTrue, drawOpt = 'EP')
+            
+            rcanvas.ylimits = (0., -1.)
+
+            plotName = "yield_"+str(loc)+"_"+str(pid)+"_ptbinned"
+            rcanvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
+
             gEff = r.TGraphAsymmErrors()
             gEff.Divide(hTrue, hTotal, "cl=0.683 b(1,1) mode")
 
-            canvas.legend.add("data", title = "Data", lcolor = r.kRed, lwidth = 2)
+            canvas.legend.add("data", title = "Data", lcolor = r.kBlack, lwidth = 2)
             canvas.legend.apply("data", gEff)
-            canvas.addHistogram(gEff, drawOpt = 'lp e2')
-            canvas.ylimits = (0., 1.)
+            canvas.addHistogram(gEff, drawOpt = 'EP')
 
-            plotName = "scalefactor_"+str(loc)+"_"+str(pid)+"_ptbinned"
+            canvas.ylimits = (0.0, 1.2)
+
+            plotName = "efficiency_"+str(loc)+"_"+str(pid)+"_ptbinned"
             canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
