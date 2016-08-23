@@ -81,7 +81,7 @@ for loc in s.Locations[:1]:
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
-            canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
+            rcanvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
             bins = [175, 200, 250, 300, 350, 500]
 
@@ -123,6 +123,7 @@ for loc in s.Locations[:1]:
                 # eff = nTrue / nTotal
                 # sigma(eff) = sqrt(eff*(1-eff)/nTotal)
 
+            """
             rcanvas.legend.add("total", title = "All Photons", lcolor = r.kBlack, lwidth = 2, mcolor = r.kBlack)
             rcanvas.legend.apply("total", hTotal)
             rcanvas.addHistogram(hTotal, drawOpt = 'EP')
@@ -135,15 +136,18 @@ for loc in s.Locations[:1]:
 
             plotName = "yield_"+str(loc)+"_"+str(pid)+"_ptbinned"
             rcanvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
+            """
 
             gEff = r.TGraphAsymmErrors()
             gEff.Divide(hTrue, hTotal, "cl=0.683 b(1,1) mode")
 
-            canvas.legend.add("data", title = "Data", lcolor = r.kBlack, lwidth = 2)
-            canvas.legend.apply("data", gEff)
-            canvas.addHistogram(gEff, drawOpt = 'EP')
+            rcanvas.legend.add("data", title = "Data", lcolor = r.kBlack, lwidth = 2)
+            rcanvas.legend.apply("data", gEff)
+            rcanvas.addHistogram(gEff, drawOpt = 'EP')
 
-            canvas.ylimits = (0.0, 1.2)
+            rcanvas.ylimits = (0.0, 1.2)
+            rcanvas.ytitle = 'Photon Efficiency'
+            rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
             plotName = "efficiency_"+str(loc)+"_"+str(pid)+"_ptbinned"
-            canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
+            rcanvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
