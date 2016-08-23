@@ -147,6 +147,16 @@ cutIsTight = '(photons.tight)'
 cutMatchedToPhoton = '(TMath::Abs(photons.matchedGen) == 22)'
 cutMatchedToReal = '(photons.matchedGen == -22)'
 
+# chWorstIsoCut 
+pixelVetoCut = 'photons.pixelVeto'
+mipCut = 'photons.mipEnergy < 4.9'
+timeCut = 'std::abs(photons.time) < 3.'
+sieieNonzeroCut = 'photons.sieie > 0.001'
+sipipNonzeroCut = 'photons.sipip > 0.001'
+noisyRegionCut = '!(photons.eta > 0. && photons.eta < 0.15 && photons.phi > 0.527580 && photons.phi < 0.541795)'
+
+monophIdCut = ' && '.join([mipCut, timeCut, sieieNonzeroCut, sipipNonzeroCut, noisyRegionCut])
+
 cutPhotonPtHigh = [175,200,250,300,350] 
 PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))') ]
 PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 

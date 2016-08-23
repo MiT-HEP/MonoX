@@ -48,6 +48,13 @@ else:
 skimName = 'Nero'
 skim = Measurement[skimName][1]
 
+pids = pid.split('_')
+if len(pids) > 1:
+    pid = pids[0]
+    extras = pids[2:]
+elif len(pids) == 1:
+    pid = pids[0]
+
 baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
 
 outName = os.path.join(plotDir,'chiso_'+inputKey)

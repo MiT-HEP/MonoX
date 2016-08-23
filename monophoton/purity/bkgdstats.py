@@ -98,8 +98,21 @@ plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
-sigSel = s.SigmaIetaIetaSels[loc][pid]+' && '+s.chIsoSels[loc][pid]+' && '+ptSel+' && '+metSel
-sbSel = s.SigmaIetaIetaSels[loc][pid]+' && '+chIsoSel+' && '+ptSel+' &&'+metSel
+pids = pid.split('_')
+if len(pids) > 1:
+    pid = pids[0]
+    extras = pids[2:]
+elif len(pids) == 1:
+    pid = pids[0]
+
+baseSel = s.SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
+if 'pixel' in extras:
+    baseSel = baseSel+' && '+s.pixelVetoCut
+if 'monoph' in extras:
+    baseSel = baseSel+' && '+s.monophIdCut
+
+sigSel = baseSel+' && '+s.chIsoSels[loc][pid]
+sbSel = baseSel+' && '+chIsoSel
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
