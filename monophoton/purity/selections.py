@@ -59,7 +59,6 @@ for iLoc, loc in enumerate(Locations):
 
 # Version = config.simpletreeVersion
 Version = 'nerogjets'
-# Version = 'monojet10fb'
 
 from ROOT import *
 
@@ -76,22 +75,37 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
 # Skims for Purity Calculation
 sphData = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
 gjetsMc = ['gj-40','gj-100','gj-200','gj-400','gj-600']
+qcdMc = [ 'qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
 gjetsMcNero = ['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d']
 
-Measurement = { "Monophoton" : [ ('FitSinglePhoton',sphData,'Fit Template from SinglePhoton Data')
+Measurement = { "bambu" : [ ('FitSinglePhoton',sphData,'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',gjetsMc,r'Scaled Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
                                  ],
-                "Nero" : [ ('FitSinglePhoton',sphDataNero,'Fit Template from SinglePhoton Data')
+                "bambumc" : [ ('FitSinglePhoton',gjetsMc+qcdMc,'Fit Template from SinglePhoton Data')
+                                 ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',gjetsMc+qcdMc,'Background Template from SinglePhoton Data')
+                                 ,('TempSidebandGJetsScaled',gjetsMc,r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',gjetsMc+qcdMc,'Background Template from SinglePhoton Data')
+                                 ],
+                "nero" : [ ('FitSinglePhoton',sphDataNero,'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',gjetsMcNero,r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',gjetsMcNero,r'Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',sphDataNero,'Background Template from SinglePhoton Data')
                                  ,('TempSidebandGJetsScaled',gjetsMcNero,r'Scaled Sideband Template from #gamma+jets MC')
                                  ,('TempBkgdSinglePhoton',sphDataNero,'Background Template from SinglePhoton Data')
+                                 ],
+                "neromc" : [ ('FitSinglePhoton',gjetsMcNero+qcdMc,'Fit Template from SinglePhoton Data')
+                                 ,('TempSignalGJets',gjetsMcNero,r'Signal Template from #gamma+jets MC')
+                                 ,('TempSidebandGJets',gjetsMcNero,r'Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',gjetsMcNero+qcdMc,'Background Template from SinglePhoton Data')
+                                 ,('TempSidebandGJetsScaled',gjetsMcNero,r'Scaled Sideband Template from #gamma+jets MC')
+                                 ,('TempBkgdSinglePhoton',gjetsMcNero+qcdMc,'Background Template from SinglePhoton Data')
                                  ]
                 }
 

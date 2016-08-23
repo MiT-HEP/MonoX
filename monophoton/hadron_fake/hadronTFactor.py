@@ -24,7 +24,7 @@ isos = [ ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '')
 
 baseSel = 't1Met.met < 60. && photons.size == 1 && photons.pixelVeto[0] && !(run > %s)' % config.runCutOff
 
-samples = [ ('',  baseSel+' && (photons.sieie[0] > 0.012 || photons.chIso[0] > 1.37)')
+samples = [ ('',  baseSel+' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIso[0] < 11.0 && photons.chIso[0] > 1.37))')
             ,('Down', baseSel)
             ,('Up', baseSel)
             ]

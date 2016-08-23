@@ -14,16 +14,26 @@ scratchPath = '/scratch5/ballen/hist/purity/'+s.Version+'/sieie/Plots/SignalCont
 argFile = file('condorArgs.txt', 'w')
 
 for loc in s.Locations[:1]:
-    for sel in s.PhotonIds[:1]+s.PhotonIds[2:3]:
-	for chiso in s.ChIsoSbSels[:]:
-	    for pt in s.PhotonPtSels[1:]:
-		for met in s.MetSels[1:2]:
+    for chiso in s.ChIsoSbSels[:]:
+        for pt in s.PhotonPtSels[1:]:
+            for met in s.MetSels[1:2]:
+                pids = []
+                pids.append(s.PhotonIds[0])
+                
+                for pid in s.PhotonIds[2:3]:
+                    pids.append(pid)
+                    # pids.append(pid+'_pixel')
+                    pids.append(pid+'_pixel_monoph')
+                    # pids.append(pid+'_monoph')
+
+                for sel in pids:
                     # print loc, sel, chiso[0], pt[0], met[0]
 		    outDir = scratchPath + '/' + loc + '_' + sel + '_' + chiso[0] + '_' + pt[0] + '_' + met[0]
                     # print outDir
                     if not os.path.exists(outDir):
                         os.makedirs(outDir)
                     argFile.write(loc + ' ' + sel + ' ' + chiso[0].replace('ChIso', '') + ' ' + pt[0].replace('PhotonPt', '') + ' ' + met[0].replace('Met', '') + ' \n')
+
 argFile.close()
 submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
 (sout, serr) = submit.communicate()

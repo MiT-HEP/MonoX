@@ -113,9 +113,9 @@ for loc in s.Locations[:1]:
                                 abs(nTotal - passes[s.ChIsoSbSels[2][0]][0]))
                 totalUncTotal = (uncTotal**2 + sbUncTotal**2)**(0.5)
 
-                print lowEdge
-                print "pass:  %10.1f pm %5.1f" % (nTrue, totalUncTrue)
-                print "total: %10.1f pm %5.1f" % (nTotal, totalUncTotal)
+                # print lowEdge
+                # print "pass:  %10.1f pm %5.1f" % (nTrue, totalUncTrue)
+                # print "total: %10.1f pm %5.1f" % (nTotal, totalUncTotal)
 
                 hTotal.SetBinContent(binNumber, nTotal)
                 hTotal.SetBinError(binNumber, totalUncTotal)
@@ -145,7 +145,7 @@ for loc in s.Locations[:1]:
             rcanvas.legend.apply("data", gEff)
             rcanvas.addHistogram(gEff, drawOpt = 'EP')
 
-            rcanvas.ylimits = (0.0, 1.2)
+            rcanvas.ylimits = (0.0, 1.1)
             rcanvas.ytitle = 'Photon Efficiency'
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 

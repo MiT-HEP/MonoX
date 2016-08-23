@@ -54,7 +54,8 @@ mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand
 mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 #mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
-mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
+#mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
+mc_gj = [(region, selectors.kfactor(defaults[region])) for region in mc_qcd]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu', 'zmmJets', 'zeeJets']
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
@@ -136,22 +137,22 @@ selectors = {
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     # 'wg': mc_cand + mc_lep + mc_lowmt,
     'wglo': mc_cand + mc_lep + mc_lowmt,
-    'gj-40': mc_gj + mc_qcd + mc_lowmt,
-    'gj-100': mc_gj + mc_qcd + mc_lowmt,
-    'gj-200': mc_gj + mc_qcd + mc_lowmt,
-    'gj-400': mc_gj + mc_qcd + mc_lowmt,
-    'gj-600': mc_gj + mc_qcd + mc_lowmt,
-    'gj-40-d': mc_gj + mc_qcd + mc_lowmt,
-    'gj-100-d': mc_gj + mc_qcd + mc_lowmt,
-    'gj-200-d': mc_gj + mc_qcd + mc_lowmt,
-    'gj-400-d': mc_gj + mc_qcd + mc_lowmt,
-    'gj-600-d': mc_gj + mc_qcd + mc_lowmt,
-    'gj04-40': mc_gj + mc_qcd + mc_lowmt,
-    'gj04-100': mc_gj + mc_qcd + mc_lowmt,
-    'gj04-200': mc_gj + mc_qcd + mc_lowmt,
-    'gj04-400': mc_gj + mc_qcd + mc_lowmt,
-    'gj04-600': mc_gj + mc_qcd + mc_lowmt,
-    'gg-80': mc_cand + mc_qcd + mc_lowmt,
+    'gj-40': mc_gj + mc_lowmt,
+    'gj-100': mc_gj + mc_lowmt,
+    'gj-200': mc_gj + mc_lowmt,
+    'gj-400': mc_gj + mc_lowmt,
+    'gj-600': mc_gj + mc_lowmt,
+    'gj-40-d': mc_gj + mc_lowmt,
+    'gj-100-d': mc_gj + mc_lowmt,
+    'gj-200-d': mc_gj + mc_lowmt,
+    'gj-400-d': mc_gj + mc_lowmt,
+    'gj-600-d': mc_gj + mc_lowmt,
+    'gj04-40': mc_gj + mc_lowmt,
+    'gj04-100': mc_gj + mc_lowmt,
+    'gj04-200': mc_gj + mc_lowmt,
+    'gj04-400': mc_gj + mc_lowmt,
+    'gj04-600': mc_gj + mc_lowmt,
+    'gg-80': mc_cand + mc_lowmt,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,

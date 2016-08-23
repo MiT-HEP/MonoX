@@ -11,11 +11,12 @@ from ROOT import *
 gROOT.SetBatch(True)
 
 ### take inputs and make sure they match a selection
-loc = sys.argv[1]
-pid = sys.argv[2]
-chiso = sys.argv[3]
-pt = sys.argv[4]
-met = sys.argv[5]
+source = sys.argv[1]
+loc = sys.argv[2]
+pid = sys.argv[3]
+chiso = sys.argv[4]
+pt = sys.argv[5]
+met = sys.argv[6]
 
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
@@ -46,7 +47,7 @@ if metSel == '(1)':
 ### Directory stuff so that results are saved and such
 varName = 'chiso'
 versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 else:
@@ -56,7 +57,7 @@ else:
 ### Get ChIso Curve for true photons
 macroDir = os.environ['PURITY']
 isoPath = os.path.join(macroDir,'plotiso.py')
-plotiso = Popen( ['python',isoPath,loc,pid,chiso,pt,met],stdout=PIPE,stderr=PIPE,cwd=macroDir)
+plotiso = Popen( ['python',isoPath,source,loc,pid,chiso,pt,met],stdout=PIPE,stderr=PIPE,cwd=macroDir)
 isoOut = plotiso.communicate()
 if not isoOut[1] == "":
     print isoOut[1] 
@@ -94,7 +95,7 @@ var = s.Variables[varName]
 varBins = False
 versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 skimDir  = s.config.skimDir
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 
@@ -104,6 +105,7 @@ if len(pids) > 1:
     extras = pids[2:]
 elif len(pids) == 1:
     pid = pids[0]
+    extras = []
 
 baseSel = s.SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
 if 'pixel' in extras:
@@ -116,8 +118,7 @@ sbSel = baseSel+' && '+chIsoSel
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
-# skims = s.Measurement["Monophoton"]
-skims = s.Measurement["Nero"]
+skims = s.Measurement[source]
 sels = [ sigSel
          ,sigSel+' && '+truthSel
          ,sbSel+' && '+truthSel

@@ -7,11 +7,12 @@ from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  siei
 from ROOT import *
 gROOT.SetBatch(True)
 
-loc = sys.argv[1]
-pid = sys.argv[2]
-chiso = sys.argv[3]
-pt = sys.argv[4]
-met = sys.argv[5]
+source = sys.argv[1]
+loc = sys.argv[2]
+pid = sys.argv[3]
+chiso = sys.argv[4]
+pt = sys.argv[5]
+met = sys.argv[6]
 
 inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
@@ -37,16 +38,14 @@ varBins = True
 
 versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
 skimDir  = config.skimDir
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 else:
     shutil.rmtree(plotDir)
     os.makedirs(plotDir)
 
-# skimName = "Monophoton"
-skimName = 'Nero'
-skim = Measurement[skimName][1]
+skim = Measurement[source][1]
 
 pids = pid.split('_')
 if len(pids) > 1:
@@ -54,6 +53,7 @@ if len(pids) > 1:
     extras = pids[2:]
 elif len(pids) == 1:
     pid = pids[0]
+    extras = []
 
 baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
 

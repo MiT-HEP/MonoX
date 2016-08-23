@@ -324,19 +324,16 @@ def purityBase(sample, selector):
 
 def purity(sample, selector):
     """
-    EM Object is true photon-like, but with loosen sieie and CHIso requirements.
+    EM Object is baseline photon, used for efficiency and SF measurements as well.
     """
 
     selector = purityBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.remove('CHIso')
-    sels.remove('CHWorstIso')
+    sels = []
     sels.append('Sieie15')
-    sels.append('CHIso11')
+    # sels.append('CHIso11')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
