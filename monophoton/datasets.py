@@ -93,7 +93,7 @@ class SampleDef(object):
             source = ROOT.TFile.Open(fullPath + '/' + fName)
             if not source:
                 continue
-            
+
             try:
                 if counter is None:
                     counter = source.Get('counter')
