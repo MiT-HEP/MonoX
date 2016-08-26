@@ -245,6 +245,59 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
 
     return hist
 
+def getTree(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], prescale = 1, postscale = 1., lumi = 0., outDir = None):
+    """
+    Create a ttree object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
+    Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
+    """
+
+    if not hname:
+        hname = sname
+
+    if not region:
+        region = plotConfig.name
+
+    # open the source file
+    sourceName = skimDir + '/' + sname + '_' + region + '.root'
+    if not os.path.exists(sourceName):
+        print 'Error: Cannot open file', sourceName
+        # return an empty histogram
+        return "sadness"
+
+    # cuts and weights
+    selection = vardef.formSelection(plotConfig, prescale = prescale, replacements = cutReplacements)
+
+    source = ROOT.TFile.Open(sourceName)
+    inTree = source.Get('events')
+
+    tempFile = ROOT.TFile('/tmp/' + os.getenv['USER'] + '/' + plotConfig.name + '-' + hname + '.root')
+    tempTree = inTree.CopyTree(selection)
+
+    tempTree.SetBranchStatus('*', 0)
+    tempTree.SetBranchStatus('weight', 1)
+    tempTree.SetBranchStatus('reweight_', 1)
+
+    if vardef.ndim() == 1:
+        bName = vardef.expr.replace('[0]', '')
+        tempTree.SetBranchStatus(bName, 1)
+    else:
+        for var in vardef.expr:
+            bName = var.replace('[0]', '')
+            tempTree.SetBranchStatus(bName, 1)
+
+    gd = ROOT.gDirectory
+    if outDir:
+        outDir.cd()
+    else:
+        ROOT.gROOT.cd()
+        
+    outTree = ROOT.TTree(hname + '_' + plotConfig.name)
+    outTree = tempTree.CloneTree()
+
+    outTree.Write()
+    gd.cd()
+    
+    return outTree
 
 def writeHist(hist):
     if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
@@ -420,6 +473,7 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-configs', '-c', metavar = 'PATH', dest = 'plotConfigFile', help = 'Plot config file that defines a getConfig function which returns a PlotConfig.')
     argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
     argParser.add_argument('--samples-list', '-s', metavar = 'PATH', dest = 'samplesList', help = 'Dataset list CSV file.')
+    argParser.add_argument('--save-trees', '-t', action = 'store_true', dest = 'saveTrees', help = 'Write trees to output file instead of histograms.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -506,7 +560,7 @@ if __name__ == '__main__':
         elif ndim == 2:
             drawOpt = 'LEGO4 F 0'
 
-        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2 or args.saveTrees:
             counters = {}
             isSensitive = False # True
 
@@ -532,19 +586,24 @@ if __name__ == '__main__':
         bkgTotal = vardef.makeHist('bkgtotal')
         
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
-            hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
+            if args.saveTrees:
+                tree = getTree(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outDir = outFile)
+                
+            else:
+                hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
 
-            bkgTotal.Add(hist)
+                bkgTotal.Add(hist)
 
-            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                counters[group.name] = hist
-            elif plotDir:
-                canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
+                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+                    counters[group.name] = hist
+                elif plotDir:
+                    canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
 
         # formatted histograms added to bkgTotal
         unformatHist(bkgTotal, vardef)
 
         # then over groups without distributions (no samples but count set)
+        # probably doesn't work in trees
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
             # cannot use lumi because cross section is not set
             hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
@@ -557,31 +616,47 @@ if __name__ == '__main__':
             usedPoints = []
 
             for sspec in plotConfig.signalPoints:
-                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
                 usedPoints.append(sspec.name)
+                if args.saveTrees:
+                    tree = getTree(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outDir = outFile)
+                    
+                else:
+                    hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
 
-                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                    counters[sspec.name] = hist
-                elif plotDir:
-                    canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
+                    if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+                        counters[sspec.name] = hist
+                    elif plotDir:
+                        canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
 
         # write out all signal distributions if asked for
         if args.allSignal:
             for group in plotConfig.sigGroups:
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
-                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
                         usedPoints.append(sample.name)
+                        if args.saveTrees:
+                            tree = getTree(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outDir = outFile)
+                            
+                        else:
+                            groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
+
 
         print 'data_obs'
-                    
-        obshist = vardef.makeHist('data_obs', outDir = outFile)
 
-        for sname in plotConfig.obs.samples:
-            obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+        if args.saveTrees:
+            obsTree = ROOT.TChain('events')
 
-        writeHist(obshist)
-        formatHist(obshist, vardef)
+            for sname in plotConfig.obs.samples:
+                obsTree.Add(getTree(sname, allsamples[sname], plotCongif, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+
+        else:
+            obshist = vardef.makeHist('data_obs', outDir = outFile)
+
+            for sname in plotConfig.obs.samples:
+                obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+
+            writeHist(obshist)
+            formatHist(obshist, vardef)
 
         # Take care of masking
         if vardef.blind is not None:

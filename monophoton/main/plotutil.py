@@ -91,6 +91,43 @@ class VariableDef(object):
     def histName(self, hname):
         return self.name + '-' + hname
 
+    def makeTree(self, tname, outDir = None):
+        """
+        Make an empty tree from the specifications.
+        This might be useless.
+        """
+        
+        gd = ROOT.gDirectory    
+        if outDir:
+            outDir.cd()
+        else:
+            ROOT.gROOT.cd()
+
+        ndim = self.ndim()
+
+        tree = ROOT.TTree(self.histName(tname), '')
+        
+        if ndim == 1:
+            bName = self.expr.replace('[0]','')
+            ## need to add better cleaning for more complicated variables
+            lExpr = bName + '/F' # everything can be cast to float, tree should be small enough still 
+
+            ## no clue what to do for point part
+            tree.Branch(bName, pointerthing, lExpr)
+        else:
+            for var in self.expr:
+                bName = self.expr.replace('[0]','')
+                ## need to add better cleaning for more complicated variables
+                lExpr = bName + '/F' # everything can be cast to float
+
+                ## no clue what to do for point part
+                tree.Branch(bName, pointerthing, lExpr)
+
+        tree.Branch("weight", pointerthing, "weight/F")
+
+        gd.cd()
+        return tree
+
     def makeHist(self, hname, outDir = None):
         """
         Make an empty histogram from the specifications.
