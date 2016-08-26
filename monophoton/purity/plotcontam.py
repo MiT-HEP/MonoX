@@ -4,7 +4,7 @@ from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
 from ROOT import *
-from selections import Version, Locations, PhotonIds, ChIsoSbSels, PhotonPtSels, MetSels
+from selections import Version, Locations, ChIsoSbSels, PhotonPtSels, MetSels
 # gROOT.SetBatch(True)
 
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -23,10 +23,11 @@ if not os.path.exists(outDir):
 outputFile = TFile("../data/impurity.root", "RECREATE")
 
 purities = {}
+PhotonIds = ['none', 'medium_eveto', 'medium_eveto_monoph']
 
 for loc in Locations[:1]:
     purities[loc] = {}
-    for pid in PhotonIds[:1]+PhotonIds[2:3]:
+    for pid in PhotonIds:
         purities[loc][pid] = {}
         for ptCut in PhotonPtSels[1:]:
             purities[loc][pid][ptCut[0]] = {}
@@ -154,7 +155,7 @@ pprint(purities)
 canvas = SimpleCanvas(lumi = config.jsonLumi)
 
 for loc in Locations[:1]:
-    for pid in PhotonIds[:1]+PhotonIds[2:3]:
+    for pid in PhotonIds:
         for metCut in MetSels[1:2]:
             canvas.cd()
             canvas.Clear()
@@ -209,30 +210,12 @@ for loc in Locations[:1]:
 
                 himp =  TH1F(chiso[0]+"imp",chiso[0]+"imp;#gamma p_{T} (GeV)",(len(bins)-1),array('d',bins))
                 himp.GetYaxis().SetTitle("Impurity (%)")
-                # himp.SetMaximum(10.)
                 hists.append(himp)
 
                 herr = TH1F(chiso[0]+"err",chiso[0]+"err;#gamma p_{T} (GeV)",(len(bins)-1),array('d',bins))
                 herr.GetYaxis().SetTitle("Relative Error on Impurity (%)")
-                # herr.SetMaximum(100.)
                 hists.append(herr)
                 
-                """
-                for hist in hists:
-                    hist.GetXaxis().SetTitle("#gamma p_{T} (GeV)")
-                    
-                    
-                    hist.SetMinimum(0.0)
-                    hist.SetLineColor(lineColors[ChIsoSbSels.index(chiso)])
-                    hist.SetLineWidth(3)
-                    hist.SetStats(False)
-                    
-                    hist.GetXaxis().SetLabelSize(0.045)
-                    hist.GetXaxis().SetTitleSize(0.045)
-                    hist.GetYaxis().SetLabelSize(0.045)
-                    hist.GetYaxis().SetTitleSize(0.045)
-                """
-
                 canvas.legend.add(chiso[0], title = chIsoLabel.replace("$",""), 
                                   lcolor = lineColors[ChIsoSbSels.index(chiso)], lwidth = 3)
                 canvas.legend.apply(chiso[0], hists[0])

@@ -154,6 +154,13 @@ for loc in Locations:
         
 
 
+PhotonIds = [ 'none', 'loose', 'medium', 'tight' ]
+
+for pid in PhotonIds[1:]:
+    # PhotonIds.append(pid+'_pixel')
+    PhotonIds.append(pid+'_pixel_monoph')
+    # PhotonIds.append(pid+'_monoph')
+
 cutIsLoose = '(photons.loose)'
 cutIsMedium = '(photons.medium)'
 cutIsTight = '(photons.tight)'
