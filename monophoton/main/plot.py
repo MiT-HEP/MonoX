@@ -294,19 +294,19 @@ def treeGen(array, nElem):
 def makeTree(name, nomlist, varlists = [], outDir = None):
     tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
     tree.SetDirectory(outDir)
-    var = array.array('d', [0.])
+    var = array.array('f', [0.])
     tree.Branch(vardef.name, var, vardef.name+'/F')
-    weight = array.array('d', [0.])
+    weight = array.array('f', [0.])
     tree.Branch('weight', weight, 'weight/F')
     varweights = {}
     for vkey in varlists:
         if len(varlists[vkey]) == 2:
-            varweights[vkey+'Up'] = array.array('d', [0.])
+            varweights[vkey+'Up'] = array.array('f', [0.])
             tree.Branch('reweight_'+vkey+'Up', varweights[vkey+'Up'], 'reweight_'+vkey+'Up/F')
-            varweights[vkey+'Down'] = array.array('d', [0.])
+            varweights[vkey+'Down'] = array.array('f', [0.])
             tree.Branch('reweight_'+vkey+'Down', varweights[vkey+'Down'], 'reweight_'+vkey+'Down/F')
         else:
-            varweights[vkey] = array.array('d', [0.])
+            varweights[vkey] = array.array('f', [0.])
             tree.Branch('reweight_'+vkey, varweights[vkey], 'reweight_'+vkey+'/F')
         
     # print 'making tree'
