@@ -6,6 +6,8 @@ import os
 import array
 import math
 import re
+import itertools
+from pprint import pprint
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -44,6 +46,8 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     print group.name, 'nominal'
 
     hist = vardef.makeHist(name, outDir = outFile)
+    if args.saveTrees:
+        hist = []
     shists = {}
    
     if len(samples) != 0:
@@ -53,16 +57,24 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                 hname = sname + '_' + group.region
             else:
                 hname = ''
-    
+
+            # print 'starting', sname
+
             # add up histograms from individual samples (saved to sampleDir)
             sample = allsamples[sname]
             if sample.data:
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale, outDir = sampleDir)
+                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale / group.scale, outDir = sampleDir)
             else:
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, lumi = lumi, outDir = sampleDir)
+                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
 
-            shist.Scale(group.scale)
-            hist.Add(shist)
+            # shist.Scale(group.scale)
+            if args.saveTrees:
+                hist += shist
+            else:
+                hist.Add(shist)
+            
+            # print 'finished', sname
+            
             shists[sname] = shist
 
     else:
@@ -83,6 +95,8 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                 varname = variation.name + 'Var'
     
                 vhist = vardef.makeHist(name + '_' + varname, outDir = outFile)
+                if args.saveTrees:
+                    vhist = []
     
                 reweight = 1. + variation.reweight
     
@@ -93,10 +107,14 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                         else:
                             hname = sname + '_' + varname
         
-                        shist = shists[sname].Clone(vardef.histName(hname))
-                        shist.SetDirectory(sampleDir)
-                        shist.Scale(reweight)
-                        vhist.Add(shist)
+                        if args.saveTrees:
+                            shist = [ (iEntry, (var, reweight)) for (iEntry, (var, weight)) in shists[sname] ]
+                            vhist += shist
+                        else:
+                            shist = shists[sname].Clone(vardef.histName(hname))
+                            shist.SetDirectory(sampleDir)
+                            shist.Scale(reweight)
+                            vhist.Add(shist)
                 else:
                     for iC in range(template.GetNcells()):
                         vhist.SetBinContent(iC, hist.GetBinContent(iC) * reweight)
@@ -107,6 +125,8 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                 # up & down variations
     
                 vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
+                if args.saveTrees:
+                    vhists = [[], []]
         
                 for iV in range(2):
                     v = 'Up' if iV == 0 else 'Down'
@@ -136,20 +156,28 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                         sample = allsamples[sname]
         
                         if sample.data:
-                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale, outDir = sampleDir)
+                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale / group.scale, outDir = sampleDir)
                         else:
-                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, lumi = lumi, outDir = sampleDir)
+                            shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
 
-                        shist.Scale(group.scale)
-                        vhists[iV].Add(shist)
+                        # shist.Scale(group.scale)
+                        if args.saveTrees:
+                            vhists[iV] += shist
+                        else:
+                            vhists[iV].Add(shist)
     
                 varhists[variation.name] = vhists
 
     # write raw histograms before formatting (which includes bin width normalization)
-    writeHist(hist)
-    for vhists in varhists.values():
-        for vhist in vhists:
-            writeHist(vhist)
+    if args.saveTrees:
+        tree = makeTree(name, hist, varhists, outDir = outFile)
+        writeHist(tree)
+        return tree
+    else:
+        writeHist(hist)
+        for vhists in varhists.values():
+            for vhist in vhists:
+                writeHist(vhist)
 
     # apply variations as uncertainties
     for vhists in varhists.values():
@@ -191,6 +219,8 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
     if not os.path.exists(sourceName):
         print 'Error: Cannot open file', sourceName
         # return an empty histogram
+        if args.saveTrees:
+            return []
         return vardef.makeHist(hname)
 
     # quantity to be plotted
@@ -215,6 +245,16 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
             weight += '*' + str(reweight)
         elif type(reweight) is str:
             weight += '*' + reweight
+
+
+    if args.saveTrees:
+        tree.SetEstimate(tree.GetEntries() + 1); 
+        nEntries = tree.Draw(expr + ':' + weight, selection, 'goff')
+        # print 'drew', hname
+        branch = [ pair for pair in enumerate(itertools.izip(treeGen(tree.GetV1(),nEntries), treeGen(tree.GetV2(),nEntries))) ]
+        # print 'made branch'
+        source.Close()
+        return branch
 
     tree.Draw(expr + '>>' + hist.GetName(), '%s*(%s)' % (weight, selection), 'goff')
 
@@ -245,59 +285,59 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
 
     return hist
 
-def getTree(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], prescale = 1, postscale = 1., lumi = 0., outDir = None):
-    """
-    Create a ttree object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
-    Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
-    """
+def treeGen(array, nElem):
+    iElem = 0
+    while iElem < nElem:
+        yield array[iElem]
+        iElem += 1
 
-    if not hname:
-        hname = sname
-
-    if not region:
-        region = plotConfig.name
-
-    # open the source file
-    sourceName = skimDir + '/' + sname + '_' + region + '.root'
-    if not os.path.exists(sourceName):
-        print 'Error: Cannot open file', sourceName
-        # return an empty histogram
-        return "sadness"
-
-    # cuts and weights
-    selection = vardef.formSelection(plotConfig, prescale = prescale, replacements = cutReplacements)
-
-    source = ROOT.TFile.Open(sourceName)
-    inTree = source.Get('events')
-
-    tempFile = ROOT.TFile('/tmp/' + os.getenv['USER'] + '/' + plotConfig.name + '-' + hname + '.root')
-    tempTree = inTree.CopyTree(selection)
-
-    tempTree.SetBranchStatus('*', 0)
-    tempTree.SetBranchStatus('weight', 1)
-    tempTree.SetBranchStatus('reweight_', 1)
-
-    if vardef.ndim() == 1:
-        bName = vardef.expr.replace('[0]', '')
-        tempTree.SetBranchStatus(bName, 1)
-    else:
-        for var in vardef.expr:
-            bName = var.replace('[0]', '')
-            tempTree.SetBranchStatus(bName, 1)
-
-    gd = ROOT.gDirectory
-    if outDir:
-        outDir.cd()
-    else:
-        ROOT.gROOT.cd()
+def makeTree(name, nomlist, varlists = [], outDir = None):
+    tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
+    tree.SetDirectory(outDir)
+    var = array.array('d', [0.])
+    tree.Branch(vardef.name, var, vardef.name+'/F')
+    weight = array.array('d', [0.])
+    tree.Branch('weight', weight, 'weight/F')
+    varweights = {}
+    for vkey in varlists:
+        if len(varlists[vkey]) == 2:
+            varweights[vkey+'Up'] = array.array('d', [0.])
+            tree.Branch('reweight_'+vkey+'Up', varweights[vkey+'Up'], 'reweight_'+vkey+'Up/F')
+            varweights[vkey+'Down'] = array.array('d', [0.])
+            tree.Branch('reweight_'+vkey+'Down', varweights[vkey+'Down'], 'reweight_'+vkey+'Down/F')
+        else:
+            varweights[vkey] = array.array('d', [0.])
+            tree.Branch('reweight_'+vkey, varweights[vkey], 'reweight_'+vkey+'/F')
         
-    outTree = ROOT.TTree(hname + '_' + plotConfig.name)
-    outTree = tempTree.CloneTree()
-
-    outTree.Write()
-    gd.cd()
-    
-    return outTree
+    # print 'making tree'
+    iEntry = 0
+    while iEntry < len(nomlist):
+        var[0] = nomlist[iEntry][1][0]
+        weight[0] = nomlist[iEntry][1][1]
+        for vkey in varlists:
+            try:
+                if len(varlists[vkey]) == 2:
+                    varweights[vkey+'Up'][0] = varlists[vkey][0][iEntry][1][1]
+                    varweights[vkey+'Down'][0] = varlists[vkey][1][iEntry][1][1]
+                else:
+                    varweights[vkey][0] = varlists[vkey][0][iEntry][1][1]
+            except IndexError:
+                print vkey, len(varlists[vkey])
+                pprint(varlists[vkey][0][iEntry])
+                if len(varlists[vkey]) == 2:
+                    pprint(varlists[vkey][0][iEntry])
+        if abs(var[0]) > 10000 or abs(weight[0]) > 10000 or weight[0] == 0.:
+            print '\n'+str(iEntry)+'/'+str(len(nomlist))
+            print vardef.name+': ', var[0]
+            print 'weight:', weight[0]
+            for vkey in varweights:
+                print vkey+': ', varweights[vkey][0]
+        tree.Fill()
+        
+        iEntry += 1
+            
+    # print 'finished tree'
+    return tree
 
 def writeHist(hist):
     if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
@@ -513,7 +553,10 @@ if __name__ == '__main__':
 
     if args.outFile:
         outFile = ROOT.TFile.Open(args.outFile, 'recreate')
-        sampleDir = outFile.mkdir('samples')
+        if args.saveTrees:
+            sampleDir = None
+        else:
+            sampleDir = outFile.mkdir('samples')
     else:
         outFile = None
         sampleDir = None
@@ -586,18 +629,15 @@ if __name__ == '__main__':
         bkgTotal = vardef.makeHist('bkgtotal')
         
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
-            if args.saveTrees:
-                tree = getTree(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outDir = outFile)
-                
-            else:
-                hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
 
+            if not args.saveTrees:
                 bkgTotal.Add(hist)
 
-                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                    counters[group.name] = hist
-                elif plotDir:
-                    canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
+            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+                counters[group.name] = hist
+            elif plotDir:
+                canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
 
         # formatted histograms added to bkgTotal
         unformatHist(bkgTotal, vardef)
@@ -617,16 +657,12 @@ if __name__ == '__main__':
 
             for sspec in plotConfig.signalPoints:
                 usedPoints.append(sspec.name)
-                if args.saveTrees:
-                    tree = getTree(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outDir = outFile)
-                    
-                else:
-                    hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
 
-                    if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                        counters[sspec.name] = hist
-                    elif plotDir:
-                        canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
+                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+                    counters[sspec.name] = hist
+                elif plotDir:
+                    canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
 
         # write out all signal distributions if asked for
         if args.allSignal:
@@ -634,27 +670,24 @@ if __name__ == '__main__':
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
                         usedPoints.append(sample.name)
-                        if args.saveTrees:
-                            tree = getTree(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outDir = outFile)
-                            
-                        else:
-                            groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
 
 
         print 'data_obs'
-
+        obshist = vardef.makeHist('data_obs', outDir = outFile)
         if args.saveTrees:
-            obsTree = ROOT.TChain('events')
+            obshist = []
 
-            for sname in plotConfig.obs.samples:
-                obsTree.Add(getTree(sname, allsamples[sname], plotCongif, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
-
-        else:
-            obshist = vardef.makeHist('data_obs', outDir = outFile)
-
-            for sname in plotConfig.obs.samples:
+        for sname in plotConfig.obs.samples:
+            if args.saveTrees:
+                obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
+            else:
                 obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
 
+        if args.saveTrees:
+            obstree = makeTree('data_obs', obshist, outDir = outFile)
+            writeHist(obstree)
+        else:
             writeHist(obshist)
             formatHist(obshist, vardef)
 

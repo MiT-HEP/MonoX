@@ -47,7 +47,7 @@ def getConfig(confName):
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('spike', 'Spikes', count = 26.8, color = None),
+            # GroupSpec('spike', 'Spikes', count = 26.8, color = None),
             # GroupSpec('ttg', 'tt#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('tg', 't#gamma', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('zllg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
@@ -123,24 +123,25 @@ def getConfig(confName):
      
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         for group in config.bkgGroups:
             if group.name in ['zg', 'wg', 'efake', 'hfake', 'halo', 'spike']:
                 continue
 
-            group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            if group.name != 'vvg':
+                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
 
         # Specific systematic variations
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.69))
-        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
-        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
-        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
+        # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
+        # config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 0.079))
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
