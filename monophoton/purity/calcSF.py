@@ -20,15 +20,16 @@ if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 yields = {}
-PhotonIds = ['none', 'medium_pixel_monoph']
+PhotonIds = ['medium_pixel_monoph']
+PhotonPtSels = s.PhotonPtSels[:1]
 
 for source in ['nero', 'neromc']:
     yields[source] = {}
     for loc in s.Locations[:1]:
         yields[source][loc] = {}
-        for pid in PhotonIds:
+        for pid in PhotonIds + ['none']:
             yields[source][loc][pid] = {}
-            for ptCut in s.PhotonPtSels[1:]:
+            for ptCut in PhotonPtSels:
                 yields[source][loc][pid][ptCut[0]] = {}
                 for metCut in s.MetSels[1:2]:
                     yields[source][loc][pid][ptCut[0]][metCut[0]] = {}
@@ -81,14 +82,14 @@ for loc in s.Locations[:1]:
             rcanvas.legend.Clear()
             rcanvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
-            bins = [175, 200, 250, 300, 350, 500]
+            bins = [175, 500] # [175, 200, 250, 300, 350, 500]
             effs = {}
 
             for source in ['nero', 'neromc']:
                 hTrue = r.TH1F("ntrue"+loc+pid+metCut[0]+source, ";#gamma p_{T} (GeV)", len(bins)-1, array('d', bins))
                 hTotal = r.TH1F("ntotal"+loc+pid+metCut[0]+source, ";#gamma p_{T} (GeV)", len(bins)-1, array('d', bins))
                 
-                for ptCut in s.PhotonPtSels[1:]:
+                for ptCut in PhotonPtSels:
                     lowEdge = int(ptCut[0].split("t")[2])
                     binNumber = 0
                     for bin in bins:
