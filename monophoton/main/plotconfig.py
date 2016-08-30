@@ -115,11 +115,6 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
-
-            # combined into totalSF
-            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            # group.variations.append(Variation('worstIsoSF', reweight = 0.05))
-            # group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
      
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -250,7 +245,7 @@ def getConfig(confName):
         dR2_01 = 'TMath::Power(photons.eta[0] - muons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - muons.phi[1]), 2.)'
 
         config = PlotConfig('dimu', muonData)
-        config.baseline = mass + ' > 50. && photons.scRawPt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = mass + ' > 50. && photons.scRawPt[0] > 175. && t1Met.met > 170.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -272,13 +267,42 @@ def getConfig(confName):
             VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
+        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
+        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups:
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('totalSF', reweight = 0.06))
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+            if group.name in 'zgam':
+                continue
+
+
+            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+        
+        # config.findGroup('zgam').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        # config.findGroup('zgam').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        # config.findGroup('zgam').variations.append(Variation('zgEWK', reweight = 'ewk'))
+
     elif confName == 'diel':
         mass = 'TMath::Sqrt(2. * electrons.pt[0] * electrons.pt[1] * (TMath::CosH(electrons.eta[0] - electrons.eta[1]) - TMath::Cos(electrons.phi[0] - electrons.phi[1])))'
         dR2_00 = 'TMath::Power(photons.eta[0] - electrons.eta[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[0]), 2.)'
         dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
         config = PlotConfig('diel', electronData)
-        config.baseline = mass + ' > 50. && photons.scRawPt[0] > 140. && t1Met.met > 100.' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = mass + ' > 50. && photons.scRawPt[0] > 175. && t1Met.met > 170.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -300,6 +324,34 @@ def getConfig(confName):
             VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
+        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
+        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups:
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('totalSF', reweight = 0.06))
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+            if group.name in 'zgam':
+                continue
+
+            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+        
+        # config.findGroup('zgam').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        # config.findGroup('zgam').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        # config.findGroup('zgam').variations.append(Variation('zgEWK', reweight = 'ewk'))
+
     elif confName == 'monomu':
 
         dPhiPhoMet = 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.realPhi))'
@@ -308,7 +360,7 @@ def getConfig(confName):
         # MinIf$() somehow returns 0 when there is only one jet
 
         config = PlotConfig('monomu', muonData)
-        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 150. && ((t1Met.met > 140. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 140. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && ((t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 170. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
 
         config.fullSelection = ''
         config.bkgGroups = [
@@ -335,6 +387,34 @@ def getConfig(confName):
             VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
+        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
+        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups:
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('totalSF', reweight = 0.06))
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+            if group.name in 'zgam':
+                continue
+
+            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+        
+        # config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        # config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        # config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+
     elif confName == 'monoel':
 
         dPhiPhoMet = 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.realPhi))'
@@ -343,7 +423,7 @@ def getConfig(confName):
         # MinIf$() somehow returns 0 when there is only one jet
 
         config = PlotConfig('monoel', electronData)
-        config.baseline = 'photons.scRawPt[0] > 150. && ((t1Met.met > 140. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 140. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
+        config.baseline = 'photons.scRawPt[0] > 175. && ((t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5) || (t1Met.realMet > 170. && ' + dPhiPhoMet + ' > 2. && ' + dPhiJetMetMin + ' > 0.5))' # met is the recoil
 
         config.fullSelection = ''
         config.bkgGroups = [
@@ -370,23 +450,33 @@ def getConfig(confName):
             VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (25, 0., 25.), overflow = True)
         ]
 
+        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
+        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+
         # Standard MC systematic variations
-        for group in config.bkgGroups + config.sigGroups:
+        for group in config.bkgGroups:
+
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('totalSF', reweight = 0.06))
-
-            group.variations.append(Variation('worstIsoSF', reweight = 0.05))
-
-            group.variations.append(Variation('leptonvetoSF', reweight = 0.02))
-
+            
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
-        # Specific systematic variations
-        config.findGroup('wg').variations.append(Variation('wgQCDscale', reweight = 'qcdscale'))
-        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+            if group.name in 'zgam':
+                continue
+
+            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+        
+        # config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        # config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        # config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
 
     elif confName == 'lowmt':
         config = PlotConfig('lowmt', photonData)

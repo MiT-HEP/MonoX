@@ -108,7 +108,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
                             hname = sname + '_' + varname
         
                         if args.saveTrees:
-                            shist = [ (iEntry, (var, reweight)) for (iEntry, (var, weight)) in shists[sname] ]
+                            shist = [ (iEntry, (var, reweight * weight)) for (iEntry, (var, weight)) in shists[sname] ]
                             vhist += shist
                         else:
                             shist = shists[sname].Clone(vardef.histName(hname))
