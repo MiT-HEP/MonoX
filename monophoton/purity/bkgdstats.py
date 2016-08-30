@@ -102,7 +102,7 @@ if not os.path.exists(plotDir):
 pids = pid.split('_')
 if len(pids) > 1:
     pid = pids[0]
-    extras = pids[2:]
+    extras = pids[1:]
 elif len(pids) == 1:
     pid = pids[0]
     extras = []
@@ -276,6 +276,9 @@ totalUncYield = ( (scaledUncYield)**2 + (twobinUncYield)**2 + (bkgdUncYield)**2 
 print "Total uncertainty is:", totalUncertainty
 
 outFile = file(plotDir + '/results.out', 'w')
+
+for hist in initialHists[:]:
+    outFile.write('%s has %f events \n' % (hist.GetName(), hist.Integral()))
 
 outFile.write( "# of real photons is: "+str(nominalPurity[2])+'\n' )
 outFile.write( "Method unc yield is: "+str(scaledUncYield)+'\n' ) 

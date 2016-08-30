@@ -58,7 +58,7 @@ for iLoc, loc in enumerate(Locations):
 ### Now start actual parameters that need to be changed ###
 
 # Version = config.simpletreeVersion
-Version = 'nerogjets'
+Version = 'testing'
 
 from ROOT import *
 
@@ -157,9 +157,9 @@ for loc in Locations:
 PhotonIds = [ 'none', 'loose', 'medium', 'tight' ]
 
 for pid in PhotonIds[1:]:
-    # PhotonIds.append(pid+'_pixel')
+    PhotonIds.append(pid+'_pixel')
     PhotonIds.append(pid+'_pixel_monoph')
-    # PhotonIds.append(pid+'_monoph')
+    PhotonIds.append(pid+'_monoph')
 
 cutIsLoose = '(photons.loose)'
 cutIsMedium = '(photons.medium)'
@@ -261,11 +261,13 @@ def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
     canvas.SaveAs(outName+'.png')
     canvas.SaveAs(outName+'.C')
 
+    """
     canvas.SetLogy()
     canvas.SaveAs(outName+'_Logy.pdf')
     canvas.SaveAs(outName+'_Logy.png')
     canvas.SaveAs(outName+'_Logy.C')
-
+    """
+    
     return temp
 
 # Fitting function
