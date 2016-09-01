@@ -135,6 +135,7 @@ selectors = {
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
     'wnlg-d'  : mc_vgcand + mc_vglep + mc_vglowmt,
     'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep + mc_vglowmt,
     # 'wg': mc_cand + mc_lep + mc_lowmt,
     'wglo': mc_cand + mc_lep + mc_lowmt,
     'gj-40': mc_gj + mc_lowmt,

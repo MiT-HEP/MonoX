@@ -42,8 +42,8 @@ def getConfig(confName):
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-#             SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-#             SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30), # 0.07827/pb 
+             SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+             SampleSpec('dma-500-150', 'DM A M_{med}=500GeV M_{DM}=150GeV', group = config.findGroup('dma'), color = 30), # 0.07827/pb 
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
@@ -250,8 +250,8 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zgam', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [10. * x for x in range(6)] + [60. + 20. * x for x in range(3)], unit = 'GeV', overflow = True),
@@ -285,7 +285,7 @@ def getConfig(confName):
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-            if group.name in 'zgam':
+            if group.name in 'zg':
                 continue
 
 
@@ -306,9 +306,9 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('tt', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('zgam', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [10. * x for x in range(6)] + [60. + 20. * x for x in range(3)], unit = 'GeV', overflow = True),
@@ -342,7 +342,7 @@ def getConfig(confName):
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-            if group.name in 'zgam':
+            if group.name in 'zg':
                 continue
 
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
@@ -365,7 +365,7 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -405,7 +405,7 @@ def getConfig(confName):
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-            if group.name in 'zgam':
+            if group.name in 'wg':
                 continue
 
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
@@ -428,7 +428,7 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -468,7 +468,7 @@ def getConfig(confName):
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-            if group.name in 'zgam':
+            if group.name in 'wg':
                 continue
 
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
