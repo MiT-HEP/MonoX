@@ -670,6 +670,12 @@ def leptonBase(sample, selector):
         'TauVeto',
         'JetCleaning',
         'LeptonRecoil',
+        ]
+
+    if not sample.data:
+        operators.append('MetVariations')
+    
+    operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
         'HighMet'
@@ -679,8 +685,25 @@ def leptonBase(sample, selector):
         selector.addOperator(getattr(ROOT, op)())
 
     if not sample.data:
-        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
+        metVar = selector.findOperator('MetVariations')
+        jetClean = selector.findOperator('JetCleaning')
+        metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+        
+        photonDPhi = selector.findOperator('PhotonMetDPhi')
+        photonDPhi.setMetVariations(metVar)
+        
+        jetDPhi = selector.findOperator('JetMetDPhi')
+        jetDPhi.setMetVariations(metVar)
+
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.PUWeight(puWeight))
+
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
+        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        selector.addOperator(idsf)
+        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(30.)
@@ -813,7 +836,7 @@ def kfactor(generator):
     def scaled(sample, name):
         selector = generator(sample, name)
 
-        sname = sample.name.replace('gj04', 'gj').replace('znng-d', 'znng-130').replace('wnlg-d', 'wnlg-130').replace('0-d', '0')
+        sname = sample.name.replace('gj04', 'gj').replace('znng-d', 'znng-130').replace('wnlg-d', 'wnlg-130').replace('0-d', '0').replace('zllg', 'znng')
 
         qcdSource = ROOT.TFile.Open(basedir + '/data/kfactor.root')
         corr = qcdSource.Get(sname)

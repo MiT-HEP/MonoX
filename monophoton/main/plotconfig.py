@@ -288,13 +288,12 @@ def getConfig(confName):
             if group.name in 'zg':
                 continue
 
-
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
-        # config.findGroup('zgam').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        # config.findGroup('zgam').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-        # config.findGroup('zgam').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
 
     elif confName == 'diel':
         mass = 'TMath::Sqrt(2. * electrons.pt[0] * electrons.pt[1] * (TMath::CosH(electrons.eta[0] - electrons.eta[1]) - TMath::Cos(electrons.phi[0] - electrons.phi[1])))'
@@ -348,9 +347,9 @@ def getConfig(confName):
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
-        # config.findGroup('zgam').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        # config.findGroup('zgam').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-        # config.findGroup('zgam').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
 
     elif confName == 'monomu':
 
@@ -411,9 +410,9 @@ def getConfig(confName):
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
-        # config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        # config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-        # config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
 
     elif confName == 'monoel':
 
@@ -474,9 +473,9 @@ def getConfig(confName):
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
-        # config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        # config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-        # config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+        config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
 
     elif confName == 'lowmt':
         config = PlotConfig('lowmt', photonData)
