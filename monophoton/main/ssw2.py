@@ -175,13 +175,13 @@ selectors = {
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
     'dy-50-600': mc_cand + mc_lep + mc_dilep,
-    'qcd-200': mc_cand + mc_qcd,
-    'qcd-300': mc_cand + mc_qcd,
-    'qcd-500': mc_cand + mc_qcd,
-    'qcd-700': mc_cand + mc_qcd,
-    'qcd-1000': mc_cand + mc_qcd,
-    'qcd-1500': mc_cand + mc_qcd,
-    'qcd-2000': mc_cand + mc_qcd
+    'qcd-200': mc_cand + mc_qcd + mc_dilep,
+    'qcd-300': mc_cand + mc_qcd + mc_dilep,
+    'qcd-500': mc_cand + mc_qcd + mc_dilep,
+    'qcd-700': mc_cand + mc_qcd + mc_dilep,
+    'qcd-1000': mc_cand + mc_qcd + mc_dilep,
+    'qcd-1500': mc_cand + mc_qcd + mc_dilep,
+    'qcd-2000': mc_cand + mc_qcd + mc_dilep
 }
 
 # all the rest are mc_sig
