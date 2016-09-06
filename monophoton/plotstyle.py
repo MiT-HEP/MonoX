@@ -693,7 +693,7 @@ class RatioCanvas(SimpleCanvas):
                     n = getNorm(axis.GetBinLowEdge(iX), axis.GetBinUpEdge(iX))
                     if n > 0.:
                         obj.SetBinError(iX, obj.GetBinError(iX) / n)
-                        obj.SetBinContent(iX, 1.)
+                        obj.SetBinContent(iX, obj.GetBinContent(iX) / n)
                     else:
                         obj.SetBinError(iX, 0.)
                         obj.SetBinContent(iX, 0.)
@@ -1044,7 +1044,7 @@ class DataMCCanvas(RatioCanvas):
             hList = [0, iBorder, iUncert] + self._sigs
             rList = [iBorder, iUncert]
             if self._obs != -1:
-                hList.append(self._obs)
+                hList.append(self._obs)                
                 rList.append(self._obs)
 
             legendOrder = []
