@@ -170,8 +170,9 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
     # write raw histograms before formatting (which includes bin width normalization)
     if args.saveTrees:
-        tree = makeTree(name, hist, varhists, outDir = outFile)
-        writeHist(tree)
+        trees = makeTrees(name, hist, varhists, outDir = outFile)
+        for tree in trees:
+            writeHist(tree)
         return tree
     else:
         writeHist(hist)
@@ -291,27 +292,43 @@ def treeGen(array, nElem):
         yield array[iElem]
         iElem += 1
 
-def makeTree(name, nomlist, varlists = [], outDir = None):
+def makeTrees(name, nomlist, varlists = {}, outDir = None):
     tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
     tree.SetDirectory(outDir)
     var = array.array('f', [0.])
     tree.Branch(vardef.name, var, vardef.name+'/F')
     weight = array.array('f', [0.])
     tree.Branch('weight', weight, 'weight/F')
+    vartrees = {}
     varweights = {}
     for vkey in varlists:
         if len(varlists[vkey]) == 2:
             varweights[vkey+'Up'] = array.array('f', [0.])
-            tree.Branch('reweight_'+vkey+'Up', varweights[vkey+'Up'], 'reweight_'+vkey+'Up/F')
+            vartrees[vkey+'Up'] = ROOT.TTree(vardef.histName(name+'-'+vkey+'Up', rname = plotConfig.name), '')
+            vartrees[vkey+'Up'].SetDirectory(outDir)
+            vartrees[vkey+'Up'].Branch('weight', varweights[vkey+'Up'], 'weight/F')
+            vartrees[vkey+'Up'].Branch(vardef.name, var, vardef.name+'/F')
+            
             varweights[vkey+'Down'] = array.array('f', [0.])
-            tree.Branch('reweight_'+vkey+'Down', varweights[vkey+'Down'], 'reweight_'+vkey+'Down/F')
+            vartrees[vkey+'Down'] = ROOT.TTree(vardef.histName(name+'-'+vkey+'Down', rname = plotConfig.name), '')
+            vartrees[vkey+'Down'].SetDirectory(outDir)
+            vartrees[vkey+'Down'].Branch('weight', varweights[vkey+'Down'], 'weight/F')
+            vartrees[vkey+'Down'].Branch(vardef.name, var, vardef.name+'/F')
+            
         else:
             varweights[vkey] = array.array('f', [0.])
-            tree.Branch('reweight_'+vkey, varweights[vkey], 'reweight_'+vkey+'/F')
+            vartrees[vkey] = ROOT.TTree(vardef.histName(name+'-'+vkey, rname = plotConfig.name), '')
+            vartrees[vkey].SetDirectory(outDir)
+            vartrees[vkey].Branch('weight', varweights[vkey], 'weight/F')
+            vartrees[vkey].Branch(vardef.name, var, vardef.name+'/F')
         
     # print 'making tree'
     iEntry = 0
-    while iEntry < len(nomlist):
+    maxEntry = len(nomlist)
+    for vlist in varlists.values():
+        maxEntry = max(maxEntry, len(vlist))
+
+    while iEntry < maxEntry:
         var[0] = nomlist[iEntry][1][0]
         weight[0] = nomlist[iEntry][1][1]
         for vkey in varlists:
@@ -333,11 +350,16 @@ def makeTree(name, nomlist, varlists = [], outDir = None):
             for vkey in varweights:
                 print vkey+': ', varweights[vkey][0]
         tree.Fill()
+        for vtree in vartrees.values():
+            vtree.Fill()
         
         iEntry += 1
             
     # print 'finished tree'
-    return tree
+    trees = [tree]
+    for vtree in vartrees.values():
+        trees.append(vtree)
+    return trees
 
 def writeHist(hist):
     if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
@@ -685,8 +707,9 @@ if __name__ == '__main__':
                 obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
 
         if args.saveTrees:
-            obstree = makeTree('data_obs', obshist, outDir = outFile)
-            writeHist(obstree)
+            obstrees = makeTrees('data_obs', obshist, outDir = outFile)
+            for tree in obstrees:
+                writeHist(tree)
         else:
             writeHist(obshist)
             formatHist(obshist, vardef)
