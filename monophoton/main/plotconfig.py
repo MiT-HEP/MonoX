@@ -118,11 +118,11 @@ def getConfig(confName):
      
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
         for group in config.bkgGroups:
             if group.name in ['zg', 'wg', 'efake', 'hfake', 'halo', 'spike']:
@@ -134,9 +134,9 @@ def getConfig(confName):
 
         # Specific systematic variations
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.69))
-        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
+        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'haloDown')))
         # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
-        # config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 0.079))
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))

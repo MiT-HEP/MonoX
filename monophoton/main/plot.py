@@ -170,9 +170,21 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
     # write raw histograms before formatting (which includes bin width normalization)
     if args.saveTrees:
-        trees = makeTrees(name, hist, varhists, outDir = outFile)
-        for tree in trees:
-            writeHist(tree)
+        tree = makeTree(name, hist, outDir = outFile)
+        writeHist(tree)
+        for vkey in varhists:
+            if len(varhists[vkey]) == 2:
+                vtreeUp = makeTree(name+'-'+vkey+'Up', varhists[vkey][0], outDir = outFile)
+                writeHist(vtreeUp)
+                vtreeDown = makeTree(name+'-'+vkey+'Down', varhists[vkey][1], outDir = outFile)
+                writeHist(vtreeDown)
+            elif len(varhists[vkey]) == 1:
+                vtree = makeTree(name+'-'+vkey, varhists[vkey][0], outDir = outFile)
+                writeHist(vtree)
+            else:
+                print "Too many trees for variation %s. Skipping..." % vkey
+                continue
+                
         return tree
     else:
         writeHist(hist)
@@ -292,74 +304,24 @@ def treeGen(array, nElem):
         yield array[iElem]
         iElem += 1
 
-def makeTrees(name, nomlist, varlists = {}, outDir = None):
+def makeTree(name, nomlist, outDir = None):
     tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
     tree.SetDirectory(outDir)
     var = array.array('f', [0.])
     tree.Branch(vardef.name, var, vardef.name+'/F')
     weight = array.array('f', [0.])
     tree.Branch('weight', weight, 'weight/F')
-    vartrees = {}
-    varweights = {}
-    for vkey in varlists:
-        if len(varlists[vkey]) == 2:
-            varweights[vkey+'Up'] = array.array('f', [0.])
-            vartrees[vkey+'Up'] = ROOT.TTree(vardef.histName(name+'-'+vkey+'Up', rname = plotConfig.name), '')
-            vartrees[vkey+'Up'].SetDirectory(outDir)
-            vartrees[vkey+'Up'].Branch('weight', varweights[vkey+'Up'], 'weight/F')
-            vartrees[vkey+'Up'].Branch(vardef.name, var, vardef.name+'/F')
-            
-            varweights[vkey+'Down'] = array.array('f', [0.])
-            vartrees[vkey+'Down'] = ROOT.TTree(vardef.histName(name+'-'+vkey+'Down', rname = plotConfig.name), '')
-            vartrees[vkey+'Down'].SetDirectory(outDir)
-            vartrees[vkey+'Down'].Branch('weight', varweights[vkey+'Down'], 'weight/F')
-            vartrees[vkey+'Down'].Branch(vardef.name, var, vardef.name+'/F')
-            
-        else:
-            varweights[vkey] = array.array('f', [0.])
-            vartrees[vkey] = ROOT.TTree(vardef.histName(name+'-'+vkey, rname = plotConfig.name), '')
-            vartrees[vkey].SetDirectory(outDir)
-            vartrees[vkey].Branch('weight', varweights[vkey], 'weight/F')
-            vartrees[vkey].Branch(vardef.name, var, vardef.name+'/F')
         
     # print 'making tree'
     iEntry = 0
-    maxEntry = len(nomlist)
-    for vlist in varlists.values():
-        maxEntry = max(maxEntry, len(vlist))
-
-    while iEntry < maxEntry:
+    while iEntry < len(nomlist):
         var[0] = nomlist[iEntry][1][0]
         weight[0] = nomlist[iEntry][1][1]
-        for vkey in varlists:
-            try:
-                if len(varlists[vkey]) == 2:
-                    varweights[vkey+'Up'][0] = varlists[vkey][0][iEntry][1][1]
-                    varweights[vkey+'Down'][0] = varlists[vkey][1][iEntry][1][1]
-                else:
-                    varweights[vkey][0] = varlists[vkey][0][iEntry][1][1]
-            except IndexError:
-                print vkey, len(varlists[vkey])
-                pprint(varlists[vkey][0][iEntry])
-                if len(varlists[vkey]) == 2:
-                    pprint(varlists[vkey][0][iEntry])
-        if abs(var[0]) > 10000 or abs(weight[0]) > 10000 or weight[0] == 0.:
-            print '\n'+str(iEntry)+'/'+str(len(nomlist))
-            print vardef.name+': ', var[0]
-            print 'weight:', weight[0]
-            for vkey in varweights:
-                print vkey+': ', varweights[vkey][0]
         tree.Fill()
-        for vtree in vartrees.values():
-            vtree.Fill()
-        
         iEntry += 1
             
     # print 'finished tree'
-    trees = [tree]
-    for vtree in vartrees.values():
-        trees.append(vtree)
-    return trees
+    return tree
 
 def writeHist(hist):
     if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
@@ -707,9 +669,8 @@ if __name__ == '__main__':
                 obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
 
         if args.saveTrees:
-            obstrees = makeTrees('data_obs', obshist, outDir = outFile)
-            for tree in obstrees:
-                writeHist(tree)
+            obstree = makeTree('data_obs', obshist, outDir = outFile)
+            writeHist(obstree)
         else:
             writeHist(obshist)
             formatHist(obshist, vardef)
