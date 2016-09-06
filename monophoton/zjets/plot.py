@@ -18,40 +18,53 @@ r.gROOT.SetBatch(True)
 lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
 canvas = DataMCCanvas(lumi = lumi)
 
-metValue = '150'
-
 probePixel = '!probe.pixelVeto'
 zMassCut = 'z.mass > 81. && z.mass < 101.'
 dPhiCut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi[0])) > 3.'
-metCut = 't1Met.met > '+metValue
 dPhiMetCut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5'
 jetPtCut = 'jets.pt[0] > 100.'
 dPhiJetCut = 't1Met.minJetDPhi > 0.5'
 monojetCut = 'jets.size == 1'
 njetsCut = 'jets.size < 3'
 
-variables = [ VariableDef('Met', 'E_{T}^{miss}', 't1Met.met', [10 * x for x in range(5, 10)] + [100 + 20 * x for x in range(0,5)] + [200, 250, 300], unit = 'GeV', overflow = True),
+variables = [ VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [25 * x for x in range(2, 4)] + [100 + 50 * x for x in range(0, 8)], unit = 'GeV', overflow = True, logy = True),
               # VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
               # VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
               VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi) ),
-              # VariableDef('jetEta', '|#eta_{j}|', 'TMath::Abs(jets.eta[0])', (10, 0., 5.), applyFullSel = True),
-              VariableDef('njets', 'N_{jets}', 'jets.size', (6, 0., 6.), applyFullSel = True),
-              VariableDef('minDPhiJetMet', 'min #Delta#phi(jet, E_{T}^{miss})', 't1Met.minJetDPhi', (15, 0., math.pi))
+              VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt[0]', (20, 0., 1000.), unit = 'GeV', applyFullSel = True, logy = True),
+              VariableDef('jetEta', '#eta_{j}', 'jets.eta[0]', (10, -5., 5.), applyFullSel = True),
+              VariableDef('jetPhi', '#phi_{j}', 'jets.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+              VariableDef('tagPt', 'p_{T}^{tag}', 'tag.pt[0]', (20, 0., 200.), unit = 'GeV', applyFullSel = True),
+              VariableDef('tagEta', '#eta_{tag}', 'tag.eta[0]', (10, -2.5, 2.5), applyFullSel = True),
+              VariableDef('tagPhi', '#phi_{tag}', 'tag.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+              VariableDef('probePt', 'p_{T}^{probe}', 'probe.pt[0]', (10, 0., 100.), unit = 'GeV', applyFullSel = True),
+              VariableDef('probeEta', '#eta_{probe}', 'probe.eta[0]', (10, -2.5, 2.5), applyFullSel = True),
+              VariableDef('probePhi', '#phi_{probe}', 'probe.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+              VariableDef('metPhi', '#phi_{E_{T}^{miss}}', 't1Met.phi', (10, -math.pi, math.pi), applyFullSel = True),
+              VariableDef('zPt', 'p_{T}^{Z}', 'z.pt[0]', (20, 0., 1000.), unit = 'GeV', applyFullSel = True, logy = True),
+              VariableDef('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.), applyFullSel = True),
+              VariableDef('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+              VariableDef('zMass', 'm_{Z}', 'z.mass[0]', (10, 81., 101.), unit = 'GeV', applyFullSel = True)
+              # VariableDef('njets', 'N_{jets}', 'jets.size', (6, 0., 6.), applyFullSel = True),
+              # VariableDef('minDPhiJetMet', 'min #Delta#phi(jet, E_{T}^{miss})', 't1Met.minJetDPhi', (15, 0., math.pi))
               ]
 
-baseCuts = [ dPhiCut, metCut, zMassCut ]
+baseCuts = [ dPhiCut, zMassCut ]
 
 zSignCuts = [ ('os', 'z.oppSign == 1'), ('ss', 'z.oppSign == 0') ]
 
 jetsCuts = [ # ('monojet30', [monojetCut]),
             ('monojet100', [monojetCut, jetPtCut]),
             # ('multijet', [jetPtCut]),
-            ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
+            # ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
             ]
+
+metValues = [ '050', '075', '100' ]
 
 skims = [ 'smu-16*2-d_zmmJets', 'sel-16*2-d_zeeJets' ] # , 's*-16*2-d_z*Jets' ]
 
-samples = [ ('w+jets', ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], r.TColor.GetColor(0xff, 0x44, 0x99)),
+samples = [ # ('qcd', ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000'], r.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            ('w+jets', ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], r.TColor.GetColor(0xff, 0x44, 0x99)),
             ('diboson', ['ww', 'wz', 'zz'], r.TColor.GetColor(0xff, 0xee, 0x99)), 
             ('tt', ['tt'], r.TColor.GetColor(0x55, 0x44, 0xff)),
             ('z+jets', ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], r.TColor.GetColor(0x99, 0xff, 0xaa)) 
@@ -72,47 +85,56 @@ for skim in skims:
             mcTree.Add(config.skimDir+'/'+sample+'_'+skimm+'.root')
         mcTrees.append( (group, color, mcTree) )
 
-    for jetsCut in jetsCuts:
-        cuts = baseCuts + jetsCut[1]
-            
-        for sign, cut in zSignCuts[:1]:
-            signCuts = cuts + [cut]
+    for metValue in metValues:
+        metCut = 't1Met.met > '+metValue
+        metCuts = baseCuts + [metCut]
 
-            for varDef in variables:
-                if varDef.applyFullSel:
-                    varCuts = signCuts + [ dPhiMetCut ]
-                else:
-                    varCuts = signCuts
+        for jetsCut in jetsCuts:
+            jetCuts = metCuts + jetsCut[1]
 
-                cutString = ' && '.join(['(%s)' % c for c in varCuts])
-                print cutString
+            for sign, cut in zSignCuts[:1]:
+                signCuts = jetCuts + [cut]
 
-                canvas.Clear()
-                canvas.legend.Clear()
-                canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
+                for varDef in variables:
+                    if varDef.applyFullSel:
+                        varCuts = signCuts + [ dPhiMetCut ]
+                    else:
+                        varCuts = signCuts
 
-                dataName = 'dataHist'+skim
-                dataHist = varDef.makeHist(dataName)
+                    cutString = ' && '.join(['(%s)' % c for c in varCuts])
+                    print cutString
 
-                if varDef.unit != '':
-                    dataHist.GetXaxis().SetTitle(varDef.title + ' (' + varDef.unit +')')
-                else:
-                    dataHist.GetXaxis().SetTitle(varDef.title)
+                    canvas.Clear()
+                    canvas.legend.Clear()
+                    canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
 
-                dataCutString = cutString + ' && !(run > %s)' % config.runCutOff
+                    dataName = 'dataHist'+skim
+                    dataHist = varDef.makeHist(dataName)
 
-                dataTree.Draw(varDef.expr+'>>'+varDef.name+'-'+dataName, 'weight * ('+cutString+')', 'goff')
-                print dataHist.Integral()
-                canvas.addObs(dataHist, title = 'Data '+skimm)
+                    if varDef.unit != '':
+                        dataHist.GetXaxis().SetTitle(varDef.title + ' (' + varDef.unit +')')
+                    else:
+                        dataHist.GetXaxis().SetTitle(varDef.title)
 
-                for sample, color, mcTree in mcTrees:
-                    mcName = sample+skimm
-                    mcHist = varDef.makeHist(mcName)
-                    mcTree.Draw(varDef.expr+'>>'+varDef.name+'-'+mcName, str(lumi)+' * weight * ('+cutString+')', 'goff')
-                    canvas.addStacked(mcHist, title = sample, color = color)
+                    dataCutString = cutString + ' && !(run > %s)' % config.runCutOff
 
-                # canvas.ylimits = (0.001, -1.)
-                canvas.xtitle = varDef.title
-                canvas.ytitle = 'Events'
+                    dataTree.Draw(varDef.expr+'>>'+varDef.name+'-'+dataName, 'weight * ('+cutString+')', 'goff')
+                    print dataHist.Integral()
+                    canvas.addObs(dataHist, title = 'Data '+skimm)
 
-                canvas.printWeb('monophoton/zjets/'+skim, skimm[:3]+'_'+jetsCut[0]+'_Met'+metValue+'_'+varDef.name, logy = False)
+                    for sample, color, mcTree in mcTrees:
+                        mcName = sample+skimm
+                        mcHist = varDef.makeHist(mcName)
+                        mcTree.Draw(varDef.expr+'>>'+varDef.name+'-'+mcName, str(lumi)+' * weight * ('+cutString+')', 'goff')
+                        canvas.addStacked(mcHist, title = sample, color = color)
+
+                    # canvas.ylimits = (0.001, -1.)
+                    canvas.xtitle = varDef.title
+                    canvas.ytitle = 'Events'
+
+                    if varDef.logy is None:
+                        logy = False
+                    else:
+                        logy = varDef.logy
+
+                    canvas.printWeb('monophoton/zjets/'+skim, skimm[:3]+'_'+jetsCut[0]+'_Met'+metValue+'_'+varDef.name, logy = logy)
