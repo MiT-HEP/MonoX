@@ -174,12 +174,12 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
         writeHist(tree)
         for vkey in varhists:
             if len(varhists[vkey]) == 2:
-                vtreeUp = makeTree(name+'-'+vkey+'Up', varhists[vkey][0], outDir = outFile)
+                vtreeUp = makeTree(name+'_'+vkey+'Up', varhists[vkey][0], outDir = outFile)
                 writeHist(vtreeUp)
-                vtreeDown = makeTree(name+'-'+vkey+'Down', varhists[vkey][1], outDir = outFile)
+                vtreeDown = makeTree(name+'_'+vkey+'Down', varhists[vkey][1], outDir = outFile)
                 writeHist(vtreeDown)
             elif len(varhists[vkey]) == 1:
-                vtree = makeTree(name+'-'+vkey, varhists[vkey][0], outDir = outFile)
+                vtree = makeTree(name+'_'+vkey, varhists[vkey][0], outDir = outFile)
                 writeHist(vtree)
             else:
                 print "Too many trees for variation %s. Skipping..." % vkey
@@ -307,10 +307,10 @@ def treeGen(array, nElem):
 def makeTree(name, nomlist, outDir = None):
     tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
     tree.SetDirectory(outDir)
-    var = array.array('f', [0.])
-    tree.Branch(vardef.name, var, vardef.name+'/F')
-    weight = array.array('f', [0.])
-    tree.Branch('weight', weight, 'weight/F')
+    var = array.array('d', [0.])
+    tree.Branch(vardef.name, var, vardef.name+'/D')
+    weight = array.array('d', [0.])
+    tree.Branch('weight', weight, 'weight/D')
         
     # print 'making tree'
     iEntry = 0
@@ -573,7 +573,7 @@ if __name__ == '__main__':
         for plot in os.listdir(WEBDIR + '/' + plotDir):
             os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
-    print "Starting plot making."
+    print "Starting plot making for %s." % plotConfig.name
     
     for vardef in plotConfig.variables + [plotConfig.countConfig()]:
         if vardef.name not in args.plots:
