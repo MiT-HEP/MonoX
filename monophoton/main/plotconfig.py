@@ -279,16 +279,17 @@ def getConfig(confName):
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
             if group.name in 'zg':
                 continue
 
-            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            if group.name != 'vvg':
+                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -335,16 +336,17 @@ def getConfig(confName):
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
             if group.name in 'zg':
                 continue
 
-            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            if group.name != 'vvg':
+                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -398,16 +400,17 @@ def getConfig(confName):
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
             if group.name in 'wg':
                 continue
-
-            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            
+            if group.name != 'vvg':
+                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -461,16 +464,17 @@ def getConfig(confName):
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
-            # group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
 
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
-            # group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
             if group.name in 'wg':
                 continue
 
-            # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+            if group.name != 'vvg':
+                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
