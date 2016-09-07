@@ -1444,23 +1444,23 @@ IDSFWeight::setVariable(Variable vx, Variable vy)
 }
 
 void
-IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
   simpletree::Particle const* part(0);
 
   switch (object_) {
   case kPhoton:
-    if (_outEvent.photons.size() != 0)
-      part = &_outEvent.photons.at(0);
+    if (_outEvent.photons.size() > iP)
+      part = &_outEvent.photons.at(iP);
     break;
   case kElectron:
-    if (_outEvent.electrons.size() != 0)
-      part = &_outEvent.electrons.at(0);
+    if (_outEvent.electrons.size() > iP)
+      part = &_outEvent.electrons.at(iP);
     break;
   case kMuon:
-    if (_outEvent.muons.size() != 0)
-      part = &_outEvent.muons.at(0);
+    if (_outEvent.muons.size() > iP)
+      part = &_outEvent.muons.at(iP);
     break;
   default:
     return;
@@ -1479,10 +1479,10 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
     switch (iV) {
     case 0:
-      axis = factors_->GetXaxis();
+      axis = factors_[iP]->GetXaxis();
       break;
     case 1:
-      axis = factors_->GetYaxis();
+      axis = factors_[iP]->GetYaxis();
       break;
     };
 
@@ -1511,13 +1511,36 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
     rowSize *= axis->GetNbins() + 2;
   }
 
-  double weight(factors_->GetBinContent(iCell));
+  double weight(factors_[iP]->GetBinContent(iCell));
+  double error(factors_[iP]->GetBinError(iCell));
 
-  weight_ = weight;
+  weight_ *= weight;
   _outEvent.weight *= weight;
 
-  weightUp_ = 1. + factors_->GetBinError(iCell) / weight;
-  weightDown_ = 1. - factors_->GetBinError(iCell) / weight;
+  double relerror = error / weight;
+
+  /* 
+  if (relerror > 0.5) {
+    printf("relerror %6.4f, weight %6.4f, error %6.4f \n", relerror, weight, error);
+    printf("hist: %s, bin %d \n", factors_[iP]->GetDirectory()->GetName(), iCell);
+  }
+  */
+
+  weightUp_ += relerror;
+  weightDown_ -= relerror;
+}
+
+void
+IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  // not exactly sure why I need to reset these, but it's definitely necessary to get reasonable results
+  weight_ = 1.;
+  weightUp_ = 1.;
+  weightDown_ = 1.;
+    
+  for (unsigned iP(0); iP != nParticles_; iP++) {
+    applyParticle(iP, _event, _outEvent);
+  }
 }
 
 //--------------------------------------------------------------------

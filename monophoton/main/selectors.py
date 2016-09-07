@@ -72,8 +72,17 @@ trigCorrDownFormula = '1.025 - 0.0001163 * x'
 gjSmearingFormula = 'TMath::Landau(x, [0], [1])'
 gjSmearingParams = (-0.7314, 0.5095) # measured in gjets/smearfit.py
 
-muonSFSource = ROOT.TFile.Open(basedir + '/data/muonsf.root')
-muonSF = muonSFSource.Get('mutrksfptg10')
+muonTightSFSource = ROOT.TFile.Open(basedir + '/data/scaleFactor_muon_tightid_12p9.root')
+muonTightSF = muonTightSFSource.Get('scaleFactor_muon_tightid_Exp')
+muonLooseSFSource = ROOT.TFile.Open(basedir + '/data/scaleFactor_muon_looseid_12p9.root')
+muonLooseSF = muonLooseSFSource.Get('scaleFactor_muon_looseid_Exp')
+muonTrigSFSource = ROOT.TFile.Open(basedir + '/data/muonTrigSF.root')
+muonTrigSF = muonTrigSFSource.Get('mutrksfptg10')
+
+electronTightSFSource = ROOT.TFile.Open(basedir + '/data/scaleFactor_electron_tightid_12p9.root')
+electronTightSF = electronTightSFSource.Get('scaleFactor_electron_tightid_Exp')
+electronVetoSFSource = ROOT.TFile.Open(basedir + '/data/scaleFactor_electron_vetoid_12p9.root')
+electronVetoSF = electronVetoSFSource.Get('scaleFactor_electron_vetoid_Exp')
 
 ##############################################################
 # Argument "selector" in all functions below can either be an
@@ -166,10 +175,11 @@ def candidate(sample, selector):
         for eventList in eventLists:
             selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
     else:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
-        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
+        idsf.addFactor(photonSF)
+        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
-        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
@@ -235,10 +245,11 @@ def lowmt(sample, selector):
     selector = monophotonBase(sample, selector)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
-        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
+        idsf.addFactor(photonSF)
+        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
-        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
@@ -698,10 +709,11 @@ def leptonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.PUWeight(puWeight))
 
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF')
-        idsf.setVariable(ROOT.IDSFWeight.kPt, ROOT.IDSFWeight.kEta)
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
+        idsf.addFactor(photonSF)
+        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
-        selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+        # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
@@ -739,17 +751,37 @@ def dielectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
 
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf.addFactor(electronTightSF)
+        idsf.addFactor(electronVetoSF)
+        idsf.setNParticles(2)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
     return selector
 
 def monoelectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf.addFactor(electronTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
     return selector
 
 def monoelectronHadProxy(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
+
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf.addFactor(electronTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
 
     selector = hadProxy(sample, selector)
 
@@ -759,23 +791,46 @@ def dimuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
 
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf.addFactor(muonTightSF)
+        idsf.addFactor(muonLooseSF)
+        idsf.setNParticles(2)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
     return selector
 
 def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf.addFactor(muonTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
+    """
     # single muon trigger efficiency ~ 90%
     selector.addOperator(ROOT.ConstantWeight(0.9))
-    trackscale = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, muonSF)
+    trackscale = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'muonTrigSF')
+    trackscale.addFactor(muonTrigSF)
     trackscale.setVariable(ROOT.IDSFWeight.kEta)
     selector.addOperator(trackscale)
+    """
 
     return selector
 
 def monomuonHadProxy(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
+
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf.addFactor(muonTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
 
     selector = hadProxy(sample, selector)
 
@@ -784,6 +839,20 @@ def monomuonHadProxy(sample, selector):
 def oppflavor(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 1)
+
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf.addFactor(electronTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
+        ### might not be 100% correct because there is no check 
+        ### that both electron and muon are tight >.>
+
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf.addFactor(muonTightSF)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
 
     return selector
 
@@ -813,8 +882,8 @@ def wenuall(sample, name):
 
     selector = monophotonBase(sample, ROOT.WenuSelector(name))
 
-    selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
-    selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+    # selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+    # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         selector.addOperator(ROOT.NNPDFVariation())
 

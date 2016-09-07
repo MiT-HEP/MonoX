@@ -9,6 +9,8 @@
 #include "TF1.h"
 #include "TRandom3.h"
 
+#include "TDirectory.h"
+
 //#include "jer.h"
 #include "eventlist.h"
 
@@ -580,19 +582,23 @@ class IDSFWeight : public Modifier {
     nVariables
   };
 
-  IDSFWeight(Object obj, TH1* factors, char const* name = "IDSFWeight") : Modifier(name), object_(obj), factors_(factors) {}
+  IDSFWeight(Object obj, char const* name = "IDSFWeight") : Modifier(name), object_(obj) {}
 
   void addBranches(TTree& skimTree) override;
   void setVariable(Variable, Variable = nVariables);
+  void setNParticles(unsigned _nP) { nParticles_ = _nP; }
+  void addFactor(TH1* factor) { factors_.emplace_back(factor); }
  protected:
+  void applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent);
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   Object object_;
   Variable variables_[2];
-  TH1* factors_;
-  double weight_;
-  double weightUp_;
-  double weightDown_;
+  unsigned nParticles_{1};
+  std::vector<TH1*> factors_;
+  double weight_{1.};
+  double weightUp_{1.};
+  double weightDown_{1.};
 };
 
 class NPVWeight : public Modifier {
