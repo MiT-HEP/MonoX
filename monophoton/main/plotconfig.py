@@ -114,7 +114,9 @@ def getConfig(confName):
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-            group.variations.append(Variation('totalSF', reweight = 0.06))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('leptonVetoSF', reweight = 1.02))
      
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -273,9 +275,11 @@ def getConfig(confName):
         # Standard MC systematic variations
         for group in config.bkgGroups:
 
-            group.variations.append(Variation('lumi', reweight = 0.027))
+            group.variations.append(Variation('lumi', reweight = 0.04))
 
-            group.variations.append(Variation('totalSF', reweight = 0.06))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -284,7 +288,7 @@ def getConfig(confName):
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
-
+            
             if group.name in 'zg':
                 continue
 
@@ -332,7 +336,9 @@ def getConfig(confName):
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-            group.variations.append(Variation('totalSF', reweight = 0.06))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -396,7 +402,9 @@ def getConfig(confName):
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-            group.variations.append(Variation('totalSF', reweight = 0.06))
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
@@ -459,8 +467,10 @@ def getConfig(confName):
         for group in config.bkgGroups:
 
             group.variations.append(Variation('lumi', reweight = 0.027))
-
-            group.variations.append(Variation('totalSF', reweight = 0.06))
+            
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
