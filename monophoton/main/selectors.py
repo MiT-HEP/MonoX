@@ -349,6 +349,15 @@ def purity(sample, selector):
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
+    if not sample.data:
+        genPhotonSel = ROOT.GenParticleSelection("GenPhotonSelection")
+        genPhotonSel.setPdgId(22)
+        genPhotonSel.setMinPt(140.)
+        genPhotonSel.setMaxEta(1.7)
+
+        selector.addOperator(genPhotonSel, 1)
+        photonSel.setIgnoreDecision(True)
+
     return selector
 
 def purityUp(sample, selector):

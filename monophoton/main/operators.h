@@ -315,6 +315,27 @@ class HighPtJetSelection : public Cut {
   double min_{100.};
 };
 
+class GenParticleSelection : public Cut {
+ public:
+  GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}
+  
+  void setPdgId(unsigned pdgId) { pdgId_ = pdgId; }
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxPt(double maxPt) { maxPt_ = maxPt; }
+  void setMinEta(double minEta) { minEta_ = minEta; }
+  void setMaxEta(double maxEta) { maxEta_ = maxEta; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  
+  unsigned pdgId_{22};
+  double minPt_{140.};
+  double maxPt_{6500.};
+  double minEta_{0.};
+  double maxEta_{5.};
+};
+
+
 class EcalCrackVeto : public Cut {
  public:
   EcalCrackVeto(char const* name = "EcalCrackVeto") : Cut(name) {}

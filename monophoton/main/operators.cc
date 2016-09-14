@@ -668,6 +668,30 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 }
 
 //--------------------------------------------------------------------
+// GenParticleSelection
+//--------------------------------------------------------------------
+
+bool
+GenParticleSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& part : _event.promptFinalStates) {
+    if (std::abs(part.pid) != pdgId_)
+      continue;
+
+    if (std::abs(part.eta) > maxEta_ || std::abs(part.eta) < minEta_ )
+      continue;
+
+    if (part.pt < minPt_ || part.pt > maxPt_)
+      continue;
+    
+    return true;
+  }
+
+  return false;
+}
+
+
+//--------------------------------------------------------------------
 // EcalCrackVeto
 //--------------------------------------------------------------------
 
