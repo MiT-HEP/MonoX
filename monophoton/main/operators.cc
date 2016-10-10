@@ -1521,6 +1521,12 @@ IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletr
     case kAbsEta:
       iBin = axis->FindFixBin(std::abs(part->eta));
       break;
+    case kNpv:
+      iBin = axis->FindFixBin(_event.npvTrue);
+      if (iBin == 0)
+	iBin = 1;
+      if (iBin > axis->GetNbins())
+	iBin = axis->GetNbins();
     default:
       break;
     }

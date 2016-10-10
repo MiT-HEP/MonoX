@@ -600,6 +600,7 @@ class IDSFWeight : public Modifier {
     kPt,
     kEta,
     kAbsEta,
+    kNpv,
     nVariables
   };
 
