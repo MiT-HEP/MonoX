@@ -22,6 +22,9 @@ electronData = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
         
+ichepAnalysisPtBinning = [175., 190., 250., 400., 700., 1000.]
+combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
+
 def getConfig(confName):
 
     if confName == 'monoph':
@@ -102,7 +105,7 @@ def getConfig(confName):
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
                 config.variables.remove(variable)
 
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # config.sensitiveVars = ['met', 'metWide', 'metHigh', 'metScan', 'phoPtHighMet', 'phoPtScanHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
         
@@ -240,7 +243,7 @@ def getConfig(confName):
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
                 config.variables.remove(variable)
                 
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
     elif confName == 'dimu':
         mass = 'TMath::Sqrt(2. * muons.pt[0] * muons.pt[1] * (TMath::CosH(muons.eta[0] - muons.eta[1]) - TMath::Cos(muons.phi[0] - muons.phi[1])))'
@@ -271,7 +274,7 @@ def getConfig(confName):
         ]
 
         config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -311,8 +314,8 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
@@ -330,7 +333,7 @@ def getConfig(confName):
         ]
 
         config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -374,7 +377,7 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
+            GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
@@ -396,7 +399,7 @@ def getConfig(confName):
         ]
 
         config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -440,7 +443,7 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
+            GroupSpec('wjets', 'W#rightawoowl#nu+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xcc, 0x99, 0x11)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
@@ -462,7 +465,7 @@ def getConfig(confName):
         ]
 
         config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet', applyFullSel = True))
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -591,7 +594,7 @@ def getConfig(confName):
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
                 config.variables.remove(variable)
 
-        config.getVariable('phoPtHighMet').binning = [175., 190., 250., 400., 700., 1000.]
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
     
     else:
         print 'Unknown configuration', confName

@@ -162,7 +162,7 @@ selectors = {
     'wlnu-100': mc_wlnu + mc_lep,
     'wlnu-200': mc_wlnu + mc_lep, 
     'wlnu-400': mc_wlnu + mc_lep, 
-    # 'wlnu-600': mc_wlnu + mc_lep, 
+    'wlnu-600': mc_wlnu + mc_lep, 
     'wlnu-800': mc_wlnu + mc_lep,
     'wlnu-1200': mc_wlnu + mc_lep,
     'wlnu-2500': mc_wlnu + mc_lep,
@@ -171,13 +171,13 @@ selectors = {
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
     'dy-50-600': mc_cand + mc_lep + mc_dilep,
-    'qcd-200': mc_cand + mc_qcd + mc_dilep,
-    'qcd-300': mc_cand + mc_qcd + mc_dilep,
-    'qcd-500': mc_cand + mc_qcd + mc_dilep,
-    'qcd-700': mc_cand + mc_qcd + mc_dilep,
-    'qcd-1000': mc_cand + mc_qcd + mc_dilep,
-    'qcd-1500': mc_cand + mc_qcd + mc_dilep,
-    'qcd-2000': mc_cand + mc_qcd + mc_dilep
+    'qcd-200': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-300': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-500': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-700': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-1000': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-1500': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'qcd-2000': mc_cand + mc_qcd + mc_dilep + mc_lep
 }
 
 # all the rest are mc_sig
