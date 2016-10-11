@@ -23,7 +23,8 @@ dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
         
 ichepAnalysisPtBinning = [175., 190., 250., 400., 700., 1000.]
-combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
+# combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
+combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 800., 1000.0]
 
 def getConfig(confName):
 
