@@ -86,12 +86,15 @@ Calculator::calculate(TTree* _input) {
     // printf("met: %.0f \n", event.t1Met.met);
 
     auto& promptFinalStates(event.promptFinalStates);
+
+    // std::cout << "PromptFinalStates " << event.promptFinalStates.size() << std::endl;
+    
     auto& photons(event.photons);
 
     for (unsigned iPFS(0); iPFS != promptFinalStates.size(); ++iPFS) {
       auto& pfs(promptFinalStates[iPFS]);
       
-      if ( !(std::abs(pfs.pid) != 22))
+      if (std::abs(pfs.pid) != 22)
 	continue;
 
       // printf("got a gen photon w/pt %.2f \n", pfs.pt);
@@ -99,12 +102,12 @@ Calculator::calculate(TTree* _input) {
       if ( pfs.pt < minGenPt_ || pfs.pt > maxGenPt_ )
 	continue;
 
-      printf("it's in the pt range \n");
+      // printf("it's in the pt range \n");
 
       if ( std::abs(pfs.eta) < minGenEta_ || std::abs(pfs.eta) > maxGenEta_ )
 	continue;
 
-      printf("it's in the eta range \n");
+      // printf("it's in the eta range \n");
 
       nGenPhotons++;
       

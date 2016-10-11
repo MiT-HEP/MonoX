@@ -28,8 +28,8 @@ print source.GetEntries()
 calc = ROOT.Calculator()
 calc.setMinPhoPt(175.)
 # calc.setMaxPhoPt(200.)
-calc.setMaxDR(5)
-calc.setMaxDPt(1)
+calc.setMaxDR(0.2)
+calc.setMaxDPt(0.2)
 calc.calculate(source)
 
 effs= []
