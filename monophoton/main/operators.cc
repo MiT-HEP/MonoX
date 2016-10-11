@@ -613,18 +613,60 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 {
   bool foundTight(false);
 
-  for (auto& electron : _event.electrons) {
-    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
-      foundTight = true;
-    if (electron.loose && electron.pt > 10.)
-      _outEvent.electrons.push_back(electron);
-  }
+  std::vector<simpletree::ParticleCollection*> cols = {
+    &_outEvent.photons
+  };
 
   for (auto& muon : _event.muons) {
     if (nMu_ != 0 && muon.tight && muon.pt > 30.)
       foundTight = true;
+    
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+	if ((*col)[iP].dR2(muon) < 0.25)
+	  break;
+      }
+      if (iP != col->size()) {
+	// there was a matching candidate
+	overlap = true;
+	break;
+      }
+    }
+    
+    if (overlap)
+      continue;
+    
     if (muon.loose && muon.pt > 10.)
       _outEvent.muons.push_back(muon);
+  }
+
+  cols.push_back(&_outEvent.muons);
+
+  for (auto& electron : _event.electrons) {
+    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
+      foundTight = true;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+	if ((*col)[iP].dR2(electron) < 0.25)
+	  break;
+      }
+      if (iP != col->size()) {
+	// there was a matching candidate
+	overlap = true;
+	break;
+      }
+    }
+    
+    if (overlap)
+      continue;
+    
+    if (electron.loose && electron.pt > 10.)
+      _outEvent.electrons.push_back(electron);
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
