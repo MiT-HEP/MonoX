@@ -85,7 +85,7 @@ for loc in s.Locations[:1]:
             bins = [175, 500] # [175, 200, 250, 300, 350, 500]
             effs = {}
 
-            for source in ['nero', 'neromc']:
+            for source in ['nero']: # , 'neromc']:
                 hTrue = r.TH1F("ntrue"+loc+pid+metCut[0]+source, ";#gamma p_{T} (GeV)", len(bins)-1, array('d', bins))
                 hTotal = r.TH1F("ntotal"+loc+pid+metCut[0]+source, ";#gamma p_{T} (GeV)", len(bins)-1, array('d', bins))
                 
@@ -129,13 +129,18 @@ for loc in s.Locations[:1]:
                 gEff.Divide(hTrue, hTotal, "cl=0.683 b(1,1) mode")
                 effs[source] = gEff
 
-            rcanvas.legend.add("mc", title = "MC", lcolor = r.kRed, lwidth = 2)
-            rcanvas.legend.apply("mc", effs['neromc'])
-            rcanvas.addHistogram(effs['neromc'], drawOpt = 'EP')
+            #rcanvas.legend.add("mc", title = "MC", lcolor = r.kRed, lwidth = 2)
+            #rcanvas.legend.apply("mc", effs['neromc'])
+            #rcanvas.addHistogram(effs['neromc'], drawOpt = 'EP')
 
             rcanvas.legend.add("data", title = "Data", lcolor = r.kBlack, lwidth = 2)
             rcanvas.legend.apply("data", effs['nero'])
             rcanvas.addHistogram(effs['nero'], drawOpt = 'EP')
+
+            xeff = r.Double(0.)
+            yeff = r.Double(0.)
+            effs['nero'].GetPoint(0, xeff, yeff)
+            print xeff, yeff
 
             rcanvas.ylimits = (0.0, 1.1)
             rcanvas.ytitle = 'Photon Efficiency'

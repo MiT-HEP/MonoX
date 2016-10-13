@@ -40,7 +40,7 @@ private:
 
   unsigned wp_{1};
   
-  const unsigned nSteps{3};
+  const unsigned nSteps{7};
   double* efficiencies = new double[nSteps+1];
   
 };
@@ -99,6 +99,7 @@ Calculator::calculate(TTree* _input) {
 
       // printf("got a gen photon w/pt %.2f \n", pfs.pt);
       
+      // if ( pfs.pt < minPhoPt_ || pfs.pt > maxPhoPt_ )
       if ( pfs.pt < minGenPt_ || pfs.pt > maxGenPt_ )
 	continue;
 
@@ -128,10 +129,37 @@ Calculator::calculate(TTree* _input) {
 	
 	nMatchedPhotons++;
 
-	if ( !(pho.passHOverE(wp_) && pho.passSieie(wp_) && pho.passCHIso(wp_) && pho.passNHIso(wp_) && pho.passPhIso(wp_)))
+	// if ( !(pho.passHOverE(wp_) && pho.passSieie(wp_) && pho.passCHIso(wp_) && pho.passNHIso(wp_) && pho.passPhIso(wp_)))
+	//  continue;
+
+	if ( !pho.passHOverE(wp_))
 	  continue;
 
 	iReco = 0;
+	nRecoPhotons[iReco]++;
+
+	if ( !pho.passSieie(wp_))
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( !pho.passNHIso(wp_))
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( !pho.passPhIso(wp_))
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( !pho.passCHIso(wp_))
+	  continue;
+
+	iReco++;
 	nRecoPhotons[iReco]++;
 
 	if ( !pho.pixelVeto )
