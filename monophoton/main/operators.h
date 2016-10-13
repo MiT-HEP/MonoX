@@ -513,6 +513,8 @@ class LeptonRecoil : public Modifier {
   Collection collection_;
   float realMet_;
   float realPhi_;
+  float minJetDPhiReal_{4.};
+  float photonDPhiReal_{4.};
 };
 
 class MetVariations : public Modifier {

@@ -1236,6 +1236,8 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
   _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+  _skimTree.Branch("t1Met.photonDPhiReal", &photonDPhiReal_, "photonDPhiReal/F");
+  _skimTree.Branch("t1Met.minJetDPhiReal", &minJetDPhiReal_, "minJetDPhiReal/F");
 }
 
 void
@@ -1257,6 +1259,26 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
   realMet_ = _event.t1Met.met;
   realPhi_ = _event.t1Met.phi;
 
+  minJetDPhiReal_ = 4.;
+
+  unsigned nJ(0);
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet(_outEvent.jets[iJ]);
+
+    if (jet.pt > 30. && nJ < 4) {
+      ++nJ;
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _event.t1Met.phi)));
+      if (dPhi < minJetDPhiReal_)
+        minJetDPhiReal_ = dPhi;
+    }
+  }
+
+  photonDPhiReal_ = 4.;
+  
+  if (_outEvent.photons.size() != 0) {
+    photonDPhiReal_ = std::abs(TVector2::Phi_mpi_pi(_event.t1Met.phi - _event.photons[0].phi));
+  }
+  
   double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
   double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
     
