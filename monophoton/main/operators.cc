@@ -607,6 +607,15 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 // LeptonSelection
 //--------------------------------------------------------------------
+void
+LeptonSelection::addBranches(TTree& _skimTree)
+{
+  if ( (nMu_ + nEl_) == 2) {
+    zs_.book(_skimTree);
+    _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
+  }
+}
+
 
 bool
 LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -667,6 +676,49 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     
     if (electron.loose && electron.pt > 10.)
       _outEvent.electrons.push_back(electron);
+  }
+
+  zs_.clear();
+  simpletree::LorentzVectorM pair;
+  pair.SetCoordinates(0., 0., 0., 0.);
+
+  if (nMu_ == 2) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.muons[0].p4() + _outEvent.muons[1].p4();
+    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.muons[1].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
+  }
+
+  else if (nEl_ == 2) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.electrons[0].p4() + _outEvent.electrons[1].p4();
+    zOppSign_ = ( (_outEvent.electrons[0].positive == _outEvent.electrons[1].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
+  }
+
+  else if (nMu_ == 1 && nEl_ == 1) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.muons[0].p4() + _outEvent.electrons[0].p4();
+    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.electrons[0].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;

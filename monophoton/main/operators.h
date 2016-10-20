@@ -271,14 +271,18 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
-  LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
+ LeptonSelection(char const* name = "LeptonSelection") : Cut(name), zs_("z") {}
 
+  void addBranches(TTree& skimTree) override;
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   unsigned nEl_{0};
   unsigned nMu_{0};
+
+  simpletree::ParticleMCollection zs_;
+  bool zOppSign_{0};
 };
 
 class HighMet : public Cut {
