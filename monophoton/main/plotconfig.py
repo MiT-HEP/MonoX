@@ -255,7 +255,7 @@ def getConfig(confName):
         print 'blah'
 
         config = PlotConfig('dimu', muonData)
-        config.baseline = mass + ' > 60. && ' + mass + ' < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhiReal > 0.5' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhiReal > 0.5' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -272,11 +272,10 @@ def getConfig(confName):
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.photonDPhiReal', (10, 0., math.pi)),
             VariableDef('dPhiPhoRecoil', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (10, 0., math.pi), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhiReal > 0.5'),
             VariableDef('dRPhoMu', '#DeltaR(#gamma, #mu)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (10, 0., 4.)),
-            VariableDef('dimumass', 'M_{#mu#mu}', mass, (12, 60., 120.), unit = 'GeV', overflow = True),
-            # VariableDef('dimumass', 'M_{#mu#mu}', mass, [0. + 25. * x for x in range(51)], unit = 'GeV', overflow = True),
-            # VariableDef('zPt', 'p_{T}^{Z}', 'z.pt[0]', (20, 0., 1000.), unit = 'GeV', applyFullSel = True, logy = True),
-            # VariableDef('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.), applyFullSel = True),
-            # VariableDef('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+            VariableDef('dimumass', 'M_{#mu#mu}', 'z.mass[0]', (12, 60., 120.), unit = 'GeV', overflow = True),
+            VariableDef('zPt', 'p_{T}^{Z}', 'z.pt[0]', combinedFitPtBinning, unit = 'GeV', applyFullSel = True),
+            VariableDef('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.), applyFullSel = True),
+            VariableDef('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
             VariableDef('mu0Pt', 'p_{T}^{leading #mu}', 'muons.pt[0]', [100., 125., 150., 175., 200., 250., 300., 400., 500.], unit = 'GeV', overflow = True),
             VariableDef('mu0Eta', '#eta_{leading #mu}', 'muons.eta[0]', (10, -2.5, 2.5)),
             VariableDef('mu0Phi', '#phi_{leading #mu}', 'muons.phi[0]', (10, -math.pi, math.pi)),
@@ -330,7 +329,7 @@ def getConfig(confName):
         dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
         config = PlotConfig('diel', electronData)
-        config.baseline = mass + ' > 60. && ' + mass + ' < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhiReal > 0.5' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.minJetDPhiReal > 0.5' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -347,11 +346,10 @@ def getConfig(confName):
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.photonDPhiReal', (10, 0., math.pi)),
             VariableDef('dPhiPhoRecoil', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (10, 0., math.pi), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhiReal > 0.5'),
             VariableDef('dRPhoEl', '#DeltaR(#gamma, e)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (10, 0., 4.)),
-            VariableDef('dielmass', 'M_{ee}', mass, (12, 60., 120.), unit = 'GeV', overflow = True),
-            # VariableDef('dielmass', 'M_{ee}', mass, [0. + 25. * x for x in range(51)], unit = 'GeV', overflow = True),
-            # VariableDef('zPt', 'p_{T}^{Z}', 'z.pt[0]', (20, 0., 1000.), unit = 'GeV', applyFullSel = True, logy = True),
-            # VariableDef('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.), applyFullSel = True),
-            # VariableDef('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
+            VariableDef('dielmass', 'M_{ee}', 'z.mass[0]', (12, 60., 120.), unit = 'GeV', overflow = True),
+            VariableDef('zPt', 'p_{T}^{Z}', 'z.pt[0]', combinedFitPtBinning, unit = 'GeV', applyFullSel = True),
+            VariableDef('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.), applyFullSel = True),
+            VariableDef('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi), applyFullSel = True),
             VariableDef('el0Pt', 'p_{T}^{leading e}', 'electrons.pt[0]', [100., 125., 150., 175., 200., 250., 300., 400., 500.], unit = 'GeV', overflow = True),
             VariableDef('el0Eta', '#eta_{leading e}', 'electrons.eta[0]', (10, -2.5, 2.5)),
             VariableDef('el0Phi', '#phi_{leading e}', 'electrons.phi[0]', (10, -math.pi, math.pi)),
