@@ -103,6 +103,9 @@ class HLTFilter : public Cut {
   HLTFilter(char const* name = "PATHNAME");
   ~HLTFilter();
 
+  // to reset the tree number
+  void addBranches(TTree& skimTree) override;
+
  protected:
   bool pass(simpletree::Event const& _event, simpletree::Event&) override;
 
