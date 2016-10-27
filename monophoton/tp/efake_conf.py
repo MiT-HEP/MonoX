@@ -12,7 +12,7 @@ skimConfig = {
     'mcgg': (['gg-80'], ['kEG'])
 }
 
-lumiSamples = ['sel-16b2', 'sel-16c2', 'sel-16d2']
+lumiSamples = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
 
 def getBinning(binningName):
     if binningName == 'pt':

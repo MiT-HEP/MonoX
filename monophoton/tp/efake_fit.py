@@ -25,9 +25,9 @@ plotDir = 'efake'
 
 fitBins = getBinning(binningName)[2]
 
-lumi = 0.
-for sname in lumiSamples:
-    lumi += allsamples[sname].lumi
+lumi = 12.9
+#for sname in lumiSamples:
+#    lumi += allsamples[sname].lumi
 
 # switching runMode
 runMode = 'single'
@@ -96,6 +96,8 @@ initVals = {
 }
 if dataType == 'data':
     initVals.update({
+        'mZ': 91.2,
+        'gammaZ': 2.5,
         'm0': 0.,
         'sigma': 1.,
         'alpha': 2.,
@@ -191,11 +193,17 @@ elif runMode == 'single':
     weight = work.factory('weight[-1000000000., 1000000000.]')
     nbkg = work.factory('nbkg[0., 1000000.]')
     nsignal = work.factory('nsignal[0., 1000000.]')
-    if dataType == 'data':
-        m0 = work.factory('m0[-10., 10.]')
-        sigma = work.factory('sigma[0.001, 5.]')
-        alpha = work.factory('alpha[0.01, 5.]')
-        n = work.factory('n[1.01, 5.]')
+    if pdf == 'altsig':
+        mZ = work.factory('mZ[91.2, 86., 96.]')
+        gammaZ = work.factory('gammaZ[2.5, 1., 5.]')
+    else:
+        mZ = work.factory('mZ[91.2]')
+        gammaZ = work.factory('gammaZ[2.5]')
+
+    m0 = work.factory('m0[-10., 10.]')
+    sigma = work.factory('sigma[0.001, 5.]')
+    alpha = work.factory('alpha[0.01, 5.]')
+    n = work.factory('n[1.01, 5.]')
 
     canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
     canvas.titlePave.SetX2NDC(0.5)
@@ -243,37 +251,39 @@ for binName, fitCut in fitBins:
     elif runMode == 'single':
         sigdataName = 'sigdata_' + binName
 
-        if dataType == 'mc':
-            hsigName = 'sig_' + binName
-    
-            # make signal template
-            generator.setTemplateBinning(ROOT.RooUniformBinning(20., 160., 140), getattr(ROOT, varType)) # avoid boundary effect
-            hsig = generator.makeTemplate(ROOT.kEG, hsigName, 'sample == 1 && TMath::Abs(probes.matchedGen) == 11 && ({fitCut})'.format(fitCut = fitCut), getattr(ROOT, varType))
+#        if dataType == 'mc':
+#            hsigName = 'sig_' + binName
+#    
+#            # make signal template
+#            generator.setTemplateBinning(ROOT.RooUniformBinning(20., 160., 140), getattr(ROOT, varType)) # avoid boundary effect
+#            hsig = generator.makeTemplate(ROOT.kEG, hsigName, 'sample == 1 && TMath::Abs(probes.matchedGen) == 11 && ({fitCut})'.format(fitCut = fitCut), getattr(ROOT, varType))
+#
+#            hsig.SetDirectory(outputFile)
+#            outputFile.cd()
+#            hsig.Write()
+#    
+#            sigdata = ROOT.RooDataHist(sigdataName, 'sig', masslist, hsig)
+#            getattr(work, 'import')(sigdata, ROOT.RooFit.Rename(sigdataName)) # Rename: dummy argument to trigger dataset import (as opposed to generic object import)
+#    
+#            # no smearing
+#            sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
+#
+#        else:
+#            sigdata = mcWork.data(sigdataName)
+#            if not sigdata:
+#                print 'No dataset ' + sigdataName + ' found in ' + mcSource.GetName() + '.'
+#                sys.exit(1)
+#
+#            getattr(work, 'import')(sigdata, ROOT.RooFit.Rename(sigdataName))
+#
+#            sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
+#            res = work.factory('Gaussian::res(mass, m0, sigma)')
 
-            hsig.SetDirectory(outputFile)
-            outputFile.cd()
-            hsig.Write()
-    
-            sigdata = ROOT.RooDataHist(sigdataName, 'sig', masslist, hsig)
-            getattr(work, 'import')(sigdata, ROOT.RooFit.Rename(sigdataName)) # Rename: dummy argument to trigger dataset import (as opposed to generic object import)
-    
-            # no smearing
-            sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
-
+        if pdf == 'altsig':
+            sigModel = work.factory('BreitWigner::' + sigModelName + '(mass, mZ, gammaZ)')
         else:
-            sigdata = mcWork.data(sigdataName)
-            if not sigdata:
-                print 'No dataset ' + sigdataName + ' found in ' + mcSource.GetName() + '.'
-                sys.exit(1)
-
-            getattr(work, 'import')(sigdata, ROOT.RooFit.Rename(sigdataName))
-
-            sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
-            if pdf == 'altsig':
-                res = work.factory('Gaussian::res(mass, m0, sigma)')
-            else:
-                res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-
+            sigCore = work.factory('BreitWigner::sigCore_' + binName + '(mass, mZ, gammaZ)')
+            res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
             sigModel = work.factory('FCONV::' + sigModelName + '(mass, sigCore_' + binName + ', res)')
 
     intComp = sigModel.createIntegral(massset, 'compWindow')
@@ -420,6 +430,7 @@ for binName, fitCut in fitBins:
             frame.SetTitle('')
             frame.SetMinimum(0.)
     
+            canvas.Clear()
             canvas.addHistogram(frame)
             if dataType == 'mc':
                 canvas.legend.apply('mcbkg', hmcbkg)

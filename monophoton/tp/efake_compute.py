@@ -60,32 +60,16 @@ while inputTree.GetEntry(iEntry) > 0:
     else:
         toys[conf][binName].append(vNz[0])
 
-for altname in ['altbkg', 'altsig']:
-    if os.path.exists(outputDir + '/fityields_' + dataType + '_' + binningName + '_' + altname + '.root'):
-        print 'Alternative fit ' + altname + ' found'
+for altname in ['bkg', 'sig']:
+    sysshift[altname] = {'ee': {}, 'eg': {}}
+    for binName, cut in fitBins:
+        if os.path.exists(outputDir + '/tpsyst_' + dataType + '_' + altname + '_' + binName + '.root'):
+            print 'Alternative fit ' + altname + ' found'
 
-        sysshift[altname] = {'ee': {}, 'eg': {}}
-
-        source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '_' + altname + '.root')
-        inputTree = source.Get('yields')
-        inputTree.SetBranchAddress('tpconf', vTPconf)
-        inputTree.SetBranchAddress('binName', vBinName)
-        inputTree.SetBranchAddress('nz', vNz)
-        inputTree.SetBranchAddress('toyNumber', vToyNumber)
-
-        iEntry = 0
-        while inputTree.GetEntry(iEntry) > 0:
-            iEntry += 1
-        
-            conf = 'ee' if vTPconf[0] == 0 else 'eg'
-
-            for binName, cut in fitBins:
-                if vBinName.tostring().startswith(binName):
-                    break
-            else:
-                continue
-        
-            sysshift[altname][conf][binName] = vNz[0]
+            source = ROOT.TFile.Open(outputDir + '/tpsyst_' + dataType + '_' + altname + '_' + binName + '.root')
+    
+            sysshift[altname]['ee'][binName] = source.Get('pull_ee').GetMean()
+            sysshift[altname]['eg'][binName] = source.Get('pull_eg').GetMean()
 
 if dataType == 'mc':
     # for mc truth background
@@ -112,7 +96,6 @@ mctruth = []
 
 for iBin, (binName, cut) in enumerate(fitBins):
     stat2 = 0.
-    syst2 = 0.
 
     toydists[binName] = {}
 
@@ -121,10 +104,8 @@ for iBin, (binName, cut) in enumerate(fitBins):
 
         yields[conf].SetBinContent(iBin + 1, nom)
 
+        err2 = 0.
         if toyUncert:
-            if binName != 'pt_160_6500':
-                continue
-
             tvals = toys[conf][binName]
 
             tvals.sort()
@@ -148,24 +129,27 @@ for iBin, (binName, cut) in enumerate(fitBins):
 
             errLow = nom - tvals[int(0.32 * quant)]
             errHigh = tvals[int((len(tvals) - quant) * 0.32) + quant] - nom
-            yields[conf].SetBinError(iBin + 1, (errLow + errHigh) * 0.5)
 
+            err2 += math.pow((errLow + errHigh) * 0.5, 2.)
             stat2 += math.pow((errLow + errHigh) * 0.5 / nom, 2.)
 
         try:
-            sys = sysshift['altsig'][conf][binName] - nom
-            syst2 += math.pow(sys / nom, 2.)
-        except KeyError:
+            err2 += math.pow(max(sysshift['sig'][conf][binName], sysshift['bkg'][conf][binName]) * nom, 2.)
+        except:
             pass
 
-        try:
-            sys = sysshift['altbkg'][conf][binName] - nom
-            syst2 += math.pow(sys / nom, 2.)
-        except KeyError:
-            pass
+        yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
     ratio = yields['eg'].GetBinContent(iBin + 1) / yields['ee'].GetBinContent(iBin + 1)
     frate.SetBinContent(iBin + 1, ratio)
+    syst2 = 0.
+    try:
+        sigshift = (1. + sysshift['sig']['eg'][binName]) / (1. + sysshift['sig']['ee'][binName])
+        bkgshift = (1. + sysshift['bkg']['eg'][binName]) / (1. + sysshift['bkg']['ee'][binName])
+        syst2 = math.pow(max(abs(sigshift - 1.), abs(bkgshift - 1.)), 2.)
+    except:
+        pass
+
     frate.SetBinError(iBin + 1, ratio * math.sqrt(stat2 + syst2))
 
     contents.append(ratio)

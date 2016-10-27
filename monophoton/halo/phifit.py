@@ -18,22 +18,19 @@ from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
 
-from plotstyle import SimpleCanvas
-canvas = SimpleCanvas()
-plotName = 'fit'
-
 # set up a workspace and the main variable
 work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))
 phiset = ROOT.RooArgSet(phi)
 
 # TTree expression
+phimpipi = 'TVector2::Phi_mpi_pi(photons.phi + 0.005)'
 phivar = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.005) - 1.570796)) - 1.570796'
 
 # targnames: sample names for target trees (monoph skim)
 # halonames: sample names for halo templates (can be a photon skim)
-targnames = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
-halonames = ['sph-16b2', 'sph-16b2s', 'sph-16c2', 'sph-16d2']
+targnames = ['sph-16b2', 'sph-16c2', 'sph-16d2']
+halonames = ['sph-16b2', 'sph-16c2', 'sph-16d2']
 targs = [allsamples[sname] for sname in targnames]
 halos = [allsamples[sname] for sname in halonames]
 
@@ -48,10 +45,28 @@ for sample in targs:
     candTree.Add(config.skimDir + '/' + sample.name + '_monoph.root')
 candTree.SetEstimate(candTree.GetEntries() + 1)
 
+# Canvas
+from plotstyle import SimpleCanvas
+canvas = SimpleCanvas(lumi = sum(t.lumi for t in targs))
+plotName = 'fit'
+
 ### fit to halo distribution and parametrize
 
+# draw
+dataTree.Draw(phimpipi + '>>haloTemp(40,-{pi},{pi})'.format(pi = math.pi), 'photons.mipEnergy > 4.9 && photons.isEB && photons.scRawPt > 175. && t1Met.met > 140. && photons.chWorstIso < 1.37 && photons.nhIso < 1.06', 'goff')
+
+haloTemp = ROOT.gDirectory.Get('haloTemp')
+haloTemp.SetLineColor(ROOT.kBlack)
+haloTemp.SetLineWidth(2)
+haloTemp.SetTitle(';#phi\'')
+
+canvas.addHistogram(haloTemp)
+canvas.xtitle = '#phi\''
+canvas.printWeb('monophoton/halo', 'haloTemp', logy = False)
+canvas.Clear()
+
 # first get the halo phi values
-nHalo = dataTree.Draw(phivar, 'photons.mipEnergy > 4.9 && photons.isEB && photons.scRawPt > 175. && t1Met.met > 140. && photons.chWorstIso < 1.37 && photons.nhIso < 1.06', 'goff')
+nHalo = dataTree.Draw(phivar + '>>haloTemp(40,-{pi},{pi})'.format(pi = math.pi), 'photons.mipEnergy > 4.9 && photons.isEB && photons.scRawPt > 175. && t1Met.met > 140. && photons.chWorstIso < 1.37 && photons.nhIso < 1.06', 'goff')
 print nHalo, 'halo events'
 
 # dump them into a RooDataSet
@@ -68,6 +83,16 @@ haloModel = work.factory('SUM::haloModel(fbase[0.1,0.,1.]*base, peak)')
 
 haloModel.fitTo(haloData)
 
+# draw
+frame = phi.frame()
+frame.SetTitle('')
+frame.GetXaxis().SetTitle('#phi\'')
+haloData.plotOn(frame)
+haloModel.plotOn(frame)
+canvas.addHistogram(frame)
+canvas.printWeb('monophoton/halo', 'phiHaloFoldedFit', logy = False)
+canvas.Clear()
+
 # fix the halo template parameters
 leaves = ROOT.RooArgSet()
 haloModel.leafNodeServerList(leaves)
@@ -78,6 +103,24 @@ while True:
         break
 
     leaf.setConstant(True)
+
+### MC flat distribution
+# draw
+mcTree = ROOT.TChain('events')
+mcTree.Add(config.skimDir + '/znng-130_monoph.root')
+mcTree.Draw(phimpipi + '>>mcTemp(40,-{pi},{pi})'.format(pi = math.pi), 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
+
+mcTemp = ROOT.gDirectory.Get('mcTemp')
+mcTemp.SetLineColor(ROOT.kBlack)
+mcTemp.SetLineWidth(2)
+mcTemp.SetTitle(';#phi\'')
+
+lumi = canvas.lumi
+canvas.lumi = -1.
+canvas.addHistogram(mcTemp)
+canvas.printWeb('monophoton/halo', 'mcTemp', logy = False)
+canvas.Clear()
+canvas.lumi = lumi
 
 ### fit to candidates
 
