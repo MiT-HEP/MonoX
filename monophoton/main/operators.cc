@@ -47,6 +47,14 @@ HLTFilter::~HLTFilter()
     delete helper;
 }
 
+void
+HLTFilter::addBranches(TTree&)
+{
+  // not really adding branches, but this is the only function that is called by the selector at each initialization
+  for (auto* h : helpers_)
+    h->reset();
+}
+
 bool
 HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
 {
