@@ -6,6 +6,7 @@
 #include "TLorentzVector.h"
 #include "TROOT.h"
 #include "TEntryListArray.h"
+#include "TEfficiency.h"
 
 #include "TreeEntries_simpletree.h"
 
@@ -13,7 +14,7 @@ class Calculator {
 public:
   Calculator() {}
   void calculate(TTree* _input);
-  double getEfficiency(unsigned iEff);
+  double* getEfficiency(unsigned iEff);
 
   void setMinPhoPt(float minPhoPt) { minPhoPt_ = minPhoPt; }
   void setMaxPhoPt(float maxPhoPt) { maxPhoPt_ = maxPhoPt; }
@@ -40,15 +41,17 @@ private:
 
   unsigned wp_{1};
   
-  const unsigned nSteps{7};
-  double* efficiencies = new double[nSteps+1];
+  const static unsigned nSteps{7};
+  double efficiencies[nSteps+1][3];
+  double temp [3] = {-1., 0., 0.};
   
 };
 
-double
+double*
 Calculator::getEfficiency(unsigned iEff){
-  if (iEff > nSteps)
-    return -1.;
+  if (iEff > nSteps) {
+    return temp;
+  }
   else
     return efficiencies[iEff];
 }
@@ -180,9 +183,18 @@ Calculator::calculate(TTree* _input) {
   printf("nGenPhotons: %f \n", nGenPhotons);
   printf("nMatchedPhotons: %f \n", nMatchedPhotons);
   
-  efficiencies[0] = nMatchedPhotons / nGenPhotons;
+  efficiencies[0][0] = nMatchedPhotons / nGenPhotons;
+  double upper = TEfficiency::ClopperPearson( nGenPhotons, nMatchedPhotons, 0.6827, true);
+  double lower = TEfficiency::ClopperPearson( nGenPhotons, nMatchedPhotons, 0.6827, false);
+  efficiencies[0][1] = upper - efficiencies[0][0];
+  efficiencies[0][2] = efficiencies[0][0] - lower;
+
   for (iReco = 0; iReco != nSteps; ++iReco) {
     printf("nRecoPhotons[%d]: %f \n", iReco, nRecoPhotons[iReco]);
-    efficiencies[iReco+1] = nRecoPhotons[iReco] / nMatchedPhotons;
+    efficiencies[iReco+1][0] = nRecoPhotons[iReco] / nMatchedPhotons;
+    upper = TEfficiency::ClopperPearson( nMatchedPhotons, nRecoPhotons[iReco], 0.6827, true);
+    lower = TEfficiency::ClopperPearson( nMatchedPhotons, nRecoPhotons[iReco], 0.6827, false);
+    efficiencies[iReco+1][1] = upper - efficiencies[iReco+1][0];
+    efficiencies[iReco+1][2] = efficiencies[iReco+1][0] - lower;
   }
 }

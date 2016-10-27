@@ -84,8 +84,9 @@ output = file(filePath, 'w')
 effs= []
 for iEff in range(8):
     eff = calc.getEfficiency(iEff)
-    print iEff, eff
-    output.write("Efficiency %i is %f \n" % (iEff, eff))
+    string = "Efficiency %i is %f +%f -%f \n" % (iEff, eff[0], eff[1], eff[2])
+    print string
+    output.write(string)
 
 output.close()
 
