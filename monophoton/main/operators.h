@@ -9,6 +9,8 @@
 #include "TF1.h"
 #include "TRandom3.h"
 
+#include "TDirectory.h"
+
 //#include "jer.h"
 #include "eventlist.h"
 
@@ -272,14 +274,18 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
-  LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
+ LeptonSelection(char const* name = "LeptonSelection") : Cut(name), zs_("z") {}
 
+  void addBranches(TTree& skimTree) override;
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   unsigned nEl_{0};
   unsigned nMu_{0};
+
+  simpletree::ParticleMCollection zs_;
+  bool zOppSign_{0};
 };
 
 class HighMet : public Cut {
@@ -315,6 +321,27 @@ class HighPtJetSelection : public Cut {
 
   double min_{100.};
 };
+
+class GenParticleSelection : public Cut {
+ public:
+  GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}
+  
+  void setPdgId(unsigned pdgId) { pdgId_ = pdgId; }
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxPt(double maxPt) { maxPt_ = maxPt; }
+  void setMinEta(double minEta) { minEta_ = minEta; }
+  void setMaxEta(double maxEta) { maxEta_ = maxEta; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  
+  unsigned pdgId_{22};
+  double minPt_{140.};
+  double maxPt_{6500.};
+  double minEta_{0.};
+  double maxEta_{5.};
+};
+
 
 class EcalCrackVeto : public Cut {
  public:
@@ -493,6 +520,8 @@ class LeptonRecoil : public Modifier {
   Collection collection_;
   float realMet_;
   float realPhi_;
+  float realMinJetDPhi_{4.};
+  float realPhotonDPhi_{4.};
 };
 
 class MetVariations : public Modifier {
@@ -580,22 +609,27 @@ class IDSFWeight : public Modifier {
     kPt,
     kEta,
     kAbsEta,
+    kNpv,
     nVariables
   };
 
-  IDSFWeight(Object obj, TH1* factors, char const* name = "IDSFWeight") : Modifier(name), object_(obj), factors_(factors) {}
+  IDSFWeight(Object obj, char const* name = "IDSFWeight") : Modifier(name), object_(obj) {}
 
   void addBranches(TTree& skimTree) override;
   void setVariable(Variable, Variable = nVariables);
+  void setNParticles(unsigned _nP) { nParticles_ = _nP; }
+  void addFactor(TH1* factor) { factors_.emplace_back(factor); }
  protected:
+  void applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent);
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
   Object object_;
   Variable variables_[2];
-  TH1* factors_;
-  double weight_;
-  double weightUp_;
-  double weightDown_;
+  unsigned nParticles_{1};
+  std::vector<TH1*> factors_;
+  double weight_{1.};
+  double weightUp_{1.};
+  double weightDown_{1.};
 };
 
 class NPVWeight : public Modifier {

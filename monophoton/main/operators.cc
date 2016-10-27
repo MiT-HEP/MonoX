@@ -615,24 +615,118 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 // LeptonSelection
 //--------------------------------------------------------------------
+void
+LeptonSelection::addBranches(TTree& _skimTree)
+{
+  if ( (nMu_ + nEl_) == 2) {
+    zs_.book(_skimTree);
+    _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
+  }
+}
+
 
 bool
 LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   bool foundTight(false);
 
-  for (auto& electron : _event.electrons) {
-    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
-      foundTight = true;
-    if (electron.loose && electron.pt > 10.)
-      _outEvent.electrons.push_back(electron);
-  }
+  std::vector<simpletree::ParticleCollection*> cols = {
+    &_outEvent.photons
+  };
 
   for (auto& muon : _event.muons) {
     if (nMu_ != 0 && muon.tight && muon.pt > 30.)
       foundTight = true;
+    
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+	if ((*col)[iP].dR2(muon) < 0.25)
+	  break;
+      }
+      if (iP != col->size()) {
+	// there was a matching candidate
+	overlap = true;
+	break;
+      }
+    }
+    
+    if (overlap)
+      continue;
+    
     if (muon.loose && muon.pt > 10.)
       _outEvent.muons.push_back(muon);
+  }
+
+  cols.push_back(&_outEvent.muons);
+
+  for (auto& electron : _event.electrons) {
+    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
+      foundTight = true;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+	if ((*col)[iP].dR2(electron) < 0.25)
+	  break;
+      }
+      if (iP != col->size()) {
+	// there was a matching candidate
+	overlap = true;
+	break;
+      }
+    }
+    
+    if (overlap)
+      continue;
+    
+    if (electron.loose && electron.pt > 10.)
+      _outEvent.electrons.push_back(electron);
+  }
+
+  zs_.clear();
+  simpletree::LorentzVectorM pair;
+  pair.SetCoordinates(0., 0., 0., 0.);
+
+  if (nMu_ == 2) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.muons[0].p4() + _outEvent.muons[1].p4();
+    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.muons[1].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
+  }
+
+  else if (nEl_ == 2) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.electrons[0].p4() + _outEvent.electrons[1].p4();
+    zOppSign_ = ( (_outEvent.electrons[0].positive == _outEvent.electrons[1].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
+  }
+
+  else if (nMu_ == 1 && nEl_ == 1) {
+    // cannot push back here; resize and use the last element
+    zs_.resize(zs_.size() + 1);
+    auto& z(zs_.back());
+    pair = _outEvent.muons[0].p4() + _outEvent.electrons[0].p4();
+    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.electrons[0].positive) ? 0 : 1);
+    
+    z.pt = pair.Pt();
+    z.eta = pair.Eta();
+    z.phi = pair.Phi();
+    z.mass = pair.M();
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
@@ -674,6 +768,30 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 
   return false;
 }
+
+//--------------------------------------------------------------------
+// GenParticleSelection
+//--------------------------------------------------------------------
+
+bool
+GenParticleSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& part : _event.promptFinalStates) {
+    if (std::abs(part.pid) != pdgId_)
+      continue;
+
+    if (std::abs(part.eta) > maxEta_ || std::abs(part.eta) < minEta_ )
+      continue;
+
+    if (part.pt < minPt_ || part.pt > maxPt_)
+      continue;
+    
+    return true;
+  }
+
+  return false;
+}
+
 
 //--------------------------------------------------------------------
 // EcalCrackVeto
@@ -1178,6 +1296,8 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
   _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+  _skimTree.Branch("t1Met.realPhotonDPhi", &realPhotonDPhi_, "realPhotonDPhi/F");
+  _skimTree.Branch("t1Met.realMinJetDPhi", &realMinJetDPhi_, "realMinJetDPhi/F");
 }
 
 void
@@ -1199,6 +1319,26 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
   realMet_ = _event.t1Met.met;
   realPhi_ = _event.t1Met.phi;
 
+  realMinJetDPhi_ = 4.;
+
+  unsigned nJ(0);
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet(_outEvent.jets[iJ]);
+
+    if (jet.pt > 30. && nJ < 4) {
+      ++nJ;
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _event.t1Met.phi)));
+      if (dPhi < realMinJetDPhi_)
+        realMinJetDPhi_ = dPhi;
+    }
+  }
+
+  realPhotonDPhi_ = 4.;
+  
+  if (_outEvent.photons.size() != 0) {
+    realPhotonDPhi_ = std::abs(TVector2::Phi_mpi_pi(_event.t1Met.phi - _event.photons[0].phi));
+  }
+  
   double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
   double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
     
@@ -1452,23 +1592,23 @@ IDSFWeight::setVariable(Variable vx, Variable vy)
 }
 
 void
-IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
   simpletree::Particle const* part(0);
 
   switch (object_) {
   case kPhoton:
-    if (_outEvent.photons.size() != 0)
-      part = &_outEvent.photons.at(0);
+    if (_outEvent.photons.size() > iP)
+      part = &_outEvent.photons.at(iP);
     break;
   case kElectron:
-    if (_outEvent.electrons.size() != 0)
-      part = &_outEvent.electrons.at(0);
+    if (_outEvent.electrons.size() > iP)
+      part = &_outEvent.electrons.at(iP);
     break;
   case kMuon:
-    if (_outEvent.muons.size() != 0)
-      part = &_outEvent.muons.at(0);
+    if (_outEvent.muons.size() > iP)
+      part = &_outEvent.muons.at(iP);
     break;
   default:
     return;
@@ -1487,10 +1627,10 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
     switch (iV) {
     case 0:
-      axis = factors_->GetXaxis();
+      axis = factors_[iP]->GetXaxis();
       break;
     case 1:
-      axis = factors_->GetYaxis();
+      axis = factors_[iP]->GetYaxis();
       break;
     };
 
@@ -1505,6 +1645,12 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
     case kAbsEta:
       iBin = axis->FindFixBin(std::abs(part->eta));
       break;
+    case kNpv:
+      iBin = axis->FindFixBin(_event.npvTrue);
+      if (iBin == 0)
+	iBin = 1;
+      if (iBin > axis->GetNbins())
+	iBin = axis->GetNbins();
     default:
       break;
     }
@@ -1519,13 +1665,36 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
     rowSize *= axis->GetNbins() + 2;
   }
 
-  double weight(factors_->GetBinContent(iCell));
+  double weight(factors_[iP]->GetBinContent(iCell));
+  double error(factors_[iP]->GetBinError(iCell));
 
-  weight_ = weight;
+  weight_ *= weight;
   _outEvent.weight *= weight;
 
-  weightUp_ = 1. + factors_->GetBinError(iCell) / weight;
-  weightDown_ = 1. - factors_->GetBinError(iCell) / weight;
+  double relerror = error / weight;
+
+  /* 
+  if (relerror > 0.5) {
+    printf("relerror %6.4f, weight %6.4f, error %6.4f \n", relerror, weight, error);
+    printf("hist: %s, bin %d \n", factors_[iP]->GetDirectory()->GetName(), iCell);
+  }
+  */
+
+  weightUp_ += relerror;
+  weightDown_ -= relerror;
+}
+
+void
+IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  // not exactly sure why I need to reset these, but it's definitely necessary to get reasonable results
+  weight_ = 1.;
+  weightUp_ = 1.;
+  weightDown_ = 1.;
+    
+  for (unsigned iP(0); iP != nParticles_; iP++) {
+    applyParticle(iP, _event, _outEvent);
+  }
 }
 
 //--------------------------------------------------------------------
