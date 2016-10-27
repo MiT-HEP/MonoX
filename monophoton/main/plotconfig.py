@@ -14,7 +14,7 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] # , 'sph-16b2s']
+photonData = ['sph-16b2', 'sph-16c2', 'sph-16d2']
 photonDataPrescaled = [('sph-16b2-d', 1), ('sph-16c2-d', 1), ('sph-16d2-d', 1)]
 muonData = ['smu-16b2-d', 'smu-16c2-d', 'smu-16d2-d']
 electronData = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
@@ -410,7 +410,7 @@ def getConfig(confName):
             # group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
-        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
+#        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
         config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
 
@@ -492,11 +492,11 @@ def getConfig(confName):
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], cut = 'photons.scRawPt[0] < 400.', unit = 'GeV', overflow = True),
-            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV', logy = False, ymax = 0.5),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV', logy = False, ymax = 1.),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), applyFullSel = True),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), applyFullSel = True, logy = False, ymax = 20.),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -1., 1.), applyBaseline = False, applyFullSel = True, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5', logy = False, ymax = 20.),
-            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (11, 40., 150.), applyFullSel = True, unit = 'GeV', logy = False, ymax = 0.6),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (11, 40., 150.), applyFullSel = True, unit = 'GeV', logy = False, ymax = 1.),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), applyFullSel = True, logy = False, ymax = 20.),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), applyFullSel = True),
             VariableDef('jetPt', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 800.), cut = 'jets.size != 0', applyFullSel = True, unit = 'GeV'),
