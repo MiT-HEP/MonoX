@@ -60,8 +60,8 @@ mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + [
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = allsamples['sph-16b2'].lumi + allsamples['sph-16b2s'].lumi
-haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16b2s'] ]
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b2', 'sph-16c2', 'sph-16d2'])
+haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16c2', 'sph-16d2'] ]
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
 neroHaloNorms = [ 1.54 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
@@ -106,12 +106,14 @@ selectors = {
                             ,('haloUp', selectors.haloCSC(haloNorms[0]))
                             ,('haloDown', selectors.haloSieie(haloNorms[0]))
                              ],
-    'sph-16b2s': data_sph + [('halo', selectors.haloMIP(4*haloNorms[1]))
-                            ,('haloUp', selectors.haloCSC(4*haloNorms[1]))
-                            ,('haloDown', selectors.haloSieie(4*haloNorms[1]))
+    'sph-16c2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
+                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
                              ],
-    'sph-16c2': data_sph,
-    'sph-16d2': data_sph,
+    'sph-16d2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
+                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
+                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
+                             ],
     'smu-16b2': data_smu,
     'smu-16c2': data_smu,
     # 'smu-16d2': data_smu,
@@ -338,7 +340,7 @@ if __name__ == '__main__':
                 """
                 
                 filesList = [ line for line in listFiles.stdout if line.endswith('.root\n') ] 
-                pathPrefix = 'root:://eoscms'
+                pathPrefix = 'root://eoscms'
             else:
                 filesList = sorted(glob(sourceDir + '/*.root'))
                 
