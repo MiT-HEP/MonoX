@@ -558,7 +558,139 @@ class SimpleCanvas(object):
             selFile.write(self.selection)
             selFile.close()
 
+class Normalizer(object):
+    """
+    Helper class for normalizing histograms and graphs against histograms, graphs, or functions.
+    See the RatioCanvas docstring for details.
+    """
+
+    def __init__(self, normObj):
+        if not normObj.InheritsFrom(ROOT.TH1.Class()) and \
+                not normObj.InheritsFrom(ROOT.TGraph.Class()) and \
+                not normObj.InheritsFrom(ROOT.TF1.Class()):
+            raise RuntimeError('Cannot normalize with ' + str(normObj))
+
+        self._normObj = normObj
+
+    def normalize(self, obj, name):
+        if obj.InheritsFrom(ROOT.TH1.Class()):
+            # normalizing a TH1
+
+            targ = obj.Clone(name)
+            targAxis = targ.GetXaxis()
+
+            if self._normObj.InheritsFrom(ROOT.TH1.Class()):
+                # base is TH1 -> check axis consistency
+                normAxis = self._normObj.GetXaxis()
+
+                if not ROOT.TMath.AreEqualRel(normAxis.GetXmin(), targAxis.GetXmin(), 1.e-12):
+                    raise RuntimeError('Inconsistent axes')
+                if not ROOT.TMath.AreEqualRel(normAxis.GetXmax(), targAxis.GetXmax(), 1.e-12):
+                    raise RuntimeError('Inconsistent axes')
+
+                for iX in range(1, normAxis.GetNbins() + 1):
+                    if not ROOT.TMath.AreEqualRel(normAxis.GetBinLowEdge(iX), targAxis.GetBinLowEdge(iX), 1.e-12):
+                        raise RuntimeError('Inconsistent axes')
+                    if not ROOT.TMath.AreEqualRel(normAxis.GetBinUpEdge(iX), targAxis.GetBinUpEdge(iX), 1.e-12):
+                        raise RuntimeError('Inconsistent axes')
+
+            for iX in range(1, targAxis.GetNbins() + 1):
+                if self._normObj.InheritsFrom(ROOT.TH1.Class()):
+                    # base is TH1 -> bin-by-bin norm
+                    norm = self._normObj.GetBinContent(iX)
+
+                elif self._normObj.InheritsFrom(ROOT.TGraph.Class()):
+                    # base is TGraph -> find a point in the bin
+                    pnorm = -1
+                    for iP in range(self._normObj.GetN()):
+                        x = self._normObj.GetX()[iP]
+                        if x >= targAxis.GetBinLowEdge(iX) and x < targAxis.GetBinUpEdge(iX):
+                            if pnorm != -1:
+                                # there is already a matching point!
+                                raise RuntimeError('Multiple graph points in bin ' + str(iX))
+
+                            pnorm = iP
+
+                    if pnorm == -1:
+                        raise RuntimeError('No graph point in bin ' + str(iX))
+
+                    norm = self._normObj.GetY()[pnorm]
+
+                elif self._normObj.InheritsFrom(ROOT.TF1.Class()):
+                    norm = self._normObj.Integral(targAxis.GetBinLowEdge(iX), targAxis.GetBinUpEdge(iX))
+
+                if norm != 0.:
+                    scale = 1. / norm
+                else:
+                    scale = 0.
+
+                targ.SetBinContent(iX, targ.GetBinContent(iX) * scale)
+                targ.SetBinError(iX, targ.GetBinError(iX) * scale)
+
+        elif obj.InheritsFrom(ROOT.TGraph.Class()):
+            targ = obj.Clone(name)
+
+            for iP in range(targ.GetN()):
+                x = targ.GetX()[iP]
+
+                if self._normObj.InheritsFrom(ROOT.TH1.Class()):
+                    iX = self._normObj.FindFixBin(x)
+                    norm = self._normObj.GetBinContent(iX)
+
+                elif self._normObj.InheritsFrom(ROOT.TGraph.Class()):
+                    if not ROOT.TMath.AreEqualRel(x, self._normObj.GetX()[iP], 1.e-12):
+                        raise RuntimeError('X values do not match')
+
+                    norm = self._normObj.GetY()[iP]
+
+                elif self._normObj.InheritsFrom(ROOT.TF1.Class()):
+                    norm = self._normObj.Eval(x)
+
+                if norm != 0.:
+                    scale = 1. / norm
+                else:
+                    scale = 0.
+
+                targ.SetPoint(iP, x, targ.GetY()[iP] * scale)
+                if targ.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                    targ.SetPointEYlow(iP, targ.GetErrorYlow(iP) * scale)
+                    targ.SetPointEYhigh(iP, targ.GetErrorYhigh(iP) * scale)
+                elif targ.InheritsFrom(ROOT.TGraphErrors.Class()):
+                    targ.SetPointError(iP, targ.GetErrorX(iP), targ.GetErrorY(iP) * scale)
+
+        elif obj.InheritsFrom(ROOT.TF1.Class()):
+            raise RuntimeError('Not implemented')
+
+        else:
+            raise RuntimeError('Cannot normalize ' + str(obj))
+
+        return targ
+
+
 class RatioCanvas(SimpleCanvas):
+    """
+    Canvas with a ratio panel at the bottom. Can plot TH1, TGraph, and TF1.
+    By default the "base" of the ratio plot is the first object to be added to the canvas.
+    This behavior can be changed by passing the argument rList to Update(). The content of the
+    list should be the histogram indices to be included in the ratio plot, and the first element
+    will be used as the base.
+
+    Ratio computation depends on the combination of base and target objects to be plotted:
+                         TH1 Target    TGraph Target          TF1 Target
+    TH1 Base   :    content/content        y/content     (value/content)
+    TGraph Base:          content/y              y/y           (value/y)
+    TF1 Base   : content*w/integral          y/value       (value/value)
+
+    In other words, all objects are assumed to represent "differential" values. For example
+    for TH1, this means the bin contents must be width-normalized number of events.
+    TH1/TH1 combination is allowed only for histograms with matching bin boundaries.
+    Similarly, TGraph/TGraph combination works only when abscissa (x) values align.
+    TF1 target case is not implemented.
+
+    Error bars in the ratio plot receive identical normalization to y values.
+
+    Normalized values are set to 0 if the denominator is 0.
+    """
 
     PLOT_YMIN = 0.32
     PLOT_YMAX = SimpleCanvas.YMAX
@@ -653,74 +785,6 @@ class RatioCanvas(SimpleCanvas):
         self.ratioPad.cd()
         self.ratioPad.SetLogx(logx)
 
-        # set later depending on what rbase is
-        norm = None
-
-        def getNorm(key1, key2 = None):
-            if key2 is None:
-                if type(norm) is not dict:
-                    raise RuntimeError('Cannot find normalization with a single key')
-
-                minDist = -1.
-                minN = 0.
-                for key, n in norm.items():
-                    if type(key) is tuple:
-                        if key1 >= key[0] and key1 <= key[1]:
-                            return n
-                    else:
-                        d = abs(key - key1)
-                        if minDist < 0. or d < minDist:
-                            minDist = d
-                            minN = n
-
-                return minN
-
-            else:
-                if type(norm) is dict:
-                    for edges, n in norm.items():
-                        if abs(key1 - edges[0]) < 1.e-5 and abs(key2 - edges[1]) < 1.e-5:
-                            return n
-                    else:
-                        raise RuntimeError('Bin edges not found')
-
-                else:
-                    return norm(key1, key2)
-
-        def normalize(obj):
-            if obj.InheritsFrom(ROOT.TH1.Class()):
-                axis = obj.GetXaxis()
-                for iX in range(1, obj.GetNbinsX() + 1):
-                    n = getNorm(axis.GetBinLowEdge(iX), axis.GetBinUpEdge(iX))
-                    if n > 0.:
-                        obj.SetBinError(iX, obj.GetBinError(iX) / n)
-                        obj.SetBinContent(iX, obj.GetBinContent(iX) / n)
-                    else:
-                        obj.SetBinError(iX, 0.)
-                        obj.SetBinContent(iX, 0.)
-
-            elif obj.InheritsFrom(ROOT.TGraph.Class()):
-                for iP in range(0, obj.GetN()):
-                    x = obj.GetX()[iP]
-                    n = getNorm(x)
-                    if n > 0.:
-                        if obj.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
-                            obj.SetPointEYlow(iP, obj.GetErrorYlow(iP) / n)
-                            obj.SetPointEYhigh(iP, obj.GetErrorYhigh(iP) / n)
-                        elif obj.InheritsFrom(ROOT.TGraphErrors.Class()):
-                            obj.SetPointError(iP, obj.GetErrorX(iP), obj.GetErrorY(iP) / n)
-
-                        obj.SetPoint(iP, x, obj.GetY()[iP] / n)
-
-                    else:
-                        if obj.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
-                            obj.SetPointEYlow(iP, 0.)
-                            obj.SetPointEYhigh(iP, 0.)
-                        elif obj.InheritsFrom(ROOT.TGraphErrors.Class()):
-                            obj.SetPointError(iP, obj.GetErrorX(iP), 0.)
-
-                        obj.SetPoint(iP, x, 0.)
-                        
-
         # list of ratio histograms
         if len(rList) == 0:
             rList = list(hList)
@@ -733,20 +797,7 @@ class RatioCanvas(SimpleCanvas):
             rbase.SetMinimum()
             self._temporaries.append(rbase)
 
-            if rbase.InheritsFrom(ROOT.TF1.Class()):
-                norm = lambda binlow, binhigh: rbase.Integral(binlow, binhigh)
-
-            else:
-                norm = {}
-
-                if rbase.InheritsFrom(ROOT.TH1.Class()):
-                    axis = rbase.GetXaxis()
-                    for iX in range(1, rbase.GetNbinsX() + 1):
-                        norm[(axis.GetBinLowEdge(iX), axis.GetBinUpEdge(iX))] = rbase.GetBinContent(iX)
-
-                elif rbase.InheritsFrom(ROOT.TGraph.Class()):
-                    for iP in range(0, rbase.GetN()):
-                        norm[rbase.GetX()[iP]] = rbase.GetY()[iP]
+            normalizer = Normalizer(rbase)
 
             rframe = ROOT.TH1F('rframe', '', 1, rbase.GetXaxis().GetXmin(), rbase.GetXaxis().GetXmax())
             rframe.SetMinimum(self.rlimits[0])
@@ -769,22 +820,23 @@ class RatioCanvas(SimpleCanvas):
                 hist = self._histograms[ir]
    
                 self._hStore.cd()
-                if hist.useRooHist:
-                    ratio = ROOT.TGraphAsymmErrors(hist.GetNbinsX())
-                else:
-                    ratio = hist.Clone('ratio_' + hist.GetName())
 
+                try:
+                    obj = rooHists[hist]
+                except KeyError:
+                    obj = hist
+
+                ratio = normalizer.normalize(obj, 'ratio_' + hist.GetName())
                 ratio.SetTitle('')
+
                 self._temporaries.append(ratio)
 
-                normalize(ratio)
-
                 if ratio.InheritsFrom(ROOT.TGraph.Class()):
-                    ratio.Draw(ratio.drawOpt + 'Z')
+                    ratio.Draw(hist.drawOpt + 'Z')
                 else:
-                    ratio.Draw(ratio.drawOpt + ' SAME')
+                    ratio.Draw(hist.drawOpt + ' SAME')
 
-                if 'P' in ratio.drawOpt or ratio.InheritsFrom(ROOT.TGraph.Class()):
+                if 'P' in hist.drawOpt or ratio.InheritsFrom(ROOT.TGraph.Class()):
                     # draw arrows and error bars for over and undershoots
                     rmed = (self.rlimits[0] + self.rlimits[1]) * 0.5
                     extrema = []
