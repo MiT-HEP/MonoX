@@ -55,6 +55,9 @@ if not args.list:
             return
     
         gr = source.Get('ProcessedRunsLumis')
+        if not gr:
+            print path, 'is corrupted'
+            sys.exit(1)
     
         for iP in range(gr.GetN()):
             run = int(gr.GetX()[iP])
