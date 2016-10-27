@@ -20,10 +20,9 @@ smu-16b2-d       "SingleMuon (2016B)"                5929.6               700000
 smu-16c2-d       "SingleMuon (2016C)"                2608.1               7000000    -                    nero160723/SingleMuon SingleMuon-2016C-v2
 smu-16d2-d       "SingleMuon (2016D)"                4329.6               7000000    -                    nero160723/SingleMuon SingleMuon-2016D-v2
 ### simpletree
-sph-16b2         "SinglePhoton (2016B)"              2097.4               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
-sph-16b2s        "SinglePhoton (2016B)"              3467.0               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
-sph-16c2         "SinglePhoton (2016C)"              2016.7               16276689   -                    filefi/045           SinglePhoton+Run2016C-PromptReco-v2+AOD
-sph-16d2         "SinglePhoton (2016D)"              2438.0               17230454   -                    filefi/045           SinglePhoton+Run2016D-PromptReco-v2+AOD
+sph-16b2         "SinglePhoton (2016B)"              5836.1               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
+sph-16c2         "SinglePhoton (2016C)"              2621.5               16276689   -                    filefi/045           SinglePhoton+Run2016C-PromptReco-v2+AOD
+sph-16d2         "SinglePhoton (2016D)"              4401.2               17230454   -                    filefi/045           SinglePhoton+Run2016D-PromptReco-v2+AOD
 sel-16b2         "SingleElectron (2016B)"            2055.8               83278806   -                    filefi/045           SingleElectron+Run2016B-PromptReco-v2+AOD
 sel-16c2         "SingleElectron (2016C)"            889.6                31906093   -                    filefi/045           SingleElectron+Run2016C-PromptReco-v2+AOD
 sel-16d2         "SingleElectron (2016D)"            527.3                17641747   -                    filefi/045           SingleElectron+Run2016D-PromptReco-v2+AOD
