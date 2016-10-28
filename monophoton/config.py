@@ -4,8 +4,8 @@ skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
 histDir = '/scratch5/ballen/hist/monophoton'
 ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
 # ntuplesDir = '/scratch5/ballen/hist/'
-dataNtuplesDir = ntuplesDir # '/scratch5/ballen/hist/'
-photonSkimDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
+dataNtuplesDir = '/scratch5/ballen/hist/'
+photonSkimDir = '/blah' # '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
 # lxplus set up
 """
 skimDir = '/afs/cern.ch/work/b/ballen/hist/monophoton/skim/2016'
