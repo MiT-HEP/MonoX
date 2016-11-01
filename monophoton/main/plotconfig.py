@@ -14,7 +14,7 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b2', 'sph-16c2', 'sph-16d2']
+photonData = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
 photonDataPrescaled = [('sph-16b2-d', 1), ('sph-16c2-d', 1), ('sph-16d2-d', 1)]
 muonData = ['smu-16b2-d', 'smu-16c2-d', 'smu-16d2-d']
 electronData = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
@@ -22,7 +22,7 @@ electronData = ['sel-16b2-d', 'sel-16c2-d', 'sel-16d2-d']
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
         
-ichepAnalysisPtBinning = [175., 190., 250., 400., 700., 1000.]
+# combinedFitPtBinning = [175., 190., 250., 400., 700., 1000.]
 # combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
 combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 800., 1000.0]
 
@@ -46,9 +46,9 @@ def getConfig(confName):
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-             SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-             SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
-             SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
+            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
+            SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
@@ -56,7 +56,7 @@ def getConfig(confName):
             # GroupSpec('ttg', 'tt#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('tg', 't#gamma', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('zllg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('wlnu', 'W#rightarrow#mu#nu, W#rightarrow#tau#nu', samples = ['wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('wlnu', 'W#rightarrow#mu#nu, W#rightarrow#tau#nu', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('gg-80', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
