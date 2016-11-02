@@ -34,7 +34,7 @@ def getConfig(confName):
         for sname, prescale in photonDataPrescaled:
             config.addObs(sname, prescale = prescale)
 
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
+        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0'
         config.fullSelection = 't1Met.met > 170.'
         config.sigGroups = [
 #            GroupSpec('add', 'ADD', samples = ['add-*']),
@@ -53,12 +53,12 @@ def getConfig(confName):
         ]
         config.bkgGroups = [
             # GroupSpec('spike', 'Spikes', count = 26.8, color = None),
-            # GroupSpec('ttg', 'tt#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('tg', 't#gamma', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('ttG', 'tt#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('tG', 't#gamma', samples = ['tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('zllg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('wlnu', 'W#rightarrow#mu#nu, W#rightarrow#tau#nu', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('gg-80', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -141,7 +141,7 @@ def getConfig(confName):
 
         # Specific systematic variations
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.69))
-        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'halo')))
+        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'halo')))
         # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
@@ -255,7 +255,7 @@ def getConfig(confName):
         print 'blah'
 
         config = PlotConfig('dimu', muonData)
-        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -329,7 +329,7 @@ def getConfig(confName):
         dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
         config = PlotConfig('diel', electronData)
-        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -406,7 +406,7 @@ def getConfig(confName):
         mt = 'TMath::Sqrt(2. * t1Met.realMet * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.realPhi - muons.phi[0]))))'
 
         config = PlotConfig('monomu', muonData)
-        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160.' # met is the recoil, mt cut to synch with monoel region
+        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160. && Sum$(jets.cisv > 0.800) == 0' # met is the recoil, mt cut to synch with monoel region
 
         config.fullSelection = ''
         config.bkgGroups = [
@@ -487,7 +487,7 @@ def getConfig(confName):
         mt = 'TMath::Sqrt(2. * t1Met.realMet * electrons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.realPhi - electrons.phi[0]))))'
 
         config = PlotConfig('monoel', electronData)
-        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && t1Met.realMet > 50. && ' + mt + ' < 160.' # met is the recoil, real MET cut to reject QCD, mt cut to reject QCD
+        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && t1Met.realMet > 50. && ' + mt + ' < 160. && Sum$(jets.cisv > 0.800) == 0' # met is the recoil, real MET cut to reject QCD, mt cut to reject QCD
 
         config.fullSelection = ''
         config.bkgGroups = [
