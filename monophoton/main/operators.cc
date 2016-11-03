@@ -424,6 +424,57 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 }
 
 //--------------------------------------------------------------------
+// BjetVeto
+//--------------------------------------------------------------------
+void
+BjetVeto::addBranches(TTree& _skimTree)
+{
+  bjets_.book(_skimTree);
+}
+
+bool
+BjetVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
+
+  simpletree::ParticleCollection* cols[] = {
+    &_outEvent.photons,
+    &_outEvent.muons,
+    &_outEvent.electrons,
+    &_outEvent.taus
+  };
+
+  bjets_.clear();
+  bool hasNonOverlapping(false);
+  for (unsigned iB(0); iB != _event.jets.size(); ++iB) {
+    auto& jet(_event.jets[iB]);
+    if (jet.cisv < 0.800 || jet.pt < 20.)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(jet) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was a matching candidate
+        overlap = true;
+        break;
+      }
+    }
+    
+    if (!overlap) { 
+      bjets_.push_back(jet);
+      hasNonOverlapping = true;
+    }
+  }
+
+  return !hasNonOverlapping;
+}
+
+//--------------------------------------------------------------------
 // PhotonMetDPhi
 //--------------------------------------------------------------------
 

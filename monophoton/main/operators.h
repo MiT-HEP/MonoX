@@ -212,6 +212,17 @@ class TauVeto : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 };
 
+class BjetVeto : public Cut {
+ public:
+  BjetVeto(char const* name = "BjetVeto") : Cut(name), bjets_("bjets") {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  simpletree::JetCollection bjets_;
+};
+
 class MetVariations; // defined below
 class JetCleaning; // defined below
 
