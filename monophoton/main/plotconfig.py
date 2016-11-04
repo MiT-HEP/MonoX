@@ -26,6 +26,8 @@ mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(p
 # combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
 combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 800., 1000.0]
 
+baseSel = 'photons.scRawPt[0] > 175. && t1Met.met > 170 && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5' #  && bjets.size == 0'
+
 def getConfig(confName):
 
     if confName == 'monoph':
@@ -34,8 +36,8 @@ def getConfig(confName):
         for sname, prescale in photonDataPrescaled:
             config.addObs(sname, prescale = prescale)
 
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0'
-        config.fullSelection = 't1Met.met > 170.'
+        config.baseline = baseSel
+        config.fullSelection = ''
         config.sigGroups = [
 #            GroupSpec('add', 'ADD', samples = ['add-*']),
             GroupSpec('dmv', 'DM V', samples = ['dmv-*']),
@@ -46,9 +48,9 @@ def getConfig(confName):
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-            SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
-            SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
+            # SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            # SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
+            # SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
@@ -61,6 +63,7 @@ def getConfig(confName):
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('spike', 'Spikes', samples = photonData, region = 'spikeSieie', color = ROOT.TColor.GetColor(0xff, 0xff, 0xff)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -142,7 +145,7 @@ def getConfig(confName):
         # Specific systematic variations
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.69))
         # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'halo')))
-        # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
+        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.79))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 0.079))
@@ -255,7 +258,7 @@ def getConfig(confName):
         print 'blah'
 
         config = PlotConfig('dimu', muonData)
-        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && z.oppSign && z.mass[0] > 60. && z.mass[0] < 120.'  # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -329,7 +332,7 @@ def getConfig(confName):
         dR2_01 = 'TMath::Power(photons.eta[0] - electrons.eta[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi[0] - electrons.phi[1]), 2.)'
 
         config = PlotConfig('diel', electronData)
-        config.baseline = 'z.oppSign && z.mass[0] > 60. && z.mass[0] < 120. && photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && Sum$(jets.cisv > 0.800) == 0' # met is the recoil (Operator LeptonRecoil)
+        config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && z.oppSign && z.mass[0] > 60. && z.mass[0] < 120.' # met is the recoil (Operator LeptonRecoil)
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
@@ -406,7 +409,7 @@ def getConfig(confName):
         mt = 'TMath::Sqrt(2. * t1Met.realMet * muons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.realPhi - muons.phi[0]))))'
 
         config = PlotConfig('monomu', muonData)
-        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160. && Sum$(jets.cisv > 0.800) == 0' # met is the recoil, mt cut to synch with monoel region
+        config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && ' + mt + ' < 160.' # met is the recoil, mt cut to synch with monoel region
 
         config.fullSelection = ''
         config.bkgGroups = [
@@ -487,7 +490,7 @@ def getConfig(confName):
         mt = 'TMath::Sqrt(2. * t1Met.realMet * electrons.pt[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.realPhi - electrons.phi[0]))))'
 
         config = PlotConfig('monoel', electronData)
-        config.baseline = 'photons.medium[0] && photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5 && t1Met.realMet > 50. && ' + mt + ' < 160. && Sum$(jets.cisv > 0.800) == 0' # met is the recoil, real MET cut to reject QCD, mt cut to reject QCD
+        config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && ' + mt + ' < 160. && t1Met.realMet > 50.' # met is the recoil, real MET cut to reject QCD, mt cut to reject QCD
 
         config.fullSelection = ''
         config.bkgGroups = [

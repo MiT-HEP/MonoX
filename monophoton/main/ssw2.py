@@ -55,7 +55,7 @@ mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
 mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
 #mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
 #mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
-mc_gj = [(region, selectors.kfactor(defaults[region])) for region in mc_qcd]
+mc_gj = [(region, selectors.kfactor(defaults[region])) for region in  mc_qcd + mc_cand]
 mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu', 'zmmJets', 'zeeJets']
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
@@ -64,8 +64,10 @@ sphLumi = sum(allsamples[s].lumi for s in ['sph-16b2', 'sph-16c2', 'sph-16d2'])
 haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16c2', 'sph-16d2'] ]
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
-neroHaloNorms = [ 1.54 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
-neroSpikeNorms = [ 1. * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
+print neroSphLumi
+neroHaloNorms = [ 5.5 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
+print neroHaloNorms
+neroSpikeNorms = [ 8.5 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
 selectors = {
     # Data 2016

@@ -315,7 +315,7 @@ def purityBase(sample, selector):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
-        'BjetVeto'
+        'BjetVeto',
         'JetCleaning',
         'HighPtJetSelection',
         'CopyMet'
