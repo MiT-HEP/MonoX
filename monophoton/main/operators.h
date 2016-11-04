@@ -524,6 +524,7 @@ class LeptonRecoil : public Modifier {
   LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
   void addBranches(TTree& skimTree) override;
 
+  void setMetVariations(MetVariations* v) { metVar_ = v; }
   void setCollection(Collection col) { collection_ = col; }
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
@@ -531,8 +532,13 @@ class LeptonRecoil : public Modifier {
   Collection collection_;
   float realMet_;
   float realPhi_;
-  float realMinJetDPhi_{4.};
   float realPhotonDPhi_{4.};
+  float realMinJetDPhi_{4.};
+  float realMinJetDPhiJECUp_{4.};
+  float realMinJetDPhiJECDown_{4.};
+  float realMinJetDPhiGECUp_{4.};
+  float realMinJetDPhiGECDown_{4.};
+  MetVariations* metVar_{0};
 };
 
 class MetVariations : public Modifier {

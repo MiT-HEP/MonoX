@@ -722,6 +722,9 @@ def leptonBase(sample, selector):
         metVar = selector.findOperator('MetVariations')
         jetClean = selector.findOperator('JetCleaning')
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+
+        leptonRecoil =  selector.findOperator('LeptonRecoil')
+        leptonRecoil.setMetVariations(metVar)
         
         photonDPhi = selector.findOperator('PhotonMetDPhi')
         photonDPhi.setMetVariations(metVar)

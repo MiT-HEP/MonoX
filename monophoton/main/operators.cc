@@ -1349,6 +1349,10 @@ LeptonRecoil::addBranches(TTree& _skimTree)
   _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
   _skimTree.Branch("t1Met.realPhotonDPhi", &realPhotonDPhi_, "realPhotonDPhi/F");
   _skimTree.Branch("t1Met.realMinJetDPhi", &realMinJetDPhi_, "realMinJetDPhi/F");
+  _skimTree.Branch("t1Met.realMinJetDPhiJECUp", &realMinJetDPhiJECUp_, "realMinJetDPhiJECUp/F");
+  _skimTree.Branch("t1Met.realMinJetDPhiJECDown", &realMinJetDPhiJECDown_, "realMinJetDPhiJECDown/F");
+  _skimTree.Branch("t1Met.realMinJetDPhiGECUp", &realMinJetDPhiGECUp_, "realMinJetDPhiGECUp/F");
+  _skimTree.Branch("t1Met.realMinJetDPhiGECDown", &realMinJetDPhiGECDown_, "realMinJetDPhiGECDown/F");
 }
 
 void
@@ -1371,8 +1375,16 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
   realPhi_ = _event.t1Met.phi;
 
   realMinJetDPhi_ = 4.;
+  realMinJetDPhiJECUp_ = 4.;
+  realMinJetDPhiJECDown_ = 4.;
+  realMinJetDPhiGECUp_ = 4.;
+  realMinJetDPhiGECDown_ = 4.;
+
 
   unsigned nJ(0);
+  unsigned nJCorrUp(0);
+  unsigned nJCorrDown(0);
+
   for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
     auto& jet(_outEvent.jets[iJ]);
 
@@ -1381,6 +1393,32 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _event.t1Met.phi)));
       if (dPhi < realMinJetDPhi_)
         realMinJetDPhi_ = dPhi;
+
+      if (metVar_) {
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecUp().Phi()));
+        if (dPhi < realMinJetDPhiGECUp_)
+          realMinJetDPhiGECUp_ = dPhi;
+	
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecDown().Phi()));
+        if (dPhi < realMinJetDPhiGECDown_)
+          realMinJetDPhiGECDown_ = dPhi;	
+      }
+    }
+    
+    if (metVar_) {
+      if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
+        ++nJCorrUp;
+        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrUp)));
+        if (dPhi < realMinJetDPhiJECUp_)
+          realMinJetDPhiJECUp_ = dPhi;
+      }
+      
+      if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
+        ++nJCorrDown;
+        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrDown)));
+        if (dPhi < realMinJetDPhiJECDown_)
+          realMinJetDPhiJECDown_ = dPhi;
+      }
     }
   }
 
