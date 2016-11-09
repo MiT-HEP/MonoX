@@ -4,7 +4,9 @@
 #include "TTree.h"
 #include "TLeaf.h"
 
+#ifdef NERO
 #include "NeroToSimple.h"
+#endif
 
 #include "GoodLumiFilter.h"
 
@@ -28,6 +30,13 @@ private:
   bool useLumiFilter_ = false;
 };
 
+#ifndef NERO
+class NeroToSimple {
+public:
+  void translate() {}
+};
+#endif
+
 void
 Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, long _nEntries/* = -1*/, bool _neroInput)
 {
@@ -40,6 +49,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   NeroToSimple* translator(0);
   if (_neroInput) {
+#ifdef NERO
     std::cout << "Setting up translator" << std::endl;
     translator = new NeroToSimple(*_input, event);
     _input->LoadTree(0);
@@ -56,6 +66,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
       translator->setTriggerNames(triggerNames->GetTitle());
     }
     std::cout << "Translator set up" << std::endl;
+#endif
   }
   else {
     event.setAddress(*_input, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
