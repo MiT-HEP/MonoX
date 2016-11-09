@@ -42,7 +42,7 @@ defaults = {
 }
 
 data_15 = []
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', ('dimu', selectors.dimuonSPh), ('diel', selectors.dielectronSPh), ('monomu', selectors.monomuonSPh), ('monoel', selectors.monoelectron) ]
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets']
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets']
 mc_cand = ['monoph']
