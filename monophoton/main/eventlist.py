@@ -10,13 +10,14 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-snames = sys.argv[1:]
+region = sys.argv[1] 
+snames = sys.argv[2:]
 data = True
 
 tree = ROOT.TChain('cutflow')
 for sr in snames:
-    tree.Add(config.skimDir + '/' + sr + '.root')
-    sname = sr[:sr.rfind('_')]
+    tree.Add(config.skimDir + '/' + sr + '_' + region + '.root')
+    sname = sr 
     sample = allsamples[sname]
 
     data = sample.data
@@ -35,14 +36,23 @@ if data:
     cuts += ['HLT_Photon165_HE10', 'MetFilters']
     # cuts += [ 'MetFilters']
 
+
+
 cuts += [
     'PhotonSelection',
     'HighMet',
     'PhotonMetDPhi',
-    'MuonVeto',
-    'ElectronVeto',
-    'JetMetDPhi'
-]
+    'JetMetDPhi',
+    ]
+
+if region == 'monoph':
+    cuts += [ 
+        'MuonVeto',
+        'ElectronVeto',
+        ]
+elif region in ['dimu', 'diel', 'monomu', 'monoel']:
+    cuts += [ 'LeptonSelection' ]
+    
 
 tree.Draw('>>elist', ' && '.join(cuts), 'entrylist')
 elist = ROOT.gDirectory.Get('elist')
@@ -64,6 +74,8 @@ while True:
 
 evlist.sort()
 
-with open('events_' + '+'.join(snames) + '.list', 'w') as output:
+print len(evlist)
+
+with open('events_' + region + '_' + '+'.join(snames) + '.list', 'w') as output:
     for tup in evlist:
         output.write('%d:%d:%d\n' % tup)

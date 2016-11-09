@@ -292,6 +292,8 @@ NormalizingSelector::finalize()
   double weight(0.);
   trueSkim->SetBranchAddress("weight", &weight);
 
+  printf("check time. \n norm_ = %.2f \n sumW  = %.2f \n", norm_, sumW);
+
   long iEntry(0);
   while (skimOut_->GetEntry(iEntry++)) {
     weight = norm_ / sumW * outEvent_.weight;

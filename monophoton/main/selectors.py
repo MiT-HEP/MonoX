@@ -118,6 +118,7 @@ def monophotonBase(sample, selector):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
+        'BjetVeto',
         'JetCleaning',
         'CopyMet'
     ]
@@ -166,6 +167,7 @@ def monophotonBase(sample, selector):
         selector.addOperator(trigCorr)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
@@ -313,6 +315,7 @@ def purityBase(sample, selector):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
+        'BjetVeto',
         'JetCleaning',
         'HighPtJetSelection',
         'CopyMet'
@@ -335,6 +338,7 @@ def purityBase(sample, selector):
 
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
@@ -697,6 +701,7 @@ def leptonBase(sample, selector):
         'PhotonSelection',
         'LeptonSelection',
         'TauVeto',
+        'BjetVeto',
         'JetCleaning',
         'LeptonRecoil',
         ]
@@ -717,6 +722,9 @@ def leptonBase(sample, selector):
         metVar = selector.findOperator('MetVariations')
         jetClean = selector.findOperator('JetCleaning')
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+
+        leptonRecoil =  selector.findOperator('LeptonRecoil')
+        leptonRecoil.setMetVariations(metVar)
         
         photonDPhi = selector.findOperator('PhotonMetDPhi')
         photonDPhi.setMetVariations(metVar)
@@ -741,6 +749,7 @@ def leptonBase(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
@@ -752,7 +761,8 @@ def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
+
     return selector
 
 def muonBase(sample, selector):
@@ -760,8 +770,7 @@ def muonBase(sample, selector):
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
 
     if sample.data:
-        # for MC apply inefficiency depending on the number of muons
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
 
     return selector
 
@@ -858,15 +867,6 @@ def monomuon(sample, selector):
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
-
-    """
-    # single muon trigger efficiency ~ 90%
-    selector.addOperator(ROOT.ConstantWeight(0.9))
-    trackscale = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'muonTrigSF')
-    trackscale.addFactor(muonTrigSF)
-    trackscale.setVariable(ROOT.IDSFWeight.kEta)
-    selector.addOperator(trackscale)
-    """
 
     return selector
 
@@ -1027,6 +1027,7 @@ def TagAndProbeBase(sample, selector):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
+        'BjetVeto',
         'TagAndProbePairZ',
         'JetCleaning',
         'CopyMet',
@@ -1044,6 +1045,7 @@ def TagAndProbeBase(sample, selector):
     selector.findOperator('MuonVeto').setIgnoreDecision(True)
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
     # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kElectrons, False)
     # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kMuons, False)
