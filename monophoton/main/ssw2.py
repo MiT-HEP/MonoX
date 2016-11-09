@@ -42,9 +42,9 @@ defaults = {
 }
 
 data_15 = []
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', ('dimu', selectors.dimuonSPh), ('diel', selectors.dielectronSPh), ('monomu', selectors.monomuonSPh), ('monoel', selectors.monoelectron) ]
-data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets']
-data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel']
+data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
+data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
 mc_sig = ['monoph', 'signalRaw']

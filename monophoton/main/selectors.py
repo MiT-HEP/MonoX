@@ -761,8 +761,8 @@ def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
     if sample.data:
-        # selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
+
     return selector
 
 def muonBase(sample, selector):
@@ -770,9 +770,7 @@ def muonBase(sample, selector):
     selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
 
     if sample.data:
-        # for MC apply inefficiency depending on the number of muons
-        # selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
 
     return selector
 
@@ -798,14 +796,6 @@ def dielectron(sample, selector):
 
     return selector
 
-def dielectronSPh(sample, selector):
-    selector = dielectron(sample, selector)
-    if sample.data:
-        selector.findOperator('HLT_Ele27_WPTight_Gsf').setIgnoreDecision(True)
-        
-
-    return selector
-
 def monoelectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
@@ -820,14 +810,6 @@ def monoelectron(sample, selector):
         track.addFactor(electronTrackSF)
         track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
-
-    return selector
-
-def monoelectronSPh(sample, selector):
-    selector = monoelectron(sample, selector)
-    if sample.data:
-        selector.findOperator('HLT_Ele27_WPTight_Gsf').setIgnoreDecision(True)
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
 
     return selector
 
@@ -871,14 +853,6 @@ def dimuon(sample, selector):
 
     return selector
 
-def dimuonSPh(sample, selector):
-    selector = dimuon(sample, selector)
-    if sample.data:
-        selector.findOperator('HLT_IsoMu20_OR_HLT_IsoTkMu20').setIgnoreDecision(True)
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
-
-    return selector
-
 def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
@@ -893,23 +867,6 @@ def monomuon(sample, selector):
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
-
-    """
-    # single muon trigger efficiency ~ 90%
-    selector.addOperator(ROOT.ConstantWeight(0.9))
-    trackscale = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'muonTrigSF')
-    trackscale.addFactor(muonTrigSF)
-    trackscale.setVariable(ROOT.IDSFWeight.kEta)
-    selector.addOperator(trackscale)
-    """
-
-    return selector
-
-def monomuonSPh(sample, selector):
-    selector = monomuon(sample, selector)
-    if sample.data:
-        selector.findOperator('HLT_IsoMu20_OR_HLT_IsoTkMu20').setIgnoreDecision(True)
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
 
     return selector
 
