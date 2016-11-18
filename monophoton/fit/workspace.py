@@ -269,11 +269,6 @@ while not done:
         if regionDone:
             data_obs = ROOT.RooDataHist(dataObsName, dataObsName, ROOT.RooArgList(x), sourcePlots[region]['data_obs']['nominal'])
             wsimport(data_obs)
-    
-#            if region == sigregion:
-#                name = 'signal_' + region
-#                signal = ROOT.RooDataHist(name, name, ROOT.RooArgList(x), sourcePlots[region]['signal']['nominal'])
-#                wsimport(signal)
 
         else:
             done = False
