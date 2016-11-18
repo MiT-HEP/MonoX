@@ -32,10 +32,14 @@
 //     ElectronVeto
 //     MuonVeto
 //     TauVeto
+//     LeptonMt *
+//     Mass *
+//     BjetVeto *
 //     PhotonMetDPhi *
 //     JetMetDPhi *
 //     LeptonSelection
 //     HighMet
+//     MtRange
 //     HighPtJetSelection
 //   Modifier
 //     JetCleaning *
@@ -48,6 +52,25 @@
 //     NPVWeight
 //     NNPDFVariation *
 //--------------------------------------------------------------------
+
+enum LeptonFlavor {
+  kElectron,
+  kMuon,
+  nLeptonFlavors
+};
+
+enum Collection {
+  kPhotons,
+  kElectrons,
+  kMuons,
+  kTaus,
+  nCollections
+};
+
+enum MetSource {
+  kInMet,
+  kOutMet
+};
 
 //--------------------------------------------------------------------
 // Base classes
@@ -212,6 +235,46 @@ class TauVeto : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 };
 
+class LeptonMt : public Cut {
+ public:
+  LeptonMt(char const* name = "LeptonMt") : Cut(name) {}
+
+  void setFlavor(LeptonFlavor flav) { flavor_ = flav; }
+  void setMin(double min) { min_ = min; }
+  void setMax(double max) { max_ = max; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  LeptonFlavor flavor_;
+
+  double min_{0.};
+  double max_{14000.};
+};
+
+class Mass : public Cut {
+ public:
+  Mass(char const* name = "Mass") : Cut(name) {}
+
+  void setPrefix(char const* p) { prefix_ = p; }
+  void setCollection1(Collection c) { col_[0] = c; }
+  void setCollection2(Collection c) { col_[1] = c; }
+  void setMin(double min) { min_ = min; }
+  void setMax(double max) { max_ = max; }
+
+  void addBranches(TTree& skimTree) override;
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  TString prefix_{"generic"};
+  Collection col_[2]{nCollections, nCollections};
+
+  float mass_{0.};
+  double min_{0.};
+  double max_{14000.};
+};
+
 class BjetVeto : public Cut {
  public:
   BjetVeto(char const* name = "BjetVeto") : Cut(name), bjets_("bjets") {}
@@ -232,10 +295,13 @@ class PhotonMetDPhi : public Cut {
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
+  void setMetSource(MetSource s) { metSource_ = s; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
   void invert(bool i) { invert_ = i; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  MetSource metSource_{kOutMet};
 
   float dPhi_{0.};
   float dPhiJECUp_{0.};
@@ -253,12 +319,15 @@ class PhotonMetDPhi : public Cut {
   bool invert_{false};
 };
 
+class LeptonRecoil;
+
 class JetMetDPhi : public Cut {
  public:
   JetMetDPhi(char const* name = "JetMetDPhi") : Cut(name) {}
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
+  void setMetSource(MetSource s) { metSource_ = s; }
   void setPassIfIsolated(bool p) { passIfIsolated_ = p; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
   /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
@@ -276,6 +345,8 @@ class JetMetDPhi : public Cut {
   /* float dPhiJER_{0.}; */
   /* float dPhiJERUp_{0.}; */
   /* float dPhiJERDown_{0.}; */
+
+  MetSource metSource_{kOutMet};
   bool passIfIsolated_{true};
   MetVariations* metVar_{0};
   /* JetCleaning* jetCleaning_{0}; */
@@ -303,10 +374,12 @@ class HighMet : public Cut {
  public:
   HighMet(char const* name = "HighMet") : Cut(name) {}
 
+  void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event& outEvent) override { return outEvent.t1Met.met > min_; }
+  bool pass(simpletree::Event const&, simpletree::Event& outEvent) override;
 
+  MetSource metSource_{kOutMet};
   double min_{170.};
 };
 
@@ -457,14 +530,6 @@ class ExtraPhotons : public Modifier {
 
 class JetCleaning : public Modifier {
  public:
-  enum Collection {
-    kPhotons,
-    kElectrons,
-    kMuons,
-    kTaus,
-    nCollections
-  };
-
   JetCleaning(char const* name = "JetCleaning");
   ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
@@ -515,30 +580,31 @@ class CopyMet : public Modifier {
 
 class LeptonRecoil : public Modifier {
  public:
-  enum Collection {
-    kElectrons,
-    kMuons,
-    nCollections
-  };
-
-  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), collection_(nCollections) {}
+  LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), flavor_(nLeptonFlavors) {}
   void addBranches(TTree& skimTree) override;
 
-  void setMetVariations(MetVariations* v) { metVar_ = v; }
-  void setCollection(Collection col) { collection_ = col; }
+  void setFlavor(LeptonFlavor flav) { flavor_ = flav; }
+
+  TVector2 realMet() const { TVector2 v; v.SetMagPhi(realMet_, realPhi_); return v; }
+  TVector2 realMetCorr(int corr) const;
+  TVector2 realMetUncl(int corr) const;
+
  protected:
   void apply(simpletree::Event const&, simpletree::Event&) override;
 
-  Collection collection_;
+  LeptonFlavor flavor_;
+  MetVariations* metVar_{0};
+
   float realMet_;
   float realPhi_;
-  float realPhotonDPhi_{4.};
-  float realMinJetDPhi_{4.};
-  float realMinJetDPhiJECUp_{4.};
-  float realMinJetDPhiJECDown_{4.};
-  float realMinJetDPhiGECUp_{4.};
-  float realMinJetDPhiGECDown_{4.};
-  MetVariations* metVar_{0};
+  float realMetCorrUp_;
+  float realPhiCorrUp_;
+  float realMetCorrDown_;
+  float realPhiCorrDown_;
+  float realMetUnclUp_;
+  float realPhiUnclUp_;
+  float realMetUnclDown_;
+  float realPhiUnclDown_;
 };
 
 class MetVariations : public Modifier {
@@ -546,6 +612,7 @@ class MetVariations : public Modifier {
   MetVariations(char const* name = "MetVariations") : Modifier(name) {}
   void addBranches(TTree& skimTree) override;
 
+  void setMetSource(MetSource s) { metSource_ = s; }
   void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
   /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
   TVector2 gecUp() const { TVector2 v; v.SetMagPhi(metGECUp_, phiGECUp_); return v; }
@@ -569,6 +636,8 @@ class MetVariations : public Modifier {
   /* float phiJERUp_{0.}; */
   /* float metJERDown_{0.}; */
   /* float phiJERDown_{0.}; */
+
+  MetSource metSource_{kOutMet};
 };
 
 class ConstantWeight : public Modifier {

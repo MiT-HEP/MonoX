@@ -426,6 +426,79 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 // BjetVeto
 //--------------------------------------------------------------------
+
+bool
+LeptonMt::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  simpletree::Lepton const* lepton(0);
+  if (flavor_ == kElectron && _outEvent.electrons.size() != 0)
+    lepton = &_outEvent.electrons[0];
+  else if (flavor_ == kMuon && _outEvent.muons.size() != 0)
+    lepton = &_outEvent.muons[0];
+
+  if (!lepton)
+    return false;
+
+  double mt2(2. * _event.t1Met.met * lepton->pt * (1. - std::cos(lepton->phi - _event.t1Met.phi)));
+
+  return mt2 > min_ * min_ && mt2 < max_ * max_;
+}
+
+//--------------------------------------------------------------------
+// Mass
+//--------------------------------------------------------------------
+
+void
+Mass::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch(prefix_ + ".mass", &mass_, "mass");
+}
+
+bool
+Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  mass_ = -1.;
+
+  simpletree::ParticleCollection const* col[2]{};
+
+  for (unsigned ic : {0, 1}) {
+    switch (col_[ic]) {
+    case kPhotons:
+      col[ic] = &_outEvent.photons;
+      break;
+    case kElectrons:
+      col[ic] = &_outEvent.electrons;
+      break;
+    case kMuons:
+      col[ic] = &_outEvent.muons;
+      break;
+    case kTaus:
+      col[ic] = &_outEvent.taus;
+      break;
+    default:
+      break;
+    }
+  }
+
+  if (!col[0] || !col[1] || col[0]->size() == 0 || col[1]->size() == 0)
+    return false;
+
+  if (col[0] == col[1]) {
+    if (col[0]->size() == 1)
+      return false;
+
+    mass_ = (col[0]->at(0).p4() + col[0]->at(1).p4()).M();
+  }
+  else
+    mass_ = (col[0]->at(0).p4() + col[1]->at(0).p4()).M();
+
+  return mass_ > min_ && mass_ < max_;
+}
+
+//--------------------------------------------------------------------
+// BjetVeto
+//--------------------------------------------------------------------
+
 void
 BjetVeto::addBranches(TTree& _skimTree)
 {
@@ -481,13 +554,24 @@ BjetVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 void
 PhotonMetDPhi::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("t1Met.photonDPhi", &dPhi_, "photonDPhi/F");
-  _skimTree.Branch("t1Met.photonDPhiJECUp", &dPhiJECUp_, "photonDPhiJECUp/F");
-  _skimTree.Branch("t1Met.photonDPhiJECDown", &dPhiJECDown_, "photonDPhiJECDown/F");
-  _skimTree.Branch("t1Met.photonDPhiGECUp", &dPhiGECUp_, "photonDPhiGECUp/F");
-  _skimTree.Branch("t1Met.photonDPhiGECDown", &dPhiGECDown_, "photonDPhiGECDown/F");
-  _skimTree.Branch("t1Met.photonDPhiUnclUp", &dPhiUnclUp_, "photonDPhiUnclUp/F");
-  _skimTree.Branch("t1Met.photonDPhiUnclDown", &dPhiUnclDown_, "photonDPhiUnclDown/F");
+  if (metSource_ == kInMet) {
+    _skimTree.Branch("t1Met.realPhotonDPhi", &dPhi_, "realPhotonDPhi/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiJECUp", &dPhiJECUp_, "realPhotonDPhiJECUp/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiJECDown", &dPhiJECDown_, "realPhotonDPhiJECDown/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiGECUp", &dPhiGECUp_, "realPhotonDPhiGECUp/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiGECDown", &dPhiGECDown_, "realPhotonDPhiGECDown/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiUnclUp", &dPhiUnclUp_, "realPhotonDPhiUnclUp/F");
+    _skimTree.Branch("t1Met.realPhotonDPhiUnclDown", &dPhiUnclDown_, "realPhotonDPhiUnclDown/F");
+  }
+  else {
+    _skimTree.Branch("t1Met.photonDPhi", &dPhi_, "photonDPhi/F");
+    _skimTree.Branch("t1Met.photonDPhiJECUp", &dPhiJECUp_, "photonDPhiJECUp/F");
+    _skimTree.Branch("t1Met.photonDPhiJECDown", &dPhiJECDown_, "photonDPhiJECDown/F");
+    _skimTree.Branch("t1Met.photonDPhiGECUp", &dPhiGECUp_, "photonDPhiGECUp/F");
+    _skimTree.Branch("t1Met.photonDPhiGECDown", &dPhiGECDown_, "photonDPhiGECDown/F");
+    _skimTree.Branch("t1Met.photonDPhiUnclUp", &dPhiUnclUp_, "photonDPhiUnclUp/F");
+    _skimTree.Branch("t1Met.photonDPhiUnclDown", &dPhiUnclDown_, "photonDPhiUnclDown/F");
+  }
   // _skimTree.Branch("t1Met.photonDPhiJER", &dPhiJER_, "photonDPhiJER/F");
   // _skimTree.Branch("t1Met.photonDPhiJERUp", &dPhiJERUp_, "photonDPhiJERUp/F");
   // _skimTree.Branch("t1Met.photonDPhiJERDown", &dPhiJERDown_, "photonDPhiJERDown/F");
@@ -498,16 +582,29 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
 {
   dPhi_ = 0.;
   if (_outEvent.photons.size() != 0) {
-    dPhi_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phi - _outEvent.photons[0].phi));
+    simpletree::CorrectedMet const* met(0);
+    if (metSource_ == kInMet)
+      met = &_event.t1Met;
+    else
+      met = &_outEvent.t1Met;
 
-    dPhiJECUp_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiCorrUp - _outEvent.photons[0].phi));
-    dPhiJECDown_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiCorrDown - _outEvent.photons[0].phi));
-    dPhiUnclUp_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiUnclUp - _outEvent.photons[0].phi));
-    dPhiUnclDown_ = std::abs(TVector2::Phi_mpi_pi(_outEvent.t1Met.phiUnclDown - _outEvent.photons[0].phi));
+    double metPhiGECUp(0.);
+    double metPhiGECDown(0.);
+    if (metVar_) {
+      metPhiGECUp = metVar_->gecUp().Phi();
+      metPhiGECDown = metVar_->gecDown().Phi();
+    }
+
+    dPhi_ = std::abs(TVector2::Phi_mpi_pi(met->phi - _outEvent.photons[0].phi));
+
+    dPhiJECUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrUp - _outEvent.photons[0].phi));
+    dPhiJECDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrDown - _outEvent.photons[0].phi));
+    dPhiUnclUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclUp - _outEvent.photons[0].phi));
+    dPhiUnclDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclDown - _outEvent.photons[0].phi));
 
     if (metVar_) {
-      dPhiGECUp_ = std::abs(TVector2::Phi_mpi_pi(metVar_->gecUp().Phi() - _outEvent.photons[0].phi));
-      dPhiGECDown_ = std::abs(TVector2::Phi_mpi_pi(metVar_->gecDown().Phi() - _outEvent.photons[0].phi));
+      dPhiGECUp_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECUp - _outEvent.photons[0].phi));
+      dPhiGECDown_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECDown - _outEvent.photons[0].phi));
       // dPhiJER_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jer().Phi() - _outEvent.photons[0].phi));
       // dPhiJERUp_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerUp().Phi() - _outEvent.photons[0].phi));
       // dPhiJERDown_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerDown().Phi() - _outEvent.photons[0].phi));      
@@ -540,13 +637,24 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
 void
 JetMetDPhi::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("t1Met.minJetDPhi", &dPhi_, "minJetDPhi/F");
-  _skimTree.Branch("t1Met.minJetDPhiJECUp", &dPhiJECUp_, "minJetDPhiJECUp/F");
-  _skimTree.Branch("t1Met.minJetDPhiJECDown", &dPhiJECDown_, "minJetDPhiJECDown/F");
-  _skimTree.Branch("t1Met.minJetDPhiGECUp", &dPhiGECUp_, "minJetDPhiGECUp/F");
-  _skimTree.Branch("t1Met.minJetDPhiGECDown", &dPhiGECDown_, "minJetDPhiGECDown/F");
-  _skimTree.Branch("t1Met.minJetDPhiUnclUp", &dPhiUnclUp_, "minJetDPhiUnclUp/F");
-  _skimTree.Branch("t1Met.minJetDPhiUnclDown", &dPhiUnclDown_, "minJetDPhiUnclDown/F");
+  if (metSource_ == kInMet) {
+    _skimTree.Branch("t1Met.realMinJetDPhi", &dPhi_, "realMinJetDPhi/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiJECUp", &dPhiJECUp_, "realMinJetDPhiJECUp/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiJECDown", &dPhiJECDown_, "realMinJetDPhiJECDown/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiGECUp", &dPhiGECUp_, "realMinJetDPhiGECUp/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiGECDown", &dPhiGECDown_, "realMinJetDPhiGECDown/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiUnclUp", &dPhiUnclUp_, "realMinJetDPhiUnclUp/F");
+    _skimTree.Branch("t1Met.realMinJetDPhiUnclDown", &dPhiUnclDown_, "realMinJetDPhiUnclDown/F");
+  }
+  else {
+    _skimTree.Branch("t1Met.minJetDPhi", &dPhi_, "minJetDPhi/F");
+    _skimTree.Branch("t1Met.minJetDPhiJECUp", &dPhiJECUp_, "minJetDPhiJECUp/F");
+    _skimTree.Branch("t1Met.minJetDPhiJECDown", &dPhiJECDown_, "minJetDPhiJECDown/F");
+    _skimTree.Branch("t1Met.minJetDPhiGECUp", &dPhiGECUp_, "minJetDPhiGECUp/F");
+    _skimTree.Branch("t1Met.minJetDPhiGECDown", &dPhiGECDown_, "minJetDPhiGECDown/F");
+    _skimTree.Branch("t1Met.minJetDPhiUnclUp", &dPhiUnclUp_, "minJetDPhiUnclUp/F");
+    _skimTree.Branch("t1Met.minJetDPhiUnclDown", &dPhiUnclDown_, "minJetDPhiUnclDown/F");
+  }
   // _skimTree.Branch("t1Met.minJetDPhiJER", &dPhiJER_, "minJetDPhiJER/F");
   // _skimTree.Branch("t1Met.minJetDPhiJERUp", &dPhiJERUp_, "minJetDPhiJERUp/F");
   // _skimTree.Branch("t1Met.minJetDPhiJERDown", &dPhiJERDown_, "minJetDPhiJERDown/F");
@@ -573,72 +681,85 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   // dPhiJERUp_ = 4.;
   // dPhiJERDown_ = 4.;
 
+  simpletree::CorrectedMet const* met(0);
+  if (metSource_ == kInMet)
+    met = &_event.t1Met;
+  else
+    met = &_outEvent.t1Met;
+
+  double metPhiGECUp(0.);
+  double metPhiGECDown(0.);
+  if (metVar_) {
+    metPhiGECUp = metVar_->gecUp().Phi();
+    metPhiGECDown = metVar_->gecDown().Phi();
+  }
+
   for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
     auto& jet(_outEvent.jets[iJ]);
 
     if (jet.pt > 30. && nJ < 4) {
       ++nJ;
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phi)));
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phi)));
       if (dPhi < dPhi_)
         dPhi_ = dPhi;
 
       if (metVar_) {
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecUp().Phi()));
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metPhiGECUp));
         if (dPhi < dPhiGECUp_)
           dPhiGECUp_ = dPhi;
 
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecDown().Phi()));
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metPhiGECDown));
         if (dPhi < dPhiGECDown_)
           dPhiGECDown_ = dPhi;
       }
 
-      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiUnclUp));
+      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiUnclUp));
       if (dPhi < dPhiUnclUp_)
         dPhiUnclUp_ = dPhi;
 
-      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiUnclDown));
+      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiUnclDown));
       if (dPhi < dPhiUnclDown_)
         dPhiUnclDown_ = dPhi;
     }
 
-    if (metVar_) {
-      if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
-        ++nJCorrUp;
-        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrUp)));
-        if (dPhi < dPhiJECUp_)
-          dPhiJECUp_ = dPhi;
-      }
-
-      if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
-        ++nJCorrDown;
-        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrDown)));
-        if (dPhi < dPhiJECDown_)
-          dPhiJECDown_ = dPhi;
-      }
-
-      // if (jetCleaning_) {
-      //   if (jetCleaning_->ptScaled(iJ) > 30. && nJJER < 4) {
-      //     ++nJJER;
-      //     double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jer().Phi())));
-      //     if (dPhi < dPhiJER_)
-      //       dPhiJER_ = dPhi;
-      //   }
-      
-      //   if (jetCleaning_->ptScaledUp(iJ) > 30. && nJJERUp < 4) {
-      //     ++nJJERUp;
-      //     double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerUp().Phi())));
-      //     if (dPhi < dPhiJERUp_)
-      //       dPhiJERUp_ = dPhi;
-      //   }
-
-      //   if (jetCleaning_->ptScaledDown(iJ) > 30. && nJJERDown < 4) {
-      //     ++nJJERDown;
-      //     double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerDown().Phi())));
-      //     if (dPhi < dPhiJERDown_)
-      //       dPhiJERDown_ = dPhi;
-      //   }
-      // }
+    if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
+      ++nJCorrUp;
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiCorrUp)));
+      if (dPhi < dPhiJECUp_)
+        dPhiJECUp_ = dPhi;
     }
+
+    if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
+      ++nJCorrDown;
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiCorrDown)));
+      if (dPhi < dPhiJECDown_)
+        dPhiJECDown_ = dPhi;
+    }
+
+    // if (metVar_) {
+    //   if (jetCleaning_) {
+    //     if (jetCleaning_->ptScaled(iJ) > 30. && nJJER < 4) {
+    //       ++nJJER;
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jer().Phi())));
+    //       if (dPhi < dPhiJER_)
+    //         dPhiJER_ = dPhi;
+    //     }
+        
+    //     if (jetCleaning_->ptScaledUp(iJ) > 30. && nJJERUp < 4) {
+    //       ++nJJERUp;
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerUp().Phi())));
+    //       if (dPhi < dPhiJERUp_)
+    //         dPhiJERUp_ = dPhi;
+    //     }
+        
+    //     if (jetCleaning_->ptScaledDown(iJ) > 30. && nJJERDown < 4) {
+    //       ++nJJERDown;
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerDown().Phi())));
+    //       if (dPhi < dPhiJERDown_)
+    //         dPhiJERDown_ = dPhi;
+    //     }
+    //   }
+    // }
   }
 
   if (passIfIsolated_) {
@@ -669,7 +790,7 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 void
 LeptonSelection::addBranches(TTree& _skimTree)
 {
-  if ( (nMu_ + nEl_) == 2) {
+  if ((nMu_ + nEl_) == 2) {
     zs_.book(_skimTree);
     _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
   }
@@ -781,6 +902,19 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+}
+
+//--------------------------------------------------------------------
+// HighMet
+//--------------------------------------------------------------------
+
+bool
+HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  if (metSource_ == kInMet)
+    return _event.t1Met.met > min_;
+  else
+    return _outEvent.t1Met.met > min_;
 }
 
 //--------------------------------------------------------------------
@@ -1347,12 +1481,6 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
   _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
-  _skimTree.Branch("t1Met.realPhotonDPhi", &realPhotonDPhi_, "realPhotonDPhi/F");
-  _skimTree.Branch("t1Met.realMinJetDPhi", &realMinJetDPhi_, "realMinJetDPhi/F");
-  _skimTree.Branch("t1Met.realMinJetDPhiJECUp", &realMinJetDPhiJECUp_, "realMinJetDPhiJECUp/F");
-  _skimTree.Branch("t1Met.realMinJetDPhiJECDown", &realMinJetDPhiJECDown_, "realMinJetDPhiJECDown/F");
-  _skimTree.Branch("t1Met.realMinJetDPhiGECUp", &realMinJetDPhiGECUp_, "realMinJetDPhiGECUp/F");
-  _skimTree.Branch("t1Met.realMinJetDPhiGECDown", &realMinJetDPhiGECDown_, "realMinJetDPhiGECDown/F");
 }
 
 void
@@ -1360,84 +1488,119 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
 {
   simpletree::LeptonCollection* col(0);
 
-  switch (collection_) {
-  case kElectrons:
+  switch (flavor_) {
+  case kElectron:
     col = &_outEvent.electrons;
     break;
-  case kMuons:
+  case kMuon:
     col = &_outEvent.muons;
     break;
   default:
     return;
   }
 
-  realMet_ = _event.t1Met.met;
-  realPhi_ = _event.t1Met.phi;
+  float inMets[] = {
+    _event.t1Met.met,
+    _event.t1Met.metCorrUp,
+    _event.t1Met.metCorrDown,
+    _event.t1Met.metUnclUp,
+    _event.t1Met.metUnclDown
+  };
+  float inPhis[] = {
+    _event.t1Met.phi,
+    _event.t1Met.phiCorrUp,
+    _event.t1Met.phiCorrDown,
+    _event.t1Met.phiUnclUp,
+    _event.t1Met.phiUnclDown
+  };
 
-  realMinJetDPhi_ = 4.;
-  realMinJetDPhiJECUp_ = 4.;
-  realMinJetDPhiJECDown_ = 4.;
-  realMinJetDPhiGECUp_ = 4.;
-  realMinJetDPhiGECDown_ = 4.;
+  float* outRecoils[] = {
+    &_outEvent.t1Met.met,
+    &_outEvent.t1Met.metCorrUp,
+    &_outEvent.t1Met.metCorrDown,
+    &_outEvent.t1Met.metUnclUp,
+    &_outEvent.t1Met.metUnclDown
+  };
+  float* outRecoilPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
 
+  float* realMets[] = {
+    &realMet_,
+    &realMetCorrUp_,
+    &realMetCorrDown_,
+    &realMetUnclUp_,
+    &realMetUnclDown_
+  };
+  float* realPhis[] = {
+    &realPhi_,
+    &realPhiCorrUp_,
+    &realPhiCorrDown_,
+    &realPhiUnclUp_,
+    &realPhiUnclDown_
+  };
 
-  unsigned nJ(0);
-  unsigned nJCorrUp(0);
-  unsigned nJCorrDown(0);
-
-  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
-    auto& jet(_outEvent.jets[iJ]);
-
-    if (jet.pt > 30. && nJ < 4) {
-      ++nJ;
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _event.t1Met.phi)));
-      if (dPhi < realMinJetDPhi_)
-        realMinJetDPhi_ = dPhi;
-
-      if (metVar_) {
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecUp().Phi()));
-        if (dPhi < realMinJetDPhiGECUp_)
-          realMinJetDPhiGECUp_ = dPhi;
-	
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->gecDown().Phi()));
-        if (dPhi < realMinJetDPhiGECDown_)
-          realMinJetDPhiGECDown_ = dPhi;	
-      }
-    }
-    
-    if (metVar_) {
-      if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
-        ++nJCorrUp;
-        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrUp)));
-        if (dPhi < realMinJetDPhiJECUp_)
-          realMinJetDPhiJECUp_ = dPhi;
-      }
-      
-      if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
-        ++nJCorrDown;
-        double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - _outEvent.t1Met.phiCorrDown)));
-        if (dPhi < realMinJetDPhiJECDown_)
-          realMinJetDPhiJECDown_ = dPhi;
-      }
-    }
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    *realMets[iM] = inMets[iM];
+    *realPhis[iM] = inPhis[iM];
   }
 
-  realPhotonDPhi_ = 4.;
-  
-  if (_outEvent.photons.size() != 0) {
-    realPhotonDPhi_ = std::abs(TVector2::Phi_mpi_pi(_event.t1Met.phi - _event.photons[0].phi));
-  }
-  
-  double mex(_event.t1Met.met * std::cos(_event.t1Met.phi));
-  double mey(_event.t1Met.met * std::sin(_event.t1Met.phi));
+  double lpx(0.);
+  double lpy(0.);
     
   for (auto& lep : *col) {
-    mex += lep.pt * std::cos(lep.phi);
-    mey += lep.pt * std::sin(lep.phi);
+    lpx += lep.pt * std::cos(lep.phi);
+    lpy += lep.pt * std::sin(lep.phi);
   }
 
-  _outEvent.t1Met.met = std::sqrt(mex * mex + mey * mey);
-  _outEvent.t1Met.phi = std::atan2(mey, mex);
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    double mex(lpx + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(lpy + inMets[iM] * std::sin(inPhis[iM]));
+    *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
+    *outRecoilPhis[iM] = std::atan2(mey, mex);
+  }
+}
+
+TVector2
+LeptonRecoil::realMetCorr(int corr) const
+{
+  if (corr == 0)
+    return realMet();
+
+  TVector2 vec;
+  switch (corr) {
+  case 1:
+    vec.SetMagPhi(realMetCorrUp_, realPhiCorrUp_);
+    break;
+  case -1:
+    vec.SetMagPhi(realMetCorrDown_, realPhiCorrDown_);
+    break;
+  };
+
+  return vec;
+}
+
+TVector2
+LeptonRecoil::realMetUncl(int corr) const
+{
+  if (corr == 0)
+    return realMet();
+
+  TVector2 vec;
+  switch (corr) {
+  case 1:
+    vec.SetMagPhi(realMetUnclUp_, realPhiUnclUp_);
+    break;
+  case -1:
+    vec.SetMagPhi(realMetUnclDown_, realPhiUnclDown_);
+    break;
+  };
+
+  return vec;
 }
 
 //--------------------------------------------------------------------
@@ -1448,10 +1611,18 @@ void
 MetVariations::addBranches(TTree& _skimTree)
 {
   if (photonSel_) {
-    _skimTree.Branch("t1Met.metGECUp", &metGECUp_, "metGECUp/F");
-    _skimTree.Branch("t1Met.phiGECUp", &phiGECUp_, "phiGECUp/F");
-    _skimTree.Branch("t1Met.metGECDown", &metGECDown_, "metGECDown/F");
-    _skimTree.Branch("t1Met.phiGECDown", &phiGECDown_, "phiGECDown/F");
+    if (metSource_ == kInMet) {
+      _skimTree.Branch("t1Met.realMetGECUp", &metGECUp_, "realMetGECUp/F");
+      _skimTree.Branch("t1Met.realPhiGECUp", &phiGECUp_, "realPhiGECUp/F");
+      _skimTree.Branch("t1Met.realMetGECDown", &metGECDown_, "realMetGECDown/F");
+      _skimTree.Branch("t1Met.realPhiGECDown", &phiGECDown_, "realPhiGECDown/F");
+    }
+    else {
+      _skimTree.Branch("t1Met.metGECUp", &metGECUp_, "metGECUp/F");
+      _skimTree.Branch("t1Met.phiGECUp", &phiGECUp_, "phiGECUp/F");
+      _skimTree.Branch("t1Met.metGECDown", &metGECDown_, "metGECDown/F");
+      _skimTree.Branch("t1Met.phiGECDown", &phiGECDown_, "phiGECDown/F");
+    }
   }
   // if (jetCleaning_) {
   //   _skimTree.Branch("t1Met.metJER", &metJER_, "metJER/F");
@@ -1464,7 +1635,7 @@ MetVariations::addBranches(TTree& _skimTree)
 }
 
 void
-MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
+MetVariations::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   metGECUp_ = 0.;
   phiGECUp_ = 0.;
@@ -1480,9 +1651,13 @@ MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
   if (_outEvent.photons.size() == 0)
     return;
 
+  TVector2 metV;
+  if (metSource_ == kInMet)
+    metV = _event.t1Met.v();
+  else
+    metV = _outEvent.t1Met.v();
+
   if (photonSel_) {
-    TVector2 metV(_outEvent.t1Met.v());
-    
     auto& photon(_outEvent.photons[0]);
 
     TVector2 nominal;
@@ -1504,8 +1679,6 @@ MetVariations::apply(simpletree::Event const&, simpletree::Event& _outEvent)
   }
 
   // if (jetCleaning_) {
-  //   TVector2 metV(_outEvent.t1Met.v());
-
   //   TVector2 shiftCentral(metV);
   //   TVector2 shiftUp(metV);
   //   TVector2 shiftDown(metV);
