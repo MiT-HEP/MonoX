@@ -34,25 +34,27 @@ cuts = []
 
 if data:
     cuts += ['HLT_Photon165_HE10', 'MetFilters']
-    # cuts += [ 'MetFilters']
-
-
 
 cuts += [
     'PhotonSelection',
     'HighMet',
     'PhotonMetDPhi',
     'JetMetDPhi',
-    ]
+]
 
 if region == 'monoph':
     cuts += [ 
         'MuonVeto',
         'ElectronVeto',
-        ]
+    ]
 elif region in ['dimu', 'diel', 'monomu', 'monoel']:
-    cuts += [ 'LeptonSelection' ]
-    
+    cuts += ['LeptonSelection']
+
+if region == 'monoel':
+    cuts += ['RealMetCut', 'LeptonMt']
+
+if region in ['dimu', 'diel']:
+    cuts += ['Mass']
 
 tree.Draw('>>elist', ' && '.join(cuts), 'entrylist')
 elist = ROOT.gDirectory.Get('elist')
