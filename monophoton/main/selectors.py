@@ -168,7 +168,7 @@ def monophotonBase(sample, selector):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
@@ -339,7 +339,7 @@ def purityBase(sample, selector):
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
@@ -696,6 +696,9 @@ def leptonBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+
     operators = [
         'MetFilters',
         'PhotonSelection',
@@ -704,7 +707,7 @@ def leptonBase(sample, selector):
         'BjetVeto',
         'JetCleaning',
         'LeptonRecoil',
-        ]
+    ]
 
     if not sample.data:
         operators.append('MetVariations')
@@ -718,19 +721,24 @@ def leptonBase(sample, selector):
     for op in operators:
         selector.addOperator(getattr(ROOT, op)())
 
+    jetDPhi = selector.findOperator('JetMetDPhi')
+    jetDPhi.setMetSource(ROOT.kInMet)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    for sel in photonFullSelection:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
-        jetClean = selector.findOperator('JetCleaning')
-        metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+        metVar.setPhotonSelection(photonSel)
 
-        leptonRecoil =  selector.findOperator('LeptonRecoil')
-        leptonRecoil.setMetVariations(metVar)
+        realMetVar = ROOT.MetVariations('RealMetVar')
+        realMetVar.setMetSource(ROOT.kInMet)
+        realMetVar.setPhotonSelection(photonSel)
+
+        selector.findOperator('PhotonMetDPhi').setMetVariations(metVar)
         
-        photonDPhi = selector.findOperator('PhotonMetDPhi')
-        photonDPhi.setMetVariations(metVar)
-        
-        jetDPhi = selector.findOperator('JetMetDPhi')
-        jetDPhi.setMetVariations(metVar)
+        jetDPhi.setMetVariations(realMetVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.PUWeight(puWeight))
@@ -743,14 +751,9 @@ def leptonBase(sample, selector):
         if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
             selector.addOperator(ROOT.NNPDFVariation())
 
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setMinPt(30.)
-    for sel in photonFullSelection:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
@@ -759,15 +762,13 @@ def leptonBase(sample, selector):
 
 def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kElectrons)
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
+    selector.findOperator('LeptonRecoil').setFlavor(ROOT.kElectron)
 
     return selector
 
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setCollection(ROOT.LeptonRecoil.kMuons)
+    selector.findOperator('LeptonRecoil').setFlavor(ROOT.kMuon)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
@@ -777,6 +778,15 @@ def muonBase(sample, selector):
 def dielectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
+
+    dielMass = ROOT.Mass()
+    dielMass.setPrefix('diel')
+    dielMass.setMin(60.)
+    dielMass.setMax(120.)
+    dielMass.setCollection1(ROOT.kElectrons)
+    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setIgnoreDecision(True)
+    selector.addOperator(dielMass)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
@@ -799,6 +809,18 @@ def dielectron(sample, selector):
 def monoelectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.kElectron)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    metCut = ROOT.HighMet('RealMetCut')
+    metCut.setMetSource(ROOT.kInMet)
+    metCut.setThreshold(50.)
+    metCut.setIgnoreDecision(True)
+    selector.addOperator(metCut)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
@@ -835,6 +857,15 @@ def monoelectronHadProxy(sample, selector):
 def dimuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
+
+    dimuMass = ROOT.Mass()
+    dimuMass.setPrefix('dimu')
+    dimuMass.setMin(60.)
+    dimuMass.setMax(120.)
+    dimuMass.setCollection1(ROOT.kMuons)
+    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setIgnoreDecision(True)
+    selector.addOperator(dimuMass)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
@@ -934,7 +965,7 @@ def zee(sample, name):
     eeSel.addSelection(False, ROOT.PhotonSelection.EVeto)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
 
     return selector
 
@@ -1046,9 +1077,9 @@ def TagAndProbeBase(sample, selector):
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kTaus, False)
-    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kElectrons, False)
-    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.JetCleaning.kMuons, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kElectrons, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kMuons, False)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setThreshold(50.)
     selector.findOperator('HighMet').setIgnoreDecision(True)
