@@ -12,15 +12,15 @@ ROOT.gSystem.Load('libRooFitCore.so')
 outname = '/local/yiiyama/exec/ws.root'
 sourcedir = '/data/t3home000/yiiyama/studies/monophoton/distributions'
 hname = 'phoPtHighMet'
-#regions = ['monoph', 'monoel', 'monomu', 'diel','dimu']
-regions = ['monoph']
+regions = ['monoph', 'monoel', 'monomu', 'diel','dimu']
 sigregion = 'monoph'
 
 links = [
     (('zg', 'diel'), ('zg', 'monoph')),
     (('zg', 'dimu'), ('zg', 'monoph')),
     (('wg', 'monoel'), ('wg', 'monoph')),
-    (('wg', 'monomu'), ('wg', 'monoph'))
+    (('wg', 'monomu'), ('wg', 'monoph')),
+    (('wg', 'monoph'), ('zg', 'monoph'))
 ]
 
 ignoredNuisances = {
@@ -134,6 +134,7 @@ while not done:
     done = True
 
     print 'Iteration {0}'.format(iteration)
+    iteration += 1
 
     for region in regions:
         dataObsName = 'data_obs_' + region
@@ -148,19 +149,8 @@ while not done:
             if sample == 'data_obs':
                 continue
 
-            try:
-                # check for source recursively
-                linkTarget = linkSource((sample, region))
-                while linkTarget is not None:
-                    if not workspace.arg('{0}_{1}_norm'.format(*linkTarget)):
-                        # source of this sample is not constructed yet
-                        raise ReferenceError()
-
-                    linkTarget = linkSource(linkTarget)
-
-            except ReferenceError:
-                # try again in a later iteration
-                regionDone = False
+            if workspace.arg('{0}_{1}_norm'.format(sample, region)):
+                # this (sample, region) is constructed already
                 continue
 
             # now construct the ParametricHist + norm
@@ -180,7 +170,23 @@ while not done:
 
             sbase = linkSource((sample, region))
             if sbase is not None:
-                print 'this sample in this region is a function of the yield in another (sample, region)'
+                print 'this sample is a function of the yields in', sbase
+
+                try:
+                    # check for source recursively
+                    source = sbase
+                    while source is not None:
+                        if not workspace.arg('{0}_{1}_norm'.format(*source)):
+                            # source of this sample is not constructed yet
+                            raise ReferenceError()
+
+                        source = linkSource(source)
+
+                except ReferenceError:
+                    print 'but source', source, 'is not constructed yet.'
+                    # try again in a later iteration
+                    regionDone = False
+                    continue
 
                 numer = nominal
                 denom = sourcePlots[sbase[1]][sbase[0]]['nominal']
@@ -209,7 +215,13 @@ while not done:
                     modifiers = []
 
                     # statistical uncertainty on tfactor
-                    relerr = ratio.GetBinError(ibin) / rbin
+                    if linkSource(sbase) is None:
+                        # this sample is tied to a non-link yield -> take numer + denom stat uncertainty
+                        relerr = ratio.GetBinError(ibin) / rbin
+                    else:
+                        # this sample is tied to a link -> take only the numer stat uncertainty
+                        relerr = nominal.GetBinError(ibin) / nominal.GetBinContent(ibin)
+
                     modifiers.append(modifier('{tf}_stat'.format(tf = tfName), '', relerr, -relerr, 'quad'))
 
                     # other systematic uncertainties on tfactor
