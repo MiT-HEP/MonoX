@@ -1,8 +1,9 @@
 # tier3 set up
 simpletreeVersion = 'simpletree18rawE'
-skimDir = '/scratch5/ballen/hist/monophoton/skim/2016'
-histDir = '/scratch5/ballen/hist/monophoton'
-ntuplesDir = '/scratch5/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
+skimDir = '/data/t3home000/yiiyama/studies/monophoton/skim'
+#skimDir = '/data/t3serv014/ballen/hist/monophoton/skim/2016'
+histDir = '/data/t3home000/yiiyama/studies/monophoton'
+ntuplesDir = '/data/t3serv014/yiiyama/hist/'+simpletreeVersion+'/t2mit/'
 # ntuplesDir = '/scratch5/ballen/hist/'
 dataNtuplesDir = '/scratch5/ballen/hist/'
 photonSkimDir = '/blah' # '/scratch5/yiiyama/hist/'+simpletreeVersion+'/photonskim/'
@@ -50,8 +51,9 @@ jsonLumiBlinded = 4950.0
 jsonLumi = 12900.0
 
 # libsimpletree = 'libMitFlatDataFormats.so'
-libsimpletree = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/obj/libsimpletree.so'
-dataformats = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats'
+#libsimpletree = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats/obj/libsimpletree.so'
+libsimpletree = os.path.dirname(os.path.realpath(__file__)) + '/MitFlat/DataFormats/obj/libsimpletree.so'
+dataformats = os.path.dirname(os.path.realpath(__file__)) + '/MitFlat/DataFormats'
 
 libnerocore = 'libNeroProducerCore.so'
 nerocorepath = os.environ['CMSSW_BASE'] + '/src/NeroProducer/Core/'

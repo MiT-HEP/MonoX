@@ -48,9 +48,9 @@ def getConfig(confName):
         ]            
         config.signalPoints = [
 #            SampleSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', group = config.findGroup('add'), color = 41), # 0.07069/pb
-            # SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-            # SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
-            # SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
+            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
+            SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
 #             SampleSpec('dmewk-3000-10', 'DM EWK #Lambda=3000GeV M_{DM}=10GeV', group = config.findGroup('dmewk'), color = 50) # 0.07827/pb 
         ]
         config.bkgGroups = [
@@ -299,7 +299,7 @@ def getConfig(confName):
         # Standard MC systematic variations
         for group in config.bkgGroups:
 
-            group.variations.append(Variation('lumi', reweight = 0.04))
+            group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))

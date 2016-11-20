@@ -60,8 +60,8 @@ mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + [
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b2', 'sph-16c2', 'sph-16d2'])
-haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2', 'sph-16c2', 'sph-16d2'] ]
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'])
+haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
 
 neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
 print neroSphLumi
@@ -257,6 +257,7 @@ if __name__ == '__main__':
         ROOT.gSystem.Load(config.libnerocore)
         ROOT.gROOT.LoadMacro(os.path.dirname(basedir) + '/common/GoodLumiFilter.cc+')
      
+    ROOT.gSystem.SetFlagsOpt(ROOT.gSystem.GetFlagsOpt() + ' -DNERO')
     compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
     print compiled
     # doesn't seem to be returning different values if compilation fails :(
@@ -375,7 +376,7 @@ if __name__ == '__main__':
         if nStart >= 0:
             sname = sname + '_' + str(nStart) + '-' + str(nEnd)
 
-        tmpDir = '/tmp/ballen'
+        tmpDir = '/tmp/' + os.environ['USER']
         if not os.path.exists(tmpDir):
             os.makedirs(tmpDir)
         skimmer.run(tree, tmpDir, sname, args.nentries, args.neroInput)

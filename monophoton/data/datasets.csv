@@ -20,17 +20,21 @@ smu-16b2-d       "SingleMuon (2016B)"                5929.6               700000
 smu-16c2-d       "SingleMuon (2016C)"                2608.1               7000000    -                    nero160723/SingleMuon SingleMuon-2016C-v2
 smu-16d2-d       "SingleMuon (2016D)"                4329.6               7000000    -                    nero160723/SingleMuon SingleMuon-2016D-v2
 ### simpletree
-sph-16b2         "SinglePhoton (2016B)"              5836.1               49807532   -                    filefi/045           SinglePhoton+Run2016B-PromptReco-v2+AOD
-sph-16c2         "SinglePhoton (2016C)"              2621.5               16276689   -                    filefi/045           SinglePhoton+Run2016C-PromptReco-v2+AOD
-sph-16d2         "SinglePhoton (2016D)"              4401.2               17230454   -                    filefi/045           SinglePhoton+Run2016D-PromptReco-v2+AOD
-sel-16b2         "SingleElectron (2016B)"            2055.8               83278806   -                    filefi/045           SingleElectron+Run2016B-PromptReco-v2+AOD
-sel-16c2         "SingleElectron (2016C)"            889.6                31906093   -                    filefi/045           SingleElectron+Run2016C-PromptReco-v2+AOD
-sel-16d2         "SingleElectron (2016D)"            527.3                17641747   -                    filefi/045           SingleElectron+Run2016D-PromptReco-v2+AOD
-smu-16b2         "SingleMuon (2016B)"                5836.1               1          -                    filefi/044           SingleMuon+Run2016B-PromptReco-v2+AOD
-smu-16c2         "SingleMuon (2016C)"                2619.6               1          -                    filefi/044           SingleMuon+Run2016C-PromptReco-v2+AOD
-smu-16d2         "SingleMuon (2016D)"                841.6                1          -                    filefi/045           SingleMuon+Run2016D-PromptReco-v2+AOD
-jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/044           JetHT+Run2016B-PromptReco-v2+AOD
-jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/044           JetHT+Run2016C-PromptReco-v2+AOD
+sph-16b          "SinglePhoton (2016B)"              5836.1               49807532   -                    filefi/046           SinglePhoton+Run2016B-23Sep2016-v3+AOD
+sph-16c          "SinglePhoton (2016C)"              2603.3               21674339   -                    filefi/046           SinglePhoton+Run2016C-23Sep2016-v1+AOD
+sph-16d          "SinglePhoton (2016D)"              4327.1               28831237   -                    filefi/046           SinglePhoton+Run2016D-23Sep2016-v1+AOD
+sph-16e          "SinglePhoton (2016E)"              4015.3               20887469   -                    filefi/046           SinglePhoton+Run2016E-23Sep2016-v1+AOD
+sph-16f          "SinglePhoton (2016F)"              3136.0               14199998   -                    filefi/046           SinglePhoton+Run2016F-23Sep2016-v1+AOD
+sph-16g          "SinglePhoton (2016G)"              0.                   0          -                    filefi/046           SinglePhoton+Run2016G-23Sep2016-v1+AOD
+sph-16h          "SinglePhoton (2016H)"              0.                   0          -                    filefi/046           SinglePhoton+Run2016H-PromptReco-v2+AOD
+sel-16b2         "SingleElectron (2016B)"            2055.8               83278806   -                    filefi/046           SingleElectron+Run2016B-PromptReco-v2+AOD
+sel-16c2         "SingleElectron (2016C)"            889.6                31906093   -                    filefi/046           SingleElectron+Run2016C-PromptReco-v2+AOD
+sel-16d2         "SingleElectron (2016D)"            527.3                17641747   -                    filefi/046           SingleElectron+Run2016D-PromptReco-v2+AOD
+smu-16b2         "SingleMuon (2016B)"                5836.1               1          -                    filefi/046           SingleMuon+Run2016B-PromptReco-v2+AOD
+smu-16c2         "SingleMuon (2016C)"                2619.6               1          -                    filefi/046           SingleMuon+Run2016C-PromptReco-v2+AOD
+smu-16d2         "SingleMuon (2016D)"                841.6                1          -                    filefi/046           SingleMuon+Run2016D-PromptReco-v2+AOD
+jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/046           JetHT+Run2016B-PromptReco-v2+AOD
+jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/046           JetHT+Run2016C-PromptReco-v2+AOD
 ### Dima MC
 znng-d           "Z_{inv}#gamma"                     0.1903               375920     375920.0             nero160723/ZNuNuG    ZNuNuG
 wnlg-d           "W#gamma"                           0.6637               483496     483496.0             nero160723/WLNuG     WLNuG

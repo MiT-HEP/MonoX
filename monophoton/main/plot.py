@@ -523,9 +523,9 @@ if __name__ == '__main__':
         fullLumi += allsamples[sName].lumi
         effLumi += allsamples[sName].lumi / plotConfig.prescales[sName]
 
-    from config import jsonLumi, jsonLumiBlinded
-    fullLumi = min(jsonLumi, fullLumi)
-    effLumi = min(jsonLumiBlinded, effLumi)
+#    from config import jsonLumi, jsonLumiBlinded
+#    fullLumi = min(jsonLumi, fullLumi)
+#    effLumi = min(jsonLumiBlinded, effLumi)
 
     canvas = DataMCCanvas()
 
