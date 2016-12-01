@@ -1,5 +1,39 @@
+"""
+Workspace constructor for simultaneous fit using combine
+
+[Terminology]
+ - region: Signal and control regions. Consists of an observation 1D histogram, (multiple) background histogram(s) that stack up to match the observation, and (multiple) signal histogram(s).
+ - process: Background samples. If a background process appears in multiple regions, they must have a common name.
+ - sample: (process, region)
+
+[Interface]
+Input: ROOT files with histograms (no directory structure).
+Output: A ROOT file containing a RooWorkspace and printouts to stdout which should be pasted into a combine data card.
+
+[Instructions]
+Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
+naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section. Histograms for
+systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf uncertainty).
+Once inputs are defined, specify the links between samples and special treatments for various nuisances. Nuisance parameters are identified automatically from the histogram names
+following the convention given above.
+Usage is
+ $ [set environment for CMSSW with combine installation]
+ $ python workspace.py
+At the moment, the tool does not write a data card. The user has to provide a card, to which the lines printed out by the tool should be appended. The second section of the card
+should be of form
+-----
+shapes * * ws.root wspace:$PROCESS_$CHANNEL
+-----
+All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Those that are printed out by the
+tool should therefore not be mentioned anywhere else in the data card.
+Another feature that is lacking at the moment is the visualization of the workspace content. The only way to check how the links were implemented in the workspace is to do
+wspace->Print()
+in ROOT.
+"""
+
 import sys
 import re
+import math
 import pprint
 import collections
 import ROOT
@@ -9,28 +43,65 @@ from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
 
+# nuisances below this order are ignored
+SMALLNUMBER = 1.e-3
+# ignore statistical uncertainties from bins with content less than the cutoff (relative to the total content of the sample)
+STATCUTOFF = 0.1
+
+##### PARAMETERS - EDIT THIS SECTION #####
+
 outname = '/local/yiiyama/exec/ws.root'
 sourcedir = '/data/t3home000/yiiyama/studies/monophoton/distributions'
-hname = 'phoPtHighMet'
-regions = ['monoph', 'monoel', 'monomu', 'diel','dimu']
-sigregion = 'monoph'
+filename = '{region}_{distribution}.root'
+histname = '{distribution}-{process}'
 
+regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu']
+processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
+processes += ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
+distribution = 'phoPtHighMet'
+
+# Links between samples. List of tuples.
+# The first sample (=target) of the tuple is represented by (transfer factor) * (second sample (=source)).
+# In the fit, the normalization of the source and the transfer factors are allowed to float, with constraints
+# on the transfer factors.
 links = [
     (('zg', 'diel'), ('zg', 'monoph')),
     (('zg', 'dimu'), ('zg', 'monoph')),
     (('wg', 'monoel'), ('wg', 'monoph')),
     (('wg', 'monomu'), ('wg', 'monoph')),
-    (('wg', 'monoph'), ('zg', 'monoph'))
+    (('zg', 'monoel'), ('zg', 'monoph')),
+    (('zg', 'monomu'), ('zg', 'monoph')),
+#    (('wg', 'monoph'), ('zg', 'monoph'))
 ]
 
+# Sample with free normalization that are not involved in links.
+floats = []
+
 ignoredNuisances = {
-    ('zg', 'diel'): ['gec', 'jec', 'leptonVetoSF', 'vgPDF', 'zgEWK'],
-    ('zg', 'dimu'): ['gec', 'jec', 'leptonVetoSF', 'vgPDF', 'zgEWK'],
-    ('wg', 'monoel'): ['gec', 'jec', 'leptonVetoSF', 'vgPDF', 'wgEWK'],
-    ('wg', 'monomu'): ['gec', 'jec', 'leptonVetoSF', 'vgPDF', 'wgEWK']
+    ('zg', 'diel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # leptonVetoSF ignored because it's supposed to be present in both SR and CR but is missing from CR
+    ('zg', 'dimu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # minorPDF and minorQCDscale are on zg & wg because of a bug in plotconfig
+    ('wg', 'monoel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
+    ('wg', 'monomu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
+    ('zg', 'monoel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'],
+    ('zg', 'monomu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec']
 }
 
+# Artificial bin-to-bin decorrelation
+decorrelatedNuisances = [
+    'zgEWK',
+    'wgEWK'
+]
+
+# Partial correlation in ratios.
+# {(target, source, nuisance): correlation}
+partialCorrelation = {
+    (('wg', 'monoph'), ('zg', 'monoph'), 'vgQCDscale'): 0.8
+}
+
+# Nuisances affecting normalization only
 scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale']
+
+##### PARAMETERS END #####
 
 workspace = ROOT.RooWorkspace('wspace')
 wsimport = SafeWorkspaceImporter(workspace)
@@ -42,12 +113,11 @@ def fct(*args):
     Just a shorthand for workspace.factory
     """
 
-    global workspace
     return workspace.factory(*args)
 
-def modifier(nuis, target, up, down, form):
+def nuisance(nuis, target, up, down, form):
     """
-    Construct a modifier function for a nuisance.
+    Define (if not defined already) a nuisance parameter and return a yield modifier function.
     """
 
     a1 = (up - down) * 0.5
@@ -65,16 +135,36 @@ def modifier(nuis, target, up, down, form):
     if form == 'lnN':
         mod = fct('expr::{mod}("TMath::Exp({a1}*@0)", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
     elif form == 'quad':
-        if abs(a2) < 1.e-5:
+        if abs(a2) < SMALLNUMBER:
             mod = fct('expr::{mod}("1.+{a1}*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
         else:
             mod = fct('expr::{mod}("1.+{a1}*@0+{a2}*@0*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, a2 = a2, nuis = nuis))
 
     return mod
 
+def ratioStatNuisance(numerName, denomName, nRelErr, dRelErr):
+    """
+    Define nuisance parameters for the numerator and the denominator of a ratio, and return a lnN yield modifier.
+    """
+
+    dNuis = '{denom}_stat'.format(denom = denomName)
+    if not workspace.arg(dNuis):
+        fct('{nuis}[0.,-5.,5.]'.format(nuis = dNuis))
+        nuisances.append(dNuis)
+
+    nNuis = '{numer}_stat'.format(numer = numerName)
+    fct('{nuis}[0.,-5.,5.]'.format(nuis = nNuis))
+    nuisances.append(nNuis)
+
+    modifierName = 'mod_{numer}_{denom}_stat'.format(numer = numerName, denom = denomName)
+
+    mod = fct('expr::{mod}("TMath::Exp({n}*@0+{d}*@1)", {{{nNuis}, {dNuis}}})'.format(mod = modifierName, n = nRelErr, d = dRelErr, nNuis = nNuis, dNuis = dNuis))
+
+    return mod
+
 def linkSource(target):
     """
-    Find the source (sample, region) of the target (sample, region)
+    Find the source sample of the target sample
     """
 
     try:
@@ -89,7 +179,7 @@ def linkSource(target):
 
 def isLinkSource(source):
     """
-    Check if (sample, region) is a source of a valid (sample, region)
+    Check if sample is a source of a valid sample
     """
 
     targets = [l[0] for l in links if l[1] == source]
@@ -102,27 +192,50 @@ def isLinkSource(source):
 # fetch all source histograms first    
 sources = {}
 sourcePlots = {}
+totals = {}
+
 for region in regions:
-    source = ROOT.TFile.Open('{0}/{1}_{2}.root'.format(sourcedir, region, hname))
-    sourcePlots[region] = collections.defaultdict(dict)
-    for key in source.GetListOfKeys():
-        matches = re.match(hname + '-([^_]+)(_.+(?:Up|Down)|)', key.GetName())
-        if matches is None:
-            continue
-    
-        sample = matches.group(1)
-        if sample == 'data':
-            sample = 'data_obs'
-
-        variation = matches.group(2)
-    
-        obj = key.ReadObj()
-        if not variation:
-            sourcePlots[region][sample]['nominal'] = obj
+    sourcePlots[region] = {}
+    for process in processes:
+        # rename 'data' to 'data_obs' (historical)
+        if process == 'data':
+            pname = 'data'
+            process = 'data_obs'
         else:
-            sourcePlots[region][sample][variation[1:]] = obj
+            pname = process
 
-    sources[region] = source
+        sourcePlots[region][process] = {}
+
+        fname = sourcedir + '/' + filename.format(process = process, region = region, distribution = distribution)
+        try:
+            source = sources[fname]
+        except KeyError:
+            source = ROOT.TFile.Open(fname)
+            sources[fname] = source
+   
+        # find all histograms matching the specified histogram name pattern + (_variation)
+        for key in source.GetListOfKeys():
+            matches = re.match(histname.format(process = pname, region = region, distribution = distribution) + '(_.+(?:Up|Down)|)', key.GetName())
+            if matches is None:
+                continue
+        
+            variation = matches.group(1)
+        
+            obj = key.ReadObj()
+            if not variation:
+                # name does not have _*Up or _*Down suffix -> is a nominal histogram
+                sourcePlots[region][process]['nominal'] = obj
+    
+                if process != 'data_obs':
+                    # background process
+                    if region not in totals:
+                        totals[region] = obj.Clone('total_' + region)
+                    else:
+                        totals[region].Add(obj)
+            else:
+                sourcePlots[region][process][variation[1:]] = obj
+
+# Workspace construction start
 
 x = fct('x[-1.e+10,1.e+10]')
 
@@ -145,12 +258,18 @@ while not done:
             continue
 
         regionDone = True
-        for sample, plots in sourcePlots[region].items():
-            if sample == 'data_obs':
+        for process, plots in sourcePlots[region].items():
+            if process == 'data_obs':
                 continue
 
-            if workspace.arg('{0}_{1}_norm'.format(sample, region)):
-                # this (sample, region) is constructed already
+            if len(plots) == 0:
+                continue
+
+            sample = (process, region)
+            sampleName = '{0}_{1}'.format(*sample)
+
+            if workspace.arg(sampleName + '_norm'):
+                # this (process, region) is constructed already
                 continue
 
             # now construct the ParametricHist + norm
@@ -159,7 +278,6 @@ while not done:
             normModifiers = {}
 
             nominal = plots['nominal']
-            sampleName = sample + '_' + region
 
             print 'Constructing pdf for', sampleName
 
@@ -168,7 +286,7 @@ while not done:
             # 2. link source: mu is its own, but has no uncertainty assigned
             # 3. independent: mu is its own and has uncertainties
 
-            sbase = linkSource((sample, region))
+            sbase = linkSource(sample)
             if sbase is not None:
                 print 'this sample is a function of the yields in', sbase
 
@@ -188,8 +306,11 @@ while not done:
                     regionDone = False
                     continue
 
+                sbaseName = '{0}_{1}'.format(*sbase)
+
                 numer = nominal
-                denom = sourcePlots[sbase[1]][sbase[0]]['nominal']
+                basePlots = sourcePlots[sbase[1]][sbase[0]]
+                denom = basePlots['nominal']
 
                 ratio = numer.Clone('ratio')
                 ratio.Divide(denom)
@@ -198,13 +319,13 @@ while not done:
                     rbin = ratio.GetBinContent(ibin)
 
                     if rbin == 0.:
-                        print 'WARNING: {region} {sample} bin{ibin} has tf = 0'.format(region = region, sample = sample, ibin = ibin)
+                        print 'WARNING: {region} {process} bin{ibin} has tf = 0'.format(region = region, process = process, ibin = ibin)
                         bin = fct('mu_{bin}[0.]')
                         bins.add(bin)
                         continue
 
-                    binName = '{0}_{1}_bin{2}'.format(sample, region, ibin)
-                    baseBinName = 'mu_{0}_{1}_bin{2}'.format(*(sbase + (ibin,)))
+                    binName = sampleName + '_bin{0}'.format(ibin)
+                    baseBinName = sbaseName + '_bin{0}'.format(ibin)
                     
                     tfName = binName + '_tf'
 
@@ -215,24 +336,19 @@ while not done:
                     modifiers = []
 
                     # statistical uncertainty on tfactor
-                    if linkSource(sbase) is None:
-                        # this sample is tied to a non-link yield -> take numer + denom stat uncertainty
-                        relerr = ratio.GetBinError(ibin) / rbin
-                    else:
-                        # this sample is tied to a link -> take only the numer stat uncertainty
-                        relerr = nominal.GetBinError(ibin) / nominal.GetBinContent(ibin)
-
-                    modifiers.append(modifier('{tf}_stat'.format(tf = tfName), '', relerr, -relerr, 'quad'))
+                    binRelErr = nominal.GetBinError(ibin) / nominal.GetBinContent(ibin)
+                    baseRelErr = denom.GetBinError(ibin) / denom.GetBinContent(ibin)
+                    modifiers.append(ratioStatNuisance(binName, baseBinName, binRelErr, baseRelErr))
 
                     # other systematic uncertainties on tfactor
                     # collect all variations on numerator and denominator
                     upVariations = set(v for v in plots.keys() if v.endswith('Up'))
-                    upVariations |= set(v for v in sourcePlots[sbase[1]][sbase[0]].keys() if v.endswith('Up'))
+                    upVariations |= set(v for v in basePlots.keys() if v.endswith('Up'))
 
                     for variation in upVariations:
                         var = variation[:-2]
 
-                        if (sample, region) in ignoredNuisances and var in ignoredNuisances[(sample, region)]:
+                        if sample in ignoredNuisances and var in ignoredNuisances[sample]:
                             continue
 
                         if var in scaleNuisances and var in normModifiers:
@@ -246,54 +362,78 @@ while not done:
                             numerUp = numer.GetBinContent(ibin)
                             numerDown = numer.GetBinContent(ibin)
 
-                        if var + 'Up' in sourcePlots[sbase[1]][sbase[0]]:
-                            denomUp = sourcePlots[sbase[1]][sbase[0]][var + 'Up'].GetBinContent(ibin)
-                            denomDown = sourcePlots[sbase[1]][sbase[0]][var + 'Down'].GetBinContent(ibin)
+                        if var + 'Up' in basePlots:
+                            denomUp = basePlots[var + 'Up'].GetBinContent(ibin)
+                            denomDown = basePlots[var + 'Down'].GetBinContent(ibin)
                         else:
                             denomUp = denom.GetBinContent(ibin)
                             denomDown = denom.GetBinContent(ibin)
                         
                         rup = numerUp / denomUp / rbin - 1.
                         rdown = numerDown / denomDown / rbin - 1.
-                        if abs(rup) < 1.e-3 and abs(rdown) < 1.e-3:
-                            # fully correlated uncertainty - cancels out
-                            continue
 
-                        if var in scaleNuisances:
-                            normModifiers[var] = modifier(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
+                        if (sample, sbase, var) in partialCorrelation:
+                            # need to split the nuisance into correlated and anti-correlated
+                            # assuming no scaleNuisance is partially correlated
+                            correlation = partialCorrelation[(sample, sbase, var)]
+                            raup = numerUp / denomDown / rbin - 1.
+                            radown = numerDown / denomUp / rbin - 1.
+
+                            if abs(rup) > SMALLNUMBER or abs(rdown) > SMALLNUMBER:
+                                coeff = (1. + correlation) * 0.5
+                                modifiers.append(nuisance(var + '_corr', tfName, coeff * rup, coeff * rdown, 'lnN'))
+
+                            if abs(raup) > SMALLNUMBER or abs(radown) > SMALLNUMBER:
+                                coeff = (1. - correlation) * 0.5
+                                modifiers.append(nuisance(var + '_acorr', tfName, coeff * raup, coeff * radown, 'lnN'))
+
                         else:
-                            modifiers.append(modifier(var, tfName, rup, rdown, 'lnN'))
+                            if abs(rup) < SMALLNUMBER and abs(rdown) < SMALLNUMBER:
+                                # fully correlated uncertainty that affects the numerator and denominator identically
+                                continue
+    
+                            if var in scaleNuisances:
+                                normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
+                            else:
+                                if var in decorrelatedNuisances:
+                                    # this nuisance is artificially decorrelated among bins
+                                    # calling "corr"Uncert function, but in reality this results in one nuisance per bin
+                                    var = var + '_bin{ibin}'.format(ibin = ibin)
+    
+                                modifiers.append(nuisance(var, tfName, rup, rdown, 'lnN'))
                     
                     if len(modifiers) > 0:
                         # "raw" yield (= base x tfactor)
-                        fct('expr::raw_{bin}("@0*@1", {{{tf}, {baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
+                        fct('expr::raw_{bin}("@0*@1", {{{tf}, mu_{baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
                         fct('prod::unc_{bin}({mod})'.format(bin = binName, mod = ','.join(m.GetName() for m in modifiers)))
                     
                         # mu = raw x unc
                         bin = fct('prod::mu_{bin}(raw_{bin},unc_{bin})'.format(bin = binName))
                     else:
-                        bin = fct('expr::mu_{bin}("@0*@1", {{{tf}, {baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
+                        bin = fct('expr::mu_{bin}("@0*@1", {{{tf}, mu_{baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
 
                     bins.add(bin)
 
                 ratio.Delete()
 
-            elif isLinkSource((sample, region)):
+            elif isLinkSource(sample):
                 print 'this sample is a base of some other sample'
                 # each bin must be described by a free-floating RooRealVar
                 # uncertainties are all casted on tfactors
 
                 for ibin in range(1, nominal.GetNbinsX() + 1):
-                    binName = '{0}_{1}_bin{2}'.format(sample, region, ibin)
-
-                    bin = fct('mu_{bin}[{val},0.,{max}]'.format(bin = binName, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
+                    bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
                     bins.add(bin)
 
             else:
                 print 'this sample does not participate in constraints'
 
+                if sample in floats:
+                    normName = '{0}_{1}_freenorm'.format(*sample)
+                    normModifiers[normName] = fct('{norm}[1.,0.,1000.]'.format(norm = normName))
+
                 for ibin in range(1, nominal.GetNbinsX() + 1):
-                    binName = '{0}_{1}_bin{2}'.format(sample, region, ibin)
+                    binName = sampleName + '_bin{0}'.format(ibin)
 
                     cval = nominal.GetBinContent(ibin)
                     if cval == 0.:
@@ -302,10 +442,11 @@ while not done:
                     else:
    
                         modifiers = []
-    
-                        # statistical uncertainty
-                        #relerr = nominal.GetBinError(ibin) / cval
-                        #modifiers.append(modifier('{bin}_stat'.format(bin = binName), '', relerr, -relerr, 'quad'))
+                        
+                        # statistical uncertainty - often not considered
+                        relErr = nominal.GetBinError(ibin) / cval
+                        if relErr > SMALLNUMBER and cval / totals[region].GetBinContent(ibin) > STATCUTOFF:
+                            modifiers.append(nuisance('{bin}_stat'.format(bin = binName), '', relErr, -relErr, 'lnN'))
     
                         for variation in plots:
                             if not variation.endswith('Up'):
@@ -313,19 +454,29 @@ while not done:
     
                             var = variation[:-2]
 
-                            if (sample, region) in ignoredNuisances and var in ignoredNuisances[(sample, region)]:
+                            if sample in ignoredNuisances and var in ignoredNuisances[sample]:
                                 continue
 
-                            if var in scaleNuisances and var in normModifiers:
+                            if var in scaleNuisances and (var in normModifiers or sample in floats):
                                 continue
     
                             dup = plots[var + 'Up'].GetBinContent(ibin) / cval - 1.
                             ddown = plots[var + 'Down'].GetBinContent(ibin) / cval - 1.
+
+                            if abs(dup - ddown) < SMALLNUMBER:
+                                continue
     
                             if var in scaleNuisances:
-                                normModifiers[var] = modifier(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
+                                if sample not in floats:
+                                    # if this sample is freely floating, scale modifiers are unnecessary degrees of freedom
+                                    normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
                             else:
-                                modifiers.append(modifier(var, binName, dup, ddown, 'lnN'))
+                                if var in decorrelatedNuisances:
+                                    # this nuisance is artificially decorrelated among bins
+                                    # treat each (variation name)_(bin name) as a variation name
+                                    var = var + '_bin{ibin}'.format(ibin = ibin)
+
+                                modifiers.append(nuisance(var, binName, dup, ddown, 'lnN'))
                         
                         if len(modifiers) > 0:
                             raw = fct('raw_{bin}[{val}]'.format(bin = binName, val = cval))
@@ -338,7 +489,7 @@ while not done:
 
                     bins.add(bin)
 
-                # switch between the three types of samples
+                # close switch between the three types of samples
 
             # now compile the bins into a parametric hist pdf and a norm
             shape = ROOT.RooParametricHist(sampleName, sampleName, x, bins, nominal)
@@ -361,7 +512,7 @@ while not done:
                 fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, unc_{sample}_norm}})'.format(sample = sampleName))
 
         if regionDone:
-            # All samples in the region are constructed. Add the observed RooDataHist.
+            # All processes in the region are constructed. Add the observed RooDataHist.
             data_obs = ROOT.RooDataHist(dataObsName, dataObsName, ROOT.RooArgList(x), sourcePlots[region]['data_obs']['nominal'])
             wsimport(data_obs)
 
