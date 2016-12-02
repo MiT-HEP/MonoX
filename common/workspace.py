@@ -39,7 +39,7 @@ import collections
 import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
-from parameters import *
+import parameters as config
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
@@ -114,11 +114,11 @@ def linkSource(target):
     """
 
     try:
-        source = next(l[1] for l in links if l[0] == target)
+        source = next(l[1] for l in config.links if l[0] == target)
     except StopIteration:
         return None
 
-    if source[1] not in regions:
+    if source[1] not in config.regions:
         raise RuntimeError('{0} linked from invalid sample {1}'.format(target, source))
 
     return source
@@ -128,9 +128,9 @@ def isLinkSource(source):
     Check if sample is a source of a valid sample
     """
 
-    targets = [l[0] for l in links if l[1] == source]
+    targets = [l[0] for l in config.links if l[1] == source]
     for target in targets:
-        if target[1] in regions:
+        if target[1] in config.regions:
             return True
 
     return False
@@ -140,9 +140,11 @@ sources = {}
 sourcePlots = {}
 totals = {}
 
-for region in regions:
+hstore = ROOT.gROOT.mkdir('hstore')
+
+for region in config.regions:
     sourcePlots[region] = {}
-    for process in processes:
+    for process in config.processes:
         # rename 'data' to 'data_obs' (historical)
         if process == 'data':
             pname = 'data'
@@ -152,7 +154,7 @@ for region in regions:
 
         sourcePlots[region][process] = {}
 
-        fname = sourcedir + '/' + filename.format(process = process, region = region, distribution = distribution)
+        fname = config.sourcedir + '/' + config.filename.format(process = process, region = region, distribution = config.distribution)
         try:
             source = sources[fname]
         except KeyError:
@@ -161,13 +163,23 @@ for region in regions:
    
         # find all histograms matching the specified histogram name pattern + (_variation)
         for key in source.GetListOfKeys():
-            matches = re.match(histname.format(process = pname, region = region, distribution = distribution) + '(_.+(?:Up|Down)|)', key.GetName())
+            matches = re.match(config.histname.format(process = pname, region = region, distribution = config.distribution) + '(_.+(?:Up|Down)|)', key.GetName())
             if matches is None:
                 continue
         
             variation = matches.group(1)
         
             obj = key.ReadObj()
+            obj.SetDirectory(hstore)
+
+            if config.binWidthNormalized:
+                for iX in range(1, obj.GetNbinsX() + 1):
+                    cont = obj.GetBinContent(iX) * obj.GetXaxis().GetBinWidth(iX)
+                    if process == 'data_obs':
+                        cont = round(cont)
+
+                    obj.SetBinContent(iX, cont) 
+
             if not variation:
                 # name does not have _*Up or _*Down suffix -> is a nominal histogram
                 sourcePlots[region][process]['nominal'] = obj
@@ -195,7 +207,7 @@ while not done:
     print 'Iteration {0}'.format(iteration)
     iteration += 1
 
-    for region in regions:
+    for region in config.regions:
         dataObsName = 'data_obs_' + region
 
         if workspace.data(dataObsName):
@@ -294,10 +306,10 @@ while not done:
                     for variation in upVariations:
                         var = variation[:-2]
 
-                        if sample in ignoredNuisances and var in ignoredNuisances[sample]:
+                        if sample in config.ignoredNuisances and var in config.ignoredNuisances[sample]:
                             continue
 
-                        if var in scaleNuisances and var in normModifiers:
+                        if var in config.scaleNuisances and var in normModifiers:
                             # this uncertainty is non-shape and is taken care of already
                             continue
 
@@ -318,10 +330,10 @@ while not done:
                         rup = numerUp / denomUp / rbin - 1.
                         rdown = numerDown / denomDown / rbin - 1.
 
-                        if (sample, sbase, var) in partialCorrelation:
+                        if (sample, sbase, var) in config.partialCorrelation:
                             # need to split the nuisance into correlated and anti-correlated
                             # assuming no scaleNuisance is partially correlated
-                            correlation = partialCorrelation[(sample, sbase, var)]
+                            correlation = config.partialCorrelation[(sample, sbase, var)]
                             raup = numerUp / denomDown / rbin - 1.
                             radown = numerDown / denomUp / rbin - 1.
 
@@ -338,10 +350,10 @@ while not done:
                                 # fully correlated uncertainty that affects the numerator and denominator identically
                                 continue
     
-                            if var in scaleNuisances:
+                            if var in config.scaleNuisances:
                                 normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
                             else:
-                                if var in decorrelatedNuisances:
+                                if var in config.decorrelatedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # calling "corr"Uncert function, but in reality this results in one nuisance per bin
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
@@ -374,7 +386,7 @@ while not done:
             else:
                 print 'this sample does not participate in constraints'
 
-                if sample in floats:
+                if sample in config.floats:
                     normName = '{0}_{1}_freenorm'.format(*sample)
                     normModifiers[normName] = fct('{norm}[1.,0.,1000.]'.format(norm = normName))
 
@@ -400,10 +412,10 @@ while not done:
     
                             var = variation[:-2]
 
-                            if sample in ignoredNuisances and var in ignoredNuisances[sample]:
+                            if sample in config.ignoredNuisances and var in config.ignoredNuisances[sample]:
                                 continue
 
-                            if var in scaleNuisances and (var in normModifiers or sample in floats):
+                            if var in config.scaleNuisances and (var in normModifiers or sample in config.floats):
                                 continue
     
                             dup = plots[var + 'Up'].GetBinContent(ibin) / cval - 1.
@@ -412,12 +424,12 @@ while not done:
                             if abs(dup - ddown) < SMALLNUMBER:
                                 continue
     
-                            if var in scaleNuisances:
-                                if sample not in floats:
+                            if var in config.scaleNuisances:
+                                if sample not in config.floats:
                                     # if this sample is freely floating, scale modifiers are unnecessary degrees of freedom
                                     normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
                             else:
-                                if var in decorrelatedNuisances:
+                                if var in config.decorrelatedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # treat each (variation name)_(bin name) as a variation name
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
@@ -465,7 +477,7 @@ while not done:
         else:
             done = False
 
-workspace.writeToFile(outname)
+workspace.writeToFile(config.outname)
 
 # print out nuisance lines for the datacard
 for n in sorted(nuisances):

@@ -7,6 +7,7 @@ regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu']
 processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
 processes += ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
 distribution = 'phoPtHighMet'
+binWidthNormalized = False
 
 # Links between samples. List of tuples.
 # The first sample (=target) of the tuple is represented by (transfer factor) * (second sample (=source)).
