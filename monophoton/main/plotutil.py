@@ -230,7 +230,7 @@ class PlotConfig(object):
                     snames.add(s)
 
         for group in self.sigGroups:
-            snames.add(group.name)
+            snames |= set(group.samples)
 
         return list(snames)
 

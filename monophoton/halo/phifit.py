@@ -29,14 +29,15 @@ phivar = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.0
 
 # targnames: sample names for target trees (monoph skim)
 # halonames: sample names for halo templates (can be a photon skim)
-targnames = ['sph-16b2', 'sph-16c2', 'sph-16d2']
-halonames = ['sph-16b2', 'sph-16c2', 'sph-16d2']
+targnames = ['sph-16e', 'sph-16f', 'sph-16g', 'sph-16h1', 'sph-16h2', 'sph-16h3']
+halonames = targnames
 targs = [allsamples[sname] for sname in targnames]
 halos = [allsamples[sname] for sname in halonames]
 
 dataTree = ROOT.TChain('events')
 for sample in halos:
     dataTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
+#    dataTree.Add(config.dataNtuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 dataTree.SetEstimate(dataTree.GetEntries() + 1)
 
 candTree = ROOT.TChain('events')
@@ -106,21 +107,21 @@ while True:
 
 ### MC flat distribution
 # draw
-mcTree = ROOT.TChain('events')
-mcTree.Add(config.skimDir + '/znng-130_monoph.root')
-mcTree.Draw(phimpipi + '>>mcTemp(40,-{pi},{pi})'.format(pi = math.pi), 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
+#mcTree = ROOT.TChain('events')
+#mcTree.Add(config.skimDir + '/znng-130_monoph.root')
+#mcTree.Draw(phimpipi + '>>mcTemp(40,-{pi},{pi})'.format(pi = math.pi), 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
+#
+#mcTemp = ROOT.gDirectory.Get('mcTemp')
+#mcTemp.SetLineColor(ROOT.kBlack)
+#mcTemp.SetLineWidth(2)
+#mcTemp.SetTitle(';#phi\'')
 
-mcTemp = ROOT.gDirectory.Get('mcTemp')
-mcTemp.SetLineColor(ROOT.kBlack)
-mcTemp.SetLineWidth(2)
-mcTemp.SetTitle(';#phi\'')
-
-lumi = canvas.lumi
-canvas.lumi = -1.
-canvas.addHistogram(mcTemp)
-canvas.printWeb('monophoton/halo', 'mcTemp', logy = False)
-canvas.Clear()
-canvas.lumi = lumi
+#lumi = canvas.lumi
+#canvas.lumi = -1.
+#canvas.addHistogram(mcTemp)
+#canvas.printWeb('monophoton/halo', 'mcTemp', logy = False)
+#canvas.Clear()
+#canvas.lumi = lumi
 
 ### fit to candidates
 

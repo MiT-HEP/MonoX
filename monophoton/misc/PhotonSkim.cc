@@ -95,6 +95,10 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
   for (auto& path : sourcePaths) {
     auto* source(TFile::Open(path));
+    if (!source || source->IsZombie()) {
+      delete source;
+      continue;
+    }
 
     if (!allEvents) {
       outputFile->cd();

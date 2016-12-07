@@ -109,8 +109,8 @@ def monophotonBase(sample, selector):
 
     operators = []
 
-    if sample.data:
-        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
+#    if sample.data:
+#        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -306,8 +306,8 @@ def purityBase(sample, selector):
 
     operators = []
 
-    if sample.data:
-        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
+#    if sample.data:
+#        operators.append(('HLTFilter', 'HLT_Photon165_HE10'))
 
     operators += [
         'MetFilters',
@@ -696,8 +696,8 @@ def leptonBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+#    if sample.data:
+#        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     operators = [
         'MetFilters',
@@ -769,9 +769,6 @@ def electronBase(sample, selector):
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
     selector.findOperator('LeptonRecoil').setFlavor(ROOT.kMuon)
-
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'), 0)
 
     return selector
 
@@ -1091,8 +1088,8 @@ def zeeBase(sample, selector):
     Select Z->ee events.
     """
     selector = TagAndProbeBase(sample, selector)
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
+#    if sample.data:
+#        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.TagAndProbePairZ.kElectron)
@@ -1119,8 +1116,8 @@ def zmmBase(sample, selector):
     Select Z->mumu events.
     """
     selector = TagAndProbeBase(sample, selector)
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
+#    if sample.data:
+#        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.TagAndProbePairZ.kMuon)

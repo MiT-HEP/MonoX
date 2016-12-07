@@ -80,12 +80,21 @@ outputFile = ROOT.TFile.Open(outputDir + '/results_' + dataType + '_' + binningN
 if binningName == 'pt':
     binning[-1] = binning[-2] + 20.
 
+binLabels = False
+if len(binning) == 0:
+    binLabels = True
+    binning = range(len(fitBins) + 1)
+
 yields = {
     'ee': ROOT.TH1D('ee', '', len(binning) - 1, array.array('d', binning)),
     'eg': ROOT.TH1D('eg', '', len(binning) - 1, array.array('d', binning))
 }
 
 frate = ROOT.TH1D('frate', '', len(binning) - 1, array.array('d', binning))
+
+for h in [yields['ee'], yields['eg'], frate]:
+    for ibin in range(1, len(fitBins) + 1):
+        h.GetXaxis().SetBinLabel(ibin, fitBins[ibin - 1][0])
 
 toydists = {}
 
@@ -170,15 +179,18 @@ frate.Write()
 yields['ee'].Write()
 yields['eg'].Write()
 
-lumi = 0.
-for sname in lumiSamples:
-    lumi += allsamples[sname].lumi
+#lumi = 0.
+#for sname in lumiSamples:
+#    lumi += allsamples[sname].lumi
+lumi = 36200
+
+frate.SetMaximum(0.05)
 
 canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 canvas.legend.add('frate', 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.apply('frate', frate)
-canvas.ylimits = (0., 0.03)
+canvas.ylimits = (0., 0.05)
 canvas.addHistogram(frate, drawOpt = 'EP')
 
 canvas.xtitle = binningTitle
@@ -190,8 +202,8 @@ for iBin, (binName, cut) in enumerate(fitBins):
     else:
         print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
 
-if toyUncert and binningName == 'pt':
-    binName = 'pt_160_6500'
+if toyUncert and binningName == 'highpt':
+    binName = 'pt_175_6500'
     for conf in ['ee', 'eg']:
         canvas.Clear(full = True)
         canvas.ylimits = (0., 0.05)
@@ -208,8 +220,8 @@ if toyUncert and binningName == 'pt':
 
         canvas.addHistogram(toydist, drawOpt = 'HIST')
         canvas.Update(logy = False)
-#        arrow = canvas.addLine(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0., width = 2, cls = ROOT.TArrow)
-#        arrow.SetArrowSize(0.1)
+        arrow = canvas.addLine(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0., width = 2, cls = ROOT.TArrow)
+        arrow.SetArrowSize(0.1)
 
         arrow = ROOT.TArrow(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0.)
         arrow.Draw()

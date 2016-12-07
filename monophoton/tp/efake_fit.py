@@ -25,7 +25,7 @@ plotDir = 'efake'
 
 fitBins = getBinning(binningName)[2]
 
-lumi = 12.9
+lumi = 36200
 #for sname in lumiSamples:
 #    lumi += allsamples[sname].lumi
 
@@ -164,16 +164,17 @@ if runMode == 'batchtoy':
 elif runMode == 'single':
     if dataType == 'data':
         # target samples
-        for sname in skimConfig['eldata'][0]:
+        for sname in skimConfig['phdata'][0]:
             generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
     
         # background samples
+#        for sname in skimConfig['phdata'][0]:
         for sname in skimConfig['mudata'][0]:
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
         # will need MC signal template
-        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
-        mcWork = mcSource.Get('work')
+#        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
+#        mcWork = mcSource.Get('work')
 
     else:
         for sname in skimConfig['mc'][0]:

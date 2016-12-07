@@ -6,6 +6,8 @@ import array
 import math
 import random
 
+NENTRIES = -1
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
@@ -35,6 +37,18 @@ for sname in lumiSamples:
 # ID integers stored in the trees.
 # Comes handy when processing a pool of samples through TChain
 sampleIds = {
+    'sph-16e': 0,
+    'sph-16f': 0,
+    'sph-16g': 0,
+    'sph-16h1': 0,
+    'sph-16h2': 0,
+    'sph-16h3': 0,
+    'sph-16b-r': 0,
+    'sph-16c-r': 0,
+    'sph-16d-r': 0,
+    'sph-16e-r': 0,
+    'sph-16f-r': 0,
+    'sph-16g-r': 0,
     'sel-16b2': 0,
     'sel-16c2': 0,
     'sel-16d2': 0,
@@ -102,9 +116,13 @@ for sname in targets:
 
     sample = allsamples[sname]
     inputTree = ROOT.TChain('events')
-    inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
+    if os.path.exists(config.photonSkimDir + '/' + sample.name + '.root'):
+        print 'Reading', sname, 'from photon skim'
+        inputTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
+    else:
+        inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
 
     if sample.data:
-        skimmer.fillSkim(inputTree, 1., sampleId)
+        skimmer.fillSkim(inputTree, 1., sampleId, NENTRIES)
     else:
-        skimmer.fillSkim(inputTree, lumi * sample.crosssection / sample.sumw, sampleId)
+        skimmer.fillSkim(inputTree, lumi * sample.crosssection / sample.sumw, sampleId, NENTRIES)

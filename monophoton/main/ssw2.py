@@ -41,8 +41,21 @@ defaults = {
     'zmmJets': selectors.zmmJets
 }
 
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
+haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'] ]
+spikeNorms = [ 8.5 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'] ]
+
+noncollision = [
+    ('halo', selectors.haloMIP(haloNorms[0])),
+    ('haloUp', selectors.haloCSC(haloNorms[0])),
+    ('haloDown', selectors.haloSieie(haloNorms[0])),
+    ('spikeE2E9', selectors.spikeE2E9(spikeNorms[0])),
+    ('spikeSieie', selectors.spikeSieie(spikeNorms[0])),
+    ('spikeSipip', selectors.spikeSipip(spikeNorms[0]))
+]
+
 data_15 = []
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel'] + noncollision
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph']
@@ -60,58 +73,26 @@ mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + [
 mc_lowmt = ['lowmt']
 mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'])
-haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
-
-neroSphLumi = allsamples['sph-16b2-d'].lumi + allsamples['sph-16c2-d'].lumi + allsamples['sph-16d2-d'].lumi
-print neroSphLumi
-neroHaloNorms = [ 5.5 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
-print neroHaloNorms
-neroSpikeNorms = [ 8.5 * allsamples[sph].lumi / neroSphLumi for sph in ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d'] ]
-
 selectors = {
     # Data 2016
-    # dima
-    'sph-16b2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[0]))
-                              ,('haloUp', selectors.haloCSC(neroHaloNorms[0]))
-                              ,('haloDown', selectors.haloSieie(neroHaloNorms[0]))
-                              ,('spikeE2E9', selectors.spikeE2E9(neroSpikeNorms[0]))
-                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[0]))
-                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[0]))
-                              ],
-    'sph-16c2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[1]))
-                              ,('haloUp', selectors.haloCSC(neroHaloNorms[1]))
-                              ,('haloDown', selectors.haloSieie(neroHaloNorms[1]))
-                              ,('spikeE2E9', selectors.spikeE2E9(neroSpikeNorms[1]))
-                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[1]))
-                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[1]))
-                              ],
-    'sph-16d2-d': data_sph + [('halo', selectors.haloMIP(neroHaloNorms[2]))
-                              ,('haloUp', selectors.haloCSC(neroHaloNorms[2]))
-                              ,('haloDown', selectors.haloSieie(neroHaloNorms[2]))
-                              ,('spikeE2E9', selectors.spikeE2E9(neroSpikeNorms[2]))
-                              ,('spikeSieie', selectors.spikeSieie(neroSpikeNorms[2]))
-                              ,('spikeSipip', selectors.spikeSipip(neroSpikeNorms[2]))
-                              ],
+    'sph-16e': data_sph,
+    'sph-16f': data_sph,
+    'sph-16g': data_sph,
+    'sph-16b-r': data_sph,
+    'sph-16c-r': data_sph,
+    'sph-16d-r': data_sph,
+    'sph-16e-r': data_sph,
+    'sph-16f-r': data_sph,
+    'sph-16g-r': data_sph,
+    'sph-16h1': data_sph,
+    'sph-16h2': data_sph,
+    'sph-16h3': data_sph,
     'smu-16b2-d': data_smu,
     'smu-16c2-d': data_smu,
     'smu-16d2-d': data_smu,
     'sel-16b2-d': data_sel,
     'sel-16c2-d': data_sel,
     'sel-16d2-d': data_sel,
-    # simple tree
-    'sph-16b2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
-                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
-                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
-                             ],
-    'sph-16c2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
-                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
-                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
-                             ],
-    'sph-16d2': data_sph + [('halo', selectors.haloMIP(haloNorms[0]))
-                            ,('haloUp', selectors.haloCSC(haloNorms[0]))
-                            ,('haloDown', selectors.haloSieie(haloNorms[0]))
-                             ],
     'smu-16b2': data_smu,
     'smu-16c2': data_smu,
     # 'smu-16d2': data_smu,
@@ -223,8 +204,12 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
         snames += [key for key in _selectorKeys if 'fs' in key]
 
     # filter out empty samples
-    tmp = [name for name in snames if allsamples[name].sumw != 0.]
-    snames = tmp
+    for name in list(snames):
+        if '*' in name: # wild card
+            snames.remove(name)
+            snames.extend([s.name for s in allsamples.getmany(name)])
+
+    snames = [name for name in snames if allsamples[name].sumw != 0.]
 
     return snames
 
@@ -237,7 +222,6 @@ if __name__ == '__main__':
     argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
     argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
-    argParser.add_argument('--nero-input', '-n', action = 'store_true', dest = 'neroInput', help = 'Specify that input is Nero instead of simpletree.')
     argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
@@ -251,15 +235,8 @@ if __name__ == '__main__':
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
     ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
-    ROOT.gSystem.AddIncludePath('-I' + config.nerocorepath + '/interface')
 
-    if args.neroInput:
-        ROOT.gSystem.Load(config.libnerocore)
-        ROOT.gROOT.LoadMacro(os.path.dirname(basedir) + '/common/GoodLumiFilter.cc+')
-     
-    ROOT.gSystem.SetFlagsOpt(ROOT.gSystem.GetFlagsOpt() + ' -DNERO')
     compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
-    print compiled
     # doesn't seem to be returning different values if compilation fails :(
     if (compiled < 0 ):
         print "Couldn't compile Skimmer.cc. Quitting."
@@ -275,20 +252,6 @@ if __name__ == '__main__':
     
     skimmer = ROOT.Skimmer()
 
-    if args.neroInput:
-        goodLumi = ROOT.GoodLumiFilter()
-
-        with open(os.environ['MIT_JSON_DIR'] + '/Cert_271036-276811_13TeV_PromptReco_Collisions16_JSON_NoL1T.txt') as source:
-            lumiList = json.loads(source.read())
-
-            for run, lumiranges in lumiList.items():
-                for lumirange in lumiranges:
-                    lumirange[1] += 1
-                    for lumi in range(*tuple(lumirange)):
-                        goodLumi.addLumi(int(run), lumi)
-
-        skimmer.addGoodLumiFilter(goodLumi)
-    
     if not os.path.exists(config.skimDir):
         os.makedirs(config.skimDir)
 
@@ -305,12 +268,7 @@ if __name__ == '__main__':
     
         skimmer.reset()
     
-        if args.neroInput:
-            tree = ROOT.TChain('nero/events')
-            if sample.data:
-                skimmer.setUseLumiFilter(True)
-        else:
-            tree = ROOT.TChain('events')
+        tree = ROOT.TChain('events')
 
         if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
             print 'Reading', sname, 'from', config.photonSkimDir
@@ -356,7 +314,7 @@ if __name__ == '__main__':
                 else:
                     tree.Add(File)
 
-        print tree.GetEntries()
+        print tree.GetEntries(), 'entries'
         if tree.GetEntries() == 0:
             print 'Tree has no entries. Skipping.'
             continue
@@ -379,7 +337,7 @@ if __name__ == '__main__':
         tmpDir = '/tmp/' + os.environ['USER']
         if not os.path.exists(tmpDir):
             os.makedirs(tmpDir)
-        skimmer.run(tree, tmpDir, sname, args.nentries, args.neroInput)
+        skimmer.run(tree, tmpDir, sname, args.nentries)
         for selname in selnames:
             if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
                 os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')

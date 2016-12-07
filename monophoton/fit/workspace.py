@@ -42,7 +42,6 @@ def fct(*args):
     Just a shorthand for workspace.factory
     """
 
-    global workspace
     return workspace.factory(*args)
 
 def modifier(nuis, target, up, down, form):
@@ -71,6 +70,21 @@ def modifier(nuis, target, up, down, form):
             mod = fct('expr::{mod}("1.+{a1}*@0+{a2}*@0*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, a2 = a2, nuis = nuis))
 
     return mod
+
+def statUncert(binName, baseBinName, binRelErr, baseRelErr):
+    baseStat = '{base}_stat'.format(base = baseBinName)
+    if not workspace.arg(baseStat):
+        workspace.arg('{baseStat}[0.,-5.,5.]'.format(baseStat = baseStat))
+        nuisances.append(baseStat)
+
+    stat = '{bin}_stat'.format(bin = binName)
+    workspace.arg('{stat}[0.,-5.,5.]'.format(stat = stat))
+    nuisances.append(stat)
+
+    bound2 = math.pow(binRelErr * 10., 2.)
+    baseBound2 = math.pow(baseRelErr * 10., 2.)
+
+    return fct('expr::{bin}_tf_stat("1.+TMath::Sqrt({bound2}*{stat}*{stat}+{baseBound2}*{baseStat}*{baseStat})")'.format(bin = binName, stat = stat, baseStat = baseStat, bound2 = bound2, baseBound2 = baseBound2))
 
 def linkSource(target):
     """
@@ -215,14 +229,9 @@ while not done:
                     modifiers = []
 
                     # statistical uncertainty on tfactor
-                    if linkSource(sbase) is None:
-                        # this sample is tied to a non-link yield -> take numer + denom stat uncertainty
-                        relerr = ratio.GetBinError(ibin) / rbin
-                    else:
-                        # this sample is tied to a link -> take only the numer stat uncertainty
-                        relerr = nominal.GetBinError(ibin) / nominal.GetBinContent(ibin)
-
-                    modifiers.append(modifier('{tf}_stat'.format(tf = tfName), '', relerr, -relerr, 'quad'))
+                    binRelErr = nominal.GetBinError(ibin) / nominal.GetBinContent(ibin)
+                    baseRelErr = denom.GetBinError(ibin) / denom.GetBinContent(ibin)
+                    modifiers.append(statUncert(binName, baseBinName, binRelErr, baseRelErr))
 
                     # other systematic uncertainties on tfactor
                     # collect all variations on numerator and denominator

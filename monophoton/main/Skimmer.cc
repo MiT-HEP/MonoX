@@ -4,10 +4,6 @@
 #include "TTree.h"
 #include "TLeaf.h"
 
-#ifdef NERO
-#include "NeroToSimple.h"
-#endif
-
 #include "GoodLumiFilter.h"
 
 #include <vector>
@@ -22,7 +18,7 @@ public:
   void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
   void addGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void setUseLumiFilter(bool _setFilter) { useLumiFilter_ = _setFilter; }
-  void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1, bool neroInput = false);
+  void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1);
 
 private:
   std::vector<EventSelector*> selectors_{};
@@ -30,15 +26,8 @@ private:
   bool useLumiFilter_ = false;
 };
 
-#ifndef NERO
-class NeroToSimple {
-public:
-  void translate() {}
-};
-#endif
-
 void
-Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, long _nEntries/* = -1*/, bool _neroInput)
+Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, long _nEntries/* = -1*/)
 {
   TString outputDir(_outputDir);
   TString sampleName(_sampleName);
@@ -47,32 +36,9 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   bool isMC = false;
 
-  NeroToSimple* translator(0);
-  if (_neroInput) {
-#ifdef NERO
-    std::cout << "Setting up translator" << std::endl;
-    translator = new NeroToSimple(*_input, event);
-    _input->LoadTree(0);
-
-    auto* br = _input->GetBranch("isRealData");
-    br->GetEntry(0);
-    if (br->GetLeaf("isRealData")->GetValue() == 0.)
-      isMC = true;
-
-    auto* file(_input->GetCurrentFile());
-    auto* triggerNames(file->Get("nero/triggerNames"));
-    if (triggerNames) {
-      std::cout << "Translating trigger names" << std::endl;
-      translator->setTriggerNames(triggerNames->GetTitle());
-    }
-    std::cout << "Translator set up" << std::endl;
-#endif
-  }
-  else {
-    event.setAddress(*_input, {"photons.matchL1", "promptFinalStates.ancestor"}, false);
-    if (_input->GetBranch("weight"))
-      isMC = true;
-  }
+  event.setAddress(*_input, {"photons.matchL1", "promptFinalStates.ancestor"}, false);
+  if (_input->GetBranch("weight"))
+    isMC = true;
   
   // printf("isMC %u \n", isMC);
 
@@ -93,9 +59,6 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
-
-    if (translator)
-      translator->translate();
 
     if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
       continue;

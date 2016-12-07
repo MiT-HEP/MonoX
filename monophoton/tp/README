@@ -18,13 +18,16 @@
 
  1. skim (skim.py)
  2. fit (efake_fit.py)
+ 3. evaluate uncertianties (efake_fit.py, efake_tpsyst.py)
  3. compute (efake_compute.py)
 
  skim.py uses Skimmer.cc to produce a generic tag & probe skim from
  simpletrees.
 
- efake_fit.py is invoked three times:
+ efake_fit.py is invoked four times:
   efake_fit.py (data|mc) (binning)
+  efake_fit.py (data|mc) (binning) altsig
+  efake_fit.py (data|mc) (binning) altbkg
  runs a fit for the nominal Z yield estimates. Yields as well as
  parameter values are recorded in the TTree yields in the file.
  Then
@@ -33,6 +36,13 @@
  This mode should be used in a batch system varying the seeds.
  The output of toy generation should be combined with hadd into a file
  named toys_(data|mc)_(binning).root.
+
+ efake_tpsyst.py computes the systematic uncertainties from fits to the
+ altsig and altbkg models. Since it involves toy data generation, the
+ script should be run in batch varying the seed.
+  efake_tpsyst.py (binning) (bin name) (sig|bkg) (N) (random seed)
+ The output should be combined with hadd into a file named
+ tpsyst_data_(sig|bkg)_(bin).root.
 
  efake_compute.py takes this ROOT file as an input and makes the fake
  rate graph.

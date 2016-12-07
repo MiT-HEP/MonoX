@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import array
@@ -15,13 +17,13 @@ ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
-nToys = 1000
-
 binningName = sys.argv[1] # see efake_conf
 binName = sys.argv[2]
 alt = sys.argv[3]
+nToys = int(sys.argv[4])
+seed = int(sys.argv[5])
 
-output = ROOT.TFile.Open(outputDir + '/tpsyst_data_' + alt + '_' + binName + '.root', 'recreate')
+output = ROOT.TFile.Open(outputDir + '/tpsyst_data_' + alt + '_' + binName + '_' + str(seed) + '.root', 'recreate')
 
 nomSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
 altSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '_alt' + alt + '.root')
@@ -53,6 +55,8 @@ tree.SetBranchAddress('binName', vBinName)
 tree.SetBranchAddress('raw', vRaw)
 for name in paramList:
     tree.SetBranchAddress(name, vParams[name])
+
+ROOT.RooRandom.randomGenerator().SetSeed(seed)
 
 for conf, iconf in [('ee', 0), ('eg', 1)]:
     output.cd()

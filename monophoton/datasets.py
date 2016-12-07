@@ -209,6 +209,9 @@ class SampleDefList(object):
             raise RuntimeError('Sample ' + name + ' not found')
 
     def getmany(self, names):
+        if type(names) is str:
+            names = [names]
+
         samples = []
         for name in names:
             match = True
