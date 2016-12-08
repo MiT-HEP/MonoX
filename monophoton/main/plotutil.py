@@ -164,8 +164,8 @@ class VariableDef(object):
         if prescale > 1 and self.blind is None:
             cuts.append('event % {prescale} == 0'.format(prescale = prescale))
 
-        from config import runCutOff
-        cuts.append('!(run > %s)' % runCutOff)
+        # from config import runCutOff
+        # cuts.append('!(run > %s)' % runCutOff)
 
         selection = ' && '.join(['(%s)' % c for c in cuts if c != ''])
 
