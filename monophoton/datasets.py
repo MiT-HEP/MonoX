@@ -286,8 +286,11 @@ add INFO: Add a new dataset.'''
             print sample.linedump()
 
     elif command == 'recalculate':
+        targets = []
         for name in arguments:
-            sample = samples[name]
+            targets.extend(samples.getmany(name))
+
+        for sample in targets:
             sample.recomputeWeight([config.photonSkimDir, config.ntuplesDir])
             print sample.linedump()
 
