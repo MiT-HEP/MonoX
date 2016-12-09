@@ -14,7 +14,12 @@ chiso = sys.argv[4]
 pt = sys.argv[5]
 met = sys.argv[6]
 
-inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
+try:
+    era = sys.argv[7]
+except:
+    era = 'Spring16'
+
+inputKey = era+'_'+loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 ptSel = '(1)'
 for ptsel in PhotonPtSels:
@@ -55,7 +60,7 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
-baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
+baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
 
 outName = os.path.join(plotDir,'chiso_'+inputKey)
 print outName+'.root'
@@ -77,7 +82,7 @@ histograms[0].append(raw)
 
 nBins = len(var[2][loc][-1]) - 1
 binEdges = array('d',var[2][loc][-1])
-eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[loc][pid]+' && '+metSel+" && "+sieieSels[loc][pid]+")"
+eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
 eSel = eSelScratch.replace("photons", "probes")
 print eSel
 

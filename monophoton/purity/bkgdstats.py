@@ -18,7 +18,12 @@ chiso = sys.argv[4]
 pt = sys.argv[5]
 met = sys.argv[6]
 
-inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
+try:
+    era = sys.argv[7]
+except:
+    era = 'Spring15'
+
+inputKey = era+'_'+loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
 
 chIsoSel = '(1)'
 for chisosel in s.ChIsoSbSels:
@@ -107,13 +112,13 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
-baseSel = s.SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
+baseSel = s.SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
 if 'pixel' in extras:
     baseSel = baseSel+' && '+s.pixelVetoCut
 if 'monoph' in extras:
     baseSel = baseSel+' && '+s.monophIdCut
 
-sigSel = baseSel+' && '+s.chIsoSels[loc][pid]
+sigSel = baseSel+' && '+s.chIsoSels[era][loc][pid]
 sbSel = baseSel+' && '+chIsoSel
 truthSel =  '(photons.matchedGen == -22)'
 
@@ -147,7 +152,7 @@ nominalDir = os.path.join(plotDir,'nominal')
 if not os.path.exists(nominalDir):
     os.makedirs(nominalDir)
 
-nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,nominalDir)
+nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,nominalDir)
 
 print "\n\n##############################\n######## Doing ch iso dist uncertainty ########\n##############################\n\n"
 ### Get chiso dist uncertainty
@@ -159,7 +164,7 @@ if not os.path.exists(scaledDir):
     os.makedirs(scaledDir)
 scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
 
-scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][loc][pid],inputKey,scaledDir)
+scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,scaledDir)
 # scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )
 scaledUncYield = abs( nominalPurity[2] - scaledPurity[2] )
@@ -213,7 +218,7 @@ for iToy in range(1,101):
     toyTemplate = s.HistToTemplate(toyHist,var[2][loc],toySkims[3],"v0_"+inputKey,toyDir)
     toyTemplates.append(toyTemplate)
 
-    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,toyDir)
+    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,toyDir)
     # purityDiff = toyPurity[0][0] - nominalPurity[0][0]
     purityDiff = toyPurity[0] - nominalPurity[0]
     print "Purity diff is:", purityDiff
@@ -259,7 +264,7 @@ for iH, hist in enumerate(initialHists[:4]):
     template = s.HistToTemplate(twobinHist,var[2][loc],twobinSkims[iH],"v0_"+inputKey,twobinDir)
     twobinTemplates.append(template)
 
-twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,twobinDir)
+twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,twobinDir)
 # twobinUncertainty = abs( nominalPurity[0][0] - twobinPurity[0][0])
 twobinUncertainty = abs( nominalPurity[0] - twobinPurity[0])
 twobinUncYield = abs( nominalPurity[2] - twobinPurity[2])

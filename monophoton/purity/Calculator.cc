@@ -27,6 +27,7 @@ public:
   void setMaxDPt(float maxDPt) { maxDPt_ = maxDPt; }
 
   void setWorkingPoint(unsigned wp) { wp_ = wp; }
+  void setEra(unsigned era) { era_ = era; }
 
 private:
   float minPhoPt_{175.};
@@ -40,6 +41,7 @@ private:
   float maxDPt_{0.2};
 
   unsigned wp_{1};
+  unsigned era_{0};
   
   const static unsigned nSteps{7};
   double efficiencies[nSteps+1][3];
@@ -135,31 +137,31 @@ Calculator::calculate(TTree* _input) {
 	// if ( !(pho.passHOverE(wp_) && pho.passSieie(wp_) && pho.passCHIso(wp_) && pho.passNHIso(wp_) && pho.passPhIso(wp_)))
 	//  continue;
 
-	if ( !pho.passHOverE(wp_))
+	if ( !pho.passHOverE(wp_, era_))
 	  continue;
 
 	iReco = 0;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passSieie(wp_))
+	if ( !pho.passSieie(wp_, era_))
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passNHIso(wp_))
+	if ( !pho.passNHIso(wp_, era_))
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passPhIso(wp_))
+	if ( !pho.passPhIso(wp_, era_))
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passCHIso(wp_))
+	if ( !pho.passCHIso(wp_, era_))
 	  continue;
 
 	iReco++;
@@ -171,7 +173,7 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !( std::abs(pho.time) < 3. && pho.mipEnergy < 4.9 && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795) && pho.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_] ) )
+	if ( !( std::abs(pho.time) < 3. && pho.mipEnergy < 4.9 && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795) && pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_] ) )
 	  continue;
 
 	iReco++;
