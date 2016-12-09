@@ -101,13 +101,13 @@ selectors = {
     'gj-600': mc_gj + mc_lep + mc_dilep + mc_lowmt,
     'gg-40': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'gg-80': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'tt': mc_cand + mc_lep + mc_dilep,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    # 'tt': mc_cand + mc_lep + mc_dilep,
     # 'wlnu': mc_wlnu + mc_lep,
     'wlnu-100': mc_wlnu + mc_lep,
     'wlnu-200': mc_wlnu + mc_lep, 
@@ -121,6 +121,9 @@ selectors = {
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
     'dy-50-600': mc_cand + mc_lep + mc_dilep,
+    'dy-50-800': mc_cand + mc_lep + mc_dilep,
+    'dy-50-1200': mc_cand + mc_lep + mc_dilep,
+    'dy-50-2500': mc_cand + mc_lep + mc_dilep,
     'qcd-200': mc_cand + mc_qcd + mc_dilep + mc_lep,
     'qcd-300': mc_cand + mc_qcd + mc_dilep + mc_lep,
     'qcd-500': mc_cand + mc_qcd + mc_dilep + mc_lep,
@@ -173,6 +176,12 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
         if '*' in name: # wild card
             snames.remove(name)
             snames.extend([s.name for s in allsamples.getmany(name)])
+        try:
+            samp = allsamples[name]
+        except KeyError:
+            print name, "is not in datasets.csv. Removing it from the list of samples to run over."
+            snames.remove(name)
+            
 
     snames = [name for name in snames if allsamples[name].sumw != 0.]
 
