@@ -18,11 +18,6 @@ ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.Load(config.dataformats + '/obj/libsimpletree.so')
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
-# ROOT.gSystem.Load('libMitFlatDataFormats.so')
-#simpletreeBase = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats'
-
-# ROOT.gSystem.AddIncludePath('-I ' + simpletreeBase + '/interface')
-
 Eras = ['Spring15', 'Spring16']
 Locations = [ 'barrel', 'endcap' ]
 PhotonIds = [ 'none', 'loose', 'medium', 'tight', 'highpt' ]
@@ -63,10 +58,7 @@ for iEra, era in enumerate(Eras):
             chIsoCuts[era][loc][pid] = ROOT.cut
             ROOT.gROOT.ProcessLine("cut = simpletree::Photon::nhIsoCuts["+str(iEra)+"]["+str(iLoc)+"]["+str(iId)+"];")
             # print "nhIso", loc, pid, ROOT.cut
-            if ROOT.cut < 0.:
-                nhIsoCuts[era][loc][pid] = 100000.
-            else:
-                nhIsoCuts[era][loc][pid] = ROOT.cut
+            nhIsoCuts[era][loc][pid] = ROOT.cut
             ROOT.gROOT.ProcessLine("cut = simpletree::Photon::phIsoCuts["+str(iEra)+"]["+str(iLoc)+"]["+str(iId)+"];")
             # print "phIso", loc, pid, ROOT.cut
             phIsoCuts[era][loc][pid] = ROOT.cut

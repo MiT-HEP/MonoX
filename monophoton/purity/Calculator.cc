@@ -43,7 +43,7 @@ private:
   unsigned wp_{1};
   unsigned era_{0};
   
-  const static unsigned nSteps{7};
+  const static unsigned nSteps{9};
   double efficiencies[nSteps+1][3];
   double temp [3] = {-1., 0., 0.};
   
@@ -134,9 +134,6 @@ Calculator::calculate(TTree* _input) {
 	
 	nMatchedPhotons++;
 
-	// if ( !(pho.passHOverE(wp_) && pho.passSieie(wp_) && pho.passCHIso(wp_) && pho.passNHIso(wp_) && pho.passPhIso(wp_)))
-	//  continue;
-
 	if ( !pho.passHOverE(wp_, era_))
 	  continue;
 
@@ -149,15 +146,29 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passNHIso(wp_, era_))
-	  continue;
+	if (era_ == 0) {
+	  if (!pho.passNHIso(wp_, era_))
+	    continue;
+	}
+	else {
+	  if ( !(pho.nhIsoS16 < simpletree::Photon::nhIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	    continue;
+	}	
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passPhIso(wp_, era_))
+	if (wp_ == 3 && !( (pho.phIso + 0.0047*pho.pt) < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
 	  continue;
-
+	else if (era_ == 0) {
+	  if ( !pho.passPhIso(wp_, era_))
+	    continue;
+	}
+	else {
+	  if ( !(pho.phIsoS16 < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	    continue;
+	}
+	
 	iReco++;
 	nRecoPhotons[iReco]++;
 
@@ -173,11 +184,24 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !( std::abs(pho.time) < 3. && pho.mipEnergy < 4.9 && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795) && pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_] ) )
+	if ( !( std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795)) ) 
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
+
+	if ( !(pho.mipEnergy < 4.9) )
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( !(pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_]))
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+	
       }
     }
   }

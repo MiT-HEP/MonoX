@@ -85,13 +85,19 @@ calc.setMaxMet(float(maxMet))
 
 calc.calculate(tree)
 
+print filePath
 output = file(filePath, 'w')
 
+cuts = ['match', 'hOverE', 'sieie', 'nhIso', 'phIso', 'chIso', 'eveto', 'spike', 'halo', 'worst']
 effs= []
-for iEff in range(8):
+for iEff in range(10):
     eff = calc.getEfficiency(iEff)
-    string = "Efficiency %i is %f +%f -%f \n" % (iEff, eff[0], eff[1], eff[2])
-    print string
+    string = "Efficiency after %6s cut is %f +%f -%f \n" % (cuts[iEff], eff[0], eff[1], eff[2])
+    print string.strip('\n')
     output.write(string)
-output.close()
 
+print 'Done'
+output.close()
+print 'Closed'
+
+sys.exit(0)
