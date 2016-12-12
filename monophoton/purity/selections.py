@@ -156,8 +156,20 @@ for era in Eras:
             sieieSel = '(photons.sieie < '+str(sieieCuts[era][loc][pid])+')'
             sieieSelWeighted = '( (0.891832 * photons.sieie + 0.0009133) < '+str(sieieCuts[era][loc][pid])+')'
             chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
-            nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'
-            phIsoSel = '(photons.phIso < '+str(phIsoCuts[era][loc][pid])+')'
+
+            if era == 'Spring15':
+                nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'
+            elif era == 'Spring16':
+                nhIsoSel = '(photons.nhIsoS16 < '+str(nhIsoCuts[era][loc][pid])+')'
+
+            if pid == 'highpt':
+                phIsoSel = '(photons.phIso  + 0.0047*photons.pt < '+str(phIsoCuts[era][loc][pid])+')'
+            else:
+                if era == 'Spring15':
+                    phIsoSel = '(photons.phIso < '+str(phIsoCuts[era][loc][pid])+')'
+                elif era == 'Spring16':
+                    phIsoSel = '(photons.phIsoS16 < '+str(phIsoCuts[era][loc][pid])+')'
+
             hOverESels[era][loc][pid] = hOverESel 
             sieieSels[era][loc][pid] = sieieSel
             chIsoSels[era][loc][pid] = chIsoSel
@@ -167,8 +179,7 @@ for era in Eras:
             PhotonIsolationSel = '('+locationSels[loc]+' && '+hOverESel+' && '+chIsoSel+' && '+nhIsoSel+')'
             # print loc, pid, SigmaIetaIetaSel, chIsoSel
             SigmaIetaIetaSels[era][loc][pid] = SigmaIetaIetaSel
-            PhotonIsolationSels[era][loc][pid] = PhotonIsolationSel
-        
+            PhotonIsolationSels[era][loc][pid] = PhotonIsolationSel        
 
 
 PhotonIds = [ 'none', 'loose', 'medium', 'tight', 'highpt' ]
