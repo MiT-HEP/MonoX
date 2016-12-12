@@ -24,26 +24,23 @@ except:
 
 inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
  
-ptSel = '(1)'
-for ptsel in s.PhotonPtSels:
-    if 'PhotonPt'+pt == ptsel[0]:
-        ptSel = ptsel[1]
-if ptSel == '(1)':
+try:
+    ptSel = s.PhotonPtSels['PhotonPt'+pt]
+except KeyError:
     print 'Inputted pt range', pt, 'not found!'
     print 'Not applying any pt selection!'
+    ptSel = '(1)'
 
-metSel = '(1)'
-for metsel in s.MetSels:
-    if 'Met'+met == metsel[0]:
-        metSel = metsel[1]
-if metSel == '(1)':
+try:
+    metSel = s.MetSels['Met'+met]
+except KeyError:
     print 'Inputted met range', met, 'not found!'
     print 'Not applying any met selection!'
+    metSel = '(1)'
 
 ### Directory stuff so that results are saved and such
-varName = 'chiso'
-versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
+plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 else:
@@ -51,9 +48,8 @@ else:
     os.makedirs(plotDir)
 
 ### Get ChIso Curve for true photons
-macroDir = os.environ['PURITY']
-isoPath = os.path.join(macroDir,'plotiso.py')
-plotiso = Popen( ['python',isoPath,loc,pid,pt,met,era],stdout=PIPE,stderr=PIPE,cwd=macroDir)
+isoPath = os.path.join(s.thisdir,'plotiso.py')
+plotiso = Popen( ['python',isoPath,loc,pid,pt,met,era],stdout=PIPE,stderr=PIPE,cwd=s.thisdir)
 isoOut = plotiso.communicate()
 if not isoOut[1] == "":
     print isoOut[1] 
@@ -92,13 +88,9 @@ for chkey in s.ChIsoSbSels:
 varName = 'sieie'
 var = s.Variables[varName]
 varBins = False
-versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 skimDir  = s.config.skimDir
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
-if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
 
-pids = pid.split('_')
+pids = pid.split('-')
 if len(pids) > 1:
     pid = pids[0]
     extras = pids[1:]

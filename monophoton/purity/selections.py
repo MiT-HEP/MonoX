@@ -183,14 +183,6 @@ for era in Eras:
             SigmaIetaIetaSels[era][loc][pid] = SigmaIetaIetaSel
             PhotonIsolationSels[era][loc][pid] = PhotonIsolationSel        
 
-
-PhotonIds = [ 'none', 'loose', 'medium', 'tight', 'highpt' ]
-
-for pid in PhotonIds[1:]:
-    PhotonIds.append(pid+'_pixel')
-    PhotonIds.append(pid+'_pixel_monoph')
-    PhotonIds.append(pid+'_monoph')
-
 cutIsLoose = '(photons.loose)'
 cutIsMedium = '(photons.medium)'
 cutIsTight = '(photons.tight)'
@@ -209,14 +201,16 @@ noisyRegionCut = '!(photons.eta > 0. && photons.eta < 0.15 && photons.phi > 0.52
 monophIdCut = ' && '.join([mipCut, timeCut, sieieNonzeroCut, sipipNonzeroCut, noisyRegionCut])
 
 cutPhotonPtHigh = [175,200,250,300,350] 
-PhotonPtSels = [ ('PhotonPt'+str(cutPhotonPtHigh[0])+'toInf', '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))') ]
-PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(low)+'to'+str(high), '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))') for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]) ] 
-PhotonPtSels = PhotonPtSels + [ ('PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf', '((photons.scRawPt > '+str(cutPhotonPtHigh[-1])+'))') ]
+PhotonPtSels = { 'PhotonPtInclusive' : '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))' }
+for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]):
+    PhotonPtSels['PhotonPt'+str(low)+'to'+str(high)] = '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))' 
+PhotonPtSels['PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf'] =  '((photons.scRawPt > '+str(cutPhotonPtHigh[-1])+'))'
 
-cutMet = [000,60,120]
-MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))') ] 
-MetSels = MetSels + [ ('Met'+str(low)+'to'+str(high),'((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))') for low, high in zip(cutMet,cutMet[1:]) ]
-MetSels = MetSels + [ ('Met'+str(cutMet[-1])+'toInf', '((t1Met.met > '+str(cutMet[-1])+'))') ]
+cutMet = [0,60,120]
+MetSels = { 'MetInclusive' : '((t1Met.met > '+str(cutMet[0])+'))' } 
+for low, high in zip(cutMet,cutMet[1:]):
+    MetSels['Met'+str(low)+'to'+str(high)] = '((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))'
+MetSels['Met'+str(cutMet[-1])+'toInf'] =  '((t1Met.met > '+str(cutMet[-1])+'))' 
 
 # ChIsoSbBins = range(20,111,30)
 # ChIsoSbSels = { 'ChIso'+str(low)+'to'+str(high) : '((photons.chIso > '+str(float(low)/10.0)+') && (photons.chIso < '+str(float(high)/10.0)+'))' for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) }

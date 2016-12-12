@@ -9,22 +9,29 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import selections as s
 
-scratchPath = '/scratch5/ballen/hist/purity/'+s.Version+'/sieie/Plots/SignalContam'
+scratchPath = '/data/t3home000/ballen/hist/purity/'+s.Version
 
 argFile = file('condorArgs.txt', 'w')
 
-for source in ['nero']:
+PhotonIds = [ 'none' ]
+for base in ['loose', 'medium', 'tight', 'highpt']:
+     PhotonIds += [ base, base+'-pixel', base+'-pixel-monoph' ]
+
+#print sorted(s.PhotonPtSels.keys())
+#print sorted(s.MetSels.keys())
+#sys.exit(0)
+
+for era in s.Eras:
     for loc in s.Locations[:1]:
-        for chiso in s.ChIsoSbSels[:]:
-            for pt in s.PhotonPtSels[:]:
-                for met in s.MetSels[1:2]:
-                    for sel in ['none', 'medium_pixel_monoph']:
-                        # print loc, sel, chiso[0], pt[0], met[0]
-                        outDir = scratchPath + '/' + source + '/' + loc + '_' + sel + '_' + chiso[0] + '_' + pt[0] + '_' + met[0]
-                        # print outDir
-                        if not os.path.exists(outDir):
-                            os.makedirs(outDir)
-                        argFile.write(source + ' ' + loc + ' ' + sel + ' ' + chiso[0].replace('ChIso', '') + ' ' + pt[0].replace('PhotonPt', '') + ' ' + met[0].replace('Met', '') + ' \n')
+        for pt in sorted(s.PhotonPtSels.keys())[-1:]:
+            for met in sorted(s.MetSels.keys())[:1]:
+                for sel in PhotonIds:
+                    # print loc, sel, chiso[0], pt[0], met[0]
+                    outDir = scratchPath + '/' + era + '_' + loc + '_' + sel + '_' + pt + '_' + met
+                    # print outDir
+                    if not os.path.exists(outDir):
+                        os.makedirs(outDir)
+                    argFile.write(loc + ' ' + sel + ' ' + pt.replace('PhotonPt', '') + ' ' + met.replace('Met', '') + ' ' + era + ' \n')
 
 argFile.close()
 submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
