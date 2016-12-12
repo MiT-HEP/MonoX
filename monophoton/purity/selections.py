@@ -82,18 +82,20 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
                
 # Skims for Purity Calculation
 sphData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3']
-gjetsMc = ['gj-40','gj-100','gj-200','gj-400','gj-600']
+gjetsMc = ['gj-100','gj-200','gj-400','gj-600']
 qcdMc = [ 'qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
 gjetsMcNero = ['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d']
 
 Measurement = { "bambu" : [ ('FitSinglePhoton',sphData,'Fit Template from SinglePhoton Data')
-                                 ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
-                                 ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
-                                 ,('TempSidebandGJetsScaled',gjetsMc,r'Scaled Sideband Template from #gamma+jets MC')
-                                 ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
-                                 ],
+                            ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
+                            ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
+                            ,('TempBkgdSinglePhoton',sphData,'Background Template from SinglePhoton Data')
+                            ,('TempSidebandGJetsNear',gjetsMc,r'Near Sideband Template from #gamma+jets MC')
+                            ,('TempBkgdSinglePhotonNear',sphData,'Near Background Template from SinglePhoton Data')
+                            ,('TempSidebandGJetsFar',gjetsMc,r'Far Sideband Template from #gamma+jets MC')
+                            ,('TempBkgdSinglePhotonFar ',sphData,'Far Background Template from SinglePhoton Data')
+                            ],
                 "bambumc" : [ ('FitSinglePhoton',gjetsMc+qcdMc,'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
                                  ,('TempSidebandGJets',gjetsMc,r'Sideband Template from #gamma+jets MC')
@@ -216,12 +218,11 @@ MetSels = [ ('Met'+str(cutMet[0])+'toInf', '((t1Met.met > '+str(cutMet[0])+'))')
 MetSels = MetSels + [ ('Met'+str(low)+'to'+str(high),'((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))') for low, high in zip(cutMet,cutMet[1:]) ]
 MetSels = MetSels + [ ('Met'+str(cutMet[-1])+'toInf', '((t1Met.met > '+str(cutMet[-1])+'))') ]
 
-"""
-ChIsoSbBins = range(20,105,5)
-ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((photons.chIso > '+str(float(low)/10.0)+') && (photons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-4], ChIsoSbBins[4:]) ]
-"""
-ChIsoSbBins = range(20,111,30)
-ChIsoSbSels = [ ('ChIso'+str(low)+'to'+str(high), '((photons.chIso > '+str(float(low)/10.0)+') && (photons.chIso < '+str(float(high)/10.0)+'))') for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) ]
+# ChIsoSbBins = range(20,111,30)
+# ChIsoSbSels = { 'ChIso'+str(low)+'to'+str(high) : '((photons.chIso > '+str(float(low)/10.0)+') && (photons.chIso < '+str(float(high)/10.0)+'))' for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) }
+ChIsoSbSels = { 'ChIso50to80'  : '(photons.chIso > 5.0 && photons.chIso < 8.0)',
+                'ChIso20to50'  : '(photons.chIso > 2.0 && photons.chIso < 5.0)',
+                'ChIso80to110' : '(photons.chIso > 8.0 && photons.chIso < 11.0)' }
 
 # Function for making templates!
 """ arguments = ( variable, RooRealVar, skim, selection, location, variablebinning ) """

@@ -3,22 +3,21 @@ import sys
 import shutil
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor, config
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config
 from ROOT import *
 gROOT.SetBatch(True)
 
 loc = sys.argv[1]
 pid = sys.argv[2]
-chiso = sys.argv[3]
-pt = sys.argv[4]
-met = sys.argv[5]
+pt = sys.argv[3]
+met = sys.argv[4]
 
 try:
-    era = sys.argv[6]
+    era = sys.argv[5]
 except:
     era = 'Spring15'
 
-inputKey = era+'_'+loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
+inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
 
 ptSel = '(1)'
 for ptsel in PhotonPtSels:
