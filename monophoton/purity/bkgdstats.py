@@ -2,7 +2,6 @@
 
 import os
 import sys
-import shutil
 from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
@@ -42,9 +41,6 @@ except KeyError:
 versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
-else:
-    shutil.rmtree(plotDir)
     os.makedirs(plotDir)
 
 ### Get ChIso Curve for true photons

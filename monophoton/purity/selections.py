@@ -14,9 +14,11 @@ import config
 
 ### Getting cut values from simple tree ###
 
-ROOT.gSystem.Load(config.libsimpletree)
+#ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.Load(config.dataformats + '/obj/libsimpletree.so')
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+
+print 'bloop'
 
 Eras = ['Spring15', 'Spring16']
 Locations = [ 'barrel', 'endcap' ]
@@ -436,4 +438,7 @@ def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,
     for version, purity  in enumerate(purities[1:]):
         print "Purity for iteration", version, "is:", purity
     return purities[-1]
+
+print 'blah'
+
 

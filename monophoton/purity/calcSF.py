@@ -13,103 +13,84 @@ from plotstyle import SimpleCanvas, RatioCanvas
 
 import selections as s
 
-varName = 'sieie'
-versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
-plotDir = os.path.join(versDir, 'Plots', 'SignalContam') 
-outDir = os.path.join(plotDir, 'ScaleFactor')
+versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
+outDir = os.path.join(versDir, 'ScaleFactor')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
+PhotonIds = ['medium-pixel-monoph']
+PhotonPtSels = sorted(s.PhotonPtSels.keys())[-1:]
+MetSels = sorted(s.MetSels.keys())[:1]
+
 yields = {}
-PhotonIds = ['medium_pixel_monoph']
-PhotonPtSels = s.PhotonPtSels[:1]
+for loc in s.Locations[:1]:
+    yields[loc] = {}
+    for pid in PhotonIds + ['none']:
+        yields[loc][pid] = {}
+        for ptCut in PhotonPtSels:
+            yields[loc][pid][ptCut] = {}
+            for metCut in MetSels: 
+                yields[loc][pid][ptCut][metCut] = {}
+                dirName = 'Spring15' + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
+ 
+                # Get Data Yields
+                dataFileName = os.path.join(versDir,dirName,"results.out") 
+                dataFile = open(dataFileName)
+                
+                match = False
+                count = [1., 0.]
+                for line in dataFile:
+                    if "# of real photons is:" in line:
+                        # print line
+                        tmp = line.split()
+                        if tmp:
+                            match = True
+                            # pprint(tmp)
+                            count[0] = float(tmp[-1].strip("(),"))
+                            #print count
+                    elif "Total unc yield is:" in line:
+                        # print line
+                        tmp = line.split()
+                        if tmp:
+                            match = True
+                            # pprint(tmp)
+                            count[1] = float(tmp[-1].strip("(),"))
+                            #print count
 
-for source in ['nero']:
-    yields[source] = {}
-    for loc in s.Locations[:1]:
-        yields[source][loc] = {}
-        for pid in PhotonIds + ['none']:
-            yields[source][loc][pid] = {}
-            for ptCut in PhotonPtSels:
-                yields[source][loc][pid][ptCut[0]] = {}
-                for metCut in s.MetSels[1:2]:
-                    tempyields = {}
+                if not match:
+                    print "No data yields found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
+                dataFile.close()
+                
+                yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
 
-                    for chiso in s.ChIsoSbSels[:]:
-                        dirName = loc+'_'+pid+'_'+chiso[0]+'_'+ptCut[0]+'_'+metCut[0] 
-                        condorFileName = os.path.join(plotDir,source,dirName,"results.out") 
-                        # print condorFileName
-                        condorFile = open(condorFileName)
-                        
-                        match = False
-                        count = [1., 0.]
-                        for line in condorFile:
-                            if "# of real photons is:" in line:
-                                # print line
-                                tmp = line.split()
-                                if tmp:
-                                    match = True
-                                    # pprint(tmp)
-                                    count[0] = float(tmp[-1].strip("(),"))
-                                    #print count
-                            elif "Total unc yield is:" in line:
-                                # print line
-                                tmp = line.split()
-                                if tmp:
-                                    match = True
-                                    # pprint(tmp)
-                                    count[1] = float(tmp[-1].strip("(),"))
-                                    #print count
+                if pid == 'none':
+                    continue
 
-                        tempyields[chiso[0]] = count
+                # get mc effs
+                mcFileName = os.path.join(versDir,dirName,"mceff.out") 
+                mcFile = open(mcFileName)
 
-                        if not match:
-                            print "No yield found for skim:", source, dirName
-                            tempyields[chiso[0]] = (-1., 0.0)
-                        condorFile.close()
+                match = False
+                count = [1., 0., 0.]
+                for line in mcFile:
+                    if "Efficiency" in line:
+                        print line
+                        tmp = line.split()
+                        if tmp:
+                            match = True
+                            pprint(tmp)
+                            count[0] = float(tmp[-3].strip("(),+-"))
+                            count[1] = float(tmp[-2].strip("(),+-"))
+                            count[2] = float(tmp[-1].strip("(),+-"))
+                            #print count
 
-                    nReal = tempyields[s.ChIsoSbSels[1][0]][0]
-                    unc = tempyields[s.ChIsoSbSels[1][0]][1]
-                    sbUnc = max(abs(nReal - tempyields[s.ChIsoSbSels[0][0]][0]),
-                                    abs(nReal - tempyields[s.ChIsoSbSels[2][0]][0]))
-                    totalUnc = (unc**2 + sbUnc**2)**(0.5)
+                if not match:
+                    print "No mc eff found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0, 0.0)
+                mcFile.close()
 
-                    yields[source][loc][pid][ptCut[0]][metCut[0]] = (nReal, totalUnc)
-
-for source in ['neromc']:
-    yields[source] = {}
-    for loc in s.Locations[:1]:
-        yields[source][loc] = {}
-        for pid in PhotonIds:
-            yields[source][loc][pid] = {}
-            for ptCut in PhotonPtSels:
-                yields[source][loc][pid][ptCut[0]] = {}
-                for metCut in s.MetSels[1:2]:                        
-                    dirName = loc+'_'+pid+'_ChIso50to80_'+ptCut[0]+'_'+metCut[0] 
-                    condorFileName = os.path.join(plotDir,source,dirName,"mceff.out") 
-                    # print condorFileName
-                    condorFile = open(condorFileName)
-                        
-                    match = False
-                    count = [1., 0., 0.]
-                    for line in condorFile:
-                        if "Efficiency" in line:
-                            print line
-                            tmp = line.split()
-                            if tmp:
-                                match = True
-                                pprint(tmp)
-                                count[0] = float(tmp[-3].strip("(),+-"))
-                                count[1] = float(tmp[-2].strip("(),+-"))
-                                count[2] = float(tmp[-1].strip("(),+-"))
-                                #print count
-
-                    if not match:
-                        print "No yield found for skim:", source, dirName
-                        yields[source][loc][pid][ptCut[0]][metCut[0]] = (-1., 0.0, 0.0)
-                    condorFile.close()
-
-                    yields[source][loc][pid][ptCut[0]][metCut[0]] = count
+                yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
                     
 pprint(yields)
 
@@ -118,38 +99,42 @@ rcanvas = RatioCanvas(lumi = config.jsonLumi)
 
 for loc in s.Locations[:1]:
     for pid in PhotonIds:
-        for metCut in s.MetSels[1:2]:
+        for metCut in MetSels:
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
             rcanvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
             dataEff = r.TGraphAsymmErrors()
-            dataEff.SetName(loc+'-'+pid+'-'+metCut[0]+'-data')
+            dataEff.SetName(loc+'-'+pid+'-'+metCut+'-data')
             
             mcEff = r.TGraphAsymmErrors()
-            mcEff.SetName(loc+'-'+pid+'-'+metCut[0]+'-mc')
+            mcEff.SetName(loc+'-'+pid+'-'+metCut+'-mc')
 
             gSF = r.TGraphAsymmErrors()
-            gSF.SetName(loc+'-'+pid+'-'+metCut[0]+'-sf')
+            gSF.SetName(loc+'-'+pid+'-'+metCut+'-sf')
 
             for iB, ptCut in enumerate(PhotonPtSels):
-                lowEdge = float(ptCut[0].split('t')[2])
-                highEdge = ptCut[0].split('to')[-1]
-                if highEdge == 'Inf':
+                if 'Inclusive' in ptCut:
+                    lowEdge = 175.
                     highEdge = 500.
-                highEdge = float(highEdge)
+                else:
+                    lowEdge = float(ptCut.split('t')[2])
+                    highEdge = ptCut.split('to')[-1]
+                    if highEdge == 'Inf':
+                        highEdge = 500.
+                    highEdge = float(highEdge)
                 
                 center = (lowEdge + highEdge) / 2.
                 exl = center - lowEdge
                 exh = highEdge - center
 
-                mceffs = yields['neromc'][loc][pid][ptCut[0]][metCut[0]]
+                mceffs = yields[loc][pid][ptCut][metCut]['mc']
                 mcEff.SetPoint(iB, center, mceffs[0])
                 mcEff.SetPointError(iB, exl, exh, mceffs[2], mceffs[1])
 
-                passes = yields['nero'][loc][pid][ptCut[0]][metCut[0]]
-                totals = yields['nero'][loc]['none'][ptCut[0]][metCut[0]]
+                passes = yields[loc][pid][ptCut][metCut]['data']
+                totals = yields[loc]['none'][ptCut][metCut]['data']
 
                 eff = passes[0] / totals[0]
                 corr = eff

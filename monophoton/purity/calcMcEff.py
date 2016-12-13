@@ -7,13 +7,9 @@ import ROOT
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
-# from datasets import allsamples
 import config
-# from selections import Version
 import selections as s
 
-# ROOT.gSystem.Load(config.libsimpletree)
-# ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/Calculator.cc+')
 
 loc = sys.argv[1]
@@ -28,8 +24,8 @@ except:
 
 inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
 
-versDir = os.path.join('/scratch5/ballen/hist/purity', s.Version,'sieie')
-plotDir = os.path.join(versDir,'Plots','SignalContam',inputKey)
+versDir = os.path.join('/data/t3home000/ballen/hist/purity', s.Version)
+plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
 filePath = os.path.join(plotDir, 'mceff.out')
@@ -60,7 +56,7 @@ elif loc == 'endcap':
 calc.setMinEta(minEta)
 calc.setMaxEta(maxEta)
 
-pids = pid.split('_')
+pids = pid.split('-')
 if len(pids) > 1:
     pid = pids[0]
     extras = pids[1:]
@@ -71,13 +67,21 @@ elif len(pids) == 1:
 idmap = { 'loose' : 0, 'medium' : 1, 'tight' : 2, 'highpt' : 3 }
 calc.setWorkingPoint(idmap[pid])
 
-(minPt, maxPt) = pt.split('to')
+if pt == 'Inclusive':
+    minPt = 175.
+    maxPt = 6500.
+else:
+    (minPt, maxPt) = pt.split('to')
 if maxPt == 'Inf':
     maxPt = 6500.
 calc.setMinPhoPt(float(minPt))
 calc.setMaxPhoPt(float(maxPt))
 
-(minMet, maxMet) = met.split('to')
+if met == 'Inclusive':
+    minMet = 175.
+    maxMet = 6500.
+else:
+    (minMet, maxMet) = met.split('to')
 if maxMet == 'Inf':
     maxMet = 6500.
 calc.setMinMet(float(minMet))
@@ -96,8 +100,10 @@ for iEff in range(10):
     print string.strip('\n')
     output.write(string)
 
-print 'Done'
 output.close()
 print 'Closed'
+
+calc = None
+print 'Done'
 
 sys.exit(0)

@@ -1,6 +1,5 @@
 import os
 import sys
-import shutil
 from array import array
 from pprint import pprint
 from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config
@@ -42,13 +41,10 @@ skimDir  = config.skimDir
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
-else:
-    shutil.rmtree(plotDir)
-    os.makedirs(plotDir)
 
 skim = Measurement['bambu'][1]
 
-pids = pid.split('_')
+pids = pid.split('-')
 if len(pids) > 1:
     pid = pids[0]
     extras = pids[2:]
