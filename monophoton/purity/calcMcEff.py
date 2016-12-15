@@ -28,6 +28,9 @@ versDir = os.path.join('/data/t3home000/ballen/hist/purity', s.Version)
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
+else:
+    shutil.rmtree(outDir)
+    os.makedirs(outDir)
 filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
@@ -43,9 +46,6 @@ print tree.GetEntries()
 calc = ROOT.Calculator()
 calc.setMaxDR(0.2)
 calc.setMaxDPt(0.2)
-
-if era == 'Spring16':
-    calc.setEra(1)
 
 if loc == 'barrel':
     minEta = 0.
@@ -66,6 +66,13 @@ elif len(pids) == 1:
 
 idmap = { 'loose' : 0, 'medium' : 1, 'tight' : 2, 'highpt' : 3 }
 calc.setWorkingPoint(idmap[pid])
+if 'pixel' in extras:
+    calc.applyPixelVeto()
+if 'monoph' in extras:
+    calc.applyMonophID()
+
+if era == 'Spring16':
+    calc.setEra(1)
 
 if pt == 'Inclusive':
     minPt = 175.
@@ -94,9 +101,15 @@ output = file(filePath, 'w')
 
 cuts = ['match', 'hOverE', 'sieie', 'nhIso', 'phIso', 'chIso', 'eveto', 'spike', 'halo', 'worst']
 effs= []
-for iEff in range(10):
+for iEff, cut in enumerate(cuts):
+    if not 'pixel' in extras and cut == 'eveto':
+        print 'blah'
+        break
+    if not 'monoph' in extras and cut == 'spike':
+        break
+
     eff = calc.getEfficiency(iEff)
-    string = "Efficiency after %6s cut is %f +%f -%f \n" % (cuts[iEff], eff[0], eff[1], eff[2])
+    string = "Efficiency after %6s cut is %f +%f -%f \n" % (cut, eff[0], eff[1], eff[2])
     print string.strip('\n')
     output.write(string)
 

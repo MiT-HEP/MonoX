@@ -28,6 +28,8 @@ public:
 
   void setWorkingPoint(unsigned wp) { wp_ = wp; }
   void setEra(unsigned era) { era_ = era; }
+  void applyPixelVeto() { eveto_ = true; }
+  void applyMonophID() { monoph_ = true; }
 
 private:
   float minPhoPt_{175.};
@@ -42,6 +44,8 @@ private:
 
   unsigned wp_{1};
   unsigned era_{0};
+  bool eveto_{false};
+  bool monoph_{false};
   
   const static unsigned nSteps{9};
   double efficiencies[nSteps+1][3];
@@ -178,11 +182,17 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
+	if ( !eveto_ )
+	  continue;
+
 	if ( !pho.pixelVeto )
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
+
+	if ( !monoph_ )
+	  continue;
 
 	if ( !( std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795)) ) 
 	  continue;
