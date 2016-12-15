@@ -162,7 +162,7 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if (wp_ == 3 && !( (pho.phIso + 0.0047*pho.pt) < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	if (wp_ == 3 && !( (pho.phIso + 0.0053*pho.pt) < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
 	  continue;
 	else if (era_ == 0) {
 	  if ( !pho.passPhIso(wp_, era_))

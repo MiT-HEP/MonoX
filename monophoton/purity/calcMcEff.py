@@ -28,9 +28,11 @@ versDir = os.path.join('/data/t3home000/ballen/hist/purity', s.Version)
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
+"""
 else:
     shutil.rmtree(outDir)
     os.makedirs(outDir)
+"""
 filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
