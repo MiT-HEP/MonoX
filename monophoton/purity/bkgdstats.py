@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE
 import selections as s
 from copy import deepcopy
 from ROOT import *
-gROOT.SetBatch(True)
+# gROOT.SetBatch(True)
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1]
@@ -142,8 +142,8 @@ nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,n
 
 print "\n\n##############################\n######## Doing ch iso sideband uncertainty ########\n##############################\n\n"
 ### Get chiso sideband near uncertainty
-nearHists = deepcopy(initialHists[:4])
-nearTemplates = deepcopy(initialTemplates[:4])
+nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
+nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
 nearSkims = skims[:4]
 nearRatio = float(isoHists['ChIso20to50'][0][1]) / float(isoHists['ChIso20to50'][0][2])
 nearDir = os.path.join(plotDir,'near')
@@ -153,10 +153,10 @@ if not os.path.exists(nearDir):
 nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,nearDir)
 
 ### Get chiso sideband far uncertainty
-farHists = deepcopy(initialHists[:4])
-farTemplates = deepcopy(initialTemplates[:4])
+farHists = deepcopy(initialHists[:2] + initialHists[6:])
+farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
 farSkims = skims[:4]
-farRatio = float(isoHists['ChIso20to50'][0][1]) / float(isoHists['ChIso20to50'][0][2])
+farRatio = float(isoHists['ChIso80to110'][0][1]) / float(isoHists['ChIso80to110'][0][2])
 farDir = os.path.join(plotDir,'far')
 if not os.path.exists(farDir):
     os.makedirs(farDir)

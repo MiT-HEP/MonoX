@@ -2,7 +2,7 @@ import os
 import sys
 import array
 import ROOT
-
+import time
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -96,7 +96,7 @@ Measurement = { "bambu" : [ ('FitSinglePhoton',sphData,'Fit Template from Single
                             ,('TempSidebandGJetsNear',gjetsMc,r'Near Sideband Template from #gamma+jets MC')
                             ,('TempBkgdSinglePhotonNear',sphData,'Near Background Template from SinglePhoton Data')
                             ,('TempSidebandGJetsFar',gjetsMc,r'Far Sideband Template from #gamma+jets MC')
-                            ,('TempBkgdSinglePhotonFar ',sphData,'Far Background Template from SinglePhoton Data')
+                            ,('TempBkgdSinglePhotonFar',sphData,'Far Background Template from SinglePhoton Data')
                             ],
                 "bambumc" : [ ('FitSinglePhoton',gjetsMc+qcdMc,'Fit Template from SinglePhoton Data')
                                  ,('TempSignalGJets',gjetsMc,r'Signal Template from #gamma+jets MC')
@@ -152,8 +152,11 @@ for era in Eras:
         SigmaIetaIetaSels[era][loc] = {}
         PhotonIsolationSels[era][loc] = {}
 
-        for sel in [hOverESels, sieieSels, chIsoSels, nhIsoSels, phIsoSels, SigmaIetaIetaSels, PhotonIsolationSels]:
+        for sel in [sieieSels, chIsoSels, nhIsoSels, phIsoSels]:
             sel[era][loc]['none'] = '(1)'
+        hOverESels[era][loc]['none'] = '(photons.hOverE < 0.06)'
+        SigmaIetaIetaSels[era][loc]['none'] = '('+locationSels[loc]+' && '+hOverESels[era][loc]['none']+' && '+nhIsoSels[era][loc]['none']+' && '+phIsoSels[era][loc]['none']+')'
+        PhotonIsolationSels[era][loc]['none'] = '('+locationSels[loc]+' && '+hOverESels[era][loc]['none']+' && '+chIsoSels[era][loc]['none']+' && '+nhIsoSels[era][loc]['none']+')'
 
         for pid in PhotonIds[1:]:
             hOverESel = '(photons.hOverE < '+str(hOverECuts[era][loc][pid])+')'
@@ -211,7 +214,7 @@ PhotonPtSels['PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf'] =  '((photons.scRawPt 
 cutMet = [0,60,120]
 MetSels = { 'MetInclusive' : '((t1Met.met > '+str(cutMet[0])+'))' } 
 for low, high in zip(cutMet,cutMet[1:]):
-    MetSels['Met'+str(low)+'to'+str(high)] = '((t1Met.met  >'+str(low)+') && (t1Met.met < '+str(high)+'))'
+    MetSels['Met'+str(low)+'to'+str(high)] = '((t1Met.met  > '+str(low)+') && (t1Met.met < '+str(high)+'))'
 MetSels['Met'+str(cutMet[-1])+'toInf'] =  '((t1Met.met > '+str(cutMet[-1])+'))' 
 
 # ChIsoSbBins = range(20,111,30)
@@ -246,7 +249,9 @@ def HistExtractor(_temp,_var,_skim,_sel,_skimDir,_varBins):
         _sel = 'weight * (1)'
     print _sel, '\n'
     
-    tree.Draw(_temp+">>"+_skim[0], _sel, "goff")
+    tree.Draw(_temp+">>"+_skim[0], _sel, "")
+
+#    time.sleep(15)
 
     if not 'Fit' in _skim[0]:
         for iBin in range(1, tempH.GetNbinsX()+1):
@@ -261,7 +266,7 @@ def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
     # remove negative weights
     for bin in range(_hist.GetNbinsX()+1):
         binContent = _hist.GetBinContent(bin)
-        if ( binContent< 0.):
+        if ( binContent < 0.):
             _hist.SetBinContent(bin, 0.)
             _hist.SetBinError(bin, 0.)
         binErrorLow = _hist.GetBinErrorLow(bin)
@@ -301,7 +306,7 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
     nEvents = _datahist.sumEntries()
     sigpdf = RooHistPdf('sig', 'sig', RooArgSet(_var), _sigtemp) #, 2)
     bkgpdf = RooHistPdf('bkg', 'bkg', RooArgSet(_var), _bkgtemp) #, 2)
-    nsig = RooRealVar('nsig', 'nsig', nEvents/2, 0., nEvents*1.5)
+    nsig = RooRealVar('nsig', 'nsig', nEvents/2, nEvents*0.01, nEvents*1.5)
     nbkg = RooRealVar('nbkg', 'nbkg', nEvents/2, 0., nEvents*1.5)
     model = RooAddPdf("model", "model", RooArgList(sigpdf, bkgpdf), RooArgList(nsig, nbkg))
     model.fitTo(_datahist) # , Extended(True), Minimizer("Minuit2", "migrad"))

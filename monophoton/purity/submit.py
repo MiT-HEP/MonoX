@@ -24,27 +24,32 @@ for base in ['loose', 'medium', 'tight', 'highpt']:
 
 for era in s.Eras:
     for loc in s.Locations[:1]:
-        for pt in sorted(s.PhotonPtSels.keys())[-1:]:
+        for pt in sorted(s.PhotonPtSels.keys())[:]:
             for met in sorted(s.MetSels.keys())[:1]:
                 for sel in PhotonIds:
                     outDir = scratchPath + '/' + era + '_' + loc + '_' + sel + '_' + pt + '_' + met
 
                     if not os.path.exists(outDir):
                         os.makedirs(outDir)
-                    else:
-                        shutil.rmtree(outDir)
-                        os.makedirs(outDir)
 
                     argFile.write(loc + ' ' + sel + ' ' + pt.replace('PhotonPt', '') + ' ' + met.replace('Met', '') + ' ' + era + ' \n')
 
 argFile.close()
 
-mceff = Popen( ['/home/ballen/bin/condor-run', 'calcMcEff.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
+mceff = Popen( ['/home/ballen/bin/condor-run', 'calcMcEff.py', '-a', 'condorArgs.txt', '-c', '10'], stdout = PIPE, stderr = PIPE )
+for mout_line in iter(mceff.stdout.readline, ''):
+     sys.stdout.write(mout_line)
+     sys.stdout.flush()
+return_code = mceff.wait()
 (mout, merr) = mceff.communicate()
-print mout, '\n'
+#print mout, '\n'
 print merr, '\n'
 
-submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt', '-c', '5'], stdout = PIPE, stderr = PIPE )
+submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt', '-c', '6'], stdout = PIPE, stderr = PIPE )
+for sout_line in iter(submit.stdout.readline, ''):
+     sys.stdout.write(sout_line)
+     sys.stdout.flush()
+return_code = submit.wait()
 (sout, serr) = submit.communicate()
-print sout, '\n'
+# print sout, '\n'
 print serr, '\n'

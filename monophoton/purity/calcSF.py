@@ -10,7 +10,7 @@ if basedir not in sys.path:
     sys.path.append(basedir)
 import config
 from plotstyle import SimpleCanvas, RatioCanvas
-
+from datasets import allsamples
 import selections as s
 
 versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
@@ -94,8 +94,10 @@ for loc in s.Locations[:1]:
                     
 pprint(yields)
 
-canvas = SimpleCanvas(lumi = config.jsonLumi)
-rcanvas = RatioCanvas(lumi = config.jsonLumi)
+
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
+canvas = SimpleCanvas(lumi = sphLumi)
+rcanvas = RatioCanvas(lumi = sphLumi)
 
 for loc in s.Locations[:1]:
     for pid in PhotonIds:
