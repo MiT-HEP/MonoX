@@ -47,6 +47,13 @@ mcDist.Write()
 puweight = dataDist.Clone('puweight')
 
 puweight.Divide(mcDist)
+
+for bin in range(1, puweight.GetNbinsX() + 1):
+    puweight.SetBinError(bin, 0.)
+    # HACK
+    if puweight.GetBinContent(bin) > 4.:
+        puweight.SetBinContent(bin, 4.)
+
 puweight.Write()
 
 outputFile.Close()
