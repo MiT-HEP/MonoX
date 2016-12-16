@@ -129,6 +129,7 @@ locationSels["endcap"] = '((TMath::Abs(photons.eta) > 1.5) && (TMath::Abs(photon
 hOverESels = {} 
 sieieSels = {} 
 chIsoSels = {}
+chWorstIsoSels = {}
 nhIsoSels = {}
 phIsoSels = {}
 SigmaIetaIetaSels = {}
@@ -138,6 +139,7 @@ for era in Eras:
     hOverESels[era] = {}
     sieieSels[era] = {}
     chIsoSels[era] = {}
+    chWorstIsoSels[era] = {}
     nhIsoSels[era] = {}
     phIsoSels[era] = {}
     SigmaIetaIetaSels[era] = {}
@@ -147,12 +149,13 @@ for era in Eras:
         hOverESels[era][loc] = {}
         sieieSels[era][loc] = {}
         chIsoSels[era][loc] = {}
+        chWorstIsoSels[era][loc] = {}
         nhIsoSels[era][loc] = {}
         phIsoSels[era][loc] = {}
         SigmaIetaIetaSels[era][loc] = {}
         PhotonIsolationSels[era][loc] = {}
 
-        for sel in [sieieSels, chIsoSels, nhIsoSels, phIsoSels]:
+        for sel in [sieieSels, chIsoSels, chWorstIsoSels, nhIsoSels, phIsoSels]:
             sel[era][loc]['none'] = '(1)'
         hOverESels[era][loc]['none'] = '(photons.hOverE < 0.06)'
         SigmaIetaIetaSels[era][loc]['none'] = '('+locationSels[loc]+' && '+hOverESels[era][loc]['none']+' && '+nhIsoSels[era][loc]['none']+' && '+phIsoSels[era][loc]['none']+')'
@@ -163,6 +166,7 @@ for era in Eras:
             sieieSel = '(photons.sieie < '+str(sieieCuts[era][loc][pid])+')'
             sieieSelWeighted = '( (0.891832 * photons.sieie + 0.0009133) < '+str(sieieCuts[era][loc][pid])+')'
             chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
+            chWorstIsoSel = '(photons.chWorstIso < ' + str(chIsoCuts[era][loc][pid]) + ')'
 
             if era == 'Spring15':
                 nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'
@@ -170,7 +174,7 @@ for era in Eras:
                 nhIsoSel = '(photons.nhIsoS16 < '+str(nhIsoCuts[era][loc][pid])+')'
 
             if pid == 'highpt':
-                phIsoSel = '(photons.phIso  + 0.0047*photons.pt < '+str(phIsoCuts[era][loc][pid])+')'
+                phIsoSel = '(photons.phIso  + 0.0053*photons.pt < '+str(phIsoCuts[era][loc][pid])+')'
             else:
                 if era == 'Spring15':
                     phIsoSel = '(photons.phIso < '+str(phIsoCuts[era][loc][pid])+')'
@@ -180,6 +184,7 @@ for era in Eras:
             hOverESels[era][loc][pid] = hOverESel 
             sieieSels[era][loc][pid] = sieieSel
             chIsoSels[era][loc][pid] = chIsoSel
+            chWorstIsoSels[era][loc][pid] = chWorstIsoSel
             nhIsoSels[era][loc][pid] = nhIsoSel
             phIsoSels[era][loc][pid] = phIsoSel
             SigmaIetaIetaSel = '('+locationSels[loc]+' && '+hOverESel+' && '+nhIsoSel+' && '+phIsoSel+')'

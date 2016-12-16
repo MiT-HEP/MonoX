@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE
 import selections as s
 from copy import deepcopy
 from ROOT import *
-# gROOT.SetBatch(True)
+gROOT.SetBatch(True)
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1]
@@ -108,9 +108,9 @@ truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
 skims = s.Measurement['bambu']
-sels = [ sigSel
-         ,sigSel+' && '+truthSel
-         ,sbSel+' && '+truthSel
+sels = [  sigSel + ' && ' + s.chWorstIsoSels[era][loc][pid]
+         ,sigSel + ' && ' + s.chWorstIsoSels[era][loc][pid] + ' && ' + truthSel
+         ,sbSel + ' && ' + truthSel
          ,sbSel
          ,sbSelNear + ' && ' + truthSel
          ,sbSelNear
