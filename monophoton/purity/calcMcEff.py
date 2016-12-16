@@ -38,10 +38,15 @@ filePath = os.path.join(plotDir, 'mceff.out')
 tree = ROOT.TChain('events')
 print config.skimDir
 # tree.Add(config.skimDir + '/gj-40_purity.root')
-tree.Add(config.skimDir + '/gj-100_purity.root')
-tree.Add(config.skimDir + '/gj-200_purity.root')
-tree.Add(config.skimDir + '/gj-400_purity.root')
-tree.Add(config.skimDir + '/gj-600_purity.root')
+# tree.Add(config.skimDir + '/gj-100_purity.root')
+# tree.Add(config.skimDir + '/gj-200_purity.root')
+# tree.Add(config.skimDir + '/gj-400_purity.root')
+# tree.Add(config.skimDir + '/gj-600_purity.root')
+tree.Add(config.skimDir + '/znng-130_purity.root')
+tree.Add(config.skimDir + '/dmv-500-1_purity.root')
+tree.Add(config.skimDir + '/dmv-1000-1_purity.root')
+tree.Add(config.skimDir + '/dmv-2000-1_purity.root')
+
 
 print tree.GetEntries()
 

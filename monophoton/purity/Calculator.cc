@@ -103,8 +103,10 @@ Calculator::calculate(TTree* _input) {
     for (unsigned iPFS(0); iPFS != promptFinalStates.size(); ++iPFS) {
       auto& pfs(promptFinalStates[iPFS]);
       
-      if (std::abs(pfs.pid) != 22)
+      if (pfs.pid != 22)
 	continue;
+
+      // printf("pdg id: %i \n", pfs.pid);
 
       // printf("got a gen photon w/pt %.2f \n", pfs.pt);
       
@@ -135,6 +137,9 @@ Calculator::calculate(TTree* _input) {
 	
 	if ( std::abs(pfs.pt - pho.pt) / pfs.pt  > maxDPt_)
 	  continue;
+
+	// if (pho.genIso > 0)
+	//   continue;
 	
 	nMatchedPhotons++;
 
