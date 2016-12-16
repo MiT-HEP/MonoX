@@ -10,50 +10,48 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
+try:
+    os.makedirs(config.histDir + '/trigger')
+except OSError:
+    pass
+
 obj = sys.argv[1]
 snames = sys.argv[2:]
+
+samples = allsamples.getmany(snames)
+
+print 'Skimming samples'
+print [s.name for s in samples]
 
 ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
+# available object - sample - skim type configurations
+configs = {
+    'photon': {'sph': ROOT.kDiphoton, 'sel': ROOT.kElectronPhoton, 'smu': ROOT.kMuonPhoton, 'jht': ROOT.kJetHT},
+    'muon': {'smu': ROOT.kDimuon},
+    'electron': {'sel': ROOT.kDielectron},
+    'met': {'sel': ROOT.kElectronMET}
+}
+
 tree = ROOT.TChain('events')
 
-st19 = False
+for sample in samples:
+    try:
+        treeType = configs[obj][sample.name[:sample.name.find('-')]]
+    except KeyError:
+        print 'treeType for', obj, sample.name, 'not found'
+        continue
 
-for sname in snames:
-    sample = allsamples[sname]
     treePath = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root'
-    print "adding files from", treePath
+    print sample.name, "adding files from", treePath
     tree.Add(treePath)
 
-    print tree.GetEntries()
-
-    if sname == snames[0]:
-        if obj == 'muon':
-            treeType = ROOT.kDimuon
-        elif obj == 'electron':
-            treeType = ROOT.kDielectron
-        elif obj == 'met':
-            treeType = ROOT.kSingleElectron
-        elif sname.startswith('sph-'):
-            treeType = ROOT.kDiphoton
-        elif sname.startswith('sel-'):
-            treeType = ROOT.kElectronPhoton
-        elif sname.startswith('smu-'):
-            treeType = ROOT.kMuonPhoton
-        elif sname.startswith('jht-'):
-            treeType = ROOT.kJetHT
+    print tree.GetEntries(), 'entries'
             
-#        suffix = sname[:sname.find('-')]
-        suffix = sname
+    ROOT.skim(tree, treeType, '/tmp/trigger_' + sample.name + '_' + obj + '.root')
 
-        # TEMPORARY
-        st19 = (sample.book == 'filefi/045')
+    shutil.move('/tmp/trigger_' + sample.name + '_' + obj + '.root', config.histDir + '/trigger')
 
-outDir = config.histDir + '/trigger'
-if not os.path.exists(outDir):
-    os.makedirs(outDir)
-
-ROOT.skim(tree, treeType, outDir + '/trigger_' + suffix + '_' + obj + '.root', st19, 50000000)
