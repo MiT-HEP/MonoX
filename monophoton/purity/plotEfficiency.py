@@ -18,9 +18,9 @@ outDir = os.path.join(versDir, 'ScaleFactor')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-PhotonIds = ['loose', 'medium', 'tight', 'highpt']
-for pid in list(PhotonIds):
-    PhotonIds += [pid+'-pixel', pid+'-pixel-monoph']
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst']
+PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
@@ -39,10 +39,11 @@ for loc in s.Locations[:1]:
                 print dirName
                 # Get Data Yields
                 dataFileName = os.path.join(versDir,dirName,"results.out") 
-                dataFile = open(dataFileName)
+                # dataFile = open(dataFileName)
                 
                 match = False
                 count = [1., 0.]
+                """
                 for line in dataFile:
                     if "# of real photons is:" in line:
                         # print line
@@ -60,11 +61,12 @@ for loc in s.Locations[:1]:
                             # pprint(tmp)
                             count[1] = float(tmp[-1].strip("(),"))
                             #print count
+                """
 
                 if not match:
                     print "No data yields found for skim:", dirName
                     yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
-                dataFile.close()
+                    # dataFile.close()
                 
                 yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
 
@@ -103,26 +105,24 @@ sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r'
 canvas = SimpleCanvas(lumi = sphLumi)
 rcanvas = SimpleCanvas(lumi = sphLumi)
 
-PhotonIds = ['loose', 'medium', 'tight', 'highpt']
-
 for loc in s.Locations[:1]:
-    for pid in PhotonIds:
+    for base in bases:
         for metCut in MetSels:
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
-            rcanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+            rcanvas.legend.setPosition(0.45, 0.7, 0.8, 0.9)
 
-            for iMod, mod in enumerate(['', '-pixel', '-pixel-monoph']):
+            for iMod, mod in enumerate(mods):
 
                 dataEff = r.TGraphAsymmErrors()
-                dataEff.SetName(loc+'-'+pid+mod+'-'+metCut+'-data')
+                dataEff.SetName(loc+'-'+base+mod+'-'+metCut+'-data')
 
                 mcEff = r.TGraphAsymmErrors()
-                mcEff.SetName(loc+'-'+pid+mod+'-'+metCut+'-mc')
+                mcEff.SetName(loc+'-'+base+mod+'-'+metCut+'-mc')
 
                 gSF = r.TGraphAsymmErrors()
-                gSF.SetName(loc+'-'+pid+mod+'-'+metCut+'-sf')
+                gSF.SetName(loc+'-'+base+mod+'-'+metCut+'-sf')
 
                 for iB, ptCut in enumerate(PhotonPtSels):
                     if 'Inclusive' in ptCut:
@@ -139,11 +139,11 @@ for loc in s.Locations[:1]:
                     exl = center - lowEdge
                     exh = highEdge - center
 
-                    mceffs = yields[loc][pid+mod][ptCut][metCut]['mc']
+                    mceffs = yields[loc][base+mod][ptCut][metCut]['mc']
                     mcEff.SetPoint(iB, center, mceffs[0])
                     mcEff.SetPointError(iB, exl, exh, mceffs[2], mceffs[1])
 
-                    passes = yields[loc][pid+mod][ptCut][metCut]['data']
+                    passes = yields[loc][base+mod][ptCut][metCut]['data']
                     totals = yields[loc]['none'][ptCut][metCut]['data']
 
                     # print passes
@@ -167,7 +167,7 @@ for loc in s.Locations[:1]:
 
                     # print sf, sfErrLow, sfErrLow / sf
 
-                rcanvas.legend.add("mc"+mod, title = pid+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
+                rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
                 rcanvas.legend.apply("mc"+mod, mcEff)
                 rcanvas.addHistogram(mcEff, drawOpt = 'EP')
 
@@ -175,21 +175,21 @@ for loc in s.Locations[:1]:
                 # rcanvas.legend.apply("data"+mod, dataEff)
                 # rcanvas.addHistogram(dataEff, drawOpt = 'EP')
 
-                canvas.legend.add(loc+'-'+pid+mod, title = loc+'-'+pid+mod, color = r.kBlack+iMod, lwidth = 2)
-                canvas.legend.apply(loc+'-'+pid+mod, gSF)
+                canvas.legend.add(loc+'-'+base+mod, title = loc+'-'+base+mod, color = r.kBlack+iMod, lwidth = 2)
+                canvas.legend.apply(loc+'-'+base+mod, gSF)
                 canvas.addHistogram(gSF, drawOpt = 'EP')
 
-            rcanvas.ylimits = (0.0, 1.1)
+            rcanvas.ylimits = (0.0, 1.3)
             rcanvas.ytitle = 'Photon Efficiency'
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             rcanvas.SetGridy(True)
 
-            plotName = "efficiency_"+str(loc)+"_"+str(pid)
+            plotName = "efficiency_"+str(loc)+"_"+str(base)
             rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)
             
             # canvas.ylimits = (0.0, 2.0)
             canvas.ytitle = 'Photon Scale Factor'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
-            plotName = "scalefactor_"+str(loc)+"_"+str(pid)
+            plotName = "scalefactor_"+str(loc)+"_"+str(base)
             # canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)

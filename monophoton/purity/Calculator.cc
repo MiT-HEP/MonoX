@@ -30,6 +30,7 @@ public:
   void setEra(unsigned era) { era_ = era; }
   void applyPixelVeto() { eveto_ = true; }
   void applyMonophID() { monoph_ = true; }
+  void applyWorstIso() { worst_ = true; }
 
 private:
   float minPhoPt_{175.};
@@ -46,10 +47,11 @@ private:
   unsigned era_{0};
   bool eveto_{false};
   bool monoph_{false};
+  bool worst_{false};
   
   const static unsigned nSteps{9};
   double efficiencies[nSteps+1][3];
-  double temp [3] = {-1., 0., 0.};
+  double temp[3] = {-1., 0., 0.};
   
 };
 
@@ -210,6 +212,9 @@ Calculator::calculate(TTree* _input) {
 
 	iReco++;
 	nRecoPhotons[iReco]++;
+
+	if ( !worst_)
+	  continue;
 
 	if ( !(pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_]))
 	  continue;

@@ -77,6 +77,8 @@ if 'pixel' in extras:
     calc.applyPixelVeto()
 if 'monoph' in extras:
     calc.applyMonophID()
+if 'worst' in extras:
+    calc.applyWorstIso()
 
 if era == 'Spring16':
     calc.setEra(1)
@@ -113,6 +115,8 @@ for iEff, cut in enumerate(cuts):
         print 'blah'
         break
     if not 'monoph' in extras and cut == 'spike':
+        break
+    if not 'worst' in extras and cut == 'worst':
         break
 
     eff = calc.getEfficiency(iEff)
