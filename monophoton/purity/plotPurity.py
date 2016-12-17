@@ -20,9 +20,9 @@ if not os.path.exists(outDir):
 
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
-PhotonIds = ['loose', 'medium', 'tight', 'highpt']
-for pid in list(PhotonIds):
-    PhotonIds += [pid+'-pixel', pid+'-pixel-monoph']
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst']
+PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
@@ -105,20 +105,18 @@ pprint(purities)
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
 canvas = SimpleCanvas(lumi = sphLumi)
 
-PhotonIds = ['loose', 'medium', 'tight', 'highpt'] 
-
 for loc in s.Locations[:1]:
-    for pid in PhotonIds:
+    for base in bases:
         for metCut in MetSels:
             canvas.cd()
             canvas.Clear()
             canvas.legend.Clear()
             canvas.legend.setPosition(0.7,0.7,0.9,0.9)
 
-            for iMod, mod in enumerate(['', '-pixel', '-pixel-monoph']):
+            for iMod, mod in enumerate(mods):
                 
                 pGraph = r.TGraphAsymmErrors()
-                pGraph.SetName(loc+'-'+pid+mod+'-'+metCut)
+                pGraph.SetName(loc+'-'+base+mod+'-'+metCut)
 
                 for iB, ptCut in enumerate(PhotonPtSels):
                     if 'Inclusive' in ptCut:
@@ -135,22 +133,22 @@ for loc in s.Locations[:1]:
                     exl = center - lowEdge
                     exh = highEdge - center
 
-                    purity = purities[loc][pid+mod][ptCut][metCut]
+                    purity = purities[loc][base+mod][ptCut][metCut]
 
                     pGraph.SetPoint(iB, center, purity[0])
                     pGraph.SetPointError(iB, exl, exh, purity[1], purity[1])
 
-                canvas.legend.add(pid+mod, title = pid+mod, mcolor = r.kBlue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
-                canvas.legend.apply(pid+mod, pGraph)
+                canvas.legend.add(base+mod, title = base+mod, mcolor = r.kBlue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
+                canvas.legend.apply(base+mod, pGraph)
                 canvas.addHistogram(pGraph, drawOpt = 'EP')
 
                 outFile.cd()
                 pGraph.Write()
                 
-            canvas.ylimits = (0.0, 25.0)
+            canvas.ylimits = (0.0, 15.0)
             canvas.ytitle = 'Photon Impurity'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = "impurity_"+str(loc)+"_"+str(pid)
+            plotName = "impurity_"+str(loc)+"_"+str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', era+'_'+plotName, logy = False)

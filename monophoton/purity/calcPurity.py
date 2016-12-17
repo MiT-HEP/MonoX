@@ -94,22 +94,26 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
-baseSel = s.SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
+baseSel = 'jets.pt[0] > 100. && ' + ptSel + ' && ' + metSel + ' && ' + s.SigmaIetaIetaSels[era][loc][pid]
 if 'pixel' in extras:
     baseSel = baseSel+' && '+s.pixelVetoCut
 if 'monoph' in extras:
     baseSel = baseSel+' && '+s.monophIdCut
 
+ChIsoNear = 'ChIso35to50'
+ChIsoNominal = 'ChIso50to75'
+ChIsoFar = 'ChIso75to90'
+
 sigSel = baseSel+' && '+s.chIsoSels[era][loc][pid]
-sbSel = baseSel + ' && ' + s.ChIsoSbSels['ChIso50to80']
-sbSelNear = baseSel + ' && ' + s.ChIsoSbSels['ChIso20to50']
-sbSelFar  = baseSel + ' && ' + s.ChIsoSbSels['ChIso80to110']
+sbSel = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNominal]
+sbSelNear = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNear]
+sbSelFar  = baseSel + ' && ' + s.ChIsoSbSels[ChIsoFar]
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
 skims = s.Measurement['bambu']
-sels = [  sigSel + ' && ' + s.chWorstIsoSels[era][loc][pid]
-         ,sigSel + ' && ' + s.chWorstIsoSels[era][loc][pid] + ' && ' + truthSel
+sels = [  sigSel
+         ,sigSel + ' && ' + truthSel
          ,sbSel + ' && ' + truthSel
          ,sbSel
          ,sbSelNear + ' && ' + truthSel
@@ -117,6 +121,11 @@ sels = [  sigSel + ' && ' + s.chWorstIsoSels[era][loc][pid]
          ,sbSelFar + ' && ' + truthSel
          ,sbSelFar
          ]
+
+if 'worst' in extras:
+    sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+    sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+
 
 # get initial templates
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
@@ -133,7 +142,7 @@ print "\n\n##############################\n######## Doing initial purity calcula
 nominalHists = deepcopy(initialHists[:4])
 nominalTemplates = deepcopy(initialTemplates[:4])
 nominalSkims = skims[:4]
-nominalRatio = float(isoHists['ChIso50to80'][0][1]) / float(isoHists['ChIso50to80'][0][2])
+nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
 nominalDir = os.path.join(plotDir,'nominal')
 if not os.path.exists(nominalDir):
     os.makedirs(nominalDir)
@@ -145,7 +154,7 @@ print "\n\n##############################\n######## Doing ch iso sideband uncert
 nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
 nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
 nearSkims = skims[:4]
-nearRatio = float(isoHists['ChIso20to50'][0][1]) / float(isoHists['ChIso20to50'][0][2])
+nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
 nearDir = os.path.join(plotDir,'near')
 if not os.path.exists(nearDir):
     os.makedirs(nearDir)
@@ -156,7 +165,7 @@ nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,var
 farHists = deepcopy(initialHists[:2] + initialHists[6:])
 farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
 farSkims = skims[:4]
-farRatio = float(isoHists['ChIso80to110'][0][1]) / float(isoHists['ChIso80to110'][0][2])
+farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
 farDir = os.path.join(plotDir,'far')
 if not os.path.exists(farDir):
     os.makedirs(farDir)
@@ -174,7 +183,7 @@ scaledSkims = skims[:4]
 scaledDir = os.path.join(plotDir,'scaled')
 if not os.path.exists(scaledDir):
     os.makedirs(scaledDir)
-scaledRatio = float(isoHists['ChIso50to80'][1][1]) / float(isoHists['ChIso50to80'][1][2])
+scaledRatio = float(isoHists[ChIsoNominal][1][1]) / float(isoHists[ChIsoNominal][1][2])
 
 scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )

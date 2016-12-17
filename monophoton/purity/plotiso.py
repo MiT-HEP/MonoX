@@ -78,15 +78,19 @@ eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels
 eSel = eSelScratch.replace("photons", "probes")
 print eSel
 
-mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
-mcTree = mcFile.Get("skimmedEvents")
+# mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
+# mcTree = mcFile.Get("skimmedEvents")
+mcTree = TChain('skimmedEvents')
+mcTree.Add(os.path.join(skimDir, 'dy-50_eg.root'))
 mcHist = TH1F("emc","",nBins,binEdges)
 mcTree.Draw("probes.chIso>>emc", eSel)
 outFile.WriteTObject(mcHist)
 histograms[1].append(mcHist)
 
-dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
-dataTree = dataFile.Get("skimmedEvents")
+# dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
+# dataTree = dataFile.Get("skimmedEvents")
+dataTree = TChain('skimmedEvents')
+dataTree.Add(os.path.join(skimDir, 'sph-16*_eg.root'))
 dataHist = TH1F("edata","",nBins,binEdges)
 dataTree.Draw("probes.chIso>>edata", eSel)
 outFile.WriteTObject(dataHist)
