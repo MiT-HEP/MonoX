@@ -68,7 +68,7 @@ for iEra, era in enumerate(Eras):
 ### Now start actual parameters that need to be changed ###
 
 # Version = config.simpletreeVersion
-Version = 'testing'
+Version = 'newSBs'
 
 from ROOT import *
 
@@ -83,7 +83,7 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-sphData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3']
+sphData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h']
 gjetsMc = ['gj-100','gj-200','gj-400','gj-600']
 qcdMc = [ 'qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
@@ -219,14 +219,21 @@ PhotonPtSels['PhotonPt'+str(cutPhotonPtHigh[-1])+'toInf'] =  '((photons.scRawPt 
 cutMet = [0,60,120]
 MetSels = { 'MetInclusive' : '((t1Met.met > '+str(cutMet[0])+'))' } 
 for low, high in zip(cutMet,cutMet[1:]):
-    MetSels['Met'+str(low)+'to'+str(high)] = '((t1Met.met  > '+str(low)+') && (t1Met.met < '+str(high)+'))'
+    MetSels['Met'+str(low)+'to'+str(high)] = '((t1Met.met > '+str(low)+') && (t1Met.met < '+str(high)+'))'
 MetSels['Met'+str(cutMet[-1])+'toInf'] =  '((t1Met.met > '+str(cutMet[-1])+'))' 
 
 # ChIsoSbBins = range(20,111,30)
 # ChIsoSbSels = { 'ChIso'+str(low)+'to'+str(high) : '((photons.chIso > '+str(float(low)/10.0)+') && (photons.chIso < '+str(float(high)/10.0)+'))' for low, high in zip(ChIsoSbBins[:-1], ChIsoSbBins[1:]) }
 ChIsoSbSels = { 'ChIso50to80'  : '(photons.chIso > 5.0 && photons.chIso < 8.0)',
                 'ChIso20to50'  : '(photons.chIso > 2.0 && photons.chIso < 5.0)',
-                'ChIso80to110' : '(photons.chIso > 8.0 && photons.chIso < 11.0)' }
+                'ChIso80to110' : '(photons.chIso > 8.0 && photons.chIso < 11.0)',
+                'ChIso35to50'  : '(photons.chIso > 3.5 && photons.chIso < 5.0)', 
+                'ChIso50to75'  : '(photons.chIso > 5.0 && photons.chIso < 7.5)',
+                'ChIso75to90'  : '(photons.chIso > 7.5 && photons.chIso < 9.0)',
+                'ChIso40to60'  : '(photons.chIso > 4.0 && photons.chIso < 6.0)', 
+                'ChIso60to80'  : '(photons.chIso > 6.0 && photons.chIso < 8.0)',
+                'ChIso80to100'  : '(photons.chIso > 8.0 && photons.chIso < 10.0)'
+                }
 
 # Function for making templates!
 """ arguments = ( variable, RooRealVar, skim, selection, location, variablebinning ) """
