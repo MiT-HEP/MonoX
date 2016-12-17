@@ -125,6 +125,9 @@ sels = [  sigSel
 if 'worst' in extras:
     sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
     sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+elif 'max' in extras:
+    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
 
 
 # get initial templates

@@ -21,7 +21,7 @@ if not os.path.exists(outDir):
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max', '-pixel-monoph-worst']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]

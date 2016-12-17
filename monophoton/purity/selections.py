@@ -130,6 +130,7 @@ hOverESels = {}
 sieieSels = {} 
 chIsoSels = {}
 chWorstIsoSels = {}
+chIsoMaxSels = {}
 nhIsoSels = {}
 phIsoSels = {}
 SigmaIetaIetaSels = {}
@@ -140,6 +141,7 @@ for era in Eras:
     sieieSels[era] = {}
     chIsoSels[era] = {}
     chWorstIsoSels[era] = {}
+    chIsoMaxSels[era] = {}
     nhIsoSels[era] = {}
     phIsoSels[era] = {}
     SigmaIetaIetaSels[era] = {}
@@ -150,6 +152,7 @@ for era in Eras:
         sieieSels[era][loc] = {}
         chIsoSels[era][loc] = {}
         chWorstIsoSels[era][loc] = {}
+        chIsoMaxSels[era][loc] = {}
         nhIsoSels[era][loc] = {}
         phIsoSels[era][loc] = {}
         SigmaIetaIetaSels[era][loc] = {}
@@ -167,6 +170,7 @@ for era in Eras:
             sieieSelWeighted = '( (0.891832 * photons.sieie + 0.0009133) < '+str(sieieCuts[era][loc][pid])+')'
             chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
             chWorstIsoSel = '(photons.chWorstIso < ' + str(chIsoCuts[era][loc][pid]) + ')'
+            chIsoMaxSel = '(photons.chIsoMax < ' + str(chIsoCuts[era][loc][pid]) + ')'
 
             if era == 'Spring15':
                 nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'
@@ -185,6 +189,7 @@ for era in Eras:
             sieieSels[era][loc][pid] = sieieSel
             chIsoSels[era][loc][pid] = chIsoSel
             chWorstIsoSels[era][loc][pid] = chWorstIsoSel
+            chIsoMaxSels[era][loc][pid] = chIsoMaxSel
             nhIsoSels[era][loc][pid] = nhIsoSel
             phIsoSels[era][loc][pid] = phIsoSel
             SigmaIetaIetaSel = '('+locationSels[loc]+' && '+hOverESel+' && '+nhIsoSel+' && '+phIsoSel+')'

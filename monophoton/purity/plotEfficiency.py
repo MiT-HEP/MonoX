@@ -19,12 +19,12 @@ if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst', '-pixel-monoph-max']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring15'
+era = 'Spring16'
 
 yields = {}
 for loc in s.Locations[:1]:
@@ -101,7 +101,7 @@ for loc in s.Locations[:1]:
 pprint(yields)
 
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 canvas = SimpleCanvas(lumi = sphLumi)
 rcanvas = SimpleCanvas(lumi = sphLumi)
 

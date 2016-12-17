@@ -14,9 +14,10 @@ scratchPath = '/data/t3home000/ballen/hist/purity/'+s.Version
 
 argFile = file('condorArgs.txt', 'w')
 
-PhotonIds = [ 'none' ]
-for base in ['loose', 'medium', 'tight', 'highpt']:
-     PhotonIds += [ base, base+'-pixel', base+'-pixel-monoph' ]
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max', '-pixel-monoph-worst']
+PhotonIds = [base+mod for base in bases for mod in mods]
+PhotonIds.append('none')
 
 #print sorted(s.PhotonPtSels.keys())
 #print sorted(s.MetSels.keys())
@@ -31,12 +32,13 @@ for era in s.Eras:
 
                     if not os.path.exists(outDir):
                         os.makedirs(outDir)
-
+                        
                     argFile.write(loc + ' ' + sel + ' ' + pt.replace('PhotonPt', '') + ' ' + met.replace('Met', '') + ' ' + era + ' \n')
 
 argFile.close()
 
-mceff = Popen( ['/home/ballen/bin/condor-run', 'calcMcEff.py', '-a', 'condorArgs.txt', '-c', '10'], stdout = PIPE, stderr = PIPE )
+
+mceff = Popen( ['/home/ballen/bin/condor-run', 'calcEfficiency.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
 for mout_line in iter(mceff.stdout.readline, ''):
      sys.stdout.write(mout_line)
      sys.stdout.flush()
@@ -45,7 +47,7 @@ return_code = mceff.wait()
 #print mout, '\n'
 print merr, '\n'
 
-submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt', '-c', '6'], stdout = PIPE, stderr = PIPE )
+submit = Popen( ['/home/ballen/bin/condor-run', 'calcPurity.py', '-a', 'condorArgs.txt', '-c', '10'], stdout = PIPE, stderr = PIPE )
 for sout_line in iter(submit.stdout.readline, ''):
      sys.stdout.write(sout_line)
      sys.stdout.flush()

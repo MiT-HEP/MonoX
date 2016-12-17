@@ -79,6 +79,8 @@ if 'monoph' in extras:
     calc.applyMonophID()
 if 'worst' in extras:
     calc.applyWorstIso()
+elif 'max' in extras:
+    calc.applyMaxIso()
 
 if era == 'Spring16':
     calc.setEra(1)
@@ -116,8 +118,9 @@ for iEff, cut in enumerate(cuts):
         break
     if not 'monoph' in extras and cut == 'spike':
         break
-    if not 'worst' in extras and cut == 'worst':
-        break
+    if cut == 'worst':
+        if not ('max' in extras or 'worst' in extras):
+            break
 
     eff = calc.getEfficiency(iEff)
     string = "Efficiency after %6s cut is %f +%f -%f \n" % (cut, eff[0], eff[1], eff[2])
