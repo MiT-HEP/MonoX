@@ -14,7 +14,13 @@ import ROOT
 black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
-photonData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r']
+photonDataICHEP = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r']
+photonData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h2', 'sph-16h3']
+
+gj = ['gj-100', 'gj-200', 'gj-400', 'gj-600']
+wlnu = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500']
+dy = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600']
+qcd = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.met * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi[0] - t1Met.phi)))'
@@ -30,7 +36,7 @@ def getConfig(confName):
     if confName == 'monoph':
         config = PlotConfig('monoph')
         config.blind = True
-        for sname in photonData:
+        for sname in photonDataICHEP:
             config.addObs(sname)
 
         config.baseline = baseSel
@@ -48,9 +54,9 @@ def getConfig(confName):
 #            SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
         ]
         config.bkgGroups = [
-#            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+#            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('spike', 'Spikes', samples = photonData, region = 'spikeSieie', color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -127,8 +133,8 @@ def getConfig(confName):
             if group.name in ['zg', 'wg', 'efake', 'hfake', 'halo', 'spike']:
                 continue
 
-            if group.name != 'vvg':
-                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            if group.name != 'vvg':
+#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
 
         # Specific systematic variations
@@ -145,20 +151,20 @@ def getConfig(confName):
         config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
 
-    
     elif confName == 'lowdphi':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.minJetDPhi < 0.5'
+        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi < 2. && t1Met.met > 100.'
         config.fullSelection = 't1Met.met > 170.'
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+#            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
+#            GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
@@ -177,7 +183,9 @@ def getConfig(confName):
         for variable in list(config.variables):
             if variable.name not in ['met', 'metWide']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
-                config.variables.remove(variable)
+#                config.variables.remove(variable)
+
+        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
     
     elif confName == 'phodphi':
         metCut = 't1Met.met > 170.'
@@ -189,7 +197,7 @@ def getConfig(confName):
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('digam', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -249,7 +257,7 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+#            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
@@ -305,8 +313,8 @@ def getConfig(confName):
             if group.name in 'zg':
                 continue
 
-            if group.name != 'vvg':
-                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            if group.name != 'vvg':
+#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -323,7 +331,7 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+#            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
@@ -379,8 +387,8 @@ def getConfig(confName):
             if group.name in 'zg':
                 continue
 
-            if group.name != 'vvg':
-                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            if group.name != 'vvg':
+#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -400,13 +408,13 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('qcd', 'QCD', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            # GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+#            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
@@ -459,8 +467,8 @@ def getConfig(confName):
             if group.name in 'wg':
                 continue
             
-            if group.name != 'vvg':
-                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            if group.name != 'vvg':
+#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
 #        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -480,13 +488,13 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('qcd', 'QCD', samples = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            # GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+#            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
@@ -539,8 +547,8 @@ def getConfig(confName):
             if group.name in 'wg':
                 continue
 
-            if group.name != 'vvg':
-                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            if group.name != 'vvg':
+#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
         
         config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
@@ -548,29 +556,60 @@ def getConfig(confName):
         config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
 
     elif confName == 'lowmt':
-        config = PlotConfig('lowmt', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5 && ' + mtPhoMet + ' > 40. && ' + mtPhoMet + ' < 150.'
-        config.fullSelection = 'photons.scRawPt[0] < 400. && t1Met.met > 170.'
+        config = PlotConfig('monoph', photonData)
+        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
+#        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
+#        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 100. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
+#        config.fullSelection = 'photons.scRawPt[0] < 400. && t1Met.met > 170.'
+        config.fullSelection = ''
         config.bkgGroups = [
-            GroupSpec('minor', 't#bar{t}, Z, #gamma#gamma', samples = ['ttg', 'zg', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 't#bar{t}, Z, #gamma#gamma', samples = ['ttg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('multiboson', 'multiboson', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfakelowmt', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'lowmtEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
-            VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], cut = 'photons.scRawPt[0] < 400.', unit = 'GeV', overflow = True),
-            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV', logy = False, ymax = 1.),
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], unit = 'GeV', overflow = True),
+            VariableDef('metLowSx', 'E_{T}^{miss}', 't1Met.met', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], cut = 'photons.e4[0] / photons.emax[0] > 0.5', unit = 'GeV', overflow = True),
+            VariableDef('metHighSx', 'E_{T}^{miss}', 't1Met.met', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV', overflow = True),
+            VariableDef('sumEt', '#SigmaE_{T}', 't1Met.sumEt', [1000. + 50. * x for x in range(40)], unit = 'GeV', overflow = True),
+            VariableDef('sumEtHighSx', '#SigmaE_{T}', 't1Met.sumEt', [1000. + 50. * x for x in range(40)], cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV', overflow = True),
+            VariableDef('significance', 'E_{T}^{miss} / #SigmaE_{T}', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (20, 0., 20.), unit = '#sqrt{GeV}', overflow = True),
+            VariableDef('significanceHighSx', 'E_{T}^{miss} / #SigmaE_{T}', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (20, 0., 20.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = '#sqrt{GeV}', overflow = True),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], unit = 'GeV', logy = False),
+            VariableDef('phoPtLowSx', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 'photons.e4[0] / photons.emax[0] > 0.5', unit = 'GeV', logy = False),
+            VariableDef('phoPtHighSx', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 30. * x for x in range(25)], cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV', overflow = True),
+#            VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV', logy = False),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), applyFullSel = True),
-            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), applyFullSel = True, logy = False, ymax = 20.),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -1., 1.), applyBaseline = False, applyFullSel = True, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5', logy = False, ymax = 20.),
-            VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (11, 40., 150.), applyFullSel = True, unit = 'GeV', logy = False, ymax = 1.),
-            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), applyFullSel = True, logy = False, ymax = 20.),
+            VariableDef('phoEtaLowSx', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'photons.e4[0] / photons.emax[0] > 0.5', applyFullSel = True),
+            VariableDef('phoEta2Jets', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'jets.size == 2', applyFullSel = True),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), applyFullSel = True, logy = False),
+#            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), cut = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5', applyBaseline = False, logy = False),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), logy = False),
+            VariableDef('dPhiPhoMetHighSx', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), cut = 'photons.e4[0] / photons.emax[0] < 0.5', logy = False),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt > 30.'),
+            VariableDef('dPhiJet1Met', '#Delta#phi(E_{T}^{miss}, j1)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[0] - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt[0] > 30.'),
+            VariableDef('dPhiJet2Met', '#Delta#phi(E_{T}^{miss}, j2)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[1] - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt[1] > 30.'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), applyFullSel = True, unit = 'GeV', logy = False),
+            VariableDef('mtPhoMetHighSx', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', applyFullSel = True, unit = 'GeV'),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), applyFullSel = True, logy = False),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), applyFullSel = True),
             VariableDef('jetPt', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 800.), cut = 'jets.size != 0', applyFullSel = True, unit = 'GeV'),
+            VariableDef('jetPtHighSx', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 1600.), cut = 'jets.size != 0 && photons.e4[0] / photons.emax[0] < 0.5', overflow = True, unit = 'GeV'),
+            VariableDef('jetPtLowSx', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 1600.), cut = 'jets.size != 0 && photons.e4[0] / photons.emax[0] > 0.5', overflow = True, unit = 'GeV'),
+            VariableDef('jetEta', '#eta^{j1}', 'jets.eta[0]', (30, -5., 5.), cut = 'jets.size != 0', applyFullSel = True),
+            VariableDef('jet2Pt', 'p_{T}^{j2}', 'jets.pt[1]', (30, 30., 800.), cut = 'jets.size > 1', applyFullSel = True, unit = 'GeV'),
+            VariableDef('jet2Eta', '#eta^{j2}', 'jets.eta[1]', (30, -5., 5.), cut = 'jets.size > 1', applyFullSel = True),
             VariableDef('r9', 'R_{9}', 'photons.r9', (50, 0.5, 1.), applyFullSel = True),
+            VariableDef('r9HighSx', 'R_{9}', 'photons.r9', (50, 0.5, 1.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', applyFullSel = True),
+            VariableDef('swissCross', '1-S4/S1', '1. - photons.e4[0] / photons.emax[0]', (50, 0., 1.)),
+            VariableDef('sipip', '#sigma_{i#phii#phi}', 'photons.sipip[0]', (50, 0., 0.02)),
+            VariableDef('sipipLowSx', '#sigma_{i#phii#phi}', 'photons.sipip[0]', (50, 0., 0.02), cut = 'photons.e4[0] / photons.emax[0] > 0.5')
         ]
 
     elif confName == 'phistack':
@@ -585,7 +624,7 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['wwg', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -604,7 +643,7 @@ def getConfig(confName):
             # GroupSpec('spike', 'Spikes', count = 26.8, color = None),
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = ['gj-40', 'gj-100', 'gj-200', 'gj-400', 'gj-600'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         ]
@@ -654,7 +693,7 @@ def getConfig(confName):
             if group.name in ['efake', 'hfake']:
                 continue
 
-            group.variations.append(Variation('minorPDF', reweight = 'pdf'))
+#            group.variations.append(Variation('minorPDF', reweight = 'pdf'))
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
 
         # Specific systematic variations

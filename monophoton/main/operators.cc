@@ -1791,6 +1791,14 @@ PhotonPtWeight::addVariation(char const* _suffix, TObject* _corr)
 }
 
 void
+PhotonPtWeight::useErrors(bool _b)
+{
+  useErrors_ = _b;
+  varWeights_[name_ + "Up"] = new double;
+  varWeights_[name_ + "Down"] = new double;
+}
+
+void
 PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   double maxPt(0.);
@@ -1817,7 +1825,7 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
     return;
   }
 
-  auto calcWeight([maxPt](TObject* source)->double {
+  auto calcWeight([maxPt](TObject* source, int var = 0)->double {
       if (source->InheritsFrom(TH1::Class())) {
         TH1* hist(static_cast<TH1*>(source));
 
@@ -1827,7 +1835,12 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
         if (iX > hist->GetNbinsX())
           iX = hist->GetNbinsX();
 
-        return hist->GetBinContent(iX);
+        if (var == 0)
+          return hist->GetBinContent(iX);
+        else if (var == 1)
+          return hist->GetBinContent(iX) + hist->GetBinError(iX);
+        else
+          return hist->GetBinContent(iX) - hist->GetBinError(iX);
       }
       else if (source->InheritsFrom(TF1::Class())) {
         TF1* func(static_cast<TF1*>(source));
@@ -1849,7 +1862,12 @@ PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEv
   _outEvent.weight *= weight;
 
   for (auto& var : varWeights_) {
-    *var.second = calcWeight(variations_[var.first]) / weight;
+    if (var.first == name_ + "Up")
+      *var.second = calcWeight(nominal_, 1) / weight;
+    else if (var.first == name_ + "Down")
+      *var.second = calcWeight(nominal_, -1) / weight;
+    else
+      *var.second = calcWeight(variations_[var.first]) / weight;
   }
 }
 
