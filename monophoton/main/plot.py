@@ -13,8 +13,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-DOSYSTEMATICS = True
-# DOSYSTEMATICS = False
+DOSYSTEMATICS = False
 
 # global variables to be set in __main__
 allsamples = None 
@@ -237,7 +236,11 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
         source.Close()
         return branch
 
-    tree.Draw(expr + '>>' + hist.GetName(), '%s*(%s)' % (weight, selection), 'goff')
+    selExpr = weight
+    if selection != '':
+        selExpr += ' * (%s)' % selection
+
+    tree.Draw(expr + '>>' + hist.GetName(), selExpr, 'goff')
 
     if vardef.overflow:
         iOverflow = hist.GetNbinsX()

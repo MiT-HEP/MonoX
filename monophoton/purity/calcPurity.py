@@ -2,104 +2,91 @@
 
 import os
 import sys
-import shutil
 from pprint import pprint
 from array import array
 from subprocess import Popen, PIPE
 import selections as s
+from copy import deepcopy
 from ROOT import *
 gROOT.SetBatch(True)
 
 ### take inputs and make sure they match a selection
-source = sys.argv[1]
-loc = sys.argv[2]
-pid = sys.argv[3]
-chiso = sys.argv[4]
-pt = sys.argv[5]
-met = sys.argv[6]
+loc = sys.argv[1]
+pid = sys.argv[2]
+pt = sys.argv[3]
+met = sys.argv[4]
 
-inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
+try:
+    era = sys.argv[5]
+except:
+    era = 'Spring15'
 
-chIsoSel = '(1)'
-for chisosel in s.ChIsoSbSels:
-    if 'ChIso'+chiso == chisosel[0]:
-        chIsoSel = chisosel[1]
-if chIsoSel == '(1)':
-    print 'Inputted chIso range', chiso, 'not found!'
-    print 'Not applying any chIso selection!'
+inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
  
-ptSel = '(1)'
-for ptsel in s.PhotonPtSels:
-    if 'PhotonPt'+pt == ptsel[0]:
-        ptSel = ptsel[1]
-if ptSel == '(1)':
+try:
+    ptSel = s.PhotonPtSels['PhotonPt'+pt]
+except KeyError:
     print 'Inputted pt range', pt, 'not found!'
     print 'Not applying any pt selection!'
+    ptSel = '(1)'
 
-metSel = '(1)'
-for metsel in s.MetSels:
-    if 'Met'+met == metsel[0]:
-        metSel = metsel[1]
-if metSel == '(1)':
+try:
+    metSel = s.MetSels['Met'+met]
+except KeyError:
     print 'Inputted met range', met, 'not found!'
     print 'Not applying any met selection!'
+    metSel = '(1)'
 
 ### Directory stuff so that results are saved and such
-varName = 'chiso'
-versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
-plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
+versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
+plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
-else:
-    shutil.rmtree(plotDir)
     os.makedirs(plotDir)
 
 ### Get ChIso Curve for true photons
-macroDir = os.environ['PURITY']
-isoPath = os.path.join(macroDir,'plotiso.py')
-plotiso = Popen( ['python',isoPath,source,loc,pid,chiso,pt,met],stdout=PIPE,stderr=PIPE,cwd=macroDir)
+isoPath = os.path.join(s.thisdir,'plotiso.py')
+plotiso = Popen( ['python',isoPath,loc,pid,pt,met,era],stdout=PIPE,stderr=PIPE,cwd=s.thisdir)
 isoOut = plotiso.communicate()
 if not isoOut[1] == "":
     print isoOut[1] 
 isoFile = TFile(os.path.join(plotDir,'chiso_'+inputKey+'.root'))
 
-splits = chiso.split("to")
-minIso = float(splits[0])/10.0
-maxIso = float(splits[1])/10.0
-
 labels = [ 'rawmc', 'scaledmc' ] 
-isoHists = []
-for label in labels:
-    isoHist = isoFile.Get(label)
-    
-    ### Get Sig and Sideband fractions
-    minIsoBin = 1
-    maxIsoBin = isoHist.GetNbinsX()
-    for bin in range(isoHist.GetNbinsX()+1):
-        binLowEdge = isoHist.GetXaxis().GetBinLowEdge(bin)
-        if (binLowEdge == minIso):
-            minIsoBin = bin
-        binUpEdge = isoHist.GetXaxis().GetBinUpEdge(bin)
-        if (binUpEdge == maxIso):
-            maxIsoBin = bin
-    sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
-    print "Fraction in sideband:", sbFrac
+isoHists = {}
 
-    sigFrac = isoHist.Integral(1,3)
-    print "Fraction in signal:", sigFrac
-    isoHists.append( (isoHist, sbFrac, sigFrac) )
+for chkey in s.ChIsoSbSels:
+    isoHists[chkey] = []
+    splits = chkey.strip('ChIso').split('to')
+    minIso = float(splits[0])/10.0
+    maxIso = float(splits[1])/10.0
+
+    for label in labels:
+        isoHist = isoFile.Get(label)
+
+        ### Get Sig and Sideband fractions
+        minIsoBin = 1
+        maxIsoBin = isoHist.GetNbinsX()
+        for bin in range(isoHist.GetNbinsX()+1):
+            binLowEdge = isoHist.GetXaxis().GetBinLowEdge(bin)
+            if (binLowEdge == minIso):
+                minIsoBin = bin
+            binUpEdge = isoHist.GetXaxis().GetBinUpEdge(bin)
+            if (binUpEdge == maxIso):
+                maxIsoBin = bin
+        sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
+        print "Fraction in sideband:", sbFrac
+
+        sigFrac = isoHist.Integral(1,3)
+        print "Fraction in signal:", sigFrac
+        isoHists[chkey].append( (isoHist, sbFrac, sigFrac) )
 
 ### Get Purity (first time)
 varName = 'sieie'
 var = s.Variables[varName]
 varBins = False
-versDir = os.path.join('/scratch5/ballen/hist/purity',s.Version,varName)
 skimDir  = s.config.skimDir
-plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
-if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
 
-pids = pid.split('_')
+pids = pid.split('-')
 if len(pids) > 1:
     pid = pids[0]
     extras = pids[1:]
@@ -107,25 +94,41 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
-baseSel = s.SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
+baseSel = 'jets.pt[0] > 100. && ' + ptSel + ' && ' + metSel + ' && ' + s.SigmaIetaIetaSels[era][loc][pid]
 if 'pixel' in extras:
     baseSel = baseSel+' && '+s.pixelVetoCut
 if 'monoph' in extras:
     baseSel = baseSel+' && '+s.monophIdCut
 
-sigSel = baseSel+' && '+s.chIsoSels[loc][pid]
-sbSel = baseSel+' && '+chIsoSel
+ChIsoNear = 'ChIso35to50'
+ChIsoNominal = 'ChIso50to75'
+ChIsoFar = 'ChIso75to90'
+
+sigSel = baseSel+' && '+s.chIsoSels[era][loc][pid]
+sbSel = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNominal]
+sbSelNear = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNear]
+sbSelFar  = baseSel + ' && ' + s.ChIsoSbSels[ChIsoFar]
 truthSel =  '(photons.matchedGen == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
-skims = s.Measurement[source]
-sels = [ sigSel
-         ,sigSel+' && '+truthSel
-         ,sbSel+' && '+truthSel
+skims = s.Measurement['bambu']
+sels = [  sigSel
+         ,sigSel + ' && ' + truthSel
+         ,sbSel + ' && ' + truthSel
          ,sbSel
-         ,sbSel+' && '+truthSel
-         ,sbSel
+         ,sbSelNear + ' && ' + truthSel
+         ,sbSelNear
+         ,sbSelFar + ' && ' + truthSel
+         ,sbSelFar
          ]
+
+if 'worst' in extras:
+    sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+    sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+elif 'max' in extras:
+    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+
 
 # get initial templates
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
@@ -139,28 +142,53 @@ for skim, sel in zip(skims,sels):
 
 print "\n\n##############################\n######## Doing initial purity calculation ########\n##############################\n\n"
 ### Get nominal value
-nominalHists = initialHists[:4]
-nominalTemplates = initialTemplates[:4]
+nominalHists = deepcopy(initialHists[:4])
+nominalTemplates = deepcopy(initialTemplates[:4])
 nominalSkims = skims[:4]
-nominalRatio = float(isoHists[0][1]) / float(isoHists[0][2])
+nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
 nominalDir = os.path.join(plotDir,'nominal')
 if not os.path.exists(nominalDir):
     os.makedirs(nominalDir)
 
-nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,nominalDir)
+nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,nominalDir)
+
+print "\n\n##############################\n######## Doing ch iso sideband uncertainty ########\n##############################\n\n"
+### Get chiso sideband near uncertainty
+nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
+nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
+nearSkims = skims[:4]
+nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
+nearDir = os.path.join(plotDir,'near')
+if not os.path.exists(nearDir):
+    os.makedirs(nearDir)
+
+nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,nearDir)
+
+### Get chiso sideband far uncertainty
+farHists = deepcopy(initialHists[:2] + initialHists[6:])
+farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
+farSkims = skims[:4]
+farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
+farDir = os.path.join(plotDir,'far')
+if not os.path.exists(farDir):
+    os.makedirs(farDir)
+
+farPurity = s.SignalSubtraction(farSkims,farHists,farTemplates,farRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,farDir)
+sidebandUncertainty = max( abs( nominalPurity[0] - nearPurity[0] ), abs( nominalPurity[0] - farPurity[0] ) )
+sidebandUncYield = max( abs( nominalPurity[2] - nearPurity[2] ), abs( nominalPurity[2] - farPurity[2] ) )
+
 
 print "\n\n##############################\n######## Doing ch iso dist uncertainty ########\n##############################\n\n"
 ### Get chiso dist uncertainty
-scaledHists = initialHists[:2] + initialHists[4:]
-scaledTemplates = initialTemplates[:2] + initialTemplates[4:]
-scaledSkims = skims[:2] + skims[4:]
+scaledHists = deepcopy(initialHists[:4])
+scaledTemplates = deepcopy(initialTemplates[:4])
+scaledSkims = skims[:4]
 scaledDir = os.path.join(plotDir,'scaled')
 if not os.path.exists(scaledDir):
     os.makedirs(scaledDir)
-scaledRatio = float(isoHists[1][1]) / float(isoHists[1][2])
+scaledRatio = float(isoHists[ChIsoNominal][1][1]) / float(isoHists[ChIsoNominal][1][2])
 
-scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][loc][pid],inputKey,scaledDir)
-# scaledUncertainty = abs( nominalPurity[0][0] - scaledPurity[0][0] )
+scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )
 scaledUncYield = abs( nominalPurity[2] - scaledPurity[2] )
 
@@ -189,8 +217,8 @@ tempCanvas.SaveAs(tempName+'.C')
  
 for iToy in range(1,101):
     print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
-    toyHists = initialHists[:3]
-    toyTemplates = initialTemplates[:3]
+    toyHists = deepcopy(initialHists[:3])
+    toyTemplates = deepcopy(initialTemplates[:3])
     
     toyDir = os.path.join(toysDir, 'toy'+str(iToy))
     if not os.path.exists(toyDir):
@@ -213,8 +241,7 @@ for iToy in range(1,101):
     toyTemplate = s.HistToTemplate(toyHist,var[2][loc],toySkims[3],"v0_"+inputKey,toyDir)
     toyTemplates.append(toyTemplate)
 
-    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,toyDir)
-    # purityDiff = toyPurity[0][0] - nominalPurity[0][0]
+    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,toyDir)
     purityDiff = toyPurity[0] - nominalPurity[0]
     print "Purity diff is:", purityDiff
     toyPlot.Fill(purityDiff)
@@ -259,19 +286,18 @@ for iH, hist in enumerate(initialHists[:4]):
     template = s.HistToTemplate(twobinHist,var[2][loc],twobinSkims[iH],"v0_"+inputKey,twobinDir)
     twobinTemplates.append(template)
 
-twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][loc][pid],inputKey,twobinDir)
-# twobinUncertainty = abs( nominalPurity[0][0] - twobinPurity[0][0])
+twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,varName,var[2][loc],var[1][era][loc][pid],inputKey,twobinDir)
 twobinUncertainty = abs( nominalPurity[0] - twobinPurity[0])
 twobinUncYield = abs( nominalPurity[2] - twobinPurity[2])
 
-
 print "\n\n##############################\n######## Showing results ########\n##############################\n\n"
 print "Nominal purity is:", nominalPurity[0]
+print "Sideband uncertainty is:", sidebandUncertainty
 print "Method uncertainty is:", scaledUncertainty
 print "Signal shape uncertainty is:", twobinUncertainty
 print "Background stat uncertainty is:", bkgdUncertainty
-totalUncertainty = ( (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
-totalUncYield = ( (scaledUncYield)**2 + (twobinUncYield)**2 + (bkgdUncYield)**2 )**(0.5)
+totalUncertainty = ( (sidebandUncertainty**2) + (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
+totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (twobinUncYield)**2 + (bkgdUncYield)**2 )**(0.5)
 
 print "Total uncertainty is:", totalUncertainty
 
@@ -281,12 +307,14 @@ for hist in initialHists[:]:
     outFile.write('%s has %f events \n' % (hist.GetName(), hist.Integral()))
 
 outFile.write( "# of real photons is: "+str(nominalPurity[2])+'\n' )
+outFile.write( "Sideband unc yield is: "+str(sidebandUncYield)+'\n' )
 outFile.write( "Method unc yield is: "+str(scaledUncYield)+'\n' ) 
 outFile.write( "Signal shape unc yield is: "+str(twobinUncYield)+'\n' ) 
 outFile.write( "Background stat unc yield is: "+str(bkgdUncYield)+'\n' )
 outFile.write( "Total unc yield is: "+str(totalUncYield)+'\n' )
 
 outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
+outFile.write( "Sideband uncertainty is: "+str(sidebandUncertainty)+'\n' )
 outFile.write( "Method uncertainty is: "+str(scaledUncertainty)+'\n' ) 
 outFile.write( "Signal shape uncertainty is: "+str(twobinUncertainty)+'\n' ) 
 outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )

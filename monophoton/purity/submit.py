@@ -2,6 +2,7 @@
 
 import sys
 import os
+import shutil
 from subprocess import Popen, PIPE
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -9,25 +10,48 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import selections as s
 
-scratchPath = '/scratch5/ballen/hist/purity/'+s.Version+'/sieie/Plots/SignalContam'
+scratchPath = '/data/t3home000/ballen/hist/purity/'+s.Version
 
 argFile = file('condorArgs.txt', 'w')
 
-for source in ['nero']:
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max', '-pixel-monoph-worst']
+PhotonIds = [base+mod for base in bases for mod in mods]
+PhotonIds.append('none')
+
+#print sorted(s.PhotonPtSels.keys())
+#print sorted(s.MetSels.keys())
+#sys.exit(0)
+
+for era in s.Eras:
     for loc in s.Locations[:1]:
-        for chiso in s.ChIsoSbSels[:]:
-            for pt in s.PhotonPtSels[:]:
-                for met in s.MetSels[1:2]:
-                    for sel in ['none', 'medium_pixel_monoph']:
-                        # print loc, sel, chiso[0], pt[0], met[0]
-                        outDir = scratchPath + '/' + source + '/' + loc + '_' + sel + '_' + chiso[0] + '_' + pt[0] + '_' + met[0]
-                        # print outDir
-                        if not os.path.exists(outDir):
-                            os.makedirs(outDir)
-                        argFile.write(source + ' ' + loc + ' ' + sel + ' ' + chiso[0].replace('ChIso', '') + ' ' + pt[0].replace('PhotonPt', '') + ' ' + met[0].replace('Met', '') + ' \n')
+        for pt in sorted(s.PhotonPtSels.keys())[:]:
+            for met in sorted(s.MetSels.keys())[:1]:
+                for sel in PhotonIds:
+                    outDir = scratchPath + '/' + era + '_' + loc + '_' + sel + '_' + pt + '_' + met
+
+                    if not os.path.exists(outDir):
+                        os.makedirs(outDir)
+                        
+                    argFile.write(loc + ' ' + sel + ' ' + pt.replace('PhotonPt', '') + ' ' + met.replace('Met', '') + ' ' + era + ' \n')
 
 argFile.close()
-submit = Popen( ['/home/ballen/bin/condor-run', 'bkgdstats.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
+
+
+mceff = Popen( ['/home/ballen/bin/condor-run', 'calcEfficiency.py', '-a', 'condorArgs.txt'], stdout = PIPE, stderr = PIPE )
+for mout_line in iter(mceff.stdout.readline, ''):
+     sys.stdout.write(mout_line)
+     sys.stdout.flush()
+return_code = mceff.wait()
+(mout, merr) = mceff.communicate()
+#print mout, '\n'
+print merr, '\n'
+
+submit = Popen( ['/home/ballen/bin/condor-run', 'calcPurity.py', '-a', 'condorArgs.txt', '-c', '10'], stdout = PIPE, stderr = PIPE )
+for sout_line in iter(submit.stdout.readline, ''):
+     sys.stdout.write(sout_line)
+     sys.stdout.flush()
+return_code = submit.wait()
 (sout, serr) = submit.communicate()
-print sout, '\n'
+# print sout, '\n'
 print serr, '\n'

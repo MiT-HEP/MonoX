@@ -11,28 +11,28 @@ from plotstyle import SimpleCanvas
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-dataDimu = ROOT.TChain('skim')
-dataDimu.Add(config.histDir + '/veto_eff/dimu_smu*.root')
+dataMumug = ROOT.TChain('skim')
+dataMumug.Add(config.histDir + '/veto_eff/mumug_smu*.root')
 
-mcDimu = ROOT.TChain('skim')
-mcDimu.Add(config.histDir + '/veto_eff/dimu_dy-50.root')
-mcDimu.Add(config.histDir + '/veto_eff/dimu_tt.root')
-mcDimu.Add(config.histDir + '/veto_eff/dimu_ww.root')
-mcDimu.Add(config.histDir + '/veto_eff/dimu_wz.root')
-mcDimu.Add(config.histDir + '/veto_eff/dimu_zz.root')
+mcMumug = ROOT.TChain('skim')
+mcMumug.Add(config.histDir + '/veto_eff/mumug_zllg-130.root')
+mcMumug.Add(config.histDir + '/veto_eff/mumug_tt.root')
+mcMumug.Add(config.histDir + '/veto_eff/mumug_ww.root')
+mcMumug.Add(config.histDir + '/veto_eff/mumug_wz.root')
+mcMumug.Add(config.histDir + '/veto_eff/mumug_zz.root')
 
 mcMonoph = ROOT.TChain('skim')
 mcMonoph.Add(config.histDir + '/veto_eff/monoph_znng-130.root')
 
 distCanvas = SimpleCanvas('cdist')
 distCanvas.legend.add('data', title = '2#mu data', opt = 'L', color = ROOT.kBlack, fstyle = 0)
-distCanvas.legend.add('dimu', title = '2#mu MC', opt = 'L', color = ROOT.kRed, fstyle = 0)
+distCanvas.legend.add('mumug', title = '2#mu MC', opt = 'L', color = ROOT.kRed, fstyle = 0)
 distCanvas.legend.add('monoph', title = 'Z#gamma MC', opt = 'L', color = ROOT.kBlue, fstyle = 0)
 distCanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
 
 effCanvas = SimpleCanvas('ceff')
 effCanvas.legend.add('data', title = '2#mu data', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-effCanvas.legend.add('dimu', title = '2#mu MC', opt = 'LP', color = ROOT.kRed, mstyle = 8)
+effCanvas.legend.add('mumug', title = '2#mu MC', opt = 'LP', color = ROOT.kRed, mstyle = 8)
 effCanvas.legend.add('monoph', title = 'Z#gamma MC', opt = 'LP', color = ROOT.kBlue, mstyle = 4)
 effCanvas.legend.add('sf', title = '2#mu data/MC', opt = 'LP', color = ROOT.kBlack, mstyle = 25, lwidth = 2)
 effCanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
@@ -68,37 +68,37 @@ for name, config in configs.items():
 
     dataDist = dist.Clone('data_' + dist.GetName())
     distCanvas.legend.apply('data', dataDist)
-    dataDimu.Draw(expr + '>>' + dataDist.GetName(), weight, 'goff')
+    dataMumug.Draw(expr + '>>' + dataDist.GetName(), weight, 'goff')
     dataDist.Scale(1. / dataDist.GetSumOfWeights(), scaleopt)
 
     dataEff = eff.Clone('data_' + eff.GetName())
     effCanvas.legend.apply('data', dataEff)
-    dataDimu.Draw('1. - (eleveto || muveto):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
+    dataMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
     
-    dimuDist = dist.Clone('dimu_' + dist.GetName())
-    distCanvas.legend.apply('dimu', dimuDist)
-    mcDimu.Draw(expr + '>>' + dimuDist.GetName(), weight, 'goff')
-    dimuDist.Scale(1. / dimuDist.GetSumOfWeights(), scaleopt)
+    mumugDist = dist.Clone('mumug_' + dist.GetName())
+    distCanvas.legend.apply('mumug', mumugDist)
+    mcMumug.Draw(expr + '>>' + mumugDist.GetName(), weight, 'goff')
+    mumugDist.Scale(1. / mumugDist.GetSumOfWeights(), scaleopt)
 
-    dimuEff = eff.Clone('dimu_' + eff.GetName())
-    effCanvas.legend.apply('dimu', dimuEff)
-    mcDimu.Draw('1. - (eleveto || muveto):' + expr + '>>' + dimuEff.GetName(), weight, 'prof goff')
+    mumugEff = eff.Clone('mumug_' + eff.GetName())
+    effCanvas.legend.apply('mumug', mumugEff)
+    mcMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + mumugEff.GetName(), weight, 'prof goff')
 
     if name == 'ht':
         dataEffHt = dataEff
-        dimuEffHt = dimuEff
+        mumugEffHt = mumugEff
 
     for iX in range(1, dataEff.GetNbinsX() + 1):
         x = dataEff.GetXaxis().GetBinCenter(iX)
         data = dataEff.GetBinContent(iX)
-        mc = dimuEff.GetBinContent(iX)
+        mc = mumugEff.GetBinContent(iX)
         if data > 0.:
             dataerr = dataEff.GetBinError(iX) / data
         else:
             dataerr = 0.
 
         if mc > 0.:
-            mcerr = dimuEff.GetBinError(iX) / mc
+            mcerr = mumugEff.GetBinError(iX) / mc
             sf.SetPoint(iX - 1, x, data / mc)
             sf.SetPointError(iX - 1, 0., data / mc * math.sqrt(dataerr * dataerr + mcerr * mcerr))
         else:
@@ -108,18 +108,18 @@ for name, config in configs.items():
 
     if name == 'incl':
         effCanvas.legend.add('datajet', title = '2#mu+jet data', opt = 'LP', color = ROOT.kBlack, mstyle = 25, lstyle = ROOT.kDashed)
-        effCanvas.legend.add('dimujet', title = '2#mu+jet MC', opt = 'LP', color = ROOT.kRed, mstyle = 25, lstyle = ROOT.kDashed)
+        effCanvas.legend.add('mumugjet', title = '2#mu+jet MC', opt = 'LP', color = ROOT.kRed, mstyle = 25, lstyle = ROOT.kDashed)
         effCanvas.legend.construct()
 
         weight = 'weight * (leadjetpt > 175.)'
     
         datajetEff = eff.Clone('datajet_' + eff.GetName())
         effCanvas.legend.apply('datajet', datajetEff)
-        dataDimu.Draw('1. - (eleveto || muveto):' + expr + '>>' + datajetEff.GetName(), weight, 'prof goff')
+        dataMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + datajetEff.GetName(), weight, 'prof goff')
     
-        dimujetEff = eff.Clone('dimujet_' + eff.GetName())
-        effCanvas.legend.apply('dimujet', dimujetEff)
-        mcDimu.Draw('1. - (eleveto || muveto):' + expr + '>>' + dimujetEff.GetName(), weight, 'prof goff')
+        mumugjetEff = eff.Clone('mumugjet_' + eff.GetName())
+        effCanvas.legend.apply('mumugjet', mumugjetEff)
+        mcMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + mumugjetEff.GetName(), weight, 'prof goff')
 
     weight = 'weight'
 
@@ -136,16 +136,16 @@ for name, config in configs.items():
     mcMonoph.Draw('1. - (eleveto || muveto):' + expr + '>>' + monophEff.GetName(), weight, 'prof goff')
 
     distCanvas.addHistogram(dataDist, drawOpt = 'HIST')
-    distCanvas.addHistogram(dimuDist, drawOpt = 'HIST')
+    distCanvas.addHistogram(mumugDist, drawOpt = 'HIST')
     distCanvas.addHistogram(monophDist, drawOpt = 'HIST')
     distCanvas.printWeb('veto_eff', 'dist_' + name)
     distCanvas.Clear()
 
     effCanvas.addHistogram(dataEff, drawOpt = 'EP')
-    effCanvas.addHistogram(dimuEff, drawOpt = 'EP')
+    effCanvas.addHistogram(mumugEff, drawOpt = 'EP')
     if name == 'incl':
         effCanvas.addHistogram(datajetEff, drawOpt = 'EP')
-        effCanvas.addHistogram(dimujetEff, drawOpt = 'EP')
+        effCanvas.addHistogram(mumugjetEff, drawOpt = 'EP')
     effCanvas.addHistogram(monophEff, drawOpt = 'EP')
     effCanvas.addHistogram(sf, drawOpt = 'P')
     effCanvas.printWeb('veto_eff', 'eff_' + name, logy = False)
@@ -155,25 +155,25 @@ for name, config in configs.items():
     outputFile.cd()
 
     dataDist.Write()
-    dimuDist.Write()
+    mumugDist.Write()
     monophDist.Write()
     dataEff.Write()
-    dimuEff.Write()
+    mumugEff.Write()
     monophEff.Write()
     sf.Write('sf_' + name)
 
     if name == 'incl':
         datajetEff.Write()
-        dimujetEff.Write()
+        mumugjetEff.Write()
         effCanvas.legend.remove('datajet')
-        effCanvas.legend.remove('dimujet')
+        effCanvas.legend.remove('mumugjet')
         effCanvas.legend.construct()
 
 data = 0.
 mc = 0.
 for iX in range(1, monophHt.GetNbinsX() + 1):
     data += dataEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
-    mc += dimuEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
+    mc += mumugEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
 
 data /= monophHt.GetSumOfWeights()
 mc /= monophHt.GetSumOfWeights()

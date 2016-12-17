@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import os
 import array
@@ -18,15 +20,16 @@ binningTitle, binning, fitBins = getBinning(binningName)
 
 sys.argv = []
 
-toyUncert = True
-
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
 inputTree = ROOT.TChain('yields')
 inputTree.Add(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
-if toyUncert:
+if os.path.exists(outputDir + '/toys_' + dataType + '_' + binningName + '.root'):
     inputTree.Add(outputDir + '/toys_' + dataType + '_' + binningName + '.root')
+    toyUncert = True
+else:
+    toyUncert = False
 
 vTPconf = array.array('i', [0])
 vBinName = array.array('c', '\0' * 128)
@@ -60,16 +63,17 @@ while inputTree.GetEntry(iEntry) > 0:
     else:
         toys[conf][binName].append(vNz[0])
 
-for altname in ['bkg', 'sig']:
-    sysshift[altname] = {'ee': {}, 'eg': {}}
-    for binName, cut in fitBins:
-        if os.path.exists(outputDir + '/tpsyst_' + dataType + '_' + altname + '_' + binName + '.root'):
-            print 'Alternative fit ' + altname + ' found'
-
-            source = ROOT.TFile.Open(outputDir + '/tpsyst_' + dataType + '_' + altname + '_' + binName + '.root')
-    
-            sysshift[altname]['ee'][binName] = source.Get('pull_ee').GetMean()
-            sysshift[altname]['eg'][binName] = source.Get('pull_eg').GetMean()
+if os.path.exists(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root'):
+    source = ROOT.TFile.Open(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root')
+    for altname in ['bkg', 'sig']:
+        sysshift[altname] = {}
+        for conf in ['ee', 'eg']:
+            sysshift[altname][conf] = {}
+            for binName, cut in fitBins:
+                h = source.Get('pull_' + conf + '_' + altname + '_' + binName)
+                if h:
+                    print 'Alternative fit', altname, conf, binName, 'found'
+                    sysshift[altname][conf][binName] = h.GetMean()
 
 if dataType == 'mc':
     # for mc truth background
@@ -92,9 +96,10 @@ yields = {
 
 frate = ROOT.TH1D('frate', '', len(binning) - 1, array.array('d', binning))
 
-for h in [yields['ee'], yields['eg'], frate]:
-    for ibin in range(1, len(fitBins) + 1):
-        h.GetXaxis().SetBinLabel(ibin, fitBins[ibin - 1][0])
+if binLabels:
+    for h in [yields['ee'], yields['eg'], frate]:
+        for ibin in range(1, len(fitBins) + 1):
+            h.GetXaxis().SetBinLabel(ibin, fitBins[ibin - 1][0])
 
 toydists = {}
 
@@ -179,10 +184,7 @@ frate.Write()
 yields['ee'].Write()
 yields['eg'].Write()
 
-#lumi = 0.
-#for sname in lumiSamples:
-#    lumi += allsamples[sname].lumi
-lumi = 36200
+lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
 frate.SetMaximum(0.05)
 
@@ -191,6 +193,7 @@ canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 canvas.legend.add('frate', 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.apply('frate', frate)
 canvas.ylimits = (0., 0.05)
+canvas.SetGrid(True, True)
 canvas.addHistogram(frate, drawOpt = 'EP')
 
 canvas.xtitle = binningTitle

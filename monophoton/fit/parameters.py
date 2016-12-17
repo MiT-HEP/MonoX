@@ -3,8 +3,8 @@ sourcedir = '/data/t3home000/yiiyama/studies/monophoton/distributions'
 filename = '{region}_{distribution}.root'
 histname = '{distribution}-{process}'
 
-regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu']
-processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
+regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu', 'lowmt']
+processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', '']
 processes += ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
 distribution = 'phoPtHighMet'
 binWidthNormalized = False
@@ -49,3 +49,6 @@ partialCorrelation = {
 
 # Nuisances affecting normalization only
 scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale']
+
+def customize(workspace):
+    

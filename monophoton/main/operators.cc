@@ -238,8 +238,8 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIso3] = (_photon.phIso < 3.);
   cutres[NHIsoTight] = _photon.passNHIso(2);
   cutres[PhIsoTight] = _photon.passPhIso(2);
-  cutres[CHIsoMax] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[0][wp_]);
-  cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_]);
+  cutres[CHIsoMax] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[0][0][wp_]);
+  cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][0][wp_]);
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);

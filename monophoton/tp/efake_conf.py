@@ -7,8 +7,8 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 # Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
 skimConfig = {
     'eldata': (['sel-16b2', 'sel-16c2', 'sel-16d2'], ['kEG']),
-    'phdata': (['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'], ['kEG', 'kMG']),
-    'mudata': (['smu-16b2', 'smu-16c2', 'sph-16e', 'sph-16f', 'sph-16g', 'sph-16h1', 'sph-16h2', 'sph-16h3'], ['kMG', 'kMMG']),
+    'phdata': (['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'], ['kEG', 'kMG']),
+#    'mudata': (['smu-16b2', 'smu-16c2'], ['kMG', 'kMMG']),
     'mc': (['dy-50', 'wlnu', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
@@ -18,14 +18,29 @@ lumiSamples = skimConfig['phdata'][0]
 def getBinning(binningName):
     if binningName == 'pt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
+#        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
+        binning = [175., 200., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
             repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
-            cut = 'probes.pt > {low:.0f} && probes.pt < {high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
+
+    elif binningName == 'ptalt':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+#        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
+        binning = [175., 200., 250., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+        binning = [175., 200., 250., 300.]
 
     elif binningName == 'highpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
@@ -37,6 +52,18 @@ def getBinning(binningName):
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
 #            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             cut = 'probes.pt > {low:.0f} && probes.pt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+    elif binningName == 'highptH':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        binning = [175., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+#            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            cut = 'probes.pt > {low:.0f} && probes.pt < {high:.0f} && run >= 280919 && run <= 284044'.format(**repl)
             fitBins.append((name, cut))
     
     elif binningName == 'eta':
@@ -80,6 +107,36 @@ def getBinning(binningName):
     
             fitBins.append((name, cut))
 
+    elif binningName == 'npvh':
+        binningTitle = 'N^{PV}'
+        binning = [0., 10., 20., 30.]
+    
+        fitBins = []
+        for low, high in [(0, 9), (10, 19), (20, 29)]:
+            repl = {'low': low, 'high': high}
+            name = 'npvh_{low}_{high}'.format(**repl)
+            if low == high:
+                cut = 'probes.scRawPt > 175. && npv == {low} && run >= 280919 && run <= 284044'.format(**repl)
+            else:
+                cut = 'probes.scRawPt > 175. && npv >= {low} && npv <= {high} && run >= 280919 && run <= 284044'.format(**repl)
+    
+            fitBins.append((name, cut))
+
+    elif binningName == 'npvbg':
+        binningTitle = 'N^{PV}'
+        binning = [0., 10., 20., 30.]
+    
+        fitBins = []
+        for low, high in [(0, 9), (10, 19), (20, 29)]:
+            repl = {'low': low, 'high': high}
+            name = 'npvh_{low}_{high}'.format(**repl)
+            if low == high:
+                cut = 'probes.scRawPt > 175. && npv == {low} && run >= 272007 && run <= 280385'.format(**repl)
+            else:
+                cut = 'probes.scRawPt > 175. && npv >= {low} && npv <= {high} && run >= 272007 && run <= 280385'.format(**repl)
+    
+            fitBins.append((name, cut))
+
     elif binningName == 'run':
         binningTitle = 'run'
         binning = []
@@ -94,6 +151,18 @@ def getBinning(binningName):
         fitBins.append(('Run2016EF', 'run >= 276831 && run <= 278808 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
         fitBins.append(('Run2016G', 'run >= 278820 && run <= 280385 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
         fitBins.append(('Run2016H', 'run >= 280919 && run <= 284044 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
+
+    elif binningName == 'chiso':
+        binningTitle = 'chiso'
+        binning = [0., 0.01, 0.5, 1., 1.37]
+
+        fitBins = []
+
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'chiso_{low:.2f}_{high:.2f}'.format(**repl)
+            cut = 'probes.scRawPt > 175. && probes.chIso >= {low:.2f} && probes.chIso < {high:.2f}'.format(**repl)
+            fitBins.append((name, cut))
 
     return binningTitle, binning, fitBins
 

@@ -29,10 +29,15 @@ phivar = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi + 0.0
 
 # targnames: sample names for target trees (monoph skim)
 # halonames: sample names for halo templates (can be a photon skim)
-targnames = ['sph-16e', 'sph-16f', 'sph-16g', 'sph-16h1', 'sph-16h2', 'sph-16h3']
+targnames = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3']
+#targnames = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r']
 halonames = targnames
 targs = [allsamples[sname] for sname in targnames]
 halos = [allsamples[sname] for sname in halonames]
+
+#lumi = sum(t.lumi for t in targs)
+lumi = sum(allsamples[sname].lumi for sname in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r'])
+lumi += sum(allsamples[sname].lumi for sname in ['sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3']) / 4.
 
 dataTree = ROOT.TChain('events')
 for sample in halos:
@@ -48,7 +53,7 @@ candTree.SetEstimate(candTree.GetEntries() + 1)
 
 # Canvas
 from plotstyle import SimpleCanvas
-canvas = SimpleCanvas(lumi = sum(t.lumi for t in targs))
+canvas = SimpleCanvas(lumi = lumi)
 plotName = 'fit'
 
 ### fit to halo distribution and parametrize
@@ -126,7 +131,7 @@ while True:
 ### fit to candidates
 
 # candidate phi values
-nTarg = candTree.Draw(phivar, 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.', 'goff')
+nTarg = candTree.Draw(phivar, 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2. && (run <= 276811 || event % 4 == 0)', 'goff')
 print nTarg, 'target events'
 
 # dump into a RooDataSet

@@ -56,9 +56,9 @@ data_15 = []
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'lowmtHfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel'] + noncollision
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-mc_cand = ['monoph']
+mc_cand = ['monoph', 'purity']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
-mc_sig = ['monoph', 'signalRaw']
+mc_sig = ['monoph', 'purity', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
@@ -73,9 +73,6 @@ mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_low
 
 selectors = {
     # Data 2016
-    'sph-16e': data_sph,
-    'sph-16f': data_sph,
-    'sph-16g': data_sph,
     'sph-16b-r': data_sph,
     'sph-16c-r': data_sph,
     'sph-16d-r': data_sph,
@@ -83,63 +80,28 @@ selectors = {
     'sph-16f-r': data_sph,
     'sph-16g-r': data_sph,
     'sph-16h': data_sph,
-    'smu-16b2-d': data_smu,
-    'smu-16c2-d': data_smu,
-    'smu-16d2-d': data_smu,
-    'sel-16b2-d': data_sel,
-    'sel-16c2-d': data_sel,
-    'sel-16d2-d': data_sel,
-    'smu-16b2': data_smu,
-    'smu-16c2': data_smu,
-    # 'smu-16d2': data_smu,
-    'sel-16b2': data_sel,
-    'sel-16c2': data_sel,
-    'sel-16d2': data_sel,
-    # Data 2015 rereco
-    'sph-15d': data_15,
-    'smu-15d': data_15,
-    'sel-15d': data_15,
-    # Data 2015 prompt reco
-    'sph-d3': data_15,
-    'sph-d4': data_15,
-    'smu-d3': data_15,
-    'smu-d4': data_15,
-    'sel-d3': data_15,
-    'sel-d4': data_15,
     # MC for signal region
     'znng-130': mc_vgcand + mc_vglowmt,
-    'znng-d'  : mc_vgcand + mc_vglowmt,
     'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
-    'wnlg-d'  : mc_vgcand + mc_vglep + mc_vglowmt,
-    'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep + mc_vglowmt,
+    # 'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     # 'wg': mc_cand + mc_lep + mc_lowmt,
     'wglo': mc_cand + mc_lep + mc_lowmt,
-    'gj-40': mc_gj + mc_lep + mc_dilep + mc_lowmt,
+    # 'gj-40': mc_gj + mc_lep + mc_dilep + mc_lowmt,
     'gj-100': mc_gj + mc_lep + mc_dilep + mc_lowmt,
     'gj-200': mc_gj + mc_lep + mc_dilep + mc_lowmt,
     'gj-400': mc_gj + mc_lep + mc_dilep + mc_lowmt,
     'gj-600': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-40-d': mc_gj + mc_lowmt,
-    'gj-100-d': mc_gj + mc_lowmt,
-    'gj-200-d': mc_gj + mc_lowmt,
-    'gj-400-d': mc_gj + mc_lowmt,
-    'gj-600-d': mc_gj + mc_lowmt,
-    'gj04-40': mc_gj + mc_lowmt,
-    'gj04-100': mc_gj + mc_lowmt,
-    'gj04-200': mc_gj + mc_lowmt,
-    'gj04-400': mc_gj + mc_lowmt,
-    'gj04-600': mc_gj + mc_lowmt,
+    'gg-40': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'gg-80': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'tt': mc_cand + mc_lep + mc_dilep,
     'tg': mc_cand + mc_lep + mc_lowmt, 
     'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'tt': mc_cand + mc_lep + mc_dilep,
-    # 'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep,
-    'wlnu': mc_wlnu + mc_lep,
+    # 'wlnu': mc_wlnu + mc_lep,
     'wlnu-100': mc_wlnu + mc_lep,
     'wlnu-200': mc_wlnu + mc_lep, 
     'wlnu-400': mc_wlnu + mc_lep, 
@@ -147,7 +109,7 @@ selectors = {
     'wlnu-800': mc_wlnu + mc_lep,
     'wlnu-1200': mc_wlnu + mc_lep,
     'wlnu-2500': mc_wlnu + mc_lep,
-    'dy-50': mc_cand + mc_lep + mc_dilep,
+    # 'dy-50': mc_cand + mc_lep + mc_dilep,
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
@@ -207,6 +169,12 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
         if '*' in name: # wild card
             snames.remove(name)
             snames.extend([s.name for s in allsamples.getmany(name)])
+        try:
+            samp = allsamples[name]
+        except KeyError:
+            print name, "is not in datasets.csv. Removing it from the list of samples to run over."
+            snames.remove(name)
+            
 
     snames = [name for name in snames if allsamples[name].sumw != 0.]
 

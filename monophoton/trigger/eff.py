@@ -30,6 +30,14 @@ except IndexError:
 
 ROOT.gStyle.SetNdivisions(510, 'X')
 
+samplesConf = {
+    'sph': ['sph-*'],
+    'sel': ['sel-16c-r'],
+    'smu': ['smu-*']
+}
+
+snames = samplesConf[sname]
+
 ## SETUP
 
 workDir = config.histDir + '/trigger'
@@ -90,15 +98,14 @@ passdef, denomdef, title = tconf[tname]
 if sname == 'jht' and vname == 'pt' and (tname == 'l1' or tname == 'l1hlt'):
     binning = array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(14)])
 
-## OBJECT DEFS
+## SOURCE
 
+tree = ROOT.TChain('triggerTree')
 lumi = 0.
-for sample in allsamples:
-    if not sample.data:
-        continue
-    if not sname+'-16' in sample.name:
-        continue
+for sample in allsamples.getmany(snames):
     lumi += sample.lumi
+    print 'adding', workDir + '/trigger_' + sample.name + '_' + oname + '.root'
+    tree.Add(workDir + '/trigger_' + sample.name + '_' + oname + '.root')
 
 canvas = SimpleCanvas(lumi = lumi)
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
@@ -113,12 +120,6 @@ xvar = work.factory('x[-6500.,6500.]')
 tmpfile = ROOT.TFile.Open('/tmp/trigeff_tmp.root', 'recreate')
 
 canvas.Clear()
-
-tree = ROOT.TChain('triggerTree')
-for fname in os.listdir(workDir):
-    if fname.startswith('trigger_' + sname) and fname.endswith(oname + '.root'):
-        print fname
-        tree.Add(workDir + '/' + fname)
 
 if type(binning) is tuple:
     passing = ROOT.TH1D('passing', ';' + vtitle, *binning)

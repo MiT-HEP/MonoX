@@ -1,3 +1,8 @@
+/*
+  Compute the electron & muon veto flags on Z(nunu)+gamma sample.
+  Skim result will be used as reference efficiency of the lepton veto.
+*/
+
 #include "TreeEntries_simpletree.h"
 
 #include "TTree.h"
@@ -9,7 +14,7 @@ monoph(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _
 {
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
+  event.setAddress(*_input, {"lumi", "event", "promptFinalStates", "npv", "npvTrue", "weight", "muons", "electrons", "jets"});
 
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));

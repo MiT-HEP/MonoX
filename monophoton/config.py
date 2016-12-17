@@ -5,7 +5,7 @@ skimDir = '/data/t3home000/yiiyama/studies/monophoton/skim'
 histDir = '/data/t3home000/yiiyama/studies/monophoton'
 ntuplesDir = '/data/t3serv014/yiiyama/hist/simpletree19/t2mit/'
 dataNtuplesDir = ntuplesDir
-photonSkimDir = '/data/t3home000/yiiyama/simpletree19/photonskim'
+photonSkimDir = '/data/t3home000/yiiyama/simpletree19/photonskim_newJSON'
 
 libsimpletree = 'libMitFlatDataFormats.so'
 dataformats = os.environ['CMSSW_BASE'] + '/src/MitFlat/DataFormats'

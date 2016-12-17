@@ -27,6 +27,11 @@ public:
   void setMaxDPt(float maxDPt) { maxDPt_ = maxDPt; }
 
   void setWorkingPoint(unsigned wp) { wp_ = wp; }
+  void setEra(unsigned era) { era_ = era; }
+  void applyPixelVeto() { eveto_ = true; }
+  void applyMonophID() { monoph_ = true; }
+  void applyWorstIso() { worst_ = true; }
+  void applyMaxIso() { max_ = true; }
 
 private:
   float minPhoPt_{175.};
@@ -40,10 +45,15 @@ private:
   float maxDPt_{0.2};
 
   unsigned wp_{1};
+  unsigned era_{0};
+  bool eveto_{false};
+  bool monoph_{false};
+  bool worst_{false};
+  bool max_{false};
   
-  const static unsigned nSteps{7};
+  const static unsigned nSteps{9};
   double efficiencies[nSteps+1][3];
-  double temp [3] = {-1., 0., 0.};
+  double temp[3] = {-1., 0., 0.};
   
 };
 
@@ -97,8 +107,10 @@ Calculator::calculate(TTree* _input) {
     for (unsigned iPFS(0); iPFS != promptFinalStates.size(); ++iPFS) {
       auto& pfs(promptFinalStates[iPFS]);
       
-      if (std::abs(pfs.pid) != 22)
+      if (pfs.pid != 22)
 	continue;
+
+      // printf("pdg id: %i \n", pfs.pid);
 
       // printf("got a gen photon w/pt %.2f \n", pfs.pt);
       
@@ -129,41 +141,58 @@ Calculator::calculate(TTree* _input) {
 	
 	if ( std::abs(pfs.pt - pho.pt) / pfs.pt  > maxDPt_)
 	  continue;
+
+	// if (pho.genIso > 0)
+	//   continue;
 	
 	nMatchedPhotons++;
 
-	// if ( !(pho.passHOverE(wp_) && pho.passSieie(wp_) && pho.passCHIso(wp_) && pho.passNHIso(wp_) && pho.passPhIso(wp_)))
-	//  continue;
-
-	if ( !pho.passHOverE(wp_))
+	if ( !pho.passHOverE(wp_, era_))
 	  continue;
 
 	iReco = 0;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passSieie(wp_))
+	if ( !pho.passSieie(wp_, era_))
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passNHIso(wp_))
+	if (era_ == 0) {
+	  if (!pho.passNHIso(wp_, era_))
+	    continue;
+	}
+	else {
+	  if ( !(pho.nhIsoS16 < simpletree::Photon::nhIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	    continue;
+	}	
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if (wp_ == 3 && !( (pho.phIso + 0.0053*pho.pt) < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	  continue;
+	else if (era_ == 0) {
+	  if ( !pho.passPhIso(wp_, era_))
+	    continue;
+	}
+	else {
+	  if ( !(pho.phIsoS16 < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	    continue;
+	}
+	
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( !pho.passCHIso(wp_, era_))
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passPhIso(wp_))
+	if ( !eveto_ )
 	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if ( !pho.passCHIso(wp_))
-	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
 
 	if ( !pho.pixelVeto )
 	  continue;
@@ -171,11 +200,36 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !( std::abs(pho.time) < 3. && pho.mipEnergy < 4.9 && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795) && pho.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_] ) )
+	if ( !monoph_ )
+	  continue;
+
+	if ( !( std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795)) ) 
 	  continue;
 
 	iReco++;
 	nRecoPhotons[iReco]++;
+
+	if ( !(pho.mipEnergy < 4.9) )
+	  continue;
+
+	iReco++;
+	nRecoPhotons[iReco]++;
+
+	if ( worst_) {
+	  if ( !(pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_]))
+	    continue;
+	  
+	  iReco++;
+	  nRecoPhotons[iReco]++;
+	}
+	
+	else if ( max_) {
+	 if ( !(pho.chIsoMax < simpletree::Photon::chIsoCuts[era_][0][wp_]))
+	    continue;
+	  
+	  iReco++;
+	  nRecoPhotons[iReco]++;
+	} 
       }
     }
   }

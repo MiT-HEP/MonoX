@@ -1,53 +1,50 @@
 import os
 import sys
-import shutil
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, chIsoSels, PhotonPtSels, MetSels, HistExtractor, config
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config
 from ROOT import *
 gROOT.SetBatch(True)
 
-source = sys.argv[1]
-loc = sys.argv[2]
-pid = sys.argv[3]
-chiso = sys.argv[4]
-pt = sys.argv[5]
-met = sys.argv[6]
+loc = sys.argv[1]
+pid = sys.argv[2]
+pt = sys.argv[3]
+met = sys.argv[4]
 
-inputKey = loc+'_'+pid+'_ChIso'+chiso+'_PhotonPt'+pt+'_Met'+met
+try:
+    era = sys.argv[5]
+except:
+    era = 'Spring15'
 
-ptSel = '(1)'
-for ptsel in PhotonPtSels:
-    if 'PhotonPt'+pt == ptsel[0]:
-        ptSel = ptsel[1]
-if ptSel == '(1)':
+inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
+
+try:
+    ptSel = PhotonPtSels['PhotonPt'+pt]
+except KeyError:
     print 'Inputted pt range', pt, 'not found!'
     print 'Not applying any pt selection!'
+    ptSel = '(1)'
 
-metSel = '(1)'
-for metsel in MetSels:
-    if 'Met'+met == metsel[0]:
-        metSel = metsel[1]
-if metSel == '(1)':
+try:
+    metSel = MetSels['Met'+met]
+except KeyError:
     print 'Inputted met range', met, 'not found!'
     print 'Not applying any met selection!'
+    metSel = '(1)'
 
 varName = 'chiso'
 var = Variables[varName]
 varBins = True
 
-versDir = os.path.join('/scratch5/ballen/hist/purity',Version,varName)
+versDir = os.path.join('/data/t3home000/ballen/hist/purity',Version)
 skimDir  = config.skimDir
-plotDir = os.path.join(versDir,'Plots','SignalContam',source,inputKey)
+plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
-else:
-    shutil.rmtree(plotDir)
-    os.makedirs(plotDir)
 
-skim = Measurement[source][1]
+skim = Measurement['bambu'][1]
 
-pids = pid.split('_')
+pids = pid.split('-')
 if len(pids) > 1:
     pid = pids[0]
     extras = pids[2:]
@@ -55,7 +52,7 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
-baseSel = SigmaIetaIetaSels[loc][pid]+' && '+ptSel+' && '+metSel
+baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
 
 outName = os.path.join(plotDir,'chiso_'+inputKey)
 print outName+'.root'
@@ -77,19 +74,23 @@ histograms[0].append(raw)
 
 nBins = len(var[2][loc][-1]) - 1
 binEdges = array('d',var[2][loc][-1])
-eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[loc][pid]+' && '+metSel+" && "+sieieSels[loc][pid]+")"
+eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
 eSel = eSelScratch.replace("photons", "probes")
 print eSel
 
-mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
-mcTree = mcFile.Get("skimmedEvents")
+# mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
+# mcTree = mcFile.Get("skimmedEvents")
+mcTree = TChain('skimmedEvents')
+mcTree.Add(os.path.join(skimDir, 'dy-50_eg.root'))
 mcHist = TH1F("emc","",nBins,binEdges)
 mcTree.Draw("probes.chIso>>emc", eSel)
 outFile.WriteTObject(mcHist)
 histograms[1].append(mcHist)
 
-dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
-dataTree = dataFile.Get("skimmedEvents")
+# dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
+# dataTree = dataFile.Get("skimmedEvents")
+dataTree = TChain('skimmedEvents')
+dataTree.Add(os.path.join(skimDir, 'sph-16*_eg.root'))
 dataHist = TH1F("edata","",nBins,binEdges)
 dataTree.Draw("probes.chIso>>edata", eSel)
 outFile.WriteTObject(dataHist)
