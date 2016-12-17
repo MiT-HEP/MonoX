@@ -23,6 +23,7 @@ probs = mix.input.nbPileupEvents.probValue.value() # list of integers
 mcProb = dict(zip(npvs, probs))
 
 mcDist = ROOT.TH1D('mc', '', 1000, 0., 80.)
+mcDist.Sumw2()
 
 for bin in range(1, mcDist.GetNbinsX() + 1):
     npv = int(mcDist.GetXaxis().GetBinCenter(bin))
@@ -32,6 +33,9 @@ for bin in range(1, mcDist.GetNbinsX() + 1):
         pass
 
 mcDist.Scale(1. / mcDist.GetSumOfWeights())
+
+for bin in range(1, mcDist.GetNbinsX() + 1):
+    mcDist.SetBinError(bin, 0.)
 
 dataDist = dataSource.Get('pileup').Clone('data')
 dataDist.Sumw2()
@@ -43,6 +47,13 @@ mcDist.Write()
 puweight = dataDist.Clone('puweight')
 
 puweight.Divide(mcDist)
+
+for bin in range(1, puweight.GetNbinsX() + 1):
+    puweight.SetBinError(bin, 0.)
+    # HACK
+    if puweight.GetBinContent(bin) > 4.:
+        puweight.SetBinContent(bin, 4.)
+
 puweight.Write()
 
 outputFile.Close()

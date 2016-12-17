@@ -129,15 +129,16 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 
     if (!outEventTree) {
       outputFile->cd();
-      outEventTree = inEventTree->CloneTree(0);
+      outEventTree = new TTree("events", "Events");
+
+      event.book(*outEventTree);
 
       // event branch addresses are copied through CloneTree
       outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
       outEventTree->Branch("hlt.photon135PFMET100", &hltPhoton135PFMET100, "photon135PFMET100/O");
     }
 
-    event.setAddress(*outEventTree);
-    event.setAddress(*inEventTree, {"photons.matchL1", "partons.pid", "promptFinalStates.ancestor"}, false);
+    event.setAddress(*inEventTree);
 
     if (inHLTTree) {
       hltPhoton165HE10Helper.reset();
@@ -159,6 +160,18 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
           hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
           hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
         }
+
+        for (auto& photon : event.photons) {
+          if (photon.isEB) {
+            photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
+            photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
+          }
+          else {
+            photon.nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
+            photon.phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
+          }
+        }
+
         outEventTree->Fill();
       }
     }

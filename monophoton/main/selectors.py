@@ -28,7 +28,8 @@ photonFullSelection = [
     'HOverE',
     'Sieie',
     'CHIso',
-    'CHWorstIso',
+#    'CHWorstIso',
+#    'CHIsoMax',
     'NHIso',
     'PhIso',
     'EVeto',
@@ -130,7 +131,8 @@ def monophotonBase(sample, selector):
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'HighMet'
+        'HighMet',
+        'PhotonMt'
     ]
 
     for op in operators:
@@ -208,7 +210,17 @@ def signalRaw(sample, selector):
 
     selector = candidate(sample, selector)
 
-    cuts = ['MetFilters', 'PhotonSelection', 'ElectronVeto', 'MuonVeto', 'TauVeto', 'PhotonMetDPhi', 'JetMetDPhi', 'HighMet']
+    cuts = [
+        'MetFilters',
+        'PhotonSelection',
+        'ElectronVeto',
+        'MuonVeto',
+        'TauVeto',
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'HighMet'
+    ]
+
     for cut in cuts:
         # print cut
         selector.findOperator(cut).setIgnoreDecision(True)
@@ -269,10 +281,11 @@ def lowmt(sample, selector):
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.setMaxPt(400.)
+#    photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
     mtCut.setRange(50., 150.)
+    mtCut.setCalculator(selector.findOperator('PhotonMt'))
     selector.addOperator(mtCut)
 
     dphi = selector.findOperator('PhotonMetDPhi')
@@ -287,12 +300,36 @@ def lowmtEleProxy(sample, selector):
 
     selector = eleProxy(sample, selector)
 
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setMaxPt(400.)
+#    photonSel = selector.findOperator('PhotonSelection')
+#    photonSel.setMaxPt(400.)
 
     mtCut = ROOT.MtRange()
     mtCut.setRange(50., 150.)
+    mtCut.setCalculator(selector.findOperator('PhotonMt'))
     selector.addOperator(mtCut)
+
+    dphi = selector.findOperator('PhotonMetDPhi')
+    dphi.invert(True)
+
+    return selector
+
+def lowmtHadProxy(sample, selector):
+    """
+    Hadron proxy for low-mt region.
+    """
+
+    selector = hadProxy(sample, selector)
+
+#    photonSel = selector.findOperator('PhotonSelection')
+#    photonSel.setMaxPt(400.)
+
+    mtCut = ROOT.MtRange()
+    mtCut.setRange(50., 150.)
+    mtCut.setCalculator(selector.findOperator('PhotonMt'))
+    selector.addOperator(mtCut)
+
+    dphi = selector.findOperator('PhotonMetDPhi')
+    dphi.invert(True)
 
     return selector
 
@@ -541,6 +578,8 @@ def gjets(sample, selector):
     
     selector.addOperator(ROOT.HighPtJetSelection())
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
+
+    selector.addOperator(ROOT.GenPhotonDR())
     
     photonSel = selector.findOperator('PhotonSelection')
 
