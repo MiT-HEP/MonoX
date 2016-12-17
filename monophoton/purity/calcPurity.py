@@ -7,6 +7,7 @@ from array import array
 from subprocess import Popen, PIPE
 import selections as s
 from copy import deepcopy
+import shutil
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -132,10 +133,18 @@ elif 'max' in extras:
 
 # get initial templates
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
+tmpDir = '/tmp/' + os.environ['USER'] + '/' + inputKey
+if not os.path.exists(tmpDir):
+    os.makedirs(tmpDir)
+for sph in s.sphData:
+    shutil.copy2(skimDir + '/' + sph + '_purity.root', tmpDir + '/' + sph + '_purity.root')
+for gj in s.gjetsMc:
+    shutil.copy2(skimDir + '/' + gj + '_purity.root', tmpDir + '/' + gj + '_purity.root')
+
 initialHists = []
 initialTemplates = []
 for skim, sel in zip(skims,sels):
-    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,skimDir,varBins)
+    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,tmpDir,varBins)
     initialHists.append(hist)
     template = s.HistToTemplate(hist,var[2][loc],skim,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
@@ -321,3 +330,6 @@ outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )
 outFile.write( "Total uncertainty is: "+str(totalUncertainty)+'\n' )
 
 outFile.close()
+
+### Clean up temp files
+shutil.rmtree(tmpDir)
