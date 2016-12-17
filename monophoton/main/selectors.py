@@ -370,6 +370,8 @@ def purity(sample, selector):
 
         selector.addOperator(genPhotonSel, 1)
         photonSel.setIgnoreDecision(True)
+        
+        selector.findOperator('HighPtJetSelection').setIgnoreDecision(True)
 
     return selector
 
