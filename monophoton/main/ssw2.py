@@ -73,9 +73,6 @@ mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_low
 
 selectors = {
     # Data 2016
-    'sph-16e': data_sph,
-    'sph-16f': data_sph,
-    'sph-16g': data_sph,
     'sph-16b-r': data_sph,
     'sph-16c-r': data_sph,
     'sph-16d-r': data_sph,
