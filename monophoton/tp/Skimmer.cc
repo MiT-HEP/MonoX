@@ -292,21 +292,31 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
       }
     }
 
+    // need to reset weight because data trees do not have weight branch any more
+    fullEvent_.weight = 1.;
+
     if (loadEvent)
       fullInput.GetEntry(iEntry - 1);
     else
       continue;
 
     fullEvent_.weight *= _weight;
-    
+
     if (reweight_) {
       int iBin(reweight_->FindFixBin(fullEvent_.npvTrue));
+      //      int iBin(reweight_->FindFixBin(fullEvent_.npv)); // used for testing data PU reweight
       if (iBin == 0)
         iBin = 1;
       else if (iBin >= reweight_->GetNbinsX())
         iBin = reweight_->GetNbinsX();
 
-      fullEvent_.weight *= reweight_->GetBinContent(iBin);
+      double w(reweight_->GetBinContent(iBin));
+      if (w != w)
+        w = 0.;
+      if (w > 20.)
+        w = 20.;
+
+      fullEvent_.weight *= w;
     }
 
     for (unsigned iT(0); iT != nSkimTypes; ++iT) {

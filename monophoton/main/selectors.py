@@ -234,15 +234,8 @@ def eleProxy(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    bin = eleproxyWeight.FindFixBin(175.)
-    if bin > eleproxyWeight.GetNbinsX():
-        bin = eleproxyWeight.GetNbinsX()
-
-    w = eleproxyWeight.GetBinContent(bin)
-
-    weight = ROOT.ConstantWeight(w, 'egfakerate')
-    weight.setUncertaintyUp(eleproxyWeight.GetBinError(bin) / w)
-    weight.setUncertaintyDown(eleproxyWeight.GetBinError(bin) / w)
+    weight = ROOT.PhotonPtWeight(eleproxyWeight, 'egfakerate')
+    weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')

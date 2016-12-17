@@ -18,6 +18,12 @@ enum EventType {
   nEventTypes
 };
 
+bool
+photonId(simpletree::Photon const& ph)
+{
+  return ph.loose;
+}
+
 void
 skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntries = -1)
 {
@@ -27,9 +33,9 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
   simpletree::Event event;
 
   bool hltPhoton135PFMET100;
-  simpletree::Muon outMuon("probe");
-  simpletree::Electron outElectron("probe");
-  simpletree::Photon outPhoton("probe");
+  simpletree::Muon outMuon;
+  simpletree::Electron outElectron;
+  simpletree::Photon outPhoton;
   simpletree::CorrectedMet outMet("probe");
   simpletree::TriggerHelper hltPhoton135PFMET100Helper("HLT_Photon135_PFMET100");
 
@@ -37,17 +43,17 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
   
   switch (_eventType) {
   case kDimuon:
-    outMuon.book(*output);
+    outMuon.book(*output, "probe");
     break;
   case kDielectron:
-    outElectron.book(*output);
+    outElectron.book(*output, "probe");
     break;
   case kElectronMET:
     outMet.book(*output);
     output->Branch("hltPhoton135PFMET100", &hltPhoton135PFMET100, "hltPhoton135PFMET100/O");
     break;
   default:
-    outPhoton.book(*output);
+    outPhoton.book(*output, "probe");
     break;
   }
 
@@ -109,6 +115,8 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
       std::cerr << ex.what() << std::endl;
       return;
     }
+
+    std::cout << "trigger" << std::endl;
 
     if (_eventType == kDimuon) {
       for (auto& muon : event.muons) {
@@ -185,7 +193,7 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
       int iPh(-1);
       for (auto& photon : event.photons) {
         ++iPh;
-        if (!photon.medium)
+        if (!photonId(photon))
           continue;
         
         switch (_eventType) {

@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))

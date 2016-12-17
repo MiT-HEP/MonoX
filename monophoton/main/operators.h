@@ -691,6 +691,7 @@ class PhotonPtWeight : public Modifier {
 
   void setPhotonType(unsigned t) { photonType_ = t; }
   void addVariation(char const* suffix, TObject* corr);
+  void useErrors(bool); // use errors of the nominal histogram weight for Up/Down variation
  protected:
   void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
 
@@ -699,6 +700,7 @@ class PhotonPtWeight : public Modifier {
   std::map<TString, TObject*> variations_;
   std::map<TString, double*> varWeights_;
   unsigned photonType_{kReco};
+  bool useErrors_{false};
 };
 
 class IDSFWeight : public Modifier {

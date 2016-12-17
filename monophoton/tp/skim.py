@@ -40,9 +40,7 @@ sampleIds = {
     'sph-16e': 0,
     'sph-16f': 0,
     'sph-16g': 0,
-    'sph-16h1': 0,
-    'sph-16h2': 0,
-    'sph-16h3': 0,
+    'sph-16h': 0,
     'sph-16b-r': 0,
     'sph-16c-r': 0,
     'sph-16d-r': 0,
@@ -75,7 +73,7 @@ if targets[0] == 'list':
     sys.exit(0)
 
 elif targets[0] == 'all':
-    dsNames = sampleIds.keys()
+    targets = sampleIds.keys()
 
 # if target contains mc / eldata / mudata
 for confName in skimConfig:
@@ -84,6 +82,8 @@ for confName in skimConfig:
         for sname in skimConfig[targets][0]:
             if sname not in targets:
                 targets.append(sname)
+
+samples = allsamples.getmany(targets)
 
 suffix = {'kEG': 'eg', 'kMG': 'mg', 'kMMG': 'mmg'}
 
@@ -96,12 +96,15 @@ reweight = puSource.Get('puweight')
 reweight.SetDirectory(ROOT.gROOT)
 puSource.Close()
 
-for sname in targets:
+#npvSource = ROOT.TFile.Open('npvreweight.root')
+#reweight = npvSource.Get('reweight')
+
+for sample in samples:
     skimmer = ROOT.Skimmer()
 
     try:
         # Find the config group this sample is in
-        confName, skimTypes = next((confName, skimTypes) for confName, (snames, skimTypes) in skimConfig.items() if sname in snames)
+        confName, skimTypes = next((confName, skimTypes) for confName, (snames, skimTypes) in skimConfig.items() if sample.name in snames)
     except StopIteration:
         print sname, 'not found in dataset list'
         continue
@@ -109,15 +112,16 @@ for sname in targets:
     if confName == 'mc':
         skimmer.setReweight(reweight)
 
+#    skimmer.setReweight(reweight)
+
     for skimType in skimTypes:
-        skimmer.addSkim(getattr(ROOT, skimType), outputDir + '/' + sname + '_' + suffix[skimType] + '.root')
+        skimmer.addSkim(getattr(ROOT, skimType), outputDir + '/' + sample.name + '_' + suffix[skimType] + '.root')
 
-    sampleId = sampleIds[sname]
+    sampleId = sampleIds[sample.name]
 
-    sample = allsamples[sname]
     inputTree = ROOT.TChain('events')
     if os.path.exists(config.photonSkimDir + '/' + sample.name + '.root'):
-        print 'Reading', sname, 'from photon skim'
+        print 'Reading', sample.name, 'from photon skim'
         inputTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
     else:
         inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')

@@ -1,20 +1,40 @@
+/*
+  Compute the electron & muon veto flags on Z(mumu) samples (data & MC).
+  Skim result will be used to derive the efficiency data/MC scale factor.
+*/
+
 #include "TreeEntries_simpletree.h"
 
 #include "TTree.h"
 #include "TFile.h"
 #include "TH1.h"
 
+void _dimu(TTree*, char const*, bool, double, TH1*);
+
 void
 dimu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _puweight = 0)
 {
+  _dimu(_input, _outputName, false, _sampleWeight, _puweight);
+}
+
+void
+mumug(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _puweight = 0)
+{
+  _dimu(_input, _outputName, true, _sampleWeight, _puweight);
+}
+
+void
+_dimu(TTree* _input, char const* _outputName, bool _gamma, double _sampleWeight, TH1* _puweight)
+{
   simpletree::Event event;
   event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"weight", "muons", "electrons", "jets", "npv", "npvTrue"});
+  event.setAddress(*_input, {"weight", "muons", "electrons", "photons", "jets", "npv", "npvTrue"});
 
   TFile* outputFile(TFile::Open(_outputName, "recreate"));
   TTree* output(new TTree("skim", "efficiency"));
   double weight;
   float mass;
+  float massg;
   bool eleveto;
   bool muveto;
   unsigned short njet;
@@ -23,6 +43,8 @@ dimu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _pu
 
   output->Branch("weight", &weight, "weight/D");
   output->Branch("mass", &mass, "mass/F");
+  if (_gamma)
+    output->Branch("massg", &massg, "massg/F");
   output->Branch("eleveto", &eleveto, "eleveto/O");
   output->Branch("muveto", &muveto, "muveto/O");
   output->Branch("njet", &njet, "njet/s");
@@ -35,6 +57,18 @@ dimu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _pu
   while (_input->GetEntry(iEntry++) > 0) {
     auto& muons(event.muons);
     auto& electrons(event.electrons);
+    simpletree::Photon const* photon(0);
+
+    if (_gamma) {
+      for (auto& ph : event.photons) {
+        if (ph.isEB && ph.scRawPt > 135. && ph.medium && ph.pixelVeto && ph.mipEnergy < 4.9 && ph.sipip > 0.001 && ph.sieie > 0.001) {
+          photon = &ph;
+          break;
+        }
+      }
+      if (!photon)
+        continue;
+    }
 
     unsigned tights[] = {unsigned(-1), unsigned(-1)};
 
@@ -60,6 +94,9 @@ dimu(TTree* _input, char const* _outputName, double _sampleWeight = 1., TH1* _pu
     }
     if (tights[0] > muons.size())
       continue;
+
+    if (photon)
+      massg = (muons[tights[0]].p4() + muons[tights[1]].p4() + photon->p4()).M();
 
     muveto = false;
     for (unsigned iMu(0); iMu != muons.size(); ++iMu) {

@@ -21,13 +21,16 @@ binningName = sys.argv[2] # see efake_conf
 
 #varType = 'kSCRawMass'
 varType = 'kMass'
-plotDir = 'efake'
+plotDir = 'efake/fit_' + binningName
+
+try:
+    os.makedirs(plotDir)
+except OSError:
+    pass
 
 fitBins = getBinning(binningName)[2]
 
-lumi = 36200
-#for sname in lumiSamples:
-#    lumi += allsamples[sname].lumi
+lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
 # switching runMode
 runMode = 'single'
@@ -134,6 +137,7 @@ for name, vParam in vParams.items():
 generator = ROOT.TemplateGenerator()
 
 weightExpr = 'weight' if dataType == 'mc' else '1'
+#weightExpr = 'weight'
 
 if runMode == 'batchtoy':
     source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
@@ -168,8 +172,7 @@ elif runMode == 'single':
             generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
     
         # background samples
-#        for sname in skimConfig['phdata'][0]:
-        for sname in skimConfig['mudata'][0]:
+        for sname in skimConfig['phdata'][0]:
             generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
 
         # will need MC signal template

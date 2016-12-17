@@ -23,7 +23,7 @@ alt = sys.argv[3]
 nToys = int(sys.argv[4])
 seed = int(sys.argv[5])
 
-output = ROOT.TFile.Open(outputDir + '/tpsyst_data_' + alt + '_' + binName + '_' + str(seed) + '.root', 'recreate')
+output = ROOT.TFile.Open(outputDir + '/tpsyst_data_' + alt + '_' + binningName + '_' + binName + '_' + str(seed) + '.root', 'recreate')
 
 nomSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
 altSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '_alt' + alt + '.root')
@@ -60,7 +60,7 @@ ROOT.RooRandom.randomGenerator().SetSeed(seed)
 
 for conf, iconf in [('ee', 0), ('eg', 1)]:
     output.cd()
-    outhist = ROOT.TH1D('pull_' + conf, '', 100, -0.5, 0.5)
+    outhist = ROOT.TH1D('pull_' + conf + '_' + alt + '_' + binName, '', 100, -0.5, 0.5)
 
     model = nomWork.pdf('model_' + conf + '_' + binName)
     altModel = altWork.pdf('model_' + conf + '_' + binName)

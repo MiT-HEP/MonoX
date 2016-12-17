@@ -477,6 +477,9 @@ while not done:
         else:
             done = False
 
+if hasattr(config, 'customize'):
+    config.customize(workspace)
+
 workspace.writeToFile(config.outname)
 
 # print out nuisance lines for the datacard
