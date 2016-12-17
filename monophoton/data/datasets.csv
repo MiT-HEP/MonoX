@@ -1,24 +1,25 @@
 ### Data 2016
-sph-16b-r        "SinglePhoton (2016B)"              5868.0               53185502   -                    filefi/046           SinglePhoton+Run2016B-23Sep2016-v3+AOD
-sph-16c-r        "SinglePhoton (2016C)"              2603.3               21674339   -                    filefi/046           SinglePhoton+Run2016C-23Sep2016-v1+AOD
-sph-16d-r        "SinglePhoton (2016D)"              4330.4               28851278   -                    filefi/046           SinglePhoton+Run2016D-23Sep2016-v1+AOD
-sph-16e-r        "SinglePhoton (2016E)"              4015.3               20887469   -                    filefi/046           SinglePhoton+Run2016E-23Sep2016-v1+AOD
-sph-16f-r        "SinglePhoton (2016F)"              3138.3               14211015   -                    filefi/046           SinglePhoton+Run2016F-23Sep2016-v1+AOD
-sph-16g-r        "SinglePhoton (2016G)"              7539.3               31821985   -                    filefi/046           SinglePhoton+Run2016G-23Sep2016-v1+AOD
-sph-16e          "SinglePhoton (2016E)"              4015.3               20887469   -                    miniaod              sph-16e
-sph-16f          "SinglePhoton (2016F)"              4015.3               20887469   -                    miniaod              sph-16f
-sph-16g          "SinglePhoton (2016G)"              4015.3               20887469   -                    miniaod              sph-16g
-sph-16h1         "SinglePhoton (2016H)"              0.0                  125        -                    filefi/046           SinglePhoton+Run2016H-PromptReco-v1+AOD
-sph-16h2         "SinglePhoton (2016H)"              8528.5               34532116   -                    filefi/046           SinglePhoton+Run2016H-PromptReco-v2+AOD
-sph-16h3         "SinglePhoton (2016H)"              211.5                851706     -                    filefi/046           SinglePhoton+Run2016H-PromptReco-v3+AOD
-sel-16b2         "SingleElectron (2016B)"            2055.8               83278806   -                    filefi/046           SingleElectron+Run2016B-PromptReco-v2+AOD
-sel-16c2         "SingleElectron (2016C)"            889.6                31906093   -                    filefi/046           SingleElectron+Run2016C-PromptReco-v2+AOD
-sel-16d2         "SingleElectron (2016D)"            527.3                17641747   -                    filefi/046           SingleElectron+Run2016D-PromptReco-v2+AOD
-smu-16b2         "SingleMuon (2016B)"                5836.1               1          -                    filefi/046           SingleMuon+Run2016B-PromptReco-v2+AOD
-smu-16c2         "SingleMuon (2016C)"                2619.6               1          -                    filefi/046           SingleMuon+Run2016C-PromptReco-v2+AOD
-smu-16d2         "SingleMuon (2016D)"                841.6                1          -                    filefi/046           SingleMuon+Run2016D-PromptReco-v2+AOD
-jht-16b2         "JetHT (2016B)"                     3348.7               75701515   -                    filefi/046           JetHT+Run2016B-PromptReco-v2+AOD
-jht-16c2         "JeTHT (2016C)"                     1842.6               31294969   -                    filefi/046           JetHT+Run2016C-PromptReco-v2+AOD
+sph-16b-r        "SinglePhoton (2016B)"              5927.9               53780416   -                    filefi/046           SinglePhoton+Run2016B-23Sep2016-v3+AOD
+sph-16c-r        "SinglePhoton (2016C)"              2628.9               21900305   -                    filefi/046           SinglePhoton+Run2016C-23Sep2016-v1+AOD
+sph-16d-r        "SinglePhoton (2016D)"              4341.9               28933971   -                    filefi/046           SinglePhoton+Run2016D-23Sep2016-v1+AOD
+sph-16e-r        "SinglePhoton (2016E)"              4040.3               21020234   -                    filefi/046           SinglePhoton+Run2016E-23Sep2016-v1+AOD
+sph-16f-r        "SinglePhoton (2016F)"              3160.1               14309422   -                    filefi/046           SinglePhoton+Run2016F-23Sep2016-v1+AOD
+sph-16g-r        "SinglePhoton (2016G)"              7552.5               31876624   -                    filefi/046           SinglePhoton+Run2016G-23Sep2016-v1+AOD
+sph-16h          "SinglePhoton (2016H)"              8761.8               33674739   -                    filefi/046           SinglePhoton+Run2016H-PromptReco-v1+AOD
+sel-16b-r        "SingleElectron (2016B)"            5919.9               239660865  -                    filefi/046           SingleElectron+Run2016B-23Sep2016-v2+AOD
+sel-16c-r        "SingleElectron (2016C)"            2643.7               93248667   -                    filefi/046           SingleElectron+Run2016C-23Sep2016-v1+AOD
+sel-16d-r        "SingleElectron (2016D)"            4350.4               146393047  -                    filefi/046           SingleElectron+Run2016D-23Sep2016-v1+AOD
+sel-16e-r        "SingleElectron (2016E)"            4049.1               113158621  -                    filefi/046           SingleElectron+Run2016E-23Sep2016-v1+AOD
+sel-16f-r        "SingleElectron (2016F)"            3156.6               70073789   -                    filefi/046           SingleElectron+Run2016F-23Sep2016-v1+AOD
+sel-16g-r        "SingleElectron (2016G)"            7463.8               150273275  -                    filefi/046           SingleElectron+Run2016G-23Sep2016-v1+AOD
+sel-16h          "SingleElectron (2016H)"            8751.5               126946686  -                    filefi/046           SingleElectron+Run2016H-PromptReco-v2+AOD
+smu-16b-r        "SingleMuon (2016B)"                5901.6               153338467  -                    filefi/046           SingleMuon+Run2016B-23Sep2016-v1+AOD
+smu-16c-r        "SingleMuon (2016C)"                2625.3               64210139   -                    filefi/046           SingleMuon+Run2016C-23Sep2016-v1+AOD
+smu-16d-r        "SingleMuon (2016D)"                4220.5               93729416   -                    filefi/046           SingleMuon+Run2016D-23Sep2016-v1+AOD
+smu-16e-r        "SingleMuon (2016E)"                4040.7               87186014   -                    filefi/046           SingleMuon+Run2016E-23Sep2016-v1+AOD
+smu-16f-r        "SingleMuon (2016F)"                3114.3               64106597   -                    filefi/046           SingleMuon+Run2016F-23Sep2016-v1+AOD
+smu-16g-r        "SingleMuon (2016G)"                7441.9               145737267  -                    filefi/046           SingleMuon+Run2016G-23Sep2016-v1+AOD
+smu-16h          "SingleMuon (2016H)"                8711.5               170144309  -                    filefi/046           SingleMuon+Run2016H-PromptReco-v1+AOD
 ### SM MC
 gg-40            "#gamma#gamma"                      134.1                4967647    3.75508860251e+06    filefi/046           DiPhotonJetsBox_M40_80-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 gg-80            "#gamma#gamma"                      134.1                56731811   2.68307417630e+07    filefi/046           DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM

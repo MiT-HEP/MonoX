@@ -27,6 +27,7 @@ defaults = {
     'purityDown': selectors.purityDown,
     'lowmt': selectors.lowmt,
     'lowmtEfake': selectors.lowmtEleProxy,
+    'lowmtHfake': selectors.lowmtHadProxy,
     'gjets': selectors.gjets,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -41,21 +42,18 @@ defaults = {
     'zmmJets': selectors.zmmJets
 }
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
-haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'] ]
-spikeNorms = [ 8.5 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'] ]
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
+haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
+spikeNorms = [ 8.5 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
 
 noncollision = [
     ('halo', selectors.haloMIP(haloNorms[0])),
     ('haloUp', selectors.haloCSC(haloNorms[0])),
-    ('haloDown', selectors.haloSieie(haloNorms[0])),
-    ('spikeE2E9', selectors.spikeE2E9(spikeNorms[0])),
-    ('spikeSieie', selectors.spikeSieie(spikeNorms[0])),
-    ('spikeSipip', selectors.spikeSipip(spikeNorms[0]))
+    ('spikeSieie', selectors.spikeSieie(spikeNorms[0]))
 ]
 
 data_15 = []
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel'] + noncollision
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'lowmtHfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel'] + noncollision
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph']
@@ -84,9 +82,7 @@ selectors = {
     'sph-16e-r': data_sph,
     'sph-16f-r': data_sph,
     'sph-16g-r': data_sph,
-    'sph-16h1': data_sph,
-    'sph-16h2': data_sph,
-    'sph-16h3': data_sph,
+    'sph-16h': data_sph,
     'smu-16b2-d': data_smu,
     'smu-16c2-d': data_smu,
     'smu-16d2-d': data_smu,
@@ -156,6 +152,9 @@ selectors = {
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
     'dy-50-400': mc_cand + mc_lep + mc_dilep,
     'dy-50-600': mc_cand + mc_lep + mc_dilep,
+    'dy-50-800': mc_cand + mc_lep + mc_dilep,
+    'dy-50-1200': mc_cand + mc_lep + mc_dilep,
+    'dy-50-2500': mc_cand + mc_lep + mc_dilep,
     'qcd-200': mc_cand + mc_qcd + mc_dilep + mc_lep,
     'qcd-300': mc_cand + mc_qcd + mc_dilep + mc_lep,
     'qcd-500': mc_cand + mc_qcd + mc_dilep + mc_lep,

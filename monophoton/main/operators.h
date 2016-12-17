@@ -44,6 +44,7 @@
 //   Modifier
 //     JetCleaning *
 //     CopyMet
+//     PhotonMt *
 //     LeptonRecoil *
 //     MetVariations *
 //     ConstantWeight *
@@ -51,6 +52,7 @@
 //     IDSFWeight *
 //     NPVWeight
 //     NNPDFVariation *
+//     GenPhotonDR *
 //--------------------------------------------------------------------
 
 enum LeptonFlavor {
@@ -174,6 +176,7 @@ class PhotonSelection : public Cut {
     PhIso3,
     NHIsoTight,
     PhIsoTight,
+    CHIsoMax,
     CHWorstIso,
     CHWorstIso11,
     Sieie05,
@@ -383,16 +386,20 @@ class HighMet : public Cut {
   double min_{170.};
 };
 
+class PhotonMt;
+
 class MtRange : public Cut {
  public:
   MtRange(char const* name = "MtRange") : Cut(name) {}
   
   void setRange(double min, double max) { min_ = min; max_ = max; }
+  void setCalculator(PhotonMt const* calc) { calc_ = calc; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   double min_{0.};
   double max_{6500.};
+  PhotonMt const* calc_{0};
 };
 
 class HighPtJetSelection : public Cut {
@@ -578,6 +585,18 @@ class CopyMet : public Modifier {
   void apply(simpletree::Event const& event, simpletree::Event& outEvent) override { outEvent.t1Met = event.t1Met; }
 };
 
+class PhotonMt : public Modifier {
+ public:
+  PhotonMt(char const* name = "PhotonMt") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+  
+  double getMt(unsigned iP) const { return mt_[iP]; }
+ protected:
+  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+
+  float mt_[simpletree::Particle::array_data::NMAX];
+};
+
 class LeptonRecoil : public Modifier {
  public:
   LeptonRecoil(char const* name = "LeptonRecoil") : Modifier(name), flavor_(nLeptonFlavors) {}
@@ -750,6 +769,17 @@ class NNPDFVariation : public Modifier {
 
   double weightUp_;
   double weightDown_;
+};
+
+class GenPhotonDR : public Modifier {
+ public:
+  GenPhotonDR(char const* name = "GenPhotonDR") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+
+  float minDR_;
 };
 
 #endif

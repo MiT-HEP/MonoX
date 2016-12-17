@@ -56,9 +56,7 @@ sampleRuns = collections.defaultdict(set)
 if not args.list:
     print 'Calculating integrated luminosity for', args.snames, 'from', config.ntuplesDir
 
-    for sname in args.snames:
-        sample = allsamples[sname]
-
+    for sample in allsamples.getmany(args.snames):
         dname = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
     
         for fname in os.listdir(dname):
@@ -77,11 +75,11 @@ if not args.list:
                     run = int(gr.GetX()[iP])
                     lumi = int(gr.GetY()[iP])
     
-                    if run not in mask or lumi not in mask[run]:
+                    if args.mask and (run not in mask or lumi not in mask[run]):
                         continue
     
                     allLumis[run].add(lumi)
-                    sampleRuns[sname].add(run)
+                    sampleRuns[sample.name].add(run)
             else:
                 print path, 'does not have ProcessedRunsLumis. Extracting the lumi list from the events tree.'
                 tree = source.Get('events')
@@ -107,7 +105,7 @@ if not args.list:
                         continue
     
                     allLumis[run].add(lumi)
-                    sampleRuns[sname].add(run)
+                    sampleRuns[sample.name].add(run)
     
             source.Close()
     

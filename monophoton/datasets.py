@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import re
 import os
 import math
@@ -307,6 +309,11 @@ add INFO: Add a new dataset.'''
             sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments)
         
         samples.samples.append(sdef)
+
+    elif command == 'lumi':
+        source = samples.getmany(arguments)
+        print ' '.join(s.name for s in source)
+        print sum(s.lumi for s in source)
 
     else:
         print 'Unknown command', command

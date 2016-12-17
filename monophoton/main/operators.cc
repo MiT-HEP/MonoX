@@ -238,6 +238,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIso3] = (_photon.phIso < 3.);
   cutres[NHIsoTight] = _photon.passNHIso(2);
   cutres[PhIsoTight] = _photon.passPhIso(2);
+  cutres[CHIsoMax] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[0][wp_]);
   cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][wp_]);
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
@@ -924,13 +925,11 @@ HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 bool
 MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
-  if (_outEvent.photons.size() == 0)
+  if (!calc_ || _outEvent.photons.size() == 0)
     return false;
 
-  auto& photon(_outEvent.photons[0]);
-  auto& met(_outEvent.t1Met);
+  double mt(calc_->getMt(0));
 
-  double mt(std::sqrt(2. * met.met * photon.scRawPt * (1. - std::cos(met.phi - photon.phi))));
   return mt > min_ && mt < max_;
 }
 
@@ -1469,6 +1468,26 @@ PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEve
 	}
       }
     }
+  }
+}
+
+//--------------------------------------------------------------------
+// PhotonMt
+//--------------------------------------------------------------------
+
+void
+PhotonMt::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("photons.mt", mt_, "mt[photons.size]/F");
+}
+
+void
+PhotonMt::apply(simpletree::Event const&, simpletree::Event& _outEvent)
+{
+  auto& met(_outEvent.t1Met);
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    auto& photon(_outEvent.photons[iP]);
+    mt_[iP] = std::sqrt(2. * met.met * photon.scRawPt * (1. - std::cos(met.phi - photon.phi)));
   }
 }
 
@@ -2014,4 +2033,34 @@ NNPDFVariation::apply(simpletree::Event const& _event, simpletree::Event&)
 {
   weightUp_ = 1. + _event.pdfDW;
   weightDown_ = 1. - _event.pdfDW;
+}
+
+//--------------------------------------------------------------------
+// GenPhotonDR
+//--------------------------------------------------------------------
+
+void
+GenPhotonDR::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("genPhotonDR", &minDR_, "genPhotonDR/F");
+}
+
+void
+GenPhotonDR::apply(simpletree::Event const& _event, simpletree::Event&)
+{
+  minDR_ = -1.;
+
+  for (auto& parton : _event.partons) {
+    if (std::abs(parton.pid) != 22)
+      continue;
+
+    for (auto& p : _event.partons) {
+      if (&p == &parton)
+        continue;
+
+      double dR(parton.dR(p));
+      if (minDR_ < 0. || dR < minDR_)
+        minDR_ = dR;
+    }
+  }
 }

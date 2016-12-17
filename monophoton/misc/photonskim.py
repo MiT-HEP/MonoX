@@ -37,4 +37,9 @@ if goodlumi:
 else:
     ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', NENTRIES)
 
+try:
+    os.makedirs(config.photonSkimDir)
+except OSError:
+    pass
+
 shutil.copyfile('/tmp/' + sname + '.root', config.photonSkimDir + '/' + sname + '.root')
