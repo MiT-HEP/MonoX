@@ -24,7 +24,7 @@ PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring16'
+era = 'Spring15'
 
 yields = {}
 for loc in s.Locations[:1]:
@@ -167,9 +167,10 @@ for loc in s.Locations[:1]:
 
                     # print sf, sfErrLow, sfErrLow / sf
 
-                rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
-                rcanvas.legend.apply("mc"+mod, mcEff)
-                rcanvas.addHistogram(mcEff, drawOpt = 'EP')
+                if not 'max' in mod:
+                    rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
+                    rcanvas.legend.apply("mc"+mod, mcEff)
+                    rcanvas.addHistogram(mcEff, drawOpt = 'EP')
 
                 # rcanvas.legend.add("data"+mod, title = "Data"+mod, mcolor = r.Blue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
                 # rcanvas.legend.apply("data"+mod, dataEff)

@@ -15,7 +15,7 @@ canvas = SimpleCanvas(lumi = lumi)
 rcanvas = RatioCanvas(lumi = lumi)
 
 binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
-pid = 'medium'
+pid = 'loose'
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 # impurityHist = inputFile.Get("barrel-loose-pixel-Met0to60")
@@ -27,7 +27,7 @@ isos = [ ('', '') ] # ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), 
 
 baseSel = 'jets.pt[0] > 100. && t1Met.met < 60. && photons.size == 1 && photons.pixelVeto[0]'
 
-samples = [ ('',  baseSel+' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIso[0] < 11.0 && photons.chIso[0] > 1.37))')
+samples = [ ('',  baseSel+' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIso[0] < 11.0 && photons.chIso[0] > 3.32))')
             ,('Down', baseSel)
             ,('Up', baseSel)
             ]
@@ -177,7 +177,7 @@ for samp, sel in samples:
     if samp == 'Down':
         rcanvas.ylimits = (0., -1.)
     else:
-        rcanvas.ylimits = (0., 0.15)
+        rcanvas.ylimits = (0., 0.1)
 
     rcanvas.SetLogy(False)
 
