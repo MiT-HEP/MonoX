@@ -57,11 +57,11 @@ else:
 print eventLists
 
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
-hadproxyWeight = hadproxySource.Get('tfactWorst')
-hadproxyupWeight = hadproxySource.Get('tfactWorstUp')
-hadproxydownWeight = hadproxySource.Get('tfactWorstDown')
-hadproxyPurityUpWeight = hadproxySource.Get('tfactWorstPurityUp')
-hadproxyPurityDownWeight = hadproxySource.Get('tfactWorstPurityDown')
+hadproxyWeight = hadproxySource.Get('tfact')
+hadproxyupWeight = hadproxySource.Get('tfactUp')
+hadproxydownWeight = hadproxySource.Get('tfactDown')
+hadproxyPurityUpWeight = hadproxySource.Get('tfactPurityUp')
+hadproxyPurityDownWeight = hadproxySource.Get('tfactPurityDown')
 
 eleproxySource = ROOT.TFile.Open(basedir + '/data/efake_data_pt.root')
 eleproxyWeight = eleproxySource.Get('frate')
