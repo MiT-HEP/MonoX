@@ -7,6 +7,8 @@ from array import array
 from subprocess import Popen, PIPE
 import selections as s
 from copy import deepcopy
+import shutil
+import time
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -132,13 +134,37 @@ elif 'max' in extras:
 
 # get initial templates
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
+tmpDir = '/tmp/' + os.environ['USER'] + '/' + inputKey
+if not os.path.exists(tmpDir):
+    os.makedirs(tmpDir)
+print 'Copying to temp dir'
+
+for sph in s.sphData:
+    print 'Copying', sph
+    start = time.time()
+    shutil.copy2(skimDir + '/' + sph + '_purity.root', tmpDir + '/' + sph + '_purity.root')
+    elapsed = time.time() - start
+    print 'Took ' + str(elapsed) + ' seconds'
+
+for gj in s.gjetsMc:
+    print 'Copying', gj
+    start = time.time()
+    shutil.copy2(skimDir + '/' + gj + '_purity.root', tmpDir + '/' + gj + '_purity.root')
+    elapsed = time.time() - start
+    print 'Took ' + str(elapsed) + ' seconds'
+
+print 'Done copying to temp'
+
 initialHists = []
 initialTemplates = []
 for skim, sel in zip(skims,sels):
-    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,skimDir,varBins)
+    start = time.time()
+    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,tmpDir,varBins)
     initialHists.append(hist)
     template = s.HistToTemplate(hist,var[2][loc],skim,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
+    elapsed = time.time() - start
+    print 'Took ' + str(elapsed) + ' seconds'
 
 print "\n\n##############################\n######## Doing initial purity calculation ########\n##############################\n\n"
 ### Get nominal value
@@ -321,3 +347,6 @@ outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )
 outFile.write( "Total uncertainty is: "+str(totalUncertainty)+'\n' )
 
 outFile.close()
+
+### Clean up temp files
+shutil.rmtree(tmpDir)
