@@ -102,7 +102,7 @@ for loc in s.Locations[:1]:
                        
 pprint(purities)
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h1', 'sph-16h2', 'sph-16h3'])
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 canvas = SimpleCanvas(lumi = sphLumi)
 
 for loc in s.Locations[:1]:
@@ -111,7 +111,7 @@ for loc in s.Locations[:1]:
             canvas.cd()
             canvas.Clear()
             canvas.legend.Clear()
-            canvas.legend.setPosition(0.7,0.7,0.9,0.9)
+            canvas.legend.setPosition(0.45, 0.7, 0.8, 0.9)
 
             for iMod, mod in enumerate(mods):
                 
@@ -138,9 +138,10 @@ for loc in s.Locations[:1]:
                     pGraph.SetPoint(iB, center, purity[0])
                     pGraph.SetPointError(iB, exl, exh, purity[1], purity[1])
 
-                canvas.legend.add(base+mod, title = base+mod, mcolor = r.kBlue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
-                canvas.legend.apply(base+mod, pGraph)
-                canvas.addHistogram(pGraph, drawOpt = 'EP')
+                if not 'max' in mod:
+                    canvas.legend.add(base+mod, title = base+mod, mcolor = r.kOrange+iMod-1, lcolor = r.kOrange+iMod-1, lwidth = 2)
+                    canvas.legend.apply(base+mod, pGraph)
+                    canvas.addHistogram(pGraph, drawOpt = 'EP')
 
                 outFile.cd()
                 pGraph.Write()
