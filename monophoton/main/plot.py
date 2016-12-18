@@ -459,6 +459,7 @@ if __name__ == '__main__':
     argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot config name.')
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
+    argParser.add_argument('--asimov', '-v', metavar = '(background|<signal>)', dest = 'asimov', default = '', help = 'Plot the total background or signal + background as the observed distribution. For signal + background, give the signal point name.')
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
@@ -518,6 +519,18 @@ if __name__ == '__main__':
 
     if args.allSignal and not outFile:
         print '--all-signal set but no output file is given.'
+        sys.exit(1)
+
+    if args.asimov not in ['', 'background'] + [s.name for s in plotConfig.signalPoints]:
+        print 'Invalid value for option --asimov.'
+        sys.exit(1)
+
+    if args.asimov in [s.name for s in plotConfig.signalPoints]:
+        print 'Feature under construction.'
+        sys.exit(0)
+
+    if args.asimov != '' and args.saveTrees:
+        print 'Cannot use --save-trees together with --asimov.'
         sys.exit(1)
 
     fullLumi = 0.
@@ -627,17 +640,29 @@ if __name__ == '__main__':
                         usedPoints.append(sample.name)
                         groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
 
-
-        print 'data_obs'
-        obshist = vardef.makeHist('data_obs', outDir = outFile)
-        if args.saveTrees:
-            obshist = []
-
-        for sname in plotConfig.obs.samples:
+        if args.asimov == '':
+            print 'data_obs'
             if args.saveTrees:
-                obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
+                obshist = []
             else:
-                obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+                obshist = vardef.makeHist('data_obs', outDir = outFile)
+    
+            for sname in plotConfig.obs.samples:
+                if args.saveTrees:
+                    obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
+                else:
+                    obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+
+        elif args.asimov == 'background':
+            print 'Asimov (background)'
+            obshist = vardef.makeHist('data_obs', outDir = outFile)
+            for iBin in range(1, bkgTotal.GetNbinsX() + 1):
+                for n in range(int(round(bkgTotal.GetBinContent(iBin)))):
+                    obshist.Fill(bkgTotal.GetXaxis().GetBinCenter(iBin))
+
+        else:
+            print 'Asimov (%s)' % args.asimov
+            # TODO!
 
         if args.saveTrees:
             obstree = makeTree('data_obs', obshist, outDir = outFile)
