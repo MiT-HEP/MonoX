@@ -75,6 +75,8 @@ def getConfig(confName):
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
+            VariableDef('fitTemplate', 'E_{T}^{#gamma}', 'photons.scRawPt[0] * TMath::Sign(1, TMath::Abs(photons.phi[0]/2.) - 0.5)', [-1 * bin for bin in reversed(combinedFitPtBinning)] + combinedFitPtBinning, unit = 'GeV', overflow = True),
+            VariableDef('fitTemplate2', 'E_{T}^{#gamma}', 'photons.scRawPt[0] + 1000 * ((TMath::Abs(photons.phi[0]/2.) - 0.5) < 0.)', combinedFitPtBinning + [1000. + bin for bin in combinedFitPtBinning] + [2175.], unit = 'GeV', overflow = True),
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
             VariableDef('metWide', 'E_{T}^{miss}', 't1Met.met', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.met', combinedFitPtBinning, unit = 'GeV', overflow = True),

@@ -204,7 +204,7 @@ class PhotonSelection : public Cut {
 
   double minPt_{175.};
   double maxPt_{6500.};
-  unsigned wp_{1}; // 1 -> medium
+  unsigned wp_{0}; // 0 -> loose, 1 -> medium
   float ptVarUp_[simpletree::Particle::array_data::NMAX];
   float ptVarDown_[simpletree::Particle::array_data::NMAX];
   // Will select photons based on the AND of the elements.
