@@ -1081,6 +1081,22 @@ def wlnu(generator):
 
     return filtered
 
+def wglo(generator):
+    """
+    Wrapper for adding an LHE photon pT cut.
+    """
+
+    def truncated(sample, name):
+        selector = generator(sample, name)
+
+        truncator = ROOT.PhotonPtTruncator()
+        truncator.setPtMax(500.)
+        selector.addOperator(truncator, 0)
+
+        return selector
+
+    return truncated
+
 def TagAndProbeBase(sample, selector):
     """
     Base for Z->ll tag and probe stuff.

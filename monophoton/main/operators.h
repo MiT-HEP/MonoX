@@ -41,6 +41,7 @@
 //     HighMet
 //     MtRange
 //     HighPtJetSelection
+//     PhotonPtTruncator
 //   Modifier
 //     JetCleaning *
 //     CopyMet
@@ -411,6 +412,17 @@ class HighPtJetSelection : public Cut {
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
   double min_{100.};
+};
+
+class PhotonPtTruncator : public Cut {
+ public:
+  PhotonPtTruncator(char const* name = "PhotonPtTruncator") : Cut(name) {}
+
+  void setPtMax(double max) { max_ = max; }
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double max_{500.};
 };
 
 class GenParticleSelection : public Cut {

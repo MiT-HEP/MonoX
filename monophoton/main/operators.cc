@@ -954,6 +954,21 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 }
 
 //--------------------------------------------------------------------
+// PhotonPtTruncator
+//--------------------------------------------------------------------
+
+bool
+PhotonPtTruncator::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  for (auto& parton : _event.partons) {
+    if (parton.pid == 22 && parton.pt > max_)
+      return false;
+  }
+
+  return true;
+}
+
+//--------------------------------------------------------------------
 // GenParticleSelection
 //--------------------------------------------------------------------
 

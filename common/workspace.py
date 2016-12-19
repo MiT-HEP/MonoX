@@ -41,9 +41,10 @@ import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
-sys.path.append(os.getcwd())
-parapy = sys.argv[1]
-config = __import__(parapy)
+configPath = sys.argv[1]
+
+sys.path.append(os.path.dirname(configPath))
+config = __import__(os.path.basename(configPath).replace('.py', ''))
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
@@ -200,6 +201,10 @@ for region in config.regions:
 # Workspace construction start
 
 x = fct('x[-1.e+10,1.e+10]')
+
+# binning
+h = sourcePlots[config.regions[0]]['data_obs']['nominal']
+x.setBinning(ROOT.RooBinning(h.GetNbinsX(), h.GetXaxis().GetBins().GetArray()), 'default')
 
 # will construct the workspace iteratively to resolve links
 iteration = 0

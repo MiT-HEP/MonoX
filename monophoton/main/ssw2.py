@@ -42,6 +42,9 @@ defaults = {
     'zmmJets': selectors.zmmJets
 }
 
+def applyMod(modifier, regions):
+    return [(region, modifier(defaults[region])) for region in regions]
+
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
 spikeNorms = [ 8.5 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
@@ -61,15 +64,8 @@ mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', '
 mc_sig = ['monoph', 'purity', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
-mc_vgcand = [(region, selectors.kfactor(defaults[region])) for region in mc_cand]
-mc_vglep = [(region, selectors.kfactor(defaults[region])) for region in mc_lep]
-mc_vgdilep = [(region, selectors.kfactor(defaults[region])) for region in mc_dilep]
-#mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(selectors.gjSmeared)), ('purity', selectors.kfactor(selectors.purity))]
-#mc_gj = [('raw', selectors.kfactor(defaults['monoph'])), ('monoph', selectors.kfactor(defaults['monoph'])), ('purity', selectors.kfactor(selectors.purity))]
-mc_gj = [(region, selectors.kfactor(defaults[region])) for region in  mc_qcd + mc_cand]
-mc_wlnu = [(region, selectors.wlnu(defaults[region])) for region in mc_cand] + ['wenu', 'zmmJets', 'zeeJets']
+mc_wlnu = applyMod(selectors.wlnu, mc_cand) + ['wenu', 'zmmJets', 'zeeJets'] + mc_lep
 mc_lowmt = ['lowmt']
-mc_vglowmt = [(region, selectors.kfactor(defaults[region])) for region in mc_lowmt]
 
 selectors = {
     # Data 2016
@@ -81,17 +77,18 @@ selectors = {
     'sph-16g-r': data_sph,
     'sph-16h': data_sph,
     # MC for signal region
-    'znng-130': mc_vgcand + mc_vglowmt,
-    'wnlg-130': mc_vgcand + mc_vglep + mc_vglowmt,
-    'zllg-130': mc_vgcand + mc_vglep + mc_vgdilep + mc_vglowmt,
+    'znng-130': applyMod(selectors.kfactor, mc_cand + mc_lowmt),
+    'wnlg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_lowmt),
+    'zllg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_dilep + mc_lowmt),
     # 'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     # 'wg': mc_cand + mc_lep + mc_lowmt,
-    'wglo': mc_cand + mc_lep + mc_lowmt,
+    'wglo': applyMod(selectors.wglo, mc_cand + mc_lep + mc_lowmt),
+    'wglo-500': mc_cand + mc_lep + mc_lowmt,
     # 'gj-40': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-100': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-200': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-400': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-600': mc_gj + mc_lep + mc_dilep + mc_lowmt,
+    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
+    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
+    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
+    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
     'gg-40': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'gg-80': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,
@@ -101,14 +98,14 @@ selectors = {
     'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    # 'wlnu': mc_wlnu + mc_lep,
-    'wlnu-100': mc_wlnu + mc_lep,
-    'wlnu-200': mc_wlnu + mc_lep, 
-    'wlnu-400': mc_wlnu + mc_lep, 
-    'wlnu-600': mc_wlnu + mc_lep, 
-    'wlnu-800': mc_wlnu + mc_lep,
-    'wlnu-1200': mc_wlnu + mc_lep,
-    'wlnu-2500': mc_wlnu + mc_lep,
+    # 'wlnu': mc_wlnu,
+    'wlnu-100': mc_wlnu,
+    'wlnu-200': mc_wlnu,
+    'wlnu-400': mc_wlnu,
+    'wlnu-600': mc_wlnu,
+    'wlnu-800': mc_wlnu,
+    'wlnu-1200': mc_wlnu,
+    'wlnu-2500': mc_wlnu,
     # 'dy-50': mc_cand + mc_lep + mc_dilep,
     'dy-50-100': mc_cand + mc_lep + mc_dilep,
     'dy-50-200': mc_cand + mc_lep + mc_dilep,
