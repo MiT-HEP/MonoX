@@ -31,6 +31,7 @@ wspace->Print()
 in ROOT.
 """
 
+import os
 import sys
 import re
 import math
@@ -39,7 +40,10 @@ import collections
 import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
-import parameters as config
+
+sys.path.append(os.getcwd())
+parapy = sys.argv[1]
+config = __import__(parapy)
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
