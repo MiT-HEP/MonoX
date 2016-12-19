@@ -204,7 +204,7 @@ x = fct('x[-1.e+10,1.e+10]')
 
 # binning
 h = sourcePlots[config.regions[0]]['data_obs']['nominal']
-x.setBinning(ROOT.RooBinning(h.GetNbinsX(), h.GetXaxis().GetBins().GetArray()), 'default')
+x.setBinning(ROOT.RooBinning(h.GetNbinsX(), h.GetXaxis().GetXbins().GetArray()), 'default')
 
 # will construct the workspace iteratively to resolve links
 iteration = 0
