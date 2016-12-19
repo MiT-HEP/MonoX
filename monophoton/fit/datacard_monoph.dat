@@ -7,76 +7,152 @@ shapes * * ws.root wspace:$PROCESS_$CHANNEL
 bin          monoph   dimu   diel   monomu   monoel
 observation  -1.0     -1.0   -1.0   -1.0     -1.0     
 ----------------------------------------------------------------------------------------------------------------------------------
-bin           monoph   monoph   monoph   monoph   monoph   monoph   monoph   monoph   monoph   monoph   dimu   dimu   dimu   dimu   diel   diel   diel   diel   monomu   monomu   monomu   monomu   monomu   monomu   monoel   monoel   monoel   monoel   monoel   monoel    
-process       <signal> zg       wg       efake    hfake    halo     spike    vvg      gjets    minor    zg     top    zjets  vvg    zg     top    zjets  vvg    wg       top      wjets    zg       gg       vvg      wg       top      wjets    zg       gg       vvg      
-process       -1       1        2        3        4        5        6        7        8        9        1      10     11     7      1      10     11     7      2        10       13       12       14       7        2        10       13       12       14       7        
-rate          1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0    1.0    1.0    1.0    1.0    1.0    1.0    1.0    1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      
+bin           monoph        monoph   monoph   monoph   monoph   monoph   monoph   monoph   monoph   monoph   dimu   dimu   dimu   dimu   diel   diel   diel   diel   monomu   monomu   monomu   monomu   monomu   monomu   monoel   monoel   monoel   monoel   monoel   monoel    
+process       dmv-1000-1    zg       wg       efake    hfake    halo     spike    vvg      gjets    minor    zg     top    zjets  vvg    zg     top    zjets  vvg    wg       top      wjets    zg       gg       vvg      wg       top      wjets    zg       gg       vvg      
+process       -1            1        2        3        4        5        6        7        8        9        1      10     11     7      1      10     11     7      2        10       13       12       14       7        2        10       13       12       14       7        
+rate          1.0           1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0    1.0    1.0    1.0    1.0    1.0    1.0    1.0    1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      1.0      
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------            
 
-lumiscale rateParam * * 3.1
+# lumiscale rateParam * * 3.1
 
+_diel_bin12_stat param 0 1
+_dimu_bin1_stat param 0 1
 customIDSF param 0 1
 egFakerate param 0 1
 electronSF param 0 1
 gec param 0 1
-gg_monoel_bin3_stat param 0 1
 haloNorm param 0 1
 haloShape param 0 1
 hfakeTfactor param 0 1
 jec param 0 1
 leptonVetoSF param 0 1
 lumi param 0 1
-minorPDF param 0 1
 minorQCDscale param 0 1
 muonSF param 0 1
 photonSF param 0 1
 purity param 0 1
 spikeNorm param 0 1
-top_dimu_bin5_stat param 0 1
-top_monoel_bin2_stat param 0 1
-top_monoel_bin4_stat param 0 1
-top_monoel_bin5_stat param 0 1
-top_monomu_bin2_stat param 0 1
-top_monomu_bin3_stat param 0 1
-top_monomu_bin5_stat param 0 1
-vvg_diel_bin2_stat param 0 1
+wg_monoel_bin10_stat param 0 1
+wg_monoel_bin11_stat param 0 1
+wg_monoel_bin12_stat param 0 1
 wg_monoel_bin1_stat param 0 1
 wg_monoel_bin2_stat param 0 1
 wg_monoel_bin3_stat param 0 1
 wg_monoel_bin4_stat param 0 1
 wg_monoel_bin5_stat param 0 1
+wg_monoel_bin6_stat param 0 1
+wg_monoel_bin7_stat param 0 1
+wg_monoel_bin8_stat param 0 1
+wg_monoel_bin9_stat param 0 1
+wg_monomu_bin10_stat param 0 1
+wg_monomu_bin11_stat param 0 1
+wg_monomu_bin12_stat param 0 1
 wg_monomu_bin1_stat param 0 1
 wg_monomu_bin2_stat param 0 1
 wg_monomu_bin3_stat param 0 1
 wg_monomu_bin4_stat param 0 1
 wg_monomu_bin5_stat param 0 1
+wg_monomu_bin6_stat param 0 1
+wg_monomu_bin7_stat param 0 1
+wg_monomu_bin8_stat param 0 1
+wg_monomu_bin9_stat param 0 1
+wg_monoph_bin10_stat param 0 1
+wg_monoph_bin11_stat param 0 1
+wg_monoph_bin12_stat param 0 1
 wg_monoph_bin1_stat param 0 1
 wg_monoph_bin2_stat param 0 1
 wg_monoph_bin3_stat param 0 1
 wg_monoph_bin4_stat param 0 1
 wg_monoph_bin5_stat param 0 1
+wg_monoph_bin6_stat param 0 1
+wg_monoph_bin7_stat param 0 1
+wg_monoph_bin8_stat param 0 1
+wg_monoph_bin9_stat param 0 1
+zg_diel_bin10_stat param 0 1
+zg_diel_bin11_stat param 0 1
+zg_diel_bin12_stat param 0 1
 zg_diel_bin1_stat param 0 1
 zg_diel_bin2_stat param 0 1
 zg_diel_bin3_stat param 0 1
 zg_diel_bin4_stat param 0 1
 zg_diel_bin5_stat param 0 1
+zg_diel_bin6_stat param 0 1
+zg_diel_bin7_stat param 0 1
+zg_diel_bin8_stat param 0 1
+zg_diel_bin9_stat param 0 1
+zg_dimu_bin10_stat param 0 1
+zg_dimu_bin11_stat param 0 1
+zg_dimu_bin12_stat param 0 1
 zg_dimu_bin1_stat param 0 1
 zg_dimu_bin2_stat param 0 1
 zg_dimu_bin3_stat param 0 1
 zg_dimu_bin4_stat param 0 1
 zg_dimu_bin5_stat param 0 1
+zg_dimu_bin6_stat param 0 1
+zg_dimu_bin7_stat param 0 1
+zg_dimu_bin8_stat param 0 1
+zg_dimu_bin9_stat param 0 1
+zg_monoel_bin10_stat param 0 1
+zg_monoel_bin11_stat param 0 1
+zg_monoel_bin12_stat param 0 1
 zg_monoel_bin1_stat param 0 1
 zg_monoel_bin2_stat param 0 1
 zg_monoel_bin3_stat param 0 1
 zg_monoel_bin4_stat param 0 1
 zg_monoel_bin5_stat param 0 1
+zg_monoel_bin6_stat param 0 1
+zg_monoel_bin7_stat param 0 1
+zg_monoel_bin8_stat param 0 1
+zg_monoel_bin9_stat param 0 1
+zg_monomu_bin10_stat param 0 1
+zg_monomu_bin11_stat param 0 1
+zg_monomu_bin12_stat param 0 1
 zg_monomu_bin1_stat param 0 1
 zg_monomu_bin2_stat param 0 1
 zg_monomu_bin3_stat param 0 1
 zg_monomu_bin4_stat param 0 1
 zg_monomu_bin5_stat param 0 1
+zg_monomu_bin6_stat param 0 1
+zg_monomu_bin7_stat param 0 1
+zg_monomu_bin8_stat param 0 1
+zg_monomu_bin9_stat param 0 1
+zg_monoph_bin10_stat param 0 1
+zg_monoph_bin11_stat param 0 1
+zg_monoph_bin12_stat param 0 1
 zg_monoph_bin1_stat param 0 1
 zg_monoph_bin2_stat param 0 1
 zg_monoph_bin3_stat param 0 1
 zg_monoph_bin4_stat param 0 1
 zg_monoph_bin5_stat param 0 1
+zg_monoph_bin6_stat param 0 1
+zg_monoph_bin7_stat param 0 1
+zg_monoph_bin8_stat param 0 1
+zg_monoph_bin9_stat param 0 1
+
+vgPDF param 0 1
+vgQCDscale_acorr param 0 1
+vgQCDscale_corr param 0 1
+wgEWK_bin1 param 0 1
+wgEWK_bin10 param 0 1
+wgEWK_bin11 param 0 1
+wgEWK_bin12 param 0 1
+wgEWK_bin2 param 0 1
+wgEWK_bin3 param 0 1
+wgEWK_bin4 param 0 1
+wgEWK_bin5 param 0 1
+wgEWK_bin6 param 0 1
+wgEWK_bin7 param 0 1
+wgEWK_bin8 param 0 1
+wgEWK_bin9 param 0 1
+zgEWK_bin1 param 0 1
+zgEWK_bin10 param 0 1
+zgEWK_bin11 param 0 1
+zgEWK_bin12 param 0 1
+zgEWK_bin2 param 0 1
+zgEWK_bin3 param 0 1
+zgEWK_bin4 param 0 1
+zgEWK_bin5 param 0 1
+zgEWK_bin6 param 0 1
+zgEWK_bin7 param 0 1
+zgEWK_bin8 param 0 1
+zgEWK_bin9 param 0 1

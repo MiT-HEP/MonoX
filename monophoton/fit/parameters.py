@@ -20,7 +20,7 @@ links = [
     (('wg', 'monomu'), ('wg', 'monoph')),
     (('zg', 'monoel'), ('zg', 'monoph')),
     (('zg', 'monomu'), ('zg', 'monoph')),
-#    (('wg', 'monoph'), ('zg', 'monoph'))
+    (('wg', 'monoph'), ('zg', 'monoph'))
 ]
 
 # Sample with free normalization that are not involved in links.

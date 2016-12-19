@@ -13,7 +13,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-DOSYSTEMATICS = False
+DOSYSTEMATICS = True
 
 # global variables to be set in __main__
 allsamples = None 
