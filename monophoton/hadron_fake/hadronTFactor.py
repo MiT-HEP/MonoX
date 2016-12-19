@@ -39,8 +39,10 @@ gname = 'gpt'
 gpt = ROOT.TH1D(gname, ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 
+print 'drawing gtree'
 gtree.Draw('photons.scRawPt[0]>>'+gname, baseSel+' && photons.' + pid + '[0]', 'goff')
 gpt.Scale(1., 'width')
+print 'done with gtree'
 
 # inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 # impurityHist = inputFile.Get("ChIso50to80imp")
@@ -117,8 +119,10 @@ for samp, sel in samples:
 
     # if iso[0] == 'Worst':
     # sel = sel.replace('chIso', 'chWorstIso')
+    print 'drawing htree'
     htree.Draw('photons.scRawPt[0]>>'+hname, sel, 'goff')
     hpt.Scale(1., 'width')
+    print 'done with htree'
 
     tname = 'tfact'+samp
     tfact = fpt.Clone(tname)
@@ -174,10 +178,10 @@ for samp, sel in samples:
     rcanvas.Clear()
     rcanvas.legend.Clear()
 
-    if samp == 'Down':
-        rcanvas.ylimits = (0., -1.)
-    else:
-        rcanvas.ylimits = (0., 0.1)
+    # if samp == 'Down':
+    #     rcanvas.ylimits = (0., -1.)
+    # else:
+    rcanvas.ylimits = (0., 0.06)
 
     rcanvas.SetLogy(False)
 
