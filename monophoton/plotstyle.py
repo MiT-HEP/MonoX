@@ -398,7 +398,7 @@ class SimpleCanvas(object):
 
         self._modified()
 
-    def Update(self, hList = [], logx = None, logy = None, ymax = -1.):
+    def Update(self, hList = None, logx = None, logy = None, ymax = -1.):
         if logx is not None:
             self.canvas.SetLogx(logx)
             self.canvas.Update()
@@ -436,8 +436,8 @@ class SimpleCanvas(object):
         pad.SetLogy(logy)
 
         # list of histograms to draw
-        if len(hList) == 0:
-            hList.extend(range(len(self._histograms)))
+        if hList is None:
+            hList = range(len(self._histograms))
 
         base = None
 
@@ -746,7 +746,7 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmin(self.rlimits[0])
         self.raxis.SetWmax(self.rlimits[1])
 
-    def Update(self, hList = [], rList = [], logx = None, logy = None, ymax = -1.):
+    def Update(self, hList = None, rList = None, logx = None, logy = None, ymax = -1.):
         if not self._needUpdate:
             if logx is not None:
                 self._updateAxis('x', logx)
@@ -786,7 +786,7 @@ class RatioCanvas(SimpleCanvas):
         self.ratioPad.SetLogx(logx)
 
         # list of ratio histograms
-        if len(rList) == 0:
+        if rList is None:
             rList = list(hList)
 
         if len(rList) > 0:
