@@ -116,8 +116,6 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
       return;
     }
 
-    std::cout << "trigger" << std::endl;
-
     if (_eventType == kDimuon) {
       for (auto& muon : event.muons) {
         if (!muon.tight)

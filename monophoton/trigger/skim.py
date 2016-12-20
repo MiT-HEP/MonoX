@@ -54,5 +54,4 @@ for sample in samples:
             
     ROOT.skim(tree, treeType, '/tmp/trigger_' + sample.name + '_' + obj + '.root')
 
-    shutil.move('/tmp/trigger_' + sample.name + '_' + obj + '.root', config.histDir + '/trigger')
-
+    shutil.move('/tmp/trigger_' + sample.name + '_' + obj + '.root', config.histDir + '/trigger/' + sample.name + '_' + obj + '.root')
