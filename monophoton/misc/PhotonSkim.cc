@@ -162,6 +162,24 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
         }
 
         for (auto& photon : event.photons) {
+          double chIsoEA(0.);
+          double absEta(std::abs(photon.scEta));
+          if (absEta < 1.)
+            chIsoEA = 0.0360;
+          else if (absEta < 1.479)
+            chIsoEA = 0.0377;
+          else if (absEta < 2.)
+            chIsoEA = 0.0306;
+          else if (absEta < 2.2)
+            chIsoEA = 0.0283;
+          else if (absEta < 2.3)
+            chIsoEA = 0.0254;
+          else if (absEta < 2.4)
+            chIsoEA = 0.0217;
+          else
+            chIsoEA = 0.0167;
+
+          photon.chIsoS16 = photon.chIso - chIsoEA * event.rho;
           if (photon.isEB) {
             photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
             photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
