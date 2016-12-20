@@ -25,15 +25,36 @@ import ROOT
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
 
+def modRelUncert2(mod):
+    # stat uncertainty of TFs have two parameters
+    # allow for general case of N parameters
+    relUncert2 = 0.
+    iparam = 0
+    p = mod.getParameter(iparam)
+    while p:
+        p.setVal(1.)
+        d = mod.getVal() - 1.
+        p.setVal(0.)
+
+        relUncert2 += d * d
+
+        iparam += 1
+        p = mod.getParameter(iparam)
+
+    return relUncert2
+
 source = ROOT.TFile.Open(args.sourcePath)
 workspace = source.Get('wspace')
 
 x = workspace.arg('x')
 
-canvas = SimpleCanvas()
-canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
-canvas.legend.add('total', 'stat. + syst.', opt = 'F', color = ROOT.kOrange + 1, fstyle = 1001)
-canvas.legend.add('stat', 'stat.', opt = 'L', color = ROOT.kBlack, mstyle = 8)
+canvas1 = SimpleCanvas(name = 'canvas1')
+canvas1.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+# a very ugly hack - somehow cannot plot two types (with and without uncertainty) of plots..
+canvas2 = SimpleCanvas(name = 'canvas2')
+
+canvas1.legend.add('total', 'stat. + syst.', opt = 'F', color = ROOT.kOrange + 1, fstyle = 1001)
+canvas1.legend.add('stat', 'stat.', opt = 'L', color = ROOT.kBlack, mstyle = 8)
 
 outputFile = ROOT.TFile.Open(outputFileName, 'recreate')
 
@@ -51,38 +72,16 @@ while True:
 
     hnominal = None
     huncert = None
-    logy = True
+    isTF = False
     
     hmods = {}
+    normMods = {}
 
-    for ibin in range(1, len(binning)):
-        binName = pdf.GetName() + '_bin' + str(ibin)
+    unc = workspace.function('unc_' + pdf.GetName() + '_norm')
+    if unc:
+        # normalization given to this PDF has associated uncertainties
 
-        if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
-            # raw is tf x another mu -> plot the TF
-
-            if hnominal is None:
-                hnominal = ROOT.TH1D(pdf.GetName() + '_tf', '', len(binning) - 1, binning)
-                huncert = hnominal.Clone(pdf.GetName() + '_tf_uncertainties')
-                logy = False
-
-            tf = workspace.var(binName + '_tf')
-            print tf.IsA().GetName()
-
-            hnominal.SetBinContent(ibin, tf.getVal())
-            huncert.SetBinContent(ibin, tf.getVal())
-
-        else:
-            if hnominal is None:
-                hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
-                hnominal.SetName(pdf.GetName())
-                huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
-
-        unc = workspace.function('unc_' + binName)
-        if not unc:
-            continue
-
-        totalUncert2 = 0.
+        # loop over all modifiers
         mods = unc.components()
         modItr = mods.iterator()
         while True:
@@ -90,52 +89,106 @@ while True:
             if not mod:
                 break
 
-            uncert2 = 0.
-            
-            # stat uncertainty of TFs have two parameters
-            # allow for general case of N parameters
-            iparam = 0
-            p = mod.getParameter(iparam)
-            while p:
-                p.setVal(1.)
-                d = (mod.getVal() - 1.) * hnominal.GetBinContent(ibin)
-                p.setVal(0.)
+            uncertName = mod.GetName().replace('mod_' + pdf.GetName() + '_norm_', '')
+            normMods[uncertName] = mod
+            hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
 
-                uncert2 += d * d
+    for ibin in range(1, len(binning)):
+        binName = pdf.GetName() + '_bin' + str(ibin)
 
-                iparam += 1
-                p = mod.getParameter(iparam)
+        # if mu is a RooRealVar -> simplest case; static PDF
+        # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
+        # if mu = raw x unc and raw is a function -> linked from another sample
 
-            if mod.GetName().endswith('_stat'):
-                hnominal.SetBinError(ibin, math.sqrt(uncert2))
-            else:
-                uncertName = mod.GetName().replace('mod_' + binName + '_', '')
-                if uncertName not in hmods:
-                    hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+        if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
+            # raw is tf x another mu -> plot the TF
 
-                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
-                
-            # total uncertainty includes stat
+            if hnominal is None:
+                hnominal = ROOT.TH1D('tf_' + pdf.GetName(), ';' + xtitle, len(binning) - 1, binning)
+                huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
+                isTF = True
+
+            tf = workspace.var(binName + '_tf')
+            val = tf.getVal()
+
+            # TF is historically plotted inverted
+            hnominal.SetBinContent(ibin, 1. / val)
+            huncert.SetBinContent(ibin, 1. / val)
+
+        else:
+            if hnominal is None:
+                hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
+                for iX in range(1, hnominal.GetNbinsX() + 1):
+                    hnominal.SetBinError(iX, 0.)
+
+                hnominal.SetName(pdf.GetName())
+                hnominal.GetXaxis().SetTitle(xtitle)
+                huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
+
+            val = hnominal.GetBinContent(ibin)
+
+        totalUncert2 = 0.
+
+        for uncertName, mod in normMods.items():
+            uncert2 = modRelUncert2(mod) * val
+            hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+
             totalUncert2 += uncert2
 
-        huncert.SetBinError(ibin, math.sqrt(totalUncert2))
+        unc = workspace.function('unc_' + binName)
+        if unc:
+            # loop over all modifiers for this bin
+            mods = unc.components()
+            modItr = mods.iterator()
+            while True:
+                mod = modItr.Next()
+                if not mod:
+                    break
+    
+                uncert2 = modRelUncert2(mod) * val
+    
+                if mod.GetName().endswith('_stat'):
+                    if isTF: # nominal is 1/value
+                        hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
+                    else:
+                        hnominal.SetBinError(ibin, math.sqrt(uncert2))
+                else:
+                    uncertName = mod.GetName().replace('mod_' + binName + '_', '')
+                    if uncertName not in hmods:
+                        hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+    
+                    hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                    
+                # total uncertainty includes stat
+                totalUncert2 += uncert2
+    
+        if isTF:
+            huncert.SetBinError(ibin, math.sqrt(totalUncert2) / val / val)
+        else:
+            huncert.SetBinError(ibin, math.sqrt(totalUncert2))
+
+    hasUncert = sum(huncert.GetBinError(iX) for iX in range(1, huncert.GetNbinsX() + 1)) != 0.
 
     outputFile.cd()
     hnominal.SetDirectory(outputFile)
     hnominal.Write()
-    huncert.SetDirectory(outputFile)
-    huncert.Write()
+    if hasUncert:
+        huncert.SetDirectory(outputFile)
+        huncert.Write()
     for h in hmods.values():
         h.SetDirectory(outputFile)
         h.Write()
 
-    canvas.legend.apply('total', huncert)
-    canvas.legend.apply('stat', hnominal)
+    canvas1.legend.apply('stat', hnominal)
 
-    huncert.GetXaxis().SetTitle(xtitle)
+    if hasUncert:
+        canvas1.Clear()
+        canvas1.legend.apply('total', huncert)
 
-    canvas.Clear()
-    canvas.addHistogram(huncert, drawOpt = 'E2')
-    canvas.addHistogram(hnominal, drawOpt = 'EP')
-    canvas.printWeb(plotDir, hnominal.GetName(), logy = logy)
-
+        canvas1.addHistogram(huncert, drawOpt = 'E2')
+        canvas1.addHistogram(hnominal, drawOpt = 'EP')
+        canvas1.printWeb(plotDir, hnominal.GetName(), logy = not isTF)
+    else:
+        canvas2.Clear()
+        canvas2.addHistogram(hnominal, drawOpt = 'EP')
+        canvas2.printWeb(plotDir, hnominal.GetName(), logy = not isTF)
