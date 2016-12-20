@@ -31,6 +31,7 @@ wspace->Print()
 in ROOT.
 """
 
+import os
 import sys
 import re
 import math

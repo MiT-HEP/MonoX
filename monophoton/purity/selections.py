@@ -68,7 +68,7 @@ for iEra, era in enumerate(Eras):
 ### Now start actual parameters that need to be changed ###
 
 # Version = config.simpletreeVersion
-Version = 'newSBs'
+Version = 'newCH'
 
 from ROOT import *
 
@@ -168,9 +168,14 @@ for era in Eras:
             hOverESel = '(photons.hOverE < '+str(hOverECuts[era][loc][pid])+')'
             sieieSel = '(photons.sieie < '+str(sieieCuts[era][loc][pid])+')'
             sieieSelWeighted = '( (0.891832 * photons.sieie + 0.0009133) < '+str(sieieCuts[era][loc][pid])+')'
-            chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
+
             chWorstIsoSel = '(photons.chWorstIso < ' + str(chIsoCuts[era][loc][pid]) + ')'
             chIsoMaxSel = '(photons.chIsoMax < ' + str(chIsoCuts[era][loc][pid]) + ')'
+
+            if era == 'Spring15':
+                chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
+            elif era == 'Spring16':
+                chIsoSel = '(photons.chIsoS16 < '+str(chIsoCuts[era][loc][pid])+')'
 
             if era == 'Spring15':
                 nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'

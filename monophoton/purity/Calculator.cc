@@ -185,8 +185,14 @@ Calculator::calculate(TTree* _input) {
 	iReco++;
 	nRecoPhotons[iReco]++;
 
-	if ( !pho.passCHIso(wp_, era_))
-	  continue;
+	if (era_ == 0) {
+	  if ( !pho.passCHIso(wp_, era_))
+	    continue;
+	}
+	else {
+	  if ( !(pho.chIsoS16 < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
+	    continue;
+	}
 
 	iReco++;
 	nRecoPhotons[iReco]++;
