@@ -16,7 +16,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, scale = 1.):
+    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, scale = 1., norm = -1., templateDir = None):
         self.name = name
         self.title = title
         self.samples = samples
@@ -24,6 +24,8 @@ class GroupSpec(object):
         self.count = count
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
+        self.norm = norm # use to normalize histograms post-facto
+        self.templateDir = templateDir
         self.variations = []
 
 
@@ -149,6 +151,38 @@ class VariableDef(object):
 
         hist.Sumw2()
         return hist
+
+    def binWidth(self, bin):
+        if self.ndim() != 1:
+            return 0.
+
+        if type(self.binning) is list:
+            return self.binning[bin] - self.binning[bin - 1]
+    
+        elif type(self.binning) is tuple:
+            return (self.binning[2] - self.binning[1]) / self.binning[0]
+
+    def xtitle(self):
+        if self.ndim() == 1:
+            title = self.title
+            if self.unit:
+                title += ' (%s)' % self.unit
+            return title
+        else:
+            return self.title[0]
+
+    def ytitle(self, binNorm = True):
+        if self.ndim() == 1:
+            title = 'Events'
+            if binNorm and self.binWidth(1) != 1.:
+                title += ' / '
+                if self.unit:
+                    title += self.unit
+                else:
+                    title += '%.2f' % self.binWidth(1)
+            return title
+        else:
+            return self.title[1]
 
     def formSelection(self, plotConfig, prescale = 1, replacements = []):
         cuts = []
