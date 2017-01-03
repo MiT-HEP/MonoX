@@ -76,7 +76,14 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
             
             shists[sname] = shist
 
-    else:
+    elif group.templateDir:
+        template = group.templateDir.Get(vardef.name)
+        if not template:
+            return hist
+
+        hist.Add(template)
+
+    elif template:
         norm = template.GetSumOfWeights()
         for iC in range(template.GetNcells()):
             hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm / postscale)
@@ -176,6 +183,9 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
         if len(vhists) == 2:
             vhist.Delete()
+
+    if group.norm >= 0. and hist.GetSumOfWeights() != 0.:
+        hist.Scale(group.norm / hist.GetSumOfWeights())
 
     formatHist(hist, vardef)
 
@@ -321,28 +331,11 @@ def formatHist(hist, vardef):
                 hist.SetBinContent(iX, cont / (w / wnorm))
                 hist.SetBinError(iX, err / (w / wnorm))
 
-        xtitle = vardef.title
-        if vardef.unit:
-            xtitle += '(%s)' % vardef.unit
-
-        ytitle = 'Events'
-        if hist.GetXaxis().GetBinWidth(1) != 1.:
-            ytitle += ' / '
-            if vardef.unit:
-                ytitle += vardef.unit
-            else:
-                ytitle += '%.2f' % hist.GetXaxis().GetBinWidth(1)
-
-    else:
-        xtitle = vardef.title[0]
-        ytitle = vardef.title[1]
-        ztitle = 'Events'
-
-    hist.GetXaxis().SetTitle(xtitle)
-    hist.GetYaxis().SetTitle(ytitle)
+    hist.GetXaxis().SetTitle(vardef.xtitle())
+    hist.GetYaxis().SetTitle(vardef.ytitle(binNorm = True))
 
     if vardef.ndim() != 1:
-        hist.GetZaxis().SetTitle(ztitle)
+        hist.GetZaxis().SetTitle('Events')
         hist.SetMinimum(0.)
 
 def unformatHist(hist, vardef):
@@ -391,9 +384,10 @@ def printCounts(counters, plotConfig):
         counter = counters[sspec.name]
         print ('%+12s  ' + prec + ' +- ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1))
         # print ('%+12s  ' + prec + ' +- ' + prec + '  S/sqrt(B): ' + prec) % (sspec.name, counter.GetBinContent(1), counter.GetBinError(1), counter.GetBinContent(1) / math.sqrt(bkgTotal) )
-    
-    print '====================='
-    print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
+
+    if 'data_obs' in counters:
+        print '====================='
+        print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
     
 
 def printBinByBin(stack, plotConfig, precision = '.2f'):
@@ -460,6 +454,7 @@ if __name__ == '__main__':
     argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
     argParser.add_argument('--asimov', '-v', metavar = '(background|<signal>)', dest = 'asimov', default = '', help = 'Plot the total background or signal + background as the observed distribution. For signal + background, give the signal point name.')
+    argParser.add_argument('--blind', '-B', action = 'store_true', dest = 'blind', help = 'Do not plot the observed distribution.')
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
@@ -640,49 +635,50 @@ if __name__ == '__main__':
                         usedPoints.append(sample.name)
                         groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
 
-        if args.asimov == '':
-            print 'data_obs'
-            if args.saveTrees:
-                obshist = []
-            else:
-                obshist = vardef.makeHist('data_obs', outDir = outFile)
-    
-            for sname in plotConfig.obs.samples:
+        if not args.blind:
+            if args.asimov == '':
+                print 'data_obs'
                 if args.saveTrees:
-                    obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
+                    obshist = []
                 else:
-                    obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
-
-        elif args.asimov == 'background':
-            print 'Asimov (background)'
-            obshist = vardef.makeHist('data_obs', outDir = outFile)
-            for iBin in range(1, bkgTotal.GetNbinsX() + 1):
-                for n in range(int(round(bkgTotal.GetBinContent(iBin)))):
-                    obshist.Fill(bkgTotal.GetXaxis().GetBinCenter(iBin))
-
-        else:
-            print 'Asimov (%s)' % args.asimov
-            # TODO!
-
-        if args.saveTrees:
-            obstree = makeTree('data_obs', obshist, outDir = outFile)
-            writeHist(obstree)
-        else:
-            writeHist(obshist)
-            formatHist(obshist, vardef)
-
-        # Take care of masking
-        if vardef.blind is not None:
-            for i in range(1, obshist.GetNbinsX()+1):
-                binCenter = obshist.GetBinCenter(i)
-                if vardef.fullyBlinded() or (binCenter > vardef.blind[0] and (vardef.blind[1] == 'inf' or binCenter < vardef.blind[1])):
-                    obshist.SetBinContent(i, 0.)
-                    obshist.SetBinError(i, 0.)
-
-        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-            counters['data_obs'] = obshist
-        elif plotDir and not vardef.fullyBlinded():
-            canvas.addObs(obshist, title = plotConfig.obs.title)
+                    obshist = vardef.makeHist('data_obs', outDir = outFile)
+        
+                for sname in plotConfig.obs.samples:
+                    if args.saveTrees:
+                        obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
+                    else:
+                        obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
+    
+            elif args.asimov == 'background':
+                print 'Asimov (background)'
+                obshist = vardef.makeHist('data_obs', outDir = outFile)
+                for iBin in range(1, bkgTotal.GetNbinsX() + 1):
+                    for n in range(int(round(bkgTotal.GetBinContent(iBin)))):
+                        obshist.Fill(bkgTotal.GetXaxis().GetBinCenter(iBin))
+    
+            else:
+                print 'Asimov (%s)' % args.asimov
+                # TODO!
+    
+            if args.saveTrees:
+                obstree = makeTree('data_obs', obshist, outDir = outFile)
+                writeHist(obstree)
+            else:
+                writeHist(obshist)
+                formatHist(obshist, vardef)
+    
+            # Take care of masking
+            if vardef.blind is not None:
+                for i in range(1, obshist.GetNbinsX()+1):
+                    binCenter = obshist.GetBinCenter(i)
+                    if vardef.fullyBlinded() or (binCenter > vardef.blind[0] and (vardef.blind[1] == 'inf' or binCenter < vardef.blind[1])):
+                        obshist.SetBinContent(i, 0.)
+                        obshist.SetBinError(i, 0.)
+    
+            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
+                counters['data_obs'] = obshist
+            elif plotDir and not vardef.fullyBlinded():
+                canvas.addObs(obshist, title = plotConfig.obs.title)
 
         if vardef.name == 'count':
             printCounts(counters, plotConfig)
@@ -696,8 +692,8 @@ if __name__ == '__main__':
             printChi2(counters, plotConfig)
 
         if plotDir and vardef.name != 'count':
-            canvas.xtitle = obshist.GetXaxis().GetTitle()
-            canvas.ytitle = obshist.GetYaxis().GetTitle()
+            canvas.xtitle = vardef.xtitle()
+            canvas.ytitle = vardef.ytitle(binNorm = True)
 
             canvas.selection = vardef.formSelection(plotConfig)
 
@@ -758,7 +754,7 @@ if __name__ == '__main__':
                 cnv.IsA().Destructor(cnv)
 
             else:
-                canvas.printWeb(plotDir, vardef.name)
+                canvas.printWeb(plotDir, vardef.name, drawLegend = False)
 
                 if addLinear:
                     canvas.ylimits = (0., -1.)
