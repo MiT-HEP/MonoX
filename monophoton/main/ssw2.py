@@ -29,6 +29,8 @@ defaults = {
     'lowmtEfake': selectors.lowmtEleProxy,
     'lowmtHfake': selectors.lowmtHadProxy,
     'gjets': selectors.gjets,
+    'halo': selectors.halo,
+    'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
     'monomuHfake': selectors.monomuonHadProxy,
@@ -46,17 +48,9 @@ def applyMod(modifier, regions):
     return [(region, modifier(defaults[region])) for region in regions]
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
-haloNorms = [ 8.7 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
-spikeNorms = [ 8.5 * allsamples[sph].lumi / sphLumi for sph in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] ]
 
-noncollision = [
-    ('halo', selectors.haloMIP(haloNorms[0])),
-    ('haloUp', selectors.haloCSC(haloNorms[0])),
-    ('spikeSieie', selectors.spikeSieie(spikeNorms[0]))
-]
-
-data_15 = []
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'lowmtHfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel'] + noncollision
+#data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'lowmtHfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'trivialShower']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph', 'purity']
@@ -85,10 +79,10 @@ selectors = {
     'wglo': applyMod(selectors.wglo, mc_cand + mc_lep + mc_lowmt),
     'wglo-500': mc_cand + mc_lep + mc_lowmt,
     # 'gj-40': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
-    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
-    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
-    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lep + mc_dilep + mc_lowmt),
+    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
+    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
+    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
+    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
     'gg-40': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'gg-80': mc_cand + mc_lep + mc_dilep + mc_lowmt,
     'tt': mc_cand + mc_lep + mc_dilep,

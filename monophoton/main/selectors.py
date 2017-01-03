@@ -48,14 +48,6 @@ puWeight = puWeightSource.Get('puweight')
 photonSFSource = ROOT.TFile.Open(basedir + '/data/photon_id_sf16.root')
 photonSF = photonSFSource.Get('EGamma_SF2D')
 
-# eventFiltersPath = '/scratch5/yiiyama/eventlists'
-eventFiltersPath = '/badpath/bad'
-if os.path.exists(eventFiltersPath):
-    eventLists = os.listdir(eventFiltersPath)
-else:
-    eventLists = []
-print eventLists
-
 hadproxySource = ROOT.TFile.Open(basedir + '/data/hadronTFactor.root')
 hadproxyWeight = hadproxySource.Get('tfact')
 hadproxyupWeight = hadproxySource.Get('tfactUp')
@@ -184,10 +176,7 @@ def candidate(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    if sample.data:
-        for eventList in eventLists:
-            selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
-    else:
+    if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
         idsf.addFactor(photonSF)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
@@ -614,6 +603,42 @@ def gjSmeared(sample, name):
 
     return selector
 
+def halo(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut and halo tag.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    for sel in photonFullSelection:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
+def trivialShower(sample, selector):
+    """
+    Candidate sample but with inverted sieie cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    for sel in photonFullSelection:
+        if sel == 'SieieNonzero':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    return selector
+
 def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
     """
     Candidate-like, but with inverted MIP tag and CSC filter.
@@ -628,15 +653,6 @@ def sampleDefiner(norm, inverts, removes, appends, CSCFilter = True):
         # 0->GlobalHalo16 tagger - not in st18 samples
         if not CSCFilter:
             selector.findOperator('MetFilters').setFilter(0, -1)
-
-        if sample.data:
-            for eventList in eventLists:
-                if 'Halo' in eventList and CSCFilter is None:
-                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 0)
-                elif 'Halo' in eventList and not CSCFilter:
-                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), -1)
-                else:
-                    selector.findOperator('MetFilters').setEventList(str(eventFiltersPath + '/' + eventList), 1)
 
         photonSel = selector.findOperator('PhotonSelection')
 
