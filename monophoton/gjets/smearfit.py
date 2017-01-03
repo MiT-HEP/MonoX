@@ -15,7 +15,7 @@ ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('/home/yiiyama/cms/studies/RooFit/libCommonRooFit.so')
 ROOT.gROOT.LoadMacro('metTree.cc+')
 
-photonData = ['sph-16b2', 'sph-16b2s']
+photonData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h']
 
 lumi = 0.
 for sname in photonData:
