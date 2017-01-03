@@ -398,7 +398,7 @@ class SimpleCanvas(object):
 
         self._modified()
 
-    def Update(self, hList = None, logx = None, logy = None, ymax = -1.):
+    def Update(self, hList = None, logx = None, logy = None, ymax = -1., drawLegend = True):
         if logx is not None:
             self.canvas.SetLogx(logx)
             self.canvas.Update()
@@ -416,7 +416,7 @@ class SimpleCanvas(object):
         if logy is None:
             logy = self._logy
 
-        base = self._updateMainPad(self.canvas, hList, logx, logy, ymax)
+        base = self._updateMainPad(self.canvas, hList, logx, logy, ymax, drawLegend = drawLegend)
 
         if base:
             if self.xtitle:
@@ -428,7 +428,7 @@ class SimpleCanvas(object):
 
         self._needUpdate = False
 
-    def _updateMainPad(self, pad, hList, logx, logy, ymax, rooHists = None):
+    def _updateMainPad(self, pad, hList, logx, logy, ymax, rooHists = None, drawLegend = True):
         gPad = ROOT.gPad
 
         pad.cd()
@@ -495,7 +495,7 @@ class SimpleCanvas(object):
             else:
                 base.GetYaxis().SetRangeUser(*self.ylimits)
 
-            if len(self.legend.entries) != 0:
+            if len(self.legend.entries) != 0 and drawLegend:
                 self.legend.Draw()
 
         for obj in self._objects:
@@ -746,7 +746,7 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmin(self.rlimits[0])
         self.raxis.SetWmax(self.rlimits[1])
 
-    def Update(self, hList = None, rList = None, logx = None, logy = None, ymax = -1.):
+    def Update(self, hList = None, rList = None, logx = None, logy = None, ymax = -1., drawLegend = True):
         if not self._needUpdate:
             if logx is not None:
                 self._updateAxis('x', logx)
@@ -770,7 +770,7 @@ class RatioCanvas(SimpleCanvas):
         # map the original histograms to RooHists
         rooHists = {}
 
-        base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists)
+        base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists, drawLegend = drawLegend)
 
         if base:
             base.GetYaxis().SetTitle('')
@@ -1049,7 +1049,7 @@ class DataMCCanvas(RatioCanvas):
 
         return idx
 
-    def Update(self, logx = None, logy = None, ymax = -1.):
+    def Update(self, logx = None, logy = None, ymax = -1., drawLegend = True):
         if not self._needUpdate:
             if logx is not None:
                 self._updateAxis('x', logx)
@@ -1106,7 +1106,7 @@ class DataMCCanvas(RatioCanvas):
 
             self.legend.construct(legendOrder)
 
-            RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, ymax = ymax)
+            RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, ymax = ymax, drawLegend = drawLegend)
 
             self._histograms.pop()
             self._histograms.pop()
