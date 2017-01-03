@@ -190,7 +190,9 @@ class PhotonSelection : public Cut {
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
 
+  // save photons passing the selection (bool->true) or fail (bool->false)
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
+  // skip event if there is a photon passing the selection (bool->true) or failing (bool->false)
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
