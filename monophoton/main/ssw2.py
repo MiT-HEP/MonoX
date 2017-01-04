@@ -25,9 +25,6 @@ defaults = {
     'purity': selectors.purity,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
-    'lowmt': selectors.lowmt,
-    'lowmtEfake': selectors.lowmtEleProxy,
-    'lowmtHfake': selectors.lowmtHadProxy,
     'gjets': selectors.gjets,
     'halo': selectors.halo,
     'trivialShower': selectors.trivialShower,
@@ -49,7 +46,7 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-#data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'lowmt', 'lowmtEfake', 'lowmtHfake', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'trivialShower']
+#data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'trivialShower']
 data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
@@ -59,7 +56,6 @@ mc_sig = ['monoph', 'purity', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 mc_wlnu = applyMod(selectors.wlnu, mc_cand) + ['wenu', 'zmmJets', 'zeeJets'] + mc_lep
-mc_lowmt = ['lowmt']
 
 selectors = {
     # Data 2016
@@ -71,27 +67,27 @@ selectors = {
     'sph-16g-r': data_sph,
     'sph-16h': data_sph,
     # MC for signal region
-    'znng-130': applyMod(selectors.kfactor, mc_cand + mc_lowmt),
-    'wnlg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_lowmt),
-    'zllg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_dilep + mc_lowmt),
-    # 'zg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    # 'wg': mc_cand + mc_lep + mc_lowmt,
-    'wglo': applyMod(selectors.wglo, mc_cand + mc_lep + mc_lowmt),
-    'wglo-500': mc_cand + mc_lep + mc_lowmt,
-    # 'gj-40': mc_gj + mc_lep + mc_dilep + mc_lowmt,
-    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
-    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
-    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
-    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand + mc_lowmt),
-    'gg-40': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'gg-80': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'znng-130': applyMod(selectors.kfactor, mc_cand),
+    'wnlg-130': applyMod(selectors.kfactor, mc_cand + mc_lep),
+    'zllg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_dilep),
+    # 'zg': mc_cand + mc_lep + mc_dilep,
+    # 'wg': mc_cand + mc_lep,
+    'wglo': applyMod(selectors.wglo, mc_cand + mc_lep),
+    'wglo-500': mc_cand + mc_lep,
+    # 'gj-40': mc_gj + mc_lep + mc_dilep,
+    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
+    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand),
+    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand),
+    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand),
+    'gg-40': mc_cand + mc_lep + mc_dilep,
+    'gg-80': mc_cand + mc_lep + mc_dilep,
     'tt': mc_cand + mc_lep + mc_dilep,
-    'tg': mc_cand + mc_lep + mc_lowmt, 
-    'ttg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'wwg': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'ww': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'wz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
-    'zz': mc_cand + mc_lep + mc_dilep + mc_lowmt,
+    'tg': mc_cand + mc_lep, 
+    'ttg': mc_cand + mc_lep + mc_dilep,
+    'wwg': mc_cand + mc_lep + mc_dilep,
+    'ww': mc_cand + mc_lep + mc_dilep,
+    'wz': mc_cand + mc_lep + mc_dilep,
+    'zz': mc_cand + mc_lep + mc_dilep,
     # 'wlnu': mc_wlnu,
     'wlnu-100': mc_wlnu,
     'wlnu-200': mc_wlnu,
