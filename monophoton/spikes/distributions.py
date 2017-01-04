@@ -47,7 +47,7 @@ spikeTree.Add('/data/t3home000/yiiyama/simpletree/uncleanedSkimmed/sph-16*.root'
 
 outputFile.cd()
 uncleanedPt = ROOT.TH1D('uncleanedPt', ';E_{T}^{SC} (GeV)', len(combinedFitPtBinning) - 1, combinedFitPtBinning)
-spikeTree.Draw('superClusters.rawPt>>uncleanedPt', 'superClusters.time > -15. && superClusters.time < -10. && superClusters.sieie < 0.0102 && superClusters.sieie > 0.001')
+spikeTree.Draw('superClusters.rawPt>>uncleanedPt', 'superClusters.time > -15. && superClusters.time < -10. && superClusters.sieie < 0.0102 && superClusters.sieie > 0.001 && superClusters.sipip > 0.001')
 uncleanedPt.Write()
 
 uncleanedPt.SetLineColor(ROOT.kBlack)
@@ -59,7 +59,7 @@ canvas.Clear()
 
 outputFile.cd()
 fitTemplate = ROOT.TH1D('fitTemplate', ';E_{T}^{SC} (GeV)', len(fitTemplateBinning) - 1, fitTemplateBinning)
-spikeTree.Draw(fitTemplateExpression + '>>fitTemplate', 'superClusters.time > -15. && superClusters.time < -10. && superClusters.sieie < 0.0102 && superClusters.sieie > 0.001')
+spikeTree.Draw(fitTemplateExpression + '>>fitTemplate', 'superClusters.time > -15. && superClusters.time < -10. && superClusters.sieie < 0.0102 && superClusters.sieie > 0.001 && superClusters.sipip > 0.001')
 fitTemplate.Write()
 
 fitTemplate.SetLineColor(ROOT.kBlack)
