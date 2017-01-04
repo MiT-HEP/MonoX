@@ -260,13 +260,10 @@ class SimpleCanvas(object):
 
         if cms:
             self.cmsPave = makeText(0.18, SimpleCanvas.YMAX - 0.12, 0.3, SimpleCanvas.YMAX - 0.01, align = 11, font = 62)
-            if sim:
-                self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
-            else:
-                self.cmsPave.AddText('#splitline{CMS}{#font[52]{Preliminary}}')
-
         else:
             self.cmsPave = None
+
+        self.sim = sim
 
         gDirectory = ROOT.gDirectory
         ROOT.gROOT.cd()
@@ -529,6 +526,13 @@ class SimpleCanvas(object):
                 self.cmsPave.SetX1NDC(0.18)
                 self.cmsPave.SetX2NDC(0.4)
                 self.cmsPave.SetTextAlign(11)
+
+            self.cmsPave.Clear()
+
+            if self.sim:
+                self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
+            else:
+                self.cmsPave.AddText('#splitline{CMS}{#font[52]{Preliminary}}')
     
             self.cmsPave.Draw()
 
