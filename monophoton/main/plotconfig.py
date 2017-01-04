@@ -21,10 +21,10 @@ photonDataPrescaled = [
     ('sph-16b-r', 1),
     ('sph-16c-r', 1),
     ('sph-16d-r', 1),
-    ('sph-16e-r', 5),
-    ('sph-16f-r', 5),
-    ('sph-16g-r', 5),
-    ('sph-16h', 5)
+    ('sph-16e-r', 4),
+    ('sph-16f-r', 4),
+    ('sph-16g-r', 4),
+    ('sph-16h', 4)
 ]
 
 gj = ['gj-100', 'gj-200', 'gj-400', 'gj-600']
@@ -75,15 +75,15 @@ def getConfig(confName):
 #            GroupSpec('dmafs', 'DM A', samples = ['dmafs-*'])
         ]            
         config.signalPoints = [
-            SampleSpec('dmv-500-1', 'DM V M_{med}=500GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
-            SampleSpec('dmv-1000-1', 'DM V M_{med}=1000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
-            SampleSpec('dmv-2000-1', 'DM V M_{med}=2000GeV M_{DM}=1GeV', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
+            SampleSpec('dmv-500-1', 'DM500', group = config.findGroup('dmv'), color = 46), # 0.01437/pb
+            SampleSpec('dmv-1000-1', 'DM1000', group = config.findGroup('dmv'), color = 30), # 0.07827/pb 
+            SampleSpec('dmv-2000-1', 'DM2000', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-#            GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 167.2, templateDir = spikeDir),
+            GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 18.8 / 36.4, templateDir = spikeDir),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -136,7 +136,7 @@ def getConfig(confName):
 
         # config.sensitiveVars = ['met', 'metWide', 'metHigh', 'metScan', 'phoPtHighMet', 'phoPtScanHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
 
-        config.sensitiveVars = ['fitTemplate']
+        config.sensitiveVars = [v.name for v in config.variables]
         
         config.treeMaker = 'MonophotonTreeMaker'
 
@@ -444,9 +444,9 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),

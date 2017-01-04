@@ -48,8 +48,14 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     if args.saveTrees:
         hist = []
     shists = {}
+
+    if template:
+        # when the group does not have a shape of its own
+        norm = template.GetSumOfWeights()
+        for iC in range(template.GetNcells()):
+            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm / postscale)
    
-    if len(samples) != 0:
+    elif len(samples) != 0:
         # nominal. name: variable-group
         for sname in samples:
             if group.region:
@@ -76,17 +82,9 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
             
             shists[sname] = shist
 
-    elif group.templateDir:
-        template = group.templateDir.Get(vardef.name)
-        if not template:
-            return hist
-
-        hist.Add(template)
-
-    elif template:
-        norm = template.GetSumOfWeights()
-        for iC in range(template.GetNcells()):
-            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm / postscale)
+    else:
+        # the group must have a template for this vardef
+        hist.Add(group.templates[vardef.name])
 
     varhists = {}
 
@@ -590,8 +588,8 @@ if __name__ == '__main__':
         # make background histograms
         # loop over groups with actual distributions
         bkgTotal = vardef.makeHist('bkgtotal')
-        
-        for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0]:
+
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0 or vardef.name in g.templates]:
             hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
 
             if not args.saveTrees:
@@ -607,7 +605,7 @@ if __name__ == '__main__':
 
         # then over groups without distributions (no samples but count set)
         # probably doesn't work in trees
-        for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0]:
+        for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0 and vardef.name not in g.templates]:
             # cannot use lumi because cross section is not set
             hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
 
@@ -620,7 +618,7 @@ if __name__ == '__main__':
 
             for sspec in plotConfig.signalPoints:
                 usedPoints.append(sspec.name)
-                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi, outFile = outFile)
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = 'point-' + sspec.name, lumi = lumi, outFile = outFile)
 
                 if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                     counters[sspec.name] = hist
@@ -633,7 +631,7 @@ if __name__ == '__main__':
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
                         usedPoints.append(sample.name)
-                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi, outFile = outFile)
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = 'point-' + sample.name, lumi = lumi, outFile = outFile)
 
         if not args.blind:
             if args.asimov == '':

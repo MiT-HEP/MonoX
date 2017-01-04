@@ -25,8 +25,13 @@ class GroupSpec(object):
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
         self.norm = norm # use to normalize histograms post-facto
-        self.templateDir = templateDir
         self.variations = []
+
+        self.templates = {}
+        if templateDir:
+            for obj in templateDir.GetList():
+                if obj.InheritsFrom(ROOT.TH1.Class()):
+                    self.templates[obj.GetName()] = obj
 
 
 class SampleSpec(object):
