@@ -618,7 +618,7 @@ if __name__ == '__main__':
 
             for sspec in plotConfig.signalPoints:
                 usedPoints.append(sspec.name)
-                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = 'point-' + sspec.name, lumi = lumi, outFile = outFile)
+                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = 'signal-' + sspec.name, lumi = lumi, outFile = outFile)
 
                 if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                     counters[sspec.name] = hist
@@ -631,7 +631,7 @@ if __name__ == '__main__':
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
                         usedPoints.append(sample.name)
-                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = 'point-' + sample.name, lumi = lumi, outFile = outFile)
+                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = 'signal-' + sample.name, lumi = lumi, outFile = outFile)
 
         if not args.blind:
             if args.asimov == '':
