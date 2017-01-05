@@ -986,6 +986,22 @@ def kfactor(generator):
 
     return scaled
 
+def genveto(generator):
+    """
+    Wrapper for vetoing gen-level photons.
+    """
+
+    def vetoed(sample, name):
+        selector = generator(sample, name)
+
+        veto = ROOT.GenPhotonVeto()
+
+        selector.addOperator(veto, 0)
+
+        return selector
+
+    return vetoed
+
 def wlnu(generator):
     """
     Wrapper for W->lnu sample to pick out non-electron decays only.

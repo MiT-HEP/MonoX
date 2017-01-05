@@ -28,6 +28,7 @@
 //     HLTEle27eta2p1WPLooseGs
 //     HLTIsoMu27
 //     MetFilters
+//     GenPhotonVeto
 //     PhotonSelection *
 //     ElectronVeto
 //     MuonVeto
@@ -152,6 +153,21 @@ class MetFilters : public Cut {
 
   int filterConfig_[6]{1, 1, 1, 1, 1, 1};
   std::vector<std::pair<EventList, int>> eventLists_;
+};
+
+class GenPhotonVeto : public Cut {
+  /* Veto event if it contains a prompt gen photon */
+ public:
+  GenPhotonVeto(char const* name = "GenPhotonVeto") : Cut(name) {}
+
+  void setMinPt(double m) { minPt_ = m; }
+  void setMinDR(double m) { minDR_ = m; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double minPt_{130.}; // minimum pt of the gen photon to be vetoed
+  double minDR_{0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
 };
 
 class PhotonSelection : public Cut {

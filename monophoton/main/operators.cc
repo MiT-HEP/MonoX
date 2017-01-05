@@ -77,7 +77,7 @@ MetFilters::setEventList(char const* _path, int _decision)
 
 bool
 MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
-{ 
+{
   bool fired[] = {
     _event.metFilters.globalHalo16,
     _event.metFilters.hbhe,
@@ -109,6 +109,35 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
       if (eventList.second == -1)
         return false;
     }
+  }
+
+  return true;
+}
+
+//--------------------------------------------------------------------
+// GenPhotonVeto
+//--------------------------------------------------------------------
+
+bool
+GenPhotonVeto::pass(simpletree::Event const& _event, simpletree::Event&)
+{
+  for (auto& part : _event.promptFinalStates) {
+    if (part.pid != 22)
+      continue;
+
+    if (part.pt < minPt_)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != _event.partons.size(); ++iP) {
+      auto& parton(_event.partons[iP]);
+      if (parton.dR2(part) < minDR_ * minDR_)
+        break;
+    }
+    if (iP != _event.partons.size())
+      continue;
+
+    return false;
   }
 
   return true;
