@@ -25,7 +25,7 @@ import ROOT
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
 
-def modRelUncert2(mod):
+def modRelUncert2(mod, debug = False):
     # stat uncertainty of TFs have two parameters
     # allow for general case of N parameters
     relUncert2 = 0.
@@ -37,6 +37,11 @@ def modRelUncert2(mod):
         p.setVal(0.)
 
         relUncert2 += d * d
+
+        if debug:
+            print p.GetName()
+            print d
+            print relUncert2
 
         iparam += 1
         p = mod.getParameter(iparam)
@@ -123,6 +128,7 @@ while True:
 
                 hnominal.SetName(pdf.GetName())
                 hnominal.GetXaxis().SetTitle(xtitle)
+                hnominal.GetYaxis().SetTitle('Events / GeV')
                 huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
 
             val = hnominal.GetBinContent(ibin)
@@ -146,6 +152,9 @@ while True:
                     break
     
                 uncert2 = modRelUncert2(mod) * val
+                
+                if uncert2 > 1000.:
+                    print modRelUncert2(mod, True), val, pdf.GetName(), mod.GetName()
     
                 if mod.GetName().endswith('_stat'):
                     if isTF: # nominal is 1/value

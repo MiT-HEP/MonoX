@@ -12,21 +12,19 @@ Output: A ROOT file containing a RooWorkspace and printouts to stdout which shou
 
 [Instructions]
 Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
-naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section. Histograms for
-systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf uncertainty).
-Once inputs are defined, specify the links between samples and special treatments for various nuisances. Nuisance parameters are identified automatically from the histogram names
-following the convention given above.
+naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section.
+. Histogram naming conventions:
+ Signal process names should be appended by "signal-" for the downstream scripts (e.g. datacard.py) to work.
+ Histograms for systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf
+ uncertainty).
+Once inputs are defined, specify the links between samples and special treatments for various nuisances in a parameter card. Nuisance parameters are identified automatically from
+the histogram names following the convention given above.
 Usage is
  $ [set environment for CMSSW with combine installation]
- $ python workspace.py
-At the moment, the tool does not write a data card. The user has to provide a card, to which the lines printed out by the tool should be appended. The second section of the card
-should be of form
------
-shapes * * ws.root wspace:$PROCESS_$CHANNEL
------
-All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Those that are printed out by the
-tool should therefore not be mentioned anywhere else in the data card.
-Another feature that is lacking at the moment is the visualization of the workspace content. The only way to check how the links were implemented in the workspace is to do
+ $ python workspace.py parameters.py
+The output workspace can be passed to datacard.py. All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale"
+type nuisances. Thus the datacard will not contain the nuisance-process matrix and instead will list all the nuisances as "param"s.
+A rather primitive visualization of the workspace content is provided by visualizeWS.py. The only way to fully check how the links were implemented in the workspace is to do
 wspace->Print()
 in ROOT.
 """
