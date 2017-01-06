@@ -167,8 +167,8 @@ def getConfig(confName):
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
 
     elif confName == 'lowdphi':
@@ -337,7 +337,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'diel':
@@ -410,7 +410,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'monomu':
@@ -487,8 +487,8 @@ def getConfig(confName):
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
-        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'monoel':
@@ -565,8 +565,8 @@ def getConfig(confName):
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
-        config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'lowmt':
