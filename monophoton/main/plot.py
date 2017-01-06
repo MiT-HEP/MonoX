@@ -86,6 +86,11 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
         # the group must have a template for this vardef
         hist.Add(group.templates[vardef.name])
 
+    postscale = 1.
+    if group.norm >= 0. and hist.GetSumOfWeights() != 0.:
+        postscale = group.norm / hist.GetSumOfWeights()
+        hist.Scale(postscale)
+
     varhists = {}
 
     if DOSYSTEMATICS:
@@ -140,6 +145,12 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
             varhists[variation.name] = vhists
 
+    if group.norm >= 0.:
+        for vhists in varhists.values():
+            for vhist in vhists:
+                if vhist.GetSumOfWeights() != 0.:
+                    vhist.Scale(postscale)
+
     # write raw histograms before formatting (which includes bin width normalization)
     if args.saveTrees:
         tree = makeTree(name, hist, outDir = outFile)
@@ -181,9 +192,6 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
 
         if len(vhists) == 2:
             vhist.Delete()
-
-    if group.norm >= 0. and hist.GetSumOfWeights() != 0.:
-        hist.Scale(group.norm / hist.GetSumOfWeights())
 
     formatHist(hist, vardef)
 
