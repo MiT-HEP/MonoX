@@ -12,7 +12,13 @@ Workspace constructor for simultaneous fit using combine
 Input: ROOT files with histograms (no directory structure).
 Output: A ROOT file containing a RooWorkspace and printouts to stdout which should be pasted into a combine data card.
 
-[Instructions]
+[Usage]
+The script is driven by a parameter card, which is itself a python script defining several variables. An example is at monophoton/fit/parameters.py. Run the script with
+ $ [set environment for CMSSW with combine installation]
+ $ python workspace.py [parameters_path]
+If parameters_path is not given, the parameters are taken from the file named parameters.py in the current directory.
+
+[Parameter card instructions]
 Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
 naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section.
 . Histogram naming conventions:
@@ -20,16 +26,10 @@ naming patterns. The wildcards will be replaced by the list of regions and proce
  uncertainty).
 Once inputs are defined, specify the links between samples and special treatments for various nuisances in a parameter card. Nuisance parameters are identified automatically from
 the histogram names following the convention given above.
-Usage is
- $ [set environment for CMSSW with combine installation]
- $ python workspace.py [parameters_path]
-If parameters_path is not given, the parameters are taken from the file named parameters.py in the current directory.
-If the parameters card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
-All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale"
-type nuisances. Thus the datacard will not contain the nuisance-process matrix and instead will list all the nuisances as "param"s.
-A rather primitive visualization of the workspace content is provided by visualizeWS.py. The only way to fully check how the links were implemented in the workspace is to do
-wspace->Print()
-in ROOT.
+All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Thus the datacard will not contain
+the nuisance-process matrix and instead will list all the nuisances as "param"s.
+If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
+If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
 """
 
 import os

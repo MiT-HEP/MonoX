@@ -5,6 +5,8 @@ sys.dont_write_bytecode = True
 import os
 import re
 
+import parameters
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
@@ -19,7 +21,7 @@ mlfit = ROOT.TFile.Open(sys.argv[1])
 prefitDir = mlfit.Get('shapes_prefit')
 postfitDir = mlfit.Get('shapes_fit_b')
 
-workspace = ROOT.TFile.Open(sys.argv[2]).Get('wspace')
+workspace = ROOT.TFile.Open(parameters.outname).Get('wspace')
 x = workspace.arg('x')
 
 for key in prefitDir.GetListOfKeys():
