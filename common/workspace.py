@@ -346,20 +346,27 @@ while not done:
                         rup = numerUp / denomUp / rbin - 1.
                         rdown = numerDown / denomDown / rbin - 1.
 
-                        if (sample, sbase, var) in config.partialCorrelation:
+                        if (sample, sbase, var) in config.ratioCorrelations:
                             # need to split the nuisance into correlated and anti-correlated
                             # assuming no scaleNuisance is partially correlated
-                            correlation = config.partialCorrelation[(sample, sbase, var)]
+                            correlation = config.ratioCorrelations[(sample, sbase, var)]
                             raup = numerUp / denomDown / rbin - 1.
                             radown = numerDown / denomUp / rbin - 1.
 
+                            if var in config.deshapedNuisances:
+                                # this nuisance is artificially decorrelated among bins
+                                # calling "corr"Uncert function, but in reality this results in one nuisance per bin
+                                var = var + '_bin{ibin}'.format(ibin = ibin)
+
                             if abs(rup) > SMALLNUMBER or abs(rdown) > SMALLNUMBER:
                                 coeff = (1. + correlation) * 0.5
-                                modifiers.append(nuisance(var + '_corr', tfName, coeff * rup, coeff * rdown, 'lnN'))
+                                if coeff != 0.:
+                                    modifiers.append(nuisance(var + '_corr', tfName, coeff * rup, coeff * rdown, 'lnN'))
 
                             if abs(raup) > SMALLNUMBER or abs(radown) > SMALLNUMBER:
                                 coeff = (1. - correlation) * 0.5
-                                modifiers.append(nuisance(var + '_acorr', tfName, coeff * raup, coeff * radown, 'lnN'))
+                                if coeff != 0.:
+                                    modifiers.append(nuisance(var + '_acorr', tfName, coeff * raup, coeff * radown, 'lnN'))
 
                         else:
                             if abs(rup) < SMALLNUMBER and abs(rdown) < SMALLNUMBER:
@@ -369,7 +376,7 @@ while not done:
                             if var in config.scaleNuisances:
                                 normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
                             else:
-                                if var in config.decorrelatedNuisances:
+                                if var in config.deshapedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # calling "corr"Uncert function, but in reality this results in one nuisance per bin
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
@@ -445,7 +452,7 @@ while not done:
                                     # if this sample is freely floating, scale modifiers are unnecessary degrees of freedom
                                     normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
                             else:
-                                if var in config.decorrelatedNuisances:
+                                if var in config.deshapedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # treat each (variation name)_(bin name) as a variation name
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
