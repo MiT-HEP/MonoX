@@ -1,1 +1,1 @@
-../../common/fit/workspace.py
+../../common/workspace.py
