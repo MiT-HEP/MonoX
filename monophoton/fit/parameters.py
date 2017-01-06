@@ -1,12 +1,13 @@
-outname = '/data/t3home000/ballen/hist/monophoton/fit/ws.root'
-sourcedir = '/data/t3home000/ballen/hist/monophoton/distributions'
+outname = '/data/t3home000/yiiyama/studies/monophoton/fit/ws_phoPtHighMet.root'
+sourcedir = '/data/t3home000/yiiyama/studies/monophoton/distributions_19fbinv'
 filename = '{region}_{distribution}.root'
 histname = '{distribution}-{process}'
+carddir = '/data/t3home000/yiiyama/studies/monophoton/datacards_19fbinv'
 
 regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowmt']
-processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', '']
-processes += ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
-distribution = 'fitTemplate'
+processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
+signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
+distribution = 'phoPtHighMet'
 binWidthNormalized = False
 
 # Links between samples. List of tuples.
@@ -27,12 +28,12 @@ links = [
 floats = []
 
 ignoredNuisances = {
-    ('zg', 'diel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # leptonVetoSF ignored because it's supposed to be present in both SR and CR but is missing from CR
-    ('zg', 'dimu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # minorPDF and minorQCDscale are on zg & wg because of a bug in plotconfig
-    ('wg', 'monoel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
-    ('wg', 'monomu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
-    ('zg', 'monoel'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'],
-    ('zg', 'monomu'): ['leptonVetoSF', 'minorPDF', 'minorQCDscale', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec']
+    ('zg', 'diel'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # leptonVetoSF ignored because it's supposed to be present in both SR and CR but is missing from CR
+    ('zg', 'dimu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'], # minorPDF and minorQCDscale are on zg & wg because of a bug in plotconfig
+    ('wg', 'monoel'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
+    ('wg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'wgEWK', 'gec'],
+    ('zg', 'monoel'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec'],
+    ('zg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'zgEWK', 'gec']
 }
 
 # Artificial bin-to-bin decorrelation
