@@ -36,6 +36,7 @@ import os
 import sys
 import re
 import math
+import array
 import pprint
 import collections
 import ROOT
@@ -510,109 +511,255 @@ if PRINTNUISANCE:
 workspace.writeToFile(config.outname)
 
 
-if not hasattr(config, 'carddir'):
-    sys.exit(0)
-
 ## DATACARDS
-
-if not os.path.isdir(config.carddir):
-    os.makedirs(config.carddir)
-
-# sort samples
-
-samples = {}
-procIds = {}
-signalRegion = ''
-
-for region, procPlots in sourcePlots.items():
-    samples[region] = []
-
-    # sort processes by expectation
-    def compProc(p, q):
-        if procPlots[p]['nominal'].GetSumOfWeights() > procPlots[q]['nominal'].GetSumOfWeights():
-            return -1
-        else:
-            return 1
-
-    procs = sorted(procPlots.keys(), compProc)
-
-    for p in procs:
-        if p in config.signals:
-            signalRegion = region
-        else:
-            samples[region].append(p)
-            if p not in procIds:
-                procIds[p] = len(procIds) + 1
-
-# define datacard template
-
-hrule = '-' * 140
-
-lines = [
-    'imax * number of bins',
-    'jmax * number of processes minus 1',
-    'kmax * number of nuisance parameters',
-    hrule,
-    'shapes * * ' + os.path.realpath(config.outname) + ' wspace:$PROCESS_$CHANNEL',
-    hrule,
-]
-
-line = 'bin          ' + ('%9s' % signalRegion) + ''.join(sorted(['%9s' % r for r in samples if r != signalRegion]))
-lines.append(line)
-
-line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samples))
-lines.append(line)
-
-lines.append(hrule)
-
-# columns for all background processes and yields
-columns = []
-
-for proc in samples[signalRegion]:
-    columns.append((signalRegion, proc, str(procIds[proc])))
-
-for region in sorted(samples.keys()):
-    if region == signalRegion:
-        continue
-
-    for proc in samples[region]:
-        columns.append((region, proc, str(procIds[proc])))
-
-# now loop over signal models and write a card per model
-for signal in config.signals:
-    cardcolumns = list(columns)
-    cardlines = list(lines)
-
-    # insert the signal expectation as the first column
-    cardcolumns.insert(0, (signalRegion, signal, str(-1)))
-
-    for ih, heading in enumerate(['bin', 'process', 'process']):
-        line = '%13s' % heading
+if hasattr(config, 'carddir'):
+    if not os.path.isdir(config.carddir):
+        os.makedirs(config.carddir)
+    
+    # sort samples
+    
+    samples = {}
+    procIds = {}
+    signalRegion = ''
+    
+    for region, procPlots in sourcePlots.items():
+        samples[region] = []
+    
+        # sort processes by expectation
+        def compProc(p, q):
+            if procPlots[p]['nominal'].GetSumOfWeights() > procPlots[q]['nominal'].GetSumOfWeights():
+                return -1
+            else:
+                return 1
+    
+        procs = sorted(procPlots.keys(), compProc)
+    
+        for p in procs:
+            if p in config.signals:
+                signalRegion = region
+            else:
+                samples[region].append(p)
+                if p not in procIds:
+                    procIds[p] = len(procIds) + 1
+    
+    # define datacard template
+    
+    hrule = '-' * 140
+    
+    lines = [
+        'imax * number of bins',
+        'jmax * number of processes minus 1',
+        'kmax * number of nuisance parameters',
+        hrule,
+        'shapes * * ' + os.path.realpath(config.outname) + ' wspace:$PROCESS_$CHANNEL',
+        hrule,
+    ]
+    
+    line = 'bin          ' + ('%9s' % signalRegion) + ''.join(sorted(['%9s' % r for r in samples if r != signalRegion]))
+    lines.append(line)
+    
+    line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samples))
+    lines.append(line)
+    
+    lines.append(hrule)
+    
+    # columns for all background processes and yields
+    columns = []
+    
+    for proc in samples[signalRegion]:
+        columns.append((signalRegion, proc, str(procIds[proc])))
+    
+    for region in sorted(samples.keys()):
+        if region == signalRegion:
+            continue
+    
+        for proc in samples[region]:
+            columns.append((region, proc, str(procIds[proc])))
+    
+    # now loop over signal models and write a card per model
+    for signal in config.signals:
+        cardcolumns = list(columns)
+        cardlines = list(lines)
+    
+        # insert the signal expectation as the first column
+        cardcolumns.insert(0, (signalRegion, signal, str(-1)))
+    
+        for ih, heading in enumerate(['bin', 'process', 'process']):
+            line = '%13s' % heading
+            for column in cardcolumns:
+                w = max(len(s) for s in column)
+                line += ('%{width}s'.format(width = w + 1)) % column[ih]
+            cardlines.append(line)
+        
+        line = 'rate         '
         for column in cardcolumns:
             w = max(len(s) for s in column)
-            line += ('%{width}s'.format(width = w + 1)) % column[ih]
+            line += ('%{width}.1f'.format(width = w + 1)) % 1.
         cardlines.append(line)
+        
+        cardlines.append(hrule)
     
-    line = 'rate         '
-    for column in cardcolumns:
-        w = max(len(s) for s in column)
-        line += ('%{width}.1f'.format(width = w + 1)) % 1.
-    cardlines.append(line)
+        for nuisance in sorted(nuisances):
+            # remove nuisances related to other signal models
+            for s in config.signals:
+                if s != signal and nuisance.startswith(s):
+                    break
+            else:
+                # no other signal name matched -> nuisance either not related to signal or related to this signal model
+                cardlines.append(nuisance + ' param 0 1')
     
-    cardlines.append(hrule)
+        with open(config.carddir + '/' + signal.replace('signal-', '') + '.dat', 'w') as datacard:
+            for line in cardlines:
+                if '{signal}' in line:
+                    line = line.format(signal = signal)
+    
+                datacard.write(line + '\n')
 
-    for nuisance in sorted(nuisances):
-        # remove nuisances related to other signal models
-        for s in config.signals:
-            if s != signal and nuisance.startswith(s):
-                break
-        else:
-            # no other signal name matched -> nuisance either not related to signal or related to this signal model
-            cardlines.append(nuisance + ' param 0 1')
 
-    with open(config.carddir + '/' + signal.replace('signal-', '') + '.dat', 'w') as datacard:
-        for line in cardlines:
-            if '{signal}' in line:
-                line = line.format(signal = signal)
+## PLOTS
+if hasattr(config, 'plotsOutname'):
+    def modRelUncert2(mod):
+        # stat uncertainty of TFs have two parameters
+        # allow for general case of N parameters
+        relUncert2 = 0.
+        iparam = 0
+        p = mod.getParameter(iparam)
+        while p:
+            p.setVal(1.)
+            d = mod.getVal() - 1.
+            p.setVal(0.)
+    
+            relUncert2 += d * d
+    
+            iparam += 1
+            p = mod.getParameter(iparam)
+    
+        return relUncert2
+    
+    plotsFile = ROOT.TFile.Open(config.plotsOutname, 'recreate')
+    
+    xbinning = x.getBinning('default')
+    boundaries = xbinning.array()
+    binning = array.array('d', [boundaries[i] for i in range(xbinning.numBoundaries())])
+    
+    allPdfs = workspace.allPdfs()
+    pdfItr = allPdfs.iterator()
+    while True:
+        pdf = pdfItr.Next()
+        if not pdf:
+            break
 
-            datacard.write(line + '\n')
+        hnominal = None
+        huncert = None
+        isTF = False
+        
+        hmods = {}
+        normMods = {}
+    
+        unc = workspace.function('unc_' + pdf.GetName() + '_norm')
+        if unc:
+            # normalization given to this PDF has associated uncertainties
+    
+            # loop over all modifiers
+            mods = unc.components()
+            modItr = mods.iterator()
+            while True:
+                mod = modItr.Next()
+                if not mod:
+                    break
+    
+                uncertName = mod.GetName().replace('mod_' + pdf.GetName() + '_norm_', '')
+                normMods[uncertName] = mod
+                hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+    
+        for ibin in range(1, len(binning)):
+            binName = pdf.GetName() + '_bin' + str(ibin)
+    
+            # if mu is a RooRealVar -> simplest case; static PDF
+            # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
+            # if mu = raw x unc and raw is a function -> linked from another sample
+    
+            if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
+                # raw is tf x another mu -> plot the TF
+    
+                if hnominal is None:
+                    hnominal = ROOT.TH1D('tf_' + pdf.GetName(), ';' + config.xtitle, len(binning) - 1, binning)
+                    huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
+                    isTF = True
+
+                tf = workspace.var(binName + '_tf')
+                val = tf.getVal()
+    
+                # TF is historically plotted inverted
+                hnominal.SetBinContent(ibin, 1. / val)
+                huncert.SetBinContent(ibin, 1. / val)
+    
+            else:
+                if hnominal is None:
+                    hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
+                    for iX in range(1, hnominal.GetNbinsX() + 1):
+                        hnominal.SetBinError(iX, 0.)
+    
+                    hnominal.SetName(pdf.GetName())
+                    hnominal.GetXaxis().SetTitle(config.xtitle)
+                    hnominal.GetYaxis().SetTitle('Events / GeV')
+                    huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
+    
+                val = hnominal.GetBinContent(ibin)
+    
+            totalUncert2 = 0.
+    
+            for uncertName, mod in normMods.items():
+                uncert2 = modRelUncert2(mod) * val
+                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+    
+                totalUncert2 += uncert2
+    
+            unc = workspace.function('unc_' + binName)
+            if unc:
+                # loop over all modifiers for this bin
+                mods = unc.components()
+                modItr = mods.iterator()
+                while True:
+                    mod = modItr.Next()
+                    if not mod:
+                        break
+        
+                    uncert2 = modRelUncert2(mod) * val
+                    
+                    if uncert2 > 1000.:
+                        print modRelUncert2(mod, True), val, pdf.GetName(), mod.GetName()
+        
+                    if mod.GetName().endswith('_stat'):
+                        if isTF: # nominal is 1/value
+                            hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
+                        else:
+                            hnominal.SetBinError(ibin, math.sqrt(uncert2))
+                    else:
+                        uncertName = mod.GetName().replace('mod_' + binName + '_', '')
+                        if uncertName not in hmods:
+                            hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+        
+                        hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                        
+                    # total uncertainty includes stat
+                    totalUncert2 += uncert2
+        
+            if isTF:
+                huncert.SetBinError(ibin, math.sqrt(totalUncert2) / val / val)
+            else:
+                huncert.SetBinError(ibin, math.sqrt(totalUncert2))
+
+        hasUncert = sum(huncert.GetBinError(iX) for iX in range(1, huncert.GetNbinsX() + 1)) != 0.
+    
+        plotsFile.cd()
+        hnominal.SetDirectory(plotsFile)
+        hnominal.Write()
+        if hasUncert:
+            huncert.SetDirectory(plotsFile)
+            huncert.Write()
+        for h in hmods.values():
+            h.SetDirectory(plotsFile)
+            h.Write()
+
+    plotsFile.Close()
