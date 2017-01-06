@@ -21,7 +21,7 @@ Once inputs are defined, specify the links between samples and special treatment
 the histogram names following the convention given above.
 Usage is
  $ [set environment for CMSSW with combine installation]
- $ python workspace.py parameters.py
+ $ python workspace.py [parameters_script]
 The output workspace can be passed to datacard.py. All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale"
 type nuisances. Thus the datacard will not contain the nuisance-process matrix and instead will list all the nuisances as "param"s.
 A rather primitive visualization of the workspace content is provided by visualizeWS.py. The only way to fully check how the links were implemented in the workspace is to do
@@ -39,7 +39,11 @@ import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
-configPath = sys.argv[1]
+if len(sys.argv) == 2:
+    configPath = sys.argv[1]
+else:
+    print 'Using configuration ' + os.getcwd() + '/parameters.py'
+    configPath = os.getcwd() + '/parameters.py'
 
 sys.path.append(os.path.dirname(configPath))
 config = __import__(os.path.basename(configPath).replace('.py', ''))
