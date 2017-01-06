@@ -53,6 +53,8 @@ ROOT.gSystem.Load('libRooFitCore.so')
 SMALLNUMBER = 1.e-3
 # ignore statistical uncertainties from bins with content less than the cutoff (relative to the total content of the sample)
 STATCUTOFF = 0.1
+# print the list of nuisance parameters at the end
+PRINTNUISANCE = True
 
 workspace = ROOT.RooWorkspace('wspace')
 wsimport = SafeWorkspaceImporter(workspace)
@@ -489,8 +491,10 @@ while not done:
 if hasattr(config, 'customize'):
     config.customize(workspace)
 
-workspace.writeToFile(config.outname)
-
-# print out nuisance lines for the datacard
+# set attribute "nuisance" for all nuisance parameters
 for n in sorted(nuisances):
-    print n, 'param 0 1'
+    workspace.arg(n).setAttribute('nuisance', True)
+    if PRINTNUISANCE:
+        print n, 'param 0 1'
+
+workspace.writeToFile(config.outname)
