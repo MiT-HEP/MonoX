@@ -18,7 +18,7 @@ DOSYSTEMATICS = True
 # global variables to be set in __main__
 allsamples = None 
 
-def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', template = None, lumi = 0., postscale = 1., outFile = None):
+def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], name = '', template = None, lumi = 0., postscale = 1.):
     """
     Fill and write the group histogram and its systematic variations.
     For normal group with a list of samples, stack up histograms from the samples.
@@ -26,10 +26,7 @@ def groupHist(group, vardef, plotConfig, skimDir = '', samples = [], name = '', 
     Argument samples can be used to limit plotting to a subset of group samples.
     """
 
-    if outFile:
-        sampleDir = outFile.GetDirectory('samples')
-    else:
-        sampleDir = None
+    sampleDir = outFile.GetDirectory('samples')
 
     if group.region:
         region = group.region
@@ -242,7 +239,6 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
         elif type(reweight) is str:
             weight += '*' + reweight
 
-
     if args.saveTrees:
         tree.SetEstimate(tree.GetEntries() + 1); 
         nEntries = tree.Draw(expr + ':' + weight, selection, 'goff')
@@ -311,7 +307,7 @@ def makeTree(name, nomlist, outDir = None):
     return tree
 
 def writeHist(hist):
-    if not hist.GetDirectory() or hist.GetDirectory() == ROOT.gROOT:
+    if not hist.GetDirectory() or not hist.GetDirectory().GetFile():
         return
 
     gd = ROOT.gDirectory
@@ -510,15 +506,15 @@ if __name__ == '__main__':
 
     if args.outFile:
         outFile = ROOT.TFile.Open(args.outFile, 'recreate')
-        if args.saveTrees:
-            sampleDir = None
-        else:
-            sampleDir = outFile.mkdir('samples')
     else:
-        outFile = None
-        sampleDir = None
+        outFile = ROOT.gROOT
 
-    if args.allSignal and not outFile:
+    if args.saveTrees:
+        sampleDir = None
+    else:
+        sampleDir = outFile.mkdir('samples')
+
+    if args.allSignal and not outFile.GetFile():
         print '--all-signal set but no output file is given.'
         sys.exit(1)
 
@@ -574,7 +570,7 @@ if __name__ == '__main__':
 
         if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2 or args.saveTrees:
             counters = {}
-            isSensitive = False # True
+            isSensitive = True
 
         else:
             # set up canvas
@@ -598,7 +594,7 @@ if __name__ == '__main__':
         bkgTotal = vardef.makeHist('bkgtotal')
 
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0 or vardef.name in g.templates]:
-            hist = groupHist(group, vardef, plotConfig, args.skimDir, lumi = lumi, postscale = postscale, outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, outFile, skimDir = args.skimDir, lumi = lumi, postscale = postscale)
 
             if not args.saveTrees:
                 bkgTotal.Add(hist)
@@ -615,18 +611,18 @@ if __name__ == '__main__':
         # probably doesn't work in trees
         for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0 and vardef.name not in g.templates]:
             # cannot use lumi because cross section is not set
-            hist = groupHist(group, vardef, plotConfig, template = bkgTotal, postscale = postscale, outFile = outFile)
+            hist = groupHist(group, vardef, plotConfig, outFile, template = bkgTotal, postscale = postscale)
 
             if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                 counters[group.name] = hist
 
         # plot signal distributions for sensitive variables
-        if isSensitive or outFile:
+        if isSensitive or outFile.GetFile():
             usedPoints = []
 
             for sspec in plotConfig.signalPoints:
                 usedPoints.append(sspec.name)
-                hist = groupHist(sspec.group, vardef, plotConfig, args.skimDir, samples = [sspec.name], name = 'signal-' + sspec.name, lumi = lumi, outFile = outFile)
+                hist = groupHist(sspec.group, vardef, plotConfig, outFile, skimDir = args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi)
 
                 if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
                     counters[sspec.name] = hist
@@ -639,7 +635,7 @@ if __name__ == '__main__':
                 for sample in allsamples.getmany(group.samples):
                     if sample.name not in usedPoints:
                         usedPoints.append(sample.name)
-                        groupHist(group, vardef, plotConfig, args.skimDir, samples = [sample.name], name = 'signal-' + sample.name, lumi = lumi, outFile = outFile)
+                        groupHist(group, vardef, plotConfig, outFile, skimDir = args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi)
 
         if not args.blind:
             if args.asimov == '':
