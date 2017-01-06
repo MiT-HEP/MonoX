@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Workspace constructor for simultaneous fit using combine
 
@@ -14,15 +16,16 @@ Output: A ROOT file containing a RooWorkspace and printouts to stdout which shou
 Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
 naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section.
 . Histogram naming conventions:
- Signal process names should be appended by "signal-" for the downstream scripts (e.g. datacard.py) to work.
  Histograms for systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf
  uncertainty).
 Once inputs are defined, specify the links between samples and special treatments for various nuisances in a parameter card. Nuisance parameters are identified automatically from
 the histogram names following the convention given above.
 Usage is
  $ [set environment for CMSSW with combine installation]
- $ python workspace.py [parameters_script]
-The output workspace can be passed to datacard.py. All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale"
+ $ python workspace.py [parameters_path]
+If parameters_path is not given, the parameters are taken from the file named parameters.py in the current directory.
+If the parameters card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
+All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale"
 type nuisances. Thus the datacard will not contain the nuisance-process matrix and instead will list all the nuisances as "param"s.
 A rather primitive visualization of the workspace content is provided by visualizeWS.py. The only way to fully check how the links were implemented in the workspace is to do
 wspace->Print()
@@ -56,7 +59,7 @@ SMALLNUMBER = 1.e-3
 # ignore statistical uncertainties from bins with content less than the cutoff (relative to the total content of the sample)
 STATCUTOFF = 0.1
 # print the list of nuisance parameters at the end
-PRINTNUISANCE = True
+PRINTNUISANCE = False
 
 workspace = ROOT.RooWorkspace('wspace')
 wsimport = SafeWorkspaceImporter(workspace)
@@ -144,7 +147,10 @@ def isLinkSource(source):
 
     return False
 
+
+## INPUT
 # fetch all source histograms first    
+
 sources = {}
 sourcePlots = {}
 totals = {}
@@ -152,16 +158,15 @@ totals = {}
 hstore = ROOT.gROOT.mkdir('hstore')
 
 for region in config.regions:
-    sourcePlots[region] = {}
-    for process in config.processes:
+    sourcePlots[region] = collections.defaultdict(dict)
+
+    for process in config.processes + config.signals:
         # rename 'data' to 'data_obs' (historical)
         if process == 'data':
             pname = 'data'
             process = 'data_obs'
         else:
             pname = process
-
-        sourcePlots[region][process] = {}
 
         fname = config.sourcedir + '/' + config.filename.format(process = process, region = region, distribution = config.distribution)
         try:
@@ -202,7 +207,8 @@ for region in config.regions:
             else:
                 sourcePlots[region][process][variation[1:]] = obj
 
-# Workspace construction start
+
+## WORKSPACE
 
 x = fct('x[-1.e+10,1.e+10]')
 
@@ -231,9 +237,6 @@ while not done:
         regionDone = True
         for process, plots in sourcePlots[region].items():
             if process == 'data_obs':
-                continue
-
-            if len(plots) == 0:
                 continue
 
             sample = (process, region)
@@ -493,10 +496,116 @@ while not done:
 if hasattr(config, 'customize'):
     config.customize(workspace)
 
-# set attribute "nuisance" for all nuisance parameters
-for n in sorted(nuisances):
-    workspace.arg(n).setAttribute('nuisance', True)
-    if PRINTNUISANCE:
+if PRINTNUISANCE:
+    for n in sorted(nuisances):
         print n, 'param 0 1'
 
 workspace.writeToFile(config.outname)
+
+
+if not hasattr(config, 'carddir'):
+    sys.exit(0)
+
+## DATACARDS
+
+if not os.path.isdir(config.carddir):
+    os.makedirs(config.carddir)
+
+# sort samples
+
+samples = {}
+procIds = {}
+signalRegion = ''
+
+for region, procPlots in sourcePlots.items():
+    samples[region] = []
+
+    # sort processes by expectation
+    def compProc(p, q):
+        if procPlots[p]['nominal'].GetSumOfWeights() > procPlots[q]['nominal'].GetSumOfWeights():
+            return -1
+        else:
+            return 1
+
+    procs = sorted(procPlots.keys(), compProc)
+
+    for p in procs:
+        if p in config.signals:
+            signalRegion = region
+        else:
+            samples[region].append(p)
+            if p not in procIds:
+                procIds[p] = len(procIds) + 1
+
+# define datacard template
+
+hrule = '-' * 140
+
+lines = [
+    'imax * number of bins',
+    'jmax * number of processes minus 1',
+    'kmax * number of nuisance parameters',
+    hrule,
+    'shapes * * ' + os.path.realpath(config.outname) + ' wspace:$PROCESS_$CHANNEL',
+    hrule,
+]
+
+line = 'bin          ' + ('%9s' % signalRegion) + ''.join(sorted(['%9s' % r for r in samples if r != signalRegion]))
+lines.append(line)
+
+line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samples))
+lines.append(line)
+
+lines.append(hrule)
+
+# columns for all background processes and yields
+columns = []
+
+for proc in samples[signalRegion]:
+    columns.append((signalRegion, proc, str(procIds[proc])))
+
+for region in sorted(samples.keys()):
+    if region == signalRegion:
+        continue
+
+    for proc in samples[region]:
+        columns.append((region, proc, str(procIds[proc])))
+
+# now loop over signal models and write a card per model
+for signal in config.signals:
+    cardcolumns = list(columns)
+    cardlines = list(lines)
+
+    # insert the signal expectation as the first column
+    cardcolumns.insert(0, (signalRegion, signal, str(-1)))
+
+    for ih, heading in enumerate(['bin', 'process', 'process']):
+        line = '%13s' % heading
+        for column in cardcolumns:
+            w = max(len(s) for s in column)
+            line += ('%{width}s'.format(width = w + 1)) % column[ih]
+        cardlines.append(line)
+    
+    line = 'rate         '
+    for column in cardcolumns:
+        w = max(len(s) for s in column)
+        line += ('%{width}.1f'.format(width = w + 1)) % 1.
+    cardlines.append(line)
+    
+    cardlines.append(hrule)
+
+    for nuisance in sorted(nuisances):
+        # remove nuisances related to other signal models
+        for s in config.signals:
+            if s != signal and nuisance.startswith(s):
+                break
+        else:
+            # no other signal name matched -> nuisance either not related to signal or related to this signal model
+            cardlines.append(nuisance + ' param 0 1')
+
+    with open(config.carddir + '/' + signal.replace('signal-', '') + '.dat', 'w') as datacard:
+        for line in cardlines:
+            if '{signal}' in line:
+                line = line.format(signal = signal)
+
+            datacard.write(line + '\n')
