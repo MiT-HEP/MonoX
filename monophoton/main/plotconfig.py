@@ -134,16 +134,13 @@ def getConfig(confName):
                 config.variables.remove(variable)
         """
 
-        # config.sensitiveVars = ['met', 'metWide', 'metHigh', 'metScan', 'phoPtHighMet', 'phoPtScanHighMet', 'mtPhoMet', 'mtPhoMetHighMet'] # , 'phoPtVsPhoPhiHighMet']
-
         config.sensitiveVars = [v.name for v in config.variables]
         
         config.treeMaker = 'MonophotonTreeMaker'
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
-#            if group.name in ['efake', 'hfake', 'halo', 'spike']:
-            if group.name in ['efake', 'hfake', 'halo']:
+            if group.name in ['efake', 'hfake', 'halo', 'spike']:
                 continue
 
             group.variations.append(Variation('lumi', reweight = 0.027))
@@ -151,7 +148,10 @@ def getConfig(confName):
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-     
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
+
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
             group.variations.append(Variation('jec', replacements = (replUp, replDown)))
@@ -160,28 +160,16 @@ def getConfig(confName):
             replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-        for group in config.bkgGroups:
-#            if group.name in ['zg', 'wg', 'efake', 'hfake', 'halo', 'spike']:
-            if group.name in ['zg', 'wg', 'efake', 'hfake', 'halo']:
-                continue
-
-#            if group.name != 'vvg':
-#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
-            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         # Specific systematic variations
-#        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.))
-#        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloUp', 'halo')))
-#        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.79))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
-#        config.findGroup('efake').variations.append(Variation('egFakerate', reweight = 0.079))
-        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
 
     elif confName == 'lowdphi':
         config = PlotConfig('monoph', photonData)
@@ -329,12 +317,14 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
-
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
+
+        for gname in ['zg']:
+            group = config.findGroup(gname)
             
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
@@ -343,17 +333,12 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
-            
-            if group.name in 'zg':
-                continue
+       
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-#            if group.name != 'vvg':
-#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
-            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-        
-        config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'diel':
         mass = 'TMath::Sqrt(2. * electrons.pt[0] * electrons.pt[1] * (TMath::CosH(electrons.eta[0] - electrons.eta[1]) - TMath::Cos(electrons.phi[0] - electrons.phi[1])))'
@@ -405,12 +390,14 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
-
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
+
+        for gname in ['zg']:
+            group = config.findGroup(gname)
             
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
@@ -419,17 +406,12 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
-            
-            if group.name in 'zg':
-                continue
+       
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-#            if group.name != 'vvg':
-#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
-            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-        
-        config.findGroup('zg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('zg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
         config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
+        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'monomu':
 
@@ -444,12 +426,10 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -487,12 +467,14 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
-
             group.variations.append(Variation('lumi', reweight = 0.027))
-
+            
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
@@ -501,17 +483,13 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
-            
-            if group.name in 'wg':
-                continue
-            
-#            if group.name != 'vvg':
-#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
-            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-        
-#        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
         config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'monoel':
 
@@ -526,12 +504,10 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            # GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
-            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('zgamm', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -569,13 +545,15 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
-
             group.variations.append(Variation('lumi', reweight = 0.027))
             
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
-            
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
+
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
             group.variations.append(Variation('jec', replacements = (replUp, replDown)))
@@ -584,16 +562,12 @@ def getConfig(confName):
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
 
-            if group.name in 'wg':
-                continue
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-#            if group.name != 'vvg':
-#                group.variations.append(Variation('minorPDF', reweight = 'pdf'))
-            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-        
-        config.findGroup('wg').variations.append(Variation('vgPDF', reweight = 'pdf'))
-        config.findGroup('wg').variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+        config.findGroup('zg').variations.append(Variation('zgEWK', reweight = 'ewk'))
         config.findGroup('wg').variations.append(Variation('wgEWK', reweight = 'ewk'))
+        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'lowmt':
         config = PlotConfig('monoph', photonData)
