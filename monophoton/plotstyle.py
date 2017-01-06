@@ -157,10 +157,17 @@ class Legend(object):
 
         self._modified = True
 
-    def apply(self, name, obj):
+    def apply(self, name, obj, opt = 'LFP'):
         entry = self.entries[name]
 
         for at in Legend.Attributes:
+            if 'Line' in at and 'L' not in opt:
+                continue
+            if 'Fill' in at and 'F' not in opt:
+                continue
+            if 'Marker' in at and 'P' not in opt:
+                continue
+
             try:
                 getattr(obj, 'Set' + at)(getattr(entry, 'Get' + at)())
             except AttributeError:
