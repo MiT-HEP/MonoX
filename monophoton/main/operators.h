@@ -28,6 +28,7 @@
 //     HLTEle27eta2p1WPLooseGs
 //     HLTIsoMu27
 //     MetFilters
+//     GenPhotonVeto
 //     PhotonSelection *
 //     ElectronVeto
 //     MuonVeto
@@ -154,6 +155,21 @@ class MetFilters : public Cut {
   std::vector<std::pair<EventList, int>> eventLists_;
 };
 
+class GenPhotonVeto : public Cut {
+  /* Veto event if it contains a prompt gen photon */
+ public:
+  GenPhotonVeto(char const* name = "GenPhotonVeto") : Cut(name) {}
+
+  void setMinPt(double m) { minPt_ = m; }
+  void setMinDR(double m) { minDR_ = m; }
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  double minPt_{130.}; // minimum pt of the gen photon to be vetoed
+  double minDR_{0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
+};
+
 class PhotonSelection : public Cut {
  public:
   enum Selection {
@@ -178,6 +194,7 @@ class PhotonSelection : public Cut {
     NHIsoTight,
     PhIsoTight,
     CHIsoMax,
+    CHIsoMax11,
     CHWorstIso,
     CHWorstIso11,
     Sieie05,
@@ -190,7 +207,9 @@ class PhotonSelection : public Cut {
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
 
+  // save photons passing the selection (bool->true) or fail (bool->false)
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
+  // skip event if there is a photon passing the selection (bool->true) or failing (bool->false)
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }

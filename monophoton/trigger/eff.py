@@ -32,7 +32,7 @@ ROOT.gStyle.SetNdivisions(510, 'X')
 
 samplesConf = {
     'sph': ['sph-*'],
-    'sel': ['sel-16c-r'],
+    'sel': ['sel-16*'],
     'smu': ['smu-*']
 }
 
@@ -41,61 +41,65 @@ snames = samplesConf[sname]
 ## SETUP
 
 workDir = config.histDir + '/trigger'
+plotDir = 'trigger'
 
 if outname:
     outputFile = ROOT.TFile.Open(outname, 'recreate')
 
 if oname == 'photon':
+    if sname == 'sel':
+        baseline = '!probe.pixelVeto'
+    else:
+        baseline = '1'
+
     vconf = {
-        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
-        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
-        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
-        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
-        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
-        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt', baseline, array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)])),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt', baseline, array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE', baseline + ' && probe.pt > 175.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt * TMath::CosH(probe.eta) * probe.hOverE', baseline + ' && probe.pt > 175.', (25, 0., 5)),
+        'run': ('Run', 'run', baseline + ' && probe.pt > 175.', (26, 271050., 284050.))
     }
 
     tconf = {
-        'hlt': ('probe.matchHLT[0][2]', 'probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', 'HLT/L1'),
-        'l1': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3', '1', 'L1 seed'),
-        'l1eg': ('probe.matchL1[0][5] > 0. && probe.matchL1[0][5] < 0.3', '1', 'L1 seed'),
-        'l1hlt': ('probe.matchL1[0][2] > 0. && probe.matchL1[0][2] < 0.3 && probe.matchHLT[0][2]', '1', 'L1&HLT'),
-        'lephlt': ('probe.matchHLT[0][0]', '1', 'HLT')
+        'sph165': ('probe.matchHLT[2]', 'probe.matchL1[2]', 'HLT/L1'),
+        'l1all': ('probe.matchL1[2]', '1', 'L1 seed'),
+        'l1eg40': ('probe.matchL1[5]', '1', 'L1 seed'),
+        'sph165abs': ('probe.matchHLT[2]', '1', 'L1&HLT')
     }
 
 elif oname == 'muon':
     vconf = {
-        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', (50, 0., 50.)),
-        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
-        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
-        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
-        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
-        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', (50, 0., 50.)),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE', 'probe.pt > 200.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt * TMath::CosH(probe.eta) * probe.hOverE', 'probe.pt > 200.', (25, 0., 5)),
+        'run': ('Run', 'run', 'probe.pt > 200.', (350, 271000., 274500.)),
+        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
     }
 
     tconf = {
-        'hlt': ('probe.matchHLT[0][0] || probe.matchHLT[0][1]', '1', ''),
+        'mu20ortrk20': ('probe.matchHLT[0] || probe.matchHLT[1]', '1', ''),
     }
 
 elif oname == 'electron':
     vconf = {
-        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', (50, 0., 50.)),
-        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
-        'hOverE': ('H/E', 'probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 0.05)),
-        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt[0] * TMath::CosH(probe.eta[0]) * probe.hOverE[0]', 'probe.pt[0] > 200.', (25, 0., 5)),
-        'run': ('Run', 'run', 'probe.pt[0] > 200.', (350, 271000., 274500.)),
-        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt[0]', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
+        'pt': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', (50, 0., 50.)),
+        'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', array.array('d', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)])),
+        'hOverE': ('H/E', 'probe.hOverE', 'probe.pt > 200.', (25, 0., 0.05)),
+        'hcalE': ('E^{HCAL} (GeV)', 'probe.pt * TMath::CosH(probe.eta) * probe.hOverE', 'probe.pt > 200.', (25, 0., 5)),
+        'run': ('Run', 'run', 'probe.pt > 200.', (350, 271000., 274500.)),
+        'leppt': ('p_{T}^{#gamma} (GeV)', 'probe.pt', '1', array.array('d', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)])),
     }
 
     tconf = {
-        'hlt': ('probe.matchHLT[0][1]', '1', ''),
+        'el27': ('probe.matchHLT[1]', '1', ''),
     }
 
 vtitle, vexpr, baseline, binning = vconf[vname]
 
 passdef, denomdef, title = tconf[tname]
 
-if sname == 'jht' and vname == 'pt' and (tname == 'l1' or tname == 'l1hlt'):
+if sname == 'jht' and vname == 'pt' and (tname == 'l1all' or tname == 'l1egallsph165'):
     binning = array.array('d', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(14)])
 
 ## SOURCE
@@ -104,8 +108,8 @@ tree = ROOT.TChain('triggerTree')
 lumi = 0.
 for sample in allsamples.getmany(snames):
     lumi += sample.lumi
-    print 'adding', workDir + '/trigger_' + sample.name + '_' + oname + '.root'
-    tree.Add(workDir + '/trigger_' + sample.name + '_' + oname + '.root')
+    print 'adding', workDir + '/' + sample.name + '_' + oname + '.root'
+    tree.Add(workDir + '/' + sample.name + '_' + oname + '.root')
 
 canvas = SimpleCanvas(lumi = lumi)
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
@@ -127,6 +131,8 @@ if type(binning) is tuple:
 else:
     passing = ROOT.TH1D('passing', ';' + vtitle, len(binning) - 1, binning)
     denom = ROOT.TH1D('denom', ';' + vtitle, len(binning) - 1, binning)
+
+print vexpr, '(%s) && (%s)' % (baseline, denomdef)
 
 tree.Draw(vexpr + '>>denom', '(%s) && (%s)' % (baseline, denomdef))
 tree.Draw(vexpr + '>>passing', '(%s) && (%s) && (%s)' % (baseline, denomdef, passdef))
@@ -165,7 +171,7 @@ else:
 
 eff.GetYaxis().SetRangeUser(0., 1.2)
 
-canvas.printWeb('trigger', vname + '_' + tname + '_' + sname + '_' + oname, logy = False)
+canvas.printWeb(plotDir, vname + '_' + tname + '_' + sname + '_' + oname, logy = False)
 
 func = None
 marker = None

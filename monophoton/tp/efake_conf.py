@@ -150,7 +150,8 @@ def getBinning(binningName):
 #        fitBins.append(('Run2016F', 'run >= 277772 && run <= 278808 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
         fitBins.append(('Run2016EF', 'run >= 276831 && run <= 278808 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
         fitBins.append(('Run2016G', 'run >= 278820 && run <= 280385 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
-        fitBins.append(('Run2016H', 'run >= 280919 && run <= 284044 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
+        fitBins.append(('Run2016H1', 'run >= 280919 && run <= 282500 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
+        fitBins.append(('Run2016H2', 'run >= 282500 && run <= 284044 && probes.matchHLT[][2] && probes.scRawPt > 175.'))
 
     elif binningName == 'chiso':
         binningTitle = 'chiso'

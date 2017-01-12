@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Workspace constructor for simultaneous fit using combine
 
@@ -10,38 +12,42 @@ Workspace constructor for simultaneous fit using combine
 Input: ROOT files with histograms (no directory structure).
 Output: A ROOT file containing a RooWorkspace and printouts to stdout which should be pasted into a combine data card.
 
-[Instructions]
-Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
-naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section. Histograms for
-systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf uncertainty).
-Once inputs are defined, specify the links between samples and special treatments for various nuisances. Nuisance parameters are identified automatically from the histogram names
-following the convention given above.
-Usage is
+[Usage]
+The script is driven by a parameter card, which is itself a python script defining several variables. An example is at monophoton/fit/parameters.py. Run the script with
  $ [set environment for CMSSW with combine installation]
- $ python workspace.py
-At the moment, the tool does not write a data card. The user has to provide a card, to which the lines printed out by the tool should be appended. The second section of the card
-should be of form
------
-shapes * * ws.root wspace:$PROCESS_$CHANNEL
------
-All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Those that are printed out by the
-tool should therefore not be mentioned anywhere else in the data card.
-Another feature that is lacking at the moment is the visualization of the workspace content. The only way to check how the links were implemented in the workspace is to do
-wspace->Print()
-in ROOT.
+ $ python workspace.py [parameters_path]
+If parameters_path is not given, the parameters are taken from the file named parameters.py in the current directory.
+
+[Parameter card instructions]
+Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
+naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section.
+. Histogram naming conventions:
+ Histograms for systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf
+ uncertainty).
+Once inputs are defined, specify the links between samples and special treatments for various nuisances in a parameter card. Nuisance parameters are identified automatically from
+the histogram names following the convention given above.
+All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Thus the datacard will not contain
+the nuisance-process matrix and instead will list all the nuisances as "param"s.
+If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
+If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
 """
 
 import os
 import sys
 import re
 import math
+import array
 import pprint
 import collections
 import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
-configPath = sys.argv[1]
+if len(sys.argv) == 2:
+    configPath = sys.argv[1]
+else:
+    print 'Using configuration ' + os.getcwd() + '/parameters.py'
+    configPath = os.getcwd() + '/parameters.py'
 
 sys.path.append(os.path.dirname(configPath))
 config = __import__(os.path.basename(configPath).replace('.py', ''))
@@ -53,6 +59,8 @@ ROOT.gSystem.Load('libRooFitCore.so')
 SMALLNUMBER = 1.e-3
 # ignore statistical uncertainties from bins with content less than the cutoff (relative to the total content of the sample)
 STATCUTOFF = 0.1
+# print the list of nuisance parameters at the end
+PRINTNUISANCE = False
 
 workspace = ROOT.RooWorkspace('wspace')
 wsimport = SafeWorkspaceImporter(workspace)
@@ -140,7 +148,10 @@ def isLinkSource(source):
 
     return False
 
+
+## INPUT
 # fetch all source histograms first    
+
 sources = {}
 sourcePlots = {}
 totals = {}
@@ -148,16 +159,15 @@ totals = {}
 hstore = ROOT.gROOT.mkdir('hstore')
 
 for region in config.regions:
-    sourcePlots[region] = {}
-    for process in config.processes:
+    sourcePlots[region] = collections.defaultdict(dict)
+
+    for process in config.processes + config.signals:
         # rename 'data' to 'data_obs' (historical)
         if process == 'data':
             pname = 'data'
             process = 'data_obs'
         else:
             pname = process
-
-        sourcePlots[region][process] = {}
 
         fname = config.sourcedir + '/' + config.filename.format(process = process, region = region, distribution = config.distribution)
         try:
@@ -198,7 +208,8 @@ for region in config.regions:
             else:
                 sourcePlots[region][process][variation[1:]] = obj
 
-# Workspace construction start
+
+## WORKSPACE
 
 x = fct('x[-1.e+10,1.e+10]')
 
@@ -227,9 +238,6 @@ while not done:
         regionDone = True
         for process, plots in sourcePlots[region].items():
             if process == 'data_obs':
-                continue
-
-            if len(plots) == 0:
                 continue
 
             sample = (process, region)
@@ -339,20 +347,27 @@ while not done:
                         rup = numerUp / denomUp / rbin - 1.
                         rdown = numerDown / denomDown / rbin - 1.
 
-                        if (sample, sbase, var) in config.partialCorrelation:
+                        if (sample, sbase, var) in config.ratioCorrelations:
                             # need to split the nuisance into correlated and anti-correlated
                             # assuming no scaleNuisance is partially correlated
-                            correlation = config.partialCorrelation[(sample, sbase, var)]
+                            correlation = config.ratioCorrelations[(sample, sbase, var)]
                             raup = numerUp / denomDown / rbin - 1.
                             radown = numerDown / denomUp / rbin - 1.
 
+                            if var in config.deshapedNuisances:
+                                # this nuisance is artificially decorrelated among bins
+                                # calling "corr"Uncert function, but in reality this results in one nuisance per bin
+                                var = var + '_bin{ibin}'.format(ibin = ibin)
+
                             if abs(rup) > SMALLNUMBER or abs(rdown) > SMALLNUMBER:
                                 coeff = (1. + correlation) * 0.5
-                                modifiers.append(nuisance(var + '_corr', tfName, coeff * rup, coeff * rdown, 'lnN'))
+                                if coeff != 0.:
+                                    modifiers.append(nuisance(var + '_corr', tfName, coeff * rup, coeff * rdown, 'lnN'))
 
                             if abs(raup) > SMALLNUMBER or abs(radown) > SMALLNUMBER:
                                 coeff = (1. - correlation) * 0.5
-                                modifiers.append(nuisance(var + '_acorr', tfName, coeff * raup, coeff * radown, 'lnN'))
+                                if coeff != 0.:
+                                    modifiers.append(nuisance(var + '_acorr', tfName, coeff * raup, coeff * radown, 'lnN'))
 
                         else:
                             if abs(rup) < SMALLNUMBER and abs(rdown) < SMALLNUMBER:
@@ -362,7 +377,7 @@ while not done:
                             if var in config.scaleNuisances:
                                 normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
                             else:
-                                if var in config.decorrelatedNuisances:
+                                if var in config.deshapedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # calling "corr"Uncert function, but in reality this results in one nuisance per bin
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
@@ -438,7 +453,7 @@ while not done:
                                     # if this sample is freely floating, scale modifiers are unnecessary degrees of freedom
                                     normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
                             else:
-                                if var in config.decorrelatedNuisances:
+                                if var in config.deshapedNuisances:
                                     # this nuisance is artificially decorrelated among bins
                                     # treat each (variation name)_(bin name) as a variation name
                                     var = var + '_bin{ibin}'.format(ibin = ibin)
@@ -489,8 +504,262 @@ while not done:
 if hasattr(config, 'customize'):
     config.customize(workspace)
 
+if PRINTNUISANCE:
+    for n in sorted(nuisances):
+        print n, 'param 0 1'
+
 workspace.writeToFile(config.outname)
 
-# print out nuisance lines for the datacard
-for n in sorted(nuisances):
-    print n, 'param 0 1'
+
+## DATACARDS
+if hasattr(config, 'carddir'):
+    if not os.path.isdir(config.carddir):
+        os.makedirs(config.carddir)
+    
+    # sort samples
+    
+    samples = {}
+    procIds = {}
+    signalRegion = ''
+    
+    for region, procPlots in sourcePlots.items():
+        samples[region] = []
+    
+        # sort processes by expectation
+        def compProc(p, q):
+            if procPlots[p]['nominal'].GetSumOfWeights() > procPlots[q]['nominal'].GetSumOfWeights():
+                return -1
+            else:
+                return 1
+    
+        procs = sorted(procPlots.keys(), compProc)
+    
+        for p in procs:
+            if p in config.signals:
+                signalRegion = region
+            else:
+                samples[region].append(p)
+                if p not in procIds:
+                    procIds[p] = len(procIds) + 1
+    
+    # define datacard template
+    
+    hrule = '-' * 140
+    
+    lines = [
+        'imax * number of bins',
+        'jmax * number of processes minus 1',
+        'kmax * number of nuisance parameters',
+        hrule,
+        'shapes * * ' + os.path.realpath(config.outname) + ' wspace:$PROCESS_$CHANNEL',
+        hrule,
+    ]
+    
+    line = 'bin          ' + ('%9s' % signalRegion) + ''.join(sorted(['%9s' % r for r in samples if r != signalRegion]))
+    lines.append(line)
+    
+    line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samples))
+    lines.append(line)
+    
+    lines.append(hrule)
+    
+    # columns for all background processes and yields
+    columns = []
+    
+    for proc in samples[signalRegion]:
+        columns.append((signalRegion, proc, str(procIds[proc])))
+    
+    for region in sorted(samples.keys()):
+        if region == signalRegion:
+            continue
+    
+        for proc in samples[region]:
+            columns.append((region, proc, str(procIds[proc])))
+    
+    # now loop over signal models and write a card per model
+    for signal in config.signals:
+        cardcolumns = list(columns)
+        cardlines = list(lines)
+    
+        # insert the signal expectation as the first column
+        cardcolumns.insert(0, (signalRegion, signal, str(-1)))
+    
+        for ih, heading in enumerate(['bin', 'process', 'process']):
+            line = '%13s' % heading
+            for column in cardcolumns:
+                w = max(len(s) for s in column)
+                line += ('%{width}s'.format(width = w + 1)) % column[ih]
+            cardlines.append(line)
+        
+        line = 'rate         '
+        for column in cardcolumns:
+            w = max(len(s) for s in column)
+            line += ('%{width}.1f'.format(width = w + 1)) % 1.
+        cardlines.append(line)
+        
+        cardlines.append(hrule)
+    
+        for nuisance in sorted(nuisances):
+            # remove nuisances related to other signal models
+            for s in config.signals:
+                if s != signal and nuisance.startswith(s):
+                    break
+            else:
+                # no other signal name matched -> nuisance either not related to signal or related to this signal model
+                cardlines.append(nuisance + ' param 0 1')
+    
+        with open(config.carddir + '/' + signal.replace('signal-', '') + '.dat', 'w') as datacard:
+            for line in cardlines:
+                if '{signal}' in line:
+                    line = line.format(signal = signal)
+    
+                datacard.write(line + '\n')
+
+
+## PLOTS
+if hasattr(config, 'plotsOutname'):
+    def modRelUncert2(mod):
+        # stat uncertainty of TFs have two parameters
+        # allow for general case of N parameters
+        relUncert2 = 0.
+        iparam = 0
+        p = mod.getParameter(iparam)
+        while p:
+            p.setVal(1.)
+            d = mod.getVal() - 1.
+            p.setVal(0.)
+    
+            relUncert2 += d * d
+    
+            iparam += 1
+            p = mod.getParameter(iparam)
+    
+        return relUncert2
+    
+    plotsFile = ROOT.TFile.Open(config.plotsOutname, 'recreate')
+    
+    xbinning = x.getBinning('default')
+    boundaries = xbinning.array()
+    binning = array.array('d', [boundaries[i] for i in range(xbinning.numBoundaries())])
+    
+    allPdfs = workspace.allPdfs()
+    pdfItr = allPdfs.iterator()
+    while True:
+        pdf = pdfItr.Next()
+        if not pdf:
+            break
+
+        hnominal = None
+        huncert = None
+        isTF = False
+        
+        hmods = {}
+        normMods = {}
+    
+        unc = workspace.function('unc_' + pdf.GetName() + '_norm')
+        if unc:
+            # normalization given to this PDF has associated uncertainties
+    
+            # loop over all modifiers
+            mods = unc.components()
+            modItr = mods.iterator()
+            while True:
+                mod = modItr.Next()
+                if not mod:
+                    break
+    
+                uncertName = mod.GetName().replace('mod_' + pdf.GetName() + '_norm_', '')
+                normMods[uncertName] = mod
+                hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+    
+        for ibin in range(1, len(binning)):
+            binName = pdf.GetName() + '_bin' + str(ibin)
+    
+            # if mu is a RooRealVar -> simplest case; static PDF
+            # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
+            # if mu = raw x unc and raw is a function -> linked from another sample
+    
+            if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
+                # raw is tf x another mu -> plot the TF
+    
+                if hnominal is None:
+                    hnominal = ROOT.TH1D('tf_' + pdf.GetName(), ';' + config.xtitle, len(binning) - 1, binning)
+                    huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
+                    isTF = True
+
+                tf = workspace.var(binName + '_tf')
+                val = tf.getVal()
+    
+                # TF is historically plotted inverted
+                hnominal.SetBinContent(ibin, 1. / val)
+                huncert.SetBinContent(ibin, 1. / val)
+    
+            else:
+                if hnominal is None:
+                    hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
+                    for iX in range(1, hnominal.GetNbinsX() + 1):
+                        hnominal.SetBinError(iX, 0.)
+    
+                    hnominal.SetName(pdf.GetName())
+                    hnominal.GetXaxis().SetTitle(config.xtitle)
+                    hnominal.GetYaxis().SetTitle('Events / GeV')
+                    huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
+    
+                val = hnominal.GetBinContent(ibin)
+    
+            totalUncert2 = 0.
+    
+            for uncertName, mod in normMods.items():
+                uncert2 = modRelUncert2(mod) * val
+                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+    
+                totalUncert2 += uncert2
+    
+            unc = workspace.function('unc_' + binName)
+            if unc:
+                # loop over all modifiers for this bin
+                mods = unc.components()
+                modItr = mods.iterator()
+                while True:
+                    mod = modItr.Next()
+                    if not mod:
+                        break
+        
+                    uncert2 = modRelUncert2(mod) * val
+                    
+                    if uncert2 > 1000.:
+                        print modRelUncert2(mod, True), val, pdf.GetName(), mod.GetName()
+        
+                    if mod.GetName().endswith('_stat'):
+                        if isTF: # nominal is 1/value
+                            hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
+                        else:
+                            hnominal.SetBinError(ibin, math.sqrt(uncert2))
+                    else:
+                        uncertName = mod.GetName().replace('mod_' + binName + '_', '')
+                        if uncertName not in hmods:
+                            hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+        
+                        hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                        
+                    # total uncertainty includes stat
+                    totalUncert2 += uncert2
+        
+            if isTF:
+                huncert.SetBinError(ibin, math.sqrt(totalUncert2) / val / val)
+            else:
+                huncert.SetBinError(ibin, math.sqrt(totalUncert2))
+
+        hasUncert = sum(huncert.GetBinError(iX) for iX in range(1, huncert.GetNbinsX() + 1)) != 0.
+    
+        plotsFile.cd()
+        hnominal.SetDirectory(plotsFile)
+        hnominal.Write()
+        if hasUncert:
+            huncert.SetDirectory(plotsFile)
+            huncert.Write()
+        for h in hmods.values():
+            h.SetDirectory(plotsFile)
+            h.Write()
+
+    plotsFile.Close()

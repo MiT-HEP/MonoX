@@ -154,26 +154,50 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
       if (_goodlumi && !_goodlumi->isGoodLumi(event.run, event.lumi))
         continue;
 
-      if (pass()) {
-        ++nPass;
-        if (inHLTTree) {
-          hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
-          hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
-        }
+      if (!pass())
+        continue;
 
-        for (auto& photon : event.photons) {
-          if (photon.isEB) {
-            photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
-            photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
-          }
-          else {
-            photon.nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
-            photon.phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
-          }
-        }
-
-        outEventTree->Fill();
+      ++nPass;
+      if (inHLTTree) {
+        hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
+        hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
       }
+
+      for (auto& photon : event.photons) {
+        double chIsoEA(0.);
+        double absEta(std::abs(photon.scEta));
+        if (absEta < 1.)
+          chIsoEA = 0.0360;
+        else if (absEta < 1.479)
+          chIsoEA = 0.0377;
+        else if (absEta < 2.)
+          chIsoEA = 0.0306;
+        else if (absEta < 2.2)
+          chIsoEA = 0.0283;
+        else if (absEta < 2.3)
+          chIsoEA = 0.0254;
+        else if (absEta < 2.4)
+          chIsoEA = 0.0217;
+        else
+          chIsoEA = 0.0167;
+
+        photon.chIsoS16 = photon.chIso - chIsoEA * event.rho;
+        if (photon.isEB) {
+          photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
+          photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
+        }
+        else {
+          photon.nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
+          photon.phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
+        }
+
+        // EA computed with iso/worstIsoEA.py
+        photon.chIsoMax -= 0.094 * event.rho;
+        if (photon.chIsoMax < photon.chIso)
+          photon.chIsoMax = photon.chIso;
+      }
+
+      outEventTree->Fill();
     }
 
     iEntry = 0;

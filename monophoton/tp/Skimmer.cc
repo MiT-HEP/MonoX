@@ -112,7 +112,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
   simpletree::Event event;
   event.setStatus(*_input, false);
   flatutils::BranchList bList{"photons.pt", "photons.eta", "photons.phi", "photons.scRawPt", "photons.isEB",
-      "photons.chIso", "photons.nhIso", "photons.phIso", "photons.sieie", "photons.sipip", "photons.sieip",
+      "photons.chIso", "photons.chWorstIso", "photons.chIsoMax", "photons.nhIso", "photons.phIso", "photons.sieie", "photons.sipip", "photons.sieip",
       "photons.hOverE", "photons.pixelVeto", "photons.csafeVeto", "photons.medium", "photons.matchedGen", "photons.matchHLT"};
   if (fill[kEG])
     bList.push_back("electrons");

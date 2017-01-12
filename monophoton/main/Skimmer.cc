@@ -36,7 +36,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   bool isMC = false;
 
-  event.setAddress(*_input, {"photons.matchL1", "promptFinalStates.ancestor"}, false);
+  event.setAddress(*_input);
   if (_input->GetBranch("weight"))
     isMC = true;
   
