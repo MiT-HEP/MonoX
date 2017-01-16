@@ -570,11 +570,8 @@ def getConfig(confName):
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
     elif confName == 'lowmt':
-        config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 100. && t1Met.photonDPhi < 2. && t1Met.photonDPhi > 0.5 && t1Met.minJetDPhi > 0.5'
-#        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
-#        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 100. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
-#        config.fullSelection = 'photons.scRawPt[0] < 400. && t1Met.met > 170.'
+        config = PlotConfig('lowmt', photonData)
+        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = ''
         config.bkgGroups = [
             GroupSpec('minor', 't#bar{t}, Z, #gamma#gamma', samples = ['ttg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
