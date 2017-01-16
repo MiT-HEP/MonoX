@@ -1,14 +1,21 @@
-outname = '/data/t3home000/yiiyama/studies/monophoton/fit/ws_phoPtHighMet.root'
-plotsOutname = '/data/t3home000/yiiyama/studies/monophoton/fit/ws_phoPtHighMet_plots.root'
-sourcedir = '/data/t3home000/yiiyama/studies/monophoton/distributions_19fbinv'
+histDir = '/data/t3home000/yiiyama/studies/monophoton'
+
+distribution = 'phoPtHighMet'
+
+outname = histDir + '/fit/ws_' distribution + '.root'
+plotsOutname = histDir + '/fit/ws_' + distribution + '_plots.root'
+sourcedir = histDir + '/distributions_13fbinv'
+carddir = histDir + '/datacards_13fbinv'
+
 filename = '{region}_{distribution}.root'
 histname = '{distribution}-{process}'
-carddir = '/data/t3home000/yiiyama/studies/monophoton/datacards_19fbinv'
 
-regions = ['monoph', 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowmt']
+sr = 'bmonoph' # blinded version
+#sr = 'monoph'
+
+regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowmt']
 processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
 signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
-distribution = 'phoPtHighMet'
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 
@@ -17,13 +24,13 @@ binWidthNormalized = False
 # In the fit, the normalization of the source and the transfer factors are allowed to float, with constraints
 # on the transfer factors.
 links = [
-    (('zg', 'diel'), ('zg', 'monoph')),
-    (('zg', 'dimu'), ('zg', 'monoph')),
-    (('wg', 'monoel'), ('wg', 'monoph')),
-    (('wg', 'monomu'), ('wg', 'monoph')),
-    (('zg', 'monoel'), ('zg', 'monoph')),
-    (('zg', 'monomu'), ('zg', 'monoph')),
-    (('wg', 'monoph'), ('zg', 'monoph'))
+    (('zg', 'diel'), ('zg', sr)),
+    (('zg', 'dimu'), ('zg', sr)),
+    (('wg', 'monoel'), ('wg', sr)),
+    (('wg', 'monomu'), ('wg', sr)),
+    (('zg', 'monoel'), ('zg', sr)),
+    (('zg', 'monomu'), ('zg', sr)),
+    (('wg', sr), ('zg', sr))
 ]
 
 # Sample with free normalization that are not involved in links.
@@ -36,7 +43,7 @@ ignoredNuisances = {
     ('wg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
     ('zg', 'monoel'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
     ('zg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
-    ('wg', 'monoph'): ['leptonVetoSF', 'gec']
+    ('wg', sr): ['leptonVetoSF', 'gec']
 }
 
 # Artificial bin-to-bin decorrelation (de-shaping)
@@ -47,9 +54,9 @@ deshapedNuisances = [
 # Correlation in ratios.
 # {(target, source, nuisance): correlation}
 ratioCorrelations = {
-    (('wg', 'monoph'), ('zg', 'monoph'), 'vgQCDscale'): 0.8,
-    (('wg', 'monoph'), ('zg', 'monoph'), 'vgPDF'): 1.,
-    (('wg', 'monoph'), ('zg', 'monoph'), 'EWK'): 1.
+    (('wg', sr), ('zg', sr), 'vgQCDscale'): 0.8,
+    (('wg', sr), ('zg', sr), 'vgPDF'): 1.,
+    (('wg', sr), ('zg', sr), 'EWK'): 1.
 }
 
 # Nuisances affecting normalization only
