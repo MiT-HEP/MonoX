@@ -15,15 +15,19 @@ skimUncleaned(TTree* _input, TFile* _outputFile, GoodLumiFilter* _goodLumi = 0)
 
   unsigned run;
   unsigned lumi;
+  TBranch* runBranch(0);
+  TBranch* lumiBranch(0);
 
-  _input->SetBranchAddress("run", &run);
-  _input->SetBranchAddress("lumi", &lumi);
+  if (_goodLumi) {
+    _input->SetBranchAddress("run", &run);
+    _input->SetBranchAddress("lumi", &lumi);
 
-  output->Branch("run", &run, "run/i");
-  output->Branch("lumi", &lumi, "lumi/i");
+    output->Branch("run", &run, "run/i");
+    output->Branch("lumi", &lumi, "lumi/i");
 
-  TBranch* runBranch(_input->GetBranch("run"));
-  TBranch* lumiBranch(_input->GetBranch("lumi"));
+    runBranch = _input->GetBranch("run");
+    lumiBranch = _input->GetBranch("lumi");
+  }
 
   simpletree::Event event;
   event.setAddress(*_input, {"run", "lumi"}, false);
@@ -39,42 +43,48 @@ skimUncleaned(TTree* _input, TFile* _outputFile, GoodLumiFilter* _goodLumi = 0)
     if (iEntry % 100000 == 0)
       std::cout << iEntry << std::endl;
 
-    if (runBranch->GetEntry(iEntry) <= 0)
+    if (_goodLumi) {
+      if (runBranch->GetEntry(iEntry) <= 0)
+        break;
+
+      if (run != currentRun) {
+        currentRun = run;
+        if (_goodLumi && !_goodLumi->hasGoodLumi(run)) {
+          skipRun = true;
+          ++iEntry;
+          continue;
+        }
+        else
+          skipRun = false;
+      }
+      else if (skipRun) {
+        ++iEntry;
+        continue;
+      }
+
+      lumiBranch->GetEntry(iEntry);
+
+      if (lumi != currentLumi) {
+        currentLumi = lumi;
+        if (_goodLumi && !_goodLumi->isGoodLumi(run, lumi)) {
+          skipLumi = true;
+          ++iEntry;
+          continue;
+        }
+        else
+          skipLumi = false;
+      }
+      else if (skipLumi) {
+        ++iEntry;
+        continue;
+      }
+    }
+
+    if (_input->GetEntry(iEntry++) <= 0)
       break;
 
-    if (run != currentRun) {
-      currentRun = run;
-      if (_goodLumi && !_goodLumi->hasGoodLumi(run)) {
-        skipRun = true;
-        ++iEntry;
-        continue;
-      }
-      else
-        skipRun = false;
-    }
-    else if (skipRun) {
-      ++iEntry;
+    if (event.t1Met.met < 140.)
       continue;
-    }
-
-    lumiBranch->GetEntry(iEntry);
-
-    if (lumi != currentLumi) {
-      currentLumi = lumi;
-      if (_goodLumi && !_goodLumi->isGoodLumi(run, lumi)) {
-        skipLumi = true;
-        ++iEntry;
-        continue;
-      }
-      else
-        skipLumi = false;
-    }
-    else if (skipLumi) {
-      ++iEntry;
-      continue;
-    }
-
-    _input->GetEntry(iEntry++);
 
     for (auto& sc : event.superClusters) {
       if (sc.rawPt > 175.) {
