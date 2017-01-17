@@ -21,10 +21,6 @@ mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-w
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonIds.append('none')
 
-#print sorted(s.PhotonPtSels.keys())
-#print sorted(s.MetSels.keys())
-#sys.exit(0)
-
 for era in s.Eras[:]:
     for loc in s.Locations[:1]:
         for pt in sorted(s.PhotonPtSels.keys())[:-1]:
