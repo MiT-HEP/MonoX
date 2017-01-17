@@ -68,7 +68,8 @@ for iEra, era in enumerate(Eras):
 ### Now start actual parameters that need to be changed ###
 
 # Version = config.simpletreeVersion
-Version = 'newCH'
+Version = 'Jan13'
+skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/purity'
 
 from ROOT import *
 
@@ -83,7 +84,7 @@ Variables = { "sieie"  : ('photons.sieie', sieieCuts, { "barrel"  : (RooRealVar(
               } 
                
 # Skims for Purity Calculation
-sphData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h']
+sphData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] 
 gjetsMc = ['gj-100','gj-200','gj-400','gj-600']
 qcdMc = [ 'qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
@@ -220,7 +221,7 @@ noisyRegionCut = '!(photons.eta > 0. && photons.eta < 0.15 && photons.phi > 0.52
 
 monophIdCut = ' && '.join([mipCut, timeCut, sieieNonzeroCut, sipipNonzeroCut, noisyRegionCut])
 
-cutPhotonPtHigh = [175,200,250,300,350] 
+cutPhotonPtHigh = [175,200,250,300,350,400,450] #,500,550,600] 
 PhotonPtSels = { 'PhotonPtInclusive' : '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))' }
 for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]):
     PhotonPtSels['PhotonPt'+str(low)+'to'+str(high)] = '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))' 

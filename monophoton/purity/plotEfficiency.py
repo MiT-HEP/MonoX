@@ -19,7 +19,7 @@ if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-worst', '-pixel-monoph-max']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # '-pixel-monoph-worst', 
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
@@ -37,13 +37,14 @@ for loc in s.Locations[:1]:
                 yields[loc][pid][ptCut][metCut] = {}
                 dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
                 print dirName
+
+                """
                 # Get Data Yields
                 dataFileName = os.path.join(versDir,dirName,"results.out") 
                 # dataFile = open(dataFileName)
                 
                 match = False
                 count = [1., 0.]
-                """
                 for line in dataFile:
                     if "# of real photons is:" in line:
                         # print line
@@ -61,7 +62,6 @@ for loc in s.Locations[:1]:
                             # pprint(tmp)
                             count[1] = float(tmp[-1].strip("(),"))
                             #print count
-                """
 
                 if not match:
                     print "No data yields found for skim:", dirName
@@ -72,29 +72,36 @@ for loc in s.Locations[:1]:
 
                 if pid == 'none':
                     continue
+                """
 
                 # get mc effs
                 mcFileName = os.path.join(versDir,dirName,"mceff.out") 
-                mcFile = open(mcFileName)
+                try:
+                    mcFile = open(mcFileName)
 
-                match = False
-                count = [1., 0., 0.]
-                for line in mcFile:
-                    if "Efficiency" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            count[0] = float(tmp[-3].strip("(),+-"))
-                            count[1] = float(tmp[-2].strip("(),+-"))
-                            count[2] = float(tmp[-1].strip("(),+-"))
-                            #print count
+                    match = False
+                    count = [1., 0., 0.]
+                    for line in mcFile:
+                        if "Efficiency" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                count[0] = float(tmp[-3].strip("(),+-"))
+                                count[1] = float(tmp[-2].strip("(),+-"))
+                                count[2] = float(tmp[-1].strip("(),+-"))
+                                #print count
 
-                if not match:
-                    print "No mc eff found for skim:", dirName
+                    if not match:
+                        print "No mc eff file found for skim:", dirName
+                        yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0, 0.0)
+
+                    mcFile.close()
+
+                except IOError:
+                    print "No mc eff file found for skim:", dirName
                     yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0, 0.0)
-                mcFile.close()
 
                 yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
                     
@@ -111,7 +118,7 @@ for loc in s.Locations[:1]:
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
-            rcanvas.legend.setPosition(0.45, 0.7, 0.8, 0.9)
+            rcanvas.legend.setPosition(0.45, 0.725, 0.8, 0.925)
 
             for iMod, mod in enumerate(mods):
 
@@ -140,15 +147,18 @@ for loc in s.Locations[:1]:
                     exh = highEdge - center
 
                     mceffs = yields[loc][base+mod][ptCut][metCut]['mc']
+                    # print loc, base+mod, ptCut, metCut, 'mc'
+                    # print mceffs
                     mcEff.SetPoint(iB, center, mceffs[0])
                     mcEff.SetPointError(iB, exl, exh, mceffs[2], mceffs[1])
 
+                    """
                     passes = yields[loc][base+mod][ptCut][metCut]['data']
                     totals = yields[loc]['none'][ptCut][metCut]['data']
 
                     # print passes
                     # print totals
-
+ 
                     eff = passes[0] / totals[0]
                     corr = eff
                     effError = eff * math.sqrt( (passes[1]/passes[0])**2 + (totals[1]/totals[0])**2 + 2*corr*(passes[1]/passes[0])*(totals[1]/passes[0]) )
@@ -166,11 +176,12 @@ for loc in s.Locations[:1]:
                     gSF.SetPointError(iB, exl, exh, sfErrLow, sfErrHigh)
 
                     # print sf, sfErrLow, sfErrLow / sf
+                    """
 
-                if not 'max' in mod:
-                    rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
-                    rcanvas.legend.apply("mc"+mod, mcEff)
-                    rcanvas.addHistogram(mcEff, drawOpt = 'EP')
+                # if not 'max' in mod:
+                rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
+                rcanvas.legend.apply("mc"+mod, mcEff)
+                rcanvas.addHistogram(mcEff, drawOpt = 'EP')
 
                 # rcanvas.legend.add("data"+mod, title = "Data"+mod, mcolor = r.Blue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
                 # rcanvas.legend.apply("data"+mod, dataEff)

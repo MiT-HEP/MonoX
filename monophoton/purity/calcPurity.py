@@ -86,7 +86,7 @@ for chkey in s.ChIsoSbSels:
 varName = 'sieie'
 var = s.Variables[varName]
 varBins = False
-skimDir  = s.config.skimDir
+skimDir  = s.skimDir
 
 pids = pid.split('-')
 if len(pids) > 1:
@@ -134,32 +134,12 @@ elif 'max' in extras:
 
 # get initial templates
 print "\n\n##############################\n######## Doing initial skims ########\n##############################\n\n"
-tmpDir = '/tmp/' + os.environ['USER'] + '/' + inputKey
-if not os.path.exists(tmpDir):
-    os.makedirs(tmpDir)
-print 'Copying to temp dir'
-
-for sph in s.sphData:
-    print 'Copying', sph
-    start = time.time()
-    shutil.copy2(skimDir + '/' + sph + '_purity.root', tmpDir + '/' + sph + '_purity.root')
-    elapsed = time.time() - start
-    print 'Took ' + str(elapsed) + ' seconds'
-
-for gj in s.gjetsMc:
-    print 'Copying', gj
-    start = time.time()
-    shutil.copy2(skimDir + '/' + gj + '_purity.root', tmpDir + '/' + gj + '_purity.root')
-    elapsed = time.time() - start
-    print 'Took ' + str(elapsed) + ' seconds'
-
-print 'Done copying to temp'
 
 initialHists = []
 initialTemplates = []
 for skim, sel in zip(skims,sels):
     start = time.time()
-    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,tmpDir,varBins)
+    hist = s.HistExtractor(var[0],var[2][loc],skim,sel,skimDir,varBins)
     initialHists.append(hist)
     template = s.HistToTemplate(hist,var[2][loc],skim,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
@@ -332,12 +312,12 @@ outFile = file(plotDir + '/results.out', 'w')
 for hist in initialHists[:]:
     outFile.write('%s has %f events \n' % (hist.GetName(), hist.Integral()))
 
-outFile.write( "# of real photons is: "+str(nominalPurity[2])+'\n' )
+outFile.write( "\n\n# of real photons is: "+str(nominalPurity[2])+'\n' )
 outFile.write( "Sideband unc yield is: "+str(sidebandUncYield)+'\n' )
 outFile.write( "Method unc yield is: "+str(scaledUncYield)+'\n' ) 
 outFile.write( "Signal shape unc yield is: "+str(twobinUncYield)+'\n' ) 
 outFile.write( "Background stat unc yield is: "+str(bkgdUncYield)+'\n' )
-outFile.write( "Total unc yield is: "+str(totalUncYield)+'\n' )
+outFile.write( "Total unc yield is: "+str(totalUncYield)+'\n\n\n' )
 
 outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
 outFile.write( "Sideband uncertainty is: "+str(sidebandUncertainty)+'\n' )
@@ -347,6 +327,3 @@ outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )
 outFile.write( "Total uncertainty is: "+str(totalUncertainty)+'\n' )
 
 outFile.close()
-
-### Clean up temp files
-shutil.rmtree(tmpDir)

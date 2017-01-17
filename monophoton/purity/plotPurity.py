@@ -21,12 +21,12 @@ if not os.path.exists(outDir):
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max', '-pixel-monoph-worst']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring15'
+era = 'Spring16'
 
 purities = {}
 for loc in s.Locations[:1]:
@@ -41,64 +41,69 @@ for loc in s.Locations[:1]:
                 dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
                 condorFileName = os.path.join(versDir,dirName,"results.out")
                 # print condorFileName
-                condorFile = open(condorFileName)
-                
-                match = False
-                purity = [1, 0, 0, 0, 0, 0]
-                for line in condorFile:
-                    if "Nominal purity is:" in line:
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[0] = (1.0 - float(tmp[-1].strip("(),"))) * 100
-                            # print purity[0]
-                    elif "Total uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[1] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Sideband uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[2] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Method uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[3] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Signal shape uncertainty is:" in line: # need to add t back
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[4] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Background stat uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[5] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                purities[loc][pid][ptCut][metCut] = tuple(purity)
+                try:
+                    condorFile = open(condorFileName)
 
-                if not match:
-                    print "No purity found for skim:", dirName
+                    match = False
+                    purity = [1, 0, 0, 0, 0, 0]
+                    for line in condorFile:
+                        if "Nominal purity is:" in line:
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[0] = (1.0 - float(tmp[-1].strip("(),"))) * 100
+                                # print purity[0]
+                        elif "Total uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[1] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Sideband uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[2] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Method uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[3] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Signal shape uncertainty is:" in line: # need to add t back
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[4] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Background stat uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[5] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                    purities[loc][pid][ptCut][metCut] = tuple(purity)
+
+                    if not match:
+                        print "No purity found for skim:", dirName
+                        purities[loc][pid][ptCut][metCut] = (102.5, 0.0)
+
+                    condorFile.close()
+                except:
+                    print "No purity file found for skim:", dirName
                     purities[loc][pid][ptCut][metCut] = (102.5, 0.0)
-                condorFile.close()
                        
 pprint(purities)
 
@@ -138,10 +143,10 @@ for loc in s.Locations[:1]:
                     pGraph.SetPoint(iB, center, purity[0])
                     pGraph.SetPointError(iB, exl, exh, purity[1], purity[1])
 
-                if not 'max' in mod:
-                    canvas.legend.add(base+mod, title = base+mod, mcolor = r.kOrange+iMod-1, lcolor = r.kOrange+iMod-1, lwidth = 2)
-                    canvas.legend.apply(base+mod, pGraph)
-                    canvas.addHistogram(pGraph, drawOpt = 'EP')
+               #  if not 'max' in mod:
+                canvas.legend.add(base+mod, title = base+mod, mcolor = r.kBlue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
+                canvas.legend.apply(base+mod, pGraph)
+                canvas.addHistogram(pGraph, drawOpt = 'EP')
 
                 outFile.cd()
                 pGraph.Write()
