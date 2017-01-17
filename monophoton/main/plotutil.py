@@ -33,6 +33,13 @@ class GroupSpec(object):
                 if obj.InheritsFrom(ROOT.TH1.Class()):
                     self.templates[obj.GetName()] = obj
 
+            # add a "counter" template
+            if 'count' not in self.templates:
+                gd = ROOT.gDirectory
+                templateDir.cd()
+                self.templates['count'] = ROOT.TH1D('count', '', 1, array.array('d', [0., 1.]))
+                self.templates['count'].SetBinContent(1, 1.)
+                gd.cd()
 
 class SampleSpec(object):
     # use for signal point spec
