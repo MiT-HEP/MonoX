@@ -424,6 +424,7 @@ bool
 TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   unsigned iTau(0);
+  bool hasNonOverlapping(false);
   for (; iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
 
@@ -448,14 +449,15 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
     if (iM != _event.muons.size())
       continue;
 
-    break;
+    _outEvent.taus.push_back(tau);
+    hasNonOverlapping = true;
   }
 
-  return iTau == _event.taus.size();
+  return !hasNonOverlapping;
 }
 
 //--------------------------------------------------------------------
-// BjetVeto
+// LeptonMt
 //--------------------------------------------------------------------
 
 bool
