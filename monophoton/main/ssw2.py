@@ -59,13 +59,13 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-#data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'trivialShower']
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
+# data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-mc_cand = ['monoph', 'purity']
+mc_cand = ['monoph'] # , 'purity']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
-mc_sig = ['monoph', 'purity', 'signalRaw']
+mc_sig = ['monoph', 'purity'] # , 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 
@@ -81,9 +81,9 @@ selectors = {
     'sph-16g-r': defaults(data_sph),
     'sph-16h': defaults(data_sph),
     # MC for signal region
-    'znng-130': applyMod(selectors.kfactor, mc_cand),
-    'wnlg-130': applyMod(selectors.kfactor, mc_cand + mc_lep),
-    'zllg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_dilep),
+    'znng-130': applyMod(selectors.kfactor, mc_sig),
+    'wnlg-130': applyMod(selectors.kfactor, mc_sig + mc_lep),
+    'zllg-130': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
     'wglo': applyMod(selectors.wglo, mc_cand + mc_lep),
     'wglo-500': defaults(mc_cand + mc_lep),
     'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
@@ -125,7 +125,7 @@ selectors = {
 # all the rest are mc_sig
 for sname in allsamples.names():
     if sname not in selectors:
-        selectors[sname] = mc_sig
+        selectors[sname] = defaults(mc_sig)
 
 def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
     snames = []
