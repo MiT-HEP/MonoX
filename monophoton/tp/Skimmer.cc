@@ -248,6 +248,39 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
             tags_[iT].push_back(lepton);
             probes_[iT].push_back(photon);
 
+	    // recompute S16 isolations
+	    double chIsoEA(0.);
+	    double absEta(std::abs(photon.scEta));
+	    if (absEta < 1.)
+	      chIsoEA = 0.0360;
+	    else if (absEta < 1.479)
+	      chIsoEA = 0.0377;
+	    else if (absEta < 2.)
+	      chIsoEA = 0.0306;
+	    else if (absEta < 2.2)
+	      chIsoEA = 0.0283;
+	    else if (absEta < 2.3)
+	      chIsoEA = 0.0254;
+	    else if (absEta < 2.4)
+	      chIsoEA = 0.0217;
+	    else
+	      chIsoEA = 0.0167;
+
+	    probes_[iT][nPairs_[iT]].chIsoS16 = photon.chIso - chIsoEA * event.rho;
+	    if (photon.isEB) {
+	      probes_[iT][nPairs_[iT]].nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
+	      probes_[iT][nPairs_[iT]].phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
+	    }
+	    else {
+	      probes_[iT][nPairs_[iT]].nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
+	      probes_[iT][nPairs_[iT]].phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
+	    }
+
+	    // EA computed with iso/worstIsoEA.py
+	    probes_[iT][nPairs_[iT]].chIsoMax -= 0.094 * event.rho;
+	    if (probes_[iT][nPairs_[iT]].chIsoMax < probes_[iT][nPairs_[iT]].chIso)
+	      probes_[iT][nPairs_[iT]].chIsoMax = probes_[iT][nPairs_[iT]].chIso;
+	    
             ++nPairs_[iT];
             loadEvent = true;
           }

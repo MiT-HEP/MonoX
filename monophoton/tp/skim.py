@@ -79,7 +79,7 @@ elif targets[0] == 'all':
 for confName in skimConfig:
     if confName in targets:
         targets.remove(confName)
-        for sname in skimConfig[targets][0]:
+        for sname in skimConfig[confName][0]:
             if sname not in targets:
                 targets.append(sname)
 
