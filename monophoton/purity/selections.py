@@ -69,7 +69,7 @@ for iEra, era in enumerate(Eras):
 
 # Version = 'Jan13'
 Version = 'MonojetSync'
-versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + s.Version
+versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + Version
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/purity'
 
 from ROOT import *
