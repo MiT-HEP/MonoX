@@ -217,9 +217,9 @@ for loc in s.Locations[:1]:
                     purity = purities[loc][base+mod][ptCut][metCut]
 
                     # fill in row with purity / uncertainty values properly
-                    nomString = '$' + str(round(purity[0], 2)) + r' \pm ' + str(round(purity[1], 2)) + '$'
+                    nomString = '$%.2f \\pm %.2f$' % tuple(purity[:2])
 
-                    systString = str(round(purity[2], 2)) + ' & ' + str(round(purity[3], 2)) + ' & ' + str(round(purity[4], 2)) + ' & ' + str(round(purity[5], 2))
+                    systString = '%.2f & %.2f & %.2f & %.2f' % tuple(purity[2:])
 
                     rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
 
