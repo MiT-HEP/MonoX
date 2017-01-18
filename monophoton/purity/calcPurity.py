@@ -40,7 +40,7 @@ except KeyError:
     metSel = '(1)'
 
 ### Directory stuff so that results are saved and such
-versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
+versDir = s.versionDir
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)

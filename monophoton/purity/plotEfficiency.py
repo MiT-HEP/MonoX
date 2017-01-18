@@ -13,7 +13,7 @@ from plotstyle import SimpleCanvas, RatioCanvas
 from datasets import allsamples
 import selections as s
 
-versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
+versDir = s.versionDir
 outDir = os.path.join(versDir, 'ScaleFactor')
 if not os.path.exists(outDir):
     os.makedirs(outDir)

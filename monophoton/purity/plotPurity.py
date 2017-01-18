@@ -13,15 +13,16 @@ from plotstyle import SimpleCanvas
 from datasets import allsamples
 import selections as s
 
-versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
-outDir = os.path.join(versDir, 'Fitting')
+versDir = s.versionDir 
+# outDir = os.path.join(versDir, 'Fitting')
+outDir = os.environ['CMSPLOTS'] + '/purity/' + s.Version + '/Fitting'
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
-bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
+bases = ['medium'] # ['loose', 'medium', 'tight', 'highpt']
+mods = ['-pixel'] # ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
@@ -98,12 +99,12 @@ for loc in s.Locations[:1]:
 
                     if not match:
                         print "No purity found for skim:", dirName
-                        purities[loc][pid][ptCut][metCut] = (102.5, 0.0)
+                        purities[loc][pid][ptCut][metCut] = (102.5, 0.0, 0.0, 0.0, 0.0, 0.0)
 
                     condorFile.close()
                 except:
                     print "No purity file found for skim:", dirName
-                    purities[loc][pid][ptCut][metCut] = (102.5, 0.0)
+                    purities[loc][pid][ptCut][metCut] = (102.5, 0.0, 0.0, 0.0, 0.0, 0.0)
                        
 pprint(purities)
 
@@ -158,3 +159,94 @@ for loc in s.Locations[:1]:
 
             plotName = "impurity_"+str(loc)+"_"+str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', era+'_'+plotName, logy = False)
+
+outFile.Close()
+
+for loc in s.Locations[:1]:
+    for base in bases:
+        for metCut in MetSels:
+            for iMod, mod in enumerate(mods):
+                
+                # start new table
+                purityFileName = era + '_impurityTable_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFilePath = outDir + '/' + purityFileName
+                purityFile = open(purityFilePath, 'w')
+
+                purityFile.write(r"\documentclass{article}")
+                purityFile.write("\n")
+                purityFile.write(r"\usepackage[paperwidth=152mm, paperheight=58mm, margin=5mm]{geometry}")
+                purityFile.write("\n")
+                purityFile.write(r"\begin{document}")
+                purityFile.write("\n")
+                purityFile.write(r"\pagenumbering{gobble}")
+                purityFile.write("\n")
+
+                # table header based on ID
+                purityFile.write(r"\begin{tabular}{ |c|c|c c c c| }")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+                purityFile.write(r"\multicolumn{6}{ |c| }{Impurity (\%) for " + loc + " " + base+mod +r" photons in data} \\")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+
+                # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
+                purityFile.write(r"$p_{T}$ Range & Nominal & \multicolumn{4}{ |c| }{Sources of Systematic Uncertainty} \\")
+                purityFile.write("\n")
+                purityFile.write(r" (GeV) & & Sideband & Method & Signal Shape & Background Stats \\")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+
+                for iB, ptCut in enumerate(PhotonPtSels):
+
+                    # start new row
+
+                    # string formatting to make pT label look nice
+                    if 'Inclusive' in ptCut:
+                        ptString = 'Inclusive'
+                    else:
+                        lowEdge = ptCut.split('t')[2]
+                        highEdge = ptCut.split('to')[-1]
+                        if highEdge == 'Inf':
+                            highEdge = r'$\infty$'
+
+                        ptString = ' (' + lowEdge +', ' + highEdge +') '
+
+                    purity = purities[loc][base+mod][ptCut][metCut]
+
+                    # fill in row with purity / uncertainty values properly
+                    nomString = '$' + str(round(purity[0], 2)) + r' \pm ' + str(round(purity[1], 2)) + '$'
+
+                    systString = str(round(purity[2], 2)) + ' & ' + str(round(purity[3], 2)) + ' & ' + str(round(purity[4], 2)) + ' & ' + str(round(purity[5], 2))
+
+                    rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
+
+                    purityFile.write(rowString)
+                    purityFile.write('\n')
+
+                # end table
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+                purityFile.write(r"\end{tabular}")
+                purityFile.write("\n")
+                
+                # end tex file
+                purityFile.write(r"\end{document}")
+                purityFile.close()
+    
+                # convert tex to pdf
+                pdflatex = Popen( ["pdflatex",purityFilePath,"-interaction nonstopmode"]
+                                  ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+                pdfout = pdflatex.communicate()
+                print pdfout[0]
+                if not pdfout[1] == "":
+                    print pdfout[1]
+
+
+                # convert tex/pdf to png
+                    
+    
+    
+    

@@ -1,5 +1,7 @@
-skimDir = '/data/t3home000/yiiyama/studies/monophoton/efake_skim'
-outputDir = '/data/t3home000/yiiyama/studies/monophoton/efake'
+import os
+
+skimDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton/efake_skim'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.
