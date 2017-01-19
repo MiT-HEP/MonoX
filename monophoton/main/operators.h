@@ -199,6 +199,14 @@ class PhotonSelection : public Cut {
     CHWorstIso11,
     Sieie05,
     Sipip05,
+    CHIsoS16,
+    NHIsoS16,
+    PhIsoS16,
+    CHIsoMaxS16,
+    NHIsoS16Tight,
+    PhIsoS16Tight,
+    NHIsoS16VLoose,
+    PhIsoS16VLoose,
     nSelections
   };
 
