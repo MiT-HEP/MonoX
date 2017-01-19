@@ -28,9 +28,12 @@ ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
 photonFullSelection = [
     'HOverE',
     'Sieie',
-    'CHIsoMax',
-    'NHIso',
-    'PhIso',
+    # 'CHIsoMax',
+    # 'NHIso',
+    # 'PhIso',
+    'CHIsoMaxS16',
+    'NHIsoS16',
+    'PhIsoS16',
     'EVeto',
     'MIP49',
     'Time',
@@ -41,7 +44,10 @@ photonFullSelection = [
 ]
 
 # MEDIUM ID
-photonWP = 1
+# photonWP = 1
+
+# LOOSE ID
+photonWP = 0
 
 def getFromFile(path, name, newname = ''):
     if newname == '':
@@ -447,10 +453,10 @@ def purityUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
+    sels.remove('CHIsoMaxS16')
     sels.append('Sieie15')
-    sels.append('NHIsoTight')
-    sels.append('PhIsoTight')
+    sels.append('NHIsoS16Tight')
+    sels.append('PhIsoS16Tight')
     sels.append('CHIsoMax11')
 
     for sel in sels:
@@ -473,14 +479,14 @@ def purityDown(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
 
     sels = list(photonFullSelection)
-    sels.remove('NHIso')
-    sels.remove('PhIso')
+    sels.remove('NHIsoS16')
+    sels.remove('PhIsoS16')
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
+    sels.remove('CHIsoMaxS16')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
-    sels.append('NHIso11')
-    sels.append('PhIso3')
+    sels.append('NHIsoS16VLoose')
+    sels.append('PhIsoS16VLoose')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -510,7 +516,7 @@ def hadProxy(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
+    sels.remove('CHIsoMaxS16')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
 
@@ -539,9 +545,9 @@ def hadProxyUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
-    sels.append('NHIsoTight')
-    sels.append('PhIsoTight')
+    sels.remove('CHIsoMaxS16')
+    sels.append('NHIsoS16Tight')
+    sels.append('PhIsoS16Tight')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
 
@@ -570,13 +576,13 @@ def hadProxyDown(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
-    sels.remove('NHIso')
-    sels.remove('PhIso')
+    sels.remove('CHIsoMaxS16')
+    sels.remove('NHIsoS16')
+    sels.remove('PhIsoS16')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
-    sels.append('NHIso11')
-    sels.append('PhIso3')
+    sels.append('NHIsoS16VLoose')
+    sels.append('PhIsoS16VLoose')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -604,7 +610,7 @@ def gjets(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMax')
+    sels.remove('CHIsoMaxS16')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
 
