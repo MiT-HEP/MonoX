@@ -508,6 +508,9 @@ if PRINTNUISANCE:
     for n in sorted(nuisances):
         print n, 'param 0 1'
 
+if hasattr(config, 'outdir'):
+    if not os.path.isdir(config.outdir):
+        os.makedirs(config.outdir)
 workspace.writeToFile(config.outname)
 
 

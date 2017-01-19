@@ -1,17 +1,22 @@
-histDir = '/data/t3home000/yiiyama/studies/monophoton'
+import os
+
+histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
 distribution = 'phoPtHighMet'
 
-outname = histDir + '/fit/ws_' distribution + '.root'
-plotsOutname = histDir + '/fit/ws_' + distribution + '_plots.root'
-sourcedir = histDir + '/distributions_13fbinv'
-carddir = histDir + '/datacards_13fbinv'
+version = 'tauVeto'
+
+outdir = histDir + '/fit/' + version
+outname = outdir + '/ws_' + distribution + '.root'
+plotsOutname = outdir + '/ws_' + distribution + '_plots.root'
+sourcedir = histDir + '/distributions/' + version
+carddir = histDir + '/datacards/' + version
 
 filename = '{region}_{distribution}.root'
 histname = '{distribution}-{process}'
 
-sr = 'bmonoph' # blinded version
-#sr = 'monoph'
+# sr = 'bmonoph' # blinded version
+sr = 'monoph'
 
 regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowmt']
 processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
