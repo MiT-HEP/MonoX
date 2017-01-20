@@ -67,9 +67,10 @@ for iEra, era in enumerate(Eras):
 
 ### Now start actual parameters that need to be changed ###
 
-# Version = 'Jan13'
-Version = 'MonojetSync'
-versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + Version
+Version = 'Jan13'
+# Version = 'MonojetSync'
+# versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + Version
+versionDir =  '/scratch5/' + os.environ['USER'] + '/studies/purity/' + Version
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/purity'
 
 from ROOT import *
@@ -222,8 +223,8 @@ noisyRegionCut = '!(photons.eta > 0. && photons.eta < 0.15 && photons.phi > 0.52
 
 monophIdCut = ' && '.join([mipCut, timeCut, sieieNonzeroCut, sipipNonzeroCut, noisyRegionCut])
 
-# cutPhotonPtHigh = [175,200,250,300,350,400,450] #,500,550,600] 
-cutPhotonPtHigh = [175, 200, 225, 250, 280, 320, 375, 425]
+cutPhotonPtHigh = [175,200,250,300,350,400,450] #,500,550,600] 
+# cutPhotonPtHigh = [175, 200, 225, 250, 280, 320, 375, 425]
 PhotonPtSels = { 'PhotonPtInclusive' : '((photons.scRawPt > '+str(cutPhotonPtHigh[0])+'))' }
 for low, high in zip(cutPhotonPtHigh, cutPhotonPtHigh[1:]):
     PhotonPtSels['PhotonPt'+str(low)+'to'+str(high)] = '((photons.scRawPt > '+str(low)+') && (photons.scRawPt < '+str(high)+'))' 

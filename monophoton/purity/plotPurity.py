@@ -21,8 +21,8 @@ if not os.path.exists(outDir):
 
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
-bases = ['medium'] # ['loose', 'medium', 'tight', 'highpt']
-mods = ['-pixel'] # ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
@@ -41,7 +41,7 @@ for loc in s.Locations[:1]:
                 
                 dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
                 condorFileName = os.path.join(versDir,dirName,"results.out")
-                # print condorFileName
+                print condorFileName
                 try:
                     condorFile = open(condorFileName)
 
@@ -157,7 +157,7 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = "impurity_"+str(loc)+"_"+str(base)
+            plotName = "impurity_plot_"+str(loc)+"_"+str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', era+'_'+plotName, logy = False)
 
 outFile.Close()
@@ -168,7 +168,7 @@ for loc in s.Locations[:1]:
             for iMod, mod in enumerate(mods):
                 
                 # start new table
-                purityFileName = era + '_impurityTable_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFileName = era + '_impurity_table_' + str(loc) + '_' + str(base+mod) + '.tex'
                 purityFilePath = outDir + '/' + purityFileName
                 purityFile = open(purityFilePath, 'w')
 
@@ -194,7 +194,7 @@ for loc in s.Locations[:1]:
                 # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
                 purityFile.write(r"$p_{T}$ Range & Nominal & \multicolumn{4}{ |c| }{Sources of Systematic Uncertainty} \\")
                 purityFile.write("\n")
-                purityFile.write(r" (GeV) & & Sideband & Method & Signal Shape & Background Stats \\")
+                purityFile.write(r" (GeV) & & Sideband & CH Iso Shape & Signal Shape & Bgkd. Stats \\")
                 purityFile.write("\n")
                 purityFile.write(r"\hline")
                 purityFile.write("\n")
@@ -215,6 +215,7 @@ for loc in s.Locations[:1]:
                         ptString = ' (' + lowEdge +', ' + highEdge +') '
 
                     purity = purities[loc][base+mod][ptCut][metCut]
+                    print purity
 
                     # fill in row with purity / uncertainty values properly
                     nomString = '$%.2f \\pm %.2f$' % tuple(purity[:2])
@@ -244,9 +245,12 @@ for loc in s.Locations[:1]:
                 if not pdfout[1] == "":
                     print pdfout[1]
 
-
                 # convert tex/pdf to png
-                    
-    
-    
+                convert = Popen( ["convert",purityFilePath.replace(".tex",".pdf")
+                                  ,purityFilePath.replace(".tex",".png") ]
+                                 ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+                conout = convert.communicate()
+                print conout[0]
+                if not conout[1] == "":
+                    print conout[1]    
     
