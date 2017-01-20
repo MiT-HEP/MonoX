@@ -27,7 +27,7 @@ isos = [ ('', '') ] # ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), 
 
 baseSel = 'jets.pt[0] > 100. && t1Met.met < 60. && photons.size == 1 && photons.pixelVeto[0]'
 
-samples = [ ('',  baseSel+' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIso[0] < 11.0 && photons.chIso[0] > 3.32))')
+samples = [ ('',  baseSel+' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.295))')
             ,('Down', baseSel)
             ,('Up', baseSel)
             ]
