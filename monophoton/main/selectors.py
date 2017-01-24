@@ -64,11 +64,11 @@ puWeight = getFromFile(datadir + '/pileup.root', 'puweight')
 
 photonSF = getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', 'photonSF')
 
-hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfact')
+hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
 hadproxyupWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactUp')
 hadproxydownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactDown')
-hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactPurityUp')
-hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactPurityDown')
+hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
+hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
 eleproxyWeight = getFromFile(datadir + '/efake_data_pt.root', 'frate')
 
@@ -442,6 +442,31 @@ def purity(sample, selector):
 
     return selector
 
+def purityNom(sample, selector):
+    """
+    EM Object is true photon like, but with inverted sieie and CHIso requirements.
+    """
+
+    selector = purityBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('CHIsoMaxS16')
+    sels.append('Sieie15')
+    sels.append('CHIsoMax11')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+
+    return selector
+
 def purityUp(sample, selector):
     """
     EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
@@ -463,9 +488,9 @@ def purityUp(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -492,9 +517,9 @@ def purityDown(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
-    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
-    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIsoS16, ROOT.PhotonSelection.PhIsoS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
 
     return selector
 
@@ -524,9 +549,9 @@ def hadProxy(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -555,9 +580,9 @@ def hadProxyUp(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -588,9 +613,9 @@ def hadProxyDown(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
-    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
-    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIsoS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
 
     return selector
 
@@ -648,6 +673,67 @@ def halo(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
 
     for sel in photonFullSelection:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
+def haloMIP(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    for sel in photonFullSelection:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, 0)
+
+    return selector
+
+def haloMET(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('MIP49')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
+def haloLoose(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut and halo tag.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.append('Sieie15')
+
+    for sel in sels:
         if sel == 'MIP49':
             photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
         else:

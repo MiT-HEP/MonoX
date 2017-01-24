@@ -23,10 +23,14 @@ defaultSelectors = {
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
+    'purityNom': selectors.purityNom,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
     'gjets': selectors.gjets,
     'halo': selectors.halo,
+    'haloMIP': selectors.haloMIP,
+    'haloMET': selectors.haloMET,
+    'haloLoose': selectors.haloLoose,
     'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
     'monomu': selectors.monomuon,
@@ -59,8 +63,10 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
+data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityNom', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'haloMIP', 'haloMET', 'haloLoose', 'trivialShower']
 # data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
+# data_sph = ['hfake', 'hfakeUp', 'hfakeDown', 'purityNom', 'purityUp', 'purityDown']
+# data_sph = ['purityNom']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
