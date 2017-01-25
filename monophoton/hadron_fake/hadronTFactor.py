@@ -17,7 +17,8 @@ lumi = sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph
 canvas = SimpleCanvas(lumi = lumi)
 rcanvas = RatioCanvas(lumi = lumi)
 
-binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
+# binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
+binning = array.array('d', [175., 200., 250., 300., 350., 400., 450., 500.])
 pid = 'loose'
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
@@ -211,4 +212,4 @@ for samp, sel in samples:
     iUp = rcanvas.addHistogram(tfactUp, drawOpt = 'HIST')
     iDown = rcanvas.addHistogram(tfactDown, drawOpt = 'HIST')
 
-    rcanvas.printWeb('monophoton/hadronTFactor', 'tfactor'+samp, hList = [iUp, iDown, iNom], rList = [iUp, iDown, iNom] )
+    rcanvas.printWeb('monophoton/hadronTFactor', 'tfactor'+samp, hList = [iUp, iDown, iNom], rList = [iNom, iUp, iDown] )
