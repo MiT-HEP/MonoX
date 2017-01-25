@@ -803,6 +803,38 @@ def dielectron(sample, selector):
 
     return selector
 
+def dielectronHadProxy(sample, selector):
+    selector = electronBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(2, 0)
+
+    dielMass = ROOT.Mass()
+    dielMass.setPrefix('diel')
+    dielMass.setMin(60.)
+    dielMass.setMax(120.)
+    dielMass.setCollection1(ROOT.kElectrons)
+    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setIgnoreDecision(True)
+    selector.addOperator(dielMass)
+
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf.addFactor(electronTightSF)
+        idsf.addFactor(electronLooseSF)
+        idsf.setNParticles(2)
+        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
+        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track.addFactor(electronTrackSF)
+        track.addFactor(electronTrackSF)
+        track.setNParticles(2)
+        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
+        selector.addOperator(track)
+        
+    selector = hadProxy(sample, selector)
+
+    return selector
+
 def monoelectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
@@ -878,6 +910,38 @@ def dimuon(sample, selector):
         track.setNParticles(2)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
+
+    return selector
+
+def dimuonHadProxy(sample, selector):
+    selector = muonBase(sample, selector)
+    selector.findOperator('LeptonSelection').setN(0, 2)
+
+    dimuMass = ROOT.Mass()
+    dimuMass.setPrefix('dimu')
+    dimuMass.setMin(60.)
+    dimuMass.setMax(120.)
+    dimuMass.setCollection1(ROOT.kMuons)
+    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setIgnoreDecision(True)
+    selector.addOperator(dimuMass)
+
+    if not sample.data:
+        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf.addFactor(muonTightSF)
+        idsf.addFactor(muonLooseSF)
+        idsf.setNParticles(2)
+        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+        selector.addOperator(idsf)
+
+        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track.addFactor(muonTrackSF)
+        track.addFactor(muonTrackSF)
+        track.setNParticles(2)
+        track.setVariable(ROOT.IDSFWeight.kNpv)
+        selector.addOperator(track)
+
+    selector = hadProxy(sample, selector)
 
     return selector
 
