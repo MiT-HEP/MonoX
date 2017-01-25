@@ -21,10 +21,10 @@ photonDataPrescaled = [
     ('sph-16b-r', 1),
     ('sph-16c-r', 1),
     ('sph-16d-r', 1),
-    ('sph-16e-r', 4),
-    ('sph-16f-r', 4),
-    ('sph-16g-r', 4),
-    ('sph-16h', 4)
+#     ('sph-16e-r', 4),
+#     ('sph-16f-r', 4),
+#     ('sph-16g-r', 4),
+#     ('sph-16h', 4)
 ]
 
 gj = ['gj-100', 'gj-200', 'gj-400', 'gj-600']
@@ -49,6 +49,8 @@ def getConfig(confName):
     if confName == 'monoph':
         config = PlotConfig('monoph')
         config.blind = True
+        dataSamples = photonDataICHEP
+
         for sname, prescale in photonDataPrescaled:
             config.addObs(sname, prescale = prescale)
 
@@ -83,10 +85,10 @@ def getConfig(confName):
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 18.8 / 36.4, templateDir = spikeDir),
-            GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.),
-            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
+            GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
+            GroupSpec('halo', 'Beam halo', samples = dataSamples, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.), # norm set here
+            GroupSpec('hfake', 'Hadronic fakes', samples = dataSamples, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('efake', 'Electron fakes', samples = dataSamples, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
@@ -164,6 +166,9 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         # Specific systematic variations
+        # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
+        # config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIP', 'haloMET'))) # variations don't have the same norm as nominal
+        # config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.05))
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
@@ -321,7 +326,8 @@ def getConfig(confName):
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
+            # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
+            group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
 
         for gname in ['zg']:
             group = config.findGroup(gname)
@@ -394,7 +400,8 @@ def getConfig(confName):
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
+            # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
+            group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
 
         for gname in ['zg']:
             group = config.findGroup(gname)
@@ -471,7 +478,8 @@ def getConfig(confName):
             
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('muonSF', reweight = 'MuonSF'))
+            # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
+            group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
 
         for gname in ['zg', 'wg']:
             group = config.findGroup(gname)
@@ -549,7 +557,8 @@ def getConfig(confName):
             
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('electronSF', reweight = 'ElectronSF'))
+            # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
+            group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
 
         for gname in ['zg', 'wg']:
             group = config.findGroup(gname)
