@@ -188,6 +188,7 @@ if __name__ == '__main__':
     argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
+    argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -204,6 +205,9 @@ if __name__ == '__main__':
     if (compiled < 0 ):
         print "Couldn't compile Skimmer.cc. Quitting."
         sys.exit()
+
+    if args.compileOnly:
+        sys.exit(0)
 
     snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
 

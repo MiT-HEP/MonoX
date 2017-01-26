@@ -83,10 +83,10 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
         # the group must have a template for this vardef
         hist.Add(group.templates[vardef.name])
 
-    postscale = 1.
+    normscale = 1.
     if group.norm >= 0. and hist.GetSumOfWeights() != 0.:
-        postscale = group.norm / hist.GetSumOfWeights()
-        hist.Scale(postscale)
+        normscale = group.norm / hist.GetSumOfWeights()
+        hist.Scale(normscale)
 
     varhists = {}
 
@@ -146,7 +146,7 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
         for vhists in varhists.values():
             for vhist in vhists:
                 if vhist.GetSumOfWeights() != 0.:
-                    vhist.Scale(postscale)
+                    vhist.Scale(normscale)
 
     # write raw histograms before formatting (which includes bin width normalization)
     if args.saveTrees:
@@ -170,6 +170,7 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
         writeHist(hist)
         for vhists in varhists.values():
             for vhist in vhists:
+                print vhist.GetSumOfWeights()
                 writeHist(vhist)
 
     # apply variations as uncertainties
