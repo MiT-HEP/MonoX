@@ -157,8 +157,8 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = "impurity_plot_"+str(loc)+"_"+str(base)
-            canvas.printWeb('purity/'+s.Version+'/Fitting', era+'_'+plotName, logy = False)
+            plotName = 'Plot_' + era + '_impurity_' + str(loc) + '_' + str(base)
+            canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
 
 outFile.Close()
 
@@ -168,7 +168,7 @@ for loc in s.Locations[:1]:
             for iMod, mod in enumerate(mods):
                 
                 # start new table
-                purityFileName = era + '_impurity_table_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFileName = 'table_' + era + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
                 purityFilePath = outDir + '/' + purityFileName
                 purityFile = open(purityFilePath, 'w')
 
