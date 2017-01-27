@@ -29,12 +29,14 @@ binWidthNormalized = False
 # In the fit, the normalization of the source and the transfer factors are allowed to float, with constraints
 # on the transfer factors.
 links = [
-    (('zg', 'diel'), ('zg', sr)),
-    (('zg', 'dimu'), ('zg', sr)),
-    (('wg', 'monoel'), ('wg', sr)),
-    (('wg', 'monomu'), ('wg', sr)),
-    (('zg', 'monoel'), ('zg', sr)),
-    (('zg', 'monomu'), ('zg', sr)),
+    # (('zg', 'diel'), ('zg', sr)),
+    # (('zg', 'dimu'), ('zg', sr)),
+    # (('wg', 'monoel'), ('wg', sr)),
+    # (('wg', 'monomu'), ('wg', sr)),
+    # (('zg', 'monoel'), ('zg', sr)),
+    # (('zg', 'monomu'), ('zg', sr)),
+    (('wg', 'monoel'), ('zg', 'diel')),
+    (('wg', 'monomu'), ('zg', 'dimu')),
     (('wg', sr), ('zg', sr))
 ]
 
@@ -59,6 +61,12 @@ deshapedNuisances = [
 # Correlation in ratios.
 # {(target, source, nuisance): correlation}
 ratioCorrelations = {
+    (('wg', 'monoel'), ('zg', 'diel'), 'vgQCDscale'): 0.8,
+    (('wg', 'monoel'), ('zg', 'diel'), 'vgPDF'): 1.,
+    (('wg', 'monoel'), ('zg', 'diel'), 'EWK'): 1.,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'vgQCDscale'): 0.8,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'vgPDF'): 1.,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'EWK'): 1.,
     (('wg', sr), ('zg', sr), 'vgQCDscale'): 0.8,
     (('wg', sr), ('zg', sr), 'vgPDF'): 1.,
     (('wg', sr), ('zg', sr), 'EWK'): 1.
