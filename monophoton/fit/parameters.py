@@ -4,7 +4,7 @@ histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
 distribution = 'phoPtHighMet'
 
-version = 'tauVeto'
+version = 'ICHEP'
 
 outdir = histDir + '/fit/' + version
 outname = outdir + '/ws_' + distribution + '.root'
@@ -65,6 +65,6 @@ ratioCorrelations = {
 }
 
 # Nuisances affecting normalization only
-scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale']
+scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
 
 # def customize(workspace):
