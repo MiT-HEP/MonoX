@@ -281,6 +281,7 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIsoS16Tight] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][2]);
   cutres[NHIsoS16VLoose] = (_photon.nhIsoS16 < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
   cutres[PhIsoS16VLoose] = (_photon.phIsoS16 < 11.); // loose WP cut is 8.3 at 1 TeV
+  cutres[CHIsoS16VLoose] = (_photon.chIsoS16 < 11.); 
 
   for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC] = cutres[iC];
