@@ -216,7 +216,9 @@ class PhotonSelection : public Cut {
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
 
-  // save photons passing the selection (bool->true) or fail (bool->false)
+  // bool->true: add photon condition "pass one of the selections"
+  // bool->false: add photon condition "fail one of the selections"
+  // Photons are saved when they match all the conditions
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   // skip event if there is a photon passing the selection (bool->true) or failing (bool->false)
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
