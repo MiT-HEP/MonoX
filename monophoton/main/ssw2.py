@@ -31,6 +31,11 @@ defaultSelectors = {
     'haloMIP': selectors.haloMIP,
     'haloMET': selectors.haloMET,
     'haloLoose': selectors.haloLoose,
+    'haloMIPLoose': selectors.haloMIPLoose,
+    'haloMETLoose': selectors.haloMETLoose,
+    'haloMedium': selectors.haloMedium,
+    'haloMIPMedium': selectors.haloMIPMedium,
+    'haloMETMedium': selectors.haloMETMedium,
     'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
     'dimuHfake': selectors.dimuonHadProxy,
@@ -65,8 +70,9 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-data_sph =  ['monoph', 'efake', 'hfake', 'halo', 'trivialShower'] 
-data_sph += ['hfakeUp', 'hfakeDown', 'haloMIP', 'haloMET', 'haloLoose']
+data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
+data_sph += ['halo', 'haloMIP', 'haloMET', 'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
+data_sph += ['hfakeUp', 'hfakeDown' ]
 data_sph += ['purity', 'purityNom', 'purityUp', 'purityDown', 'gjets'] 
 data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
 data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 

@@ -32,6 +32,7 @@ photonFullSelection = [
     # 'NHIso',
     # 'PhIso',
     'CHIsoMaxS16',
+    # 'CHIsoS16',
     'NHIsoS16',
     'PhIsoS16',
     'EVeto',
@@ -453,9 +454,11 @@ def purityNom(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('Sieie15')
-    sels.append('CHIsoMax11')
+    # sels.append('CHIsoMax11')
+    sels.append('CHIsoS16VLoose')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -478,11 +481,13 @@ def purityUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('Sieie15')
     sels.append('NHIsoS16Tight')
     sels.append('PhIsoS16Tight')
-    sels.append('CHIsoMax11')
+    # sels.append('CHIsoMax11')
+    sels.append('CHIsoS16VLoose')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -507,9 +512,11 @@ def purityDown(sample, selector):
     sels.remove('NHIsoS16')
     sels.remove('PhIsoS16')
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('Sieie15')
-    sels.append('CHIsoMax11')
+    # sels.append('CHIsoMax11')
+    sels.append('CHIsoS16VLoose')
     sels.append('NHIsoS16VLoose')
     sels.append('PhIsoS16VLoose')
 
@@ -541,7 +548,8 @@ def hadProxy(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('Sieie15')
     sels.append('CHIsoMax11')
 
@@ -570,7 +578,8 @@ def hadProxyUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('NHIsoS16Tight')
     sels.append('PhIsoS16Tight')
     sels.append('Sieie15')
@@ -601,7 +610,8 @@ def hadProxyDown(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.remove('NHIsoS16')
     sels.remove('PhIsoS16')
     sels.append('Sieie15')
@@ -635,9 +645,11 @@ def gjets(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
-    sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoMaxS16')
+    sels.remove('CHIsoS16')
     sels.append('Sieie15')
-    sels.append('CHIsoMax11')
+    # sels.append('CHIsoMax11')
+    sels.append('CHIsoS16VLoose')
 
     for sel in sels:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -742,6 +754,118 @@ def haloLoose(sample, selector):
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
+
+def haloMIPLoose(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.append('Sieie15')
+
+    for sel in sels:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, 0)
+
+    return selector
+
+def haloMETLoose(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('MIP49')
+    sels.remove('Sieie')
+    sels.append('Sieie15')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
+def haloMedium(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut and halo tag.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.append('Sieie12')
+
+    for sel in sels:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
+def haloMIPMedium(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.append('Sieie12')
+
+    for sel in sels:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, 0)
+
+    return selector
+
+def haloMETMedium(sample, selector):
+    """
+    Candidate sample but with inverted MIP cut.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    sels = list(photonFullSelection)
+    sels.remove('MIP49')
+    sels.remove('Sieie')
+    sels.append('Sieie12')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
 
 def trivialShower(sample, selector):
     """
