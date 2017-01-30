@@ -13,20 +13,21 @@ from plotstyle import SimpleCanvas
 from datasets import allsamples
 import selections as s
 
-versDir = os.path.join('/data/t3home000/ballen/hist/purity',s.Version)
-outDir = os.path.join(versDir, 'Fitting')
+versDir = s.versionDir 
+# outDir = os.path.join(versDir, 'Fitting')
+outDir = os.environ['CMSPLOTS'] + '/purity/' + s.Version + '/Fitting'
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max', '-pixel-monoph-worst']
+mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring15'
+era = 'Spring16'
 
 purities = {}
 for loc in s.Locations[:1]:
@@ -40,65 +41,70 @@ for loc in s.Locations[:1]:
                 
                 dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
                 condorFileName = os.path.join(versDir,dirName,"results.out")
-                # print condorFileName
-                condorFile = open(condorFileName)
-                
-                match = False
-                purity = [1, 0, 0, 0, 0, 0]
-                for line in condorFile:
-                    if "Nominal purity is:" in line:
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[0] = (1.0 - float(tmp[-1].strip("(),"))) * 100
-                            # print purity[0]
-                    elif "Total uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[1] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Sideband uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[2] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Method uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[3] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Signal shape uncertainty is:" in line: # need to add t back
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[4] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                    elif "Background stat uncertainty is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            purity[5] = float(tmp[-1].strip("(),")) * 100
-                            #print purity
-                purities[loc][pid][ptCut][metCut] = tuple(purity)
+                print condorFileName
+                try:
+                    condorFile = open(condorFileName)
 
-                if not match:
-                    print "No purity found for skim:", dirName
-                    purities[loc][pid][ptCut][metCut] = (102.5, 0.0)
-                condorFile.close()
+                    match = False
+                    purity = [1, 0, 0, 0, 0, 0]
+                    for line in condorFile:
+                        if "Nominal purity is:" in line:
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[0] = (1.0 - float(tmp[-1].strip("(),"))) * 100
+                                # print purity[0]
+                        elif "Total uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[1] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Sideband uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[2] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Method uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[3] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Signal shape uncertainty is:" in line: # need to add t back
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[4] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                        elif "Background stat uncertainty is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                purity[5] = float(tmp[-1].strip("(),")) * 100
+                                #print purity
+                    purities[loc][pid][ptCut][metCut] = tuple(purity)
+
+                    if not match:
+                        print "No purity found for skim:", dirName
+                        purities[loc][pid][ptCut][metCut] = (102.5, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+                    condorFile.close()
+                except:
+                    print "No purity file found for skim:", dirName
+                    purities[loc][pid][ptCut][metCut] = (102.5, 0.0, 0.0, 0.0, 0.0, 0.0)
                        
 pprint(purities)
 
@@ -138,10 +144,10 @@ for loc in s.Locations[:1]:
                     pGraph.SetPoint(iB, center, purity[0])
                     pGraph.SetPointError(iB, exl, exh, purity[1], purity[1])
 
-                if not 'max' in mod:
-                    canvas.legend.add(base+mod, title = base+mod, mcolor = r.kOrange+iMod-1, lcolor = r.kOrange+iMod-1, lwidth = 2)
-                    canvas.legend.apply(base+mod, pGraph)
-                    canvas.addHistogram(pGraph, drawOpt = 'EP')
+               #  if not 'max' in mod:
+                canvas.legend.add(base+mod, title = base+mod, mcolor = r.kBlue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
+                canvas.legend.apply(base+mod, pGraph)
+                canvas.addHistogram(pGraph, drawOpt = 'EP')
 
                 outFile.cd()
                 pGraph.Write()
@@ -151,5 +157,100 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = "impurity_"+str(loc)+"_"+str(base)
-            canvas.printWeb('purity/'+s.Version+'/Fitting', era+'_'+plotName, logy = False)
+            plotName = 'Plot_' + era + '_impurity_' + str(loc) + '_' + str(base)
+            canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
+
+outFile.Close()
+
+for loc in s.Locations[:1]:
+    for base in bases:
+        for metCut in MetSels:
+            for iMod, mod in enumerate(mods):
+                
+                # start new table
+                purityFileName = 'table_' + era + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFilePath = outDir + '/' + purityFileName
+                purityFile = open(purityFilePath, 'w')
+
+                purityFile.write(r"\documentclass{article}")
+                purityFile.write("\n")
+                purityFile.write(r"\usepackage[paperwidth=152mm, paperheight=58mm, margin=5mm]{geometry}")
+                purityFile.write("\n")
+                purityFile.write(r"\begin{document}")
+                purityFile.write("\n")
+                purityFile.write(r"\pagenumbering{gobble}")
+                purityFile.write("\n")
+
+                # table header based on ID
+                purityFile.write(r"\begin{tabular}{ |c|c|c c c c| }")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+                purityFile.write(r"\multicolumn{6}{ |c| }{Impurity (\%) for " + loc + " " + base+mod +r" photons in data} \\")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+
+                # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
+                purityFile.write(r"$p_{T}$ Range & Nominal & \multicolumn{4}{ |c| }{Sources of Systematic Uncertainty} \\")
+                purityFile.write("\n")
+                purityFile.write(r" (GeV) & & Sideband & CH Iso Shape & Signal Shape & Bgkd. Stats \\")
+                purityFile.write("\n")
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+
+                for iB, ptCut in enumerate(PhotonPtSels):
+
+                    # start new row
+
+                    # string formatting to make pT label look nice
+                    if 'Inclusive' in ptCut:
+                        ptString = 'Inclusive'
+                    else:
+                        lowEdge = ptCut.split('t')[2]
+                        highEdge = ptCut.split('to')[-1]
+                        if highEdge == 'Inf':
+                            highEdge = r'$\infty$'
+
+                        ptString = ' (' + lowEdge +', ' + highEdge +') '
+
+                    purity = purities[loc][base+mod][ptCut][metCut]
+                    print purity
+
+                    # fill in row with purity / uncertainty values properly
+                    nomString = '$%.2f \\pm %.2f$' % tuple(purity[:2])
+
+                    systString = '%.2f & %.2f & %.2f & %.2f' % tuple(purity[2:])
+
+                    rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
+
+                    purityFile.write(rowString)
+                    purityFile.write('\n')
+
+                # end table
+                purityFile.write(r"\hline")
+                purityFile.write("\n")
+                purityFile.write(r"\end{tabular}")
+                purityFile.write("\n")
+                
+                # end tex file
+                purityFile.write(r"\end{document}")
+                purityFile.close()
+    
+                # convert tex to pdf
+                pdflatex = Popen( ["pdflatex",purityFilePath,"-interaction nonstopmode"]
+                                  ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+                pdfout = pdflatex.communicate()
+                print pdfout[0]
+                if not pdfout[1] == "":
+                    print pdfout[1]
+
+                # convert tex/pdf to png
+                convert = Popen( ["convert",purityFilePath.replace(".tex",".pdf")
+                                  ,purityFilePath.replace(".tex",".png") ]
+                                 ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+                conout = convert.communicate()
+                print conout[0]
+                if not conout[1] == "":
+                    print conout[1]    
+    

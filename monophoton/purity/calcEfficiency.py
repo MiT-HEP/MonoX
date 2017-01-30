@@ -24,7 +24,7 @@ except:
 
 inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
 
-versDir = os.path.join('/data/t3home000/ballen/hist/purity', s.Version)
+versDir = s.versionDir
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
@@ -38,15 +38,25 @@ filePath = os.path.join(plotDir, 'mceff.out')
 tree = ROOT.TChain('events')
 print config.skimDir
 # tree.Add(config.skimDir + '/gj-40_purity.root')
-tree.Add(config.skimDir + '/gj-100_purity.root')
-tree.Add(config.skimDir + '/gj-200_purity.root')
-tree.Add(config.skimDir + '/gj-400_purity.root')
-tree.Add(config.skimDir + '/gj-600_purity.root')
-# tree.Add(config.skimDir + '/znng-130_purity.root')
-# tree.Add(config.skimDir + '/dmv-500-1_purity.root')
-# tree.Add(config.skimDir + '/dmv-1000-1_purity.root')
-# tree.Add(config.skimDir + '/dmv-2000-1_purity.root')
-
+# tree.Add(config.skimDir + '/gj-100_purity.root')
+# tree.Add(config.skimDir + '/gj-200_purity.root')
+# tree.Add(config.skimDir + '/gj-400_purity.root')
+# tree.Add(config.skimDir + '/gj-600_purity.root')
+tree.Add(config.skimDir + '/znng-130_purity.root')
+tree.Add(config.skimDir + '/zllg-130_purity.root')
+tree.Add(config.skimDir + '/wnlg-130_purity.root')
+"""
+for samp in ['dma', 'dmv']:
+    tree.Add(config.skimDir + '/' + samp + '-500-1_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-1000-1_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-1000-150_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-2000-1_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-2000-500_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-1_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-10_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-50_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-150_purity.root')
+"""
 
 print tree.GetEntries()
 

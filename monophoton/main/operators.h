@@ -173,33 +173,42 @@ class GenPhotonVeto : public Cut {
 class PhotonSelection : public Cut {
  public:
   enum Selection {
-    HOverE,
+    HOverE,               // 0
     Sieie,
     CHIso,
     NHIso,
     PhIso,
-    EVeto,
+    EVeto,                // 5
     CSafeVeto,
     MIP49,
     Time,
     SieieNonzero,
-    SipipNonzero,
+    SipipNonzero,         // 10
     E2E995,
     NoisyRegion,
     Sieie12,
     Sieie15,
-    CHIso11,
+    CHIso11,              // 15
     NHIso11,
     PhIso3,
     NHIsoTight,
     PhIsoTight,
-    CHIsoMax,
+    CHIsoMax,             // 20
     CHIsoMax11,
     CHWorstIso,
     CHWorstIso11,
     Sieie05,
-    Sipip05,
-    nSelections
+    Sipip05,              // 25 
+    CHIsoS16,
+    NHIsoS16,
+    PhIsoS16,
+    CHIsoMaxS16,
+    NHIsoS16Tight,        // 30
+    PhIsoS16Tight,
+    NHIsoS16VLoose,
+    PhIsoS16VLoose,
+    CHIsoS16VLoose,
+    nSelections           // 35
   };
 
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}

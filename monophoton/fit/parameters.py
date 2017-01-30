@@ -1,17 +1,22 @@
-histDir = '/data/t3home000/yiiyama/studies/monophoton'
+import os
+
+histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
 distribution = 'phoPtHighMet'
 
-outname = histDir + '/fit/ws_' + distribution + '.root'
-plotsOutname = histDir + '/fit/ws_' + distribution + '_plots.root'
-sourcedir = histDir + '/distributions_13fbinv'
-carddir = histDir + '/datacards_13fbinv'
+version = 'ICHEP'
+
+outdir = histDir + '/fit/' + version
+outname = outdir + '/ws_' + distribution + '.root'
+plotsOutname = outdir + '/ws_' + distribution + '_plots.root'
+sourcedir = histDir + '/distributions/' + version
+carddir = histDir + '/datacards/' + version
 
 filename = '{region}_{distribution}.root'
 histname = '{distribution}-{process}'
 
-sr = 'bmonoph' # blinded version
-#sr = 'monoph'
+# sr = 'bmonoph' # blinded version
+sr = 'monoph'
 
 regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowmt']
 processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
@@ -24,12 +29,14 @@ binWidthNormalized = False
 # In the fit, the normalization of the source and the transfer factors are allowed to float, with constraints
 # on the transfer factors.
 links = [
-    (('zg', 'diel'), ('zg', sr)),
-    (('zg', 'dimu'), ('zg', sr)),
-    (('wg', 'monoel'), ('wg', sr)),
-    (('wg', 'monomu'), ('wg', sr)),
-    (('zg', 'monoel'), ('zg', sr)),
-    (('zg', 'monomu'), ('zg', sr)),
+    # (('zg', 'diel'), ('zg', sr)),
+    # (('zg', 'dimu'), ('zg', sr)),
+    # (('wg', 'monoel'), ('wg', sr)),
+    # (('wg', 'monomu'), ('wg', sr)),
+    # (('zg', 'monoel'), ('zg', sr)),
+    # (('zg', 'monomu'), ('zg', sr)),
+    (('wg', 'monoel'), ('zg', 'diel')),
+    (('wg', 'monomu'), ('zg', 'dimu')),
     (('wg', sr), ('zg', sr))
 ]
 
@@ -54,12 +61,18 @@ deshapedNuisances = [
 # Correlation in ratios.
 # {(target, source, nuisance): correlation}
 ratioCorrelations = {
+    (('wg', 'monoel'), ('zg', 'diel'), 'vgQCDscale'): 0.8,
+    (('wg', 'monoel'), ('zg', 'diel'), 'vgPDF'): 1.,
+    (('wg', 'monoel'), ('zg', 'diel'), 'EWK'): 1.,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'vgQCDscale'): 0.8,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'vgPDF'): 1.,
+    (('wg', 'monomu'), ('zg', 'dimu'), 'EWK'): 1.,
     (('wg', sr), ('zg', sr), 'vgQCDscale'): 0.8,
     (('wg', sr), ('zg', sr), 'vgPDF'): 1.,
     (('wg', sr), ('zg', sr), 'EWK'): 1.
 }
 
 # Nuisances affecting normalization only
-scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale']
+scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
 
 # def customize(workspace):

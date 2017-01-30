@@ -23,15 +23,26 @@ defaultSelectors = {
     'hfakeUp': selectors.hadProxyUp,
     'hfakeDown': selectors.hadProxyDown,
     'purity': selectors.purity,
+    'purityNom': selectors.purityNom,
     'purityUp': selectors.purityUp,
     'purityDown': selectors.purityDown,
     'gjets': selectors.gjets,
     'halo': selectors.halo,
+    'haloMIP': selectors.haloMIP,
+    'haloMET': selectors.haloMET,
+    'haloLoose': selectors.haloLoose,
+    'haloMIPLoose': selectors.haloMIPLoose,
+    'haloMETLoose': selectors.haloMETLoose,
+    'haloMedium': selectors.haloMedium,
+    'haloMIPMedium': selectors.haloMIPMedium,
+    'haloMETMedium': selectors.haloMETMedium,
     'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
+    'dimuHfake': selectors.dimuonHadProxy,
     'monomu': selectors.monomuon,
     'monomuHfake': selectors.monomuonHadProxy,
     'diel': selectors.dielectron,
+    'dielHfake': selectors.dielectronHadProxy,
     'monoel': selectors.monoelectron,
     'monoelHfake': selectors.monoelectronHadProxy,
     'elmu': selectors.oppflavor,
@@ -59,13 +70,17 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-#data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets', 'dimu', 'diel', 'monomu', 'monoel', 'trivialShower']
-data_sph = ['monoph', 'efake', 'hfake', 'hfakeUp', 'hfakeDown', 'dimu', 'diel', 'monomu', 'monoel', 'halo', 'trivialShower']
+data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
+data_sph += ['halo', 'haloMIP', 'haloMET', 'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
+data_sph += ['hfakeUp', 'hfakeDown' ]
+data_sph += ['purity', 'purityNom', 'purityUp', 'purityDown', 'gjets'] 
+data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
+data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-mc_cand = ['monoph', 'purity']
+mc_cand = ['monoph'] # , 'purity']
 mc_qcd = ['hfake', 'hfakeUp', 'hfakeDown', 'purity', 'purityUp', 'purityDown', 'gjets'] 
-mc_sig = ['monoph', 'purity', 'signalRaw']
+mc_sig = ['monoph', 'purity'] # , 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 
@@ -81,9 +96,9 @@ selectors = {
     'sph-16g-r': defaults(data_sph),
     'sph-16h': defaults(data_sph),
     # MC for signal region
-    'znng-130': applyMod(selectors.kfactor, mc_cand),
-    'wnlg-130': applyMod(selectors.kfactor, mc_cand + mc_lep),
-    'zllg-130': applyMod(selectors.kfactor, mc_cand + mc_lep + mc_dilep),
+    'znng-130': applyMod(selectors.kfactor, mc_sig),
+    'wnlg-130': applyMod(selectors.kfactor, mc_sig + mc_lep),
+    'zllg-130': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
     'wglo': applyMod(selectors.wglo, mc_cand + mc_lep),
     'wglo-500': defaults(mc_cand + mc_lep),
     'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
@@ -125,7 +140,7 @@ selectors = {
 # all the rest are mc_sig
 for sname in allsamples.names():
     if sname not in selectors:
-        selectors[sname] = mc_sig
+        selectors[sname] = defaults(mc_sig)
 
 def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
     snames = []

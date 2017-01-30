@@ -2,7 +2,7 @@ import os
 import sys
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config
+from selections import Variables, Version, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config, skimDir, versionDir
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -36,8 +36,8 @@ varName = 'chiso'
 var = Variables[varName]
 varBins = True
 
-versDir = os.path.join('/data/t3home000/ballen/hist/purity',Version)
-skimDir  = config.skimDir
+versDir = versionDir
+skimDir = skimDir
 plotDir = os.path.join(versDir,inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)

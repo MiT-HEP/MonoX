@@ -273,6 +273,15 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
+  cutres[CHIsoS16] = (_photon.chIsoS16 < simpletree::Photon::chIsoCuts[1][0][wp_]);
+  cutres[NHIsoS16] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][wp_]);
+  cutres[PhIsoS16] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][wp_]);
+  cutres[CHIsoMaxS16] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[1][0][wp_]);
+  cutres[NHIsoS16Tight] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][2]);
+  cutres[PhIsoS16Tight] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][2]);
+  cutres[NHIsoS16VLoose] = (_photon.nhIsoS16 < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
+  cutres[PhIsoS16VLoose] = (_photon.phIsoS16 < 11.); // loose WP cut is 8.3 at 1 TeV
+  cutres[CHIsoS16VLoose] = (_photon.chIsoS16 < 11.); 
 
   for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC] = cutres[iC];
@@ -424,6 +433,7 @@ bool
 TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   unsigned iTau(0);
+  bool hasNonOverlapping(false);
   for (; iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
 
@@ -448,14 +458,15 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
     if (iM != _event.muons.size())
       continue;
 
-    break;
+    _outEvent.taus.push_back(tau);
+    hasNonOverlapping = true;
   }
 
-  return iTau == _event.taus.size();
+  return !hasNonOverlapping;
 }
 
 //--------------------------------------------------------------------
-// BjetVeto
+// LeptonMt
 //--------------------------------------------------------------------
 
 bool

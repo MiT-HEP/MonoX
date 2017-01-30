@@ -170,7 +170,7 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
         writeHist(hist)
         for vhists in varhists.values():
             for vhist in vhists:
-                print vhist.GetSumOfWeights()
+                # print vhist.GetSumOfWeights()
                 writeHist(vhist)
 
     # apply variations as uncertainties

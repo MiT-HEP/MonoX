@@ -282,6 +282,7 @@ while not done:
                     continue
 
                 sbaseName = '{0}_{1}'.format(*sbase)
+                # sampleName = sampleName + '_' + sbaseName
 
                 numer = nominal
                 basePlots = sourcePlots[sbase[1]][sbase[0]]
@@ -302,7 +303,8 @@ while not done:
                     binName = sampleName + '_bin{0}'.format(ibin)
                     baseBinName = sbaseName + '_bin{0}'.format(ibin)
                     
-                    tfName = binName + '_tf'
+                    # tfName = binName + '_tf'
+                    tfName = sampleName + '_' + sbaseName + '_bin{0}'.format(ibin) + '_tf'
 
                     # nominal tfactor (constant)
                     fct('{tf}[{val}]'.format(tf = tfName, val = rbin))
@@ -508,9 +510,12 @@ if PRINTNUISANCE:
     for n in sorted(nuisances):
         print n, 'param 0 1'
 
+if hasattr(config, 'outdir'):
+    if not os.path.isdir(config.outdir):
+        os.makedirs(config.outdir)
 workspace.writeToFile(config.outname)
 
-
+signalRegion = ''
 ## DATACARDS
 if hasattr(config, 'carddir'):
     if not os.path.isdir(config.carddir):
@@ -520,7 +525,6 @@ if hasattr(config, 'carddir'):
     
     samples = {}
     procIds = {}
-    signalRegion = ''
     
     for region, procPlots in sourcePlots.items():
         samples[region] = []
@@ -655,7 +659,7 @@ if hasattr(config, 'plotsOutname'):
         
         hmods = {}
         normMods = {}
-    
+
         unc = workspace.function('unc_' + pdf.GetName() + '_norm')
         if unc:
             # normalization given to this PDF has associated uncertainties
@@ -681,13 +685,31 @@ if hasattr(config, 'plotsOutname'):
     
             if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
                 # raw is tf x another mu -> plot the TF
+
+                (samp, region, bin) = binName.split('_')
+                sample = (samp, region)
+                sbase = linkSource(sample)
+                sbaseName = '{0}_{1}'.format(*sbase)
+                tfName = samp + '_' + region + '_' + sbaseName 
+
+                print tfName
     
                 if hnominal is None:
-                    hnominal = ROOT.TH1D('tf_' + pdf.GetName(), ';' + config.xtitle, len(binning) - 1, binning)
+                    """
+                    (source, target) = pdf.GetName().split('_')
+                    nums = { 'zg' : 'Z(#nu#nu)', 'wg' : 'W(l#nu)' }
+                    denoms = { 'monoph' : 'W(l#nu)', 
+                               'monoel' : { 'zg' : 'Z(ee)', 'wg' : 'W(e#nu)'}, 
+                               'monomu' : 'W(#mu#nu)', 
+                               'diel' : 'Z(ee)', 'dimu' : 'Z(#mu#mu)' }
+                    ytitle = nums[source] + '/' + denoms[target]
+                    """
+                    hnominal = ROOT.TH1D('tf_' + tfName, ';' + config.xtitle, len(binning) - 1, binning)
+                    # hnominal.GetYaxis().SetTitle(ytitle)
                     huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
                     isTF = True
 
-                tf = workspace.var(binName + '_tf')
+                tf = workspace.var(tfName + '_' + bin + '_tf')
                 val = tf.getVal()
     
                 # TF is historically plotted inverted
@@ -761,5 +783,24 @@ if hasattr(config, 'plotsOutname'):
         for h in hmods.values():
             h.SetDirectory(plotsFile)
             h.Write()
+
+    allData = workspace.allData()
+    """
+    dataItr = allData.iterator()
+    while True:
+        data = dataItr.Next()
+        if not pdf:
+            break
+    """
+    for data in allData:
+        hnominal = None
+
+        print signalRegion
+        if signalRegion in data.GetName():
+            continue
+
+        hData = data.createHistogram(data.GetName(), x, ROOT.RooFit.Binning('default'))
+        hData.SetDirectory(plotsFile)
+        hData.Write()
 
     plotsFile.Close()
