@@ -2,7 +2,7 @@ histDir = '/data/t3home000/yiiyama/studies/monophoton'
 
 distribution = 'phoPtHighMet'
 
-outname = histDir + '/fit/ws_' distribution + '.root'
+outname = histDir + '/fit/ws_' + distribution + '.root'
 plotsOutname = histDir + '/fit/ws_' + distribution + '_plots.root'
 sourcedir = histDir + '/distributions_13fbinv'
 carddir = histDir + '/datacards_13fbinv'
