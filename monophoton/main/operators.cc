@@ -180,6 +180,24 @@ PhotonSelection::addSelection(bool _pass, unsigned _s1, unsigned _s2/* = nSelect
 }
 
 void
+PhotonSelection::removeSelection(unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  BitMask sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  for (auto&& itr(selections_.begin()); itr != selections_.end(); ++itr) {
+    if (itr->second == sel) {
+      selections_.erase(itr);
+      std::cout << "Removed photon selection " << sel.to_string() << std::endl;
+    }
+  }
+}
+
+void
 PhotonSelection::addVeto(bool _pass, unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
 {
   BitMask sel;
@@ -190,6 +208,24 @@ PhotonSelection::addVeto(bool _pass, unsigned _s1, unsigned _s2/* = nSelections*
     sel.set(_s3);
 
   vetoes_.emplace_back(_pass, sel);
+}
+
+void
+PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsigned _s3/* = nSelections*/)
+{
+  BitMask sel;
+  sel.set(_s1);
+  if (_s2 != nSelections)
+    sel.set(_s2);
+  if (_s3 != nSelections)
+    sel.set(_s3);
+
+  for (auto&& itr(vetoes_.begin()); itr != vetoes_.end(); ++itr) {
+    if (itr->second == sel) {
+      vetoes_.erase(itr);
+      std::cout << "Removed photon selection " << sel.to_string() << std::endl;
+    }
+  }
 }
 
 double

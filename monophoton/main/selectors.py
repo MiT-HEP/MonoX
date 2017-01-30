@@ -243,6 +243,8 @@ def leptonBase(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setWP(photonWP)
 
+    photonSel.resetSelection()
+    photonSel.resetVeto()
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
 
@@ -359,6 +361,8 @@ def candidate(sample, selector):
             selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     for sel in photonFullSelection:
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
@@ -401,6 +405,8 @@ def eleProxy(sample, selector):
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('EVeto')
@@ -423,6 +429,8 @@ def purity(sample, selector):
     selector = purityBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = []
     sels.append('Sieie15')
@@ -451,6 +459,8 @@ def purityNom(sample, selector):
     selector = purityBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -479,6 +489,8 @@ def purityUp(sample, selector):
     selector = purityBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -511,6 +523,8 @@ def purityDown(sample, selector):
     selector = purityBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('NHIso')
@@ -554,6 +568,8 @@ def hadProxy(sample, selector):
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -586,6 +602,8 @@ def hadProxyUp(sample, selector):
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -622,6 +640,8 @@ def hadProxyDown(sample, selector):
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('NHIso')
@@ -663,6 +683,8 @@ def gjets(sample, selector):
     selector.addOperator(ROOT.GenPhotonDR())
     
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -705,6 +727,8 @@ def halo(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     for sel in photonFullSelection:
         if sel == 'MIP49':
@@ -724,6 +748,8 @@ def haloMIP(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     for sel in photonFullSelection:
         if sel == 'MIP49':
@@ -743,6 +769,8 @@ def haloMET(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('MIP49')
@@ -762,6 +790,8 @@ def haloLoose(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -785,6 +815,8 @@ def haloMIPLoose(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -808,6 +840,8 @@ def haloMETLoose(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('MIP49')
@@ -829,6 +863,8 @@ def haloMedium(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -852,6 +888,8 @@ def haloMIPMedium(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
@@ -875,6 +913,8 @@ def haloMETMedium(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     sels = list(photonFullSelection)
     sels.remove('MIP49')
@@ -897,6 +937,8 @@ def trivialShower(sample, selector):
     selector = monophotonBase(sample, selector)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     for sel in photonFullSelection:
         if sel == 'SieieNonzero':
@@ -1170,6 +1212,8 @@ def wenuall(sample, name):
         selector.addOperator(ROOT.NNPDFVariation())
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
 
     for sel in photonFullSelection:
         if sel != 'EVeto':

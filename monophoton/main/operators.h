@@ -220,8 +220,12 @@ class PhotonSelection : public Cut {
   // bool->false: add photon condition "fail one of the selections"
   // Photons are saved when they match all the conditions
   void addSelection(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
+  void resetSelection() { selections_.clear(); }
+  void removeSelection(unsigned, unsigned = nSelections, unsigned = nSelections);
   // skip event if there is a photon passing the selection (bool->true) or failing (bool->false)
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
+  void resetVeto() { vetoes_.clear(); }
+  void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setWP(unsigned wp) { wp_ = wp; }
