@@ -19,21 +19,21 @@ rcanvas = RatioCanvas(lumi = lumi)
 
 # binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 binning = array.array('d', [175., 200., 250., 300., 350., 400., 450., 500.])
-pid = 'loose'
+pid = 'medium'
+era = 'Spring15'
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
-# impurityHist = inputFile.Get("barrel-loose-pixel-Met0to60")
-impurityGraph = inputFile.Get("barrel-" + pid + "-pixel-Met0to60")
+impurityGraph = inputFile.Get("barrel-" + pid + "-pixel-monoph-max-Met0to60")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
 isos = [ ('', '') ] # ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '') ]
 
 baseSel = 'jets.pt[0] > 100. && t1Met.met < 60. && photons.size == 1 && photons.isEB[0]'
-nomSel = SigmaIetaIetaSels['Spring16']['barrel'][pid] + ' && ' + pixelVetoCut + ' && ' + monophIdCut
-goodSel = chIsoMaxSels['Spring16']['barrel'][pid] + ' && ' + sieieSels['Spring16']['barrel'][pid]
+nomSel = SigmaIetaIetaSels[era]['barrel'][pid] + ' && ' + pixelVetoCut + ' && ' + monophIdCut
+goodSel = chIsoMaxSels[era]['barrel'][pid] + ' && ' + sieieSels[era]['barrel'][pid]
 
-samples = [ ('',  baseSel + ' && ' + nomSel + ' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.295))')
+samples = [ ('',  baseSel + ' && ' + nomSel + ' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.37))')
             ,('Nom', baseSel) #  + ' && ' + nomSel)
             ,('Down', baseSel)
             ,('Up', baseSel)
