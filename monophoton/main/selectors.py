@@ -475,9 +475,13 @@ def purityNom(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -509,9 +513,13 @@ def purityUp(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -547,9 +555,13 @@ def purityDown(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.NHIsoS16, ROOT.PhotonSelection.PhIsoS16)
-    photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
-    photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.NHIsoS16, ROOT.PhotonSelection.PhIsoS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
 
     return selector
 
@@ -584,9 +596,13 @@ def hadProxy(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -622,9 +638,13 @@ def hadProxyUp(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
 
     return selector
 
@@ -664,9 +684,13 @@ def hadProxyDown(sample, selector):
         photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
         photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
 
-    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIsoS16)
-    photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
-    photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
+    photonSel.addSelection(False, ROOT.PhotonSelection.NHIso, ROOT.PhotonSelection.PhIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.NHIso)
+    photonSel.addVeto(True, ROOT.PhotonSelection.PhIso)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.NHIsoS16, ROOT.PhotonSelection.PhIsoS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.NHIsoS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.PhIsoS16)
 
     return selector
 
@@ -702,6 +726,10 @@ def gjets(sample, selector):
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
     photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
     photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
     
     return selector
 
