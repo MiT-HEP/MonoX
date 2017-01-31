@@ -44,6 +44,7 @@ for lep in ['mu', 'el']:
     # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
 
     for nuis in ['EWK', 'vgQCDscale', 'vgPDF']:
+        print nuis, 'Up'
         hMcRatioUp = mcDilep[nuis+'Up'].Clone('tf_mc_'+lep+'_'+nuis+'Up')
         hMcRatioUp.Divide(mcMonolep[nuis+'Up'])
         
@@ -51,17 +52,20 @@ for lep in ['mu', 'el']:
         hMcUpErr.Add(hMcRatio, -1)
 
         for iP in range(0, gMcRatio.GetN()):
+            # print iP, hMcUpErr.GetBinContent(iP+1)
             uperr = math.sqrt(gMcRatio.GetErrorYhigh(iP)**2 + hMcUpErr.GetBinContent(iP+1)**2)
             # print iP, uperr
             gMcRatio.SetPointEYhigh(iP, uperr)
 
+        print nuis, 'Down'
         hMcRatioDown = mcDilep[nuis+'Down'].Clone('tf_mc_'+lep+'_'+nuis+'Down')
         hMcRatioDown.Divide(mcMonolep[nuis+'Down'])
         
-        hMcDownErr = hMcRatio.Clone('tferr_mc_'+lep+'_'+nuis+'Down')
-        hMcDownErr.Add(hMcRatioDown, -1)
+        hMcDownErr = hMcRatioDown.Clone('tferr_mc_'+lep+'_'+nuis+'Down')
+        hMcDownErr.Add(hMcRatio, -1)
 
         for iP in range(0, gMcRatio.GetN()):
+            # print iP, hMcDownErr.GetBinContent(iP+1)
             downerr = math.sqrt(gMcRatio.GetErrorYlow(iP)**2 + hMcDownErr.GetBinContent(iP+1)**2)
             # print iP, downerr
             gMcRatio.SetPointEYlow(iP, downerr)
@@ -106,13 +110,20 @@ for lep in ['mu', 'el']:
     hDataRatio = hDataDilep.Clone('tf_data_'+lep)
     hDataRatio.Divide(hDataMonolep)
 
+    print 'Data ratio'
+    for iB in range(1, hDataRatio.GetNbinsX()+1):
+        print iB, hDataRatio.GetBinContent(iB)
+
     ### Plot the things
     mcplots = gMcRatio
     rcanvas.legend.apply('mc', hMcRatio)
     rcanvas.legend.apply('mc', gMcRatio)
     rcanvas.legend.apply('data', hDataRatio)
 
-    iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'EP')
+    rcanvas.Clear()
+    rcanvas.ylimits = (0, 0.7)
+
+    iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
     iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
     iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
 
@@ -139,31 +150,44 @@ hMcRatio.Divide(hMcMonolep)
 gMcRatio = r.TGraphAsymmErrors(hMcRatio)
 # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
 
+hUpRatios = {}
+hDownRatios = {}
+
 for nuis in ['EWK', 'vgQCDscale', 'vgPDF']:
+    print nuis, 'Up'
     hMcRatioUp = mcDimu[nuis+'Up'].Clone('tf_mc_lep_'+nuis+'Up')
     hMcRatioUp.Add(mcDiel[nuis+'Up'], 1)
-    hMcMonolepUp = mcMonolep[nuis+'Up'].Clone('mc_monolep_'+nuis+'Up')
-    hMcMonolepUp.Add(mcDiel[nuis+'Up'], 1)
-    hMcRatioUp.Divide(hMcMonolepUp)
 
+    hMcMonolepUp = mcMonomu[nuis+'Up'].Clone('mc_monolep_'+nuis+'Up')
+    hMcMonolepUp.Add(mcMonoel[nuis+'Up'], 1)
+
+    hMcRatioUp.Divide(hMcMonolepUp)
+    hUpRatios[nuis] = hMcRatioUp
+    
     hMcUpErr = hMcRatioUp.Clone('tferr_mc_lep_'+nuis+'Up')
     hMcUpErr.Add(hMcRatio, -1)
 
     for iP in range(0, gMcRatio.GetN()):
+        # print iP, hMcUpErr.GetBinContent(iP+1)
         uperr = math.sqrt(gMcRatio.GetErrorYhigh(iP)**2 + hMcUpErr.GetBinContent(iP+1)**2)
         # print iP, uperr
         gMcRatio.SetPointEYhigh(iP, uperr)
 
+    print nuis, 'Down'
     hMcRatioDown = mcDimu[nuis+'Down'].Clone('tf_mc_lep_'+nuis+'Down')
     hMcRatioDown.Add(mcDiel[nuis+'Down'], 1)
-    hMcMonolepDown = mcMonolep[nuis+'Down'].Clone('mc_monolep_'+nuis+'Down')
-    hMcMonolepDown.Add(mcDiel[nuis+'Down'], 1)
-    hMcRatioDown.Divide(hMcMonolepDown)
 
-    hMcDownErr = hMcRatio.Clone('tferr_mc_lep_'+nuis+'Down')
-    hMcDownErr.Add(hMcRatioDown, -1)
+    hMcMonolepDown = mcMonomu[nuis+'Down'].Clone('mc_monolep_'+nuis+'Down')
+    hMcMonolepDown.Add(mcMonoel[nuis+'Down'], 1)
+
+    hMcRatioDown.Divide(hMcMonolepDown)
+    hDownRatios[nuis] = hMcRatioDown
+
+    hMcDownErr = hMcRatioDown.Clone('tferr_mc_lep_'+nuis+'Down')
+    hMcDownErr.Add(hMcRatio, -1)
 
     for iP in range(0, gMcRatio.GetN()):
+        # print iP, hMcDownErr.GetBinContent(iP+1)
         downerr = math.sqrt(gMcRatio.GetErrorYlow(iP)**2 + hMcDownErr.GetBinContent(iP+1)**2)
         # print iP, downerr
         gMcRatio.SetPointEYlow(iP, downerr)
@@ -232,15 +256,45 @@ hDataMonolep.Add(hBkgdMonolep, -1)
 hDataRatio = hDataDilep.Clone('tf_data_lep')
 hDataRatio.Divide(hDataMonolep)
 
+print 'Data ratio'
+for iB in range(1, hDataRatio.GetNbinsX()+1):
+    print iB, hDataRatio.GetBinContent(iB)
+
 ### Plot the things
 mcplots = gMcRatio
 rcanvas.legend.apply('mc', hMcRatio)
 rcanvas.legend.apply('mc', gMcRatio)
 rcanvas.legend.apply('data', hDataRatio)
 
-iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'EP')
+rcanvas.Clear()
+rcanvas.ylimits = (0, 0.7)
+
+iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
 iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
 iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
 
+"""
+rcanvas.legend.add('EWK', 'Z/W EWK', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 2, lwidth = 2, msize = 0)
+rcanvas.legend.apply('EWK', hUpRatios['EWK'])
+rcanvas.legend.apply('EWK', hDownRatios['EWK'])
+iEWKUp = rcanvas.addHistogram(hUpRatios['EWK'])
+iEWKDown = rcanvas.addHistogram(hDownRatios['EWK'])
+
+rcanvas.legend.add('vgQCDscale', 'Z/W vgQCDscale', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 3, lwidth = 2, msize = 0)
+rcanvas.legend.apply('vgQCDscale', hUpRatios['vgQCDscale'])
+rcanvas.legend.apply('vgQCDscale', hDownRatios['vgQCDscale'])
+ivgQCDscaleUp = rcanvas.addHistogram(hUpRatios['vgQCDscale'])
+ivgQCDscaleDown = rcanvas.addHistogram(hDownRatios['vgQCDscale'])
+
+rcanvas.legend.add('vgPDF', 'Z/W vgPDF', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 4, lwidth = 2, msize = 0)
+rcanvas.legend.apply('vgPDF', hUpRatios['vgPDF'])
+rcanvas.legend.apply('vgPDF', hDownRatios['vgPDF'])
+ivgPDFUp = rcanvas.addHistogram(hUpRatios['vgPDF'])
+ivgPDFDown = rcanvas.addHistogram(hDownRatios['vgPDF'])
+
+theoList = [iEWKUp, iEWKDown, ivgQCDscaleUp, ivgQCDscaleDown, ivgPDFUp, ivgPDFDown]
+"""
+theoList = []
+
 outName = 'tf_ratio3_lep'
-rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData], rList = [iMc, iUnc, iMc, iData], logy = False)
+rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData] + theoList, rList = [iMc, iUnc, iMc, iData] + theoList, logy = False)
