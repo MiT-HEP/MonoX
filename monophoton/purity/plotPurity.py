@@ -27,7 +27,7 @@ PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring16'
+era = 'Spring15'
 
 purities = {}
 for loc in s.Locations[:1]:
