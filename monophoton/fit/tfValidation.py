@@ -43,32 +43,30 @@ for lep in ['mu', 'el']:
     gMcRatio = r.TGraphAsymmErrors(hMcRatio)
     # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
 
-    for nuis in ['EWK', 'vgQCDscale', 'vgPDF']:
-        print nuis, 'Up'
-        hMcRatioUp = mcDilep[nuis+'Up'].Clone('tf_mc_'+lep+'_'+nuis+'Up')
-        hMcRatioUp.Divide(mcMonolep[nuis+'Up'])
-        
-        hMcUpErr = hMcRatioUp.Clone('tferr_mc_'+lep+'_'+nuis+'Up')
-        hMcUpErr.Add(hMcRatio, -1)
+    for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
+        print nuis, corr
+        hMcDilepUp     = mcDilep[nuis+'Up']
+        hMcMonolepUp   = mcMonolep[nuis+'Up']
+        hMcDilepDown   = mcDilep[nuis+'Down']
+        hMcMonolepDown = mcMonolep[nuis+'Down']
 
-        for iP in range(0, gMcRatio.GetN()):
-            # print iP, hMcUpErr.GetBinContent(iP+1)
-            uperr = math.sqrt(gMcRatio.GetErrorYhigh(iP)**2 + hMcUpErr.GetBinContent(iP+1)**2)
-            # print iP, uperr
-            gMcRatio.SetPointEYhigh(iP, uperr)
+        for iP in range(1, gMcRatio.GetN()+1):
+            rNom = hMcRatio.GetBinContent(iP)
+            upup     = hMcDilepUp.GetBinContent(iP)   / hMcMonolepUp.GetBinContent(iP)   - rNom
+            updown   = hMcDilepUp.GetBinContent(iP)   / hMcMonolepDown.GetBinContent(iP) - rNom
+            downup   = hMcDilepDown.GetBinContent(iP) / hMcMonolepUp.GetBinContent(iP)   - rNom
+            downdown = hMcDilepDown.GetBinContent(iP) / hMcMonolepDown.GetBinContent(iP) - rNom
+            
+            dUp = math.sqrt( (1 + corr)/2 * upup**2 + (1 - corr)/2 * updown**2 )
+            dDown = math.sqrt( (1 + corr)/2 * downdown**2 + (1 - corr)/2 * downup**2 )
+            # print '%i %6.5f %6.5f' % (iP, dUp, dDown)
 
-        print nuis, 'Down'
-        hMcRatioDown = mcDilep[nuis+'Down'].Clone('tf_mc_'+lep+'_'+nuis+'Down')
-        hMcRatioDown.Divide(mcMonolep[nuis+'Down'])
-        
-        hMcDownErr = hMcRatioDown.Clone('tferr_mc_'+lep+'_'+nuis+'Down')
-        hMcDownErr.Add(hMcRatio, -1)
+            eUp = math.sqrt(gMcRatio.GetErrorYhigh(iP-1)**2 + dUp**2)
+            eDown = math.sqrt(gMcRatio.GetErrorYlow(iP-1)**2 + dDown**2)
+            # print '%i %6.5f %6.5f' % (iP, eUp, eDown)
 
-        for iP in range(0, gMcRatio.GetN()):
-            # print iP, hMcDownErr.GetBinContent(iP+1)
-            downerr = math.sqrt(gMcRatio.GetErrorYlow(iP)**2 + hMcDownErr.GetBinContent(iP+1)**2)
-            # print iP, downerr
-            gMcRatio.SetPointEYlow(iP, downerr)
+            gMcRatio.SetPointEYhigh(iP-1, eUp)
+            gMcRatio.SetPointEYlow(iP-1, eDown)
             
     ### Get Data for Data TF
     hDataDilep = sourcePlots['di'+lep]['data_obs']['nominal']
@@ -110,9 +108,11 @@ for lep in ['mu', 'el']:
     hDataRatio = hDataDilep.Clone('tf_data_'+lep)
     hDataRatio.Divide(hDataMonolep)
 
+    """
     print 'Data ratio'
     for iB in range(1, hDataRatio.GetNbinsX()+1):
         print iB, hDataRatio.GetBinContent(iB)
+    """
 
     ### Plot the things
     mcplots = gMcRatio
@@ -127,7 +127,7 @@ for lep in ['mu', 'el']:
     iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
     iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
 
-    outName = 'tf_ratio3_'+lep
+    outName = 'tf_ratio4_'+lep
     rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData], rList = [iMc, iUnc, iMc, iData], logy = False)
 
 
@@ -153,44 +153,35 @@ gMcRatio = r.TGraphAsymmErrors(hMcRatio)
 hUpRatios = {}
 hDownRatios = {}
 
-for nuis in ['EWK', 'vgQCDscale', 'vgPDF']:
-    print nuis, 'Up'
-    hMcRatioUp = mcDimu[nuis+'Up'].Clone('tf_mc_lep_'+nuis+'Up')
-    hMcRatioUp.Add(mcDiel[nuis+'Up'], 1)
+for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
+    print nuis, corr
+    hMcDimuUp     = mcDimu[nuis+'Up']
+    hMcMonomuUp   = mcMonomu[nuis+'Up']
+    hMcDimuDown   = mcDimu[nuis+'Down']
+    hMcMonomuDown = mcMonomu[nuis+'Down']
 
-    hMcMonolepUp = mcMonomu[nuis+'Up'].Clone('mc_monolep_'+nuis+'Up')
-    hMcMonolepUp.Add(mcMonoel[nuis+'Up'], 1)
+    hMcDielUp     = mcDiel[nuis+'Up']
+    hMcMonoelUp   = mcMonoel[nuis+'Up']
+    hMcDielDown   = mcDiel[nuis+'Down']
+    hMcMonoelDown = mcMonoel[nuis+'Down']
 
-    hMcRatioUp.Divide(hMcMonolepUp)
-    hUpRatios[nuis] = hMcRatioUp
-    
-    hMcUpErr = hMcRatioUp.Clone('tferr_mc_lep_'+nuis+'Up')
-    hMcUpErr.Add(hMcRatio, -1)
+    for iP in range(1, gMcRatio.GetN()+1):
+        rNom = hMcRatio.GetBinContent(iP)
+        upup     = ( hMcDimuUp.GetBinContent(iP)   + hMcDielUp.GetBinContent(iP)   ) / ( hMcMonomuUp.GetBinContent(iP)   + hMcMonoelUp.GetBinContent(iP)   )  - rNom
+        updown   = ( hMcDimuUp.GetBinContent(iP)   + hMcDielUp.GetBinContent(iP)   ) / ( hMcMonomuDown.GetBinContent(iP) + hMcMonoelDown.GetBinContent(iP) ) - rNom
+        downup   = ( hMcDimuDown.GetBinContent(iP) + hMcDielDown.GetBinContent(iP) ) / ( hMcMonomuUp.GetBinContent(iP)   + hMcMonoelUp.GetBinContent(iP)   ) - rNom
+        downdown = ( hMcDimuDown.GetBinContent(iP) + hMcDielDown.GetBinContent(iP) ) / ( hMcMonomuDown.GetBinContent(iP) + hMcMonoelDown.GetBinContent(iP) ) - rNom
 
-    for iP in range(0, gMcRatio.GetN()):
-        # print iP, hMcUpErr.GetBinContent(iP+1)
-        uperr = math.sqrt(gMcRatio.GetErrorYhigh(iP)**2 + hMcUpErr.GetBinContent(iP+1)**2)
-        # print iP, uperr
-        gMcRatio.SetPointEYhigh(iP, uperr)
+        dUp = math.sqrt( (1 + corr)/2 * upup**2 + (1 - corr)/2 * updown**2 )
+        dDown = math.sqrt( (1 + corr)/2 * downdown**2 + (1 - corr)/2 * downup**2 )
+        # print '%i %6.5f %6.5f' % (iP, dUp, dDown)
 
-    print nuis, 'Down'
-    hMcRatioDown = mcDimu[nuis+'Down'].Clone('tf_mc_lep_'+nuis+'Down')
-    hMcRatioDown.Add(mcDiel[nuis+'Down'], 1)
+        eUp = math.sqrt(gMcRatio.GetErrorYhigh(iP-1)**2 + dUp**2)
+        eDown = math.sqrt(gMcRatio.GetErrorYlow(iP-1)**2 + dDown**2)
+        # print '%i %6.5f %6.5f' % (iP, eUp, eDown)
 
-    hMcMonolepDown = mcMonomu[nuis+'Down'].Clone('mc_monolep_'+nuis+'Down')
-    hMcMonolepDown.Add(mcMonoel[nuis+'Down'], 1)
-
-    hMcRatioDown.Divide(hMcMonolepDown)
-    hDownRatios[nuis] = hMcRatioDown
-
-    hMcDownErr = hMcRatioDown.Clone('tferr_mc_lep_'+nuis+'Down')
-    hMcDownErr.Add(hMcRatio, -1)
-
-    for iP in range(0, gMcRatio.GetN()):
-        # print iP, hMcDownErr.GetBinContent(iP+1)
-        downerr = math.sqrt(gMcRatio.GetErrorYlow(iP)**2 + hMcDownErr.GetBinContent(iP+1)**2)
-        # print iP, downerr
-        gMcRatio.SetPointEYlow(iP, downerr)
+        gMcRatio.SetPointEYhigh(iP-1, eUp)
+        gMcRatio.SetPointEYlow(iP-1, eDown)
 
 ### Get Data for Data TF
 hDataDilep = sourcePlots['dimu']['data_obs']['nominal'].Clone('data_dilep')
@@ -256,9 +247,11 @@ hDataMonolep.Add(hBkgdMonolep, -1)
 hDataRatio = hDataDilep.Clone('tf_data_lep')
 hDataRatio.Divide(hDataMonolep)
 
+"""
 print 'Data ratio'
 for iB in range(1, hDataRatio.GetNbinsX()+1):
     print iB, hDataRatio.GetBinContent(iB)
+"""
 
 ### Plot the things
 mcplots = gMcRatio
@@ -296,5 +289,5 @@ theoList = [iEWKUp, iEWKDown, ivgQCDscaleUp, ivgQCDscaleDown, ivgPDFUp, ivgPDFDo
 """
 theoList = []
 
-outName = 'tf_ratio3_lep'
+outName = 'tf_ratio4_lep'
 rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData] + theoList, rList = [iMc, iUnc, iMc, iData] + theoList, logy = False)
