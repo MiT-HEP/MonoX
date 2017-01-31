@@ -15,14 +15,41 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include <tuple>
+
+class PhotonSkimmer {
+public:
+  PhotonSkimmer() {}
+  ~PhotonSkimmer() {}
+
+  void setSecondaryInput(TTree* t) { secondaryInput_ = t; }
+
+  void run(char const* sourceDir, char const* outputPath, long _nEvents = -1, GoodLumiFilter* _goodlumi = 0);
+
+private:
+  bool pass()
+  {
+    for (auto& photon : event_.photons) {
+      if (photon.isEB && photon.scRawPt > 150.)
+        return true;
+    }
+    return false;
+  }
+
+  TTree* getLongestTree(char const* name);
+
+  TFile* source_{0};
+  TTree* secondaryInput_{0};
+  simpletree::Event event_;
+};
 
 // fix for simpletree18 bug (latest cycle not necessarily the biggest tree)
 TTree*
-getLongestTree(TFile* _source, char const* _name)
+PhotonSkimmer::getLongestTree(char const* _name)
 {
   TTree* longestTree(0);
   
-  auto* keys(_source->GetListOfKeys());
+  auto* keys(source_->GetListOfKeys());
   for (auto* keyObj : *keys) {
     auto* key(static_cast<TKey*>(keyObj));
     if (std::strcmp(key->GetName(), _name) != 0)
@@ -42,7 +69,7 @@ getLongestTree(TFile* _source, char const* _name)
 }
 
 void
-PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, GoodLumiFilter* _goodlumi = 0)
+PhotonSkimmer::run(char const* _sourceDir, char const* _outputPath, long _nEvents/* = -1*/, GoodLumiFilter* _goodlumi/* = 0*/)
 {
   std::vector<TString> sourcePaths;
 
@@ -69,7 +96,19 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
   TH1D* allEvents(0);
   TH1D* eventCounter(0);
 
-  simpletree::Event event;
+  typedef std::tuple<unsigned, unsigned, unsigned> EventID;
+  std::map<EventID, long> secondaryEvents;
+  if (secondaryInput_) {
+    secondaryInput_->SetBranchStatus("*", false);
+    event_.setAddress(*secondaryInput_, {"run", "lumi", "event"});
+
+    long iEntry(0);
+    while (secondaryInput_->GetEntry(iEntry) > 0)
+      secondaryEvents.emplace(EventID(event_.run, event_.lumi, event_.event), iEntry++);
+
+    secondaryInput_->SetBranchStatus("*", true);
+    event_.setAddress(*secondaryInput_);
+  }
 
   simpletree::TriggerHelper hltPhoton165HE10Helper("HLT_Photon165_HE10");
   bool hltPhoton165HE10(false);
@@ -80,46 +119,45 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
   std::vector<TString>* hltPaths(0);
   std::map<unsigned, std::vector<TString>> hltMenus;
 
-  auto pass([&event]()->bool {
-      for (auto& photon : event.photons) {
-        if (photon.isEB && photon.scRawPt > 150.)
-          return true;
-      }
-      return false;
-    });
-
   std::cout << "skimming events" << std::endl;
 
   long nTotal(0);
   long nPass(0);
 
   for (auto& path : sourcePaths) {
-    auto* source(TFile::Open(path));
-    if (!source || source->IsZombie()) {
-      delete source;
+    source_ = TFile::Open(path);
+    if (!source_ || source_->IsZombie()) {
+      delete source_;
+      source_ = 0;
       continue;
     }
 
     if (!allEvents) {
-      outputFile->cd();
-      allEvents = static_cast<TH1D*>(source->Get("hDAllEvents")->Clone());
+      auto* h(source_->Get("hDAllEvents"));
+      if (h) {
+        outputFile->cd();
+        allEvents = static_cast<TH1D*>(h->Clone());
+      }
     }
     else
-      allEvents->Add(static_cast<TH1D*>(source->Get("hDAllEvents")));
+      allEvents->Add(static_cast<TH1D*>(source_->Get("hDAllEvents")));
 
     if (!eventCounter) {
-      outputFile->cd();
-      eventCounter = static_cast<TH1D*>(source->Get("counter")->Clone());
+      auto* h(source_->Get("counter"));
+      if (h) {
+        outputFile->cd();
+        eventCounter = static_cast<TH1D*>(h->Clone());
+      }
     }
     else
-      eventCounter->Add(static_cast<TH1D*>(source->Get("counter")));
+      eventCounter->Add(static_cast<TH1D*>(source_->Get("counter")));
 
-    TTree* inEventTree(getLongestTree(source, "events"));
+    TTree* inEventTree(getLongestTree("events"));
 
-    TTree* inRunTree(getLongestTree(source, "runs"));
+    TTree* inRunTree(getLongestTree("runs"));
     run.setAddress(*inRunTree);
 
-    TTree* inHLTTree(getLongestTree(source, "hlt"));
+    TTree* inHLTTree(getLongestTree("hlt"));
     if (inHLTTree) {
       if (!hltPaths)
         hltPaths = new std::vector<TString>;
@@ -131,14 +169,14 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
       outputFile->cd();
       outEventTree = new TTree("events", "Events");
 
-      event.book(*outEventTree);
+      event_.book(*outEventTree);
 
       // event branch addresses are copied through CloneTree
       outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
       outEventTree->Branch("hlt.photon135PFMET100", &hltPhoton135PFMET100, "photon135PFMET100/O");
     }
 
-    event.setAddress(*inEventTree);
+    event_.setAddress(*inEventTree);
 
     if (inHLTTree) {
       hltPhoton165HE10Helper.reset();
@@ -151,19 +189,25 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
       if (nTotal % 100000 == 1)
         std::cout << " " << nTotal << std::endl;
 
-      if (_goodlumi && !_goodlumi->isGoodLumi(event.run, event.lumi))
+      if (_goodlumi && !_goodlumi->isGoodLumi(event_.run, event_.lumi))
         continue;
+
+      if (secondaryInput_) {
+        auto eItr(secondaryEvents.find(EventID(event_.run, event_.lumi, event_.event)));
+        if (eItr != secondaryEvents.end())
+          secondaryInput_->GetEntry(eItr->second);
+      }
 
       if (!pass())
         continue;
 
       ++nPass;
       if (inHLTTree) {
-        hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event);
-        hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event);
+        hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event_);
+        hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event_);
       }
 
-      for (auto& photon : event.photons) {
+      for (auto& photon : event_.photons) {
         double chIsoEA(0.);
         double absEta(std::abs(photon.scEta));
         if (absEta < 1.)
@@ -181,7 +225,7 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
         else
           chIsoEA = 0.0167;
 
-        photon.chIsoS16 = photon.chIso - chIsoEA * event.rho;
+        photon.chIsoS16 = photon.chIso - chIsoEA * event_.rho;
         if (photon.isEB) {
           photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
           photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
@@ -192,7 +236,7 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
         }
 
         // EA computed with iso/worstIsoEA.py
-        photon.chIsoMax -= 0.094 * event.rho;
+        photon.chIsoMax -= 0.094 * event_.rho;
         if (photon.chIsoMax < photon.chIso)
           photon.chIsoMax = photon.chIso;
       }
@@ -220,7 +264,8 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
         hltMenus[run.run];
     }
 
-    delete source;
+    delete source_;
+    source_ = 0;
   }
 
   std::cout << "Event reduction: " << nPass << " / " << nTotal << std::endl;

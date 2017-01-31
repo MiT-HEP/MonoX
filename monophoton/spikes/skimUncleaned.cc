@@ -1,99 +1,112 @@
 #include "TreeEntries_simpletree.h"
 
-#include "../../common/GoodLumiFilter.h"
-
 #include "TFile.h"
 #include "TTree.h"
+#include "TLorentzVector.h"
 
 #include <iostream>
 
 void
-skimUncleaned(TTree* _input, TFile* _outputFile, GoodLumiFilter* _goodLumi = 0)
+skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
 {
-  _outputFile->cd();
-  auto* output(new TTree("events", "Events"));
-
-  unsigned run;
-  unsigned lumi;
-  TBranch* runBranch(0);
-  TBranch* lumiBranch(0);
-
-  if (_goodLumi) {
-    _input->SetBranchAddress("run", &run);
-    _input->SetBranchAddress("lumi", &lumi);
-
-    output->Branch("run", &run, "run/i");
-    output->Branch("lumi", &lumi, "lumi/i");
-
-    runBranch = _input->GetBranch("run");
-    lumiBranch = _input->GetBranch("lumi");
-  }
+  enum Skim {
+    kHighMet,
+    kLowMet,
+    //    kZee,
+    nSkims
+  };
+  
+  TString skimNames[] = {
+    "highmet",
+    "lowmet",
+    //    "zee"
+  };
 
   simpletree::Event event;
-  event.setAddress(*_input, {"run", "lumi"}, false);
-  event.book(*output, {"run", "lumi"}, false);
+  simpletree::SuperCluster outCluster;
+  simpletree::Met outMet("met");
 
-  unsigned currentRun(0);
-  unsigned currentLumi(0);
-  bool skipRun(false);
-  bool skipLumi(false);
+  TTree* outputs[nSkims]{};
+
+  for (unsigned iS(0); iS != nSkims; ++iS) {
+    TString outputName(_outputNameBase);
+    outputName.ReplaceAll(".root", "_" + skimNames[iS] + ".root");
+    auto* outputFile(TFile::Open(outputName, "recreate"));
+    outputs[iS] = new TTree("events", "Events");
+    event.book(*outputs[iS], {"run", "lumi", "event"});
+    outCluster.book(*outputs[iS], "cluster");
+    outMet.book(*outputs[iS]);
+  }
+
+  // float mZ(0.);
+  // outputs[kZee]->Branch("mZ", &mZ, "mZ/F");
+
+  event.setStatus(*_input, false, {"*"});
+  event.setAddress(*_input, {"t1Met", "superClusters"});
 
   long iEntry(0);
-  while (true) {
+  while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 0)
       std::cout << iEntry << std::endl;
 
-    if (_goodLumi) {
-      if (runBranch->GetEntry(iEntry) <= 0)
-        break;
+    auto& clusters(event.superClusters);
 
-      if (run != currentRun) {
-        currentRun = run;
-        if (_goodLumi && !_goodLumi->hasGoodLumi(run)) {
-          skipRun = true;
-          ++iEntry;
-          continue;
-        }
-        else
-          skipRun = false;
-      }
-      else if (skipRun) {
-        ++iEntry;
+    outMet = event.t1Met;
+
+    for (unsigned iC(0); iC != clusters.size(); ++iC) {
+      auto& sc(clusters[iC]);
+
+      if (!sc.isEB)
         continue;
-      }
 
-      lumiBranch->GetEntry(iEntry);
-
-      if (lumi != currentLumi) {
-        currentLumi = lumi;
-        if (_goodLumi && !_goodLumi->isGoodLumi(run, lumi)) {
-          skipLumi = true;
-          ++iEntry;
-          continue;
-        }
-        else
-          skipLumi = false;
-      }
-      else if (skipLumi) {
-        ++iEntry;
+      if (sc.rawPt < 175.)
         continue;
-      }
-    }
 
-    if (_input->GetEntry(iEntry++) <= 0)
-      break;
+      outCluster = sc;
 
-    if (event.t1Met.met < 140.)
-      continue;
+      if (event.t1Met.met > 140.)
+        outputs[kHighMet]->Fill();
 
-    for (auto& sc : event.superClusters) {
-      if (sc.rawPt > 175.) {
-        output->Fill();
-        break;
-      }
+      if (event.t1Met.met < 40.)
+        outputs[kLowMet]->Fill();
+
+      // // trackIso kills electrons
+      // // if (sc.trackIso > 10.)
+      // //   continue;
+      // if (sc.sieie > 0.0102 || sc.sieie < 0.001 || sc.sipip < 0.001)
+      //   continue;
+
+      // TLorentzVector p1;
+      // p1.SetPtEtaPhiM(sc.rawPt, sc.eta, sc.phi, 0.);
+
+      // for (unsigned iC2(0); iC2 != clusters.size(); ++iC2) {
+      //   if (iC2 == iC)
+      //     continue;
+
+      //   auto& sc2(clusters[iC2]);
+
+      //   if (!sc2.isEB)
+      //     continue;
+      //   // if (sc2.trackIso > 10.)
+      //   //   continue;
+      //   if (sc2.sieie > 0.0102 || sc2.sieie < 0.001 || sc2.sipip < 0.001)
+      //     continue;
+
+      //   TLorentzVector p2;
+      //   p2.SetPtEtaPhiM(sc2.rawPt, sc2.eta, sc2.phi, 0.);
+      //   mZ = (p1 + p2).M();
+      //   if (mZ > 61. && mZ < 121.) {
+      //     outputs[kZee]->Fill();
+      //     break;
+      //   }
+      // }
     }
   }
 
-  _outputFile->cd();
-  output->Write();
+  for (unsigned iS(0); iS != nSkims; ++iS) {
+    auto* outputFile(outputs[iS]->GetCurrentFile());
+    outputFile->cd();
+    outputFile->Write();
+    delete outputFile;
+  }
 }
