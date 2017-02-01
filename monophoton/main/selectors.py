@@ -66,8 +66,12 @@ puWeight = getFromFile(datadir + '/pileup.root', 'puweight')
 photonSF = getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', 'photonSF')
 
 hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
-hadproxyupWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactUp')
-hadproxydownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactDown')
+# hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
+hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactUp')
+# hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
+hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactDown')
+# hadproxyVLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactVLoose')
+hadproxyVLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactDown')
 hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
 hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
@@ -655,7 +659,7 @@ def hadProxyTight(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    weight = ROOT.PhotonPtWeight(hadproxyupWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyTightWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
@@ -697,7 +701,7 @@ def hadProxyLoose(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    weight = ROOT.PhotonPtWeight(hadproxyupWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyLooseWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
@@ -741,7 +745,7 @@ def hadProxyVLoose(sample, selector):
 
     selector = monophotonBase(sample, selector)
 
-    weight = ROOT.PhotonPtWeight(hadproxydownWeight)
+    weight = ROOT.PhotonPtWeight(hadproxyVLooseWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
