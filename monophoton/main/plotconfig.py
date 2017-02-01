@@ -188,8 +188,8 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
@@ -228,6 +228,9 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
+            if group.name == 'hfake':
+                continue
+
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
@@ -250,6 +253,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
 
@@ -264,8 +268,8 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
@@ -304,6 +308,9 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
+            if group.name == 'hfake':
+                continue
+
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
@@ -327,6 +334,7 @@ def getConfig(confName):
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
     elif confName == 'monomu':
@@ -342,13 +350,13 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+           #  GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
@@ -384,6 +392,9 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
+            if group.name == 'hfake':
+                continue
+
             group.variations.append(Variation('lumi', reweight = 0.027))
             
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
@@ -408,6 +419,7 @@ def getConfig(confName):
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
     elif confName == 'monoel':
@@ -423,13 +435,13 @@ def getConfig(confName):
 
         config.fullSelection = ''
         config.bkgGroups = [
-            GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            # GroupSpec('zjets', 'Z#rightarrowll+jets', samples = dy, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('wjets', 'W#rightarrowl#nu+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
@@ -465,6 +477,9 @@ def getConfig(confName):
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
+            if group.name == 'hfake':
+                continue
+
             group.variations.append(Variation('lumi', reweight = 0.027))
             
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
@@ -489,6 +504,7 @@ def getConfig(confName):
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         
     
     elif confName == 'lowdphi':
