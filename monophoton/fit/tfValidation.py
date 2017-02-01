@@ -5,8 +5,6 @@ import array
 import math
 from pprint import pprint
 
-plotDir = 'workspace'
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
@@ -23,6 +21,9 @@ totals = {}
 
 hstore = r.gROOT.mkdir('hstore')
 
+plotDir = 'workspace'
+subtractBackground = True
+
 fetchHistograms(parameters, sources, sourcePlots, totals, hstore)
 
 rcanvas = RatioCanvas(name = 'datamc', lumi = 36400)
@@ -30,6 +31,9 @@ rcanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
 rcanvas.legend.add('mc', 'Z/W MC', opt = 'LF', lcolor = r.kRed + 1, lwidth = 2, fcolor = r.kGray, fstyle = 1001, msize = 0)
 rcanvas.legend.add('data', 'Z/W Data', opt = 'L', color = r.kBlack, mstyle = 8)
 
+dataDileps   = {}
+dataMonoleps = {}
+dataRatios   = {}
 for lep in ['mu', 'el']:
 
     ### make MC TF 
@@ -69,8 +73,8 @@ for lep in ['mu', 'el']:
             gMcRatio.SetPointEYlow(iP-1, eDown)
             
     ### Get Data for Data TF
-    hDataDilep = sourcePlots['di'+lep]['data_obs']['nominal']
-    hDataMonolep = sourcePlots['mono'+lep]['data_obs']['nominal']
+    hDataDilep = sourcePlots['di'+lep]['data_obs']['nominal'].Clone('data_di'+lep)
+    hDataMonolep = sourcePlots['mono'+lep]['data_obs']['nominal'].Clone('data_mono'+lep)
 
     ### Add up dilep backgrounds
     hBkgdDilep = None
@@ -78,7 +82,7 @@ for lep in ['mu', 'el']:
         if sname == 'zg' or sname == 'data_obs':
             continue
         
-        print 'Subtracting ' + sname + ' from di' + lep + ' observed.'
+        # print 'Subtracting ' + sname + ' from di' + lep + ' observed.'
 
         if hBkgdDilep is None:
             hBkgdDilep = sourcePlots['di'+lep][sname]['nominal'].Clone('di'+lep+'_bkgd')
@@ -92,7 +96,7 @@ for lep in ['mu', 'el']:
         if sname == 'wg' or sname == 'data_obs':
             continue
 
-        print 'Subtracting ' + sname + ' from mono' + lep + ' observed.'
+        # print 'Subtracting ' + sname + ' from mono' + lep + ' observed.'
         
         if hBkgdMonolep is None:
             hBkgdMonolep = sourcePlots['mono'+lep][sname]['nominal'].Clone('mono'+lep+'_bkgd')
@@ -101,18 +105,17 @@ for lep in ['mu', 'el']:
             hBkgdMonolep.Add(sourcePlots['mono'+lep][sname]['nominal'])
 
     ### Subtract backgrounds
-    hDataDilep.Add(hBkgdDilep, -1)
-    hDataMonolep.Add(hBkgdMonolep, -1)
+    if subtractBackground:
+        hDataDilep.Add(hBkgdDilep, -1)
+        hDataMonolep.Add(hBkgdMonolep, -1)
 
     ### Make Data TF
     hDataRatio = hDataDilep.Clone('tf_data_'+lep)
     hDataRatio.Divide(hDataMonolep)
 
-    """
-    print 'Data ratio'
-    for iB in range(1, hDataRatio.GetNbinsX()+1):
-        print iB, hDataRatio.GetBinContent(iB)
-    """
+    dataDileps[lep]   = hDataDilep
+    dataMonoleps[lep] = hDataMonolep
+    dataRatios[lep]   = hDataRatio
 
     ### Plot the things
     mcplots = gMcRatio
@@ -141,6 +144,7 @@ mcMonoel = sourcePlots['monoel']['wg']
 
 hMcRatio = mcDimu['nominal'].Clone('tf_mc_lep')
 hMcRatio.Add(mcDiel['nominal'], 1)
+
 hMcMonolep = mcMonomu['nominal'].Clone('mc_monolep')
 hMcMonolep.Add(mcMonoel['nominal'], 1)
 
@@ -149,9 +153,6 @@ hMcRatio.Divide(hMcMonolep)
 ### Add theory uncertainties to MC TF
 gMcRatio = r.TGraphAsymmErrors(hMcRatio)
 # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
-
-hUpRatios = {}
-hDownRatios = {}
 
 for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
     print nuis, corr
@@ -186,6 +187,7 @@ for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
 ### Get Data for Data TF
 hDataDilep = sourcePlots['dimu']['data_obs']['nominal'].Clone('data_dilep')
 hDataDilep.Add(sourcePlots['diel']['data_obs']['nominal'], 1)
+
 hDataMonolep = sourcePlots['monomu']['data_obs']['nominal'].Clone('data_monolep')
 hDataMonolep.Add(sourcePlots['monoel']['data_obs']['nominal'], 1)
 
@@ -195,23 +197,23 @@ for sname in sourcePlots['dimu']:
     if sname == 'zg' or sname == 'data_obs':
         continue
 
-    print 'Subtracting ' + sname + ' from dilep observed.'
+    # print 'Subtracting ' + sname + ' from dilep observed.'
 
     if hBkgdDilep is None:
         hBkgdDilep = sourcePlots['dimu'][sname]['nominal'].Clone('dilep_bkgd')
     else:
-        hBkgdDilep.Add(sourcePlots['dimu'][sname]['nominal'])
+        hBkgdDilep.Add(sourcePlots['dimu'][sname]['nominal'], 1)
 
 for sname in sourcePlots['diel']:
     if sname == 'zg' or sname == 'data_obs':
         continue
 
-    print 'Subtracting ' + sname + ' from dilep observed.'
+    # print 'Subtracting ' + sname + ' from dilep observed.'
 
     if hBkgdDilep is None:
         hBkgdDilep = sourcePlots['diel'][sname]['nominal'].Clone('dilep_bkgd')
     else:
-        hBkgdDilep.Add(sourcePlots['diel'][sname]['nominal'])
+        hBkgdDilep.Add(sourcePlots['diel'][sname]['nominal'], 1)
 
 ### Add up monolep backgrounds
 hBkgdMonolep = None
@@ -219,39 +221,48 @@ for sname in sourcePlots['monomu']:
     if sname == 'wg' or sname == 'data_obs':
         continue
 
-    print 'Subtracting ' + sname + ' from monolep observed.'
+    # print 'Subtracting ' + sname + ' from monolep observed.'
 
     if hBkgdMonolep is None:
         hBkgdMonolep = sourcePlots['monomu'][sname]['nominal'].Clone('monolep_bkgd')
         # hBkgdMonolep.Sumw2(True)
     else:
-        hBkgdMonolep.Add(sourcePlots['monomu'][sname]['nominal'])
+        hBkgdMonolep.Add(sourcePlots['monomu'][sname]['nominal'], 1)
 
 for sname in sourcePlots['monoel']:
     if sname == 'wg' or sname == 'data_obs':
         continue
 
-    print 'Subtracting ' + sname + ' from monolep observed.'
+    # print 'Subtracting ' + sname + ' from monolep observed.'
 
     if hBkgdMonolep is None:
         hBkgdMonolep = sourcePlots['monoel'][sname]['nominal'].Clone('monolep_bkgd')
         # hBkgdMonolep.Sumw2(True)
     else:
-        hBkgdMonolep.Add(sourcePlots['monoel'][sname]['nominal'])
+        hBkgdMonolep.Add(sourcePlots['monoel'][sname]['nominal'], 1)
 
 ### Subtract backgrounds
-hDataDilep.Add(hBkgdDilep, -1)
-hDataMonolep.Add(hBkgdMonolep, -1)
+if subtractBackground:
+    hDataDilep.Add(hBkgdDilep, -1)
+    hDataMonolep.Add(hBkgdMonolep, -1)
 
 ### Make Data TF
 hDataRatio = hDataDilep.Clone('tf_data_lep')
 hDataRatio.Divide(hDataMonolep)
 
-"""
 print 'Data ratio'
 for iB in range(1, hDataRatio.GetNbinsX()+1):
-    print iB, hDataRatio.GetBinContent(iB)
-"""
+    print "dimu      %i %8.3f %8.3f % 8.5f" % (iB, dataDileps['mu'].GetBinContent(iB), dataDileps['mu'].GetBinError(iB), dataDileps['mu'].GetBinError(iB) / dataDileps['mu'].GetBinContent(iB))
+    print "monomu    %i %8.3f %8.3f % 8.5f" % (iB, dataMonoleps['mu'].GetBinContent(iB), dataMonoleps['mu'].GetBinError(iB), dataMonoleps['mu'].GetBinError(iB) / dataMonoleps['mu'].GetBinContent(iB)) 
+    print "diel      %i %8.3f %8.3f % 8.5f" % (iB, dataDileps['el'].GetBinContent(iB), dataDileps['el'].GetBinError(iB), dataDileps['el'].GetBinError(iB) / dataDileps['el'].GetBinContent(iB))
+    print "monoel    %i %8.3f %8.3f % 8.5f" % (iB, dataMonoleps['el'].GetBinContent(iB), dataMonoleps['el'].GetBinError(iB), dataMonoleps['el'].GetBinError(iB) / dataMonoleps['el'].GetBinContent(iB))
+    print "dilep     %i %8.3f %8.3f % 8.5f" % (iB, hDataDilep.GetBinContent(iB), hDataDilep.GetBinError(iB), hDataDilep.GetBinError(iB) / hDataDilep.GetBinContent(iB))
+    print "monolep   %i %8.3f %8.3f % 8.5f" % (iB, hDataMonolep.GetBinContent(iB), hDataMonolep.GetBinError(iB), hDataMonolep.GetBinError(iB) / hDataMonolep.GetBinContent(iB))
+    print "mu ratio  %i %8.5f %8.5f % 8.5f" % (iB, dataRatios['mu'].GetBinContent(iB), dataRatios['mu'].GetBinError(iB), dataRatios['mu'].GetBinError(iB) / dataRatios['mu'].GetBinContent(iB))
+    print "el ratio  %i %8.5f %8.5f % 8.5f" % (iB, dataRatios['el'].GetBinContent(iB), dataRatios['el'].GetBinError(iB), dataRatios['el'].GetBinError(iB) / dataRatios['el'].GetBinContent(iB))
+    print "lep ratio %i %8.5f %8.5f % 8.5f \n" % (iB, hDataRatio.GetBinContent(iB), hDataRatio.GetBinError(iB), hDataRatio.GetBinError(iB) / hDataRatio.GetBinContent(iB))
+    
+
 
 ### Plot the things
 mcplots = gMcRatio
@@ -266,28 +277,5 @@ iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
 iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
 iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
 
-"""
-rcanvas.legend.add('EWK', 'Z/W EWK', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 2, lwidth = 2, msize = 0)
-rcanvas.legend.apply('EWK', hUpRatios['EWK'])
-rcanvas.legend.apply('EWK', hDownRatios['EWK'])
-iEWKUp = rcanvas.addHistogram(hUpRatios['EWK'])
-iEWKDown = rcanvas.addHistogram(hDownRatios['EWK'])
-
-rcanvas.legend.add('vgQCDscale', 'Z/W vgQCDscale', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 3, lwidth = 2, msize = 0)
-rcanvas.legend.apply('vgQCDscale', hUpRatios['vgQCDscale'])
-rcanvas.legend.apply('vgQCDscale', hDownRatios['vgQCDscale'])
-ivgQCDscaleUp = rcanvas.addHistogram(hUpRatios['vgQCDscale'])
-ivgQCDscaleDown = rcanvas.addHistogram(hDownRatios['vgQCDscale'])
-
-rcanvas.legend.add('vgPDF', 'Z/W vgPDF', opt = 'L', lstyle = r.kDashed, lcolor = r.kRed + 4, lwidth = 2, msize = 0)
-rcanvas.legend.apply('vgPDF', hUpRatios['vgPDF'])
-rcanvas.legend.apply('vgPDF', hDownRatios['vgPDF'])
-ivgPDFUp = rcanvas.addHistogram(hUpRatios['vgPDF'])
-ivgPDFDown = rcanvas.addHistogram(hDownRatios['vgPDF'])
-
-theoList = [iEWKUp, iEWKDown, ivgQCDscaleUp, ivgQCDscaleDown, ivgPDFUp, ivgPDFDown]
-"""
-theoList = []
-
 outName = 'tf_ratio4_lep'
-rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData] + theoList, rList = [iMc, iUnc, iMc, iData] + theoList, logy = False)
+rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData], rList = [iMc, iUnc, iMc, iData], logy = False)
