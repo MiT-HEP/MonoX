@@ -485,7 +485,7 @@ def purityNom(sample, selector):
 
     return selector
 
-def purityUp(sample, selector):
+def purityTight(sample, selector):
     """
     EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
     """
@@ -498,9 +498,9 @@ def purityUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
+    sels.remove('CHIsoMax')
     # sels.remove('CHIsoMaxS16')
     # sels.remove('CHIsoS16')
-    sels.remove('CHIsoMax')
     sels.append('Sieie15')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
@@ -523,7 +523,49 @@ def purityUp(sample, selector):
 
     return selector
 
-def purityDown(sample, selector):
+def purityLoose(sample, selector):
+    """
+    EM Object is true photon like, but with loosened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
+    """
+
+    selector = purityBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('NHIso')
+    sels.remove('PhIso')
+    sels.remove('CHIsoMax')
+    # sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoS16')
+    # sels.remove('NHIsoS16')
+    # sels.remove('PhIsoS16')
+    sels.append('Sieie15')
+    sels.append('NHIsoLoose')
+    sels.append('PhIsoLoose')
+    sels.append('CHIsoMax11')
+    # sels.append('CHIsoS16VLoose')
+    # sels.append('NHIsoS16Loose')
+    # sels.append('PhIsoS16Loose')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+
+    return selector
+
+def purityVLoose(sample, selector):
     """
     EM Object is true photon like, but with inverted NHIso and PhIso requirements and loosened sieie and CHIso requirements.
     """
@@ -606,7 +648,7 @@ def hadProxy(sample, selector):
 
     return selector
 
-def hadProxyUp(sample, selector):
+def hadProxyTight(sample, selector):
     """
     Candidate-like with tight NHIso and PhIso, with inverted sieie or CHIso.
     """
@@ -623,9 +665,9 @@ def hadProxyUp(sample, selector):
 
     sels = list(photonFullSelection)
     sels.remove('Sieie')
+    sels.remove('CHIsoMax')
     # sels.remove('CHIsoMaxS16')
     # sels.remove('CHIsoS16')
-    sels.remove('CHIsoMax')
     sels.append('Sieie15')
     sels.append('NHIsoTight')
     sels.append('PhIsoTight')
@@ -648,7 +690,51 @@ def hadProxyUp(sample, selector):
 
     return selector
 
-def hadProxyDown(sample, selector):
+def hadProxyLoose(sample, selector):
+    """
+    Candidate-like with Loose NHIso and PhIso, with inverted sieie or CHIso.
+    """
+
+    selector = monophotonBase(sample, selector)
+
+    weight = ROOT.PhotonPtWeight(hadproxyupWeight)
+    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
+
+    sels = list(photonFullSelection)
+    sels.remove('Sieie')
+    sels.remove('NHIso')
+    sels.remove('PhIso')
+    sels.remove('CHIsoMax')
+    # sels.remove('CHIsoMaxS16')
+    # sels.remove('CHIsoS16')
+    sels.append('Sieie15')
+    sels.append('NHIsoLoose')
+    sels.append('PhIsoLoose')
+    sels.append('CHIsoMax11')
+    # sels.append('CHIsoS16VLoose')
+    # sels.append('NHIsoS16Tight')
+    # sels.append('PhIsoS16Tight')
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
+
+    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
+    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+
+    return selector
+
+def hadProxyVLoose(sample, selector):
     """
     Candidate-like, but with loosened sieie + CHIso and inverted NHIso or PhIso.
     """
