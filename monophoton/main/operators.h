@@ -208,7 +208,9 @@ class PhotonSelection : public Cut {
     NHIsoS16VLoose,
     PhIsoS16VLoose,
     CHIsoS16VLoose,
-    nSelections           // 35
+    NHIsoLoose,           // 35
+    PhIsoLoose,
+    nSelections           // 37
   };
 
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}

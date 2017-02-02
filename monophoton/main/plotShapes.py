@@ -95,6 +95,23 @@ for syst, procs in nuisances.items():
             nomId = rcanvas.addHistogram(nominal, drawOpt = 'L')
 
             if not var:
+                rcanvas.rlimits = (0.8, 1.2)
+                for iB in range(1, up.GetNbinsX()+1):
+                    if nominal.GetBinContent(iB):
+                        binRatioUp = up.GetBinContent(iB) / nominal.GetBinContent(iB)
+                        binRatioDown = down.GetBinContent(iB) / nominal.GetBinContent(iB)
+                    else:
+                        binRatioUp = 0.
+                        binRatioDown = 1.
+                    
+                    if binRatioUp > 1.55 or binRatioDown < 0.45:
+                        rcanvas.rlimits = (0.0, 2.0)
+                        break
+
+                    elif binRatioUp > 1.2 or binRatioDown < 0.8:
+                        rcanvas.rlimits = (0.45, 1.55)
+                    
+
                 up.GetXaxis().SetTitle('E_{T}^{#gamma} (GeV)')
                 rcanvas.legend.add('up', title = 'Up', lcolor = r.kRed, lwidth = 2)
                 rcanvas.legend.apply('up', up)
