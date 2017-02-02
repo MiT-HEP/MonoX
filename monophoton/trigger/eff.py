@@ -40,8 +40,8 @@ snames = samplesConf[sname]
 
 ## SETUP
 
-workDir = config.histDir + '/trigger'
-plotDir = 'trigger'
+workDir = config.histDir + '/trigger_gsfix'
+plotDir = 'trigger_gsfix'
 
 if outname:
     outputFile = ROOT.TFile.Open(outname, 'recreate')

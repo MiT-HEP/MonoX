@@ -6,26 +6,40 @@
 #include "TString.h"
 
 #include <iostream>
+#include <tuple>
+#include <map>
 
-enum EventType {
-  kDiphoton,
-  kElectronPhoton,
-  kMuonPhoton,
-  kJetHT,
-  kDimuon,
-  kDielectron,
-  kElectronMET,
-  nEventTypes
+class Skimmer {
+public:
+  enum EventType {
+    kDiphoton,
+    kElectronPhoton,
+    kMuonPhoton,
+    kJetHT,
+    kDimuon,
+    kDielectron,
+    kElectronMET,
+    nEventTypes
+  };
+
+  Skimmer() {}
+  ~Skimmer() {}
+
+  void skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntries = -1);
+  void setSecondaryInput(TTree* input) { secondary_ = input; }
+
+private:
+  bool
+  photonId(simpletree::Photon const& ph)
+  {
+    return ph.medium;
+  }
+
+  TTree* secondary_{0};
 };
 
-bool
-photonId(simpletree::Photon const& ph)
-{
-  return ph.loose;
-}
-
 void
-skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntries = -1)
+Skimmer::skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntries)
 {
   auto* outputFile(TFile::Open(_outputName, "recreate"));
   auto* output(new TTree("triggerTree", "trigger matching"));
@@ -55,6 +69,26 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
   default:
     outPhoton.book(*output, "probe");
     break;
+  }
+
+  typedef std::tuple<unsigned, unsigned, unsigned> EventID;
+  std::map<EventID, long> secondaryEvents;
+
+  if (secondary_) {
+    std::cout << secondary_->GetEntries() << " secondary inputs" << std::endl;
+
+    event.setStatus(*secondary_, false, {"*"});
+    event.setAddress(*secondary_, {"run", "lumi", "event"});
+   
+    long iEntry(0);
+    while (secondary_->GetEntry(iEntry) > 0)
+      secondaryEvents.emplace(EventID(event.run, event.lumi, event.event), iEntry++);
+
+    auto beg(secondaryEvents.begin());
+    std::cout << "secondary mapping " << std::get<0>(beg->first) << ":" << std::get<1>(beg->first) << ":" << std::get<2>(beg->first) << " -> " << beg->second << std::endl;
+
+    // has to come before main setAddress so that input tree of event is set to main
+    event.setAddress(*secondary_, {"run", "lumi", "event", "rho", "npv", "hltBits", "photons", "electrons", "muons", "t1Met"});
   }
 
   event.setStatus(*_input, false, {"*"});
@@ -114,6 +148,12 @@ skim(TTree* _input, EventType _eventType, char const* _outputName, long _nEntrie
     catch (std::exception& ex) {
       std::cerr << ex.what() << std::endl;
       return;
+    }
+
+    if (secondary_) {
+      auto eItr(secondaryEvents.find(EventID(event.run, event.lumi, event.event)));
+      if (eItr != secondaryEvents.end())
+        secondary_->GetEntry(eItr->second);
     }
 
     if (_eventType == kDimuon) {
