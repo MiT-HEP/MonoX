@@ -21,19 +21,20 @@ totals = {}
 
 hstore = r.gROOT.mkdir('hstore')
 
-plotDir = 'workspace'
+plotDir = 'monophoton/workspace'
 subtractBackground = True
 
 fetchHistograms(parameters, sources, sourcePlots, totals, hstore)
 
 rcanvas = RatioCanvas(name = 'datamc', lumi = 36400)
-rcanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+rcanvas.legend.setPosition(0.5, 0.7, 0.7, 0.9)
 rcanvas.legend.add('mc', 'Z/W MC', opt = 'LF', lcolor = r.kRed + 1, lwidth = 2, fcolor = r.kGray, fstyle = 1001, msize = 0)
 rcanvas.legend.add('data', 'Z/W Data', opt = 'L', color = r.kBlack, mstyle = 8)
 
 dataDileps   = {}
 dataMonoleps = {}
 dataRatios   = {}
+leps = { 'mu' : '#mu', 'el' : 'e' }
 for lep in ['mu', 'el']:
 
     ### make MC TF 
@@ -129,8 +130,10 @@ for lep in ['mu', 'el']:
     iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
     iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
     iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
+    
+    rcanvas.ytitle = 'Ratio Z('+leps[lep]+leps[lep]+') / W('+leps[lep]+'#nu)'
 
-    outName = 'tf_ratio4_'+lep
+    outName = 'tf_ratio_'+lep
     rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData], rList = [iMc, iUnc, iMc, iData], logy = False)
 
 
@@ -277,5 +280,7 @@ iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
 iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
 iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'L')
 
-outName = 'tf_ratio4_lep'
+rcanvas.ytitle = "Ratio Z(ll) / W(l#nu)"
+
+outName = 'tf_ratio_lep'
 rcanvas.printWeb(plotDir, outName, hList = [iMc, iUnc, iMc, iData], rList = [iMc, iUnc, iMc, iData], logy = False)
