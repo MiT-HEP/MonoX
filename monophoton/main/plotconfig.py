@@ -165,10 +165,10 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         # Specific systematic variations
-        # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.5))
+        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 1.0))
         config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose'))) 
-        # config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 0.05))
-        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeUp', 'hfakeDown')))
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))

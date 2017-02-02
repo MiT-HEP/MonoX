@@ -33,10 +33,11 @@ baseSel = 'jets.pt[0] > 100. && t1Met.met < 60. && photons.size == 1 && photons.
 nomSel = SigmaIetaIetaSels[era]['barrel'][pid] + ' && ' + pixelVetoCut + ' && ' + monophIdCut
 goodSel = chIsoMaxSels[era]['barrel'][pid] + ' && ' + sieieSels[era]['barrel'][pid]
 
-samples = [ ('',  baseSel + ' && ' + nomSel + ' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.37))')
-            ,('Nom', baseSel) #  + ' && ' + nomSel)
-            ,('Down', baseSel)
-            ,('Up', baseSel)
+samples = [ # ('',  baseSel + ' && ' + nomSel + ' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.37))')
+            ('Nom', baseSel) #  + ' && ' + nomSel)
+            ,('Tight', baseSel)
+            ,('Loose', baseSel)
+            ,('VLoose', baseSel)
             ]
 
 gtree = ROOT.TChain('events')
