@@ -137,6 +137,7 @@ selectors = {
     'wlnu-800': wlnu,
     'wlnu-1200': wlnu,
     'wlnu-2500': wlnu,
+    'dy-50': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
     'dy-50-100': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
     'dy-50-200': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
     'dy-50-400': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
