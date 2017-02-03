@@ -109,7 +109,7 @@ EventSelector::findOperator(char const* _name) const
 ZeeEventSelector::ZeeEventSelector(char const* name) :
   EventSelector(name)
 {
-  operators_.push_back(new HLTFilter("HLT_Ele23_WPLoose_Gsf"));
+  operators_.push_back(new HLTFilter("HLT_Ele27_WPTight_Gsf"));
   operators_.push_back(new MetFilters());
   operators_.push_back(new EEPairSelection());
   operators_.push_back(new MuonVeto());

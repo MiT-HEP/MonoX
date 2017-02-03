@@ -74,8 +74,8 @@ sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r'
 
 data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
 data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
-data_sph += ['hfakeTight', 'hfakeLoose', 'hfakeVLoose']
-data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose', 'purityVLoose'] # , 'gjets'] 
+data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
+data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
 data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
 data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
@@ -97,6 +97,20 @@ selectors = {
     'sph-16f-r': defaults(data_sph),
     'sph-16g-r': defaults(data_sph),
     'sph-16h': defaults(data_sph),
+    'smu-16b-r': defaults(data_smu),
+    'smu-16c-r': defaults(data_smu),
+    'smu-16d-r': defaults(data_smu),
+    'smu-16e-r': defaults(data_smu),
+    'smu-16f-r': defaults(data_smu),
+    'smu-16g-r': defaults(data_smu),
+    'smu-16h': defaults(data_smu),
+    'sel-16b-r': defaults(data_sel),
+    'sel-16c-r': defaults(data_sel),
+    'sel-16d-r': defaults(data_sel),
+    'sel-16e-r': defaults(data_sel),
+    'sel-16f-r': defaults(data_sel),
+    'sel-16g-r': defaults(data_sel),
+    'sel-16h': defaults(data_sel),
     # MC for signal region
     'znng-130': applyMod(selectors.kfactor, mc_sig),
     'wnlg-130': applyMod(selectors.kfactor, mc_sig + mc_lep),

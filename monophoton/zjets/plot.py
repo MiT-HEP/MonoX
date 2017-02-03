@@ -15,8 +15,9 @@ import config
 import ROOT as r
 r.gROOT.SetBatch(True)
 
-lumi = min(config.jsonLumi, allsamples['smu-16b2-d'].lumi + allsamples['smu-16c2-d'].lumi + allsamples['smu-16d2-d'].lumi)
-canvas = DataMCCanvas(lumi = lumi)
+
+smuLumi = sum(allsamples[s].lumi for s in ['smu-16b-r', 'smu-16c-r', 'smu-16d-r', 'smu-16e-r', 'smu-16f-r', 'smu-16g-r', 'smu-16h'])
+canvas = DataMCCanvas(lumi = smuLumi)
 
 probePixel = '!probe.pixelVeto'
 zMassCut = 'z.mass > 81. && z.mass < 101.'
@@ -28,8 +29,8 @@ monojetCut = 'jets.size == 1'
 njetsCut = 'jets.size < 3'
 
 variables = [ VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [25 * x for x in range(2, 4)] + [100 + 50 * x for x in range(0, 8)], unit = 'GeV', overflow = True, logy = True),
-              # VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
-              # VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
+              VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi) ),
+              VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi) ),
               VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi) ),
               VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt[0]', (20, 0., 1000.), unit = 'GeV', applyFullSel = True, logy = True),
               VariableDef('jetEta', '#eta_{j}', 'jets.eta[0]', (10, -5., 5.), applyFullSel = True),
@@ -59,15 +60,15 @@ jetsCuts = [ # ('monojet30', [monojetCut]),
             # ('multijetdPhiCut', [jetPtCut, dPhiJetCut])
             ]
 
-metValues = [ '050', '075', '100' ]
+metValues = [ '050' ] # , '075', '100', '125', '150' ] #
 
-skims = [ 'smu-16*2-d_zmmJets', 'sel-16*2-d_zeeJets' ] # , 's*-16*2-d_z*Jets' ]
+skims = [ 'smu-16*_zmmJets', 'sel-16*_zeeJets' ] # , 's*-16*2-d_z*Jets' ]
 
 samples = [ # ('qcd', ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000'], r.TColor.GetColor(0xff, 0xaa, 0xcc)),
             ('w+jets', ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], r.TColor.GetColor(0xff, 0x44, 0x99)),
             ('diboson', ['ww', 'wz', 'zz'], r.TColor.GetColor(0xff, 0xee, 0x99)), 
             ('tt', ['tt'], r.TColor.GetColor(0x55, 0x44, 0xff)),
-            ('z+jets', ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600'], r.TColor.GetColor(0x99, 0xff, 0xaa)) 
+            ('z+jets', ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500'], r.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
 
 
@@ -116,8 +117,6 @@ for skim in skims:
                     else:
                         dataHist.GetXaxis().SetTitle(varDef.title)
 
-                    dataCutString = cutString + ' && !(run > %s)' % config.runCutOff
-
                     dataTree.Draw(varDef.expr+'>>'+varDef.name+'-'+dataName, 'weight * ('+cutString+')', 'goff')
                     print dataHist.Integral()
                     canvas.addObs(dataHist, title = 'Data '+skimm)
@@ -125,7 +124,7 @@ for skim in skims:
                     for sample, color, mcTree in mcTrees:
                         mcName = sample+skimm
                         mcHist = varDef.makeHist(mcName)
-                        mcTree.Draw(varDef.expr+'>>'+varDef.name+'-'+mcName, str(lumi)+' * weight * ('+cutString+')', 'goff')
+                        mcTree.Draw(varDef.expr+'>>'+varDef.name+'-'+mcName, str(smuLumi)+' * weight * ('+cutString+')', 'goff')
                         canvas.addStacked(mcHist, title = sample, color = color)
 
                     # canvas.ylimits = (0.001, -1.)
