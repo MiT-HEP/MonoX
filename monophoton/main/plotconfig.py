@@ -546,7 +546,7 @@ def getConfig(confName):
         config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
     elif confName == 'lowmt':
-        config = PlotConfig('lowmt', photonData)
+        config = PlotConfig('monoph', photonData)
         config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = ''
         config.bkgGroups = [

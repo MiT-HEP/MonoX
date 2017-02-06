@@ -31,13 +31,13 @@ ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
 # available object - sample - skim type configurations
 configs = {
-    'photon': {'sph': ROOT.kDiphoton, 'sel': ROOT.kElectronPhoton, 'smu': ROOT.kMuonPhoton, 'jht': ROOT.kJetHT},
-    'muon': {'smu': ROOT.kDimuon},
-    'electron': {'sel': ROOT.kDielectron},
-    'met': {'sel': ROOT.kElectronMET}
+    'photon': {'sph': ROOT.Skimmer.kDiphoton, 'sel': ROOT.Skimmer.kElectronPhoton, 'smu': ROOT.Skimmer.kMuonPhoton, 'jht': ROOT.Skimmer.kJetHT},
+    'muon': {'smu': ROOT.Skimmer.kDimuon},
+    'electron': {'sel': ROOT.Skimmer.kDielectron},
+    'met': {'sel': ROOT.Skimmer.kElectronMET}
 }
 
-tree = ROOT.TChain('events')
+secondaries = []
 
 for sample in samples:
     try:
@@ -46,12 +46,26 @@ for sample in samples:
         print 'treeType for', obj, sample.name, 'not found'
         continue
 
+    tree = ROOT.TChain('events')
+
     treePath = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root'
     print sample.name, "adding files from", treePath
     tree.Add(treePath)
 
     print tree.GetEntries(), 'entries'
-            
-    ROOT.skim(tree, treeType, '/tmp/trigger_' + sample.name + '_' + obj + '.root')
+    
+    skimmer = ROOT.Skimmer()
 
-    shutil.move('/tmp/trigger_' + sample.name + '_' + obj + '.root', config.histDir + '/trigger/' + sample.name + '_' + obj + '.root')
+    if sample.name.startswith('sel-16'):
+        secondary = ROOT.TChain('events')
+        for fname in os.listdir('/data/t3serv014/yiiyama/hist/simpletree19/gsfix'):
+            if fname.startswith(sample.fullname):
+                secondary.Add('/data/t3serv014/yiiyama/hist/simpletree19/gsfix/' + fname)
+
+        print secondary.GetEntries(), 'secondary events'
+        skimmer.setSecondaryInput(secondary)
+        secondaries.append(secondary)
+        
+    skimmer.skim(tree, treeType, '/tmp/trigger_' + sample.name + '_' + obj + '.root')
+
+    shutil.move('/tmp/trigger_' + sample.name + '_' + obj + '.root', config.histDir + '/trigger_gsfix/' + sample.name + '_' + obj + '.root')
