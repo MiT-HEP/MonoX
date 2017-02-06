@@ -87,8 +87,8 @@ mcpdf = ROOT.KeysShape('mcpdf', 'mcpdf', met, mctree, 'weight', 0.5, 8)
 print 'Done.'
 
 sigmar = space.factory('sigmar[1., 0., 100.]')
-alpha = space.factory('alpha[0.1, 0., 1.]')
-beta = space.factory('beta[0.1, 0., 1.]')
+alpha = space.factory('alpha[0.0, 0., 1.]')
+beta = space.factory('beta[0.0, 0., 1.]')
 mean = space.factory('mean[0, -1., 50.]')
 
 print sigmar
@@ -97,10 +97,10 @@ print beta
 print mean
 
 print 'making width'
-width = space.factory('expr::width("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
-widthName = 'quadratic'
-# width = space.factory('expr::width("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
-# widthName = 'linear'
+# width = space.factory('expr::width("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
+# widthName = 'quadratic'
+width = space.factory('expr::width("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
+widthName = 'linear'
 print 'width made'
 
 print 'making smear'
@@ -116,11 +116,11 @@ model = ROOT.RooAddPdf('model', 'model', ROOT.RooArgList(gjets, bpdf), ROOT.RooA
 
 model.fitTo(ddata)
 
-paramsOut = file('params_' + widthName + '.txt', 'w')
-paramsOut.write('%10s: %10.3g %10.3g \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
-paramsOut.write('%10s: %10.3g %10.3g \n' % ('alpha', alpha.getValV(), alpha.getError()))
-paramsOut.write('%10s: %10.3g %10.3g \n' % ('beta', beta.getValV(), beta.getError()))
-paramsOut.write('%10s: %10.3g %10.3g \n' % ('mean', mean.getValV(), mean.getError()))
+paramsOut = file('../data/gjSmearParams_' + widthName + '.txt', 'w')
+paramsOut.write('%10s %20f %20f \n' % ('mean', mean.getValV(), mean.getError()))
+paramsOut.write('%10s %20f %20f \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
+paramsOut.write('%10s %20f %20f \n' % ('alpha', alpha.getValV(), alpha.getError()))
+paramsOut.write('%10s %20f %20f \n' % ('beta', beta.getValV(), beta.getError()))
 paramsOut.close()
 
 frame = met.frame()

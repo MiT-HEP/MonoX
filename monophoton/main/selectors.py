@@ -83,6 +83,13 @@ electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 
 electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
 electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
 
+gjSmearParams = {}
+gjSmearParamsFile = file(datadir + '/gjSmearParams_linear.txt', 'r')
+for line in gjSmearParamsFile:
+    param = line.split()
+    gjSmearParams[param[0]] = (param[1], param[2])
+gjSmearParamsFile.close()
+
 ##############################################################
 # Argument "selector" in all functions below can either be an
 # actual Selector object or a name for the selector.
@@ -825,8 +832,11 @@ def gjSmeared(sample, name):
 
     selector = candidate(sample, ROOT.SmearingSelector(name))
 
-    smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1])', 0., 40.)
-    smearing.SetParameters(-0.7314, 0.5095) # measured in gjets/smearfit.py
+    smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1]*(1. + [2]*x))', 0., 100.)
+    mean = gjSmearParams['mean'][0]
+    sigmar = gjSmearParams['sigmar'][0]
+    alpha = gjSmearParams['alpha'][0]
+    smearing.SetParameters(mean, sigmar, alpha) # measured in gjets/smearfit.py
     selector.setNSamples(1)
     selector.setFunction(smearing)
 
