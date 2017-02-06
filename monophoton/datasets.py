@@ -114,6 +114,7 @@ class SampleDef(object):
         counter = self._getCounter(sourceDirs)
 
         if not counter:
+            print 'Failed at counting sample. Not changing anything!!!.'
             return
 
         self.nevents = int(counter.GetBinContent(1))
