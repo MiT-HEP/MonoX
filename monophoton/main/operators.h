@@ -315,6 +315,25 @@ class Mass : public Cut {
   double max_{14000.};
 };
 
+class OppositeSign : public Cut {
+ public:
+  OppositeSign(char const* name = "OppositeSign") : Cut(name) {}
+
+  void setPrefix(char const* p) { prefix_ = p; }
+  void setCollection1(Collection c) { col_[0] = c; }
+  void setCollection2(Collection c) { col_[1] = c; }
+
+  void addBranches(TTree& skimTree) override;
+
+ protected:
+  bool pass(simpletree::Event const&, simpletree::Event&) override;
+
+  TString prefix_{"generic"};
+  Collection col_[2]{nCollections, nCollections};
+
+  bool oppSign_{0};
+};
+
 class BjetVeto : public Cut {
  public:
   BjetVeto(char const* name = "BjetVeto") : Cut(name), bjets_("bjets") {}

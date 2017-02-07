@@ -50,11 +50,14 @@ if region == 'monoph':
 elif region in ['dimu', 'diel', 'monomu', 'monoel']:
     cuts += ['LeptonSelection']
 
+if region == 'monomu':
+    cuts += ['LeptonMt']
+
 if region == 'monoel':
     cuts += ['RealMetCut', 'LeptonMt']
 
 if region in ['dimu', 'diel']:
-    cuts += ['Mass']
+    cuts += ['Mass', 'OppositeSign']
 
 tree.Draw('>>elist', ' && '.join(cuts), 'entrylist')
 elist = ROOT.gDirectory.Get('elist')

@@ -1096,6 +1096,13 @@ def dielectron(sample, selector):
     dielMass.setIgnoreDecision(True)
     selector.addOperator(dielMass)
 
+    dielSign = ROOT.OppositeSign()
+    dielSign.setPrefix('diel')
+    dielSign.setCollection1(ROOT.kElectrons)
+    dielSign.setCollection2(ROOT.kElectrons)
+    dielSign.setIgnoreDecision(True)
+    selector.addOperator(dielSign)
+
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
         idsf.addFactor(electronTightSF)
@@ -1126,6 +1133,13 @@ def dielectronHadProxy(sample, selector):
     dielMass.setCollection2(ROOT.kElectrons)
     dielMass.setIgnoreDecision(True)
     selector.addOperator(dielMass)
+
+    dielSign = ROOT.OppositeSign()
+    dielSign.setPrefix('diel')
+    dielSign.setCollection1(ROOT.kElectrons)
+    dielSign.setCollection2(ROOT.kElectrons)
+    dielSign.setIgnoreDecision(True)
+    selector.addOperator(dielSign)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
@@ -1179,6 +1193,18 @@ def monoelectronHadProxy(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.kElectron)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    metCut = ROOT.HighMet('RealMetCut')
+    metCut.setMetSource(ROOT.kInMet)
+    metCut.setThreshold(50.)
+    metCut.setIgnoreDecision(True)
+    selector.addOperator(metCut)
+
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
         idsf.addFactor(electronTightSF)
@@ -1206,6 +1232,13 @@ def dimuon(sample, selector):
     dimuMass.setCollection2(ROOT.kMuons)
     dimuMass.setIgnoreDecision(True)
     selector.addOperator(dimuMass)
+
+    dimuSign = ROOT.OppositeSign()
+    dimuSign.setPrefix('dimu')
+    dimuSign.setCollection1(ROOT.kMuons)
+    dimuSign.setCollection2(ROOT.kMuons)
+    dimuSign.setIgnoreDecision(True)
+    selector.addOperator(dimuSign)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
@@ -1237,6 +1270,13 @@ def dimuonHadProxy(sample, selector):
     dimuMass.setIgnoreDecision(True)
     selector.addOperator(dimuMass)
 
+    dimuSign = ROOT.OppositeSign()
+    dimuSign.setPrefix('dimu')
+    dimuSign.setCollection1(ROOT.kMuons)
+    dimuSign.setCollection2(ROOT.kMuons)
+    dimuSign.setIgnoreDecision(True)
+    selector.addOperator(dimuSign)
+
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
         idsf.addFactor(muonTightSF)
@@ -1260,6 +1300,12 @@ def monomuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.kMuon)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
         idsf.addFactor(muonTightSF)
@@ -1276,6 +1322,12 @@ def monomuon(sample, selector):
 def monomuonHadProxy(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.kMuon)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
 
     if not sample.data:
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')

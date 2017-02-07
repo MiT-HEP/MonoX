@@ -576,6 +576,51 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 }
 
 //--------------------------------------------------------------------
+// OppositeSign
+//--------------------------------------------------------------------
+
+void
+OppositeSign::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch(prefix_ + ".oppSign", &oppSign_, "oppSign/O");
+}
+
+bool
+OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+{
+  oppSign_ = 0;
+
+  simpletree::LeptonCollection const* col[2]{};
+
+  for (unsigned ic : {0, 1}) {
+    switch (col_[ic]) {
+    case kElectrons:
+      col[ic] = &_outEvent.electrons;
+      break;
+    case kMuons:
+      col[ic] = &_outEvent.muons;
+      break;
+    default:
+      break;
+    }
+  }
+
+  if (!col[0] || !col[1] || col[0]->size() == 0 || col[1]->size() == 0)
+    return false;
+
+  if (col[0] == col[1]) {
+    if (col[0]->size() == 1)
+      return false;
+
+    oppSign_ = ((col[0]->at(0).positive == col[0]->at(1).positive) ? 0 : 1);
+  }
+  else
+    oppSign_ = ((col[0]->at(0).positive == col[1]->at(0).positive) ? 0 : 1);
+
+  return oppSign_;
+}
+
+//--------------------------------------------------------------------
 // BjetVeto
 //--------------------------------------------------------------------
 
