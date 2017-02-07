@@ -69,7 +69,6 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
             else:
                 shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
 
-            # shist.Scale(group.scale)
             if args.saveTrees:
                 hist += shist
             else:
@@ -133,8 +132,7 @@ def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], na
                         shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale / group.scale, outDir = sampleDir)
                     else:
                         shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
-
-                    # shist.Scale(group.scale)
+                        
                     if args.saveTrees:
                         vhists[iV] += shist
                     else:
@@ -277,7 +275,7 @@ def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '',
     # we don't need the tree any more
     source.Close()
 
-    if postscale > 1. and vardef.blind is None:
+    if vardef.blind is None:
         hist.Scale(1. / postscale)
 
     return hist
