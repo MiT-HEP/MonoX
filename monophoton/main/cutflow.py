@@ -80,11 +80,11 @@ if args.cutflow is None:
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('RealMetCut',),
-            ('LeptonMt',)
+            ('LeptonMt',),
+            ('RealMetCut',)
         ]
 
-    elif args.region == 'dimu':
+    elif args.region == 'monomu':
         if data:
             cutflow.append(('MetFilters',))
             cutflow.append(('HLT_Photon165_HE10',))
@@ -95,7 +95,22 @@ if args.cutflow is None:
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('Mass',)
+            ('LeptonMt',),
+        ]
+
+    elif args.region in ['dimu', 'diel']:
+        if data:
+            cutflow.append(('MetFilters',))
+            cutflow.append(('HLT_Photon165_HE10',))
+
+        cutflow += [
+            ('PhotonSelection',),
+            ('LeptonSelection',),
+            ('HighMet',),
+            ('PhotonMetDPhi',),
+            ('JetMetDPhi',),
+            ('Mass',),
+            ('OppositeSign',)
         ]
 
 else:
