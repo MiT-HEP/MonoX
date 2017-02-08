@@ -32,7 +32,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   TString outputDir(_outputDir);
   TString sampleName(_sampleName);
 
-  simpletree::Event event;
+  panda::Event event;
 
   bool isMC = false;
 

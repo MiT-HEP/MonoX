@@ -13,14 +13,14 @@
 //--------------------------------------------------------------------
 
 bool
-Cut::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Cut::exec(panda::Event const& _event, panda::Event& _outEvent)
 {
   result_ = pass(_event, _outEvent);
   return ignoreDecision_ || result_;
 }
 
 bool
-Modifier::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Modifier::exec(panda::Event const& _event, panda::Event& _outEvent)
 {
   apply(_event, _outEvent);
   return true;
@@ -38,7 +38,7 @@ HLTFilter::HLTFilter(char const* name) :
   Ssiz_t pos(0);
   TString path;
   while (pathNames.Tokenize(path, pos, "_OR_"))
-    helpers_.push_back(new simpletree::TriggerHelper(path.Data()));
+    helpers_.push_back(new panda::TriggerHelper(path.Data()));
 }
 
 HLTFilter::~HLTFilter()
@@ -56,7 +56,7 @@ HLTFilter::addBranches(TTree&)
 }
 
 bool
-HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
+HLTFilter::pass(panda::Event const& _event, panda::Event&)
 {
   for (auto* helper : helpers_) {
     if (helper->pass(_event))
@@ -76,7 +76,7 @@ MetFilters::setEventList(char const* _path, int _decision)
 }
 
 bool
-MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
+MetFilters::pass(panda::Event const& _event, panda::Event&)
 {
   bool fired[] = {
     _event.metFilters.globalHalo16,
@@ -119,7 +119,7 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 //--------------------------------------------------------------------
 
 bool
-GenPhotonVeto::pass(simpletree::Event const& _event, simpletree::Event&)
+GenPhotonVeto::pass(panda::Event const& _event, panda::Event&)
 {
   for (auto& part : _event.promptFinalStates) {
     if (part.pid != 22)
@@ -229,7 +229,7 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
 }
 
 double
-PhotonSelection::ptVariation(simpletree::Photon const& _photon, bool up)
+PhotonSelection::ptVariation(panda::Photon const& _photon, bool up)
 {
   if (up)
     return _photon.scRawPt * 1.015;
@@ -238,7 +238,7 @@ PhotonSelection::ptVariation(simpletree::Photon const& _photon, bool up)
 }
 
 bool
-PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
@@ -280,7 +280,7 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 }
 
 int
-PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
+PhotonSelection::selectPhoton(panda::Photon const& _photon)
 {
   BitMask cutres;
   cutres[HOverE] = _photon.passHOverE(wp_);
@@ -303,18 +303,18 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[PhIso3] = (_photon.phIso < 3.);
   cutres[NHIsoTight] = _photon.passNHIso(2);
   cutres[PhIsoTight] = _photon.passPhIso(2);
-  cutres[CHIsoMax] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[0][0][wp_]);
+  cutres[CHIsoMax] = (_photon.chIsoMax < panda::Photon::chIsoCuts[0][0][wp_]);
   cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
-  cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][0][wp_]);
+  cutres[CHWorstIso] = (_photon.chWorstIso < panda::Photon::chIsoCuts[0][0][wp_]);
   cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
-  cutres[CHIsoS16] = (_photon.chIsoS16 < simpletree::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][wp_]);
-  cutres[PhIsoS16] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][wp_]);
-  cutres[CHIsoMaxS16] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16Tight] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][2]);
-  cutres[PhIsoS16Tight] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][2]);
+  cutres[CHIsoS16] = (_photon.chIsoS16 < panda::Photon::chIsoCuts[1][0][wp_]);
+  cutres[NHIsoS16] = (_photon.nhIsoS16 < panda::Photon::nhIsoCuts[1][0][wp_]);
+  cutres[PhIsoS16] = (_photon.phIsoS16 < panda::Photon::phIsoCuts[1][0][wp_]);
+  cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::Photon::chIsoCuts[1][0][wp_]);
+  cutres[NHIsoS16Tight] = (_photon.nhIsoS16 < panda::Photon::nhIsoCuts[1][0][2]);
+  cutres[PhIsoS16Tight] = (_photon.phIsoS16 < panda::Photon::phIsoCuts[1][0][2]);
   cutres[NHIsoS16VLoose] = (_photon.nhIsoS16 < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
   cutres[PhIsoS16VLoose] = (_photon.phIsoS16 < 11.); // loose WP cut is 8.3 at 1 TeV
   cutres[CHIsoS16VLoose] = (_photon.chIsoS16 < 11.); 
@@ -326,9 +326,9 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
 
   // Wisconsin denominator def
   // if (photon.passHOverE(wp_) && photon.pixelVeto && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
-  //     photon.nhIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::nhIsoCuts[0][0]) &&
-  //     photon.phIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::phIsoCuts[0][0]) &&
-  //     photon.chIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::chIsoCuts[0][0])) {
+  //     photon.nhIso < std::min(0.2 * photon.pt, 5. * panda::Photon::nhIsoCuts[0][0]) &&
+  //     photon.phIso < std::min(0.2 * photon.pt, 5. * panda::Photon::phIsoCuts[0][0]) &&
+  //     photon.chIso < std::min(0.2 * photon.pt, 5. * panda::Photon::chIsoCuts[0][0])) {
   //   unsigned nPass(0);
   //   if (photon.passCHIso(0))
   //     ++nPass;
@@ -384,11 +384,11 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
 //--------------------------------------------------------------------
 
 bool
-ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ElectronVeto::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.muons
   };
@@ -426,11 +426,11 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
 //--------------------------------------------------------------------
 
 bool
-MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MuonVeto::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.electrons
   };
@@ -468,7 +468,7 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+TauVeto::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   unsigned iTau(0);
   bool hasNonOverlapping(false);
@@ -508,9 +508,9 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-LeptonMt::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonMt::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
-  simpletree::Lepton const* lepton(0);
+  panda::Lepton const* lepton(0);
   if (flavor_ == kElectron && _outEvent.electrons.size() != 0)
     lepton = &_outEvent.electrons[0];
   else if (flavor_ == kMuon && _outEvent.muons.size() != 0)
@@ -535,11 +535,11 @@ Mass::addBranches(TTree& _skimTree)
 }
 
 bool
-Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Mass::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   mass_ = -1.;
 
-  simpletree::ParticleCollection const* col[2]{};
+  panda::ParticleCollection const* col[2]{};
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
@@ -586,11 +586,11 @@ OppositeSign::addBranches(TTree& _skimTree)
 }
 
 bool
-OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+OppositeSign::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   oppSign_ = 0;
 
-  simpletree::LeptonCollection const* col[2]{};
+  panda::LeptonCollection const* col[2]{};
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
@@ -631,11 +631,11 @@ BjetVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-BjetVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+BjetVeto::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.muons,
     &_outEvent.electrons,
@@ -703,11 +703,11 @@ PhotonMetDPhi::addBranches(TTree& _skimTree)
 }
 
 bool
-PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonMetDPhi::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   dPhi_ = 0.;
   if (_outEvent.photons.size() != 0) {
-    simpletree::CorrectedMet const* met(0);
+    panda::CorrectedMet const* met(0);
     if (metSource_ == kInMet)
       met = &_event.t1Met;
     else
@@ -786,7 +786,7 @@ JetMetDPhi::addBranches(TTree& _skimTree)
 }
 
 bool
-JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+JetMetDPhi::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   unsigned nJ(0);
   unsigned nJCorrUp(0);
@@ -806,7 +806,7 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   // dPhiJERUp_ = 4.;
   // dPhiJERDown_ = 4.;
 
-  simpletree::CorrectedMet const* met(0);
+  panda::CorrectedMet const* met(0);
   if (metSource_ == kInMet)
     met = &_event.t1Met;
   else
@@ -923,11 +923,11 @@ LeptonSelection::addBranches(TTree& _skimTree)
 
 
 bool
-LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   bool foundTight(false);
 
-  std::vector<simpletree::ParticleCollection*> cols = {
+  std::vector<panda::ParticleCollection*> cols = {
     &_outEvent.photons
   };
 
@@ -984,7 +984,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   }
 
   zs_.clear();
-  simpletree::LorentzVectorM pair;
+  panda::LorentzVectorM pair;
   pair.SetCoordinates(0., 0., 0., 0.);
 
   if (nMu_ == 2) {
@@ -1034,7 +1034,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 //--------------------------------------------------------------------
 
 bool
-HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+HighMet::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   if (metSource_ == kInMet)
     return _event.t1Met.met > min_;
@@ -1047,7 +1047,7 @@ HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MtRange::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   if (!calc_ || _outEvent.photons.size() == 0)
     return false;
@@ -1062,7 +1062,7 @@ MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+HighPtJetSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   for (auto& jet : _outEvent.jets) {
     if (std::abs(jet.eta) > 5.)
@@ -1082,7 +1082,7 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 //--------------------------------------------------------------------
 
 bool
-PhotonPtTruncator::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonPtTruncator::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   for (auto& parton : _event.partons) {
     if (parton.pid == 22 && parton.pt > max_)
@@ -1097,7 +1097,7 @@ PhotonPtTruncator::pass(simpletree::Event const& _event, simpletree::Event& _out
 //--------------------------------------------------------------------
 
 bool
-GenParticleSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+GenParticleSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   for (auto& part : _event.promptFinalStates) {
     if (std::abs(part.pid) != pdgId_)
@@ -1127,7 +1127,7 @@ EcalCrackVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+EcalCrackVeto::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
@@ -1178,25 +1178,25 @@ TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
   switch (tagSpecies_) {
   case kMuon:
-    tags_ = new simpletree::MuonCollection("tag");
+    tags_ = new panda::MuonCollection("tag");
     break;
   case kElectron:
-    tags_ = new simpletree::ElectronCollection("tag");
+    tags_ = new panda::ElectronCollection("tag");
     break;
   case kPhoton:
-    tags_ = new simpletree::PhotonCollection("tag");
+    tags_ = new panda::PhotonCollection("tag");
     break;
   }
 
   switch (probeSpecies_) {
   case kMuon:
-    probes_ = new simpletree::MuonCollection("probe");
+    probes_ = new panda::MuonCollection("probe");
     break;
   case kElectron:
-    probes_ = new simpletree::ElectronCollection("probe");
+    probes_ = new panda::ElectronCollection("probe");
     break;
   case kPhoton:
-    probes_ = new simpletree::PhotonCollection("probe");
+    probes_ = new panda::PhotonCollection("probe");
     break;
   }
 
@@ -1208,35 +1208,35 @@ TagAndProbePairZ::addBranches(TTree& _skimTree)
 }
 
 bool
-TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+TagAndProbePairZ::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
-  simpletree::LeptonCollection const* inTags(0);
-  simpletree::LeptonCollection const* inProbes(0);
-  simpletree::LorentzVectorM tnpPair;
+  panda::LeptonCollection const* inTags(0);
+  panda::LeptonCollection const* inProbes(0);
+  panda::LorentzVectorM tnpPair;
   tnpPair.SetCoordinates(0., 0., 0., 0.);
 
   // OK, object-orientation and virtual methods cannot quite solve the problem at hand (push back the objects with full info).
   // We will cheat.
-  std::function<void(simpletree::Particle const&)> push_back_tag;
-  std::function<void(simpletree::Particle const&)> push_back_probe;
+  std::function<void(panda::Particle const&)> push_back_tag;
+  std::function<void(panda::Particle const&)> push_back_probe;
 
   switch (tagSpecies_) {
   case kMuon:
     inTags = &_event.muons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::MuonCollection*>(this->tags_)->push_back(static_cast<simpletree::Muon const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
     };
     break;
   case kElectron:
     inTags = &_event.electrons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::ElectronCollection*>(this->tags_)->push_back(static_cast<simpletree::Electron const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
     };
     break;
   case kPhoton:
     // inTags = &_event.photons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::PhotonCollection*>(this->tags_)->push_back(static_cast<simpletree::Photon const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::PhotonCollection*>(this->tags_)->push_back(static_cast<panda::Photon const&>(tag));
     };
     break;
   }
@@ -1244,20 +1244,20 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
   switch (probeSpecies_) {
   case kMuon:
     inProbes = &_event.muons;
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::MuonCollection*>(this->probes_)->push_back(static_cast<simpletree::Muon const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
     };
     break;
   case kElectron:
     inProbes = &_event.electrons;
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::ElectronCollection*>(this->probes_)->push_back(static_cast<simpletree::Electron const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
     };
     break;
   case kPhoton:
     // inProbes = &_event.photons; 
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::PhotonCollection*>(this->probes_)->push_back(static_cast<simpletree::Photon const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::PhotonCollection*>(this->probes_)->push_back(static_cast<panda::Photon const&>(probe));
     };
     break;
   }
@@ -1319,7 +1319,7 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 //--------------------------------------------------------------------
 
 bool
-ZJetBackToBack::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ZJetBackToBack::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   if (tnp_->getNUniqueZ() != 1)
     return false;
@@ -1370,7 +1370,7 @@ TriggerEfficiency::addBranches(TTree& _skimTree)
 }
 
 void
-TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+TriggerEfficiency::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   if (!formula_ || _outEvent.photons.size() == 0)
     return;
@@ -1391,9 +1391,9 @@ TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _ou
 //--------------------------------------------------------------------
 
 void
-ExtraPhotons::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ExtraPhotons::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.electrons,
     &_outEvent.muons,
@@ -1456,9 +1456,9 @@ JetCleaning::addBranches(TTree& _skimTree)
 // }
 
 void
-JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+JetCleaning::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.electrons,
     &_outEvent.muons,
@@ -1562,7 +1562,7 @@ PhotonJetDPhi::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonJetDPhi::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   unsigned nJ(0);
   unsigned nJCorrUp(0);
@@ -1621,7 +1621,7 @@ PhotonMt::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonMt::apply(simpletree::Event const&, simpletree::Event& _outEvent)
+PhotonMt::apply(panda::Event const&, panda::Event& _outEvent)
 {
   auto& met(_outEvent.t1Met);
   for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
@@ -1642,9 +1642,9 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 }
 
 void
-LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonRecoil::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
-  simpletree::LeptonCollection* col(0);
+  panda::LeptonCollection* col(0);
 
   switch (flavor_) {
   case kElectron:
@@ -1793,7 +1793,7 @@ MetVariations::addBranches(TTree& _skimTree)
 }
 
 void
-MetVariations::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MetVariations::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   metGECUp_ = 0.;
   phiGECUp_ = 0.;
@@ -1938,7 +1938,7 @@ PhotonPtWeight::useErrors(bool _b)
 }
 
 void
-PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonPtWeight::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   double maxPt(0.);
   switch (photonType_) {
@@ -2030,10 +2030,10 @@ IDSFWeight::setVariable(Variable vx, Variable vy)
 }
 
 void
-IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::applyParticle(unsigned iP, panda::Event const& _event, panda::Event& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
-  simpletree::Particle const* part(0);
+  panda::Particle const* part(0);
 
   switch (object_) {
   case kPhoton:
@@ -2123,7 +2123,7 @@ IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletr
 }
 
 void
-IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   // not exactly sure why I need to reset these, but it's definitely necessary to get reasonable results
   weight_ = 1.;
@@ -2140,7 +2140,7 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 void
-NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+NPVWeight::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npv));
   if (iX == 0)
@@ -2162,7 +2162,7 @@ PUWeight::addBranches(TTree& _skimTree)
 }
 
 void
-PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PUWeight::apply(panda::Event const& _event, panda::Event& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npvTrue));
   if (iX == 0)
@@ -2186,7 +2186,7 @@ NNPDFVariation::addBranches(TTree& _skimTree)
 }
 
 void
-NNPDFVariation::apply(simpletree::Event const& _event, simpletree::Event&)
+NNPDFVariation::apply(panda::Event const& _event, panda::Event&)
 {
   weightUp_ = 1. + _event.pdfDW;
   weightDown_ = 1. - _event.pdfDW;
@@ -2203,7 +2203,7 @@ GenPhotonDR::addBranches(TTree& _skimTree)
 }
 
 void
-GenPhotonDR::apply(simpletree::Event const& _event, simpletree::Event&)
+GenPhotonDR::apply(panda::Event const& _event, panda::Event&)
 {
   minDR_ = -1.;
 

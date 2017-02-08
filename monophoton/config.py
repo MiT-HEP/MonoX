@@ -9,4 +9,4 @@ photonSkimDir = '/data/t3home000/yiiyama/studies/test/photonskim'
 
 libobjs = 'libPandaTreeObjects.so'
 libutils = 'libPandaTreeUtils.so'
-dataformats = os.environ['CMSSW_BASE'] + '/src/PandaTree'
+dataformats = os.environ['CMSSW_BASE'] + '/src/PandaTree/Objects'

@@ -72,12 +72,12 @@ def applyMod(modifier, regions):
 
 sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
 
-data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
-data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
-data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
-data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
-data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
-data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
+data_sph =  ['monoph'] # , 'efake', 'hfake',  'trivialShower'] 
+# data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
+# data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
+# data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
+# data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
+# data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
@@ -231,9 +231,9 @@ if __name__ == '__main__':
 
     import ROOT
 
-    ROOT.gSystem.Load(config.libsimpletree)
+    ROOT.gSystem.Load(config.libobjs)
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-    ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
+    # ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
     ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
 
     compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')

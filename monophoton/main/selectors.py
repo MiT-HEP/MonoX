@@ -18,7 +18,7 @@ if basedir not in sys.path:
 
 import config
 
-ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 
 #ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')

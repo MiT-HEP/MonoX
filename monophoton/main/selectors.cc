@@ -11,7 +11,7 @@
 //--------------------------------------------------------------------
 
 void
-EventSelector::initialize(char const* _outputPath, simpletree::Event& _event, bool _isMC)
+EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
@@ -69,7 +69,7 @@ EventSelector::finalize()
 }
 
 void
-EventSelector::selectEvent(simpletree::Event& _event)
+EventSelector::selectEvent(panda::Event& _event)
 {
   if (blindPrescale_ > 1 && _event.run >= blindMinRun_ && _event.event % blindPrescale_ != 0)
     return;
@@ -129,7 +129,7 @@ ZeeEventSelector::~ZeeEventSelector()
 }
 
 void
-ZeeEventSelector::selectEvent(simpletree::Event& _event)
+ZeeEventSelector::selectEvent(panda::Event& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
@@ -183,7 +183,7 @@ ZeeEventSelector::EEPairSelection::EEPairSelection(char const* name) :
 }
 
 bool
-ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
   eePairs_.clear();
 
@@ -218,7 +218,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT[simpletree::fEl27Tight]))
+      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT[panda::fEl27Tight]))
         iElectron = iE;
       else
         break;
@@ -237,7 +237,7 @@ ZeeEventSelector::EEPairSelection::pass(simpletree::Event const& _event, simplet
 //--------------------------------------------------------------------
 
 void
-WlnuSelector::selectEvent(simpletree::Event& _event)
+WlnuSelector::selectEvent(panda::Event& _event)
 {
   for (auto& parton : _event.partons) {
     if (std::abs(parton.pid) == 11)
@@ -252,7 +252,7 @@ WlnuSelector::selectEvent(simpletree::Event& _event)
 //--------------------------------------------------------------------
 
 void
-WenuSelector::selectEvent(simpletree::Event& _event)
+WenuSelector::selectEvent(panda::Event& _event)
 {
   unsigned iP(0);
   for (; iP != _event.partons.size(); ++iP) {
@@ -319,7 +319,7 @@ NormalizingSelector::finalize()
 //--------------------------------------------------------------------
 
 void
-SmearingSelector::selectEvent(simpletree::Event& _event)
+SmearingSelector::selectEvent(panda::Event& _event)
 {
   if (!func_)
     return;

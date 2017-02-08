@@ -29,7 +29,7 @@ class EventList {
     }
   }
 
-  bool inList(simpletree::Event const& _event) const
+  bool inList(panda::Event const& _event) const
   {
     auto rItr(list_.find(_event.run));
     if (rItr == list_.end())
