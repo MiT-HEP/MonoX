@@ -5,7 +5,7 @@ import sys
 import shutil
 import ROOT
 
-NENTRIES = -1
+NENTRIES = 100
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -16,8 +16,9 @@ from datasets import allsamples
 import config
 from goodlumi import makeGoodLumiFilter
 
-ROOT.gSystem.Load(config.libsimpletree)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+ROOT.gSystem.Load(config.libobjs)
+ROOT.gSystem.Load(config.libutils)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
 
 ROOT.gROOT.LoadMacro(thisdir + '/PhotonSkim.cc+')
@@ -31,6 +32,8 @@ except:
     pass
 
 sample = allsamples[sname]
+
+print config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
 
 if goodlumi:
     ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', NENTRIES, goodlumi)
