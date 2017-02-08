@@ -551,8 +551,8 @@ def getConfig(confName):
 
     elif confName == 'gjets':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 300. && (t1Met.minJetDPhi < 0.5 || t1Met.photonDPhi < 0.5) && t1Met.met > 100. && TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - jets.phi[0])) > 3. && jets.size == 1 && jets.pt[0] > 100.'
-        config.fullSelection = 't1Met.met > 170.'
+        config.baseline = 'photons.scRawPt[0] > 175. && (t1Met.minJetDPhi < 0.5 || t1Met.photonDPhi < 0.5) && t1Met.met > 100. && TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - jets.phi[0])) > 3. && jets.size == 1 && jets.pt[0] > 100.'
+        config.fullSelection = 'photons.scRawPt[0] > 350.'
         config.bkgGroups = [
 #            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
@@ -580,11 +580,17 @@ def getConfig(confName):
         ]
 
         for variable in list(config.variables):
+            """
             if variable.name not in ['met', 'metWide', 'metDPhiWeighted']:
                 config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
 #                config.variables.remove(variable)
+            """
+            if variable.name not in ['phoPt']:
+                config.variables.append(variable.clone(variable.name + 'HighPhoPt', applyFullSel = True))
+#                config.variables.remove(variable)
 
-        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
+            # config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
+            # config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
 
     elif confName == 'lowmt':

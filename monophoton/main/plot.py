@@ -574,7 +574,7 @@ if __name__ == '__main__':
         else:
             # set up canvas
             canvas.Clear(full = True)
-            canvas.legend.setPosition(0.6, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints)), 0.92, SimpleCanvas.YMAX - 0.01)
+            canvas.legend.setPosition(0.67, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints)), 0.92, SimpleCanvas.YMAX - 0.01)
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:
