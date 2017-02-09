@@ -30,38 +30,37 @@ Modifier::exec(panda::Event const& _event, panda::Event& _outEvent)
 // HLTFilter
 //--------------------------------------------------------------------
 
+
 HLTFilter::HLTFilter(char const* name) :
-  Cut(name),
-  helpers_()
+  Cut(name)
 {
-  TString pathNames(name);
-  Ssiz_t pos(0);
-  TString path;
-  while (pathNames.Tokenize(path, pos, "_OR_"))
-    helpers_.push_back(new panda::TriggerHelper(path.Data()));
+  TString pathNames_ = name;
 }
+
 
 HLTFilter::~HLTFilter()
 {
-  for (auto* helper : helpers_) 
-    delete helper;
+  tokens_.clear();
 }
 
 void
-HLTFilter::addBranches(TTree&)
+HLTFilter::initialize(panda::Event& _event)
 {
-  // not really adding branches, but this is the only function that is called by the selector at each initialization
-  for (auto* h : helpers_)
-    h->reset();
+  Ssiz_t pos(0);
+  TString path;
+  while (pathNames_.Tokenize(path, pos, "_OR_"))
+    tokens_.push_back(_event.registerTrigger(path.Data()));
 }
+
 
 bool
 HLTFilter::pass(panda::Event const& _event, panda::Event&)
 {
-  for (auto* helper : helpers_) {
-    if (helper->pass(_event))
+  for (auto token : tokens_) {
+    if (_event.triggerFired(token))
       return true;
   }
+
   return false;
 }
 
@@ -121,8 +120,14 @@ MetFilters::pass(panda::Event const& _event, panda::Event&)
 bool
 GenPhotonVeto::pass(panda::Event const& _event, panda::Event&)
 {
-  for (auto& part : _event.promptFinalStates) {
-    if (part.pid != 22)
+  for (auto& part : _event.genParticles) {
+    // might need to add a check on if is promptFinalState
+    /*
+    if (part.statusFlags != "someCondition")
+      continue;
+    */
+
+    if (part.pdgid != 22)
       continue;
 
     if (part.pt < minPt_)
@@ -283,11 +288,11 @@ int
 PhotonSelection::selectPhoton(panda::Photon const& _photon)
 {
   BitMask cutres;
-  cutres[HOverE] = _photon.passHOverE(wp_);
-  cutres[Sieie] = _photon.passSieie(wp_);
-  cutres[CHIso] = _photon.passCHIso(wp_);
-  cutres[NHIso] = _photon.passNHIso(wp_);
-  cutres[PhIso] = _photon.passPhIso(wp_);
+  cutres[HOverE] = _photon.passHOverE(wp_, 0);
+  cutres[Sieie] = _photon.passSieie(wp_, 0);
+  cutres[CHIso] = _photon.passCHIsoS15(wp_);
+  cutres[NHIso] = _photon.passNHIsoS15(wp_);
+  cutres[PhIso] = _photon.passPhIsoS15(wp_);
   cutres[EVeto] = _photon.pixelVeto;
   cutres[CSafeVeto] = _photon.csafeVeto;
   cutres[MIP49] = _photon.mipEnergy < 4.9;
@@ -298,28 +303,26 @@ PhotonSelection::selectPhoton(panda::Photon const& _photon)
   cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
-  cutres[CHIso11] = (_photon.chIso < 11.);
-  cutres[NHIso11] = (_photon.nhIso < 11.);
+  cutres[CHIso11] = (_photon.chIsoS15 < 11.);
+  cutres[NHIso11] = (_photon.nhIsoS15 < 11.);
   cutres[PhIso3] = (_photon.phIso < 3.);
-  cutres[NHIsoTight] = _photon.passNHIso(2);
-  cutres[PhIsoTight] = _photon.passPhIso(2);
+  cutres[NHIsoTight] = _photon.passNHIsoS15(2);
+  cutres[PhIsoTight] = _photon.passPhIsoS15(2);
   cutres[CHIsoMax] = (_photon.chIsoMax < panda::Photon::chIsoCuts[0][0][wp_]);
   cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
-  cutres[CHWorstIso] = (_photon.chWorstIso < panda::Photon::chIsoCuts[0][0][wp_]);
-  cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
-  cutres[CHIsoS16] = (_photon.chIsoS16 < panda::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16] = (_photon.nhIsoS16 < panda::Photon::nhIsoCuts[1][0][wp_]);
-  cutres[PhIsoS16] = (_photon.phIsoS16 < panda::Photon::phIsoCuts[1][0][wp_]);
+  cutres[CHIsoS16] = (_photon.passCHIso(wp_));
+  cutres[NHIsoS16] = (_photon.passNHIso(wp_));
+  cutres[PhIsoS16] = (_photon.passPhIso(wp_));
   cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16Tight] = (_photon.nhIsoS16 < panda::Photon::nhIsoCuts[1][0][2]);
-  cutres[PhIsoS16Tight] = (_photon.phIsoS16 < panda::Photon::phIsoCuts[1][0][2]);
-  cutres[NHIsoS16VLoose] = (_photon.nhIsoS16 < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
-  cutres[PhIsoS16VLoose] = (_photon.phIsoS16 < 11.); // loose WP cut is 8.3 at 1 TeV
-  cutres[CHIsoS16VLoose] = (_photon.chIsoS16 < 11.); 
-  cutres[NHIsoLoose] = (_photon.passNHIso(0));
-  cutres[PhIsoLoose] = (_photon.passPhIso(0));
+  cutres[NHIsoS16Tight] = (_photon.passNHIso(2));
+  cutres[PhIsoS16Tight] = (_photon.passPhIso(2));
+  cutres[NHIsoS16VLoose] = (_photon.nhIso < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
+  cutres[PhIsoS16VLoose] = (_photon.phIso < 11.); // loose WP cut is 8.3 at 1 TeV
+  cutres[CHIsoS16VLoose] = (_photon.chIso < 11.); 
+  cutres[NHIsoLoose] = (_photon.passNHIsoS15(0));
+  cutres[PhIsoLoose] = (_photon.passPhIsoS15(0));
 
   for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC] = cutres[iC];

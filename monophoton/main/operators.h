@@ -76,6 +76,9 @@ enum MetSource {
   kOutMet
 };
 
+
+const UInt_t NMAX_PARTICLES = 64;
+
 //--------------------------------------------------------------------
 // Base classes
 //--------------------------------------------------------------------
@@ -89,6 +92,7 @@ class Operator {
   virtual bool exec(panda::Event const&, panda::Event&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
+  virtual void initialize(panda::Event& _event) {}
 
  protected:
   TString name_;
@@ -132,14 +136,15 @@ class HLTFilter : public Cut {
   HLTFilter(char const* name = "PATHNAME");
   ~HLTFilter();
 
-  // to reset the tree number
-  void addBranches(TTree& skimTree) override;
-
+  void initialize(panda::Event& _event) override;
+    
  protected:
   bool pass(panda::Event const& _event, panda::Event&) override;
 
-  std::vector<panda::TriggerHelper*> helpers_;
+  TString pathNames_{""};
+  std::vector<UInt_t> tokens_;
 };
+
 
 class MetFilters : public Cut {
  public:
@@ -241,8 +246,8 @@ class PhotonSelection : public Cut {
   double minPt_{175.};
   double maxPt_{6500.};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
-  float ptVarUp_[panda::Particle::array_data::NMAX];
-  float ptVarDown_[panda::Particle::array_data::NMAX];
+  float ptVarUp_[NMAX_PARTICLES];
+  float ptVarDown_[NMAX_PARTICLES];
   // Will select photons based on the AND of the elements.
   // Within each element, multiple bits are considered as OR.
   typedef std::bitset<nSelections> BitMask;
@@ -621,9 +626,9 @@ class JetCleaning : public Modifier {
   std::bitset<nCollections> cleanAgainst_{};
 
   // will copy jer branches
-  /* float ptScaled_[panda::Particle::array_data::NMAX]; */
-  /* float ptScaledUp_[panda::Particle::array_data::NMAX]; */
-  /* float ptScaledDown_[panda::Particle::array_data::NMAX]; */
+  /* float ptScaled_[NMAX_PARTICLES]; */
+  /* float ptScaledUp_[NMAX_PARTICLES]; */
+  /* float ptScaledDown_[NMAX_PARTICLES]; */
 
   //  JER* jer_{0};
   //  TRandom3* rndm_{0};
@@ -638,10 +643,10 @@ class PhotonJetDPhi : public Modifier {
  protected:
   void apply(panda::Event const&, panda::Event&) override;
 
-  float dPhi_[panda::Particle::array_data::NMAX];
-  float minDPhi_[panda::Particle::array_data::NMAX];
-  float minDPhiJECUp_[panda::Particle::array_data::NMAX];
-  float minDPhiJECDown_[panda::Particle::array_data::NMAX];
+  float dPhi_[NMAX_PARTICLES];
+  float minDPhi_[NMAX_PARTICLES];
+  float minDPhiJECUp_[NMAX_PARTICLES];
+  float minDPhiJECDown_[NMAX_PARTICLES];
   MetVariations* metVar_{0};
 };
 
@@ -649,7 +654,7 @@ class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
-  void apply(panda::Event const& event, panda::Event& outEvent) override { outEvent.t1Met = event.t1Met; }
+  void apply(panda::Event const& event, panda::Event& outEvent) override { outEvent.met = event.met; }
 };
 
 class PhotonMt : public Modifier {
@@ -661,7 +666,7 @@ class PhotonMt : public Modifier {
  protected:
   void apply(panda::Event const& event, panda::Event& outEvent) override;
 
-  float mt_[panda::Particle::array_data::NMAX];
+  float mt_[NMAX_PARTICLES];
 };
 
 class LeptonRecoil : public Modifier {
