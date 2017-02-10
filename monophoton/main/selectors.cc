@@ -21,11 +21,11 @@ EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _i
   // printf("Made files and trees. \n");
 
   if (_isMC) { // is MC
-    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "partons", "promptFinalStates"}); // , "promptFinalStates"}); // branches to be directly copied
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "promptFinalStates"}); // , "promptFinalStates"}); // branches to be directly copied
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {
-    _event.book(*skimOut_, {"run", "lumi", "event", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
     // printf("Copied the right stuff. \n");
     outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
     // printf("Made the empty branches. \n");
@@ -35,11 +35,11 @@ EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _i
 
   skimOut_->Branch("weight_Input", &inWeight_, "weight_Input/D");
 
-  cutsOut_->Branch("run", &_event.run, "run/i");
-  cutsOut_->Branch("lumi", &_event.lumi, "lumi/i");
-  cutsOut_->Branch("event", &_event.event, "event/i");
+  cutsOut_->Branch("runNumber", &_event.runNumber, "runNumber/i");
+  cutsOut_->Branch("lumiNumber", &_event.lumiNumber, "lumiNumber/i");
+  cutsOut_->Branch("eventNumber", &_event.eventNumber, "eventNumber/i");
 
-  // printf("Did run lumi event. \n");
+  // printf("Did runNumber lumiNumber eventNumber. \n");
 
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
@@ -71,7 +71,7 @@ EventSelector::finalize()
 void
 EventSelector::selectEvent(panda::Event& _event)
 {
-  if (blindPrescale_ > 1 && _event.run >= blindMinRun_ && _event.event % blindPrescale_ != 0)
+  if (blindPrescale_ > 1 && _event.runNumber >= blindMinRun_ && _event.eventNumber % blindPrescale_ != 0)
     return;
 
   outEvent_.init();
@@ -218,7 +218,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt > 30. && (_event.run == 1 || electron.matchHLT[panda::fEl27Tight]))
+      if (electron.tight && electron.pt > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::fEl27Loose]))
         iElectron = iE;
       else
         break;
@@ -240,7 +240,7 @@ void
 WlnuSelector::selectEvent(panda::Event& _event)
 {
   for (auto& parton : _event.partons) {
-    if (std::abs(parton.pid) == 11)
+    if (std::abs(parton.pdgid) == 11)
       return;
   }
 
@@ -257,7 +257,7 @@ WenuSelector::selectEvent(panda::Event& _event)
   unsigned iP(0);
   for (; iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
-    if (std::abs(parton.pid) == 11)
+    if (std::abs(parton.pdgid) == 11)
       break;
   }
   if (iP == _event.partons.size())
@@ -325,12 +325,12 @@ SmearingSelector::selectEvent(panda::Event& _event)
     return;
 
   // smearing the MET only - total pT will be inconsistent
-  double originalMet(_event.t1Met.met);
+  double originalMet(_event.met.pt);
 
   _event.weight /= nSamples_;
 
   for (unsigned iS(0); iS != nSamples_; ++iS) {
-    _event.t1Met.met = originalMet + func_->GetRandom();
+    _event.met.pt = originalMet + func_->GetRandom();
   
     EventSelector::selectEvent(_event);
   }

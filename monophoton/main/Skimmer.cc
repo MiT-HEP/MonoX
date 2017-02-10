@@ -60,7 +60,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
 
-    if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.run, event.lumi))
+    if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
       continue;
 
     for (auto* sel : selectors_)
