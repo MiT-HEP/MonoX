@@ -489,7 +489,7 @@ class GenParticleSelection : public Cut {
  public:
   GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}
   
-  void setPdgId(unsigned pdgId) { pdgId_ = pdgId; }
+  void setPdgId(int pdgId) { pdgId_ = pdgId; }
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setMinEta(double minEta) { minEta_ = minEta; }
@@ -498,7 +498,7 @@ class GenParticleSelection : public Cut {
  protected:
   bool pass(panda::Event const&, panda::Event&) override;
   
-  unsigned pdgId_{22};
+  int pdgId_{22};
   double minPt_{140.};
   double maxPt_{6500.};
   double minEta_{0.};
