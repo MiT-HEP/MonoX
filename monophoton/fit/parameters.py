@@ -4,7 +4,7 @@ histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
 distribution = 'phoPtHighMet'
 
-version = 'ICHEP'
+version = 'gsfixed'
 
 outdir = histDir + '/fit/' + version
 outname = outdir + '/ws_' + distribution + '.root'
