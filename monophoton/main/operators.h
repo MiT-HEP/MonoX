@@ -180,42 +180,39 @@ class PhotonSelection : public Cut {
   enum Selection {
     HOverE,               // 0
     Sieie,
-    CHIso,
     NHIso,
     PhIso,
-    EVeto,                // 5
+    CHIso,
+    CHIsoMax,             // 5
+    EVeto,
     CSafeVeto,
     MIP49,
     Time,
-    SieieNonzero,
-    SipipNonzero,         // 10
-    E2E995,
+    SieieNonzero,         // 10
+    SipipNonzero,
     NoisyRegion,
+    E2E995,
     Sieie12,
-    Sieie15,
-    CHIso11,              // 15
-    NHIso11,
-    PhIso3,
+    Sieie15,              // 15
+    Sieie20,
+    CHIso11,
+    CHIsoMax11,
+    NHIsoLoose,
+    PhIsoLoose,           // 20
     NHIsoTight,
     PhIsoTight,
-    CHIsoMax,             // 20
-    CHIsoMax11,
-    CHWorstIso,
-    CHWorstIso11,
     Sieie05,
-    Sipip05,              // 25 
-    CHIsoS16,
-    NHIsoS16,
+    Sipip05,
+    NHIsoS16,             // 25
     PhIsoS16,
+    CHIsoS16,
     CHIsoMaxS16,
-    NHIsoS16Tight,        // 30
-    PhIsoS16Tight,
     NHIsoS16VLoose,
-    PhIsoS16VLoose,
+    PhIsoS16VLoose,       // 30
     CHIsoS16VLoose,
-    NHIsoLoose,           // 35
-    PhIsoLoose,
-    nSelections           // 37
+    NHIsoS16Tight,
+    PhIsoS16Tight,
+    nSelections           // 34
   };
 
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}

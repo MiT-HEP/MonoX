@@ -34,9 +34,8 @@ Modifier::exec(panda::Event const& _event, panda::Event& _outEvent)
 HLTFilter::HLTFilter(char const* name) :
   Cut(name)
 {
-  TString pathNames_ = name;
+  pathNames_ = name;
 }
-
 
 HLTFilter::~HLTFilter()
 {
@@ -48,8 +47,15 @@ HLTFilter::initialize(panda::Event& _event)
 {
   Ssiz_t pos(0);
   TString path;
-  while (pathNames_.Tokenize(path, pos, "_OR_"))
-    tokens_.push_back(_event.registerTrigger(path.Data()));
+  UInt_t token(0);
+  
+  printf("Triggers to add: %s \n", pathNames_.Data());
+
+  while (pathNames_.Tokenize(path, pos, "_OR_")) {
+    token = _event.registerTrigger(path.Data());
+    tokens_.push_back(token);
+    printf("Added trigger path %s with token %u to tokens vector. \n", path.Data(), token);
+  }
 }
 
 
@@ -237,20 +243,29 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
 double
 PhotonSelection::ptVariation(panda::Photon const& _photon, bool up)
 {
+  // photon.scRawPt not filled in test sample
+  // need to uncomment this part once it's there
   if (up)
-    return _photon.scRawPt * 1.015;
+    // return _photon.scRawPt * 1.015;
+    return _photon.pt * 1.015;
   else
-    return _photon.scRawPt * 0.985;
+    // return _photon.scRawPt * 0.985;
+    return _photon.pt * 0.985;
 }
 
 bool
 PhotonSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
 {
+  
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
-
+    
+    // photon.isEB not filled in test sample
+    // need to uncomment this part once it's there
+    /*
     if (!photon.isEB)
       continue;
+    */
     
     if (vetoes_.size() == 0) {
       // veto is not set -> this is a simple photon selection. Pass if upward variation is above the threshold.
@@ -279,8 +294,11 @@ PhotonSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
       _outEvent.photons.push_back(photon);
     }
   }
-
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
+  
+  // photon.scRawPt not filled in test sample
+  // need to uncomment this part once it's there
+  // nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].pt > minPt_;
 
   return _outEvent.photons.size() != 0;
 }
@@ -294,55 +312,39 @@ PhotonSelection::selectPhoton(panda::Photon const& _photon)
   cutres[CHIso] = _photon.passCHIsoS15(wp_);
   cutres[NHIso] = _photon.passNHIsoS15(wp_);
   cutres[PhIso] = _photon.passPhIsoS15(wp_);
+  cutres[CHIsoMax] = (_photon.chIsoMax < panda::Photon::chIsoCuts[0][0][wp_]);
   cutres[EVeto] = _photon.pixelVeto;
   cutres[CSafeVeto] = _photon.csafeVeto;
-  cutres[MIP49] = _photon.mipEnergy < 4.9;
-  cutres[Time] = std::abs(_photon.time) < 3.;
-  cutres[SieieNonzero] = _photon.sieie > 0.001;
-  cutres[SipipNonzero] = _photon.sipip > 0.001;
-  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33 < 0.95;
+  cutres[MIP49] = (_photon.mipEnergy < 4.9);
+  cutres[Time] = (std::abs(_photon.time) < 3.);
+  cutres[SieieNonzero] = (_photon.sieie > 0.001);
+  cutres[SipipNonzero] = (_photon.sipip > 0.001);
   cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
+  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33 < 0.95;
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
+  cutres[Sieie20] = (_photon.sieie < 0.020);
   cutres[CHIso11] = (_photon.chIsoS15 < 11.);
-  cutres[NHIso11] = (_photon.nhIsoS15 < 11.);
-  cutres[PhIso3] = (_photon.phIso < 3.);
+  cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
+  cutres[NHIsoLoose] = _photon.passNHIsoS15(0);
+  cutres[PhIsoLoose] = _photon.passPhIsoS15(0);
   cutres[NHIsoTight] = _photon.passNHIsoS15(2);
   cutres[PhIsoTight] = _photon.passPhIsoS15(2);
-  cutres[CHIsoMax] = (_photon.chIsoMax < panda::Photon::chIsoCuts[0][0][wp_]);
-  cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
-  cutres[CHIsoS16] = (_photon.passCHIso(wp_));
-  cutres[NHIsoS16] = (_photon.passNHIso(wp_));
-  cutres[PhIsoS16] = (_photon.passPhIso(wp_));
+  cutres[NHIsoS16] = _photon.passNHIso(wp_);
+  cutres[PhIsoS16] = _photon.passPhIso(wp_);
+  cutres[CHIsoS16] = _photon.passCHIso(wp_);
   cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16Tight] = (_photon.passNHIso(2));
-  cutres[PhIsoS16Tight] = (_photon.passPhIso(2));
   cutres[NHIsoS16VLoose] = (_photon.nhIso < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
   cutres[PhIsoS16VLoose] = (_photon.phIso < 11.); // loose WP cut is 8.3 at 1 TeV
   cutres[CHIsoS16VLoose] = (_photon.chIso < 11.); 
-  cutres[NHIsoLoose] = (_photon.passNHIsoS15(0));
-  cutres[PhIsoLoose] = (_photon.passPhIsoS15(0));
+  cutres[NHIsoS16Tight] = _photon.passNHIso(2);
+  cutres[PhIsoS16Tight] = _photon.passPhIso(2);
 
-  for (unsigned iC(0); iC != nSelections; ++iC)
+  for (unsigned iC(0); iC != nSelections; ++iC) {
     cutRes_[iC] = cutres[iC];
-
-  // Wisconsin denominator def
-  // if (photon.passHOverE(wp_) && photon.pixelVeto && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
-  //     photon.nhIso < std::min(0.2 * photon.pt, 5. * panda::Photon::nhIsoCuts[0][0]) &&
-  //     photon.phIso < std::min(0.2 * photon.pt, 5. * panda::Photon::phIsoCuts[0][0]) &&
-  //     photon.chIso < std::min(0.2 * photon.pt, 5. * panda::Photon::chIsoCuts[0][0])) {
-  //   unsigned nPass(0);
-  //   if (photon.passCHIso(0))
-  //     ++nPass;
-  //   if (photon.passNHIso(0))
-  //     ++nPass;
-  //   if (photon.passPhIso(0))
-  //     ++nPass;
-
-  //   if (nPass == 3)
-  //     break;
+  }
 
   if (vetoes_.size() != 0) {
     unsigned iV(0);

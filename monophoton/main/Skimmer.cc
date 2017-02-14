@@ -37,8 +37,11 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   bool isMC = false;
 
   event.setAddress(*_input);
-  if (_input->GetBranch("weight"))
+  auto* br = _input->GetBranch("isData");
+  br->GetEntry(0);
+  if (br->GetLeaf("isData")->GetValue() == 0.)
     isMC = true;
+
   
   // printf("isMC %u \n", isMC);
 
@@ -56,7 +59,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 
   long iEntry(0);
   TFile* currentFile(0);
-  while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
+  while (iEntry != _nEntries && event.getEntry(iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
 

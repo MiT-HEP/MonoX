@@ -21,13 +21,13 @@ EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _i
   // printf("Made files and trees. \n");
 
   if (_isMC) { // is MC
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "promptFinalStates"}); // , "promptFinalStates"}); // branches to be directly copied
-    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"}); // , "promptFinalStates"}); // branches to be directly copied
+    outEvent_.book(*skimOut_, {"weight", "chsAK4Jets", "photons", "electrons", "muons", "taus", "met"});
   }
   else {
     _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
     // printf("Copied the right stuff. \n");
-    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+    outEvent_.book(*skimOut_, {"weight", "chsAK4Jets", "photons", "electrons", "muons", "taus", "met"});
     // printf("Made the empty branches. \n");
   }
 
@@ -43,6 +43,7 @@ EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _i
 
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
+    op->initialize(_event);
     auto* cut(dynamic_cast<Cut*>(op));
     if (cut)
       cut->registerCut(*cutsOut_);
@@ -172,7 +173,7 @@ ZeeEventSelector::selectEvent(panda::Event& _event)
 ZeeEventSelector::EEPairSelection::EEPairSelection(char const* name) :
   PhotonSelection(name)
 {
-  unsigned sels[] = {HOverE, Sieie, CHWorstIso, NHIso, PhIso, MIP49, Time, SieieNonzero, NoisyRegion};
+  unsigned sels[] = {HOverE, Sieie, CHIsoMax, NHIso, PhIso, MIP49, Time, SieieNonzero, NoisyRegion};
   for (unsigned sel : sels) {
     addSelection(true, sel);
     addVeto(true, sel);
