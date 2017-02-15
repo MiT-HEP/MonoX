@@ -1177,25 +1177,25 @@ void
 TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
   switch (tagSpecies_) {
-  case kMuon:
+  case kMuons:
     tags_ = new simpletree::MuonCollection("tag");
     break;
-  case kElectron:
+  case kElectrons:
     tags_ = new simpletree::ElectronCollection("tag");
     break;
-  case kPhoton:
+  case kPhotons:
     tags_ = new simpletree::PhotonCollection("tag");
     break;
   }
 
   switch (probeSpecies_) {
-  case kMuon:
+  case kMuons:
     probes_ = new simpletree::MuonCollection("probe");
     break;
-  case kElectron:
+  case kElectrons:
     probes_ = new simpletree::ElectronCollection("probe");
     break;
-  case kPhoton:
+  case kPhotons:
     probes_ = new simpletree::PhotonCollection("probe");
     break;
   }
@@ -1221,40 +1221,40 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
   std::function<void(simpletree::Particle const&)> push_back_probe;
 
   switch (tagSpecies_) {
-  case kMuon:
+  case kMuons:
     inTags = &_event.muons;
     push_back_tag = [this](simpletree::Particle const& tag) {
       static_cast<simpletree::MuonCollection*>(this->tags_)->push_back(static_cast<simpletree::Muon const&>(tag));
     };
     break;
-  case kElectron:
+  case kElectrons:
     inTags = &_event.electrons;
     push_back_tag = [this](simpletree::Particle const& tag) {
       static_cast<simpletree::ElectronCollection*>(this->tags_)->push_back(static_cast<simpletree::Electron const&>(tag));
     };
     break;
-  case kPhoton:
+  case kPhotons:
     // inTags = &_event.photons;
     push_back_tag = [this](simpletree::Particle const& tag) {
       static_cast<simpletree::PhotonCollection*>(this->tags_)->push_back(static_cast<simpletree::Photon const&>(tag));
     };
     break;
   }
-  
+
   switch (probeSpecies_) {
-  case kMuon:
+  case kMuons:
     inProbes = &_event.muons;
     push_back_probe = [this](simpletree::Particle const& probe) {
       static_cast<simpletree::MuonCollection*>(this->probes_)->push_back(static_cast<simpletree::Muon const&>(probe));
     };
     break;
-  case kElectron:
+  case kElectrons:
     inProbes = &_event.electrons;
     push_back_probe = [this](simpletree::Particle const& probe) {
       static_cast<simpletree::ElectronCollection*>(this->probes_)->push_back(static_cast<simpletree::Electron const&>(probe));
     };
     break;
-  case kPhoton:
+  case kPhotons:
     // inProbes = &_event.photons; 
     push_back_probe = [this](simpletree::Particle const& probe) {
       static_cast<simpletree::PhotonCollection*>(this->probes_)->push_back(static_cast<simpletree::Photon const&>(probe));

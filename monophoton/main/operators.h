@@ -516,12 +516,6 @@ class EcalCrackVeto : public Cut {
 
 class TagAndProbePairZ : public Cut {
  public:
-  enum Species {
-    kMuon,
-    kElectron,
-    kPhoton, // doesn't work currently
-    nSpecies 
-  };
 
   TagAndProbePairZ(char const* name = "TagAndProbePairZ");
   ~TagAndProbePairZ();
