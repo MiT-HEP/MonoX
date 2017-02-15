@@ -13,7 +13,6 @@ from datasets import allsamples
 ROOT.gROOT.SetBatch(True)
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('/home/yiiyama/cms/studies/RooFit/libCommonRooFit.so')
-ROOT.gROOT.LoadMacro('metTree.cc+')
 
 photonData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] # ['sph-16c-r'] #
 
@@ -22,187 +21,155 @@ for sname in photonData:
     lumi += allsamples[sname].lumi
 
 canvas = RatioCanvas(lumi = lumi)
+canvas.legend.add('data', title = 'Data', mstyle = 8, color = ROOT.kBlack, opt = 'LP')
+canvas.legend.add('fit', title = 'Fit', color = ROOT.kBlue, lwidth = 2, opt = 'L')
+canvas.legend.add('gjets', title = '#gamma+jets', color = ROOT.kGreen, lstyle = ROOT.kDashed, lwidth = 2, opt = 'L')
+canvas.legend.add('mcpdf', title = '#gamma+jets raw', color = ROOT.kRed, lstyle = ROOT.kDotted, lwidth = 2, opt = 'L')
 
 # direct smear
 
-outputFile = ROOT.TFile.Open(config.histDir + '/smearfit.root', 'recreate')
-
-dsource = ROOT.TChain('events')
-bsource = ROOT.TChain('events')
-for sname in photonData:
-    dsource.Add(config.skimDir + '/' + sname + '_monoph.root')
-    bsource.Add(config.skimDir + '/' + sname + '_hfake.root')
-    bsource.Add(config.skimDir + '/' + sname + '_efake.root')
-
-bmcsource = ROOT.TChain('events')
-bmcsource.Add(config.skimDir + '/wglo_monoph.root') # inclusive sample - wg130 canno be used because we go lower in MET
-bmcsource.Add(config.skimDir + '/wlnu-*_monoph.root')
-bmcsource.Add(config.skimDir + '/ttg_monoph.root')
-bmcsource.Add(config.skimDir + '/znng-130_monoph.root') # temporaryyyy
-bmcsource.Add(config.skimDir + '/zllg-130_monoph.root') # temporaryyyy
-
-# znnsource = ROOT.TChain('events')
-# znnsource.Add(config.skimDir + '/zg_dimu.root')  # need to replace with new sample
-
-mcsource = ROOT.TChain('events')
-mcsource.Add(config.skimDir + '/gj-40_monoph.root')
-mcsource.Add(config.skimDir + '/gj-100_monoph.root')
-mcsource.Add(config.skimDir + '/gj-200_monoph.root')
-mcsource.Add(config.skimDir + '/gj-400_monoph.root')
-mcsource.Add(config.skimDir + '/gj-600_monoph.root')
-
-binning = array.array('d', [4. * x for x in range(51)])
-sel = '(photons.scRawPt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi > 2.)'
-
-dname = 'dmetLow'
-dmet = ROOT.TH1D(dname, ';E_{T}^{miss} (GeV); Events / GeV', len(binning) - 1, binning)
-dmet.Sumw2()
-dsource.Draw('t1Met.met>>'+dname, sel, 'goff')
-
-btree = ROOT.TTree('btree', 'met')
-ROOT.metTree(bsource, btree, sel)
-ROOT.metTree(bmcsource, btree, sel, lumi)
-# ROOT.metTree(znnsource, btree, sel, lumi * 6.122)
-
-counter = ROOT.TH1D('counter', '', 1, 0., 1.)
-btree.Draw('0.5>>counter', 'weight', 'goff')
-nbkgval = counter.GetBinContent(1)
-
-mctree = ROOT.TTree('mctree', 'met')
-ROOT.metTree(mcsource, mctree, sel)
+inputFile = ROOT.TFile.Open(config.histDir + '/gjets/fitTemplates.root')
+outputFile = ROOT.TFile.Open(config.histDir + '/gjets/smearfit.root', 'recreate')
 
 space = ROOT.RooWorkspace('space', 'space')
 
-met = space.factory('met[0., 200.]')
+mcpdf = inputFile.Get('mcpdf')
+bpdf = inputFile.Get('bpdf')
+dmet = inputFile.Get('dmet')
+ddata = inputFile.Get('ddata')
+counter = inputFile.Get('counter')
+
+nbkgval = counter.GetBinContent(1)
+
+getattr(space, 'import')(mcpdf)
+getattr(space, 'import')(bpdf)
+getattr(space, 'import')(dmet)
+getattr(space, 'import')(ddata)
+
+met = space.factory('met[0., 400.]')
 met.setUnit('GeV')
-met.setBins(50)
-
-ddata = ROOT.RooDataHist('ddata', 'ddata', ROOT.RooArgList(met), dmet)
-
-bpdf = ROOT.KeysShape('bpdf', 'bpdf', met, btree, 'weight', 0.5, 8)
-
-print 'Constructing KeysShape from', mcsource.GetEntries(), 'events.'
-mcname = 'mcmetLow'
-mcpdf = ROOT.KeysShape('mcpdf', 'mcpdf', met, mctree, 'weight', 0.5, 8)
-print 'Done.'
+met.setBins(100)
 
 sigmar = space.factory('sigmar[1., 0., 100.]')
 alpha = space.factory('alpha[0.0, 0., 1.]')
 beta = space.factory('beta[0.0, 0., 1.]')
 mean = space.factory('mean[0, -1., 50.]')
 
-print sigmar
-print alpha
-print beta
-print mean
+sfuncs = { 'constant' : space.factory('expr::constant("@0", {{sigmar}})')
+           ,'linear' : space.factory('expr::linear("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
+           ,'quadratic' : space.factory('expr::quadratic("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
+           }
 
-print 'making width'
-# width = space.factory('expr::width("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
-# widthName = 'quadratic'
-width = space.factory('expr::width("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
-widthName = 'linear'
-print 'width made'
+for sname in sorted(sfuncs.keys()):
+    print 'make smear'
+    smear = space.factory('Landau::' + sname + 'Smear(met, mean, ' + sname + ')')
+    print 'made smear'
 
-print 'making smear'
-smear = space.factory('Landau::smear(met, mean, width)')
-print 'smear made'
+    start = time.time()
+    print 'starting FFTconv'
+    gjets = ROOT.RooFFTConvPdf('gjets', 'gjets', met, mcpdf, smear)
+    elapsed = time.time() - start
+    print 'finished. took %i seconds' % elapsed
 
-gjets = ROOT.RooFFTConvPdf('gjets', 'gjets', met, mcpdf, smear)
+    ngjets = space.factory('ngjets[%f, 0., %f]' % (dmet.GetSumOfWeights(), dmet.GetSumOfWeights() * 1.5))
+    nbkg = space.factory('nbkg[%f]' % nbkgval)
 
-ngjets = space.factory('ngjets[%f, 0., %f]' % (dmet.GetSumOfWeights(), dmet.GetSumOfWeights() * 1.5))
-nbkg = space.factory('nbkg[%f]' % nbkgval)
+    model = ROOT.RooAddPdf('model', 'model', ROOT.RooArgList(gjets, bpdf), ROOT.RooArgList(ngjets, nbkg))
 
-model = ROOT.RooAddPdf('model', 'model', ROOT.RooArgList(gjets, bpdf), ROOT.RooArgList(ngjets, nbkg))
+    start = time.time()
+    print 'starting fit'
+    model.fitTo(ddata)
+    elapsed = time.time() - start
+    print 'finished. took %i seconds' % elapsed
 
-model.fitTo(ddata)
+    paramsOut = file('../data/gjSmearParams_' + sname + '.txt', 'w')
+    paramsOut.write('%10s %20f %20f \n' % ('mean', mean.getValV(), mean.getError()))
+    paramsOut.write('%10s %20f %20f \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
+    paramsOut.write('%10s %20f %20f \n' % ('alpha', alpha.getValV(), alpha.getError()))
+    paramsOut.write('%10s %20f %20f \n' % ('beta', beta.getValV(), beta.getError()))
+    paramsOut.close()
 
-paramsOut = file('../data/gjSmearParams_' + widthName + '.txt', 'w')
-paramsOut.write('%10s %20f %20f \n' % ('mean', mean.getValV(), mean.getError()))
-paramsOut.write('%10s %20f %20f \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
-paramsOut.write('%10s %20f %20f \n' % ('alpha', alpha.getValV(), alpha.getError()))
-paramsOut.write('%10s %20f %20f \n' % ('beta', beta.getValV(), beta.getError()))
-paramsOut.close()
+    frame = met.frame()
+    ddata.plotOn(frame)
+    model.plotOn(frame)
+    model.plotOn(frame, ROOT.RooFit.Components('gjets'), ROOT.RooFit.LineColor(ROOT.kGreen), ROOT.RooFit.LineStyle(ROOT.kDashed))
+    mcpdf.plotOn(frame, ROOT.RooFit.LineColor(ROOT.kRed), ROOT.RooFit.LineStyle(ROOT.kDotted))
+    # frame.SetTitle('min#Delta#phi(j, E_{T}^{miss}) < 0.5')
+    #frame.GetXaxis().SetTitle('E_{T}^{miss} (GeV)')
+    frame.GetXaxis().SetTitle('')
+    frame.GetXaxis().SetTitleSize(0.)
+    frame.GetXaxis().SetLabelSize(0.)
+    frame.GetYaxis().SetLabelSize(0.)
+    frame.GetYaxis().SetTickSize(0.)
 
-frame = met.frame()
-ddata.plotOn(frame)
-model.plotOn(frame)
-model.plotOn(frame, ROOT.RooFit.Components('gjets'), ROOT.RooFit.LineColor(ROOT.kGreen), ROOT.RooFit.LineStyle(ROOT.kDashed))
-mcpdf.plotOn(frame, ROOT.RooFit.LineColor(ROOT.kRed), ROOT.RooFit.LineStyle(ROOT.kDotted))
-# frame.SetTitle('min#Delta#phi(j, E_{T}^{miss}) < 0.5')
-#frame.GetXaxis().SetTitle('E_{T}^{miss} (GeV)')
-frame.GetXaxis().SetTitle('')
-frame.GetXaxis().SetTitleSize(0.)
-frame.GetXaxis().SetLabelSize(0.)
-frame.GetYaxis().SetLabelSize(0.)
-frame.GetYaxis().SetTickSize(0.)
+    canvas.Clear()
+    canvas.xtitle = 'E_{T}^{miss} (GeV)'
 
-canvas.xtitle = 'E_{T}^{miss} (GeV)'
-canvas.legend.add('data', title = 'Data', mstyle = 8, color = ROOT.kBlack, opt = 'LP')
-canvas.legend.add('fit', title = 'Fit', color = ROOT.kBlue, lwidth = 2, opt = 'L')
-canvas.legend.add('gjets', title = '#gamma+jets', color = ROOT.kGreen, lstyle = ROOT.kDashed, lwidth = 2, opt = 'L')
-canvas.legend.add('mcpdf', title = '#gamma+jets raw', color = ROOT.kRed, lstyle = ROOT.kDotted, lwidth = 2, opt = 'L')
+    canvas.addHistogram(frame, clone = True, drawOpt = '')
 
-canvas.addHistogram(frame, clone = True, drawOpt = '')
+    canvas.Update(rList = [])
 
-canvas.Update(rList = [])
+    fitcurve = frame.findObject('model_Norm[met]')
+    rawcurve = frame.findObject('mcpdf_Norm[met]')
 
-fitcurve = frame.findObject('model_Norm[met]')
-rawcurve = frame.findObject('mcpdf_Norm[met]')
+    rdata = ROOT.TGraphErrors(dmet.GetNbinsX())
+    for iP in range(rdata.GetN()):
+        x = dmet.GetXaxis().GetBinCenter(iP + 1)
+        norm = fitcurve.interpolate(x)
+        rdata.SetPoint(iP, x, dmet.GetBinContent(iP + 1) / norm)
+        rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
 
-rdata = ROOT.TGraphErrors(dmet.GetNbinsX())
-for iP in range(rdata.GetN()):
-    x = dmet.GetXaxis().GetBinCenter(iP + 1)
-    norm = fitcurve.interpolate(x)
-    rdata.SetPoint(iP, x, dmet.GetBinContent(iP + 1) / norm)
-    rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
+    rdata.SetMarkerStyle(8)
+    rdata.SetMarkerColor(ROOT.kBlack)
+    rdata.SetLineColor(ROOT.kBlack)
 
-rdata.SetMarkerStyle(8)
-rdata.SetMarkerColor(ROOT.kBlack)
-rdata.SetLineColor(ROOT.kBlack)
+    rraw = ROOT.TGraph(rawcurve.GetN())
+    pre = -1
+    last = -1.
+    for iP in range(rraw.GetN()):
+        x = rawcurve.GetX()[iP]
+        if x < 0.:
+            pre = iP
+            continue
 
-rraw = ROOT.TGraph(rawcurve.GetN())
-pre = -1
-last = -1.
-for iP in range(rraw.GetN()):
-    x = rawcurve.GetX()[iP]
-    if x < 0.:
-        pre = iP
-        continue
+        if x > 400.:
+            rraw.SetPoint(iP, x, last)
+            continue
 
-    if x > 200.:
+        last = rawcurve.interpolate(x) / fitcurve.interpolate(x)
         rraw.SetPoint(iP, x, last)
-        continue
 
-    last = rawcurve.interpolate(x) / fitcurve.interpolate(x)
-    rraw.SetPoint(iP, x, last)
+    iP = 0
+    while iP <= pre:
+        rraw.SetPoint(iP, rawcurve.GetX()[iP], rraw.GetY()[pre + 1])
+        iP += 1
 
-iP = 0
-while iP <= pre:
-    rraw.SetPoint(iP, rawcurve.GetX()[iP], rraw.GetY()[pre + 1])
-    iP += 1
+    rraw.SetLineWidth(2)
+    rraw.SetLineColor(ROOT.kRed)
+    rraw.SetLineStyle(ROOT.kDotted)
 
-rraw.SetLineWidth(2)
-rraw.SetLineColor(ROOT.kRed)
-rraw.SetLineStyle(ROOT.kDotted)
+    canvas.ratioPad.cd()
 
-canvas.ratioPad.cd()
+    rframe = ROOT.TH1F('rframe', '', 1, 0., 400.)
+    rframe.GetYaxis().SetRangeUser(0., 2.)
+    rframe.Draw()
 
-rframe = ROOT.TH1F('rframe', '', 1, 0., 200.)
-rframe.GetYaxis().SetRangeUser(0., 2.)
-rframe.Draw()
+    line = ROOT.TLine(0., 1., 400., 1.)
+    line.SetLineWidth(2)
+    line.SetLineColor(ROOT.kBlue)
+    line.Draw()
 
-line = ROOT.TLine(0., 1., 200., 1.)
-line.SetLineWidth(2)
-line.SetLineColor(ROOT.kBlue)
-line.Draw()
+    rraw.Draw('L')
 
-rraw.Draw('L')
+    rdata.Draw('EP')
 
-rdata.Draw('EP')
+    canvas._needUpdate = False
 
-canvas._needUpdate = False
-
-canvas.printWeb('monophoton/smearfit', widthName)
+    canvas.printWeb('monophoton/smearfit', sname)
+###
 
 outputFile.cd()
 space.Write()
+outputFile.Close()
+
+print 'done'
