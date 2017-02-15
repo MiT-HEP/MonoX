@@ -1737,7 +1737,9 @@ LeptonRecoil::apply(panda::Event const& _event, panda::Event& _outEvent)
   double lpx(0.);
   double lpy(0.);
     
-  for (auto& lep : *col) {
+  for (unsigned iL(0); iL != col->size(); ++iL) {
+    auto& lep = col->at(iL);
+
     lpx += lep.pt * std::cos(lep.phi);
     lpy += lep.pt * std::sin(lep.phi);
   }
@@ -1748,6 +1750,7 @@ LeptonRecoil::apply(panda::Event const& _event, panda::Event& _outEvent)
     *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
     *outRecoilPhis[iM] = std::atan2(mey, mex);
   }
+  
 }
 
 TVector2
