@@ -526,7 +526,7 @@ def getConfig(confName):
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
@@ -597,7 +597,7 @@ def getConfig(confName):
     elif confName == 'lowmt':
         config = PlotConfig('monoph', photonData)
         config.baseline = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
-        config.fullSelection = ''
+        config.fullSelection = 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[0] - t1Met.phi)) < 3.0'
         config.bkgGroups = [
             GroupSpec('minor', 't#bar{t}, Z, #gamma#gamma', samples = ['ttg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
@@ -616,14 +616,14 @@ def getConfig(confName):
             VariableDef('sumEtHighSx', '#SigmaE_{T}', 't1Met.sumEt', [1000. + 50. * x for x in range(40)], cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV', overflow = True),
             VariableDef('significance', 'E_{T}^{miss} / #SigmaE_{T}', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (20, 0., 20.), unit = '#sqrt{GeV}', overflow = True),
             VariableDef('significanceHighSx', 'E_{T}^{miss} / #SigmaE_{T}', 't1Met.met / TMath::Sqrt(t1Met.sumEt)', (20, 0., 20.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = '#sqrt{GeV}', overflow = True),
-            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], unit = 'GeV'),
-            VariableDef('phoPtLowSx', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 'photons.e4[0] / photons.emax[0] > 0.5', unit = 'GeV', logy = False),
+            VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], unit = 'GeV', overflow = True),
+            VariableDef('phoPtLowSx', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 'photons.e4[0] / photons.emax[0] > 0.5', unit = 'GeV', overflow = True),
             VariableDef('phoPtHighSx', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 30. * x for x in range(25)], cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV', overflow = True),
-            VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV'),
-            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), applyFullSel = True),
-            VariableDef('phoEtaLowSx', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'photons.e4[0] / photons.emax[0] > 0.5', applyFullSel = True),
-            VariableDef('phoEta2Jets', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'jets.size == 2', applyFullSel = True),
-            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), applyFullSel = True, logy = False),
+            VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 15. * x for x in range(20)], cut = 't1Met.met > 170.', unit = 'GeV', overflow = True),
+            VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5)),
+            VariableDef('phoEtaLowSx', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'photons.e4[0] / photons.emax[0] > 0.5'),
+            VariableDef('phoEta2Jets', '#eta^{#gamma}', 'photons.eta[0]', (20, -1.5, 1.5), cut = 'jets.size == 2'),
+            VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi[0]', (20, -math.pi, math.pi), logy = False),
 #            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), cut = 'photons.scRawPt[0] > 175. && t1Met.met > 170. && t1Met.minJetDPhi > 0.5', applyBaseline = False, logy = False),
             VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), logy = False),
             VariableDef('dPhiPhoMetHighSx', '#Delta#phi(#gamma, E_{T}^{miss})', 'TVector2::Phi_mpi_pi(photons.phi[0] - t1Met.phi)', (20, -math.pi, math.pi), cut = 'photons.e4[0] / photons.emax[0] < 0.5', logy = False),
@@ -631,22 +631,27 @@ def getConfig(confName):
             VariableDef('dPhiJet1Met', '#Delta#phi(E_{T}^{miss}, j1)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[0] - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt[0] > 30.'),
             VariableDef('dPhiJet2Met', '#Delta#phi(E_{T}^{miss}, j2)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi[1] - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt[1] > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
-            VariableDef('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), applyFullSel = True, unit = 'GeV', logy = False),
-            VariableDef('mtPhoMetHighSx', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', applyFullSel = True, unit = 'GeV'),
-            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), applyFullSel = True, logy = False),
-            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), applyFullSel = True),
-            VariableDef('jetPt', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 800.), cut = 'jets.size != 0', applyFullSel = True, unit = 'GeV'),
+            VariableDef('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), unit = 'GeV', logy = False),
+            VariableDef('mtPhoMetHighSx', 'M_{T#gamma}', 'photons.mt[0]', (30, 0., 300.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', unit = 'GeV'),
+            VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), logy = False),
+            VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.)),
+            VariableDef('jetPt', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 800.), cut = 'jets.size != 0', unit = 'GeV'),
             VariableDef('jetPtHighSx', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 1600.), cut = 'jets.size != 0 && photons.e4[0] / photons.emax[0] < 0.5', overflow = True, unit = 'GeV'),
             VariableDef('jetPtLowSx', 'p_{T}^{j1}', 'jets.pt[0]', (30, 30., 1600.), cut = 'jets.size != 0 && photons.e4[0] / photons.emax[0] > 0.5', overflow = True, unit = 'GeV'),
-            VariableDef('jetEta', '#eta^{j1}', 'jets.eta[0]', (30, -5., 5.), cut = 'jets.size != 0', applyFullSel = True),
-            VariableDef('jet2Pt', 'p_{T}^{j2}', 'jets.pt[1]', (30, 30., 800.), cut = 'jets.size > 1', applyFullSel = True, unit = 'GeV'),
-            VariableDef('jet2Eta', '#eta^{j2}', 'jets.eta[1]', (30, -5., 5.), cut = 'jets.size > 1', applyFullSel = True),
-            VariableDef('r9', 'R_{9}', 'photons.r9', (50, 0.5, 1.), applyFullSel = True),
-            VariableDef('r9HighSx', 'R_{9}', 'photons.r9', (50, 0.5, 1.), cut = 'photons.e4[0] / photons.emax[0] < 0.5', applyFullSel = True),
+            VariableDef('jetEta', '#eta^{j1}', 'jets.eta[0]', (30, -5., 5.), cut = 'jets.size != 0'),
+            VariableDef('jet2Pt', 'p_{T}^{j2}', 'jets.pt[1]', (30, 30., 800.), cut = 'jets.size > 1', unit = 'GeV'),
+            VariableDef('jet2Eta', '#eta^{j2}', 'jets.eta[1]', (30, -5., 5.), cut = 'jets.size > 1'),
+            VariableDef('r9', 'R_{9}', 'photons.r9', (50, 0.5, 1.)),
+            VariableDef('r9HighSx', 'R_{9}', 'photons.r9', (50, 0.5, 1.), cut = 'photons.e4[0] / photons.emax[0] < 0.5'),
             VariableDef('swissCross', '1-S4/S1', '1. - photons.e4[0] / photons.emax[0]', (50, 0., 1.)),
             VariableDef('sipip', '#sigma_{i#phii#phi}', 'photons.sipip[0]', (50, 0., 0.02)),
             VariableDef('sipipLowSx', '#sigma_{i#phii#phi}', 'photons.sipip[0]', (50, 0., 0.02), cut = 'photons.e4[0] / photons.emax[0] > 0.5')
         ]
+
+        for variable in list(config.variables):
+            if variable.name not in ['dPhiJetMet', 'dPhiJet1Met', 'dPhiJet2Met', 'dPhiJetMetMin']:
+                config.variables.append(variable.clone(variable.name + 'JetCleaned', applyFullSel = True))
+#                config.variables.remove(variable)
 
 
     elif confName == 'zmmJets':
@@ -654,15 +659,15 @@ def getConfig(confName):
         config.baseline = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi[0])) > 3. && TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 75.'
         config.bkgGroups = [
-            GroupSpec('wjets', 'W+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('wjets', 'W+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)), 
             GroupSpec('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)) # ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500']
+            GroupSpec('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
         config.variables = [ 
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [25 * x for x in range(2, 4)] + [100 + 50 * x for x in range(0, 8)], unit = 'GeV', overflow = True),
             VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
-            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
             VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi[0])) > 3. && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
             VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt[0]', (20, 0., 1000.), unit = 'GeV'),
             VariableDef('jetEta', '#eta_{j}', 'jets.eta[0]', (10, -5., 5.)),
@@ -691,15 +696,15 @@ def getConfig(confName):
         config.baseline = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi[0])) > 3. && TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.met > 75.'
         config.bkgGroups = [
-            GroupSpec('wjets', 'W+jets', samples = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('wjets', 'W+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)), 
             GroupSpec('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)) # ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500']
+            GroupSpec('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)) 
             ]
         config.variables = [ 
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', [25 * x for x in range(2, 4)] + [100 + 50 * x for x in range(0, 8)], unit = 'GeV', overflow = True),
             VariableDef('dPhi', '#Delta#phi(Z, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
-            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
+            VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, jet)', 'TMath::Abs(TVector2::Phi_mpi_pi(t1Met.phi - jets.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
             VariableDef('dPhiZMet', '#Delta#phi(Z, E_{T}^{miss})', 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi))', (15, 0., math.pi), applyBaseline = False, cut = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi[0])) > 3. && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt[0] > 100. && t1Met.met > 50. && t1Met.minJetDPhi > 0.5'),
             VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt[0]', (20, 0., 1000.), unit = 'GeV'),
             VariableDef('jetEta', '#eta_{j}', 'jets.eta[0]', (10, -5., 5.)),
@@ -735,7 +740,7 @@ def getConfig(confName):
         config.bkgGroups = [
             GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -752,7 +757,7 @@ def getConfig(confName):
         config.fullSelection = 't1Met.met > 170.'
         config.bkgGroups = [
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.), # norm set here
@@ -797,7 +802,7 @@ def getConfig(confName):
             # GroupSpec('spike', 'Spikes', count = 26.8, color = None),
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         ]
