@@ -38,6 +38,7 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
       auto& outPhoton(outEvent.photons[iPh]);
 
       outPhoton.scEta = superCluster.eta;
+      outPhoton.e4 = inPhoton.eleft + inPhoton.eright + inPhoton.etop + inPhoton.ebottom;
       outPhoton.isEB = std::abs(outPhoton.scEta) < 1.4442;
       
       double chIsoS16EA(0.);
@@ -111,9 +112,9 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
       outPhoton.phIsoS15 += (phIsoS15EA - phIsoS16EA) * _event.rho;
 
       // EA computed with iso/worstIsoEA.py
-      outPhoton.chIsoWorst -= 0.094 * _event.rho;
-      if (outPhoton.chIsoWorst < outPhoton.chIso)
-        outPhoton.chIsoWorst = outPhoton.chIso;
+      outPhoton.chIsoMax -= 0.094 * _event.rho;
+      if (outPhoton.chIsoMax < outPhoton.chIso)
+        outPhoton.chIsoMax = outPhoton.chIso;
     }
 
     return true;
