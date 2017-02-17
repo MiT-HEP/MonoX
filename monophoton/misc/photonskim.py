@@ -5,7 +5,7 @@ import sys
 import shutil
 import ROOT
 
-NENTRIES = 100
+NENTRIES = 10000
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -33,12 +33,11 @@ except:
 
 sample = allsamples[sname]
 
+sample.book = ''
+
 print config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
 
-if goodlumi:
-    ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', NENTRIES, goodlumi)
-else:
-    ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', NENTRIES)
+ROOT.PhotonSkim(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname, '/tmp/' + sname + '.root', NENTRIES, goodlumi)
 
 try:
     os.makedirs(config.photonSkimDir)

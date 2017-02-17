@@ -1,4 +1,4 @@
-#include "Objects/interface/Event.h"
+#include "Objects/interface/EventMonophoton.h"
 #include "Utils/interface/FileMerger.h"
 
 #include "GoodLumiFilter.h"
@@ -12,35 +12,147 @@ PhotonSkim(char const* _sourceDir, char const* _outputPath, long _nEvents = -1, 
 {
   panda::FileMerger merger;
 
+  panda::EventMonophoton outEvent;
+  merger.setOutEvent(&outEvent);
+
   panda::FileMerger::SkimFunction skim;
   
-  if (_goodlumi) {
-    skim = [_goodlumi](panda::Event& _event)->bool {
-      if (!_goodlumi->isGoodLumi(_event.runNumber, _event.lumiNumber))
-        return false;
+  skim = [&outEvent, _goodlumi](panda::Event& _event)->bool {
+    if (_goodlumi && !_goodlumi->isGoodLumi(_event.runNumber, _event.lumiNumber))
+      return false;
+
+    unsigned iPh(0);
+    for (; iPh != _event.photons.size(); ++iPh) {
+      auto& photon(_event.photons[iPh]);
+      if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
+        break;
+    }
+    if (iPh == _event.photons.size())
+      return false;
+
+    outEvent = _event;
   
-      for (auto& photon : _event.photons) {
-        if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
-          return true;
+    for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
+      auto& inPhoton(_event.photons[iPh]);
+      auto& superCluster(*inPhoton.superCluster);
+      auto& outPhoton(outEvent.photons[iPh]);
+
+      outPhoton.scEta = superCluster.eta;
+      outPhoton.isEB = std::abs(outPhoton.scEta) < 1.4442;
+      
+      double chIsoS16EA(0.);
+      double nhIsoS16EA(0.);
+      double phIsoS16EA(0.);
+      double nhIsoS15EA(0.);
+      double phIsoS15EA(0.);
+      double absEta(std::abs(outPhoton.scEta));
+      if (absEta < 1.) {
+        nhIsoS15EA = 0.0599;
+        phIsoS15EA = 0.1271;
+        chIsoS16EA = 0.0360;
+        nhIsoS16EA = 0.0597;
+        phIsoS16EA = 0.1210;
       }
-      return false;
-    };
-  }
-  else {
-    skim = [](panda::Event& _event)->bool {
-      for (auto& photon : _event.photons) {
-        if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
-          return true;
+      else if (absEta < 1.479) {
+        nhIsoS15EA = 0.0819;
+        phIsoS15EA = 0.1101;
+        chIsoS16EA = 0.0377;
+        nhIsoS16EA = 0.0807;
+        phIsoS16EA = 0.1107;
       }
-      return false;
-    };
-  }
+      else if (absEta < 2.) {
+        nhIsoS15EA = 0.0696;
+        phIsoS15EA = 0.0756;
+        chIsoS16EA = 0.0306;
+        nhIsoS16EA = 0.0629;
+        phIsoS16EA = 0.0699;
+      }
+      else if (absEta < 2.2) {
+        nhIsoS15EA = 0.0360;
+        phIsoS15EA = 0.1175;
+        chIsoS16EA = 0.0283;
+        nhIsoS16EA = 0.0197;
+        phIsoS16EA = 0.1056;
+      }
+      else if (absEta < 2.3) {
+        nhIsoS15EA = 0.0360;
+        phIsoS15EA = 0.1498;
+        chIsoS16EA = 0.0254;
+        nhIsoS16EA = 0.0184;
+        phIsoS16EA = 0.1457;
+      }
+      else if (absEta < 2.4) {
+        nhIsoS15EA = 0.0462;
+        phIsoS15EA = 0.1857;
+        chIsoS16EA = 0.0217;
+        nhIsoS16EA = 0.0284;
+        phIsoS16EA = 0.1719;
+      }
+      else {
+        nhIsoS15EA = 0.0656;
+        phIsoS15EA = 0.2183;
+        chIsoS16EA = 0.0167;
+        nhIsoS16EA = 0.0591;
+        phIsoS16EA = 0.1998;
+      }
+
+      outPhoton.chIsoS15 = inPhoton.chIso;
+      if (outPhoton.isEB) {
+        outPhoton.nhIsoS15 = inPhoton.nhIso + (0.014 - 0.0148) * inPhoton.pt() + (0.000019 - 0.000017) * inPhoton.pt() * inPhoton.pt();
+        outPhoton.phIsoS15 = inPhoton.phIso + (0.0053 - 0.0047) * inPhoton.pt();
+      }
+      else {
+        outPhoton.nhIsoS15 = inPhoton.nhIso + (0.0139 - 0.0163) * inPhoton.pt() + (0.000025 - 0.000014) * inPhoton.pt() * inPhoton.pt();
+        outPhoton.phIsoS15 = inPhoton.phIso + (0.0034 - 0.0034) * inPhoton.pt();
+      }
+
+      outPhoton.chIsoS15 += chIsoS16EA * _event.rho;
+      outPhoton.nhIsoS15 += (nhIsoS15EA - nhIsoS16EA) * _event.rho;
+      outPhoton.phIsoS15 += (phIsoS15EA - phIsoS16EA) * _event.rho;
+
+      // EA computed with iso/worstIsoEA.py
+      outPhoton.chIsoWorst -= 0.094 * _event.rho;
+      if (outPhoton.chIsoWorst < outPhoton.chIso)
+        outPhoton.chIsoWorst = outPhoton.chIso;
+    }
+
+    return true;
+  };
 
   TString sourcePath(_sourceDir);
-  sourcePath += "/*.root";
-
+  sourcePath += "/98.root";
   merger.addInput(sourcePath);
-  merger.selectBranches({"!pfCandidates", "!puppiAK4Jets", "!chsAK8Jets", "!puppiAK8Jets", "!chsCA15Jets", "!puppiCA15Jets", "!subjets"}, true);
+
+  panda::utils::BranchList branchList = {
+    "!pfCandidates",
+    "!puppiAK4Jets",
+    "!chsAK8Jets",
+    "!chsAK8Subjets",
+    "!puppiAK8Jets",
+    "!puppiAK8Subjets",
+    "!chsCA15Jets",
+    "!chsCA15Subjets",
+    "!puppiCA15Jets",
+    "!puppiCA15Subjets",
+    "!subjets",
+    "!ak8GenJets",
+    "!ca15GenJets",
+    "!puppiMet",
+    "!rawMet",
+    "!caloMet",
+    "!noMuMet",
+    "!noHFMet",
+    "!trkMet",
+    "!neutralMet",
+    "!photonMet",
+    "!hfMet",
+    "!reoil",
+    "t1Met",
+    "jets",
+    "genJets"
+  };
+
+  merger.selectBranches(branchList, true);
   merger.setSkim(skim);
 
   merger.merge(_outputPath, _nEvents);
