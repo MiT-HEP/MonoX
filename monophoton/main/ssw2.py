@@ -90,6 +90,13 @@ wlnu = applyMod(selectors.wlnu, applyMod(selectors.genveto, mc_cand)) + applyMod
 
 selectors = {
     # Data 2016
+    'sph-16b-m': defaults(data_sph),
+    'sph-16c-m': defaults(data_sph),
+    'sph-16d-m': defaults(data_sph),
+    'sph-16e-m': defaults(data_sph),
+    'sph-16f-m': defaults(data_sph),
+    'sph-16g-m': defaults(data_sph),
+    'sph-16h-m': defaults(data_sph),
     'sph-16b-r': defaults(data_sph),
     'sph-16c-r': defaults(data_sph),
     'sph-16d-r': defaults(data_sph),
