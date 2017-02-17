@@ -11,7 +11,7 @@
 //--------------------------------------------------------------------
 
 void
-EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _isMC)
+EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _event, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
@@ -22,12 +22,12 @@ EventSelector::initialize(char const* _outputPath, panda::Event& _event, bool _i
 
   if (_isMC) { // is MC
     _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"}); // , "promptFinalStates"}); // branches to be directly copied
-    outEvent_.book(*skimOut_, {"weight", "chsAK4Jets", "photons", "electrons", "muons", "taus", "met"});
+    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
   }
   else {
     _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
     // printf("Copied the right stuff. \n");
-    outEvent_.book(*skimOut_, {"weight", "chsAK4Jets", "photons", "electrons", "muons", "taus", "met"});
+    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
     // printf("Made the empty branches. \n");
   }
 
@@ -70,7 +70,7 @@ EventSelector::finalize()
 }
 
 void
-EventSelector::selectEvent(panda::Event& _event)
+EventSelector::selectEvent(panda::EventMonophoton& _event)
 {
   if (blindPrescale_ > 1 && _event.runNumber >= blindMinRun_ && _event.eventNumber % blindPrescale_ != 0)
     return;
@@ -130,7 +130,7 @@ ZeeEventSelector::~ZeeEventSelector()
 }
 
 void
-ZeeEventSelector::selectEvent(panda::Event& _event)
+ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 {
   outEvent_.init();
   outEvent_.weight = _event.weight;
@@ -184,7 +184,7 @@ ZeeEventSelector::EEPairSelection::EEPairSelection(char const* name) :
 }
 
 bool
-ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event& _outEvent)
+ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   eePairs_.clear();
 
@@ -210,7 +210,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event
     for (; iE != _event.electrons.size(); ++iE) {
       auto& electron(_event.electrons[iE]);
 
-      if (!electron.loose || electron.pt < 10.)
+      if (!electron.loose || electron.pt() < 10.)
         continue;
 
       if (electron.dR2(photon) < 0.01)
@@ -219,7 +219,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::fEl27Loose]))
+      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::fEl27Loose]))
         iElectron = iE;
       else
         break;
@@ -238,7 +238,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::Event const& _event, panda::Event
 //--------------------------------------------------------------------
 
 void
-WlnuSelector::selectEvent(panda::Event& _event)
+WlnuSelector::selectEvent(panda::EventMonophoton& _event)
 {
   for (auto& parton : _event.partons) {
     if (std::abs(parton.pdgid) == 11)
@@ -253,7 +253,7 @@ WlnuSelector::selectEvent(panda::Event& _event)
 //--------------------------------------------------------------------
 
 void
-WenuSelector::selectEvent(panda::Event& _event)
+WenuSelector::selectEvent(panda::EventMonophoton& _event)
 {
   unsigned iP(0);
   for (; iP != _event.partons.size(); ++iP) {
@@ -320,18 +320,18 @@ NormalizingSelector::finalize()
 //--------------------------------------------------------------------
 
 void
-SmearingSelector::selectEvent(panda::Event& _event)
+SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 {
   if (!func_)
     return;
 
   // smearing the MET only - total pT will be inconsistent
-  double originalMet(_event.met.pt);
+  double originalMet(_event.t1Met.pt);
 
   _event.weight /= nSamples_;
 
   for (unsigned iS(0); iS != nSamples_; ++iS) {
-    _event.met.pt = originalMet + func_->GetRandom();
+    _event.t1Met.pt = originalMet + func_->GetRandom();
   
     EventSelector::selectEvent(_event);
   }

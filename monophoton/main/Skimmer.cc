@@ -32,7 +32,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   TString outputDir(_outputDir);
   TString sampleName(_sampleName);
 
-  panda::Event event;
+  panda::EventMonophoton event;
 
   bool isMC = false;
 

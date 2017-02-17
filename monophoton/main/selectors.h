@@ -16,9 +16,9 @@ public:
   virtual ~EventSelector() {}
 
   void addOperator(Operator* _op, unsigned idx = -1) { if (idx >= operators_.size()) operators_.push_back(_op); else operators_.insert(operators_.begin() + idx, _op); }
-  virtual void initialize(char const* outputPath, panda::Event& event, bool _isMC);
+  virtual void initialize(char const* outputPath, panda::EventMonophoton& event, bool _isMC);
   virtual void finalize();
-  virtual void selectEvent(panda::Event&);
+  virtual void selectEvent(panda::EventMonophoton&);
   void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
 
   TString const& name() const { return name_; }
@@ -31,7 +31,7 @@ public:
   std::vector<Operator*> operators_;
   TTree* skimOut_{0};
   TTree* cutsOut_{0};
-  panda::Event outEvent_;
+  panda::EventMonophoton outEvent_;
 
   unsigned blindPrescale_{1};
   unsigned blindMinRun_{0};
@@ -44,7 +44,7 @@ class ZeeEventSelector : public EventSelector {
   ZeeEventSelector(char const* name);
   ~ZeeEventSelector();
 
-  void selectEvent(panda::Event&) override;
+  void selectEvent(panda::EventMonophoton&) override;
 
   class EEPairSelection : public PhotonSelection {
   public:
@@ -52,7 +52,7 @@ class ZeeEventSelector : public EventSelector {
     std::vector<std::pair<unsigned, unsigned>> const& getEEPairs() const { return eePairs_; }
 
   protected:
-    bool pass(panda::Event const&, panda::Event&) override;
+    bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
     
     std::vector<std::pair<unsigned, unsigned>> eePairs_;
   };
@@ -66,7 +66,7 @@ class WlnuSelector : public EventSelector {
  public:
   WlnuSelector(char const* name) : EventSelector(name) {}
 
-  void selectEvent(panda::Event&) override;
+  void selectEvent(panda::EventMonophoton&) override;
 };
 
 class WenuSelector : public EventSelector {
@@ -74,7 +74,7 @@ class WenuSelector : public EventSelector {
  public:
   WenuSelector(char const* name) : EventSelector(name) {}
 
-  void selectEvent(panda::Event&) override;
+  void selectEvent(panda::EventMonophoton&) override;
 };
 
 class NormalizingSelector : public EventSelector {
@@ -99,7 +99,7 @@ class SmearingSelector : public EventSelector {
   SmearingSelector(char const* name) : EventSelector(name) {}
   ~SmearingSelector() {}
 
-  void selectEvent(panda::Event&) override;
+  void selectEvent(panda::EventMonophoton&) override;
 
   void setNSamples(unsigned n) { nSamples_ = n; }
   void setFunction(TF1* func) { func_ = func; }
