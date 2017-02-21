@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <ctime>
 
 class Skimmer {
 public:
@@ -58,10 +59,13 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   // std::cout<< "Selectors set up" << std::endl;
 
   long iEntry(0);
+  clock_t elapsed = clock();
   TFile* currentFile(0);
-  while (iEntry != _nEntries && event.getEntry(iEntry++) > 0) {
-    if (iEntry % 100000 == 1)
-      std::cout << " " << iEntry << std::endl;
+  while (iEntry != _nEntries && event.getEntry(*_input, iEntry++) > 0) {
+    if (iEntry % 100000 == 1) {
+      elapsed = clock() - elapsed;
+      std::cout << " " << iEntry << " (took " << ((float)elapsed)/CLOCKS_PER_SEC << " s)" << std::endl;
+    }
 
     if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
       continue;
