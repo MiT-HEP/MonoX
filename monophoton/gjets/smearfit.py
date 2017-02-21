@@ -14,7 +14,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('/home/yiiyama/cms/studies/RooFit/libCommonRooFit.so')
 
-photonData = ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] # ['sph-16c-r'] #
+photonData = ['sph-16h'] # ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'] # ['sph-16c-r'] #
 
 lumi = 0.
 for sname in photonData:
@@ -28,7 +28,7 @@ canvas.legend.add('mcpdf', title = '#gamma+jets raw', color = ROOT.kRed, lstyle 
 
 # direct smear
 
-inputFile = ROOT.TFile.Open(config.histDir + '/gjets/fitTemplates.root')
+inputFile = ROOT.TFile.Open(config.histDir + '/gjets/fitTemplates.root_16hOnly')
 outputFile = ROOT.TFile.Open(config.histDir + '/gjets/smearfit.root', 'recreate')
 
 space = ROOT.RooWorkspace('space', 'space')
@@ -48,21 +48,38 @@ getattr(space, 'import')(ddata)
 
 met = space.factory('met[0., 400.]')
 met.setUnit('GeV')
-met.setBins(100)
+met.setBins(75)
 
-sigmar = space.factory('sigmar[1., 0., 100.]')
-alpha = space.factory('alpha[0.0, 0., 1.]')
-beta = space.factory('beta[0.0, 0., 1.]')
-mean = space.factory('mean[0, -1., 50.]')
+sigmar = space.factory('sigmar[5.0, 0.1, 10.0]')
+alpha = space.factory('alpha[0.1, 0.01, 0.2]')
+beta = space.factory('beta[0.0, 0., 0.2]')
+mean = space.factory('mean[0., 0., 50.]')
 
-sfuncs = { 'constant' : space.factory('expr::constant("@0", {{sigmar}})')
-           ,'linear' : space.factory('expr::linear("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
-           ,'quadratic' : space.factory('expr::quadratic("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
+constant = space.factory('expr::constant("@0", {{sigmar}})')
+linear = space.factory('expr::linear("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
+quadratic = space.factory('expr::quadratic("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
+
+sfuncs = { 
+    # 'landau' : space.factory('Landau::landau(met, mean, constant)'),
+    # 'gaussConst' : space.factory('Gaussian::gaussConst(met, mean, constant)'),
+    # 'gaussLin' : space.factory('Gaussian::gaussLin(met, mean, linear)'),
+    # 'gaussQuad' : space.factory('Gaussian::gaussQuad(met, mean, quadratic)'),
+    # 'rayConst' : space.factory("EXPR::rayConst('((@0 / @1**2) * TMath::Exp(-1. * (@0 / @1)**2))', met, constant)"),
+    'rayLin' : space.factory("EXPR::rayLin('((@0 / (@1 + @2*@0)**2) * TMath::Exp(-1. * (@0 / (@1 + @2*@0))**2))', met, sigmar, alpha)"),
+    # 'rayQuad' : space.factory("EXPR::rayQuad('((@0 / (@1*(1. + @2*@0 + @3*@0**2))**2) * TMath::Exp(-1. * (@0 / (@1*(1. + @2*@0 + @3*@0**2)))**2))', met, sigmar, alpha, beta)")
+    # 'rayMeanConst' : space.factory("EXPR::rayMeanConst('@0*TMath::Exp(-1. * ((@0 - @1) / @2)**2)', met, mean, constant)"),
+    # 'rayMeanLin' : space.factory("EXPR::rayMeanLin('@0*TMath::Exp(-1. * ((@0 - @1) / (@2*(1. + @3*@0))**2))', met, mean, sigmar, alpha)"),
+    # 'rayMeanQuad' : space.factory("EXPR::rayMeanQuad('@0*TMath::Exp(-1. * ((@0 - @1) / (@2*(1. + @3*@0 + @4*@0**2))**2))', met, mean, sigmar, alpha, beta)")
            }
 
 for sname in sorted(sfuncs.keys()):
+    mean.setVal(0.)
+    sigmar.setVal(5.0)
+    alpha.setVal(0.1)
+    sigmar.setVal(0.)
+
     print 'make smear'
-    smear = space.factory('Landau::' + sname + 'Smear(met, mean, ' + sname + ')')
+    smear = sfuncs[sname]
     print 'made smear'
 
     start = time.time()
@@ -83,10 +100,10 @@ for sname in sorted(sfuncs.keys()):
     print 'finished. took %i seconds' % elapsed
 
     paramsOut = file('../data/gjSmearParams_' + sname + '.txt', 'w')
-    paramsOut.write('%10s %20f %20f \n' % ('mean', mean.getValV(), mean.getError()))
-    paramsOut.write('%10s %20f %20f \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
-    paramsOut.write('%10s %20f %20f \n' % ('alpha', alpha.getValV(), alpha.getError()))
-    paramsOut.write('%10s %20f %20f \n' % ('beta', beta.getValV(), beta.getError()))
+    paramsOut.write('%10s %20.16f %20.16f \n' % ('mean', mean.getValV(), mean.getError()))
+    paramsOut.write('%10s %20.16f %20.16f \n' % ('sigmar', sigmar.getValV(), sigmar.getError()))
+    paramsOut.write('%10s %20.16f %20.16f \n' % ('alpha', alpha.getValV(), alpha.getError()))
+    paramsOut.write('%10s %20.16f %20.16f \n' % ('beta', beta.getValV(), beta.getError()))
     paramsOut.close()
 
     frame = met.frame()
@@ -104,6 +121,7 @@ for sname in sorted(sfuncs.keys()):
 
     canvas.Clear()
     canvas.xtitle = 'E_{T}^{miss} (GeV)'
+    canvas.ylimits = (0.1, 1000000.)
 
     canvas.addHistogram(frame, clone = True, drawOpt = '')
 
