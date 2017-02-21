@@ -1,11 +1,11 @@
 import os
 
 # tier3 set up
-skimDir = '/data/t3home000/' + os.environ['USER'] + '/studies/test/skim'
-histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/test'
-ntuplesDir = '/mnt/hadoop/scratch/yiiyama/panda'
+photonSkimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/photonskim'
+skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim'
+histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton_panda'
+ntuplesDir = '/mnt/hadoop/cms/store/user/paus'
 dataNtuplesDir = ntuplesDir
-photonSkimDir = '/data/t3home000/yiiyama/studies/test/photonskim'
 
 libobjs = 'libPandaTreeObjects.so'
 libutils = 'libPandaTreeUtils.so'

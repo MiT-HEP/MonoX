@@ -18,20 +18,13 @@ EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _even
   skimOut_ = new TTree("events", "Events");
   cutsOut_ = new TTree("cutflow", "cutflow");
 
-  // printf("Made files and trees. \n");
+  // Branches to be directly copied from the input tree
+  if (_isMC)
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
+  else
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
 
-  if (_isMC) { // is MC
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"}); // , "promptFinalStates"}); // branches to be directly copied
-    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
-  }
-  else {
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters.globalHalo16"}); // branches to be directly copied
-    // printf("Copied the right stuff. \n");
-    outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
-    // printf("Made the empty branches. \n");
-  }
-
-  // printf("Booked trees. \n");
+  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
 
   skimOut_->Branch("weight_Input", &inWeight_, "weight_Input/D");
 

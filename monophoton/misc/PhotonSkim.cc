@@ -29,6 +29,8 @@ PhotonSkimmer::run(char const* _outputPath, long _nEvents/* = -1*/, GoodLumiFilt
   panda::EventMonophoton outEvent;
   merger_.setOutEvent(&outEvent);
 
+  merger_.setEventSelection("TMath::Abs(superClusters.eta) < 1.4442 && superClusters.rawPt > 150.");
+
   panda::FileMerger::SkimFunction skim([&outEvent, _goodlumi](panda::Event& _event)->bool {
       if (_goodlumi && !_goodlumi->isGoodLumi(_event.runNumber, _event.lumiNumber))
         return false;
@@ -42,6 +44,7 @@ PhotonSkimmer::run(char const* _outputPath, long _nEvents/* = -1*/, GoodLumiFilt
       if (iPh == _event.photons.size())
         return false;
 
+      // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
       outEvent = _event;
   
       for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {

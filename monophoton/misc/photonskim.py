@@ -67,7 +67,7 @@ if args.batch:
     else:
         filesets = list(args.filesets)
 
-    proc = subprocess.Popen(['/home/yiiyama/bin/condor-run', os.path.realpath(__file__), '-e', ' '.join(commonArgs), '-j'] + ['-f %s' % fileset for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    proc = subprocess.Popen(['/home/yiiyama/bin/condor-run', os.path.realpath(__file__), '-H', '-e', ' '.join(commonArgs), '-j'] + ['-f %s' % fileset for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     out, err = proc.communicate()
     print out.strip()
     print err.strip()
