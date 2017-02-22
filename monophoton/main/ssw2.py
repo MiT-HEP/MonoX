@@ -221,6 +221,9 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
 
 if __name__ == '__main__':
 
+    padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
+    condor_run = 'home/yiiyama/bin/condor-run'
+
     from argparse import ArgumentParser
     import json
     
@@ -230,8 +233,9 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
     argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
-    argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
     argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
+    argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id when running in split mode.')
+    argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -240,7 +244,6 @@ if __name__ == '__main__':
 
     ROOT.gSystem.Load(config.libobjs)
     ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-    # ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
     ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
 
     compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
@@ -259,42 +262,30 @@ if __name__ == '__main__':
         # for sname in sorted(snames):
             # print sname
         sys.exit(0)
-    
-    skimmer = ROOT.Skimmer()
-
-    if not os.path.exists(config.skimDir):
-        os.makedirs(config.skimDir)
-
-    if args.files:
-        nStart = args.files[0]
-        nEnd = args.files[1]
-    else:
-        nStart = -1
-        nEnd = 100000
 
     for sname in snames:
         sample = allsamples[sname]
         print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
-    
-        skimmer.reset()
-    
-        tree = ROOT.TChain('events')
 
-        if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
-            print 'Reading', sname, 'from', config.photonSkimDir
-            tree.Add(config.photonSkimDir + '/' + sname + '.root')
+        splitOutDir = config.skimDir + '/' + sname
 
+        if len(args.filesets) != 0:
+            outDir = splitOutDir
         else:
+            outDir = config.skimDir
+
+        if not os.path.exists(outDir):
+            os.makedirs(outDir)
+
+        if args.split:
+            # Will spawn condor jobs and wait
+
             if args.eosInput:
+                # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
+                # not maintained any more
+
                 sourceDir = sample.book + '/' + sample.fullname
-            elif sample.data:
-                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
-            else:
-                sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
 
-            print 'Reading', sname, 'from', sourceDir
-
-            if args.eosInput:
                 # lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
                 lsCmd = ['lcg-ls', '-b', '-D', 'srmv2', 'srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN='+sourceDir]
                 listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
@@ -305,44 +296,100 @@ if __name__ == '__main__':
                 print lerr, '\n'
                 sys.exit()
                 """
-                
-                filesList = [ line for line in listFiles.stdout if line.endswith('.root\n') ] 
-                pathPrefix = 'root://eoscms'
+
+                pathPrefix = 'root://eoscms'                
+                filesList = [pathPrefix + line.strip() for line in listFiles.stdout if line.endswith('.root\n')] 
+
             else:
-                filesList = sorted(glob(sourceDir + '/*.root'))
-                
-            for iF, File in enumerate(filesList):
-                if iF < nStart:
+                filesList = sorted(glob(config.photonSkimDir + '/' + sname + '/*.root'))
+
+            filesets = []
+
+            for fname in enumerate(filesList):
+                fileset = fname[fname.rfind('_') + 1:fname.rfind('.root')]
+                if len(args.filesets) != 0 and fileset not in args.filesets:
                     continue
-                if iF > nEnd:
+
+                filesets.append(fileset)
+
+            proc = subprocess.Popen([condor_run, os.path.realpath(__file__), '-H', '-e', sname, '-j'] + ['-f %s' % fileset for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            out, err = proc.communicate()
+            print out.strip()
+            print err.strip()
+
+            print 'Waiting for individual skim jobs to complete.'
+        
+            while True:
+                for fileset in filesets:
+                    for selname in selnames:
+                        if not os.path.exists(outDir + '/' + args.sname + '_' + fileset + '_' + selname + '.root'):
+                            break
+                    else:
+                        # all selnames present
+                        continue
+                    
+                    # some selnames missing
                     break
-                File = File.strip(' \n')
-                
-                if args.eosInput:
-                    print pathPrefix + File
-                    tree.Add(pathPrefix + File)
+        
                 else:
-                    tree.Add(File)
+                    # all filesets exist
+                    break
+        
+                time.sleep(10)
 
-        print tree.GetEntries(), 'entries'
-        if tree.GetEntries() == 0:
-            print 'Tree has no entries. Skipping.'
-            continue
+            print 'Merging the split skims.'
+            for selname in selnames:
+                outName = args.sname + '_' + selname + '.root'
 
-        selnames = []
-        for rname, gen in selectors[sname]:
-            selnames.append(rname)
-            selector = gen(sample, rname)
-            skimmer.addSelector(selector)
+                proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + args.sname + '_' + fileset + '_' + selname + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                out, err = proc.communicate()
+                print out.strip()
+                print err.strip()
 
-        if nStart >= 0:
-            sname = sname + '_' + str(nStart) + '-' + str(nEnd)
+                shutil.copy('/tmp/' + outName, config.skimDir)
+                os.remove('/tmp/' + outName)
 
-        tmpDir = '/tmp/' + os.environ['USER']
-        if not os.path.exists(tmpDir):
-            os.makedirs(tmpDir)
-        skimmer.run(tree, tmpDir, sname, args.nentries)
-        for selname in selnames:
-            if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
-                os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')
-            shutil.move(tmpDir + '/' + sname + '_' + selname + '.root', config.skimDir)
+        else:
+            # Will do the actual skimming
+
+            skimmer = ROOT.Skimmer()
+    
+            selnames = []
+            for rname, gen in selectors[sname]:
+                selnames.append(rname)
+                selector = gen(sample, rname)
+                skimmer.addSelector(selector)
+
+            tmpDir = '/tmp/' + os.environ['USER'] + '/' + sname
+            if not os.path.exists(tmpDir):
+                os.makedirs(tmpDir)
+
+            if len(args.filesets) == 0:
+                print 'Reading', sname, 'from', config.photonSkimDir
+                allpaths = {'': config.photonSkimDir + '/' + sname + '.root'}
+
+            else:
+                print 'Reading', sname, fileset, 'from', config.photonSkimDir + '/' + sname
+                allpaths = {}
+                for fileset in args.filesets:
+                    allpaths['_' + fileset] = config.photonSkimDir + '/' + sname + '/' + sname + '_' + fileset + '.root'
+
+            for suffix, sourcePath in allpaths.items():
+                source = ROOT.TFile.Open(sourcePath)
+                tree = source.Get('events')
+
+                print tree.GetEntries(), 'entries'
+                if tree.GetEntries() == 0:
+                    print 'Tree has no entries. Skipping.'
+                    continue
+    
+                skimmer.run(tree, tmpDir, sname + suffix, args.nentries)
+
+                for selname in selnames:
+                    outName = sname + suffix + '_' + selname + '.root'
+
+                    if os.path.exists(config.skimDir + '/' + outName):
+                        os.remove(config.skimDir + '/' + outName)
+
+                    shutil.copy(tmpDir + '/' + outName, config.skimDir)
+                    os.remove(tmpDir + '/' + outName)
