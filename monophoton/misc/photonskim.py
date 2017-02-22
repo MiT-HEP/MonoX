@@ -17,7 +17,7 @@ argParser = ArgumentParser(description = 'Skim and slim the primary panda files 
 argParser.add_argument('sname', help = 'Sample name.')
 argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '', help = 'Good lumi list to apply.')
 argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
-argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id (empty => all filesets).')
+argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '*', default = ['all'], help = 'Fileset id (empty => all filesets).')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run the skim in parallel.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Run padd at the end of execution to produce a single output.')
 
@@ -47,7 +47,7 @@ sample = allsamples[args.sname]
 
 splitOutDir = config.photonSkimDir + '/' + args.sname
 
-if len(args.filesets) != 0:
+if len(args.filesets) != 0 and 'all' not in args.filesets:
     outDir = splitOutDir
 else:
     outDir = config.photonSkimDir
@@ -66,12 +66,16 @@ with open(cdir + '/Filesets') as filesetList:
         directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
 
 if args.split:
+    if len(args.filesets) == 0:
+        print 'Need at least one fileset to run in split mode (argument can be "all")'
+        sys.exit(1)
+
     commonArgs = list(argv[1:])
     for a in ['-B', '--split', '-M', '--merge']:
         if a in commonArgs:
             commonArgs.remove(a)
 
-    if len(args.filesets) == 0:
+    if 'all' in args.filesets:
         filesets = directories.keys()
     else:
         filesets = list(args.filesets)
@@ -103,11 +107,19 @@ if args.split:
         time.sleep(10)
 
 else:
+    if 'all' in args.filesets:
+        filesets = directories.keys()
+    else:
+        filesets = args.filesets
+
     fullpaths = collections.defaultdict(list)
     
     with open(cdir + '/Files') as fileList:
         for line in fileList:
             fileset, fname = line.split()[:2]
+
+            if fileset not in filesets:
+                continue
     
             fullpath = directories[fileset] + '/' + fname
             if not os.path.exists(fullpath):
@@ -116,13 +128,12 @@ else:
     
             fullpaths[fileset].append(fullpath)
     
-    if len(args.filesets) == 0:
+    if 'all' in args.filesets:
         allpaths = {'': sum(paths for paths in fullpaths.values())}
     else:
         allpaths = {}
         for fileset, paths in fullpaths.items():
-            if fileset in args.filesets:
-                allpaths['_%s' % fileset] = paths
+            allpaths['_%s' % fileset] = paths
 
     for suffix, paths in allpaths.items():
         skimmer = ROOT.PhotonSkimmer()
@@ -141,18 +152,18 @@ else:
         os.remove('/tmp/' + outputName)
     
 if args.merge:
+    # here we interpret filesets == [] as "all filesets"
     if len(args.filesets) == 0:
         filesets = directories.keys()
     else:
         filesets = args.filesets
 
-    outputName = args.sname + '.root'
+    outName = args.sname + '.root'
 
-    skimmer = ROOT.PhotonSkimmer()
-    for fileset in filesets:
-        skimmer.addSourcePath(splitOutDir + '/' + args.sname + '_' + fileset + '.root')
+    proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + args.sname + '_' + fileset + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    out, err = proc.communicate()
+    print out.strip()
+    print err.strip()
 
-    skimmer.run('/tmp/' + outputName, False)
-
-    shutil.copy('/tmp/' + outputName, config.photonSkimDir)
-    os.remove('/tmp/' + outputName)
+    shutil.copy('/tmp/' + outName, config.photonSkimDir)
+    os.remove('/tmp/' + outName)
