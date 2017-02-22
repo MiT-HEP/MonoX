@@ -947,7 +947,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     for (auto* col : cols) {
       unsigned iP(0);
       for (; iP != col->size(); ++iP) {
-	if ((*col)[iP].dR2(muon) < 0.25)
+        if ((*col)[iP].dR2(muon) < 0.25)
 	  break;
       }
       if (iP != col->size()) {
@@ -1002,7 +1002,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     auto& z(zs_.back());
     zpair = _outEvent.muons[0].p4() + _outEvent.muons[1].p4();
     zOppSign_ = ( (_outEvent.muons[0].charge == _outEvent.muons[1].charge) ? 0 : 1);
-    
+
     z.setPtEtaPhiM(zpair.Pt(), zpair.Eta(), zpair.Phi(), zpair.M());
   }
 
