@@ -58,7 +58,7 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   
   // std::cout<< "Selectors set up" << std::endl;
 
-  long iEntry(1275330);
+  long iEntry(0);
   clock_t now(clock());
   TFile* currentFile(0);
   while (iEntry != _nEntries && event.getEntry(*_input, iEntry++) > 0) {

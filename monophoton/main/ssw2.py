@@ -354,7 +354,7 @@ if __name__ == '__main__':
 
             print 'Merging the split skims.'
             for selname in selnames:
-                outName = args.sname + '_' + selname + '.root'
+                outName = sname + '_' + selname + '.root'
 
                 proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 out, err = proc.communicate()
