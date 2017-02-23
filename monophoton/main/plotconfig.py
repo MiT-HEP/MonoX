@@ -244,9 +244,9 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
 
-        for gname in ['zg']:
-            group = config.findGroup(gname)
-            
+            if group.name in ['vvg']:
+                continue
+
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
             group.variations.append(Variation('jec', replacements = (replUp, replDown)))
@@ -254,7 +254,10 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
-       
+
+        for gname in ['zg']:
+            group = config.findGroup(gname)
+                   
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
@@ -324,9 +327,9 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
 
-        for gname in ['zg']:
-            group = config.findGroup(gname)
-            
+            if group.name in ['vvg']:
+                continue
+
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
             group.variations.append(Variation('jec', replacements = (replUp, replDown)))
@@ -334,6 +337,9 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+            
+        for gname in ['zg']:
+            group = config.findGroup(gname)
        
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
@@ -408,8 +414,8 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
 
-        for gname in ['zg', 'wg']:
-            group = config.findGroup(gname)
+            if group.name in ['vvg']:
+                continue
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
@@ -418,6 +424,9 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
 
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
@@ -493,8 +502,8 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
 
-        for gname in ['zg', 'wg']:
-            group = config.findGroup(gname)
+            if group.name in ['vvg']:
+                continue
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.metCorrUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECDown'), ('t1Met.realMet', 't1Met.metCorrDown')]
@@ -503,6 +512,9 @@ def getConfig(confName):
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
             replDown = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
             group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
 
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
@@ -549,7 +561,44 @@ def getConfig(confName):
 
         config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
-    elif confName == 'gjetsScaled':
+        for group in config.bkgGroups + config.sigGroups:
+            if group.name in ['efake', 'hfake', 'halo']:
+                continue
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+
+            if group.name in ['vvg']:
+                continue
+            
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.met', 't1Met.metCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.met', 't1Met.metCorrDown')]
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.met', 't1Met.metGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.met', 't1Met.metGECDown')]
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
+
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+
+        # Specific systematic variations
+        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose'))) 
+        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
+        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('minor').variations.append(Variation('minorQCDscale', reweight = 0.033))
+
+    elif confName == 'gjets':
         config = PlotConfig('monoph', photonData)
         config.baseline = 'photons.scRawPt[0] > 175. && (t1Met.minJetDPhi < 0.5 || t1Met.photonDPhi < 0.5) && t1Met.met > 100. && TMath::Abs(TVector2::Phi_mpi_pi(photons.phi[0] - jets.phi[0])) > 3. && jets.size == 1 && jets.pt[0] > 100.'
         config.fullSelection = 'photons.scRawPt[0] > 350.'
@@ -562,7 +611,7 @@ def getConfig(confName):
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
-            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), scale = 1.5)
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , scale = 1.5)
         ]
         config.variables = [
             VariableDef('met', 'E_{T}^{miss}', 't1Met.met', combinedFitPtBinning, unit = 'GeV', overflow = True),
@@ -581,18 +630,8 @@ def getConfig(confName):
         ]
 
         for variable in list(config.variables):
-            """
-            if variable.name not in ['met', 'metWide', 'metDPhiWeighted']:
-                config.variables.append(variable.clone(variable.name + 'HighMet', applyFullSel = True))
-#                config.variables.remove(variable)
-            """
-            if variable.name not in ['phoPt']:
+            if variable.name not in ['phoPt', 'phoPtHighMet']:
                 config.variables.append(variable.clone(variable.name + 'HighPhoPt', applyFullSel = True))
-#                config.variables.remove(variable)
-
-            # config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
-            # config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
-
 
     elif confName == 'lowmt':
         config = PlotConfig('monoph', photonData)
