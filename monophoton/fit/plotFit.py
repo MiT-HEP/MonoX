@@ -29,8 +29,10 @@ for key in prefitDir.GetListOfKeys():
 
     prefitTotal = prefitDir.Get(region + '/total_background')
     prefitUnc = prefitTotal.Clone('prefitUnc')
+    prefitRatio = prefitTotal.Clone('prefitRatio')
     postfitTotal = postfitDir.Get(region + '/total_background')
     postfitUnc = postfitTotal.Clone('postfitUnc')
+    postfitRatio = postfitTotal.Clone('postfitRatio')
 
     dataHist = prefitTotal.Clone('dataHist')
     dataHist.Reset()
@@ -56,14 +58,14 @@ for key in prefitDir.GetListOfKeys():
         v = vitr.Next()
         if not v:
             break
-        
+
         matches = re.match('mu_([^_]+)_' + region + '_bin[0-9]+', v.GetName())
         if matches and not v.isConstant():
             proc = matches.group(1)
             if proc not in floatNames:
                 floatNames.append(proc)
 
-        matches = re.match('([^_]+)_' + region + '_bin[0-9]+_tf', v.GetName())
+        matches = re.match('([^_]+)_' + region + '_([^_]+)_([^_]+)_bin[0-9]+_tf', v.GetName())
         if matches:
             proc = matches.group(1)
             if proc not in floatNames:
@@ -87,10 +89,10 @@ for key in prefitDir.GetListOfKeys():
     canvas = RatioCanvas(lumi = lumi, name = region)
     canvas.legend.setPosition(0.6, 0.6, 0.9, 0.9)
     canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
-    canvas.legend.add('prefit', title = 'Prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3003)
+    canvas.legend.add('prefit', title = 'Prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3003, mstyle = 8, msize = 0.8)
     if prefitSub:
         canvas.legend.add('subdom', title = 'Prefit subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
-    canvas.legend.add('postfit', title = 'Postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3003)
+    canvas.legend.add('postfit', title = 'Postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3003, mstyle = 8, msize = 0.8)
 
     obs.SetTitle('')
     prefitTotal.SetTitle('')
@@ -101,14 +103,17 @@ for key in prefitDir.GetListOfKeys():
     canvas.legend.apply('obs', obs)
     canvas.legend.apply('prefit', prefitTotal, opt = 'L')
     canvas.legend.apply('prefit', prefitUnc, opt = 'F')
+    canvas.legend.apply('prefit', prefitRatio, opt = 'LP')
     canvas.legend.apply('postfit', postfitTotal, opt = 'L')
     canvas.legend.apply('postfit', postfitUnc, opt = 'F')
+    canvas.legend.apply('postfit', postfitRatio, opt = 'LP')
+        
     if prefitSub:
         canvas.legend.apply('subdom', prefitSub)
     
     # reuse dataHist for unity line in ratio pad
     dataHist.SetLineColor(ROOT.kBlack)
-    dataHist.SetLineStyle(ROOT.kDashed)
+    # dataHist.SetLineStyle(ROOT.kDashed)
     dataHist.SetLineWidth(2)
 
     iObs = canvas.addHistogram(obs)
@@ -117,15 +122,18 @@ for key in prefitDir.GetListOfKeys():
     iPostUnc = canvas.addHistogram(postfitUnc, drawOpt = 'E2')
     iPost = canvas.addHistogram(postfitTotal, drawOpt = 'HIST')
     iLine = canvas.addHistogram(dataHist, drawOpt = 'HIST')
+    iPreRatio = canvas.addHistogram(prefitRatio, drawOpt = 'LP')
+    iPostRatio = canvas.addHistogram(postfitRatio, drawOpt = 'LP')
+
     if prefitSub:
         iSub = canvas.addHistogram(prefitSub)
         hList = [iSub, iPreUnc, iPre, iPostUnc, iPost, iObs]
     else:
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
-    canvas.rlimits = (0.5, 1.5)
+    canvas.rlimits = (0.0, 2.0)
 
-    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iPreUnc, iPre, iPostUnc, iPost])
+    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iPreRatio, iPostRatio])
     canvas.Clear()
 
     dataHist.Delete()
