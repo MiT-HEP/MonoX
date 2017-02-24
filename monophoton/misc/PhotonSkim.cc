@@ -12,6 +12,7 @@ public:
   PhotonSkimmer();
   void addSourcePath(char const* path) { merger_.addInput(path); }
   void setLumiFilter(GoodLumiFilter* f) { goodlumi_ = f; }
+  void setPrintLevel(int l) { merger_.setPrintLevel(l); }
   void run(char const*, bool doSkim, long = -1);
 
   bool skimFunction(panda::Event&, panda::EventMonophoton&);

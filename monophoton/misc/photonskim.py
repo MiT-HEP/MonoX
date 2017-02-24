@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import collections
 import time
+import re
 from argparse import ArgumentParser
 
 NENTRIES = -1
@@ -57,13 +58,34 @@ try:
 except OSError:
     pass
 
-cdir = args.catalog + '/' + sample.book + '/' + sample.fullname
-
+# directories where the input panda files exist
+# {fileset: directory}
 directories = {}
-with open(cdir + '/Filesets') as filesetList:
-    for line in filesetList:
-        fileset, xrdpath = line.split()[:2]
-        directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+suffices = []
+
+# get all catalogs (including extensions)
+namebase = sample.fullname[:sample.fullname.rfind('+')]
+namebase = re.sub('-v[0-9]+$', '', namebase)
+tier = sample.fullname[sample.fullname.rfind('+'):]
+for cname in os.listdir(args.catalog + '/' + sample.book):
+    if cname.startswith(namebase) and cname.endswith(tier):
+        if cname == sample.fullname:
+            # this is the "main" dataset
+            suffix = ''
+            cdir = args.catalog + '/' + sample.book + '/' + sample.fullname
+        else:
+            # this is the extension or a different version
+            suffix = cname[:cname.rfind('+')].replace(namebase, '')
+            cdir = args.catalog + '/' + sample.book + '/' + namebase + suffix + tier
+
+        if suffix not in suffices:
+            suffices.append(suffix)
+    
+        with open(cdir + '/Filesets') as filesetList:
+            for line in filesetList:
+                fileset, xrdpath = line.split()[:2]
+                fileset += suffix
+                directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
 
 if args.split:
     if len(args.filesets) == 0:
@@ -113,20 +135,27 @@ else:
         filesets = args.filesets
 
     fullpaths = collections.defaultdict(list)
-    
-    with open(cdir + '/Files') as fileList:
-        for line in fileList:
-            fileset, fname = line.split()[:2]
 
-            if fileset not in filesets:
-                continue
+    for suffix in suffices:
+        if suffix == '':
+            dataset = sample.fullname
+        else:
+            dataset = namebase + suffix + tier
     
-            fullpath = directories[fileset] + '/' + fname
-            if not os.path.exists(fullpath):
-                proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', sample.fullname, '--book', sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                print proc.communicate()[0].strip()
+        with open(args.catalog + '/' + sample.book + '/' + dataset + '/Files') as fileList:
+            for line in fileList:
+                fileset, fname = line.split()[:2]
+                fileset += suffix
     
-            fullpaths[fileset].append(fullpath)
+                if fileset not in filesets:
+                    continue
+        
+                fullpath = directories[fileset] + '/' + fname
+                if not os.path.exists(fullpath):
+                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    print proc.communicate()[0].strip()
+        
+                fullpaths[fileset].append(fullpath)
     
     if 'all' in args.filesets:
         allpaths = {'': sum(paths for paths in fullpaths.values())}
@@ -158,12 +187,16 @@ if args.merge:
     else:
         filesets = args.filesets
 
-    outName = args.sname + '.root'
+    outputName = args.sname + '.root'
 
-    proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + args.sname + '_' + fileset + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-    out, err = proc.communicate()
-    print out.strip()
-    print err.strip()
+    skimmer = ROOT.PhotonSkimmer()
+    for fileset in filesets:
+        skimmer.addSourcePath(splitOutDir + '/' + args.sname + '_' + fileset + '.root')
 
-    shutil.copy('/tmp/' + outName, config.photonSkimDir)
-    os.remove('/tmp/' + outName)
+#    skimmer.setPrintLevel(3)
+
+    skimmer.run('/tmp/' + outputName, False)
+
+    # shutil.move fails if the destination exists already
+    shutil.copy('/tmp/' + outputName, outDir)
+    os.remove('/tmp/' + outputName)

@@ -311,7 +311,7 @@ if __name__ == '__main__':
             filesets = []
 
             for fname in filesList:
-                fileset = fname[fname.rfind('_') + 1:fname.rfind('.root')]
+                fileset = fname.replace(sname + '_', '').replace('.root', '')
                 if len(args.filesets) != 0 and fileset not in args.filesets:
                     continue
 
