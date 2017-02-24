@@ -8,11 +8,12 @@ import fnmatch
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
 
 class SampleDef(object):
-    def __init__(self, name, title = '', book = '', fullname = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
+    def __init__(self, name, title = '', book = '', fullname = '', altnames = [], crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
         self.name = name
         self.title = title
         self.book = book
         self.fullname = fullname
+        self.altnames = list(altnames)
         self.crosssection = crosssection
         self.nevents = nevents
         if sumw == 0.:
@@ -32,6 +33,7 @@ class SampleDef(object):
         print 'title =', self.title
         print 'book =', self.book
         print 'fullname =', self.fullname
+        print 'altnames =', self.altnames
         print 'crosssection =', self.crosssection
         print 'nevents =', self.nevents
         if self.sumw >= 0.:
@@ -63,13 +65,15 @@ class SampleDef(object):
         else:
             xsecstr = '%.{ndec}f'.format(ndec = ndec) % crosssection
 
+        altnames = ''.join([' %s' % n for n in self.altnames])
+
         if self.comments != '':
             comments = " # " + self.comments
         else:
             comments = ''
             
-        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.fullname, comments)
-        return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.fullname, altnames, comments)
+        return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s%s' % lineTuple
 
     def _getCounter(self, dirs):
         import ROOT
@@ -173,18 +177,18 @@ class SampleDefList(object):
                     self._commentLines.append((name, line)) # dataset from one line above, line
                     continue
         
-                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
+                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)((?: [^ ]+)+|)( +#.*|)$', line.strip())
                 if not matches:
                     print 'Ill-formed line in ' + listpath
                     print line
                     continue
         
-                name, title, crosssection, nevents, sumw, book, fullname, comments = [matches.group(i) for i in range(1, 9)]
+                name, title, crosssection, nevents, sumw, book, fullname, altnames, comments = [matches.group(i) for i in range(1, 10)]
         
                 if sumw == '-':
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments.lstrip(' #'))
+                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, altnames = altnames.split(), lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments.lstrip(' #'))
                 else:
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
+                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, altnames = altnames.split(), crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
         
                 self.samples.append(sdef)
 
@@ -230,7 +234,11 @@ class SampleDefList(object):
             if match:
                 samples += matching
             else:
-                samples += [s for s in self.samples if s not in matching]
+                for s in matching:
+                    try:
+                        samples.remove(s)
+                    except:
+                        pass
 
         return sorted(list(set(samples)), key = lambda s: s.name)
 
