@@ -61,31 +61,35 @@ except OSError:
 # directories where the input panda files exist
 # {fileset: directory}
 directories = {}
-suffices = []
 
 # get all catalogs (including extensions)
-namebase = sample.fullname[:sample.fullname.rfind('+')]
-namebase = re.sub('-v[0-9]+$', '', namebase)
-tier = sample.fullname[sample.fullname.rfind('+'):]
-for cname in os.listdir(args.catalog + '/' + sample.book):
-    if cname.startswith(namebase) and cname.endswith(tier):
-        if cname == sample.fullname:
-            # this is the "main" dataset
-            suffix = ''
-            cdir = args.catalog + '/' + sample.book + '/' + sample.fullname
-        else:
-            # this is the extension or a different version
-            suffix = cname[:cname.rfind('+')].replace(namebase, '')
-            cdir = args.catalog + '/' + sample.book + '/' + namebase + suffix + tier
+cnames = [('', sample.fullname)]
+for altname in sample.altnames:
+    start = 0
+    while True:
+        if altname[start] != sample.fullname[start]:
+            break
+        start += 1
 
-        if suffix not in suffices:
-            suffices.append(suffix)
-    
-        with open(cdir + '/Filesets') as filesetList:
-            for line in filesetList:
-                fileset, xrdpath = line.split()[:2]
-                fileset += suffix
-                directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+    end = -1
+    while True:
+        if altname[end] != sample.fullname[end]:
+            break
+        end -= 1
+
+    # end cannot be -1 - don't mix data from different tiers!
+    dsuffix = altname[start:end + 1]
+    if dsuffix.endswith('-v'): # special case if we have e.g. extN suffix but the version number is the same
+        dsuffix = dsuffix[:-2]
+
+    cnames.append((dsuffix, altname))
+
+for dsuffix, dataset in cnames:
+    with open(args.catalog + '/' + sample.book + '/' + dataset + '/Filesets') as filesetList:
+        for line in filesetList:
+            fileset, xrdpath = line.split()[:2]
+            fileset += dsuffix
+            directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
 
 if args.split:
     if len(args.filesets) == 0:
@@ -136,16 +140,11 @@ else:
 
     fullpaths = collections.defaultdict(list)
 
-    for suffix in suffices:
-        if suffix == '':
-            dataset = sample.fullname
-        else:
-            dataset = namebase + suffix + tier
-    
+    for dsuffix, dataset in cnames:
         with open(args.catalog + '/' + sample.book + '/' + dataset + '/Files') as fileList:
             for line in fileList:
                 fileset, fname = line.split()[:2]
-                fileset += suffix
+                fileset += dsuffix
     
                 if fileset not in filesets:
                     continue
@@ -164,7 +163,7 @@ else:
         for fileset, paths in fullpaths.items():
             allpaths['_%s' % fileset] = paths
 
-    for suffix, paths in allpaths.items():
+    for fsuffix, paths in allpaths.items():
         skimmer = ROOT.PhotonSkimmer()
         for path in paths:
             skimmer.addSourcePath(path)
@@ -172,7 +171,7 @@ else:
         if args.json:
             skimmer.setLumiFilter(makeGoodLumiFilter(args.json))
 
-        outputName = args.sname + suffix + '.root'
+        outputName = args.sname + fsuffix + '.root'
 
         skimmer.run('/tmp/' + outputName, True, NENTRIES)
 

@@ -191,7 +191,6 @@ for sample in samples:
 
 if args.split:
     # Spawn condor jobs
-
     arguments = []
 
     # Collect arguments and remove output

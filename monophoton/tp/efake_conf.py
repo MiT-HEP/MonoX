@@ -1,15 +1,15 @@
 import os
 
-skimDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton/efake_skim'
-outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton/efake'
+skimDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton_panda/efake_skim'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton_panda/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
 # Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
 skimConfig = {
-    'eldata': (['sel-16b2', 'sel-16c2', 'sel-16d2'], ['kEG']),
-    'phdata': (['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'], ['kEG', 'kMG']),
+#    'phdata': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
+    'phdata': (['sph-16c-m'], ['kEG', 'kMG']),
 #    'mudata': (['smu-16b2', 'smu-16c2'], ['kMG', 'kMMG']),
     'mc': (['dy-50', 'wlnu', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
