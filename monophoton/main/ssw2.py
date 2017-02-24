@@ -311,7 +311,7 @@ if __name__ == '__main__':
             filesets = []
 
             for fname in filesList:
-                fileset = fname.replace(sname + '_', '').replace('.root', '')
+                fileset = fname.split('/')[-1].replace(sname + '_', '').replace('.root', '')
                 if len(args.filesets) != 0 and fileset not in args.filesets:
                     continue
 
@@ -385,7 +385,7 @@ if __name__ == '__main__':
                 allpaths = {}
                 for fileset in args.filesets:
                     print 'Reading', sname, fileset, 'from', config.photonSkimDir + '/' + sname
-                    allpaths['_' + fileset] = config.photonSkimDir + '/' + sname + '/' + sname + '_' + fileset + '.root'
+                    allpaths['_' + fileset] = config.photonSkimDir + '/' + sname + '/' + sname + '_' + fileset + '.root' 
 
             for suffix, sourcePath in allpaths.items():
                 source = ROOT.TFile.Open(sourcePath)
