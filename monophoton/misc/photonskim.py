@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import collections
 import time
+import re
 from argparse import ArgumentParser
 
 NENTRIES = -1
@@ -17,7 +18,7 @@ argParser = ArgumentParser(description = 'Skim and slim the primary panda files 
 argParser.add_argument('sname', help = 'Sample name.')
 argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '', help = 'Good lumi list to apply.')
 argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
-argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id (empty => all filesets).')
+argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '*', default = ['all'], help = 'Fileset id (empty => all filesets).')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run the skim in parallel.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Run padd at the end of execution to produce a single output.')
 
@@ -47,7 +48,7 @@ sample = allsamples[args.sname]
 
 splitOutDir = config.photonSkimDir + '/' + args.sname
 
-if len(args.filesets) != 0:
+if len(args.filesets) != 0 and 'all' not in args.filesets:
     outDir = splitOutDir
 else:
     outDir = config.photonSkimDir
@@ -57,21 +58,46 @@ try:
 except OSError:
     pass
 
-cdir = args.catalog + '/' + sample.book + '/' + sample.fullname
-
+# directories where the input panda files exist
+# {fileset: directory}
 directories = {}
-with open(cdir + '/Filesets') as filesetList:
-    for line in filesetList:
-        fileset, xrdpath = line.split()[:2]
-        directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+suffices = []
+
+# get all catalogs (including extensions)
+namebase = sample.fullname[:sample.fullname.rfind('+')]
+namebase = re.sub('-v[0-9]+$', '', namebase)
+tier = sample.fullname[sample.fullname.rfind('+'):]
+for cname in os.listdir(args.catalog + '/' + sample.book):
+    if cname.startswith(namebase) and cname.endswith(tier):
+        if cname == sample.fullname:
+            # this is the "main" dataset
+            suffix = ''
+            cdir = args.catalog + '/' + sample.book + '/' + sample.fullname
+        else:
+            # this is the extension or a different version
+            suffix = cname[:cname.rfind('+')].replace(namebase, '')
+            cdir = args.catalog + '/' + sample.book + '/' + namebase + suffix + tier
+
+        if suffix not in suffices:
+            suffices.append(suffix)
+    
+        with open(cdir + '/Filesets') as filesetList:
+            for line in filesetList:
+                fileset, xrdpath = line.split()[:2]
+                fileset += suffix
+                directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
 
 if args.split:
+    if len(args.filesets) == 0:
+        print 'Need at least one fileset to run in split mode (argument can be "all")'
+        sys.exit(1)
+
     commonArgs = list(argv[1:])
     for a in ['-B', '--split', '-M', '--merge']:
         if a in commonArgs:
             commonArgs.remove(a)
 
-    if len(args.filesets) == 0:
+    if 'all' in args.filesets:
         filesets = directories.keys()
     else:
         filesets = list(args.filesets)
@@ -103,26 +129,40 @@ if args.split:
         time.sleep(10)
 
 else:
+    if 'all' in args.filesets:
+        filesets = directories.keys()
+    else:
+        filesets = args.filesets
+
     fullpaths = collections.defaultdict(list)
+
+    for suffix in suffices:
+        if suffix == '':
+            dataset = sample.fullname
+        else:
+            dataset = namebase + suffix + tier
     
-    with open(cdir + '/Files') as fileList:
-        for line in fileList:
-            fileset, fname = line.split()[:2]
+        with open(args.catalog + '/' + sample.book + '/' + dataset + '/Files') as fileList:
+            for line in fileList:
+                fileset, fname = line.split()[:2]
+                fileset += suffix
     
-            fullpath = directories[fileset] + '/' + fname
-            if not os.path.exists(fullpath):
-                proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', sample.fullname, '--book', sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                print proc.communicate()[0].strip()
+                if fileset not in filesets:
+                    continue
+        
+                fullpath = directories[fileset] + '/' + fname
+                if not os.path.exists(fullpath):
+                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    print proc.communicate()[0].strip()
+        
+                fullpaths[fileset].append(fullpath)
     
-            fullpaths[fileset].append(fullpath)
-    
-    if len(args.filesets) == 0:
+    if 'all' in args.filesets:
         allpaths = {'': sum(paths for paths in fullpaths.values())}
     else:
         allpaths = {}
         for fileset, paths in fullpaths.items():
-            if fileset in args.filesets:
-                allpaths['_%s' % fileset] = paths
+            allpaths['_%s' % fileset] = paths
 
     for suffix, paths in allpaths.items():
         skimmer = ROOT.PhotonSkimmer()
@@ -141,6 +181,7 @@ else:
         os.remove('/tmp/' + outputName)
     
 if args.merge:
+    # here we interpret filesets == [] as "all filesets"
     if len(args.filesets) == 0:
         filesets = directories.keys()
     else:
@@ -152,7 +193,10 @@ if args.merge:
     for fileset in filesets:
         skimmer.addSourcePath(splitOutDir + '/' + args.sname + '_' + fileset + '.root')
 
+#    skimmer.setPrintLevel(3)
+
     skimmer.run('/tmp/' + outputName, False)
 
-    shutil.copy('/tmp/' + outputName, config.photonSkimDir)
+    # shutil.move fails if the destination exists already
+    shutil.copy('/tmp/' + outputName, outDir)
     os.remove('/tmp/' + outputName)

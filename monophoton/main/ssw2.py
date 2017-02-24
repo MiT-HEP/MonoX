@@ -3,6 +3,7 @@
 import sys
 import os
 import socket
+import time
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -222,7 +223,7 @@ def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
 if __name__ == '__main__':
 
     padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
-    condor_run = 'home/yiiyama/bin/condor-run'
+    condor_run = '/home/yiiyama/bin/condor-run'
 
     from argparse import ArgumentParser
     import json
@@ -267,6 +268,10 @@ if __name__ == '__main__':
         sample = allsamples[sname]
         print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
 
+        selnames = []
+        for rname, gen in selectors[sname]:
+            selnames.append(rname)
+
         splitOutDir = config.skimDir + '/' + sname
 
         if len(args.filesets) != 0:
@@ -305,14 +310,23 @@ if __name__ == '__main__':
 
             filesets = []
 
-            for fname in enumerate(filesList):
-                fileset = fname[fname.rfind('_') + 1:fname.rfind('.root')]
+            for fname in filesList:
+                fileset = fname.replace(sname + '_', '').replace('.root', '')
                 if len(args.filesets) != 0 and fileset not in args.filesets:
                     continue
 
                 filesets.append(fileset)
 
-            proc = subprocess.Popen([condor_run, os.path.realpath(__file__), '-H', '-e', sname, '-j'] + ['-f %s' % fileset for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            # remove the output first
+            for fileset in filesets:
+                for selname in selnames:
+                    path = splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root'
+                    try:
+                        os.remove(path)
+                    except:
+                        pass
+
+            proc = Popen([condor_run, os.path.realpath(__file__), '-H', '-e', sname, '-j'] + ['-f %s' % fileset for fileset in filesets], stdout = PIPE, stderr = PIPE)
             out, err = proc.communicate()
             print out.strip()
             print err.strip()
@@ -322,7 +336,8 @@ if __name__ == '__main__':
             while True:
                 for fileset in filesets:
                     for selname in selnames:
-                        if not os.path.exists(outDir + '/' + args.sname + '_' + fileset + '_' + selname + '.root'):
+                        path = splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root'
+                        if not os.path.exists(path) or os.stat(path).st_size == 0:
                             break
                     else:
                         # all selnames present
@@ -339,9 +354,9 @@ if __name__ == '__main__':
 
             print 'Merging the split skims.'
             for selname in selnames:
-                outName = args.sname + '_' + selname + '.root'
+                outName = sname + '_' + selname + '.root'
 
-                proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + args.sname + '_' + fileset + '_' + selname + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                proc = subprocess.Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root' for fileset in filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 out, err = proc.communicate()
                 print out.strip()
                 print err.strip()
@@ -354,9 +369,7 @@ if __name__ == '__main__':
 
             skimmer = ROOT.Skimmer()
     
-            selnames = []
             for rname, gen in selectors[sname]:
-                selnames.append(rname)
                 selector = gen(sample, rname)
                 skimmer.addSelector(selector)
 
@@ -369,9 +382,9 @@ if __name__ == '__main__':
                 allpaths = {'': config.photonSkimDir + '/' + sname + '.root'}
 
             else:
-                print 'Reading', sname, fileset, 'from', config.photonSkimDir + '/' + sname
                 allpaths = {}
                 for fileset in args.filesets:
+                    print 'Reading', sname, fileset, 'from', config.photonSkimDir + '/' + sname
                     allpaths['_' + fileset] = config.photonSkimDir + '/' + sname + '/' + sname + '_' + fileset + '.root'
 
             for suffix, sourcePath in allpaths.items():
@@ -388,8 +401,5 @@ if __name__ == '__main__':
                 for selname in selnames:
                     outName = sname + suffix + '_' + selname + '.root'
 
-                    if os.path.exists(config.skimDir + '/' + outName):
-                        os.remove(config.skimDir + '/' + outName)
-
-                    shutil.copy(tmpDir + '/' + outName, config.skimDir)
+                    shutil.copy(tmpDir + '/' + outName, outDir)
                     os.remove(tmpDir + '/' + outName)
