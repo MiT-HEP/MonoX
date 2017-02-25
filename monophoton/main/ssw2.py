@@ -49,7 +49,7 @@ if args.split and len(args.filesets) != 0:
     sys.exit(1)
 
 if len(args.filesets) == 1 and not args.outSuffix:
-    args.outSuffix = '_' + args.filesets[0]
+    args.outSuffix = args.filesets[0]
 
 import ROOT
 
@@ -174,8 +174,10 @@ for sample in samples:
 
     if sample.data and args.json:
         skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
-
-    outNameBase = sample.name + '_' + args.outSuffix
+    
+    outNameBase = sample.name
+    if args.outSuffix:
+        outNameBase += '_' + args.outSuffix
 
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
 

@@ -99,6 +99,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
       input->SetEntryList(elist);
     }
+
+    event.setAddress(*input);
   
     long iEntry(0);
     while (iEntryGlobal++ != _nEntries && event.getEntry(*input, input->GetEntryNumber(iEntry++)) > 0) {
@@ -119,6 +121,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     }
 
     delete source;
+
+    if (iEntryGlobal == _nEntries + 1)
+      break;
   }
 
   for (auto* sel : selectors_)
