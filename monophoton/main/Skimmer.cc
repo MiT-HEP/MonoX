@@ -1,8 +1,13 @@
 #include "selectors.h"
 
 #include "TString.h"
+#include "TFile.h"
 #include "TTree.h"
-#include "TLeaf.h"
+#include "TEntryList.h"
+#include "TError.h"
+#include "TSystem.h"
+#include "TROOT.h"
+#include "TDirectory.h"
 
 #include "GoodLumiFilter.h"
 
@@ -11,25 +16,29 @@
 #include <stdexcept>
 #include <ctime>
 
+unsigned TIMEOUT(300);
+
 class Skimmer {
 public:
   Skimmer() {}
 
-  void reset() { selectors_.clear(); useLumiFilter_ = false; }
+  void reset() { paths_.clear(); selectors_.clear(); }
+  void addPath(char const* _path) { paths_.emplace_back(_path); }
   void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
-  void addGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
-  void setUseLumiFilter(bool _setFilter) { useLumiFilter_ = _setFilter; }
-  void run(TTree* input, char const* outputDir, char const* sampleName, long nEntries = -1);
+  void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
+  void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
+  void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
   bool passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent);
 
 private:
+  std::vector<TString> paths_{};
   std::vector<EventSelector*> selectors_{};
+  TString commonSelection_{};
   GoodLumiFilter* goodLumiFilter_{};
-  bool useLumiFilter_ = false;
 };
 
 void
-Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, long _nEntries/* = -1*/)
+Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long _nEntries/* = -1*/)
 {
   TString outputDir(_outputDir);
   TString sampleName(_sampleName);
@@ -37,47 +46,79 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
   panda::Event event;
   panda::EventMonophoton skimmedEvent;
 
-  bool isMC = false;
-
-  event.setAddress(*_input);
-  auto* br = _input->GetBranch("isData");
-  br->GetEntry(0);
-  if (br->GetLeaf("isData")->GetValue() == 0.)
-    isMC = true;
-
-  
-  // printf("isMC %u \n", isMC);
-
-  if (goodLumiFilter_ && useLumiFilter_)
-    printf("Appyling good lumi filter. \n");
-
   for (auto* sel : selectors_) {
-    TString outputPath = outputDir + "/" + sampleName + "_" + sel->name() + ".root";
-    // std::cout << "Saving to " << outputPath << std::endl;
-    sel->initialize(outputPath, skimmedEvent, isMC);
-    // std::cout << "Selector initialized" << std::endl;
+    TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
+    sel->initialize(outputPath, skimmedEvent, !isData);
   }
-  
-  // std::cout<< "Selectors set up" << std::endl;
 
-  long iEntry(0);
+  if (goodLumiFilter_)
+    std::cout << "Appyling good lumi filter." << std::endl;
+
+  if (commonSelection_.Length() != 0)
+    std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
+
+  long iEntryGlobal(0);
   clock_t now(clock());
-  TFile* currentFile(0);
-  while (iEntry != _nEntries && event.getEntry(*_input, iEntry++) > 0) {
-    if (iEntry % 100000 == 1) {
-      clock_t past(now);
-      now = clock();
-      std::cout << " " << iEntry << " (took " << ((now - past) / double(CLOCKS_PER_SEC)) << " s)" << std::endl;
+
+  for (auto& path : paths_) {
+    TFile* source(0);
+
+    auto originalErrorIgnoreLevel(gErrorIgnoreLevel);
+    gErrorIgnoreLevel = kError + 1;
+
+    unsigned const tryEvery(30);
+    for (unsigned iAtt(0); iAtt <= TIMEOUT / tryEvery; ++iAtt) {
+      source = TFile::Open(path);
+      if (source) {
+        if (!source->IsZombie())
+          break;
+        delete source;
+      }
+
+      gSystem->Sleep(tryEvery * 1000.);
     }
 
-    if (goodLumiFilter_ && useLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
-      continue;
+    gErrorIgnoreLevel = originalErrorIgnoreLevel;
 
-    if (!passPhotonSkim(event, skimmedEvent))
-      continue;
+    if (!source || source->IsZombie()) {
+      std::cerr << "Cannot open file " << path << std::endl;
+      delete source;
+      throw std::runtime_error("source");
+    }
 
-    for (auto* sel : selectors_)
-      sel->selectEvent(skimmedEvent);
+    auto* input(static_cast<TTree*>(source->Get("events")));
+    if (!input) {
+      std::cerr << "Events tree missing from " << source->GetName() << std::endl;
+      delete source;
+      throw std::runtime_error("source");
+    }
+    
+    if (commonSelection_.Length() != 0) {
+      gROOT->cd();
+      input->Draw(">>elist", commonSelection_, "entrylist");
+      auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
+      input->SetEntryList(elist);
+    }
+  
+    long iEntry(0);
+    while (iEntryGlobal++ != _nEntries && event.getEntry(*input, input->GetEntryNumber(iEntry++)) > 0) {
+      if (iEntryGlobal % 10000 == 1) {
+        clock_t past(now);
+        now = clock();
+        std::cout << " " << iEntryGlobal << " (took " << ((now - past) / double(CLOCKS_PER_SEC)) << " s)" << std::endl;
+      }
+
+      if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
+        continue;
+
+      if (!passPhotonSkim(event, skimmedEvent))
+        continue;
+
+      for (auto* sel : selectors_)
+        sel->selectEvent(skimmedEvent);
+    }
+
+    delete source;
   }
 
   for (auto* sel : selectors_)
@@ -88,11 +129,6 @@ Skimmer::run(TTree* _input, char const* _outputDir, char const* _sampleName, lon
 bool
 Skimmer::passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent)
 {
-  /*
-  if (goodlumi_ && !goodlumi_->isGoodLumi(_event.runNumber, _event.lumiNumber))
-    return false;
-  */
-
   unsigned iPh(0);
   for (; iPh != _event.photons.size(); ++iPh) {
     auto& photon(_event.photons[iPh]);

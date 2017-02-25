@@ -9,6 +9,26 @@ import collections
 from subprocess import Popen, PIPE
 from argparse import ArgumentParser
 
+argParser = ArgumentParser(description = 'Plot and count')
+argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
+argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
+#argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
+argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
+argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
+argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
+argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
+argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
+argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix. If running on a single fileset, automatically set to _<fileset>.')
+argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
+argParser.add_argument('--merge-only', '-M', action = 'store_true', dest = 'mergeOnly', help = 'Merge the fragments without running any skim jobs.')
+
+# eosInput:
+# Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
+# not maintained any more - use github to recover
+
+args = argParser.parse_args()
+sys.argv = []
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 monoxdir = os.path.dirname(basedir)
@@ -24,29 +44,12 @@ from main.skimconfig import selectors
 sys.path.append('/home/yiiyama/lib')
 from condor_run import CondorRun
 
-padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
-
-argParser = ArgumentParser(description = 'Plot and count')
-argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
-argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
-#argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
-argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
-argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
-argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
-argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
-argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
-
-# eosInput:
-# Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
-# not maintained any more - use github to recover
-
-args = argParser.parse_args()
-sys.argv = []
-
 if args.split and len(args.filesets) != 0:
     print 'Split mode must be inclusive in filesets.'
     sys.exit(1)
+
+if len(args.filesets) == 1 and not args.outSuffix:
+    args.outSuffix = '_' + args.filesets[0]
 
 import ROOT
 
@@ -122,7 +125,7 @@ for sample in samples:
 
     filesets[sample.name] = []
     directories = {} # fileset -> directory of source files
-    fullpaths = collections.defaultdict(list) # fileset -> list of full paths
+    fullpaths = []
 
     # Loop over dataset names of the sample
     for dsuffix, dataset in cnames:
@@ -139,9 +142,10 @@ for sample in samples:
                 fileset, fname = line.split()[:2]
                 fileset += dsuffix
 
-                fullpaths[fileset].append(directories[fileset] + '/' + fname)
+                if len(args.filesets) == 0 or fileset in args.filesets:
+                    fullpaths.append(directories[fileset] + '/' + fname)
 
-    if args.split:
+    if args.split or args.mergeOnly:
         # Split mode - only need to collect the input names
         # Will spawn condor jobs below
         continue
@@ -149,6 +153,7 @@ for sample in samples:
     # Will do the actual skimming
 
     skimmer = ROOT.Skimmer()
+    skimmer.setCommonSelection('superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442')
 
     for rname, gen in selectors[sample.name]:
         selector = gen(sample, rname)
@@ -158,38 +163,32 @@ for sample in samples:
     if not os.path.exists(tmpDir):
         os.makedirs(tmpDir)
 
-    inputPaths = {}
-    if len(args.filesets) == 0:
-        # run over all filesets - empty suffix
-        inputPaths[''] = sum(fullpaths.values())
+    for path in fullpaths:
+        if not os.path.exists(path):
+            fname = os.path.basename(path)
+            dataset = os.path.basename(os.path.dirname(path))
+            proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
+            print proc.communicate()[0].strip()
 
-    else:
-        for fileset in args.filesets:
-            inputPaths['_' + fileset] = fullpaths[fileset]
+        skimmer.addPath(path)
 
-    for suffix, paths in inputPaths.items():
-        tree = ROOT.TChain('events')
-        for path in paths:
-            tree.Add(path)
+    if sample.data and args.json:
+        skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
 
-        nEntries = tree.GetEntries()
-        print nEntries, 'entries'
-        if nEntries == 0:
-            print 'Tree has no entries. Skipping.'
-            continue
+    outNameBase = sample.name + '_' + args.outSuffix
 
-        if sample.data and args.json:
-            skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
+    skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
 
-        skimmer.run(tree, tmpDir, sample.name + suffix, args.nentries)
+    for selname in selnames:
+        outName = outNameBase + '_' + selname + '.root'
 
-        for selname in selnames:
-            outName = sample.name + suffix + '_' + selname + '.root'
+        shutil.copy(tmpDir + '/' + outName, outDir)
+        os.remove(tmpDir + '/' + outName)
 
-            shutil.copy(tmpDir + '/' + outName, outDir)
-            os.remove(tmpDir + '/' + outName)
 
-if args.split:
+heldJobs = dict([(sname, []) for sname in filesets.keys()])
+
+if args.split and not args.mergeOnly:
     # Spawn condor jobs
     arguments = []
 
@@ -218,8 +217,6 @@ if args.split:
 
     print 'Waiting for individual skim jobs to complete.'
 
-    heldJobs = dict([(sname, []) for sname in filesets.keys()])
-
     while True:
         proc = Popen(['condor_q'] + jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = PIPE, stderr = PIPE)
         out, err = proc.communicate()
@@ -245,8 +242,12 @@ if args.split:
             break
 
         time.sleep(10)
-    
+
+if args.split or args.mergeOnly:    
     print 'Merging the split skims.'
+
+    padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
+
     for sname, fslist in filesets.items():
         if len(heldJobs[sname]) != 0:
             print 'Some jobs failed for ' + sname + '. Not merging output.'
