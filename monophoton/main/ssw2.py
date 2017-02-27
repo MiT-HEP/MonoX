@@ -96,8 +96,10 @@ for sample in samples:
     else:
         outDir = config.skimDir
 
-    if not os.path.exists(outDir):
+    try:
         os.makedirs(outDir)
+    except OSError:
+        pass
 
     # Read the catalogs and make lists of filesets
 
@@ -160,8 +162,10 @@ for sample in samples:
         skimmer.addSelector(selector)
 
     tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
-    if not os.path.exists(tmpDir):
+    try:
         os.makedirs(tmpDir)
+    except OSError:
+        pass
 
     for path in fullpaths:
         if not os.path.exists(path):
@@ -195,15 +199,18 @@ if args.split and not args.mergeOnly:
     arguments = []
 
     # Collect arguments and remove output
-    for sname, fslist in filesets.items():
+    for sample in samples:
+        fslist = filesets[sample.name]
+        splitOutDir = config.skimDir + '/' + sample.name
+
         for fileset in fslist:
             if len(args.filesets) != 0 and fileset not in args.filesets:
                 continue
 
-            arguments.append((sname, fileset))
+            arguments.append((sample.name, fileset))
 
-            for selname in [rname for rname, gen in selectors[sname]]:
-                path = splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root'
+            for selname in [rname for rname, gen in selectors[sample.name]]:
+                path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
                 try:
                     os.remove(path)
                 except:
@@ -250,15 +257,18 @@ if args.split or args.mergeOnly:
 
     padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
 
-    for sname, fslist in filesets.items():
-        if len(heldJobs[sname]) != 0:
-            print 'Some jobs failed for ' + sname + '. Not merging output.'
+    for sample in samples:
+        fslist = filesets[sample.name]
+        splitOutDir = config.skimDir + '/' + sample.name
+
+        if len(heldJobs[sample.name]) != 0:
+            print 'Some jobs failed for ' + sample.name + '. Not merging output.'
             continue
 
-        for selname in [rname for rname, gen in selectors[sname]]:
-            outName = sname + '_' + selname + '.root'
+        for selname in [rname for rname, gen in selectors[sample.name]]:
+            outName = sample.name + '_' + selname + '.root'
 
-            proc = Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + sname + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
+            proc = Popen([padd, '/tmp/' + outName] + [splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
             out, err = proc.communicate()
             print out.strip()
             print err.strip()
