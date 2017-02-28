@@ -32,7 +32,7 @@ class SampleDef(object):
         for name in additionalDatasets:
             self.addDataset(name)
 
-        self._counter = None
+        self._sumw2 = 0. # will be > 0 at the first call to _updateSumw
         self._fullpaths = {} # {dataset: {fileset: [path]}}; loaded from catalog only on demand
 
     def clone(self):
@@ -65,7 +65,7 @@ class SampleDef(object):
         self.datasetNames.append(name)
         self.datasetSuffices.append(suffix)
 
-        self._counter = None
+        self._sumw2 = 0.
         self._fullpaths = {}
 
     def dump(self):
@@ -77,8 +77,7 @@ class SampleDef(object):
         print 'datasetSuffices =', self.datasetSuffices
         print 'crosssection =', self.crosssection
         print 'nevents =', self.nevents
-        if self.sumw >= 0.:
-            print 'sumw =', self.sumw
+        print 'sumw =', self.sumw
         print 'lumi =', self.effectiveLumi(), 'pb'
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
@@ -116,13 +115,16 @@ class SampleDef(object):
         lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, fullnames, comments)
         return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
 
-    def _getCounter(self):
-        if self._counter is not None:
+    def _updateSumw(self):
+        if self._sumw2 > 0.:
             return
 
         import ROOT
 
         self._readCatalogs()
+
+        self.nevents = 0
+        self.sumw = 0.
 
         for dataset in self.datasetNames:
             for fileset, paths in self._fullpaths[dataset].items():
@@ -132,11 +134,13 @@ class SampleDef(object):
                         raise IOError('Could not open', path)
 
                     try:
-                        if self._counter is None:
-                            self._counter = source.Get('eventcounter')
-                            self._counter.SetDirectory(ROOT.gROOT)
-                        else:
-                            self._counter.Add(source.Get('eventcounter'))
+                        counter = source.Get('eventcounter')
+                        self.nevents += counter.GetBinContent(1)
+                        if not self.data:
+                            sumw = source.Get('hSumW')
+                            self.sumw += sumw.GetBinContent(1)
+                            self._sumw2 += math.pow(sumw.GetBinError(1), 2.)
+
                     except:
                         print path
                         raise
@@ -169,31 +173,20 @@ class SampleDef(object):
                     self._fullpaths[dataset][fileset].append(directories[fileset] + '/' + fname)
     
     def recomputeWeight(self):
-        self._getCounter()
+        self._sumw2 = 0.
 
-        if not self._counter:
+        self._updateSumw()
+
+        if self._sumw2 == 0.:
             print 'Failed at counting sample. Not changing anything!!!.'
             return
-
-        self.nevents = int(self._counter.GetBinContent(1))
-        if self.data:
-            self.sumw = -1.
-        else:
-            self.sumw = self._counter.GetBinContent(2)
-
-    def getSumw2(self):
-        self._getCounter()
-
-        if not self._counter:
-            return 0.
-
-        return math.pow(self._counter.GetBinError(2), 2.)
 
     def effectiveLumi(self):
         if self.lumi > 0.:
             return self.lumi
         else:
-            sumw2 = self.getSumw2()
+            self._updateSumw()
+            sumw2 = self._sumw2
             if sumw2 > 0.:
                 return math.pow(self.sumw, 2.) / sumw2 / self.crosssection
             else:
@@ -275,13 +268,15 @@ class SampleDefList(object):
         
                 name, title, crosssection, nevents, sumw, book, fullnames, comments = [matches.group(i) for i in range(1, 9)]
                 fullnames = fullnames.split()
-        
+
+                kwd = {'title': title, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
+
                 if sumw == '-':
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullnames[0], additionalDatasets = fullnames[1:], lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments.lstrip(' #'))
+                    kwd.update({'lumi': float(crosssection), 'data': True})
                 else:
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullnames[0], additionalDatasets = fullnames[1:], crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
-        
-                self.samples.append(sdef)
+                    kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
+
+                self.samples.append(SampleDef(name, **kwd))
 
     def save(self, listpath):
         with open(listpath, 'w') as out:
@@ -397,17 +392,27 @@ add INFO: Add a new dataset.'''
 
     elif command == 'add':
         name, title, crosssection, nevents, sumw, book, fullname = arguments[:7]
-        try:
-            comments = arguments[7]
-        except IndexError:
-            comments = ''
-        
+        additionalDatasets = []
+        comments = ''
+
+        iarg = 7
+        while iarg < len(arguments):
+            if arguments[iarg].startswith('#'):
+                comments = ' '.join(arguments[iarg:])
+                break
+            else:
+                additionalDatasets.append(arguments[iarg])
+
+            iarg += 1
+
+        kwd = {'title': title, 'book': book, 'fullname': fullname, 'additionalDatasets': additionalDatasets, 'nevents': int(nevents), 'comments': comments.lstrip('#')}
+
         if sumw == '-':
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments)
+            kwd.update({'lumi': float(crosssection), 'data': True})
         else:
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments)
-        
-        samples.samples.append(sdef)
+            kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
+
+        samples.samples.append(SampleDef(name, **kwd))
 
     elif command == 'lumi':
         source = samples.getmany(arguments)
