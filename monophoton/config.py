@@ -1,7 +1,6 @@
 import os
 
 # tier3 set up
-photonSkimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/photonskim'
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim'
 histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton_panda'
 ntuplesDir = '/mnt/hadoop/cms/store/user/paus'
