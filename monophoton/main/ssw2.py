@@ -80,14 +80,8 @@ if args.list:
     print ' '.join(sorted(s.name for s in samples))
     sys.exit(0)
 
-filesets = {} # sample -> list of filesets
-
 for sample in samples:
     print 'Starting sample %s (%d/%d)' % (sample.name, samples.index(sample) + 1, len(samples))
-
-    selnames = []
-    for rname, gen in selectors[sample.name]:
-        selnames.append(rname)
 
     splitOutDir = config.skimDir + '/' + sample.name
 
@@ -100,52 +94,6 @@ for sample in samples:
         os.makedirs(outDir)
     except OSError:
         pass
-
-    # Read the catalogs and make lists of filesets
-
-    # First get all catalogs (including extensions)
-    cnames = [('', sample.fullname)]
-    for altname in sample.altnames:
-        start = 0
-        while True:
-            if altname[start] != sample.fullname[start]:
-                break
-            start += 1
-    
-        end = -1
-        while True:
-            if altname[end] != sample.fullname[end]:
-                break
-            end -= 1
-    
-        # end cannot be -1 - don't mix data from different tiers!
-        dsuffix = altname[start:end + 1]
-        if dsuffix.endswith('-v'): # special case if we have e.g. extN suffix but the version number is the same
-            dsuffix = dsuffix[:-2]
-    
-        cnames.append((dsuffix, altname))
-
-    filesets[sample.name] = []
-    directories = {} # fileset -> directory of source files
-    fullpaths = []
-
-    # Loop over dataset names of the sample
-    for dsuffix, dataset in cnames:
-        with open(args.catalog + '/' + sample.book + '/' + dataset + '/Filesets') as filesetList:
-            for line in filesetList:
-                fileset, xrdpath = line.split()[:2]
-                fileset += dsuffix
-
-                directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
-                filesets[sample.name].append(fileset)
-
-        with open(args.catalog + '/' + sample.book + '/' + dataset + '/Files') as fileList:
-            for line in fileList:
-                fileset, fname = line.split()[:2]
-                fileset += dsuffix
-
-                if len(args.filesets) == 0 or fileset in args.filesets:
-                    fullpaths.append(directories[fileset] + '/' + fname)
 
     if args.split or args.mergeOnly:
         # Split mode - only need to collect the input names
@@ -167,7 +115,7 @@ for sample in samples:
     except OSError:
         pass
 
-    for path in fullpaths:
+    for path in sample.files():
         if not os.path.exists(path):
             fname = os.path.basename(path)
             dataset = os.path.basename(os.path.dirname(path))
@@ -185,14 +133,14 @@ for sample in samples:
 
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
 
-    for selname in selnames:
-        outName = outNameBase + '_' + selname + '.root'
+    for rname, gen in selectors[sample.name]:
+        outName = outNameBase + '_' + rname + '.root'
 
         shutil.copy(tmpDir + '/' + outName, outDir)
         os.remove(tmpDir + '/' + outName)
 
 
-heldJobs = dict([(sname, []) for sname in filesets.keys()])
+heldJobs = dict([(s.name, []) for s in samples])
 
 if args.split and not args.mergeOnly:
     # Spawn condor jobs
@@ -200,7 +148,7 @@ if args.split and not args.mergeOnly:
 
     # Collect arguments and remove output
     for sample in samples:
-        fslist = filesets[sample.name]
+        fslist = sample.filesets()
         splitOutDir = config.skimDir + '/' + sample.name
 
         for fileset in fslist:
@@ -258,7 +206,7 @@ if args.split or args.mergeOnly:
     padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
 
     for sample in samples:
-        fslist = filesets[sample.name]
+        fslist = sample.filesets()
         splitOutDir = config.skimDir + '/' + sample.name
 
         if len(heldJobs[sample.name]) != 0:
