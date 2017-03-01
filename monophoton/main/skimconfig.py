@@ -15,12 +15,10 @@ defaultSelectors = {
     'hfake': selectors.hadProxy,
     'hfakeTight': selectors.hadProxyTight,
     'hfakeLoose': selectors.hadProxyLoose,
-    'hfakeVLoose': selectors.hadProxyVLoose,
     'purity': selectors.purity,
     'purityNom': selectors.purityNom,
     'purityTight': selectors.purityTight,
     'purityLoose': selectors.purityLoose,
-    'purityVLoose': selectors.purityVLoose,
     'gjets': selectors.gjets,
     'halo': selectors.halo,
     'haloMIP': selectors.haloMIP,
@@ -72,7 +70,7 @@ data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'hfakeVLoose', 'purity', 'purityTight', 'purityLoose', 'purityVLoose', 'gjets'] 
+mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'purity', 'purityNom', 'purityTight', 'purityLoose', 'gjets'] 
 mc_sig = ['monoph', 'purity'] # , 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']

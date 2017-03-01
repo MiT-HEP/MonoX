@@ -335,9 +335,9 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
   cutres[PhIsoS16] = _photon.passPhIso(wp_);
   cutres[CHIsoS16] = _photon.passCHIso(wp_);
   cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::XPhoton::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16VLoose] = (_photon.nhIso < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
-  cutres[PhIsoS16VLoose] = (_photon.phIso < 11.); // loose WP cut is 8.3 at 1 TeV
-  cutres[CHIsoS16VLoose] = (_photon.chIso < 11.); 
+  cutres[NHIsoS16Loose] = _photon.passNHIso(0); 
+  cutres[PhIsoS16Loose] = _photon.passPhIso(0); 
+  cutres[CHIsoS16Loose] = (_photon.chIso < 11.); 
   cutres[NHIsoS16Tight] = _photon.passNHIso(2);
   cutres[PhIsoS16Tight] = _photon.passPhIso(2);
 

@@ -209,9 +209,9 @@ class PhotonSelection : public Cut {
     PhIsoS16,
     CHIsoS16,
     CHIsoMaxS16,
-    NHIsoS16VLoose,
-    PhIsoS16VLoose,       // 30
-    CHIsoS16VLoose,
+    NHIsoS16Loose,
+    PhIsoS16Loose,        // 30
+    CHIsoS16Loose,
     NHIsoS16Tight,
     PhIsoS16Tight,
     nSelections           // 34
