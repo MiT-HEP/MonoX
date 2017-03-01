@@ -121,7 +121,7 @@ class SampleDef(object):
 
         import ROOT
 
-        self._readCatalogs()
+        self.cache()
 
         self.nevents = 0
         self.sumw = 0.
@@ -260,7 +260,7 @@ class SampleDefList(object):
                     self._commentLines.append((name, line))
                     continue
         
-                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s]+\s*)+)(#.*|)$', line.strip())
+                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line.strip())
                 if not matches:
                     print 'Ill-formed line in ' + listpath
                     print line
