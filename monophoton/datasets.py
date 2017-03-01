@@ -121,7 +121,7 @@ class SampleDef(object):
 
         import ROOT
 
-        self._readCatalogs()
+        self.cache()
 
         self.nevents = 0
         self.sumw = 0.

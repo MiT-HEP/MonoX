@@ -212,19 +212,45 @@ Skimmer::passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent)
       phIsoS16EA = 0.1998;
     }
 
+    // Redoing leakage correction with scRawPt
+    // Panda isolation has Spring15 leakage correction but Spring16 effective areas (production error).
+
     outPhoton.chIsoS15 = inPhoton.chIso;
+
+    double nhIsoE1S15, nhIsoE2S15, phIsoE1S15;
+    double nhIsoE1S16, nhIsoE2S16, phIsoE1S16;
+
     if (outPhoton.isEB) {
-      outPhoton.nhIsoS15 = inPhoton.nhIso + (0.014 - 0.0148) * inPhoton.pt() + (0.000019 - 0.000017) * inPhoton.pt() * inPhoton.pt();
-      outPhoton.phIsoS15 = inPhoton.phIso + (0.0053 - 0.0047) * inPhoton.pt();
+      nhIsoE1S15 = 0.014;
+      nhIsoE2S15 = 0.000019;
+      phIsoE1S15 = 0.0053;
+
+      nhIsoE1S16 = 0.0148;
+      nhIsoE2S16 = 0.000017;
+      phIsoE1S16 = 0.0047;
     }
     else {
-      outPhoton.nhIsoS15 = inPhoton.nhIso + (0.0139 - 0.0163) * inPhoton.pt() + (0.000025 - 0.000014) * inPhoton.pt() * inPhoton.pt();
-      outPhoton.phIsoS15 = inPhoton.phIso + (0.0034 - 0.0034) * inPhoton.pt();
+      nhIsoE1S15 = 0.0139;
+      nhIsoE2S15 = 0.000025;
+      phIsoE1S15 = 0.0034;
+
+      nhIsoE1S16 = 0.0163;
+      nhIsoE2S16 = 0.000014;
+      phIsoE1S16 = 0.0034;
     }
 
+    double nhIsoCore(inPhoton.nhIso + nhIsoE1S15 * inPhoton.pt() + nhIsoE2S15 * inPhoton.pt() * inPhoton.pt());
+    double phIsoCore(inPhoton.phIso + phIsoE1S15 * inPhoton.pt());
+
+    outPhoton.nhIso = nhIsoCore - nhIsoE1S16 * outPhoton.scRawPt - nhIsoE2S16 * outPhoton.scRawPt * outPhoton.scRawPt;
+    outPhoton.phIso = phIsoCore - phIsoE1S16 * outPhoton.scRawPt;
+
+    outPhoton.nhIsoS15 = nhIsoCore - nhIsoE1S15 * outPhoton.scRawPt - nhIsoE2S15 * outPhoton.scRawPt * outPhoton.scRawPt;
+    outPhoton.phIsoS15 = phIsoCore - phIsoE1S15 * outPhoton.scRawPt;
+
     outPhoton.chIsoS15 += chIsoS16EA * _event.rho;
-    outPhoton.nhIsoS15 += (nhIsoS15EA - nhIsoS16EA) * _event.rho;
-    outPhoton.phIsoS15 += (phIsoS15EA - phIsoS16EA) * _event.rho;
+    outPhoton.nhIsoS15 += (nhIsoS16EA - nhIsoS15EA) * _event.rho;
+    outPhoton.phIsoS15 += (phIsoS16EA - phIsoS15EA) * _event.rho;
 
     // EA computed with iso/worstIsoEA.py
     outPhoton.chIsoMax -= 0.094 * _event.rho;
