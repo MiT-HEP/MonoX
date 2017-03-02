@@ -14,7 +14,8 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-#include <ctime>
+#include <chrono>
+typedef std::chrono::steady_clock Clock; 
 
 unsigned TIMEOUT(300);
 
@@ -58,7 +59,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
   long iEntryGlobal(0);
-  clock_t now(clock());
+  auto now = Clock::now();
+  auto start = now;
 
   for (auto& path : paths_) {
     TFile* source(0);
@@ -105,9 +107,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     long iEntry(0);
     while (iEntryGlobal++ != _nEntries && event.getEntry(*input, input->GetEntryNumber(iEntry++)) > 0) {
       if (iEntryGlobal % 10000 == 1) {
-        clock_t past(now);
-        now = clock();
-        std::cout << " " << iEntryGlobal << " (took " << ((now - past) / double(CLOCKS_PER_SEC)) << " s)" << std::endl;
+        auto past = now;
+        now = Clock::now();
+        std::cout << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
       }
 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
@@ -128,6 +130,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   for (auto* sel : selectors_)
     sel->finalize();
+
+  now = Clock::now();
+  std::cout << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
 }
 
 
