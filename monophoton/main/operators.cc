@@ -1102,7 +1102,7 @@ PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonoph
 bool
 GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+  for (unsigned iP(0); iP != _event.genParticles.size(); ++iP) {
     auto& part(_event.genParticles[iP]);
 
     // probably need to add a check if it's prompt final state

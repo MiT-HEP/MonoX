@@ -14,6 +14,7 @@ argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample
 argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
 #argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
 argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
+argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
 argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
 argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
 argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
@@ -107,6 +108,7 @@ for sample in samples:
 
     for rname, gen in selectors[sample.name]:
         selector = gen(sample, rname)
+        selector.setUseTimers(args.timer)
         skimmer.addSelector(selector)
 
     tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name

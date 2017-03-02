@@ -28,7 +28,9 @@ public:
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
-  bool passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent);
+  bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
+  // only copy prompt final state photons and leptons
+  void copyGenParticles(panda::GenParticleCollection const&, panda::GenParticleCollection&);
 
 private:
   std::vector<TString> paths_{};
@@ -44,7 +46,41 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   TString sampleName(_sampleName);
 
   panda::Event event;
+  panda::GenParticleCollection genParticles;
   panda::EventMonophoton skimmedEvent;
+
+  panda::utils::BranchList branchList = {
+    "*",
+    "!pfCandidates",
+    "!puppiAK4Jets",
+    "!chsAK8Jets",
+    "!chsAK8Subjets",
+    "!puppiAK8Jets",
+    "!puppiAK8Subjets",
+    "!chsCA15Jets",
+    "!chsCA15Subjets",
+    "!puppiCA15Jets",
+    "!puppiCA15Subjets",
+    "!chsAK4Jets.constituents",
+    "!ak8GenJets",
+    "!ca15GenJets",
+    "!puppiMet",
+    "!rawMet",
+    "!caloMet",
+    "!noMuMet",
+    "!noHFMet",
+    "!trkMet",
+    "!neutralMet",
+    "!photonMet",
+    "!hfMet",
+    "!genMet",
+    "!metMuOnlyFix",
+    "!metNoFix",
+    "!recoil"
+  };
+
+  // will take care of genParticles individually
+  branchList += {"!genParticles"};
 
   for (auto* sel : selectors_) {
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
@@ -100,10 +136,15 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       input->SetEntryList(elist);
     }
 
-    event.setAddress(*input);
+    event.setAddress(*input, branchList);
+    genParticles.setAddress(*input);
   
     long iEntry(0);
-    while (iEntryGlobal++ != _nEntries && event.getEntry(*input, input->GetEntryNumber(iEntry++)) > 0) {
+    while (iEntryGlobal++ != _nEntries) {
+      int entryNumber(input->GetEntryNumber(iEntry++));
+      if (event.getEntry(*input, entryNumber) <= 0)
+        break;
+
       if (iEntryGlobal % 10000 == 1) {
         clock_t past(now);
         now = clock();
@@ -115,6 +156,11 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
       if (!passPhotonSkim(event, skimmedEvent))
         continue;
+
+      if (!event.isData) {
+        genParticles.getEntry(*input, entryNumber);
+        copyGenParticles(genParticles, skimmedEvent.genParticles);
+      }
 
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
@@ -132,7 +178,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
 
 bool
-Skimmer::passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent)
+Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _outEvent)
 {
   unsigned iPh(0);
   for (; iPh != _event.photons.size(); ++iPh) {
@@ -259,4 +305,24 @@ Skimmer::passPhotonSkim(panda::Event& _event, panda::EventMonophoton& _outEvent)
   }
 
   return true;
+}
+
+void
+Skimmer::copyGenParticles(panda::GenParticleCollection const& _inParticles, panda::GenParticleCollection& _outParticles)
+{
+  _outParticles.clear();
+  
+  // kIsPrompt && kIsLastCopy
+  unsigned short mask(1 | (1 << 13));
+
+  for (auto& part : _inParticles) {
+    if ((part.statusFlags & mask) != mask)
+      continue;
+
+    unsigned absId(std::abs(part.pdgid));
+    if (absId != 11 && absId != 13 && absId != 22)
+      continue;
+
+    _outParticles.push_back(part);
+  }
 }

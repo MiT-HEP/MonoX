@@ -42,6 +42,9 @@ EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _even
       cut->registerCut(*cutsOut_);
   }
 
+  if (useTimers_)
+    timers_.resize(operators_.size());
+
   // printf("Added all the operators. \n");
 
 }
@@ -60,6 +63,15 @@ EventSelector::finalize()
   delete outputFile;
   skimOut_ = 0;
   cutsOut_ = 0;
+
+  if (useTimers_) {
+    std::cout << "Operator runtimes for " << name() << " (CPU seconds):" << std::endl;
+    for (unsigned iO(0); iO != operators_.size(); ++iO) {
+      std::cout.flags(std::ios_base::fixed);
+      std::cout.width(5);
+      std::cout << " " << (std::chrono::duration_cast<std::chrono::nanoseconds>(timers_[iO]).count() * 1.e-9) << " " << operators_[iO]->name() << std::endl;
+    }
+  }
 }
 
 void
@@ -72,10 +84,20 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
   inWeight_ = _event.weight;
   outEvent_.weight = _event.weight;
 
+  Clock::time_point start;
+
   bool pass(true);
-  for (auto* op : operators_) {
-    if (!op->exec(_event, outEvent_))
+  for (unsigned iO(0); iO != operators_.size(); ++iO) {
+    auto& op(*operators_[iO]);
+
+    if (useTimers_)
+      start = Clock::now();
+
+    if (!op.exec(_event, outEvent_))
       pass = false;
+
+    if (useTimers_)
+      timers_[iO] += Clock::now() - start;
   }
 
   if (pass)
