@@ -9,6 +9,9 @@
 #include "TF1.h"
 
 #include <vector>
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock Clock;
 
 class EventSelector {
 public:
@@ -26,6 +29,8 @@ public:
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
 
+  void setUseTimers(bool b) { useTimers_ = b; }
+
  protected:
   TString name_;
   std::vector<Operator*> operators_;
@@ -36,6 +41,9 @@ public:
   unsigned blindPrescale_{1};
   unsigned blindMinRun_{0};
   double inWeight_{1.};
+
+  bool useTimers_{false};
+  std::vector<Clock::duration> timers_;
 };
 
 class ZeeEventSelector : public EventSelector {
