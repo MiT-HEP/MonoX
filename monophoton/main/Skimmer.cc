@@ -15,7 +15,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <chrono>
-typedef std::chrono::steady_clock Clock; 
+typedef std::chrono::steady_clock SClock; 
 
 unsigned TIMEOUT(300);
 
@@ -29,6 +29,7 @@ public:
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
+  void skipPhotonSkim() { doPhotonSkim_ = false; }
   bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
   // only copy prompt final state photons and leptons
   void copyGenParticles(panda::GenParticleCollection const&, panda::GenParticleCollection&);
@@ -37,6 +38,7 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelector*> selectors_{};
   TString commonSelection_{};
+  bool doPhotonSkim_{true};
   GoodLumiFilter* goodLumiFilter_{};
 };
 
@@ -95,7 +97,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
   long iEntryGlobal(0);
-  auto now = Clock::now();
+  auto now = SClock::now();
   auto start = now;
 
   for (auto& path : paths_) {
@@ -149,7 +151,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
       if (iEntryGlobal % 10000 == 1) {
         auto past = now;
-        now = Clock::now();
+        now = SClock::now();
         std::cout << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
       }
 
@@ -177,7 +179,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   for (auto* sel : selectors_)
     sel->finalize();
 
-  now = Clock::now();
+  now = SClock::now();
   std::cout << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
 }
 
@@ -191,7 +193,7 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
       break;
   }
-  if (iPh == _event.photons.size())
+  if (doPhotonSkim_ && iPh == _event.photons.size())
     return false;
 
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)

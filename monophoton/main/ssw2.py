@@ -9,6 +9,8 @@ import collections
 from subprocess import Popen, PIPE
 from argparse import ArgumentParser
 
+sys.stderr.write(socket.gethostname()+ '\n')
+
 argParser = ArgumentParser(description = 'Plot and count')
 argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
 argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
@@ -22,6 +24,7 @@ argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', na
 argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix. If running on a single fileset, automatically set to _<fileset>.')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
 argParser.add_argument('--merge-only', '-M', action = 'store_true', dest = 'mergeOnly', help = 'Merge the fragments without running any skim jobs.')
+argParser.add_argument('--skip-photonSkim', '-s', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
 
 # eosInput:
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
@@ -104,7 +107,10 @@ for sample in samples:
     # Will do the actual skimming
 
     skimmer = ROOT.Skimmer()
-    skimmer.setCommonSelection('superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442')
+    if args.skipPhotonSkim:
+        skimmer.skipPhotonSkim()
+    else:
+        skimmer.setCommonSelection('superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442')
 
     for rname, gen in selectors[sample.name]:
         selector = gen(sample, rname)
@@ -168,6 +174,7 @@ if args.split and not args.mergeOnly:
 
     submitter = CondorRun(os.path.realpath(__file__))
     submitter.hold_on_fail = True
+    # submitter.requirements = 'UidDomain == "mit.edu" && Arch == "X86_64" && OpSysAndVer == "SL6"'
     submitter.group = 'group_t3mit.urgent'
     submitter.job_args = ['%s -f %s' % arg for arg in arguments]
     submitter.job_names = ['%s_%s' % arg for arg in arguments]
