@@ -165,6 +165,14 @@ if args.split and not args.mergeOnly:
 
             arguments.append((sample.name, fileset))
 
+            # clean up old .log files
+            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
+            try:
+                os.remove(path)
+            except:
+                print "Couldn't remove", path
+                pass
+
             for selname in [rname for rname, gen in selectors[sample.name]]:
                 path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
                 try:
@@ -173,8 +181,10 @@ if args.split and not args.mergeOnly:
                     pass
 
     submitter = CondorRun(os.path.realpath(__file__))
+    submitter.logdir = '/local/' + os.environ['USER']
     submitter.hold_on_fail = True
     # submitter.requirements = 'UidDomain == "mit.edu" && Arch == "X86_64" && OpSysAndVer == "SL6"'
+    submitter.requirements = 'Machine != "t3desk001.mit.edu" && Machine != "t3desk002.mit.edu" && Machine != "t3desk003.mit.edu" && Machine != "t3desk005.mit.edu"'
     submitter.group = 'group_t3mit.urgent'
     submitter.job_args = ['%s -f %s' % arg for arg in arguments]
     submitter.job_names = ['%s_%s' % arg for arg in arguments]
