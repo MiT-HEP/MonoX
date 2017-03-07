@@ -451,8 +451,8 @@ def purity(sample, selector):
         genPhotonSel.setMaxEta(1.7)
 
         selector.addOperator(genPhotonSel, 1)
-        photonSel.setIgnoreDecision(True)
         
+        photonSel.setIgnoreDecision(True)        
         selector.findOperator('HighPtJetSelection').setIgnoreDecision(True)
 
     return selector

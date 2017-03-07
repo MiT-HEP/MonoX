@@ -315,6 +315,9 @@ class Mass : public Cut {
   Collection col_[2]{nCollections, nCollections};
 
   float mass_{0.};
+  float pt_{0.};
+  float eta_{0.};
+  float phi_{0.};
   double min_{0.};
   double max_{14000.};
 };
@@ -419,18 +422,14 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
- LeptonSelection(char const* name = "LeptonSelection") : Cut(name), zs_("z") {}
+ LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
 
-  void addBranches(TTree& skimTree) override;
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   unsigned nEl_{0};
   unsigned nMu_{0};
-
-  panda::ParticleMCollection zs_;
-  bool zOppSign_{0};
 };
 
 class HighMet : public Cut {

@@ -538,6 +538,9 @@ void
 Mass::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch(prefix_ + ".mass", &mass_, "mass");
+  _skimTree.Branch(prefix_ + ".pt", &pt_, "pt");
+  _skimTree.Branch(prefix_ + ".eta", &eta_, "eta");
+  _skimTree.Branch(prefix_ + ".phi", &phi_, "phi");
 }
 
 bool
@@ -569,14 +572,21 @@ Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEve
   if (!col[0] || !col[1] || col[0]->size() == 0 || col[1]->size() == 0)
     return false;
 
+  TLorentzVector pair(0., 0., 0., 0.);
+
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
 
-    mass_ = (col[0]->at(0).p4() + col[0]->at(1).p4()).M();
+    pair = (col[0]->at(0).p4() + col[0]->at(1).p4());
   }
   else
-    mass_ = (col[0]->at(0).p4() + col[1]->at(0).p4()).M();
+    pair = (col[0]->at(0).p4() + col[1]->at(0).p4());
+
+  mass_ = pair.M();
+  pt_ = pair.Pt();
+  eta_ = pair.Eta();
+  phi_ = pair.Phi();
 
   return mass_ > min_ && mass_ < max_;
 }
@@ -918,15 +928,6 @@ JetMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 //--------------------------------------------------------------------
 // LeptonSelection
 //--------------------------------------------------------------------
-void
-LeptonSelection::addBranches(TTree& _skimTree)
-{
-  if ((nMu_ + nEl_) == 2) {
-    zs_.book(_skimTree);
-    _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
-  }
-}
-
 
 bool
 LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
@@ -991,38 +992,6 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     
     if (electron.loose && electron.pt() > 10.)
       _outEvent.electrons.push_back(electron);
-  }
-
-  zs_.clear();
-  TLorentzVector zpair(0., 0., 0., 0.);
-
-  if (nMu_ == 2) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    zpair = _outEvent.muons[0].p4() + _outEvent.muons[1].p4();
-    zOppSign_ = ( (_outEvent.muons[0].charge == _outEvent.muons[1].charge) ? 0 : 1);
-
-    z.setPtEtaPhiM(zpair.Pt(), zpair.Eta(), zpair.Phi(), zpair.M());
-  }
-
-  else if (nEl_ == 2) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    zpair = _outEvent.electrons[0].p4() + _outEvent.electrons[1].p4();
-    zOppSign_ = ( (_outEvent.electrons[0].charge == _outEvent.electrons[1].charge) ? 0 : 1);
-    z.setPtEtaPhiM(zpair.Pt(), zpair.Eta(), zpair.Phi(), zpair.M());
-  }
-
-  else if (nMu_ == 1 && nEl_ == 1) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    zpair = _outEvent.muons[0].p4() + _outEvent.electrons[0].p4();
-    zOppSign_ = ( (_outEvent.muons[0].charge == _outEvent.electrons[0].charge) ? 0 : 1);
-    
-    z.setPtEtaPhiM(zpair.Pt(), zpair.Eta(), zpair.Phi(), zpair.M());
   }
 
   return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
@@ -1111,14 +1080,22 @@ GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventMon
       continue;
     */
 
+    printf("gen part %d --> pdgid: %2i pt: %7.2f eta: %5.2f \n", iP, part.pdgid, part.pt(), part.eta());
+
     if (std::abs(part.pdgid) != pdgId_)
       continue;
+
+    printf(" pass pdgid \n");
 
     if (std::abs(part.eta()) > maxEta_ || std::abs(part.eta()) < minEta_ )
       continue;
 
+    printf(" pass eta \n");
+
     if (part.pt() < minPt_ || part.pt() > maxPt_)
       continue;
+
+    printf(" pass pt \n");
     
     return true;
   }

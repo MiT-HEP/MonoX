@@ -83,7 +83,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   };
 
   // will take care of genParticles individually
-  branchList += {"!genParticles"};
+  // branchList += {"!genParticles"};
 
   for (auto* sel : selectors_) {
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
@@ -162,7 +162,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
 
       if (!event.isData) {
-        genParticles.getEntry(*input, entryNumber);
+	printf ("before the get entry \n ");
+        int temp = genParticles.getEntry(*input, entryNumber);
+	printf("%i genParticles.size() = %d \n", temp, genParticles.size());
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
 
@@ -322,13 +324,21 @@ Skimmer::copyGenParticles(panda::GenParticleCollection const& _inParticles, pand
   // kIsPrompt && kIsLastCopy
   unsigned short mask(1 | (1 << 13));
 
-  for (auto& part : _inParticles) {
+  printf("copying %u gen particles \n", _inParticles.size());
+  
+  for (unsigned iP(0); iP != _inParticles.size(); ++iP) {
+    auto& part(_inParticles[iP]);
+    printf("got a gen particle \%d n", iP);
     if ((part.statusFlags & mask) != mask)
       continue;
 
     unsigned absId(std::abs(part.pdgid));
+    printf(" it's a prompt final state with pdgid %d \n ", absId);
+
     if (absId != 11 && absId != 13 && absId != 22)
       continue;
+
+    printf("  adding it to outparticles \n");
 
     _outParticles.push_back(part);
   }
