@@ -162,17 +162,21 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
 
       if (!event.isData) {
-	printf ("before the get entry \n ");
+	printf ("before the get entry %i \n", entryNumber);
         int temp = genParticles.getEntry(*input, entryNumber);
 	printf("%i genParticles.size() = %d \n", temp, genParticles.size());
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
+      
+      // break;
 
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
     }
 
     delete source;
+
+    // break;
 
     if (iEntryGlobal == _nEntries + 1)
       break;
