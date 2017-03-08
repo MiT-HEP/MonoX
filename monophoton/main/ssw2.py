@@ -58,7 +58,7 @@ if len(args.filesets) == 1 and not args.outSuffix:
 import ROOT
 
 ROOT.gSystem.Load(config.libobjs)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
 
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
@@ -66,6 +66,13 @@ try:
     s = ROOT.Skimmer
 except:
     print "Couldn't compile Skimmer.cc. Quitting."
+    sys.exit(1)
+
+ROOT.gROOT.LoadMacro(thisdir + '/../misc/mpadd.cc+')
+try:
+    m = ROOT.MPAdd
+except:
+    print "Couldn't compile mpadd.cc. Quitting."
     sys.exit(1)
 
 if args.compileOnly:
@@ -222,9 +229,6 @@ if args.split and not args.mergeOnly:
 if args.split or args.mergeOnly:    
     print 'Merging the split skims.'
 
-    # padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
-    padd = 'hadd'
-
     mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
     try:
         os.makedirs(mergeDir)
@@ -241,12 +245,12 @@ if args.split or args.mergeOnly:
 
         for selname in [rname for rname, gen in selectors[sample.name]]:
             outName = sample.name + '_' + selname + '.root'
-            mergePath = mergeDir + '/' + outName
 
-            proc = Popen([padd, '-f', mergePath] + [splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
-            out, err = proc.communicate()
-            print out.strip()
-            print err.strip()
+            mpadd = ROOT.MPAdd()
+            for fileset in fslist:
+                mpadd.addInputPath(splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root')
+
+            mpadd.merge(mergeDir + '/' + outName)
     
             shutil.copy(mergePath, config.skimDir)
             os.remove(mergePath)
