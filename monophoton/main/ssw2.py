@@ -24,7 +24,8 @@ argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', na
 argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix. If running on a single fileset, automatically set to _<fileset>.')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
 argParser.add_argument('--merge-only', '-M', action = 'store_true', dest = 'mergeOnly', help = 'Merge the fragments without running any skim jobs.')
-argParser.add_argument('--skip-photonSkim', '-s', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
+argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
+argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to merge.')
 
 # eosInput:
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
@@ -177,7 +178,6 @@ if args.split and not args.mergeOnly:
             try:
                 os.remove(path)
             except:
-                print "Couldn't remove", path
                 pass
 
             for selname in [rname for rname, gen in selectors[sample.name]]:
@@ -226,10 +226,12 @@ if args.split and not args.mergeOnly:
 
         time.sleep(10)
 
-if args.split or args.mergeOnly:    
+    print 'All skim jobs finished.'
+
+if args.mergeOnly and not args.split:    
     print 'Merging the split skims.'
 
-    mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
+    mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
     try:
         os.makedirs(mergeDir)
     except OSError:
@@ -243,7 +245,11 @@ if args.split or args.mergeOnly:
             print 'Some jobs failed for ' + sample.name + '. Not merging output.'
             continue
 
-        for selname in [rname for rname, gen in selectors[sample.name]]:
+        selnames = args.selnames
+        if selnames == []:
+            selnames = [rname for rname, gen in selectors[sample.name]]
+
+        for selname in selnames:
             outName = sample.name + '_' + selname + '.root'
 
             mpadd = ROOT.MPAdd()
@@ -254,3 +260,69 @@ if args.split or args.mergeOnly:
     
             shutil.copy(mergePath, config.skimDir)
             os.remove(mergePath)
+
+if args.mergeOnly and args.split:
+    # Spawn condor jobs
+    arguments = []
+
+    # Collect arguments and remove output
+    for sample in samples:
+        fslist = sample.filesets()
+        splitOutDir = config.skimDir + '/' + sample.name
+
+        for selname in [rname for rname, gen in selectors[sample.name]]:
+            arguments.append((sample.name, selname))
+
+            # clean up old .log files
+            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + selname + '.0.log'
+            try:
+                os.remove(path)
+            except:
+                pass
+
+            # not sure if I want to delete old file immediately
+            path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
+            try:
+                os.remove(path)
+            except:
+                pass
+
+    submitter = CondorRun(os.path.realpath(__file__))
+    submitter.logdir = '/local/' + os.environ['USER']
+    submitter.hold_on_fail = True
+    submitter.requirements = 'Machine != "t3desk001.mit.edu" && Machine != "t3desk002.mit.edu" && Machine != "t3desk003.mit.edu" && Machine != "t3desk005.mit.edu"'
+    submitter.group = 'group_t3mit.urgent'
+    submitter.job_args = ['-M %s -s %s' % arg for arg in arguments]
+    submitter.job_names = ['%s_%s' % arg for arg in arguments]
+
+    jobClusters = submitter.submit(name = 'ssw2')
+
+    print 'Waiting for individual merge jobs to complete.'
+
+    while True:
+        proc = Popen(['condor_q'] + jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = PIPE, stderr = PIPE)
+        out, err = proc.communicate()
+        lines = out.split('\n')
+        completed = True
+        for line in lines:
+            if line.strip() == '':
+                continue
+
+            clusterId, jobStatus = line.split()[:2]
+            if jobStatus == '5':
+                sname, dummy, selname = line.split()[4:] # [2] is the executable
+                if fileset in heldJobs[sname]:
+                    continue
+
+                print 'Job %s %s is held' % (sname, selname)
+                heldJobs[sname].append(selname)
+                continue
+            
+            completed = False
+
+        if completed:
+            break
+
+        time.sleep(10)
+
+    print 'All merge jobs finished.'

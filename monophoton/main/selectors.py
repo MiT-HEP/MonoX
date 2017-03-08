@@ -450,6 +450,7 @@ def purity(sample, selector):
         genPhotonSel.setMinPt(140.)
         genPhotonSel.setMaxEta(1.7)
 
+        # GenParticles not being filled currently
         selector.addOperator(genPhotonSel, 1)
         
         photonSel.setIgnoreDecision(True)        
@@ -1383,14 +1384,13 @@ def kfactor(generator):
     def scaled(sample, name):
         selector = generator(sample, name)
 
-        sname = sample.name.replace('gj04', 'gj').replace('znng-d', 'znng-130').replace('wnlg-d', 'wnlg-130').replace('0-d', '0').replace('zllg', 'znng')
+        sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('-o', '')
 
         qcdSource = ROOT.TFile.Open(datadir + '/kfactor.root')
         corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
-        # qcd.setPhotonType(ROOT.PhotonPtWeight.kReco) # because nero doesn't have gen info saved
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sname + '_' + variation)
@@ -1398,7 +1398,9 @@ def kfactor(generator):
                 # print 'applying qcd var', variation, sample.name
                 qcd.addVariation('qcd' + variation, vcorr)
 
-        selector.addOperator(qcd)
+        # temporarily don't apply QCD k-factor until we redrive for nlo samples
+        if not sample.name in ['znng', 'znng-130', 'zllg', 'zllg-130', 'wnlg', 'wnlg-130', 'wnlg-500']:
+            selector.addOperator(qcd)
 
         ewkSource = ROOT.TFile.Open(datadir + '/ewk_corr.root')
         corr = ewkSource.Get(sname)
