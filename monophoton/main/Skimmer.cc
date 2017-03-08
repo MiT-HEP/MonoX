@@ -3,6 +3,7 @@
 #include "TString.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TKey.h"
 #include "TEntryList.h"
 #include "TError.h"
 #include "TSystem.h"
@@ -49,7 +50,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   TString sampleName(_sampleName);
 
   panda::Event event;
-  panda::GenParticleCollection genParticles;
+  panda::GenParticleCollection genParticles("genParticles");
   panda::EventMonophoton skimmedEvent;
 
   panda::utils::BranchList branchList = {
@@ -83,7 +84,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   };
 
   // will take care of genParticles individually
-  // branchList += {"!genParticles"};
+  branchList += {"!genParticles"};
 
   for (auto* sel : selectors_) {
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
@@ -126,7 +127,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw std::runtime_error("source");
     }
 
-    auto* input(static_cast<TTree*>(source->Get("events")));
+    auto* inputKey(static_cast<TKey*>(source->GetListOfKeys()->FindObject("events")));
+
+    auto* input(static_cast<TTree*>(inputKey->ReadObj()));
     if (!input) {
       std::cerr << "Events tree missing from " << source->GetName() << std::endl;
       delete source;
@@ -141,7 +144,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     }
 
     event.setAddress(*input, branchList);
-    genParticles.setAddress(*input);
+
+    auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
+    genInput->SetBranchStatus("*", false);
+    genParticles.setAddress(*genInput);
   
     long iEntry(0);
     while (iEntryGlobal++ != _nEntries) {
@@ -162,21 +168,15 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
 
       if (!event.isData) {
-	printf ("before the get entry %i \n", entryNumber);
-        int temp = genParticles.getEntry(*input, entryNumber);
-	printf("%i genParticles.size() = %d \n", temp, genParticles.size());
+        genParticles.getEntry(*genInput, entryNumber);
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
-      
-      // break;
 
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
     }
 
     delete source;
-
-    // break;
 
     if (iEntryGlobal == _nEntries + 1)
       break;
@@ -328,21 +328,15 @@ Skimmer::copyGenParticles(panda::GenParticleCollection const& _inParticles, pand
   // kIsPrompt && kIsLastCopy
   unsigned short mask(1 | (1 << 13));
 
-  printf("copying %u gen particles \n", _inParticles.size());
-  
   for (unsigned iP(0); iP != _inParticles.size(); ++iP) {
     auto& part(_inParticles[iP]);
-    printf("got a gen particle \%d n", iP);
     if ((part.statusFlags & mask) != mask)
       continue;
 
     unsigned absId(std::abs(part.pdgid));
-    printf(" it's a prompt final state with pdgid %d \n ", absId);
 
     if (absId != 11 && absId != 13 && absId != 22)
       continue;
-
-    printf("  adding it to outparticles \n");
 
     _outParticles.push_back(part);
   }
