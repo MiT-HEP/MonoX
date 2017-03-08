@@ -451,7 +451,7 @@ def purity(sample, selector):
         genPhotonSel.setMaxEta(1.7)
 
         # GenParticles not being filled currently
-        # selector.addOperator(genPhotonSel, 1)
+        selector.addOperator(genPhotonSel, 1)
         
         photonSel.setIgnoreDecision(True)        
         selector.findOperator('HighPtJetSelection').setIgnoreDecision(True)
@@ -1390,7 +1390,7 @@ def kfactor(generator):
         corr = qcdSource.Get(sname)
 
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
-        qcd.setPhotonType(ROOT.PhotonPtWeight.kParton) # switch back to kPostShower once genParticles is fixed
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
 
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sname + '_' + variation)
