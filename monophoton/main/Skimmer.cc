@@ -46,7 +46,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   TString sampleName(_sampleName);
 
   panda::Event event;
-  panda::GenParticleCollection genParticles;
+  panda::GenParticleCollection genParticles("genParticles");
   panda::EventMonophoton skimmedEvent;
 
   panda::utils::BranchList branchList = {
