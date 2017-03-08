@@ -59,8 +59,11 @@ if len(args.filesets) == 1 and not args.outSuffix:
 import ROOT
 
 ROOT.gSystem.Load(config.libobjs)
+ROOT.gSystem.Load(config.libutils)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
+
+print config.dataformats
 
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 try:
@@ -125,11 +128,18 @@ for sample in samples:
         selector.setUseTimers(args.timer)
         skimmer.addSelector(selector)
 
-    tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
+    tmpDir = '/local/' + os.environ['USER'] + '/' + sample.name
     try:
         os.makedirs(tmpDir)
     except OSError:
         pass
+
+    if not os.path.isdir(tmpDir):
+        tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
+        try:
+            os.makedirs(tmpDir)
+        except OSError:
+            pass
 
     for path in sample.files():
         if not os.path.exists(path):
@@ -231,11 +241,18 @@ if args.split and not args.mergeOnly:
 if args.mergeOnly and not args.split:    
     print 'Merging the split skims.'
 
-    mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
+    mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
     try:
         os.makedirs(mergeDir)
     except OSError:
         pass
+
+    if not os.path.isdir(mergeDir):
+        mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
+        try:
+            os.makedirs(mergeDir)
+        except OSError:
+            pass
         
     for sample in samples:
         fslist = sample.filesets()
@@ -256,7 +273,9 @@ if args.mergeOnly and not args.split:
             for fileset in fslist:
                 mpadd.addInputPath(splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root')
 
-            mpadd.merge(mergeDir + '/' + outName)
+            mergePath = mergeDir + '/' + outName
+
+            mpadd.merge(mergePath)
     
             shutil.copy(mergePath, config.skimDir)
             os.remove(mergePath)
