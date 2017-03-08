@@ -14,7 +14,8 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
-#include <ctime>
+#include <chrono>
+typedef std::chrono::steady_clock SClock; 
 
 unsigned TIMEOUT(300);
 
@@ -28,6 +29,7 @@ public:
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
+  void skipPhotonSkim() { doPhotonSkim_ = false; }
   bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
   // only copy prompt final state photons and leptons
   void copyGenParticles(panda::GenParticleCollection const&, panda::GenParticleCollection&);
@@ -36,6 +38,7 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelector*> selectors_{};
   TString commonSelection_{};
+  bool doPhotonSkim_{true};
   GoodLumiFilter* goodLumiFilter_{};
 };
 
@@ -80,7 +83,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   };
 
   // will take care of genParticles individually
-  branchList += {"!genParticles"};
+  // branchList += {"!genParticles"};
 
   for (auto* sel : selectors_) {
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
@@ -94,7 +97,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
   long iEntryGlobal(0);
-  clock_t now(clock());
+  auto now = SClock::now();
+  auto start = now;
 
   for (auto& path : paths_) {
     TFile* source(0);
@@ -146,9 +150,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         break;
 
       if (iEntryGlobal % 10000 == 1) {
-        clock_t past(now);
-        now = clock();
-        std::cout << " " << iEntryGlobal << " (took " << ((now - past) / double(CLOCKS_PER_SEC)) << " s)" << std::endl;
+        auto past = now;
+        now = SClock::now();
+        std::cout << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
       }
 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
@@ -158,9 +162,13 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
 
       if (!event.isData) {
-        genParticles.getEntry(*input, entryNumber);
+	printf ("before the get entry %i \n", entryNumber);
+        int temp = genParticles.getEntry(*input, entryNumber);
+	printf("%i genParticles.size() = %d \n", temp, genParticles.size());
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
+      
+      // break;
 
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
@@ -168,12 +176,17 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
     delete source;
 
+    // break;
+
     if (iEntryGlobal == _nEntries + 1)
       break;
   }
 
   for (auto* sel : selectors_)
     sel->finalize();
+
+  now = SClock::now();
+  std::cout << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
 }
 
 
@@ -186,7 +199,7 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
       break;
   }
-  if (iPh == _event.photons.size())
+  if (doPhotonSkim_ && iPh == _event.photons.size())
     return false;
 
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
@@ -315,13 +328,21 @@ Skimmer::copyGenParticles(panda::GenParticleCollection const& _inParticles, pand
   // kIsPrompt && kIsLastCopy
   unsigned short mask(1 | (1 << 13));
 
-  for (auto& part : _inParticles) {
+  printf("copying %u gen particles \n", _inParticles.size());
+  
+  for (unsigned iP(0); iP != _inParticles.size(); ++iP) {
+    auto& part(_inParticles[iP]);
+    printf("got a gen particle \%d n", iP);
     if ((part.statusFlags & mask) != mask)
       continue;
 
     unsigned absId(std::abs(part.pdgid));
+    printf(" it's a prompt final state with pdgid %d \n ", absId);
+
     if (absId != 11 && absId != 13 && absId != 22)
       continue;
+
+    printf("  adding it to outparticles \n");
 
     _outParticles.push_back(part);
   }

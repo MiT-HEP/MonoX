@@ -15,12 +15,10 @@ defaultSelectors = {
     'hfake': selectors.hadProxy,
     'hfakeTight': selectors.hadProxyTight,
     'hfakeLoose': selectors.hadProxyLoose,
-    'hfakeVLoose': selectors.hadProxyVLoose,
     'purity': selectors.purity,
     'purityNom': selectors.purityNom,
     'purityTight': selectors.purityTight,
     'purityLoose': selectors.purityLoose,
-    'purityVLoose': selectors.purityVLoose,
     'gjets': selectors.gjets,
     'halo': selectors.halo,
     'haloMIP': selectors.haloMIP,
@@ -72,7 +70,7 @@ data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'hfakeVLoose', 'purity', 'purityTight', 'purityLoose', 'purityVLoose', 'gjets'] 
+mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'gjets'] 
 mc_sig = ['monoph', 'purity'] # , 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
@@ -109,12 +107,22 @@ selectors = {
     'sel-16f-r': defaults(data_sel),
     'sel-16g-r': defaults(data_sel),
     'sel-16h': defaults(data_sel),
-    # MC for signal region
-    'znng-130': applyMod(selectors.kfactor, mc_sig),
-    'wnlg-130': applyMod(selectors.kfactor, mc_sig + mc_lep),
-    'zllg-130': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
-    'wglo': applyMod(selectors.wglo, mc_cand + mc_lep),
-    'wglo-500': defaults(mc_cand + mc_lep),
+    # MC
+    'znng': defaults(mc_sig),
+    'znng-130': defaults(mc_sig),
+    'zllg': defaults(mc_sig + mc_lep + mc_dilep),
+    'zllg-130': defaults(mc_sig + mc_lep + mc_dilep),
+    'wnlg': defaults(mc_sig + mc_lep),
+    'wnlg-130': defaults(mc_sig + mc_lep),
+    'wnlg-500': defaults(mc_sig + mc_lep),
+    'wglo': applyMod(selectors.kfactor, mc_cand + mc_lep),
+    'wglo-130': applyMod(selectors.kfactor, mc_cand + mc_lep),
+    'wglo-500': applyMod(selectors.kfactor, mc_cand + mc_lep),
+    'znng-40-o': applyMod(selectors.kfactor, mc_sig),
+    'znng-130-o': applyMod(selectors.kfactor, mc_sig),
+    'zllg-130-o': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
+    'wnlg-40-o': applyMod(selectors.kfactor, mc_sig + mc_lep),
+    'wnlg-130-o': applyMod(selectors.kfactor, mc_sig + mc_lep),
     'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
     'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand),
     'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand),
@@ -125,13 +133,13 @@ selectors = {
     'gj04-600': applyMod(selectors.kfactor, mc_qcd + mc_cand),
     'gg-40': defaults(mc_cand + mc_lep + mc_dilep),
     'gg-80': defaults(mc_cand + mc_lep + mc_dilep),
-    'tt': defaults(mc_cand + mc_lep + mc_dilep),
-    'tg': defaults(mc_cand + mc_lep),
     'ttg': defaults(mc_cand + mc_lep + mc_dilep),
-    'wwg': defaults(mc_cand + mc_lep + mc_dilep),
+    'tg': defaults(mc_cand + mc_lep),
     'ww': defaults(mc_cand + mc_lep + mc_dilep),
     'wz': defaults(mc_cand + mc_lep + mc_dilep),
     'zz': defaults(mc_cand + mc_lep + mc_dilep),
+    'tt': defaults(mc_cand + mc_lep + mc_dilep),
+    'wlnu': wlnu,
     'wlnu-100': wlnu,
     'wlnu-200': wlnu,
     'wlnu-400': wlnu,
@@ -159,4 +167,5 @@ selectors = {
 # all the rest are mc_sig
 for sname in allsamples.names():
     if sname not in selectors:
+        # print 'Sample ' + sname + ' not found in selectors dict. Appyling mc_sig.'
         selectors[sname] = defaults(mc_sig)
