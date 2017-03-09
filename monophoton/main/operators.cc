@@ -577,18 +577,46 @@ Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEve
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
+    
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
+	pair = (col[0]->at(i1).p4() + col[0]->at(i2).p4());
+	mass_ = pair.M();
+	
+	if (mass_ > min_ && mass_ < max_) {
+	  pt_ = pair.Pt();
+	  eta_ = pair.Eta();
+	  phi_ = pair.Phi();
 
-    pair = (col[0]->at(0).p4() + col[0]->at(1).p4());
+	  return true; 
+	}
+      }
+    }
   }
-  else
-    pair = (col[0]->at(0).p4() + col[1]->at(0).p4());
-
-  mass_ = pair.M();
+  else { 
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
+	pair = (col[0]->at(i1).p4() + col[1]->at(i2).p4());
+	mass_ = pair.M();
+	
+	if (mass_ > min_ && mass_ < max_) {
+	  pt_ = pair.Pt();
+	  eta_ = pair.Eta();
+	  phi_ = pair.Phi();
+	  
+	  return true; 
+	}
+      }
+    }
+  }
+  
+  // mass_ = pair.M();
   pt_ = pair.Pt();
   eta_ = pair.Eta();
   phi_ = pair.Phi();
 
-  return mass_ > min_ && mass_ < max_;
+  // return mass_ > min_ && mass_ < max_;
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -628,12 +656,28 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (col[0]->size() == 1)
       return false;
 
-    oppSign_ = ((col[0]->at(0).charge == col[0]->at(1).charge) ? 0 : 1);
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
+	oppSign_ = ((col[0]->at(i1).charge == col[0]->at(i2).charge) ? 0 : 1);
+		
+	if (oppSign_)
+	  return true;
+      }
+    }
   }
-  else
-    oppSign_ = ((col[0]->at(0).charge == col[1]->at(0).charge) ? 0 : 1);
+  else {
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
+	oppSign_ = ((col[0]->at(0).charge == col[1]->at(0).charge) ? 0 : 1);
+	    
+	if (oppSign_)
+	  return true; 
+      }
+    }
+  }
 
-  return oppSign_;
+  // return oppSign_;
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -994,7 +1038,14 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       _outEvent.electrons.push_back(electron);
   }
 
-  return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+  if (strictMu_ && strictEl_)
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+  else if (strictMu_ && !strictEl_)
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
+  else if (!strictMu_ && strictEl_)
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_;
+  else
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_;
 }
 
 //--------------------------------------------------------------------
@@ -1080,23 +1131,15 @@ GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventMon
       continue;
     */
 
-    printf("gen part %d --> pdgid: %2i pt: %7.2f eta: %5.2f \n", iP, part.pdgid, part.pt(), part.eta());
-
     if (std::abs(part.pdgid) != pdgId_)
       continue;
-
-    printf(" pass pdgid \n");
 
     if (std::abs(part.eta()) > maxEta_ || std::abs(part.eta()) < minEta_ )
       continue;
 
-    printf(" pass eta \n");
-
     if (part.pt() < minPt_ || part.pt() > maxPt_)
       continue;
 
-    printf(" pass pt \n");
-    
     return true;
   }
 

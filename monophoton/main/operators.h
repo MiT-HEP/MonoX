@@ -425,9 +425,13 @@ class LeptonSelection : public Cut {
  LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
 
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
+  void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
+  void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
+  bool strictMu_{true};
+  bool strictEl_{true};
   unsigned nEl_{0};
   unsigned nMu_{0};
 };
