@@ -19,9 +19,8 @@ if basedir not in sys.path:
 import config
 
 ROOT.gSystem.Load(config.libobjs)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 
-#ROOT.gROOT.LoadMacro(thisdir + '/jer.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
 ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
 

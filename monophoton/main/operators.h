@@ -1,10 +1,7 @@
 #ifndef operators_h
 #define operators_h
 
-// #include "PandaTree/Objects/interface/Event.h"
-#include "PandaTree/Objects/interface/EventMonophoton.h"
-
-// #include "SimpleTreeUtils.h"
+#include "Objects/interface/EventMonophoton.h"
 
 #include "TH1.h"
 #include "TH2.h"
