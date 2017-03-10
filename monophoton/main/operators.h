@@ -419,9 +419,13 @@ class LeptonSelection : public Cut {
 
   void addBranches(TTree& skimTree) override;
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
+  void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
+  void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
  protected:
   bool pass(simpletree::Event const&, simpletree::Event&) override;
 
+  bool strictMu_{true};
+  bool strictEl_{true};
   unsigned nEl_{0};
   unsigned nMu_{0};
 

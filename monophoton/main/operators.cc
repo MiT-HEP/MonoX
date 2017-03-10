@@ -399,8 +399,6 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
     if (!electron.loose || electron.pt < 10.)
       continue;
 
-    _outEvent.electrons.push_back(electron);
-
     bool overlap(false);
     for (auto* col : cols) {
       unsigned iP(0);
@@ -414,6 +412,9 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
         break;
       }
     }
+    
+    _outEvent.electrons.push_back(electron);
+
     if (!overlap)
       hasNonOverlapping = true;
   }
@@ -438,10 +439,8 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-    if (!muon.loose || muon.pt < 10.)
+    if ( !(muon.loose && muon.pt > 10. && muon.combRelIso < 0.25))
       continue;
-
-    _outEvent.muons.push_back(muon);
 
     bool overlap(false);
     for (auto* col : cols) {
@@ -456,6 +455,9 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
         break;
       }
     }
+    
+    _outEvent.muons.push_back(muon);
+
     if (!overlap)
       hasNonOverlapping = true;
   }
@@ -563,16 +565,38 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (!col[0] || !col[1] || col[0]->size() == 0 || col[1]->size() == 0)
     return false;
 
+  simpletree::LorentzVectorM pair;
+  pair.SetCoordinates(0., 0., 0., 0.);
+
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
-
-    mass_ = (col[0]->at(0).p4() + col[0]->at(1).p4()).M();
+    
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
+	pair = (col[0]->at(i1).p4() + col[0]->at(i2).p4());
+	mass_ = pair.M();
+	
+	if (mass_ > min_ && mass_ < max_) {
+	  return true; 
+	}
+      }
+    }
   }
-  else
-    mass_ = (col[0]->at(0).p4() + col[1]->at(0).p4()).M();
-
-  return mass_ > min_ && mass_ < max_;
+  else { 
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
+	pair = (col[0]->at(i1).p4() + col[1]->at(i2).p4());
+	mass_ = pair.M();
+	
+	if (mass_ > min_ && mass_ < max_) {
+	  return true; 
+	}
+      }
+    }
+  }
+  
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -611,13 +635,28 @@ OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
-
-    oppSign_ = ((col[0]->at(0).positive == col[0]->at(1).positive) ? 0 : 1);
+   
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
+	oppSign_ = ((col[0]->at(i1).positive == col[0]->at(i2).positive) ? 0 : 1);
+	
+	if (oppSign_)
+	  return true;
+      }
+    }
   }
-  else
-    oppSign_ = ((col[0]->at(0).positive == col[1]->at(0).positive) ? 0 : 1);
-
-  return oppSign_;
+  else {
+    for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
+      for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
+	oppSign_ = ((col[0]->at(0).positive == col[1]->at(0).positive) ? 0 : 1);
+	
+	if (oppSign_)
+	  return true; 
+      }
+    }
+  }
+  
+  return false;
 }
 
 //--------------------------------------------------------------------
@@ -932,7 +971,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   };
 
   for (auto& muon : _event.muons) {
-    if (nMu_ != 0 && muon.tight && muon.pt > 30.)
+    if (nMu_ != 0 && muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)
       foundTight = true;
     
     bool overlap(false);
@@ -952,7 +991,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     if (overlap)
       continue;
     
-    if (muon.loose && muon.pt > 10.)
+    if (muon.loose && muon.pt > 10. && muon.combRelIso < 0.25)
       _outEvent.muons.push_back(muon);
   }
 
@@ -1026,7 +1065,14 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     z.mass = pair.M();
   }
 
-  return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+  if (strictMu_ && strictEl_)
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+  else if (strictMu_ && !strictEl_)
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_;
+  else if (!strictMu_ && strictEl_)
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
+  else
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_;
 }
 
 //--------------------------------------------------------------------
