@@ -78,8 +78,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     "!photonMet",
     "!hfMet",
     "!genMet",
-    "!metMuOnlyFix",
-    "!metNoFix",
+    // "!metMuOnlyFix",
+    // "!metNoFix",
     "!recoil"
   };
 
