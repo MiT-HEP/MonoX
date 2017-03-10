@@ -107,8 +107,8 @@ def monophotonBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
-#    if sample.data:
-#        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    # if sample.data:
+    #     selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     operators = [
         'MetFilters',
@@ -171,8 +171,8 @@ def purityBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
-#    if sample.data:
-#        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    # if sample.data:
+    #     selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     operators = [
         'MetFilters',
@@ -219,8 +219,8 @@ def leptonBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
-#    if sample.data:
-#        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    # if sample.data:
+    #     selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     operators = [
         'MetFilters',
@@ -998,7 +998,7 @@ def muonBase(sample, selector):
 def dielectron(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
-    selector.findOperator('LeptonSelection').setStrictEl(False)
+    # selector.findOperator('LeptonSelection').setStrictEl(False)
 
     dielMass = ROOT.Mass()
     dielMass.setPrefix('diel')
@@ -1037,7 +1037,7 @@ def dielectron(sample, selector):
 def dielectronHadProxy(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
-    selector.findOperator('LeptonSelection').setStrictEl(False)
+    # selector.findOperator('LeptonSelection').setStrictEl(False)
 
     dielMass = ROOT.Mass()
     dielMass.setPrefix('diel')
@@ -1137,7 +1137,7 @@ def monoelectronHadProxy(sample, selector):
 def dimuon(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
-    selector.findOperator('LeptonSelection').setStrictMu(False)
+    # selector.findOperator('LeptonSelection').setStrictMu(False)
 
     dimuMass = ROOT.Mass()
     dimuMass.setPrefix('dimu')
@@ -1175,7 +1175,7 @@ def dimuon(sample, selector):
 def dimuonHadProxy(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
-    selector.findOperator('LeptonSelection').setStrictMu(False)
+    # selector.findOperator('LeptonSelection').setStrictMu(False)
 
     dimuMass = ROOT.Mass()
     dimuMass.setPrefix('dimu')
