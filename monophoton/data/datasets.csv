@@ -21,8 +21,8 @@ smu-16f-r        "SingleMuon (2016F)"                3114.3               641065
 smu-16g-r        "SingleMuon (2016G)"                7441.9               145737267  -                    filefi/046           SingleMuon+Run2016G-23Sep2016-v1+AOD
 smu-16h          "SingleMuon (2016H)"                8711.5               170144309  -                    filefi/046           SingleMuon+Run2016H-PromptReco-v1+AOD
 ### SM MC
-gg-40            "#gamma#gamma"                      134.1                4967647    3.75508860251e+06    filefi/046           DiPhotonJetsBox_M40_80-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
-gg-80            "#gamma#gamma"                      134.1                56731811   2.68307417630e+07    filefi/046           DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
+gg-40            "#gamma#gamma"                      301.4                4967647    3.75508860251e+06    filefi/046           DiPhotonJetsBox_M40_80-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
+gg-80            "#gamma#gamma"                      83.47                56731811   2.68307417630e+07    filefi/046           DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 gj-100           "#gamma+jet"                        9226                 5096995    5096995.0            filefi/046           GJets_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v2+AODSIM
 gj-200           "#gamma+jet"                        2300                 9635905    9.63590399558e+06    filefi/046           GJets_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
 gj-400           "#gamma+jet"                        277.4                2320498    2320498.0            filefi/046           GJets_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISpring16DR80-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v1+AODSIM
