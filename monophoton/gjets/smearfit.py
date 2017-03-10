@@ -59,17 +59,21 @@ constant = space.factory('expr::constant("@0", {{sigmar}})')
 linear = space.factory('expr::linear("@0*(1. + @1*@2)", {{sigmar, alpha, met}})')
 quadratic = space.factory('expr::quadratic("@0*(1. + @1*@3 + @2*@3*@3)", {{sigmar, alpha, beta, met}})')
 
+
+
 sfuncs = { 
     # 'landau' : space.factory('Landau::landau(met, mean, constant)'),
     # 'gaussConst' : space.factory('Gaussian::gaussConst(met, mean, constant)'),
     # 'gaussLin' : space.factory('Gaussian::gaussLin(met, mean, linear)'),
     # 'gaussQuad' : space.factory('Gaussian::gaussQuad(met, mean, quadratic)'),
     # 'rayConst' : space.factory("EXPR::rayConst('((@0 / @1**2) * TMath::Exp(-1. * (@0 / @1)**2))', met, constant)"),
-    'rayLin' : space.factory("EXPR::rayLin('((@0 / (@1 + @2*@0)**2) * TMath::Exp(-1. * (@0 / (@1 + @2*@0))**2))', met, sigmar, alpha)"),
+    # 'rayLin' : space.factory("EXPR::rayLin('((@0 / (@1 + @2*@0)**2) * TMath::Exp(-1. * (@0 / (@1 + @2*@0))**2))', met, sigmar, alpha)"),
     # 'rayQuad' : space.factory("EXPR::rayQuad('((@0 / (@1*(1. + @2*@0 + @3*@0**2))**2) * TMath::Exp(-1. * (@0 / (@1*(1. + @2*@0 + @3*@0**2)))**2))', met, sigmar, alpha, beta)")
     # 'rayMeanConst' : space.factory("EXPR::rayMeanConst('@0*TMath::Exp(-1. * ((@0 - @1) / @2)**2)', met, mean, constant)"),
     # 'rayMeanLin' : space.factory("EXPR::rayMeanLin('@0*TMath::Exp(-1. * ((@0 - @1) / (@2*(1. + @3*@0))**2))', met, mean, sigmar, alpha)"),
     # 'rayMeanQuad' : space.factory("EXPR::rayMeanQuad('@0*TMath::Exp(-1. * ((@0 - @1) / (@2*(1. + @3*@0 + @4*@0**2))**2))', met, mean, sigmar, alpha, beta)")
+    'doubleGauss' : space.factory("SUM::doubleGauss(g1frac[0.5, 0., 1.]*Gaussian::gauss1(met, mean1[0., 10.], sigma1[0., 15.]), Gaussian::gauss2(met, mean2[0., 50.], sigma2[0., 100.]))")
+    'rayGauss' : space.factory("SUM::rayGauss(g1frac[0.5, 0., 1.]*Gaussian::gauss1(met, mean1[0., 10.], sigma1[0., 15.]), EXPR::rayleigh('((@0 / (@1 + @2*@0)**2) * TMath::Exp(-1. * (@0 / (@1 + @2*@0))**2))', met, sigmar, alpha))")
            }
 
 for sname in sorted(sfuncs.keys()):
