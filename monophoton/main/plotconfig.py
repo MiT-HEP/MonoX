@@ -84,7 +84,7 @@ def getConfig(confName):
             # SampleSpec('dmv-2000-1', 'DM2000', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
         ]
         config.bkgGroups = [
-            # GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
@@ -192,8 +192,9 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            # GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('zgo', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
@@ -267,8 +268,8 @@ def getConfig(confName):
         config.fullSelection = ''
         config.bkgGroups = [
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            # GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
@@ -347,9 +348,10 @@ def getConfig(confName):
         config.bkgGroups = [
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            # GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('wgo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
@@ -405,7 +407,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             # group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        # config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         # config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
@@ -427,8 +429,8 @@ def getConfig(confName):
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            # GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
+            GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
