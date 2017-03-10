@@ -265,7 +265,7 @@ if args.mergeOnly and not args.split:
 
             mergePath = mergeDir + '/' + outName
 
-            proc = Popen([padd, '-f', mergePath] + [splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
+            proc = Popen([padd, mergePath] + [splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
             out, err = proc.communicate()
             print out.strip()
             print err.strip()
@@ -323,7 +323,7 @@ if args.mergeOnly and args.split:
             clusterId, jobStatus = line.split()[:2]
             if jobStatus == '5':
                 sname, dummy, selname = line.split()[4:] # [2] is the executable
-                if fileset in heldJobs[sname]:
+                if selname in heldJobs[sname]:
                     continue
 
                 print 'Job %s %s is held' % (sname, selname)
