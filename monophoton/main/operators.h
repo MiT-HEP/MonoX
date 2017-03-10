@@ -311,10 +311,10 @@ class Mass : public Cut {
   TString prefix_{"generic"};
   Collection col_[2]{nCollections, nCollections};
 
-  float mass_{0.};
-  float pt_{0.};
-  float eta_{0.};
-  float phi_{0.};
+  float mass_{-1.};
+  float pt_{-1.};
+  float eta_{-1.};
+  float phi_{-1.};
   double min_{0.};
   double max_{14000.};
 };

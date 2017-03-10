@@ -62,11 +62,13 @@ HLTFilter::initialize(panda::EventMonophoton& _event)
 bool
 HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  for (auto token : tokens_) {
+  for (unsigned iT(0); iT != tokens_.size(); ++iT) {
+    auto& token(tokens_[iT]);
+
     if (_event.triggerFired(token))
       return true;
   }
-
+  
   return false;
 }
 
@@ -547,6 +549,9 @@ bool
 Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   mass_ = -1.;
+  pt_ = -1.;
+  eta_ = -1.;
+  phi_ = -1.;
 
   panda::ParticleCollection const* col[2]{};
 
@@ -1041,9 +1046,9 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   if (strictMu_ && strictEl_)
     return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
   else if (strictMu_ && !strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
-  else if (!strictMu_ && strictEl_)
     return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_;
+  else if (!strictMu_ && strictEl_)
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
   else
     return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_;
 }
