@@ -439,7 +439,7 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-    if ( !(muon.loose && muon.pt > 10. && muon.combRelIso < 0.25))
+    if ( !muon.loose || muon.pt < 10.)
       continue;
 
     bool overlap(false);
@@ -965,6 +965,7 @@ bool
 LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   bool foundTight(false);
+  unsigned nLooseIsoMuons(0);
 
   std::vector<simpletree::ParticleCollection*> cols = {
     &_outEvent.photons
@@ -991,8 +992,11 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     if (overlap)
       continue;
     
-    if (muon.loose && muon.pt > 10. && muon.combRelIso < 0.25)
+    if (muon.loose && muon.pt > 10.) {
       _outEvent.muons.push_back(muon);
+      if (muon.combRelIso < 0.25)
+	nLooseIsoMuons++;
+    }
   }
 
   cols.push_back(&_outEvent.muons);
@@ -1066,13 +1070,13 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   }
 
   if (strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (strictMu_ && !strictEl_)
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_;
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (!strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
   else
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_;
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
 }
 
 //--------------------------------------------------------------------
