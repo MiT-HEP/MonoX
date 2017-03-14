@@ -62,6 +62,9 @@ HLTFilter::initialize(panda::EventMonophoton& _event)
 bool
 HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
+  // make sure a trigger menu exists; will return a human readable error if not
+  _event.run.triggerMenu();
+
   for (unsigned iT(0); iT != tokens_.size(); ++iT) {
     auto& token(tokens_[iT]);
 

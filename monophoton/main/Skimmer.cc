@@ -172,6 +172,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
 
+      skimmedEvent.run.update(skimmedEvent.runNumber, *input);
+
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
     }
