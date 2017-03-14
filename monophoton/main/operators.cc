@@ -48,7 +48,7 @@ HLTFilter::initialize(panda::EventMonophoton& _event)
   Ssiz_t pos(0);
   TString path;
   UInt_t token(0);
-  
+
   printf("Triggers to add: %s \n", pathNames_.Data());
 
   while (pathNames_.Tokenize(path, pos, "_OR_")) {
@@ -982,6 +982,7 @@ bool
 LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   bool foundTight(false);
+  unsigned nLooseIsoMuons(0);
 
   std::vector<panda::ParticleCollection*> cols = {
     &_outEvent.photons
@@ -990,7 +991,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
 
-    if (nMu_ != 0 && muon.tight && muon.pt() > 30.)
+    if (nMu_ != 0 && muon.tight && muon.pt() > 30. && (muon.combIso() / muon.pt()) < 0.15)
       foundTight = true;
     
     bool overlap(false);
@@ -1010,8 +1011,11 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (overlap)
       continue;
     
-    if (muon.loose && muon.pt() > 10.)
+    if (muon.loose && muon.pt() > 10.) {
       _outEvent.muons.push_back(muon);
+      if ( (muon.combIso() / muon.pt()) < 0.25)
+	nLooseIsoMuons++;
+    }
   }
 
   cols.push_back(&_outEvent.muons);
@@ -1044,13 +1048,13 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   }
 
   if (strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_;
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (strictMu_ && !strictEl_)
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_;
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (!strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_;
+    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
   else
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_;
+    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
 }
 
 //--------------------------------------------------------------------
