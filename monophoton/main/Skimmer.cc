@@ -91,6 +91,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     sel->initialize(outputPath, skimmedEvent, !isData);
   }
 
+  // if the selectors register triggers, make sure the information is passed to the actual input event
+  event.run = skimmedEvent.run;
+
   if (goodLumiFilter_)
     std::cout << "Appyling good lumi filter." << std::endl;
 
@@ -150,9 +153,14 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     genParticles.setAddress(*genInput);
   
     long iEntry(0);
-    while (iEntryGlobal++ != _nEntries) {
+    while (iEntryGlobal != _nEntries) {
       int entryNumber(input->GetEntryNumber(iEntry++));
-      if (event.getEntry(*input, entryNumber) <= 0)
+      if (entryNumber < 0) // no more entries in this tree
+        break;
+
+      ++iEntryGlobal;
+
+      if (event.getEntry(*input, entryNumber) <= 0) // I/O error
         break;
 
       if (iEntryGlobal % 10000 == 1) {
@@ -172,15 +180,13 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
 
-      skimmedEvent.run.update(skimmedEvent.runNumber, *input);
-
       for (auto* sel : selectors_)
         sel->selectEvent(skimmedEvent);
     }
 
     delete source;
 
-    if (iEntryGlobal == _nEntries + 1)
+    if (iEntryGlobal == _nEntries)
       break;
   }
 

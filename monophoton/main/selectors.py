@@ -107,8 +107,8 @@ def monophotonBase(sample, selector):
     if type(selector) is str: # this is a name for the selector
         selector = ROOT.EventSelector(selector)
 
-    # if sample.data:
-    #     selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     operators = [
         'MetFilters',
