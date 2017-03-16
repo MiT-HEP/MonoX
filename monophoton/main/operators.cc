@@ -63,6 +63,10 @@ bool
 HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   // make sure a trigger menu exists; will return a human readable error if not
+  std::cout << "event.runNumber " << _event.runNumber << std::endl;
+  std::cout << "event.run.runNumber " << _event.run.runNumber << std::endl;
+  std::cout << "event.run.hltMenu " << _event.run.hltMenu << std::endl;
+  std::cout << "event.run.hlt.menu " << _event.run.hlt.menu << std::endl;
   _event.run.triggerMenu();
 
   for (unsigned iT(0); iT != tokens_.size(); ++iT) {
