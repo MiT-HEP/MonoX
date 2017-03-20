@@ -310,7 +310,10 @@ class Mass : public Cut {
   TString prefix_{"generic"};
   Collection col_[2]{nCollections, nCollections};
 
-  float mass_{0.};
+  float mass_{-1.};
+  float pt_{-1.};
+  float eta_{-1.};
+  float phi_{-1.};
   double min_{0.};
   double max_{14000.};
 };
@@ -415,9 +418,8 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
- LeptonSelection(char const* name = "LeptonSelection") : Cut(name), zs_("z") {}
+ LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
 
-  void addBranches(TTree& skimTree) override;
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
@@ -428,9 +430,6 @@ class LeptonSelection : public Cut {
   bool strictEl_{true};
   unsigned nEl_{0};
   unsigned nMu_{0};
-
-  simpletree::ParticleMCollection zs_;
-  bool zOppSign_{0};
 };
 
 class HighMet : public Cut {

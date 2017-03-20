@@ -396,6 +396,7 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
   bool hasNonOverlapping(false);
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
+
     if (!electron.loose || electron.pt < 10.)
       continue;
 
@@ -433,12 +434,12 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
   simpletree::ParticleCollection* cols[] = {
     &_outEvent.photons,
-    // &_outEvent.electrons
   };
 
   bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
+
     if ( !muon.loose || muon.pt < 10.)
       continue;
 
@@ -462,7 +463,7 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
     }
   }
 
-  return !hasNonOverlapping;
+ return !hasNonOverlapping;
 }
 
 //--------------------------------------------------------------------
@@ -537,12 +538,18 @@ void
 Mass::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch(prefix_ + ".mass", &mass_, "mass");
+  _skimTree.Branch(prefix_ + ".pt", &pt_, "pt");
+  _skimTree.Branch(prefix_ + ".eta", &eta_, "eta");
+  _skimTree.Branch(prefix_ + ".phi", &phi_, "phi");
 }
 
 bool
 Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 {
   mass_ = -1.;
+  pt_ = -1.;
+  eta_ = -1.;
+  phi_ = -1.;
 
   simpletree::ParticleCollection const* col[2]{};
 
@@ -581,6 +588,10 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 	mass_ = pair.M();
 	
 	if (mass_ > min_ && mass_ < max_) {
+	  pt_ = pair.Pt();
+	  eta_ = pair.Eta();
+	  phi_ = pair.Phi();
+
 	  return true; 
 	}
       }
@@ -593,11 +604,20 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 	mass_ = pair.M();
 	
 	if (mass_ > min_ && mass_ < max_) {
+	  pt_ = pair.Pt();
+	  eta_ = pair.Eta();
+	  phi_ = pair.Phi();
+	  
 	  return true; 
 	}
       }
     }
   }
+
+  mass_ = pair.M();
+  pt_ = pair.Pt();
+  eta_ = pair.Eta();
+  phi_ = pair.Phi();
   
   return false;
 }
@@ -954,15 +974,6 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 // LeptonSelection
 //--------------------------------------------------------------------
-void
-LeptonSelection::addBranches(TTree& _skimTree)
-{
-  if ((nMu_ + nEl_) == 2) {
-    zs_.book(_skimTree);
-    _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
-  }
-}
-
 
 bool
 LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
@@ -974,12 +985,9 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     &_outEvent.photons
   };
 
-  std::vector<unsigned> candMuons;
-  std::vector<unsigned> candElectrons;
-
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-    // for (auto& muon : _event.muons) {
+
     if (nMu_ != 0 && muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)
       foundTight = true;
     
@@ -1001,16 +1009,17 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
       continue;
     
     if (muon.loose && muon.pt > 10.) {
-      candMuons.push_back(iM);
-      // _outEvent.muons.push_back(muon);
-      // if (muon.combRelIso < 0.25)
-      // nLooseIsoMuons++;
+      _outEvent.muons.push_back(muon);
+      if (muon.combRelIso < 0.25)
+	nLooseIsoMuons++;
     }
   }
 
+  cols.push_back(&_outEvent.muons);
+
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
-    // for (auto& electron : _event.electrons) {
+
     if (nEl_ != 0 && electron.tight && electron.pt > 30.)
       foundTight = true;
 
@@ -1032,97 +1041,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
       continue;
    
     if (electron.loose && electron.pt > 10.)
-      candElectrons.push_back(iE);
-    // _outEvent.electrons.push_back(electron);
-  }
-
-
-  unsigned nOverlaps(0);
-  // clean electrons and muons in the crazy way that Wisconsin does
-  for (unsigned iM(0); iM != candMuons.size(); ++iM) {
-    auto& muon(_event.muons[candMuons[iM]]);
-    
-    for (unsigned iE(0); iE != candElectrons.size(); ++iE) {
-      auto& electron(_event.electrons[candElectrons[iE]]);
-
-      if (muon.dR2(electron) < 0.25) {
-
-	if (nEl_ > nMu_ && (electron.tight && electron.pt > 30.) && !(muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)) {
-	  nOverlaps++;
-	  printf("electron %d erasing muon %d in event %d:%d:%d \n", iE, iM, _event.run, _event.lumi, _event.event);
-	  printf("electron %d matched to %i \n", iE, electron.matchedGen);
-	  printf("muon     %d matched to %i \n", iM, muon.matchedGen);
-	  // candMuons.erase(std::remove(candMuons.begin(), candMuons.end(), iM), candMuons.end());
-	}
-	else {
-	  nOverlaps++;
-	  // printf("muon %d erasing electron %d in event %d \n", iM, iE, _event.event);
-	  // candElectrons.erase(std::remove(candElectrons.begin(), candElectrons.end(), iE), candElectrons.end());
-	}
-      }
-    }
-  }
-
-  if (nOverlaps > 1)
-    printf("nOverlaps %d \n", nOverlaps);
-
-  // push back muons and electrons to outEvent
-  for (unsigned iM : candMuons) {
-    auto& muon(_event.muons[iM]);
-    
-    if (muon.combRelIso < 0.25)
-      nLooseIsoMuons++;
-    
-    _outEvent.muons.push_back(muon);
-  }
-
-  for (unsigned iE : candElectrons) {
-    auto& electron(_event.electrons[iE]);
-    
-    _outEvent.electrons.push_back(electron);
-  }
-
-  zs_.clear();
-  simpletree::LorentzVectorM pair;
-  pair.SetCoordinates(0., 0., 0., 0.);
-
-  if (nMu_ == 2) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    pair = _outEvent.muons[0].p4() + _outEvent.muons[1].p4();
-    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.muons[1].positive) ? 0 : 1);
-    
-    z.pt = pair.Pt();
-    z.eta = pair.Eta();
-    z.phi = pair.Phi();
-    z.mass = pair.M();
-  }
-
-  else if (nEl_ == 2) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    pair = _outEvent.electrons[0].p4() + _outEvent.electrons[1].p4();
-    zOppSign_ = ( (_outEvent.electrons[0].positive == _outEvent.electrons[1].positive) ? 0 : 1);
-    
-    z.pt = pair.Pt();
-    z.eta = pair.Eta();
-    z.phi = pair.Phi();
-    z.mass = pair.M();
-  }
-
-  else if (nMu_ == 1 && nEl_ == 1) {
-    // cannot push back here; resize and use the last element
-    zs_.resize(zs_.size() + 1);
-    auto& z(zs_.back());
-    pair = _outEvent.muons[0].p4() + _outEvent.electrons[0].p4();
-    zOppSign_ = ( (_outEvent.muons[0].positive == _outEvent.electrons[0].positive) ? 0 : 1);
-    
-    z.pt = pair.Pt();
-    z.eta = pair.Eta();
-    z.phi = pair.Phi();
-    z.mass = pair.M();
+      _outEvent.electrons.push_back(electron);
   }
 
   if (strictMu_ && strictEl_)
