@@ -1125,7 +1125,7 @@ def dielectron(sample, selector):
 def dielectronHadProxy(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
-    selector.findOperator('LeptonSelection').setStrictEl(False)
+    # selector.findOperator('LeptonSelection').setStrictEl(False)
 
     dielMass = ROOT.Mass()
     dielMass.setPrefix('diel')
@@ -1263,7 +1263,7 @@ def dimuon(sample, selector):
 def dimuonHadProxy(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
-    selector.findOperator('LeptonSelection').setStrictEl(False)
+    # selector.findOperator('LeptonSelection').setStrictEl(False)
 
     dimuMass = ROOT.Mass()
     dimuMass.setPrefix('dimu')
