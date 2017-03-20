@@ -63,10 +63,6 @@ bool
 HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   // make sure a trigger menu exists; will return a human readable error if not
-  std::cout << "event.runNumber " << _event.runNumber << std::endl;
-  std::cout << "event.run.runNumber " << _event.run.runNumber << std::endl;
-  std::cout << "event.run.hltMenu " << _event.run.hltMenu << std::endl;
-  std::cout << "event.run.hlt.menu " << _event.run.hlt.menu << std::endl;
   _event.run.triggerMenu();
 
   for (unsigned iT(0); iT != tokens_.size(); ++iT) {
@@ -410,10 +406,9 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
   bool hasNonOverlapping(false);
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
+    
     if (!electron.loose || electron.pt() < 10.)
       continue;
-
-    _outEvent.electrons.push_back(electron);
 
     bool overlap(false);
     for (auto* col : cols) {
@@ -428,8 +423,10 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
         break;
       }
     }
-    if (!overlap)
+    if (!overlap) {
+      _outEvent.electrons.push_back(electron);
       hasNonOverlapping = true;
+    }
   }
 
   return !hasNonOverlapping;
@@ -446,16 +443,14 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
 
   panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
-    &_outEvent.electrons
   };
 
   bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
+    
     if (!muon.loose || muon.pt() < 10.)
       continue;
-
-    _outEvent.muons.push_back(muon);
 
     bool overlap(false);
     for (auto* col : cols) {
@@ -470,8 +465,10 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
         break;
       }
     }
-    if (!overlap)
+    if (!overlap) {
+      _outEvent.muons.push_back(muon);
       hasNonOverlapping = true;
+    }
   }
 
   return !hasNonOverlapping;
@@ -484,35 +481,37 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
 bool
 TauVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  unsigned iTau(0);
+  panda::ParticleCollection* cols[] = {
+    &_outEvent.photons,
+    &_outEvent.muons,
+    &_outEvent.electrons
+  };
+
   bool hasNonOverlapping(false);
-  for (; iTau != _event.taus.size(); ++iTau) {
+  for (unsigned iTau(0); iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
 
-    // might not be the right iso variable
     if (!tau.decayMode || tau.isoDeltaBetaCorr > 5.)
       continue;
 
-    unsigned iE(0);
-    for (; iE != _event.electrons.size(); ++iE) {
-      auto& electron(_event.electrons[iE]);
-      if (electron.loose && tau.dR2(electron) < 0.16)
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(tau) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was a matching candidate
+        overlap = true;
         break;
+      }
     }
-    if (iE != _event.electrons.size())
-      continue;
-
-    unsigned iM(0);
-    for (; iM != _event.muons.size(); ++iM) {
-      auto& muon(_event.muons[iM]);
-      if (muon.loose && tau.dR2(muon) < 0.16)
-        break;
+    
+    if (!overlap) {
+      _outEvent.taus.push_back(tau);
+      hasNonOverlapping = true;
     }
-    if (iM != _event.muons.size())
-      continue;
-
-    _outEvent.taus.push_back(tau);
-    hasNonOverlapping = true;
   }
 
   return !hasNonOverlapping;
@@ -622,12 +621,11 @@ Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEve
     }
   }
   
-  // mass_ = pair.M();
+  mass_ = pair.M();
   pt_ = pair.Pt();
   eta_ = pair.Eta();
   phi_ = pair.Phi();
 
-  // return mass_ > min_ && mass_ < max_;
   return false;
 }
 
@@ -688,7 +686,6 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
     }
   }
 
-  // return oppSign_;
   return false;
 }
 
