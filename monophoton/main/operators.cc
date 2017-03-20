@@ -412,11 +412,11 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
         break;
       }
     }
-    
-    _outEvent.electrons.push_back(electron);
 
-    if (!overlap)
+    if (!overlap) {
+      _outEvent.electrons.push_back(electron);
       hasNonOverlapping = true;
+    }
   }
 
   return !hasNonOverlapping;
@@ -433,7 +433,7 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
   simpletree::ParticleCollection* cols[] = {
     &_outEvent.photons,
-    &_outEvent.electrons
+    // &_outEvent.electrons
   };
 
   bool hasNonOverlapping(false);
@@ -455,11 +455,11 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
         break;
       }
     }
-    
-    _outEvent.muons.push_back(muon);
 
-    if (!overlap)
+    if (!overlap) {
+      _outEvent.muons.push_back(muon);
       hasNonOverlapping = true;
+    }
   }
 
   return !hasNonOverlapping;
@@ -471,35 +471,38 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 
 bool
 TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  unsigned iTau(0);
+{ 
+  simpletree::ParticleCollection* cols[] = {
+    &_outEvent.photons,
+    &_outEvent.muons,
+    &_outEvent.electrons
+  };
+
   bool hasNonOverlapping(false);
-  for (; iTau != _event.taus.size(); ++iTau) {
+  for (unsigned iTau(0); iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
 
     if (!tau.decayMode || tau.combIso > 5.)
       continue;
 
-    unsigned iE(0);
-    for (; iE != _event.electrons.size(); ++iE) {
-      auto& electron(_event.electrons[iE]);
-      if (electron.loose && tau.dR2(electron) < 0.16)
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(tau) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was a matching candidate
+        overlap = true;
         break;
+      }
     }
-    if (iE != _event.electrons.size())
-      continue;
-
-    unsigned iM(0);
-    for (; iM != _event.muons.size(); ++iM) {
-      auto& muon(_event.muons[iM]);
-      if (muon.loose && tau.dR2(muon) < 0.16)
-        break;
+    
+    if (!overlap) {
+      _outEvent.taus.push_back(tau);
+      hasNonOverlapping = true;
     }
-    if (iM != _event.muons.size())
-      continue;
-
-    _outEvent.taus.push_back(tau);
-    hasNonOverlapping = true;
   }
 
   return !hasNonOverlapping;
@@ -971,7 +974,12 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     &_outEvent.photons
   };
 
-  for (auto& muon : _event.muons) {
+  std::vector<unsigned> candMuons;
+  std::vector<unsigned> candElectrons;
+
+  for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
+    auto& muon(_event.muons[iM]);
+    // for (auto& muon : _event.muons) {
     if (nMu_ != 0 && muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)
       foundTight = true;
     
@@ -993,15 +1001,16 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
       continue;
     
     if (muon.loose && muon.pt > 10.) {
-      _outEvent.muons.push_back(muon);
-      if (muon.combRelIso < 0.25)
-	nLooseIsoMuons++;
+      candMuons.push_back(iM);
+      // _outEvent.muons.push_back(muon);
+      // if (muon.combRelIso < 0.25)
+      // nLooseIsoMuons++;
     }
   }
 
-  cols.push_back(&_outEvent.muons);
-
-  for (auto& electron : _event.electrons) {
+  for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
+    auto& electron(_event.electrons[iE]);
+    // for (auto& electron : _event.electrons) {
     if (nEl_ != 0 && electron.tight && electron.pt > 30.)
       foundTight = true;
 
@@ -1021,9 +1030,56 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     
     if (overlap)
       continue;
-    
+   
     if (electron.loose && electron.pt > 10.)
-      _outEvent.electrons.push_back(electron);
+      candElectrons.push_back(iE);
+    // _outEvent.electrons.push_back(electron);
+  }
+
+
+  unsigned nOverlaps(0);
+  // clean electrons and muons in the crazy way that Wisconsin does
+  for (unsigned iM(0); iM != candMuons.size(); ++iM) {
+    auto& muon(_event.muons[candMuons[iM]]);
+    
+    for (unsigned iE(0); iE != candElectrons.size(); ++iE) {
+      auto& electron(_event.electrons[candElectrons[iE]]);
+
+      if (muon.dR2(electron) < 0.25) {
+
+	if (nEl_ > nMu_ && (electron.tight && electron.pt > 30.) && !(muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)) {
+	  nOverlaps++;
+	  printf("electron %d erasing muon %d in event %d:%d:%d \n", iE, iM, _event.run, _event.lumi, _event.event);
+	  printf("electron %d matched to %i \n", iE, electron.matchedGen);
+	  printf("muon     %d matched to %i \n", iM, muon.matchedGen);
+	  // candMuons.erase(std::remove(candMuons.begin(), candMuons.end(), iM), candMuons.end());
+	}
+	else {
+	  nOverlaps++;
+	  // printf("muon %d erasing electron %d in event %d \n", iM, iE, _event.event);
+	  // candElectrons.erase(std::remove(candElectrons.begin(), candElectrons.end(), iE), candElectrons.end());
+	}
+      }
+    }
+  }
+
+  if (nOverlaps > 1)
+    printf("nOverlaps %d \n", nOverlaps);
+
+  // push back muons and electrons to outEvent
+  for (unsigned iM : candMuons) {
+    auto& muon(_event.muons[iM]);
+    
+    if (muon.combRelIso < 0.25)
+      nLooseIsoMuons++;
+    
+    _outEvent.muons.push_back(muon);
+  }
+
+  for (unsigned iE : candElectrons) {
+    auto& electron(_event.electrons[iE]);
+    
+    _outEvent.electrons.push_back(electron);
   }
 
   zs_.clear();
