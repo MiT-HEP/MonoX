@@ -10,8 +10,8 @@ from datasets import allsamples
 import config
 
 argParser = ArgumentParser(description = 'Print cut flow')
-argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
 argParser.add_argument('region', metavar = 'REGION', help = 'Control/signal region name.')
+argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
 argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
 argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
@@ -57,16 +57,17 @@ cutflow = []
 if args.cutflow is None:
     if args.region == 'monoph':
         if data:
-            cutflow.append(('HLT_Photon165_HE10',))
             cutflow.append(('MetFilters',))
+            cutflow.append(('HLT_Photon165_HE10',))
         
         cutflow += [
             ('PhotonSelection',),
+            ('MuonVeto',), 
+            ('ElectronVeto',),
             ('HighMet',),
             ('PhotonMetDPhi',),
-            ('MuonVeto', 'ElectronVeto'),
             ('JetMetDPhi',),
-            ('TauVeto',)
+            # ('TauVeto',)
         ]
 
     elif args.region == 'monoel':
@@ -77,11 +78,11 @@ if args.cutflow is None:
         cutflow += [
             ('PhotonSelection',),
             ('LeptonSelection',),
+            ('RealMetCut',),
+            ('LeptonMt',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('LeptonMt',),
-            ('RealMetCut',)
         ]
 
     elif args.region == 'monomu':
@@ -92,10 +93,10 @@ if args.cutflow is None:
         cutflow += [
             ('PhotonSelection',),
             ('LeptonSelection',),
+            ('LeptonMt',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('LeptonMt',),
         ]
 
     elif args.region in ['dimu', 'diel']:
@@ -106,11 +107,11 @@ if args.cutflow is None:
         cutflow += [
             ('PhotonSelection',),
             ('LeptonSelection',),
+            ('OppositeSign',),
+            ('Mass',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('Mass',),
-            ('OppositeSign',)
         ]
 
 else:
