@@ -321,24 +321,9 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
   cutres[NHIsoLoose] = (_photon.passNHIso(0));
   cutres[PhIsoLoose] = (_photon.passPhIso(0));
 
-  for (unsigned iC(0); iC != nSelections; ++iC)
+  for (unsigned iC(0); iC != nSelections; ++iC) {
     cutRes_[iC] = cutres[iC];
-
-  // Wisconsin denominator def
-  // if (photon.passHOverE(wp_) && photon.pixelVeto && photon.sieie > 0.001 && photon.mipEnergy < 4.9 && std::abs(photon.time) < 3. &&
-  //     photon.nhIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::nhIsoCuts[0][0]) &&
-  //     photon.phIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::phIsoCuts[0][0]) &&
-  //     photon.chIso < std::min(0.2 * photon.pt, 5. * simpletree::Photon::chIsoCuts[0][0])) {
-  //   unsigned nPass(0);
-  //   if (photon.passCHIso(0))
-  //     ++nPass;
-  //   if (photon.passNHIso(0))
-  //     ++nPass;
-  //   if (photon.passPhIso(0))
-  //     ++nPass;
-
-  //   if (nPass == 3)
-  //     break;
+  }
 
   if (vetoes_.size() != 0) {
     unsigned iV(0);
