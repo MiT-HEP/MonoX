@@ -314,7 +314,7 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     // outPhoton.phIso = phIsoCore - phIsoE1S16 * outPhoton.scRawPt;
     outPhoton.nhIso = nhIsoCore - nhIsoE1S16 * outPhoton.pt() - nhIsoE2S16 * outPhoton.pt() * outPhoton.pt();
     outPhoton.phIso = phIsoCore - phIsoE1S16 * outPhoton.pt();
-
+    
     // using GED pt for syncing purposes, revert once panda is figured out
     // outPhoton.nhIsoS15 = nhIsoCore - nhIsoE1S15 * outPhoton.scRawPt - nhIsoE2S15 * outPhoton.scRawPt * outPhoton.scRawPt;
     // outPhoton.phIsoS15 = phIsoCore - phIsoE1S15 * outPhoton.scRawPt;

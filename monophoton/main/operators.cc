@@ -256,7 +256,6 @@ PhotonSelection::ptVariation(panda::XPhoton const& _photon, bool up)
 bool
 PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
     
