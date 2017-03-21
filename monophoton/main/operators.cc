@@ -291,7 +291,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     }
   }
   
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
 
   return _outEvent.photons.size() != 0;
 }
