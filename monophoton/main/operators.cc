@@ -247,14 +247,10 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
 double
 PhotonSelection::ptVariation(panda::XPhoton const& _photon, bool up)
 {
-  // photon.scRawPt not filled in test sample
-  // need to uncomment this part once it's there
   if (up)
-    // return _photon.scRawPt * 1.015;
-    return _photon.pt() * 1.015;
+    return _photon.scRawPt * 1.015;
   else
-    // return _photon.scRawPt * 0.985;
-    return _photon.pt() * 0.985;
+    return _photon.scRawPt * 0.985;
 }
 
 bool
@@ -264,12 +260,8 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
     
-    // photon.isEB not filled in test sample
-    // need to uncomment this part once it's there
-    /*
     if (!photon.isEB)
       continue;
-    */
     
     if (vetoes_.size() == 0) {
       // veto is not set -> this is a simple photon selection. Pass if upward variation is above the threshold.
@@ -299,10 +291,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     }
   }
   
-  // photon.scRawPt not filled in test sample
-  // need to uncomment this part once it's there
-  // nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt;
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].pt() > minPt_;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt;
 
   return _outEvent.photons.size() != 0;
 }
