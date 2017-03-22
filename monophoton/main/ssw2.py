@@ -133,7 +133,7 @@ for sample in samples:
         except OSError:
             pass
 
-    for path in sample.files():
+    for path in sample.files(args.filesets):
         if not os.path.exists(path):
             fname = os.path.basename(path)
             dataset = os.path.basename(os.path.dirname(path))
