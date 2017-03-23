@@ -153,7 +153,7 @@ def monophotonBase(sample, selector):
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        # selector.addOperator(ROOT.PUWeight(puWeight))
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -200,7 +200,7 @@ def purityBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        # selector.addOperator(ROOT.PUWeight(puWeight))
 
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
@@ -269,7 +269,7 @@ def leptonBase(sample, selector):
         jetDPhi.setMetVariations(realMetVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        # selector.addOperator(ROOT.PUWeight(puWeight))
 
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
         idsf.addFactor(photonSF)
@@ -333,7 +333,7 @@ def TagAndProbeBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        # selector.addOperator(ROOT.PUWeight(puWeight))
 
     selector.findOperator('MuonVeto').setIgnoreDecision(True)
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
