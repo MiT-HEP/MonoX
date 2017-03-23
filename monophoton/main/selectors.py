@@ -1387,7 +1387,7 @@ def kfactor(generator):
     def scaled(sample, name):
         selector = generator(sample, name)
 
-        sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('-o', '')
+        sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('wglo', 'wnlg').replace('-o', '')
 
         qcdSource = ROOT.TFile.Open(datadir + '/kfactor.root')
         corr = qcdSource.Get(sname)
