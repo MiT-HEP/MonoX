@@ -1,3 +1,4 @@
+import logging
 import os
 
 # tier3 set up
@@ -9,3 +10,5 @@ dataNtuplesDir = ntuplesDir
 libobjs = 'libPandaTreeObjects.so'
 libutils = 'libPandaTreeUtils.so'
 dataformats = os.environ['CMSSW_BASE'] + '/src/PandaTree'
+
+printLevel = logging.INFO
