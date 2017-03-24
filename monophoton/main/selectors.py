@@ -1,13 +1,13 @@
 import sys
 import os
 import array
+import logging
+
 needHelp = False
 for opt in ['-h', '--help']:
     if opt in sys.argv:
         needHelp = True
         sys.argv.remove(opt)
-
-import ROOT
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -17,6 +17,11 @@ if basedir not in sys.path:
     sys.path.append(basedir)
 
 import config
+
+logger = logging.getLogger(__name__)
+logger.setLevel(config.printLevel)
+
+import ROOT
 
 ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
@@ -49,6 +54,27 @@ photonWP = 1
 # LOOSE ID
 # photonWP = 0
 
+# PU reweight
+puWeights = []
+f = ROOT.TFile.Open(datadir + '/pileup.root')
+for k in f.GetListOfKeys():
+    if k.GetName().startswith('puweight_'):
+        ROOT.gROOT.cd()
+        logger.debug('Loading PU weights %s', k.GetName())
+        puWeights.append((k.GetName().replace('puweight_', ''), k.ReadObj().Clone()))
+
+f.Close()
+
+def addPUWeight(sample, selector):
+    for name, hist in puWeights:
+        if name in sample.fullname:
+            logger.debug('Using PU weights %s for %s', name, sample.name)
+            selector.addOperator(ROOT.PUWeight(hist))
+            break
+    else:
+        raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
+
+# Other weights
 def getFromFile(path, name, newname = ''):
     if newname == '':
         newname = name
@@ -58,9 +84,9 @@ def getFromFile(path, name, newname = ''):
     obj = f.Get(name).Clone(newname)
     f.Close()
 
-    return obj
+    logger.debug('Picked up %s from %s', name, path)
 
-puWeight = getFromFile(datadir + '/pileup.root', 'puweight')
+    return obj
 
 photonSF = getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', 'photonSF')
 
@@ -152,7 +178,7 @@ def monophotonBase(sample, selector):
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        addPUWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -199,7 +225,7 @@ def purityBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        addPUWeight(sample, selector)
 
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
@@ -268,7 +294,7 @@ def leptonBase(sample, selector):
         jetDPhi.setMetVariations(realMetVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        addPUWeight(sample, selector)
 
         idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
         idsf.addFactor(photonSF)
@@ -332,7 +358,7 @@ def TagAndProbeBase(sample, selector):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        selector.addOperator(ROOT.PUWeight(puWeight))
+        addPUWeight(sample, selector)
 
     selector.findOperator('MuonVeto').setIgnoreDecision(True)
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
@@ -1398,7 +1424,7 @@ def kfactor(generator):
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
             vcorr = qcdSource.Get(sname + '_' + variation)
             if vcorr:
-                # print 'applying qcd var', variation, sample.name
+                logger.debug('applying qcd var %s %s', variation, sample.name)
                 qcd.addVariation('qcd' + variation, vcorr)
 
         # temporarily don't apply QCD k-factor until we redrive for nlo samples
@@ -1408,14 +1434,14 @@ def kfactor(generator):
         ewkSource = ROOT.TFile.Open(datadir + '/ewk_corr.root')
         corr = ewkSource.Get(sname)
         if corr:
-            # print 'applying ewk', sample.name
+            logger.debug('applying ewk %s', sample.name)
             ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
             ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
             for variation in ['Up', 'Down']:
                 vcorr = ewkSource.Get(sname + '_' + variation)
                 if vcorr:
-                    # print 'applying ewk var', variation, sample.name
+                    logger.debug('applying ewk var %s %s', variation, sample.name)
                     ewk.addVariation('ewk' + variation, vcorr)
 
             selector.addOperator(ewk)
