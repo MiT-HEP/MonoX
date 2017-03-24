@@ -302,7 +302,7 @@ if args.split:
 
             # clean up old .log files
             path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
-            logger.info('Removing %s', path)
+            logger.debug('Removing %s', path)
             try:
                 os.remove(path)
             except:
@@ -310,7 +310,7 @@ if args.split:
 
             for selname in [rname for rname, gen in selectors[sample.name]]:
                 path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
-                logger.info('Removing %s', path)
+                logger.debug('Removing %s', path)
                 try:
                     os.remove(path)
                 except:
@@ -342,7 +342,7 @@ if args.merge:
 
             # clean up old .log files
             path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + selname + '.0.log'
-            logger.info('Removing %s', path)
+            logger.debug('Removing %s', path)
             try:
                 os.remove(path)
             except:
@@ -350,7 +350,7 @@ if args.merge:
 
             # not sure if I want to delete old file immediately
             path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
-            logger.info('Removing %s', path)
+            logger.debug('Removing %s', path)
             try:
                 os.remove(path)
             except:
