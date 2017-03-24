@@ -34,8 +34,6 @@ argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selname
 args = argParser.parse_args()
 sys.argv = []
 
-batch = (args.split or args.merge) and not args.interactive
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 monoxdir = os.path.dirname(basedir)
@@ -56,6 +54,12 @@ from goodlumi import makeGoodLumiFilter
 
 sys.path.append('/home/yiiyama/lib')
 from condor_run import CondorRun
+
+batch = (args.split or args.merge) and not args.interactive
+
+if args.merge and batch and len(args.selnames) != 0:
+    logger.error('Batch merge mode must be inclusive in selectors.')
+    sys.exit(1)
 
 if args.split and len(args.filesets) != 0:
     logger.error('Split mode must be inclusive in filesets.')
@@ -156,12 +160,13 @@ def executeSkim(sample, filesets, outDir):
     
     outNameBase = sample.name
 
+    outSuffix = None
     if args.outSuffix:
         outSuffix = args.outSuffix
     elif len(filesets) == 1 and len(sample.filesets()) > 1:
         outSuffix = filesets[0]
 
-    if outSuffix:
+    if outSuffix is not None:
         outNameBase += '_' + outSuffix
 
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
@@ -198,17 +203,7 @@ for sample in samples:
         # Will spawn condor jobs below
         continue
 
-    # Will do the actual skimming
-
-    print 'Skimming.'
-
-    if args.split:
-        # Interactive + split -> not very useful. For debugging
-        for fileset in fslist:
-            executeSkim(sample, [fileset], outDir)
-    else:
-        executeSkim(sample, fslist, outDir)
-
+    # Will do the actual merging
     if args.merge:
         print 'Merging.'
 
@@ -237,6 +232,15 @@ for sample in samples:
             logger.info('Removing %s', mergePath)
             os.remove(mergePath)
 
+    # Will do the actual skimming
+    elif args.split:
+        print 'Skimming.'
+        # Interactive + split -> not very useful. For debugging
+        for fileset in fslist:
+            executeSkim(sample, [fileset], outDir)
+    else:
+        print 'Skimming.'
+        executeSkim(sample, fslist, outDir)
 
 # Remainder of the script relates to condor submission
 if not batch:
@@ -352,7 +356,7 @@ if args.merge:
             except:
                 pass
 
-    submitter.job_args = ['-M %s -s %s' % arg for arg in arguments]
+    submitter.job_args = ['-M -I %s -s %s' % arg for arg in arguments]
     submitter.job_names = ['%s_%s' % arg for arg in arguments]
 
     jobClusters = submitter.submit(name = 'ssw2')
