@@ -138,7 +138,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       delete source;
       throw std::runtime_error("source");
     }
-    
+
     if (commonSelection_.Length() != 0) {
       gROOT->cd();
       input->Draw(">>elist", commonSelection_, "entrylist");
@@ -151,10 +151,11 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
     genInput->SetBranchStatus("*", false);
     genParticles.setAddress(*genInput);
-  
+
     long iEntry(0);
     while (iEntryGlobal != _nEntries) {
       int entryNumber(input->GetEntryNumber(iEntry++));
+
       if (entryNumber < 0) // no more entries in this tree
         break;
 
@@ -178,6 +179,27 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (!event.isData) {
         genParticles.getEntry(*genInput, entryNumber);
         copyGenParticles(genParticles, skimmedEvent.genParticles);
+      }
+
+      if (_nEntries > 0) {
+	std::cout << std::endl << ">>>>> Printing event " << iEntryGlobal <<" !!! <<<<<" << std::endl;
+	skimmedEvent.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.photons.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.muons.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.electrons.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.jets.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.t1Met.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.metMuOnlyFix.print(std::cout, 2);
+	std::cout << std::endl;
+	skimmedEvent.metNoFix.print(std::cout, 2);
+	std::cout << std::endl;
+	std::cout << ">>>>> Event " << iEntryGlobal << " done!!! <<<<<" << std::endl << std::endl;
       }
 
       for (auto* sel : selectors_)
