@@ -100,6 +100,12 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (commonSelection_.Length() != 0)
     std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
+  ofstream debugFile;
+  if (_nEntries > 0) {
+    TString debugPath("debug_" + sampleName + ".txt");
+    debugFile.open(debugPath.Data());
+  }
+
   long iEntryGlobal(0);
   auto now = SClock::now();
   auto start = now;
@@ -182,24 +188,29 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       }
 
       if (_nEntries > 0) {
-	std::cout << std::endl << ">>>>> Printing event " << iEntryGlobal <<" !!! <<<<<" << std::endl;
-	skimmedEvent.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.photons.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.muons.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.electrons.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.jets.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.t1Met.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.metMuOnlyFix.print(std::cout, 2);
-	std::cout << std::endl;
-	skimmedEvent.metNoFix.print(std::cout, 2);
-	std::cout << std::endl;
-	std::cout << ">>>>> Event " << iEntryGlobal << " done!!! <<<<<" << std::endl << std::endl;
+	debugFile << std::endl << ">>>>> Printing event " << iEntryGlobal <<" !!! <<<<<" << std::endl;
+	debugFile << skimmedEvent.runNumber << ":" << skimmedEvent.lumiNumber << ":" << skimmedEvent.eventNumber << std::endl;
+	skimmedEvent.print(debugFile, 2);
+	debugFile << std::endl;
+	skimmedEvent.photons.print(debugFile, 2);
+	// debugFile << "photons.size() = " << skimmedEvent.photons.size() << std::endl;
+	debugFile << std::endl;
+	skimmedEvent.muons.print(debugFile, 2);
+	// debugFile << "muons.size() = " << skimmedEvent.muons.size() << std::endl;
+	debugFile << std::endl;
+	skimmedEvent.electrons.print(debugFile, 2);
+	// debugFile << "electrons.size() = " << skimmedEvent.electrons.size() << std::endl;
+	debugFile << std::endl;
+	skimmedEvent.jets.print(debugFile, 2);
+	// debugFile << "jets.size() = " << skimmedEvent.jets.size() << std::endl;
+	debugFile << std::endl;
+	skimmedEvent.t1Met.print(debugFile, 2);
+	// debugFile << std::endl;
+	skimmedEvent.metMuOnlyFix.print(debugFile, 2);
+	debugFile << std::endl;
+	skimmedEvent.metNoFix.print(debugFile, 2);
+	debugFile << std::endl;
+	debugFile << ">>>>> Event " << iEntryGlobal << " done!!! <<<<<" << std::endl << std::endl;
       }
 
       for (auto* sel : selectors_)
@@ -214,6 +225,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   for (auto* sel : selectors_)
     sel->finalize();
+
+  if (_nEntries > 0) {
+    debugFile.close();
+  }
 
   now = SClock::now();
   std::cout << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
