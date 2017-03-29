@@ -653,7 +653,9 @@ class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
-  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.t1Met; }
+  // copy metMuOnlyFix and correct using EGCorrection operator
+  // change back to copy t1Met once pfMet is fixed in panda
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.metMuOnlyFix; }
 };
 
 class PhotonMt : public Modifier {
