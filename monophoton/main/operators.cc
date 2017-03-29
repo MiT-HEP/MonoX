@@ -1692,18 +1692,18 @@ LeptonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   }
 
   float inMets[] = {
-    _event.t1Met.pt,
-    _event.t1Met.ptCorrUp,
-    _event.t1Met.ptCorrDown,
-    _event.t1Met.ptUnclUp,
-    _event.t1Met.ptUnclDown
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
   };
   float inPhis[] = {
-    _event.t1Met.phi,
-    _event.t1Met.phiCorrUp,
-    _event.t1Met.phiCorrDown,
-    _event.t1Met.phiUnclUp,
-    _event.t1Met.phiUnclDown
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
   };
 
   float* outRecoils[] = {
@@ -1796,6 +1796,97 @@ LeptonRecoil::realMetUncl(int corr) const
   };
 
   return vec;
+}
+//--------------------------------------------------------------------
+// EGCorrection
+//--------------------------------------------------------------------
+
+void
+EGCorrection::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.corrMag", &corrMag_, "corrMag/F");
+  _skimTree.Branch("t1Met.corrPhi", &corrPhi_, "corrPhi/F");
+}
+
+void
+EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outMets[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outMetPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  double cpx(0.);
+  double cpy(0.);
+  double pfPt(0.);
+
+  // add up corrections from photons
+  for (unsigned iL(0); iL != _outEvent.photons.size(); ++iL) {
+    auto& part = _outEvent.photons[iL];
+    
+    if (part.pfPt < 0) {
+      // printf("Warning!! negative pfPt! Photon wasn't matched to a pf candidate! \n");
+      pfPt = part.rawPt;
+    }
+    else
+      pfPt = part.pfPt;
+    
+    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
+    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+  }
+
+  // add up corrections from electrons
+  for (unsigned iL(0); iL != _outEvent.electrons.size(); ++iL) {
+    auto& part = _outEvent.electrons[iL];
+    
+    if (part.pfPt < 0) {
+      // printf("Warning!! negative pfPt! Electron wasn't matched to a pf candidate! \n");
+      pfPt = part.rawPt;
+    }
+    else
+      pfPt = part.pfPt;
+    
+    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
+    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+  }
+  
+  // save correction
+  corrMag_ = std::sqrt(cpx * cpx + cpy * cpy);
+  corrPhi_ = std::atan2(cpy, cpx);
+
+  // apply correction
+  for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
+    double mex(cpx + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(cpy + inMets[iM] * std::sin(inPhis[iM]));
+    *outMets[iM] = std::sqrt(mex * mex + mey * mey);
+    *outMetPhis[iM] = std::atan2(mey, mex);
+  }
+  
 }
 
 //--------------------------------------------------------------------

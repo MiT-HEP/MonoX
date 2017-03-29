@@ -149,6 +149,8 @@ def monophotonBase(sample, selector):
 
     if not sample.data:
         operators.append('MetVariations')
+    else:
+        operators.append('EGCorrection')
         
     operators += [
         'PhotonMetDPhi',
@@ -213,6 +215,9 @@ def purityBase(sample, selector):
         'CopyMet'
     ]
 
+    if sample.data:
+        operators.append('EGCorrection')
+
     operators += [
         'JetMetDPhi',
         'PhotonMetDPhi'
@@ -257,12 +262,19 @@ def leptonBase(sample, selector):
         'TauVeto',
         'BjetVeto',
         'JetCleaning',
-        'LeptonRecoil',
+        'CopyMet',
     ]
+
+    if sample.data:
+        operators.append('EGCorrection')
+
+    operators += [
+        'LeptonRecoil',
+        ]
 
     if not sample.data:
         operators.append('MetVariations')
-    
+        
     operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
@@ -352,6 +364,12 @@ def TagAndProbeBase(sample, selector):
         'TagAndProbePairZ',
         'JetCleaning',
         'CopyMet',
+    ]
+
+    if sample.data:
+        operators.append('EGCorrection')
+
+    operators += [ 
         'JetMetDPhi',
         'HighMet'
     ]

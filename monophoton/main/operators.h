@@ -697,6 +697,18 @@ class LeptonRecoil : public Modifier {
   float realPhiUnclDown_;
 };
 
+class EGCorrection : public Modifier {
+ public:
+  EGCorrection(char const* name = "EGCorrection") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+  
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  float corrMag_{0.};
+  float corrPhi_{0.};
+};
+
 class MetVariations : public Modifier {
  public:
   MetVariations(char const* name = "MetVariations") : Modifier(name) {}
