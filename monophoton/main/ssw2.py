@@ -20,7 +20,7 @@ argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'co
 argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
 argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
 argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
-argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix. If running on a single fileset, automatically set to _<fileset>.')
+argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
@@ -160,14 +160,8 @@ def executeSkim(sample, filesets, outDir):
     
     outNameBase = sample.name
 
-    outSuffix = None
     if args.outSuffix:
-        outSuffix = args.outSuffix
-    elif len(filesets) == 1 and len(sample.filesets()) > 1:
-        outSuffix = filesets[0]
-
-    if outSuffix is not None:
-        outNameBase += '_' + outSuffix
+        outNameBase += '_' + args.outSuffix
 
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
@@ -290,6 +284,11 @@ if args.split:
 
     # Collect arguments and remove output
     for sample in samples:
+        if len(sample.filesets()) == 1:
+            singleFileset = True
+        else:
+            singleFileset = False
+
         if len(args.filesets) == 0:
             fslist = sorted(sample.filesets())
         else:
@@ -298,26 +297,40 @@ if args.split:
         splitOutDir = config.skimDir + '/' + sample.name
 
         for fileset in fslist:
-            arguments.append((sample.name, fileset))
+            if singleFileset:
+                arguments.append(sample.name)
+            else:
+                arguments.append((sample.name, fileset))
 
             # clean up old .log files
-            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
-            logger.debug('Removing %s', path)
+            logpath = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
+            logger.debug('Removing %s', logpath)
             try:
-                os.remove(path)
+                os.remove(logpath)
             except:
                 pass
 
             for selname in [rname for rname, gen in selectors[sample.name]]:
-                path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
+                if singleFileset:
+                    path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
+                else:
+                    path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
+
                 logger.debug('Removing %s', path)
                 try:
                     os.remove(path)
                 except:
                     pass
 
-    submitter.job_args = ['%s -f %s' % arg for arg in arguments]
-    submitter.job_names = ['%s_%s' % arg for arg in arguments]
+    submitter.job_args = []
+    submitter.job_names = []
+    for arg in arguments:
+        if type(arg) is tuple:
+            submitter.job_args.append('{0} -f {1} -x {1}'.format(*arg))
+            submitter.job_names.append('{0}_{1}'.format(*arg))
+        else:
+            submitter.job_args.append('%s' % arg)
+            submitter.job_names.append('%s_0000' % arg)
 
     jobClusters = submitter.submit(name = 'ssw2')
 
