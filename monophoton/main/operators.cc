@@ -1881,8 +1881,8 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
 
   // apply correction
   for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
-    double mex(cpx + inMets[iM] * std::cos(inPhis[iM]));
-    double mey(cpy + inMets[iM] * std::sin(inPhis[iM]));
+    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx);
+    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy);
     *outMets[iM] = std::sqrt(mex * mex + mey * mey);
     *outMetPhis[iM] = std::atan2(mey, mex);
   }
