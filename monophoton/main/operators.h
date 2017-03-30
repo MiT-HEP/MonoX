@@ -707,6 +707,8 @@ class EGCorrection : public Modifier {
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
+  float origMet_{0.};
+  float origPhi_{0.};
   float corrMag_{0.};
   float corrPhi_{0.};
 };

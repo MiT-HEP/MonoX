@@ -1804,6 +1804,8 @@ LeptonRecoil::realMetUncl(int corr) const
 void
 EGCorrection::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("t1Met.origMet", &origMet_, "origMet/F");
+  _skimTree.Branch("t1Met.origPhi", &origPhi_, "origPhi/F");
   _skimTree.Branch("t1Met.corrMag", &corrMag_, "corrMag/F");
   _skimTree.Branch("t1Met.corrPhi", &corrPhi_, "corrPhi/F");
 }
@@ -1878,6 +1880,8 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   // save correction
   corrMag_ = std::sqrt(cpx * cpx + cpy * cpy);
   corrPhi_ = std::atan2(cpy, cpx);
+  origMet_ = inMets[0];
+  origPhi_ = inPhis[0];
 
   // apply correction
   for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
