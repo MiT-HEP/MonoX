@@ -160,8 +160,14 @@ def executeSkim(sample, filesets, outDir):
     
     outNameBase = sample.name
 
+    outSuffix = None
     if args.outSuffix:
-        outNameBase += '_' + args.outSuffix
+        outSuffix = args.outSuffix
+    elif len(filesets) == 1 and len(sample.filesets()) > 1:
+        outSuffix = filesets[0]
+
+    if outSuffix is not None:
+        outNameBase += '_' + outSuffix
 
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
@@ -228,12 +234,12 @@ for sample in samples:
 
     # Will do the actual skimming
     elif args.split:
-        print 'Skimming.'
+        print 'Skimming entire sample in chunks.'
         # Interactive + split -> not very useful. For debugging
         for fileset in fslist:
             executeSkim(sample, [fileset], outDir)
     else:
-        print 'Skimming.'
+        print 'Skimming given filesets.'
         executeSkim(sample, fslist, outDir)
 
 # Remainder of the script relates to condor submission
