@@ -332,7 +332,7 @@ if args.split:
     submitter.job_names = []
     for arg in arguments:
         if type(arg) is tuple:
-            submitter.job_args.append('{0} -f {1} -x {1}'.format(*arg))
+            submitter.job_args.append('{0} -f {1}'.format(*arg))
             submitter.job_names.append('{0}_{1}'.format(*arg))
         else:
             submitter.job_args.append('%s' % arg)
