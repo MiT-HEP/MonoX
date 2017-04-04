@@ -13,37 +13,57 @@
 
 typedef std::chrono::high_resolution_clock Clock;
 
-class EventSelector {
+class EventSelectorBase {
 public:
-  EventSelector(char const* name) : name_(name) {}
-  virtual ~EventSelector() {}
+  EventSelectorBase(char const* name) : name_(name) {}
+  virtual ~EventSelectorBase() {}
 
-  void addOperator(Operator* _op, unsigned idx = -1) { if (idx >= operators_.size()) operators_.push_back(_op); else operators_.insert(operators_.begin() + idx, _op); }
-  virtual void initialize(char const* outputPath, panda::EventMonophoton& event, bool _isMC);
-  virtual void finalize();
-  virtual void selectEvent(panda::EventMonophoton&);
-  void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
-
-  TString const& name() const { return name_; }
+  void addOperator(Operator*, unsigned idx = -1);
   unsigned size() const { return operators_.size(); }
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
 
+  void initialize(char const* outputPath, panda::EventBase& event, bool isMC);
+  void finalize();
+  virtual void selectEvent(panda::EventBase&) = 0;
+
+  TString const& name() const { return name_; }
+
   void setUseTimers(bool b) { useTimers_ = b; }
 
- protected:
+protected:
+  virtual void bookOutEvent_(panda::EventBase& event, bool isMC) = 0;
+  virtual void setupSkim_(panda::EventBase& event, bool isMC) {}
+  virtual void addOutput_(TFile*& outputFile) {}
+
   TString name_;
-  std::vector<Operator*> operators_;
   TTree* skimOut_{0};
   TTree* cutsOut_{0};
-  panda::EventMonophoton outEvent_;
 
-  unsigned blindPrescale_{1};
-  unsigned blindMinRun_{0};
+  std::vector<Operator*> operators_;
+
   double inWeight_{1.};
 
   bool useTimers_{false};
   std::vector<Clock::duration> timers_;
+};
+
+class EventSelector : public EventSelectorBase {
+public:
+  EventSelector(char const* name) : EventSelectorBase(name) {}
+  ~EventSelector() {}
+
+  void selectEvent(panda::EventBase&) override;
+
+  void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
+
+ protected:
+  void setupSkim_(panda::EventBase& event, bool isMC) override;
+
+  panda::EventMonophoton outEvent_;
+
+  unsigned blindPrescale_{1};
+  unsigned blindMinRun_{0};
 };
 
 class ZeeEventSelector : public EventSelector {
@@ -52,7 +72,7 @@ class ZeeEventSelector : public EventSelector {
   ZeeEventSelector(char const* name);
   ~ZeeEventSelector();
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent(panda::EventBase&) override;
 
   class EEPairSelection : public PhotonSelection {
   public:
@@ -74,7 +94,7 @@ class WlnuSelector : public EventSelector {
  public:
   WlnuSelector(char const* name) : EventSelector(name) {}
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent(panda::EventBase&) override;
 };
 
 class WenuSelector : public EventSelector {
@@ -82,7 +102,7 @@ class WenuSelector : public EventSelector {
  public:
   WenuSelector(char const* name) : EventSelector(name) {}
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent(panda::EventBase&) override;
 };
 
 class NormalizingSelector : public EventSelector {
@@ -91,11 +111,11 @@ class NormalizingSelector : public EventSelector {
   NormalizingSelector(char const* name) : EventSelector(name) {}
   ~NormalizingSelector() {}
 
-  void finalize() override;
-
   void setNormalization(double norm, char const* normCut) { norm_ = norm; normCut_ = normCut; }
 
  protected:
+  void addOutput_(TFile*& outputFile) override;
+
   double norm_{1.};
   TString normCut_{""};
 };
@@ -107,7 +127,7 @@ class SmearingSelector : public EventSelector {
   SmearingSelector(char const* name) : EventSelector(name) {}
   ~SmearingSelector() {}
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent(panda::EventBase&) override;
 
   void setNSamples(unsigned n) { nSamples_ = n; }
   void setFunction(TF1* func) { func_ = func; }

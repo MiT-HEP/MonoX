@@ -7,24 +7,36 @@
 #include <cstring>
 
 //--------------------------------------------------------------------
-// EventSelector
+// EventSelectorBase
 //--------------------------------------------------------------------
 
 void
-EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _event, bool _isMC)
+EventSelectorBase::addOperator(Operator* _op, unsigned _idx/* = -1*/)
+{
+  if (_idx >= operators_.size())
+    operators_.push_back(_op);
+  else
+    operators_.insert(operators_.begin() + _idx, _op);
+}
+
+Operator*
+EventSelectorBase::findOperator(char const* _name) const
+{
+  for (auto* op : operators_) {
+    if (std::strcmp(op->name(), _name) == 0)
+      return op;
+  }
+
+  return 0;
+}
+
+void
+EventSelectorBase::initialize(char const* _outputPath, panda::EventBase& _event, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
   skimOut_ = new TTree("events", "Events");
   cutsOut_ = new TTree("cutflow", "cutflow");
-
-  // Branches to be directly copied from the input tree
-  if (_isMC)
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
-  else
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
-
-  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
 
   skimOut_->Branch("weight_Input", &inWeight_, "weight_Input/D");
 
@@ -32,25 +44,24 @@ EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _even
   cutsOut_->Branch("lumiNumber", &_event.lumiNumber, "lumiNumber/i");
   cutsOut_->Branch("eventNumber", &_event.eventNumber, "eventNumber/i");
 
-  // printf("Did runNumber lumiNumber eventNumber. \n");
+  setupSkim_(_event, _isMC);
 
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
-    op->initialize(_event);
+    op->init(_event);
     auto* cut(dynamic_cast<Cut*>(op));
     if (cut)
       cut->registerCut(*cutsOut_);
   }
 
-  if (useTimers_)
-    timers_.resize(operators_.size());
-
   // printf("Added all the operators. \n");
 
+  if (useTimers_)
+    timers_.resize(operators_.size());
 }
 
 void
-EventSelector::finalize()
+EventSelectorBase::finalize()
 {
   if (!skimOut_)
     return;
@@ -59,6 +70,9 @@ EventSelector::finalize()
   outputFile->cd();
   skimOut_->Write();
   cutsOut_->Write();
+
+  // save additional output if there are any
+  addOutput_(outputFile);
 
   delete outputFile;
   skimOut_ = 0;
@@ -74,15 +88,33 @@ EventSelector::finalize()
   }
 }
 
+//--------------------------------------------------------------------
+// EventSelector
+//--------------------------------------------------------------------
+
 void
-EventSelector::selectEvent(panda::EventMonophoton& _event)
+EventSelector::setupSkim_(panda::EventBase& _event, bool _isMC)
+{
+  // Branches to be directly copied from the input tree
+  if (_isMC)
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
+  else
+    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
+
+  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+}
+
+void
+EventSelector::selectEvent(panda::EventBase& _event)
 {
   if (blindPrescale_ > 1 && _event.runNumber >= blindMinRun_ && _event.eventNumber % blindPrescale_ != 0)
     return;
 
+  auto& event(static_cast<panda::EventMonophoton&>(_event));
+
   outEvent_.init();
-  inWeight_ = _event.weight;
-  outEvent_.weight = _event.weight;
+  inWeight_ = event.weight;
+  outEvent_.weight = event.weight;
 
   Clock::time_point start;
 
@@ -93,7 +125,7 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, outEvent_))
+    if (!op.execute(event, outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -104,17 +136,6 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     skimOut_->Fill();
 
   cutsOut_->Fill();
-}
-
-Operator*
-EventSelector::findOperator(char const* _name) const
-{
-  for (auto* op : operators_) {
-    if (std::strcmp(op->name(), _name) == 0)
-      return op;
-  }
-
-  return 0;
 }
 
 //--------------------------------------------------------------------
@@ -144,16 +165,18 @@ ZeeEventSelector::~ZeeEventSelector()
 }
 
 void
-ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
+ZeeEventSelector::selectEvent(panda::EventBase& _event)
 {
+  auto& event(static_cast<panda::EventMonophoton&>(_event));
+
   outEvent_.init();
-  outEvent_.weight = _event.weight;
+  outEvent_.weight = event.weight;
 
   bool passUpToEE(true);
 
   auto opItr(operators_.begin());
   while (true) {
-    passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
+    passUpToEE = passUpToEE && (*opItr)->execute(event, outEvent_);
     if (opItr == eePairSel_)
       break;
 
@@ -163,12 +186,12 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
   if (passUpToEE) {
     for (auto& eePair : static_cast<EEPairSelection*>(*eePairSel_)->getEEPairs()) {
       opItr = eePairSel_;
-      outEvent_.photons[0] = _event.photons[eePair.first];
-      outEvent_.electrons[0] = _event.electrons[eePair.second];
+      outEvent_.photons[0] = event.photons[eePair.first];
+      outEvent_.electrons[0] = event.electrons[eePair.second];
 
       bool pass(true);
       for (; opItr != operators_.end(); ++opItr)
-        pass = pass && (*opItr)->exec(_event, outEvent_);
+        pass = pass && (*opItr)->execute(event, outEvent_);
 
       if (pass)
         skimOut_->Fill();
@@ -178,7 +201,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
   }
   else {
     for (; opItr != operators_.end(); ++opItr)
-      (*opItr)->exec(_event, outEvent_);
+      (*opItr)->execute(event, outEvent_);
 
     cutsOut_->Fill();
   }
@@ -252,9 +275,11 @@ ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, pa
 //--------------------------------------------------------------------
 
 void
-WlnuSelector::selectEvent(panda::EventMonophoton& _event)
+WlnuSelector::selectEvent(panda::EventBase& _event)
 {
-  for (auto& parton : _event.partons) {
+  auto& event(static_cast<panda::EventMonophoton&>(_event));
+
+  for (auto& parton : event.partons) {
     if (std::abs(parton.pdgid) == 11)
       return;
   }
@@ -267,15 +292,17 @@ WlnuSelector::selectEvent(panda::EventMonophoton& _event)
 //--------------------------------------------------------------------
 
 void
-WenuSelector::selectEvent(panda::EventMonophoton& _event)
+WenuSelector::selectEvent(panda::EventBase& _event)
 {
+  auto& event(static_cast<panda::EventMonophoton&>(_event));
+
   unsigned iP(0);
-  for (; iP != _event.partons.size(); ++iP) {
-    auto& parton(_event.partons[iP]);
+  for (; iP != event.partons.size(); ++iP) {
+    auto& parton(event.partons[iP]);
     if (std::abs(parton.pdgid) == 11)
       break;
   }
-  if (iP == _event.partons.size())
+  if (iP == event.partons.size())
     return;
 
   EventSelector::selectEvent(_event);
@@ -286,21 +313,17 @@ WenuSelector::selectEvent(panda::EventMonophoton& _event)
 //--------------------------------------------------------------------
 
 void
-NormalizingSelector::finalize()
+NormalizingSelector::addOutput_(TFile*& _outputFile)
 {
-  if (!skimOut_)
-    return;
-
   auto* hSumW(new TH1D("sumW", "", 1, 0., 1.));
   hSumW->Sumw2();
   skimOut_->Draw("0.5>>sumW", "weight * (" + normCut_ + ")", "goff");
   double sumW(hSumW->GetBinContent(1));
   delete hSumW;
 
-  auto* outputFile(skimOut_->GetCurrentFile());
-  TString outName(outputFile->GetName());
+  TString outName(_outputFile->GetName());
   TString tmpName(outName);
-  tmpName.ReplaceAll(".root", "_tmp.root");
+  tmpName.ReplaceAll(".root", "_normalizing.root");
 
   auto* trueOutput(TFile::Open(tmpName, "recreate"));
   auto* trueSkim(skimOut_->CloneTree(0));
@@ -317,14 +340,14 @@ NormalizingSelector::finalize()
 
   trueOutput->cd();
   trueSkim->Write();
-  auto* trueCuts(cutsOut_->CloneTree());
+  auto* trueCuts(cutsOut_->CloneTree(-1, "fast"));
   trueCuts->Write();
 
   delete trueOutput;
-  delete outputFile;
 
-  skimOut_ = 0;
-  cutsOut_ = 0;
+  delete _outputFile;
+  // set the pointer to NULL so that finalize() does not delete it again
+  _outputFile = 0;
 
   gSystem->Rename(tmpName, outName);
 }
@@ -334,18 +357,20 @@ NormalizingSelector::finalize()
 //--------------------------------------------------------------------
 
 void
-SmearingSelector::selectEvent(panda::EventMonophoton& _event)
+SmearingSelector::selectEvent(panda::EventBase& _event)
 {
   if (!func_)
     return;
 
-  // smearing the MET only - total pT will be inconsistent
-  double originalMet(_event.t1Met.pt);
+  auto& event(static_cast<panda::EventMonophoton&>(_event));
 
-  _event.weight /= nSamples_;
+  // smearing the MET only - total pT will be inconsistent
+  double originalMet(event.t1Met.pt);
+
+  event.weight /= nSamples_;
 
   for (unsigned iS(0); iS != nSamples_; ++iS) {
-    _event.t1Met.pt = originalMet + func_->GetRandom();
+    event.t1Met.pt = originalMet + func_->GetRandom();
   
     EventSelector::selectEvent(_event);
   }

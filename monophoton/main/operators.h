@@ -88,18 +88,33 @@ class Operator {
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
 
-  virtual bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
+  virtual bool execute(panda::EventBase const&, panda::EventBase&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
-  virtual void initialize(panda::EventMonophoton& _event) {}
+  virtual void init(panda::EventBase&) {}
 
  protected:
   TString name_;
 };
 
-class Cut : public Operator {
+class MonophotonOperator : public Operator {
  public:
-  Cut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
+  MonophotonOperator(char const* name) : Operator(name) {}
+  ~MonophotonOperator() {}
+
+  bool execute(panda::EventBase const& inEvent, panda::EventBase& outEvent) {
+    return exec(static_cast<panda::EventMonophoton const&>(inEvent), static_cast<panda::EventMonophoton&>(outEvent)); }
+  virtual bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
+
+  void init(panda::EventBase& _event) {
+    initialize(static_cast<panda::EventMonophoton&>(_event));
+  }
+  virtual void initialize(panda::EventMonophoton&) {}
+};
+
+class Cut : public MonophotonOperator {
+ public:
+  Cut(char const* name) : MonophotonOperator(name), result_(false), ignoreDecision_(false) {}
   virtual ~Cut() {}
 
   bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -115,9 +130,9 @@ class Cut : public Operator {
   bool ignoreDecision_;
 };
 
-class Modifier : public Operator {
+class Modifier : public MonophotonOperator {
  public:
-  Modifier(char const* name) : Operator(name) {}
+  Modifier(char const* name) : MonophotonOperator(name) {}
   virtual ~Modifier() {}
 
   bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) override;
