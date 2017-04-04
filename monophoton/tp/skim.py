@@ -86,7 +86,7 @@ if not puSource:
     print 'NPV reweight absent - run monophoton/ssw2.py'
     sys.exit(1)
 
-reweight = puSource.Get('puweight')
+reweight = puSource.Get('puweight_PUMoriond17')
 reweight.SetDirectory(ROOT.gROOT)
 puSource.Close()
 
@@ -97,7 +97,7 @@ for sample in samples:
         # Find the config group this sample is in
         confName, skimTypes = next((confName, skimTypes) for confName, (snames, skimTypes) in skimConfig.items() if sample.name in snames)
     except StopIteration:
-        print sname, 'not found in dataset list'
+        print sample.name, 'not found in dataset list'
         continue
 
     if confName == 'mc':
