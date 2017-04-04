@@ -70,20 +70,22 @@ def getConfig(confName):
         spikeSource.Close()
 
         config.baseline = baseSel
-        config.fullSelection = 't1Met.pt > 170.'
+        config.fullSelection = ''
         config.sigGroups = [
             GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']),
             GroupSpec('dma', 'DM A', samples = ['dma-500-1', 'dmv-1000-1', 'dmv-2000-1']),
             GroupSpec('dph', 'Dark Photon', samples = ['dph-125', 'dph-1000']),
 #            GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
-#            GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-*']),
-#            GroupSpec('dmalo', 'DM A', samples = ['dmalo-*'])
+            GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1']),
+            GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'])
         ]            
         config.signalPoints = [
             # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = 46), 
             SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = 30), 
-            # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = 50), 
+            # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = 50),
+            SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = 30), 
             SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = 31), 
+            SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = 31), 
             SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = 77), 
         ]
         config.bkgGroups = [
@@ -102,9 +104,11 @@ def getConfig(confName):
         ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', applyFullSel = True, overflow = False),
-            VariableDef('met', 'E_{T}^{miss}', 't1Met.pt', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),
-            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.pt', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', overflow = True),
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.pt', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),            
+            VariableDef('metWide', 'E_{T}^{miss}', 't1Met.pt', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5', overflow = True),
+            VariableDef('metWideNoEGFix', 'E_{T}^{miss}', 'TMath::Sqrt(TMath::Power(t1Met.pt * TMath::Cos(t1Met.phi) + t1Met.corrMag * TMath::Cos(t1Met.corrPhi), 2) + TMath::Power(t1Met.pt * TMath::Sin(t1Met.phi) + t1Met.corrMag * TMath::Sin(t1Met.corrPhi), 2))', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5', overflow = True),
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
+            VariableDef('metHighNoEGFix', 'E_{T}^{miss}', 'TMath::Sqrt(TMath::Power(t1Met.pt * TMath::Cos(t1Met.phi) + t1Met.corrMag * TMath::Cos(t1Met.corrPhi), 2) + TMath::Power(t1Met.pt * TMath::Sin(t1Met.phi) + t1Met.corrMag * TMath::Sin(t1Met.corrPhi), 2))', combinedFitPtBinning, unit = 'GeV', overflow = True),
             VariableDef('metScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True), # blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
@@ -158,7 +162,7 @@ def getConfig(confName):
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
-            if group.name in ['vvg']:
+            if group.name not in ['zg', 'wg']:
                 continue
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.pt', 't1Met.ptCorrUp')]
@@ -247,7 +251,7 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
 
-            if group.name in ['vvg']:
+            if group.name not in ['zg', 'wg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -328,7 +332,7 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
 
-            if group.name in ['vvg']:
+            if group.name not in ['zg', 'wg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -413,7 +417,7 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
 
-            if group.name in ['vvg']:
+            if group.name not in ['zg', 'wg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -499,7 +503,7 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
 
-            if group.name in ['vvg']:
+            if group.name in ['zg', 'wg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]

@@ -1845,7 +1845,7 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
 
   double cpx(0.);
   double cpy(0.);
-  double pfPt(0.);
+  double ptDiff(0.);
 
   // add up corrections from photons
   for (unsigned iL(0); iL != _outEvent.photons.size(); ++iL) {
@@ -1853,13 +1853,16 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     
     if (part.pfPt < 0) {
       // printf("Warning!! negative pfPt! Photon wasn't matched to a pf candidate! \n");
-      pfPt = part.rawPt;
+      ptDiff = 0.;
     }
     else
-      pfPt = part.pfPt;
+      ptDiff = part.rawPt - part.pfPt;
     
-    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
-    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+    if (std::abs(ptDiff) > 50.)
+      printf("photon   ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
   }
 
   // add up corrections from electrons
@@ -1868,13 +1871,16 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     
     if (part.pfPt < 0) {
       // printf("Warning!! negative pfPt! Electron wasn't matched to a pf candidate! \n");
-      pfPt = part.rawPt;
+      ptDiff = 0.;
     }
     else
-      pfPt = part.pfPt;
+      ptDiff = part.rawPt - part.pfPt;
     
-    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
-    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+    if (std::abs(ptDiff) > 50.)
+      printf("electron ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
   }
   
   // save correction
@@ -1883,10 +1889,13 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   origMet_ = inMets[0];
   origPhi_ = inPhis[0];
 
+  // if (corrMag_ > 50.)
+  //  printf("cpx: %6.1f  cpy: %6.1f  corrMag: %6.1f  corrPhi %6.2f \n", cpx, cpy, corrMag_, corrPhi_);
+
   // apply correction
   for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
-    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx);
-    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy);
+    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx); 
+    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy); 
     *outMets[iM] = std::sqrt(mex * mex + mey * mey);
     *outMetPhis[iM] = std::atan2(mey, mex);
   }
