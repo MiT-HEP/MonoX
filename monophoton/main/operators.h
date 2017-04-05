@@ -11,7 +11,6 @@
 
 #include "TDirectory.h"
 
-//#include "jer.h"
 #include "eventlist.h"
 
 #include <bitset>
@@ -55,6 +54,10 @@
 //     NPVWeight
 //     NNPDFVariation *
 //     GenPhotonDR *
+//   PUWeight
+//   TPOperator
+//     TPElectronPhoton
+//     TPMuonPhoton
 //--------------------------------------------------------------------
 
 enum LeptonFlavor {
@@ -89,34 +92,27 @@ class Operator {
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
 
-  virtual bool execute(panda::EventMonophoton const&, panda::EventBase&) = 0;
+  virtual bool exec(panda::EventMonophoton const&, panda::EventBase&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
   virtual void initialize(panda::EventMonophoton&) {}
+
+  virtual void registerCut(TTree&) {}
 
  protected:
   TString name_;
 };
 
-class MonophotonOperator : public Operator {
+class Cut : public Operator {
  public:
-  MonophotonOperator(char const* name) : Operator(name) {}
-  ~MonophotonOperator() {}
-
-  bool execute(panda::EventMonophoton const& inEvent, panda::EventBase& outEvent) {
-    return exec(inEvent, static_cast<panda::EventMonophoton&>(outEvent)); }
-  virtual bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
-};
-
-class Cut : public MonophotonOperator {
- public:
-  Cut(char const* name) : MonophotonOperator(name), result_(false), ignoreDecision_(false) {}
+  Cut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
   virtual ~Cut() {}
 
-  bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
-  virtual void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
+
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
 
  protected:
   virtual bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
@@ -126,15 +122,31 @@ class Cut : public MonophotonOperator {
   bool ignoreDecision_;
 };
 
-class Modifier : public MonophotonOperator {
+class Modifier : public Operator {
  public:
-  Modifier(char const* name) : MonophotonOperator(name) {}
+  Modifier(char const* name) : Operator(name) {}
   virtual ~Modifier() {}
 
-  bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
  protected:
   virtual void apply(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
+};
+
+class TPOperator : public Operator {
+ public:
+  TPOperator(char const* name) : Operator(name), result_(false) {}
+  ~TPOperator() {}
+
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
+
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+
+ protected:
+  virtual void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) = 0;
+
+ private:
+  bool result_;
 };
 
 //--------------------------------------------------------------------
@@ -154,7 +166,6 @@ class HLTFilter : public Cut {
   TString pathNames_{""};
   std::vector<UInt_t> tokens_;
 };
-
 
 class MetFilters : public Cut {
  public:
@@ -845,18 +856,6 @@ class NPVWeight : public Modifier {
   TH1* factors_;
 };
 
-class PUWeight : public Modifier {
- public:
-  PUWeight(TH1* factors, char const* name = "PUWeight") : Modifier(name), factors_(factors) {}
-
-  void addBranches(TTree& _skimTree) override;
- protected:
-  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
-
-  TH1* factors_;
-  double weight_;
-};
-
 class NNPDFVariation : public Modifier {
  public:
   NNPDFVariation(char const* name = "NNPDFVariation") : Modifier(name) {}
@@ -878,6 +877,53 @@ class GenPhotonDR : public Modifier {
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   float minDR_;
+};
+
+//--------------------------------------------------------------------
+// Simple reweights
+//--------------------------------------------------------------------
+
+class PUWeight : public Operator {
+ public:
+  PUWeight(TH1* factors, char const* name = "PUWeight") : Operator(name), factors_(factors) {}
+
+  void addBranches(TTree& _skimTree) override;
+
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
+
+ protected:
+  TH1* factors_;
+  double weight_;
+};
+
+
+//--------------------------------------------------------------------
+// Tag & Probe
+//--------------------------------------------------------------------
+
+class TPElectronPhoton : public TPOperator {
+ public:
+  TPElectronPhoton(char const* name = "TPElectronPhoton") : TPOperator(name) {}
+  
+ protected:
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+};
+
+class TPMuonPhoton : public TPOperator {
+ public:
+  TPMuonPhoton(char const* name = "TPMuonPhoton") : TPOperator(name) {}
+
+  enum Mode {
+    kSingle,
+    kDouble
+  };
+
+  void setMode(Mode m) { mode_ = m; }
+  
+ protected:
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+
+  Mode mode_{kSingle};
 };
 
 #endif

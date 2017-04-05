@@ -49,9 +49,7 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
     op->initialize(_inEvent);
-    auto* cut(dynamic_cast<Cut*>(op));
-    if (cut)
-      cut->registerCut(*cutsOut_);
+    op->registerCut(*cutsOut_);
   }
 
   // printf("Added all the operators. \n");
@@ -123,7 +121,7 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.execute(_event, outEvent_))
+    if (!op.exec(_event, outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -172,7 +170,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 
   auto opItr(operators_.begin());
   while (true) {
-    passUpToEE = passUpToEE && (*opItr)->execute(_event, outEvent_);
+    passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
     if (opItr == eePairSel_)
       break;
 
@@ -187,7 +185,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 
       bool pass(true);
       for (; opItr != operators_.end(); ++opItr)
-        pass = pass && (*opItr)->execute(_event, outEvent_);
+        pass = pass && (*opItr)->exec(_event, outEvent_);
 
       if (pass)
         skimOut_->Fill();
@@ -197,7 +195,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
   }
   else {
     for (; opItr != operators_.end(); ++opItr)
-      (*opItr)->execute(_event, outEvent_);
+      (*opItr)->exec(_event, outEvent_);
 
     cutsOut_->Fill();
   }
@@ -392,7 +390,7 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.execute(_event, outEvent_))
+    if (!op.exec(_event, outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -404,3 +402,4 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 
   cutsOut_->Fill();
 }
+

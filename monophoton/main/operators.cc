@@ -13,17 +13,27 @@
 //--------------------------------------------------------------------
 
 bool
-Cut::exec(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+Cut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  result_ = pass(_event, _outEvent);
+  result_ = pass(_event, static_cast<panda::EventMonophoton&>(_outEvent));
   return ignoreDecision_ || result_;
 }
 
 bool
-Modifier::exec(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+Modifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  apply(_event, _outEvent);
+  apply(_event, static_cast<panda::EventMonophoton&>(_outEvent));
   return true;
+}
+
+bool
+TPOperator::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  auto& tpevent(static_cast<panda::EventTPPhoton&>(_outEvent));
+  findCombos(_event, tpevent);
+  result_ = tpevent.tp.size() != 0;
+
+  return result_;
 }
 
 //--------------------------------------------------------------------
@@ -2291,29 +2301,6 @@ NPVWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 }
 
 //--------------------------------------------------------------------
-// PUWeight
-//--------------------------------------------------------------------
-
-void
-PUWeight::addBranches(TTree& _skimTree)
-{
-  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
-}
-
-void
-PUWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
-{
-  int iX(factors_->FindFixBin(_event.npvTrue));
-  if (iX == 0)
-    iX = 1;
-  if (iX > factors_->GetNbinsX())
-    iX = factors_->GetNbinsX();
-
-  weight_ = factors_->GetBinContent(iX);
-  _outEvent.weight *= factors_->GetBinContent(iX);
-}
-
-//--------------------------------------------------------------------
 // NNPDFVariation
 //--------------------------------------------------------------------
 
@@ -2361,6 +2348,186 @@ GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
       double dR(parton.dR(p));
       if (minDR_ < 0. || dR < minDR_)
         minDR_ = dR;
+    }
+  }
+}
+
+//--------------------------------------------------------------------
+// PUWeight
+//--------------------------------------------------------------------
+
+void
+PUWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+}
+
+bool
+PUWeight::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  int iX(factors_->FindFixBin(_event.npvTrue));
+  if (iX == 0)
+    iX = 1;
+  if (iX > factors_->GetNbinsX())
+    iX = factors_->GetNbinsX();
+
+  weight_ = factors_->GetBinContent(iX);
+  _outEvent.weight *= factors_->GetBinContent(iX);
+
+  return true;
+}
+
+//--------------------------------------------------------------------
+// TPElectronPhoton
+//--------------------------------------------------------------------
+
+void
+TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+{
+  for (auto& photon : _inEvent.photons) {
+    if (!photon.isEB || photon.scRawPt < 175.)
+      continue;
+
+    auto&& pg(photon.p4());
+
+    for (auto& electron : _inEvent.electrons) {
+      if (!electron.tight)
+        continue;
+
+      //      if (electron.pt() < 30. || std::abs(electron.eta()) > 2.1)
+      if (electron.pt() < 15. || std::abs(electron.eta()) > 2.1)
+        continue;
+
+      if (photon.dR2(electron) < 0.01)
+        continue;
+
+          // veto additional loose lepton
+      unsigned iVeto(0);
+      for (; iVeto != _inEvent.electrons.size(); ++iVeto) {
+        auto& veto(_inEvent.electrons[iVeto]);
+
+        if (&veto == &electron)
+          continue;
+
+        if (!veto.veto)
+          continue;
+
+        if (veto.pt() < 10.)
+          continue;
+            
+        // Our electron veto does not reject photons overlapping with e/mu
+        // Cases:
+        // 1. One electron radiates hard, gets deflected by a large angle
+        //   -> The radiation is a photon. Do not consider it in the set of probes for e->g fake rate measurement.
+        // 2. One electron radiates hard but stays collinear with the radiation
+        //   -> This is a fake photon.
+        // Large angle is defined by the isolation cone of the lepton; if the photon is within the cone, the lepton will fail the
+        // veto identification and therefore the event will stay in the candidate sample.
+        if (photon.dR2(veto) < 0.09)
+          continue;
+
+        break;
+      }
+      if (iVeto != _inEvent.electrons.size())
+        continue;
+
+      double mlg((pg + electron.p4()).M());
+
+      if (mlg < 20. || mlg > 160.)
+        continue;
+
+      auto& tp(_outEvent.tp.create_back());
+      tp.mass = mlg;
+            
+      _outEvent.tags.push_back(electron);
+      _outEvent.probes.push_back(photon);
+    }
+  }
+}
+
+void
+TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+{
+  for (auto& photon : _inEvent.photons) {
+    if (!photon.isEB || photon.scRawPt < 175.)
+      continue;
+
+    auto&& pg(photon.p4());
+
+    for (auto& muon : _inEvent.muons) {
+      if (!muon.tight)
+        continue;
+
+      //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)
+      if (muon.pt() < 15. || std::abs(muon.eta()) > 2.1)
+        continue;
+
+      if (photon.dR2(muon) < 0.01)
+        continue;
+
+      // veto additional loose lepton
+      unsigned iVeto(0);
+      for (; iVeto != _inEvent.muons.size(); ++iVeto) {
+        auto& veto(_inEvent.muons[iVeto]);
+
+        if (&veto == &muon)
+          continue;
+
+        if (!veto.loose)
+          continue;
+
+        if (veto.pt() < 10.)
+          continue;
+            
+        // Sync with electrons
+        if (photon.dR2(veto) < 0.09)
+          continue;
+
+        break;
+      }
+      if (iVeto != _inEvent.muons.size())
+        continue;
+
+      auto&& pm(muon.p4());
+
+      if (mode_ == kDouble) {
+        for (auto& looseMuon : _inEvent.muons) {
+          if (&looseMuon == &muon)
+            continue;
+
+          if (!looseMuon.loose)
+            continue;
+
+          if (photon.dR2(looseMuon) < 0.01)
+            continue;
+
+          TLorentzVector pll(pm + looseMuon.p4());
+          double mllg((pg + pll).M());
+
+          if (mllg < 20. || mllg > 160.)
+            continue;
+
+          auto& tp(_outEvent.tp.create_back());
+          tp.mass = mllg;
+          tp.mass2 = pll.M();
+
+          _outEvent.tags.push_back(muon);
+          _outEvent.looseTags.push_back(looseMuon);
+          _outEvent.probes.push_back(photon);
+        }
+      }
+      else {
+        double mlg((pg + pm).M());
+
+        if (mlg < 20. || mlg > 160.)
+          continue;
+
+        auto& tp(_outEvent.tp.create_back());
+        tp.mass = mlg;
+            
+        _outEvent.tags.push_back(muon);
+        _outEvent.probes.push_back(photon);
+      }
     }
   }
 }

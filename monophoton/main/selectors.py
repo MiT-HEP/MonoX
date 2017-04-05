@@ -1513,3 +1513,50 @@ def wglo(generator):
         return selector
 
     return truncated
+
+def tagprobeBase(sample, selector):
+    """
+    Base for selectors skimming tag & probe input trees.
+    """
+
+    if type(selector) is str: # this is a name for the selector
+        selector = ROOT.TagAndProbeSelector(selector)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    else:
+        addPUWeight(sample, selector)
+
+    return selector
+
+def tpeg(sample, selector):
+    """
+    Electron + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    selector.addOperator(ROOT.TPElectronPhoton())
+
+    return selector
+
+def tpmg(sample, selector):
+    """
+    Muon + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    selector.addOperator(ROOT.TPMuonPhoton())
+
+    return selector
+
+def tpmmg(sample, selector):
+    """
+    Dimuon + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    operator = ROOT.TPMuonPhoton()
+    operator.setMode(ROOT.TPMuonPhoton.kDouble)
+    selector.addOperator(operator)
+
+    return selector
