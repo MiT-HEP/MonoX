@@ -1513,3 +1513,18 @@ def wglo(generator):
         return selector
 
     return truncated
+
+def dph(generator):
+    """
+    Wrapper for diphoton samples to turn them into photon+dark photon samples by 'removing' one of the photons and adding it to the MET.
+    """
+
+    def invisible(sample, name):
+        selector = generator(sample, name)
+        
+        recoil = ROOT.PhotonRecoil()
+        selector.addOperator(recoil)
+
+        return selector
+
+    return invisible

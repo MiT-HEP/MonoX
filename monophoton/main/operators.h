@@ -653,9 +653,7 @@ class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
-  // copy metMuOnlyFix and correct using EGCorrection operator
-  // change back to copy t1Met once pfMet is fixed in panda
-  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.metMuOnlyFix; }
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.t1Met; }
 };
 
 class PhotonMt : public Modifier {
@@ -869,6 +867,26 @@ class GenPhotonDR : public Modifier {
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   float minDR_;
+};
+
+class PhotonRecoil : public Modifier {
+ public:
+  PhotonRecoil(char const* name = "PhotonRecoil") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  float realMet_;
+  float realPhi_;
+  float realMetCorrUp_;
+  float realPhiCorrUp_;
+  float realMetCorrDown_;
+  float realPhiCorrDown_;
+  float realMetUnclUp_;
+  float realPhiUnclUp_;
+  float realMetUnclDown_;
+  float realPhiUnclDown_;
 };
 
 #endif

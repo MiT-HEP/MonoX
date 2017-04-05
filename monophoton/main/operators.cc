@@ -290,7 +290,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     }
   }
   
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_ && _outEvent.photons[0].isEB;
 
   return _outEvent.photons.size() != 0;
 }
@@ -2376,4 +2376,89 @@ GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
         minDR_ = dR;
     }
   }
+}
+
+//--------------------------------------------------------------------
+// PhotonRecoil
+//--------------------------------------------------------------------
+
+void
+PhotonRecoil::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
+  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+}
+
+void
+PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outRecoils[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outRecoilPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  float* realMets[] = {
+    &realMet_,
+    &realMetCorrUp_,
+    &realMetCorrDown_,
+    &realMetUnclUp_,
+    &realMetUnclDown_
+  };
+  float* realPhis[] = {
+    &realPhi_,
+    &realPhiCorrUp_,
+    &realPhiCorrDown_,
+    &realPhiUnclUp_,
+    &realPhiUnclDown_
+  };
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    *realMets[iM] = inMets[iM];
+    *realPhis[iM] = inPhis[iM];
+  }
+
+  double phox(0.);
+  double phoy(0.);
+    
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    if (iP == 0)
+      continue;
+    
+    auto& pho = _outEvent.photons[iP];
+
+    phox += pho.pt() * std::cos(pho.phi());
+    phoy += pho.pt() * std::sin(pho.phi());
+  }
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    double mex(phox + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(phoy + inMets[iM] * std::sin(inPhis[iM]));
+    *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
+    *outRecoilPhis[iM] = std::atan2(mey, mex);
+  } 
 }
