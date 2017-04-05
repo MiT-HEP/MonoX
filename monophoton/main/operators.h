@@ -2,6 +2,7 @@
 #define operators_h
 
 #include "Objects/interface/EventMonophoton.h"
+#include "Objects/interface/EventTPPhoton.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -88,10 +89,10 @@ class Operator {
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
 
-  virtual bool execute(panda::EventBase const&, panda::EventBase&) = 0;
+  virtual bool execute(panda::EventMonophoton const&, panda::EventBase&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
-  virtual void init(panda::EventBase&) {}
+  virtual void initialize(panda::EventMonophoton&) {}
 
  protected:
   TString name_;
@@ -102,14 +103,9 @@ class MonophotonOperator : public Operator {
   MonophotonOperator(char const* name) : Operator(name) {}
   ~MonophotonOperator() {}
 
-  bool execute(panda::EventBase const& inEvent, panda::EventBase& outEvent) {
-    return exec(static_cast<panda::EventMonophoton const&>(inEvent), static_cast<panda::EventMonophoton&>(outEvent)); }
+  bool execute(panda::EventMonophoton const& inEvent, panda::EventBase& outEvent) {
+    return exec(inEvent, static_cast<panda::EventMonophoton&>(outEvent)); }
   virtual bool exec(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
-
-  void init(panda::EventBase& _event) {
-    initialize(static_cast<panda::EventMonophoton&>(_event));
-  }
-  virtual void initialize(panda::EventMonophoton&) {}
 };
 
 class Cut : public MonophotonOperator {
