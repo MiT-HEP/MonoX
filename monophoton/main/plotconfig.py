@@ -80,14 +80,14 @@ def getConfig(confName):
             GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'])
         ]            
         config.signalPoints = [
-            # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = 46), 
-            SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = 30), 
+            # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = ROOT.kOrange+1), 
+            SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = ROOT.kMagenta), 
             # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = 50),
             # SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = 30), 
             # SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = 31), 
             # SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = 31), 
-            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = 77),
-            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = 98), 
+            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kYellow),
+            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kCyan), 
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'] + wlnu, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),

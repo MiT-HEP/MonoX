@@ -1038,10 +1038,11 @@ class DataMCCanvas(RatioCanvas):
 
             fillcolor = ROOT.gROOT.GetColor(color)
             if fillcolor:
-                r = fillcolor.GetRed() * 0.8
-                g = fillcolor.GetGreen() * 0.8
-                b = fillcolor.GetBlue() * 0.8
-                lcolor = ROOT.TColor.GetColor(r, g, b)
+                r = fillcolor.GetRed() * 0.9
+                g = fillcolor.GetGreen() * 0.9
+                b = fillcolor.GetBlue() * 0.9
+                color = ROOT.TColor.GetColor(r, g, b)
+                lcolor = ROOT.TColor.GetColor(r * 0.9, g * 0.9, b * 0.9)
             else:
                 lcolor = color
 
@@ -1061,7 +1062,7 @@ class DataMCCanvas(RatioCanvas):
             # a new signal
             self._sigs.append(idx)
 
-            self.legend.add('sig%d' % idx, title = title, opt = 'L', color = color, lwidth = 2, lstyle = ROOT.kSolid, fstyle = 0)
+            self.legend.add('sig%d' % idx, title = title, opt = 'L', color = color, lwidth = 3, lstyle = ROOT.kSolid, fstyle = 0)
             self.legend.apply('sig%d' % idx, self._histograms[idx].histogram)
 
         self._modified()
