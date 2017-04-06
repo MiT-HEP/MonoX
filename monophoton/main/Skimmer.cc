@@ -26,7 +26,7 @@ public:
 
   void reset() { paths_.clear(); selectors_.clear(); }
   void addPath(char const* _path) { paths_.emplace_back(_path); }
-  void addSelector(EventSelector* _sel) { selectors_.push_back(_sel); }
+  void addSelector(EventSelectorBase* _sel) { selectors_.push_back(_sel); }
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
@@ -37,7 +37,7 @@ public:
 
 private:
   std::vector<TString> paths_{};
-  std::vector<EventSelector*> selectors_{};
+  std::vector<EventSelectorBase*> selectors_{};
   TString commonSelection_{};
   bool doPhotonSkim_{true};
   GoodLumiFilter* goodLumiFilter_{};

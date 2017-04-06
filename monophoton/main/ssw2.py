@@ -22,6 +22,7 @@ argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', de
 argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
 argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
+argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
 argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
@@ -153,11 +154,7 @@ def executeSkim(sample, filesets, outDir):
 
         logger.debug('Add input: %s', path)
         skimmer.addPath(path)
-
-    if sample.data and args.json:
-        logger.info('Good lumi filter: %s', args.json)
-        skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
-    
+   
     outNameBase = sample.name
 
     outSuffix = None
@@ -168,6 +165,34 @@ def executeSkim(sample, filesets, outDir):
 
     if outSuffix is not None:
         outNameBase += '_' + outSuffix
+
+    if args.skipExisting:
+        logger.info('Checking for existing files.')
+    else:
+        logger.info('Removing existing files.')
+
+    for selname in [rname for rname, gen in selectors[sample.name]]:
+        outName = outDir + '/' + outNameBase + '_' + selname + '.root'
+        logger.debug(outName)
+
+        if args.skipExisting:
+            if not os.path.exists(outName) or os.stat(outName).st_size == 0:
+                break
+            logger.debug('%s exists.', outName)
+        else:
+            try:
+                os.remove(outName)
+            except:
+                pass
+
+    else:
+        if args.skipExisting:
+            logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
+            return
+
+    if sample.data and args.json:
+        logger.info('Good lumi filter: %s', args.json)
+        skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
 
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
@@ -186,7 +211,7 @@ for sample in samples:
 
     splitOutDir = config.skimDir + '/' + sample.name
 
-    if len(args.filesets) != 0:
+    if len(args.filesets) != 0 and len(sample.filesets()) > 1:
         outDir = splitOutDir
         fslist = args.filesets
     else:
@@ -232,15 +257,15 @@ for sample in samples:
             logger.info('Removing %s', mergePath)
             os.remove(mergePath)
 
-    # Will do the actual skimming
-    elif args.split:
-        print 'Skimming entire sample in chunks.'
-        # Interactive + split -> not very useful. For debugging
-        for fileset in fslist:
-            executeSkim(sample, [fileset], outDir)
     else:
-        print 'Skimming given filesets.'
-        executeSkim(sample, fslist, outDir)
+        # Will do the actual skimming
+        print 'Skimming.'
+        if args.split:
+            # Interactive + split -> not very useful. For debugging
+            for fileset in fslist:
+                executeSkim(sample, [fileset], outDir)
+        else:
+            executeSkim(sample, fslist, outDir)
 
 # Remainder of the script relates to condor submission
 if not batch:
@@ -261,7 +286,7 @@ def waitForCompletion(jobClusters):
 
             clusterId, jobStatus = line.split()[:2]
             if jobStatus == '5':
-                sname, dummy, fileset = line.split()[3:] # [2] is the executable
+                sname, _, fileset = line.split()[3:6] # [2] is the executable
                 if (sname, fileset) in heldJobs:
                     continue
 
@@ -290,11 +315,6 @@ if args.split:
 
     # Collect arguments and remove output
     for sample in samples:
-        if len(sample.filesets()) == 1:
-            singleFileset = True
-        else:
-            singleFileset = False
-
         if len(args.filesets) == 0:
             fslist = sorted(sample.filesets())
         else:
@@ -303,7 +323,7 @@ if args.split:
         splitOutDir = config.skimDir + '/' + sample.name
 
         for fileset in fslist:
-            if singleFileset:
+            if len(sample.filesets()) == 1:
                 arguments.append(sample.name)
             else:
                 arguments.append((sample.name, fileset))
@@ -316,27 +336,21 @@ if args.split:
             except:
                 pass
 
-            for selname in [rname for rname, gen in selectors[sample.name]]:
-                if singleFileset:
-                    path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
-                else:
-                    path = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
-
-                logger.debug('Removing %s', path)
-                try:
-                    os.remove(path)
-                except:
-                    pass
-
     submitter.job_args = []
     submitter.job_names = []
     for arg in arguments:
         if type(arg) is tuple:
-            submitter.job_args.append('{0} -f {1}'.format(*arg))
-            submitter.job_names.append('{0}_{1}'.format(*arg))
+            job_arg = '{0} -f {1}'.format(*arg)
+            job_name = '{0}_{1}'.format(*arg)
         else:
-            submitter.job_args.append('%s' % arg)
-            submitter.job_names.append('%s_0000' % arg)
+            job_arg = arg
+            job_name = '%s_0000' % arg
+
+        if args.skipExisting:
+            job_arg += ' -X'
+
+        submitter.job_args.append(job_arg)
+        submitter.job_names.append(job_name)
 
     jobClusters = submitter.submit(name = 'ssw2')
 

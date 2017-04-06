@@ -7,50 +7,59 @@
 #include <cstring>
 
 //--------------------------------------------------------------------
-// EventSelector
+// EventSelectorBase
 //--------------------------------------------------------------------
 
 void
-EventSelector::initialize(char const* _outputPath, panda::EventMonophoton& _event, bool _isMC)
+EventSelectorBase::addOperator(Operator* _op, unsigned _idx/* = -1*/)
+{
+  if (_idx >= operators_.size())
+    operators_.push_back(_op);
+  else
+    operators_.insert(operators_.begin() + _idx, _op);
+}
+
+Operator*
+EventSelectorBase::findOperator(char const* _name) const
+{
+  for (auto* op : operators_) {
+    if (std::strcmp(op->name(), _name) == 0)
+      return op;
+  }
+
+  return 0;
+}
+
+void
+EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _inEvent, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
   skimOut_ = new TTree("events", "Events");
   cutsOut_ = new TTree("cutflow", "cutflow");
 
-  // Branches to be directly copied from the input tree
-  if (_isMC)
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
-  else
-    _event.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
-
-  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
-
   skimOut_->Branch("weight_Input", &inWeight_, "weight_Input/D");
 
-  cutsOut_->Branch("runNumber", &_event.runNumber, "runNumber/i");
-  cutsOut_->Branch("lumiNumber", &_event.lumiNumber, "lumiNumber/i");
-  cutsOut_->Branch("eventNumber", &_event.eventNumber, "eventNumber/i");
+  cutsOut_->Branch("runNumber", &_inEvent.runNumber, "runNumber/i");
+  cutsOut_->Branch("lumiNumber", &_inEvent.lumiNumber, "lumiNumber/i");
+  cutsOut_->Branch("eventNumber", &_inEvent.eventNumber, "eventNumber/i");
 
-  // printf("Did runNumber lumiNumber eventNumber. \n");
+  setupSkim_(_inEvent, _isMC);
 
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
-    op->initialize(_event);
-    auto* cut(dynamic_cast<Cut*>(op));
-    if (cut)
-      cut->registerCut(*cutsOut_);
+    op->initialize(_inEvent);
+    op->registerCut(*cutsOut_);
   }
-
-  if (useTimers_)
-    timers_.resize(operators_.size());
 
   // printf("Added all the operators. \n");
 
+  if (useTimers_)
+    timers_.resize(operators_.size());
 }
 
 void
-EventSelector::finalize()
+EventSelectorBase::finalize()
 {
   if (!skimOut_)
     return;
@@ -59,6 +68,9 @@ EventSelector::finalize()
   outputFile->cd();
   skimOut_->Write();
   cutsOut_->Write();
+
+  // save additional output if there are any
+  addOutput_(outputFile);
 
   delete outputFile;
   skimOut_ = 0;
@@ -72,6 +84,22 @@ EventSelector::finalize()
       std::cout << " " << (std::chrono::duration_cast<std::chrono::nanoseconds>(timers_[iO]).count() * 1.e-9) << " " << operators_[iO]->name() << std::endl;
     }
   }
+}
+
+//--------------------------------------------------------------------
+// EventSelector
+//--------------------------------------------------------------------
+
+void
+EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
+{
+  // Branches to be directly copied from the input tree
+  if (_isMC)
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
+  else
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
+
+  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
 }
 
 void
@@ -104,17 +132,6 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     skimOut_->Fill();
 
   cutsOut_->Fill();
-}
-
-Operator*
-EventSelector::findOperator(char const* _name) const
-{
-  for (auto* op : operators_) {
-    if (std::strcmp(op->name(), _name) == 0)
-      return op;
-  }
-
-  return 0;
 }
 
 //--------------------------------------------------------------------
@@ -286,21 +303,17 @@ WenuSelector::selectEvent(panda::EventMonophoton& _event)
 //--------------------------------------------------------------------
 
 void
-NormalizingSelector::finalize()
+NormalizingSelector::addOutput_(TFile*& _outputFile)
 {
-  if (!skimOut_)
-    return;
-
   auto* hSumW(new TH1D("sumW", "", 1, 0., 1.));
   hSumW->Sumw2();
   skimOut_->Draw("0.5>>sumW", "weight * (" + normCut_ + ")", "goff");
   double sumW(hSumW->GetBinContent(1));
   delete hSumW;
 
-  auto* outputFile(skimOut_->GetCurrentFile());
-  TString outName(outputFile->GetName());
+  TString outName(_outputFile->GetName());
   TString tmpName(outName);
-  tmpName.ReplaceAll(".root", "_tmp.root");
+  tmpName.ReplaceAll(".root", "_normalizing.root");
 
   auto* trueOutput(TFile::Open(tmpName, "recreate"));
   auto* trueSkim(skimOut_->CloneTree(0));
@@ -317,14 +330,14 @@ NormalizingSelector::finalize()
 
   trueOutput->cd();
   trueSkim->Write();
-  auto* trueCuts(cutsOut_->CloneTree());
+  auto* trueCuts(cutsOut_->CloneTree(-1, "fast"));
   trueCuts->Write();
 
   delete trueOutput;
-  delete outputFile;
 
-  skimOut_ = 0;
-  cutsOut_ = 0;
+  delete _outputFile;
+  // set the pointer to NULL so that finalize() does not delete it again
+  _outputFile = 0;
 
   gSystem->Rename(tmpName, outName);
 }
@@ -350,3 +363,43 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
     EventSelector::selectEvent(_event);
   }
 }
+
+//--------------------------------------------------------------------
+// TagAndProbeSelector
+//--------------------------------------------------------------------
+
+void
+TagAndProbeSelector::setupSkim_(panda::EventMonophoton&, bool)
+{
+  outEvent_.book(*skimOut_);
+}
+
+void
+TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
+{
+  outEvent_.init();
+  inWeight_ = _event.weight;
+  outEvent_.weight = _event.weight;
+
+  Clock::time_point start;
+
+  bool pass(true);
+  for (unsigned iO(0); iO != operators_.size(); ++iO) {
+    auto& op(*operators_[iO]);
+
+    if (useTimers_)
+      start = Clock::now();
+
+    if (!op.exec(_event, outEvent_))
+      pass = false;
+
+    if (useTimers_)
+      timers_[iO] += Clock::now() - start;
+  }
+
+  if (pass)
+    skimOut_->Fill();
+
+  cutsOut_->Fill();
+}
+
