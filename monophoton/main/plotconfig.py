@@ -45,7 +45,7 @@ combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 1000.0]
 fitTemplateExpression = '( ( (photons.scRawPt[0] - 175.) * (photons.scRawPt[0] < 1000.) + 800. * (photons.scRawPt[0] > 1000.) ) * TMath::Sign(1, TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - 1.570796)) - 1.570796) - 0.5) )'
 fitTemplateBinning = [-1 * (bin - 175.) for bin in reversed(combinedFitPtBinning)] + [bin - 175. for bin in combinedFitPtBinning[1:]]
 
-baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5' #  && taus.size == 0' # && bjets.size == 0'
+baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5' #  && taus.size == 0' # && bjets.size == 0'
 
 def getConfig(confName):
 
@@ -83,10 +83,11 @@ def getConfig(confName):
             # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = 46), 
             SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = 30), 
             # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = 50),
-            SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = 30), 
-            SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = 31), 
-            SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = 31), 
-            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = 77), 
+            # SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = 30), 
+            # SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = 31), 
+            # SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = 31), 
+            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = 77),
+            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = 98), 
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'] + wlnu, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
@@ -97,18 +98,15 @@ def getConfig(confName):
             GroupSpec('hfake', 'Hadronic fakes', samples = photonDataICHEP, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = photonDataICHEP, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            # GroupSpec('wglo', 'W#rightarrowl#nu+#gamma', samples = ['wglo-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            # GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
+            # GroupSpec('wgnlo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            # GroupSpec('zgnlo', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', applyFullSel = True, overflow = False),
             VariableDef('met', 'E_{T}^{miss}', 't1Met.pt', [170., 190., 250., 400., 700., 1000.], unit = 'GeV', overflow = True),            
             VariableDef('metWide', 'E_{T}^{miss}', 't1Met.pt', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5', overflow = True),
-            VariableDef('metWideNoEGFix', 'E_{T}^{miss}', 'TMath::Sqrt(TMath::Power(t1Met.pt * TMath::Cos(t1Met.phi) + t1Met.corrMag * TMath::Cos(t1Met.corrPhi), 2) + TMath::Power(t1Met.pt * TMath::Sin(t1Met.phi) + t1Met.corrMag * TMath::Sin(t1Met.corrPhi), 2))', [0. + 10. * x for x in range(10)] + [100. + 20. * x for x in range(5)] + [200. + 50. * x for x in range(9)], unit = 'GeV', applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5', overflow = True),
             VariableDef('metHigh', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
-            VariableDef('metHighNoEGFix', 'E_{T}^{miss}', 'TMath::Sqrt(TMath::Power(t1Met.pt * TMath::Cos(t1Met.phi) + t1Met.corrMag * TMath::Cos(t1Met.corrPhi), 2) + TMath::Power(t1Met.pt * TMath::Sin(t1Met.phi) + t1Met.corrMag * TMath::Sin(t1Met.corrPhi), 2))', combinedFitPtBinning, unit = 'GeV', overflow = True),
             VariableDef('metScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True), # blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
@@ -162,7 +160,7 @@ def getConfig(confName):
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
-            if group.name not in ['zg', 'wg']:
+            if group.name in ['vvg']:
                 continue
             
             replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.pt', 't1Met.ptCorrUp')]
@@ -204,7 +202,7 @@ def getConfig(confName):
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            # GroupSpec('zgnlo', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', overflow = False),
@@ -251,7 +249,7 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
 
-            if group.name not in ['zg', 'wg']:
+            if group.name in ['vvg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -285,7 +283,7 @@ def getConfig(confName):
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
-            # GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+            # GroupSpec('zgnlo', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
             ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', overflow = False),
@@ -332,7 +330,7 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
 
-            if group.name not in ['zg', 'wg']:
+            if group.name in ['vvg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -369,11 +367,11 @@ def getConfig(confName):
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-40', 'gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             # GroupSpec('wglo', 'W#rightarrowl#nu+#gamma', samples = ['wglo-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            # GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+            # GroupSpec('wgnlo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', overflow = False),
@@ -417,7 +415,7 @@ def getConfig(confName):
             # group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
 
-            if group.name not in ['zg', 'wg']:
+            if group.name in ['vvg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
@@ -455,11 +453,11 @@ def getConfig(confName):
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gg', '#gamma#gamma', samples = ['gg-40', 'gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
             GroupSpec('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
-            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
+            GroupSpec('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
             GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             # GroupSpec('wglo', 'W#rightarrowl#nu+#gamma', samples = ['wglo-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
-            # GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+            # GroupSpec('wgnlo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         ]
         config.variables = [
             VariableDef('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', overflow = False),
@@ -503,7 +501,7 @@ def getConfig(confName):
             # group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
 
-            if group.name in ['zg', 'wg']:
+            if group.name in ['vvg']:
                 continue;
 
             replUp = [('t1Met.realMinJetDPhi', 't1Met.realMinJetDPhiJECUp'), ('t1Met.realMet', 't1Met.ptCorrUp')]
