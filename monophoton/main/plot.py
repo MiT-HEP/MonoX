@@ -13,7 +13,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-DOSYSTEMATICS = True
+# DOSYSTEMATICS = True
+DOSYSTEMATICS = False
 
 # global variables to be set in __main__
 allsamples = None 
@@ -574,7 +575,14 @@ if __name__ == '__main__':
         else:
             # set up canvas
             canvas.Clear(full = True)
-            canvas.legend.setPosition(0.67, SimpleCanvas.YMAX - 0.01 - 0.035 * (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints)), 0.92, SimpleCanvas.YMAX - 0.01)
+
+            nentries = (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints))
+            if nentries % 5:
+                ncolumns = (int(nentries) / 5) + 1
+            else:
+                ncolumns = (int(nentries) / 5)
+
+            canvas.legend.setPosition(0.80 - 0.15 * ncolumns, SimpleCanvas.YMAX - 0.01 - 0.035 * 5, 0.92, SimpleCanvas.YMAX - 0.01)
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:
