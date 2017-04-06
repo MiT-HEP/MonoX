@@ -61,12 +61,12 @@ if args.cutflow is None:
             cutflow.append(('HLT_Photon165_HE10',))
         
         cutflow += [
+            ('PhotonSelection',),
             ('MuonVeto',), 
             ('ElectronVeto',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('PhotonSelection',),
             # ('TauVeto',)
         ]
 
@@ -76,13 +76,13 @@ if args.cutflow is None:
             cutflow.append(('HLT_Photon165_HE10',))
 
         cutflow += [
+            ('PhotonSelection',),
             ('LeptonSelection',),
             ('RealMetCut',),
             ('LeptonMt',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('PhotonSelection',),
         ]
 
     elif args.region == 'monomu':
@@ -91,12 +91,12 @@ if args.cutflow is None:
             cutflow.append(('HLT_Photon165_HE10',))
 
         cutflow += [
+            ('PhotonSelection',),
             ('LeptonSelection',),
             ('LeptonMt',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('PhotonSelection',),
         ]
 
     elif args.region in ['dimu', 'diel']:
@@ -105,13 +105,13 @@ if args.cutflow is None:
             cutflow.append(('HLT_Photon165_HE10',))
 
         cutflow += [
+            ('PhotonSelection',),
             ('LeptonSelection',),
             ('OppositeSign',),
             ('Mass',),
             ('HighMet',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
-            ('PhotonSelection',),
         ]
 
 else:
@@ -121,10 +121,10 @@ else:
 
 # print ntotal, 1
 
-print "%40s %15d %15.4e %15.1e" % ("total", ntotal, (float(ntotal) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, ntotal, 0.6826895, True) - float(ntotal) / ntotal))
+print "%40s %15d %15.4f %15.4e %15.1e" % ("total", ntotal, (float(ntotal) / ntotal), (float(ntotal) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, ntotal, 0.6826895, True) - float(ntotal) / ntotal))
 
 nevt = tree.GetEntries()
-print "%40s %15d %15.4e %15.1e" % ('PhotonSkim', nevt, (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
+print "%40s %15d %15.4f %15.4e %15.1e" % ('PhotonSkim', nevt, (float(nevt) / ntotal), (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
 
 expr = ''
 for cuts in cutflow:
@@ -135,6 +135,7 @@ for cuts in cutflow:
         name = ' && ' + ' && '.join(cuts)
         expr += name
 
+    prev = float(nevt)
     nevt = tree.GetEntries(expr)
     # print nevt, '%.4e' % (float(nevt) / ntotal), '%.1e' % (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal), name
-    print "%40s %15d %15.4e %15.1e" % (name, nevt, (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
+    print "%40s %15d %15.4f %15.4e %15.1e" % (name, nevt, (float(nevt) / prev), (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
