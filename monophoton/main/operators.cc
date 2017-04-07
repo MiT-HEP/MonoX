@@ -300,7 +300,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     }
   }
   
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_ && _outEvent.photons[0].isEB;
 
   return _outEvent.photons.size() != 0;
 }
@@ -1814,6 +1814,8 @@ LeptonRecoil::realMetUncl(int corr) const
 void
 EGCorrection::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("t1Met.origMet", &origMet_, "origMet/F");
+  _skimTree.Branch("t1Met.origPhi", &origPhi_, "origPhi/F");
   _skimTree.Branch("t1Met.corrMag", &corrMag_, "corrMag/F");
   _skimTree.Branch("t1Met.corrPhi", &corrPhi_, "corrPhi/F");
 }
@@ -1853,7 +1855,7 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
 
   double cpx(0.);
   double cpy(0.);
-  double pfPt(0.);
+  double ptDiff(0.);
 
   // add up corrections from photons
   for (unsigned iL(0); iL != _outEvent.photons.size(); ++iL) {
@@ -1861,13 +1863,16 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     
     if (part.pfPt < 0) {
       // printf("Warning!! negative pfPt! Photon wasn't matched to a pf candidate! \n");
-      pfPt = part.rawPt;
+      ptDiff = 0.;
     }
     else
-      pfPt = part.pfPt;
+      ptDiff = part.rawPt - part.pfPt;
     
-    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
-    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+    if (std::abs(ptDiff) > 50.)
+      printf("photon   ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
   }
 
   // add up corrections from electrons
@@ -1876,23 +1881,31 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     
     if (part.pfPt < 0) {
       // printf("Warning!! negative pfPt! Electron wasn't matched to a pf candidate! \n");
-      pfPt = part.rawPt;
+      ptDiff = 0.;
     }
     else
-      pfPt = part.pfPt;
+      ptDiff = part.rawPt - part.pfPt;
     
-    cpx += (part.rawPt - pfPt) * std::cos(part.phi());
-    cpy += (part.rawPt - pfPt) * std::sin(part.phi());
+    if (std::abs(ptDiff) > 50.)
+      printf("electron ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
   }
   
   // save correction
   corrMag_ = std::sqrt(cpx * cpx + cpy * cpy);
   corrPhi_ = std::atan2(cpy, cpx);
+  origMet_ = inMets[0];
+  origPhi_ = inPhis[0];
+
+  // if (corrMag_ > 50.)
+  //  printf("cpx: %6.1f  cpy: %6.1f  corrMag: %6.1f  corrPhi %6.2f \n", cpx, cpy, corrMag_, corrPhi_);
 
   // apply correction
   for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
-    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx);
-    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy);
+    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx); 
+    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy); 
     *outMets[iM] = std::sqrt(mex * mex + mey * mey);
     *outMetPhis[iM] = std::atan2(mey, mex);
   }
@@ -2353,6 +2366,90 @@ GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
 }
 
 //--------------------------------------------------------------------
+// PhotonRecoil
+//--------------------------------------------------------------------
+
+void
+PhotonRecoil::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
+  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+}
+
+void
+PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outRecoils[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outRecoilPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  float* realMets[] = {
+    &realMet_,
+    &realMetCorrUp_,
+    &realMetCorrDown_,
+    &realMetUnclUp_,
+    &realMetUnclDown_
+  };
+  float* realPhis[] = {
+    &realPhi_,
+    &realPhiCorrUp_,
+    &realPhiCorrDown_,
+    &realPhiUnclUp_,
+    &realPhiUnclDown_
+  };
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    *realMets[iM] = inMets[iM];
+    *realPhis[iM] = inPhis[iM];
+  }
+
+  double phox(0.);
+  double phoy(0.);
+    
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    if (iP == 0)
+      continue;
+    
+    auto& pho = _outEvent.photons[iP];
+
+    phox += pho.pt() * std::cos(pho.phi());
+    phoy += pho.pt() * std::sin(pho.phi());
+  }
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    double mex(phox + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(phoy + inMets[iM] * std::sin(inPhis[iM]));
+    *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
+    *outRecoilPhis[iM] = std::atan2(mey, mex);
+  } 
+}
+
 // PUWeight
 //--------------------------------------------------------------------
 

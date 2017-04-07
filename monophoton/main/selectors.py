@@ -149,8 +149,8 @@ def monophotonBase(sample, selector):
 
     if not sample.data:
         operators.append('MetVariations')
-    else:
-        operators.append('EGCorrection')
+    # else:
+    #     operators.append('EGCorrection')
         
     operators += [
         'PhotonMetDPhi',
@@ -215,8 +215,8 @@ def purityBase(sample, selector):
         'CopyMet'
     ]
 
-    if sample.data:
-        operators.append('EGCorrection')
+    # if sample.data:
+    #     operators.append('EGCorrection')
 
     operators += [
         'JetMetDPhi',
@@ -265,8 +265,8 @@ def leptonBase(sample, selector):
         'CopyMet',
     ]
 
-    if sample.data:
-        operators.append('EGCorrection')
+    # if sample.data:
+    #     operators.append('EGCorrection')
 
     operators += [
         'LeptonRecoil',
@@ -366,8 +366,8 @@ def TagAndProbeBase(sample, selector):
         'CopyMet',
     ]
 
-    if sample.data:
-        operators.append('EGCorrection')
+    # if sample.data:
+    #     operators.append('EGCorrection')
 
     operators += [ 
         'JetMetDPhi',
@@ -1514,6 +1514,21 @@ def wglo(generator):
 
     return truncated
 
+def dph(generator):
+    """
+    Wrapper for diphoton samples to turn them into photon+dark photon samples by 'removing' one of the photons and adding it to the MET.
+    """
+
+    def invisible(sample, name):
+        selector = generator(sample, name)
+        
+        recoil = ROOT.PhotonRecoil()
+        selector.addOperator(recoil)
+
+        return selector
+
+    return invisible
+
 def tagprobeBase(sample, selector):
     """
     Base for selectors skimming tag & probe input trees.
@@ -1560,3 +1575,4 @@ def tpmmg(sample, selector):
     selector.addOperator(operator)
 
     return selector
+

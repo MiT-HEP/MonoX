@@ -157,8 +157,14 @@ def executeSkim(sample, filesets, outDir):
    
     outNameBase = sample.name
 
+    outSuffix = None
     if args.outSuffix:
-        outNameBase += '_' + args.outSuffix
+        outSuffix = args.outSuffix
+    elif len(filesets) == 1 and len(sample.filesets()) > 1:
+        outSuffix = filesets[0]
+
+    if outSuffix is not None:
+        outNameBase += '_' + outSuffix
 
     if args.skipExisting:
         logger.info('Checking for existing files.')
@@ -334,7 +340,7 @@ if args.split:
     submitter.job_names = []
     for arg in arguments:
         if type(arg) is tuple:
-            job_arg = '{0} -f {1} -x {1}'.format(*arg)
+            job_arg = '{0} -f {1}'.format(*arg)
             job_name = '{0}_{1}'.format(*arg)
         else:
             job_arg = arg
