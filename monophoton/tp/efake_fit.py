@@ -11,7 +11,7 @@ sys.path.append(basedir)
 import config
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import skimDir, skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 # set to nonzero if you want to run toys in runMode single too
 nToys = 0
@@ -72,7 +72,7 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.Load(config.libsimpletree)
+ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
@@ -169,11 +169,11 @@ elif runMode == 'single':
     if dataType == 'data':
         # target samples
         for sname in skimConfig['phdata'][0]:
-            generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
     
         # background samples
         for sname in skimConfig['phdata'][0]:
-            generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
+            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '_tpmg.root')
 
         # will need MC signal template
 #        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
@@ -181,10 +181,10 @@ elif runMode == 'single':
 
     else:
         for sname in skimConfig['mc'][0]:
-            generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
-            generator.addInput(ROOT.kMG, skimDir + '/' + sname + '_mg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
+            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '_tpmg.root')
         for sname in skimConfig['mcgg'][0]:
-            generator.addInput(ROOT.kEG, skimDir + '/' + sname + '_eg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
 
     work = ROOT.RooWorkspace('work', 'work')
     

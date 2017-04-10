@@ -27,7 +27,7 @@ argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 's
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
 argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
-argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to merge.')
+argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
 
 # eosInput:
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Running at %s', socket.gethostname())
 
 from datasets import allsamples
-from main.skimconfig import selectors
+from main.skimconfig import selectors as allSelectors
 
 sys.path.append(monoxdir + '/common')
 from goodlumi import makeGoodLumiFilter
@@ -61,6 +61,7 @@ batch = (args.split or args.merge) and not args.interactive
 
 if args.merge and batch and len(args.selnames) != 0:
     logger.error('Batch merge mode must be inclusive in selectors.')
+    # why was this I forgot
     sys.exit(1)
 
 if args.split and len(args.filesets) != 0:
@@ -70,6 +71,17 @@ if args.split and len(args.filesets) != 0:
 if len(args.files) != 0 and (len(args.filesets) != 0 or args.split):
     logger.error('Cannot set filesets or split mode with --files option.')
     sys.exit(1)
+
+if len(args.selnames) != 0:
+    selectors = {}
+    for sname, sels in allSelectors.items():
+        selectors[sname] = []
+        for rname, gen in sels:
+            if rname in args.selnames:
+                selectors[sname].append((rname, gen))
+
+else:
+    selectors = allSelectors
 
 import ROOT
 
@@ -245,9 +257,7 @@ for sample in samples:
     if args.merge:
         print 'Merging.'
 
-        selnames = args.selnames
-        if selnames == []:
-            selnames = [rname for rname, gen in selectors[sample.name]]
+        selnames = [rname for rname, gen in selectors[sample.name]]
 
         for selname in selnames:
             for fileset in fslist:
@@ -361,6 +371,9 @@ if args.split:
 
         if args.skipExisting:
             job_arg += ' -X'
+
+        if len(args.selnames) != 0:
+            job_arg += ' -s ' + ' '.join(args.selnames)
 
         submitter.job_args.append(job_arg)
         submitter.job_names.append(job_name)
