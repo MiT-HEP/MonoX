@@ -81,6 +81,7 @@ class SampleDef(object):
         print 'lumi =', self.effectiveLumi(), 'pb'
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
+        print 'filesets = ', self.filesets()
 
     def linedump(self):
         title = '"%s"' % self.title
@@ -214,7 +215,7 @@ class SampleDef(object):
         if len(datasetNames) == 0:
             datasetNames = self.datasetNames
 
-        return sum([self._fullpaths[d].keys() for d in datasetNames], [])
+        return sum([sorted(self._fullpaths[d].keys()) for d in datasetNames], [])
 
     def files(self, filesets = []):
         self._readCatalogs()

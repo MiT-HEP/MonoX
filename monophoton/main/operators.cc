@@ -2552,7 +2552,7 @@ TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPP
     auto&& pg(photon.p4());
 
     for (auto& muon : _inEvent.muons) {
-      if (!muon.tight)
+      if (!muon.tight || muon.combIso() / muon.pt() > 0.15)
         continue;
 
       //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)

@@ -20,13 +20,14 @@ argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'co
 argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
 argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
 argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
+argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files. No split mode available.')
 argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
 argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
 argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
 argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
-argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to merge.')
+argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
 
 # eosInput:
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
@@ -48,7 +49,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Running at %s', socket.gethostname())
 
 from datasets import allsamples
-from main.skimconfig import selectors
+from main.skimconfig import selectors as allSelectors
 
 sys.path.append(monoxdir + '/common')
 from goodlumi import makeGoodLumiFilter
@@ -60,11 +61,27 @@ batch = (args.split or args.merge) and not args.interactive
 
 if args.merge and batch and len(args.selnames) != 0:
     logger.error('Batch merge mode must be inclusive in selectors.')
+    # why was this I forgot
     sys.exit(1)
 
 if args.split and len(args.filesets) != 0:
     logger.error('Split mode must be inclusive in filesets.')
     sys.exit(1)
+
+if len(args.files) != 0 and (len(args.filesets) != 0 or args.split):
+    logger.error('Cannot set filesets or split mode with --files option.')
+    sys.exit(1)
+
+if len(args.selnames) != 0:
+    selectors = {}
+    for sname, sels in allSelectors.items():
+        selectors[sname] = []
+        for rname, gen in sels:
+            if rname in args.selnames:
+                selectors[sname].append((rname, gen))
+
+else:
+    selectors = allSelectors
 
 import ROOT
 
@@ -113,6 +130,10 @@ if args.merge:
         except OSError:
             pass
 
+if len(args.files) != 0:
+    # make a dummy fileset
+    args.filesets = ['manual']
+
 
 def executeSkim(sample, filesets, outDir):
     """
@@ -145,15 +166,19 @@ def executeSkim(sample, filesets, outDir):
 
     logger.debug('getting all input files')
 
-    for path in sample.files(filesets):
-        if not os.path.exists(path):
-            fname = os.path.basename(path)
-            dataset = os.path.basename(os.path.dirname(path))
-            proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
-            print proc.communicate()[0].strip()
-
-        logger.debug('Add input: %s', path)
-        skimmer.addPath(path)
+    if filesets[0] == 'manual':
+        for path in args.files:
+            skimmer.addPath(path)
+    else:
+        for path in sample.files(filesets):
+            if not os.path.exists(path):
+                fname = os.path.basename(path)
+                dataset = os.path.basename(os.path.dirname(path))
+                proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
+                print proc.communicate()[0].strip()
+    
+            logger.debug('Add input: %s', path)
+            skimmer.addPath(path)
    
     outNameBase = sample.name
 
@@ -232,9 +257,7 @@ for sample in samples:
     if args.merge:
         print 'Merging.'
 
-        selnames = args.selnames
-        if selnames == []:
-            selnames = [rname for rname, gen in selectors[sample.name]]
+        selnames = [rname for rname, gen in selectors[sample.name]]
 
         for selname in selnames:
             for fileset in fslist:
@@ -348,6 +371,9 @@ if args.split:
 
         if args.skipExisting:
             job_arg += ' -X'
+
+        if len(args.selnames) != 0:
+            job_arg += ' -s ' + ' '.join(args.selnames)
 
         submitter.job_args.append(job_arg)
         submitter.job_names.append(job_name)
