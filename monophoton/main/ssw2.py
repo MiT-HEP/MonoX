@@ -59,12 +59,7 @@ from condor_run import CondorRun
 
 batch = (args.split or args.merge) and not args.interactive
 
-if args.merge and batch and len(args.selnames) != 0:
-    logger.error('Batch merge mode must be inclusive in selectors.')
-    # why was this I forgot
-    ## mostly because I didn't want to debug the case where it wasn't
-    ## I think it should be fine now with the additional code you added
-    sys.exit(1)
+# no issue using batch merge and specifying selectors, just wasn't tested before
 
 if args.split and len(args.filesets) != 0:
     logger.error('Split mode must be inclusive in filesets.')

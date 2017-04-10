@@ -789,6 +789,9 @@ class RatioCanvas(SimpleCanvas):
         # map the original histograms to RooHists
         rooHists = {}
 
+        if hList is None:
+            hList = range(len(self._histograms))
+
         base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists, drawLegend = drawLegend)
 
         if base:

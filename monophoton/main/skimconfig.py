@@ -76,7 +76,7 @@ data_smu += ['tpmg', 'tpmmg']
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
 mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'gjets'] 
-mc_sig = ['monoph', 'purity'] # , 'signalRaw']
+mc_sig = ['monoph', 'purity', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 
