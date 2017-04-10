@@ -119,9 +119,9 @@ selectors = {
     'sel-16f-r': defaults(data_sel),
     'sel-16g-r': defaults(data_sel),
     'sel-16h': defaults(data_sel),
-    # Dark Photon MC
-    'dph-125': applyMod(selectors.dph, mc_sig),
-    'dph-1000': applyMod(selectors.dph, mc_sig),
+    # Hgg -> Dark Photon MC no gen changes
+    'hgg-125': applyMod(selectors.dph, mc_sig),
+    'hgg-1000': applyMod(selectors.dph, mc_sig),
     # MC
     'znng': defaults(mc_sig),
     'znng-130': applyMod(selectors.kfactor, mc_sig),

@@ -62,6 +62,8 @@ batch = (args.split or args.merge) and not args.interactive
 if args.merge and batch and len(args.selnames) != 0:
     logger.error('Batch merge mode must be inclusive in selectors.')
     # why was this I forgot
+    ## mostly because I didn't want to debug the case where it wasn't
+    ## I think it should be fine now with the additional code you added
     sys.exit(1)
 
 if args.split and len(args.filesets) != 0:
@@ -185,6 +187,8 @@ def executeSkim(sample, filesets, outDir):
     outSuffix = None
     if args.outSuffix:
         outSuffix = args.outSuffix
+    elif len(filesets) == 1 and filesets[0] == 'manual':
+        outSuffix = filesets[0]
     elif len(filesets) == 1 and len(sample.filesets()) > 1:
         outSuffix = filesets[0]
 
@@ -236,7 +240,10 @@ for sample in samples:
 
     splitOutDir = config.skimDir + '/' + sample.name
 
-    if len(args.filesets) != 0 and len(sample.filesets()) > 1:
+    if len(args.filesets) != 0 and args.filesets[0] == 'manual':
+        outDir = config.skimDir
+        fslist = args.filesets
+    elif len(args.filesets) != 0 and len(sample.filesets()) > 1:
         outDir = splitOutDir
         fslist = args.filesets
     else:
