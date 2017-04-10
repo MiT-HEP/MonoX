@@ -45,7 +45,7 @@ combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 1000.0]
 fitTemplateExpression = '( ( (photons.scRawPt[0] - 175.) * (photons.scRawPt[0] < 1000.) + 800. * (photons.scRawPt[0] > 1000.) ) * TMath::Sign(1, TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - 1.570796)) - 1.570796) - 0.5) )'
 fitTemplateBinning = [-1 * (bin - 175.) for bin in reversed(combinedFitPtBinning)] + [bin - 175. for bin in combinedFitPtBinning[1:]]
 
-baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5' #  && taus.size == 0' # && bjets.size == 0'
+baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 0.5 && t1Met.minJetDPhi > 0.5' #  && taus.size == 0' # && bjets.size == 0'
 
 def getConfig(confName):
 
@@ -75,19 +75,22 @@ def getConfig(confName):
             GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']),
             GroupSpec('dma', 'DM A', samples = ['dma-500-1', 'dmv-1000-1', 'dmv-2000-1']),
             GroupSpec('dph', 'Dark Photon', samples = ['dph-125', 'dph-1000']),
+            GroupSpec('hgg', 'Dark Photon', samples = ['hgg-125', 'hgg-1000']),
 #            GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
             GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1']),
             GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'])
         ]            
         config.signalPoints = [
-            # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = ROOT.kOrange+1), 
-            SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = ROOT.kMagenta), 
-            # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = 50),
+            # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = ROOT.kCyan), 
+            SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = ROOT.kGreen), 
+            # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = ROOT.kYellow),
             # SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = 30), 
-            # SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = 31), 
+            # SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = ROOT.kRed), 
             # SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = 31), 
-            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kYellow),
-            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kCyan), 
+            SampleSpec('hgg-125', 'HGG125', group = config.findGroup('hgg'), color = ROOT.kCyan),
+            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kRed),
+            SampleSpec('hgg-1000', 'HGG1000', group = config.findGroup('hgg'), color = ROOT.kYellow), 
+            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta), 
         ]
         config.bkgGroups = [
             GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'] + wlnu, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
@@ -110,12 +113,12 @@ def getConfig(confName):
             VariableDef('metScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True), # blind = (600., 2000.)),
             VariableDef('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True),
-            VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
+            VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True, blind = 'full'),
             VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [200. + 10. * x for x in range(40)], unit = 'GeV', overflow = True),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi)),
             VariableDef('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (30, 0., math.pi), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", [0. + 0.25 * x for x in range(14)], applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5', overflow = True, blind = 'full'),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt_ > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2.', overflow = True),
