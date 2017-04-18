@@ -444,6 +444,26 @@ def signalRaw(sample, selector):
         # print cut
         selector.findOperator(cut).setIgnoreDecision(True)
 
+    selector.findOperator('PhotonSelection').setMinPt(30.)
+    
+    dimuMass = ROOT.Mass()
+    dimuMass.setPrefix('dimu')
+    dimuMass.setMin(60.)
+    dimuMass.setMax(120.)
+    dimuMass.setCollection1(ROOT.kMuons)
+    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setIgnoreDecision(True)
+    selector.addOperator(dimuMass)
+
+    dielMass = ROOT.Mass()
+    dielMass.setPrefix('diel')
+    dielMass.setMin(60.)
+    dielMass.setMax(120.)
+    dielMass.setCollection1(ROOT.kElectrons)
+    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setIgnoreDecision(True)
+    selector.addOperator(dielMass)
+
     return selector
 
 def eleProxy(sample, selector):

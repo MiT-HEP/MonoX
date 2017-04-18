@@ -554,8 +554,8 @@ Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEve
 {
   mass_ = -1.;
   pt_ = -1.;
-  eta_ = -1.;
-  phi_ = -1.;
+  eta_ = -99.;
+  phi_ = -99.;
 
   panda::ParticleCollection const* col[2]{};
 

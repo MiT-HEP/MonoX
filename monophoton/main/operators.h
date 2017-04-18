@@ -335,8 +335,8 @@ class Mass : public Cut {
 
   float mass_{-1.};
   float pt_{-1.};
-  float eta_{-1.};
-  float phi_{-1.};
+  float eta_{-99.};
+  float phi_{-99.};
   double min_{0.};
   double max_{14000.};
 };
