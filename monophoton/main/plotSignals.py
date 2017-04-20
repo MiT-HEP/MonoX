@@ -190,44 +190,6 @@ for iX in range(1, sfPlot.GetNbinsX()+1):
             print sfPlot.GetXaxis().GetBinLowEdge(iX), sfPlot.GetYaxis().GetBinLowEdge(iY), sfPlot.GetZaxis().GetBinLowEdge(iZ), sfPlot.GetBinContent(iX, iY, iZ), sfPlot.GetBinError(iX, iY,iZ)
 
 canvas = SimpleCanvas(lumi = lumi, xmax = 0.90)
-"""
-ncontours = 999
-stops = (0.0,1.0)
-red   = (1.0,0.0)
-green = (1.0,0.0)
-blue  = (1.0,1.0)
-
-s = array.array('d', stops)
-reds = array.array('d', red)
-g = array.array('d', green)
-b = array.array('d', blue)
-
-npoints = len(s)
-r.TColor.CreateGradientColorTable(npoints, s, reds, g, b, ncontours)
-r.gStyle.SetNumberContours(ncontours)
-r.gStyle.SetPaintTextFormat(".2f")
-
-canvas.addHistogram(sfPlot, drawOpt = 'BOX')
-canvas.printWeb('monophoton/fsValidation/' + args.input.rstrip('.root') + '/scaleFactors', 'scaleFactors', logx = True, logy = True, ymax = 2.)
-
-canvas.Clear(xmax = 0.90)
-canvas.addHistogram(fastPlot, drawOpt = 'BOX')
-canvas.printWeb('monophoton/fsValidation/' + args.input.rstrip('.root') + '/scaleFactors', 'fastYields', logx = True, logy = True)
-
-canvas.Clear(xmax = 0.90)
-canvas.addHistogram(fullPlot, drawOpt = 'BOX')
-canvas.printWeb('monophoton/fsValidation/' + args.input.rstrip('.root') + '/scaleFactors', 'fullYields', logx = True, logy = True)
-
-systPlot = sfPlot.Clone('systPlot')
-for iX in range(1, sfPlot.GetNbinsX()+1):
-    for iY in range(1, sfPlot.GetNbinsY()+1):
-        systPlot.SetBinContent(iX, iY, sfPlot.GetBinError(iX, iY))
-
-canvas.Clear(xmax = 0.90)
-canvas.addHistogram(systPlot, drawOpt = 'BOX')
-canvas.printWeb('monophoton/fsValidation/' + args.input.rstrip('.root') + '/scaleFactors', 'sfSysts', logx = True, logy = True, ymax = 0.1)
-"""
-
 spins = [ 'Axial', 'Vector' ]
 
 for iS, spin in enumerate(spins):

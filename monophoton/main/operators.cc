@@ -13,55 +13,75 @@
 //--------------------------------------------------------------------
 
 bool
-Cut::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Cut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  result_ = pass(_event, _outEvent);
+  result_ = pass(_event, static_cast<panda::EventMonophoton&>(_outEvent));
   return ignoreDecision_ || result_;
 }
 
 bool
-Modifier::exec(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Modifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  apply(_event, _outEvent);
+  apply(_event, static_cast<panda::EventMonophoton&>(_outEvent));
   return true;
+}
+
+bool
+TPOperator::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  auto& tpevent(static_cast<panda::EventTPPhoton&>(_outEvent));
+  findCombos(_event, tpevent);
+  result_ = tpevent.tp.size() != 0;
+
+  return result_;
 }
 
 //--------------------------------------------------------------------
 // HLTFilter
 //--------------------------------------------------------------------
 
+
 HLTFilter::HLTFilter(char const* name) :
-  Cut(name),
-  helpers_()
+  Cut(name)
 {
-  TString pathNames(name);
-  Ssiz_t pos(0);
-  TString path;
-  while (pathNames.Tokenize(path, pos, "_OR_"))
-    helpers_.push_back(new simpletree::TriggerHelper(path.Data()));
+  pathNames_ = name;
 }
 
 HLTFilter::~HLTFilter()
 {
-  for (auto* helper : helpers_) 
-    delete helper;
+  tokens_.clear();
 }
 
 void
-HLTFilter::addBranches(TTree&)
+HLTFilter::initialize(panda::EventMonophoton& _event)
 {
-  // not really adding branches, but this is the only function that is called by the selector at each initialization
-  for (auto* h : helpers_)
-    h->reset();
+  Ssiz_t pos(0);
+  TString path;
+  UInt_t token(0);
+
+  printf("Triggers to add: %s \n", pathNames_.Data());
+
+  while (pathNames_.Tokenize(path, pos, "_OR_")) {
+    token = _event.registerTrigger(path.Data());
+    tokens_.push_back(token);
+    printf("Added trigger path %s with token %u to tokens vector. \n", path.Data(), token);
+  }
 }
 
+
 bool
-HLTFilter::pass(simpletree::Event const& _event, simpletree::Event&)
+HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  for (auto* helper : helpers_) {
-    if (helper->pass(_event))
+  // make sure a trigger menu exists; will return a human readable error if not
+  _event.run.triggerMenu();
+
+  for (unsigned iT(0); iT != tokens_.size(); ++iT) {
+    auto& token(tokens_[iT]);
+
+    if (_event.triggerFired(token))
       return true;
   }
+  
   return false;
 }
 
@@ -76,18 +96,17 @@ MetFilters::setEventList(char const* _path, int _decision)
 }
 
 bool
-MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
+MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   bool fired[] = {
     _event.metFilters.globalHalo16,
     _event.metFilters.hbhe,
     _event.metFilters.hbheIso,
     _event.metFilters.badsc,
-    _event.metFilters.badTrack,
-    _event.metFilters.badMuonTrack
+    _event.metFilters.ecalDeadCell,
   };
 
-  for (unsigned iF(0); iF != 6; ++iF) {
+  for (unsigned iF(0); iF != sizeof(fired) / sizeof(Bool_t); ++iF) {
     if (fired[iF]) {
       if (filterConfig_[iF] == 1)
         return false;
@@ -119,13 +138,20 @@ MetFilters::pass(simpletree::Event const& _event, simpletree::Event&)
 //--------------------------------------------------------------------
 
 bool
-GenPhotonVeto::pass(simpletree::Event const& _event, simpletree::Event&)
+GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  for (auto& part : _event.promptFinalStates) {
-    if (part.pid != 22)
+  for (unsigned iG(0); iG != _event.genParticles.size(); ++iG) {
+    auto& part(_event.genParticles[iG]);
+    // might need to add a check on if is promptFinalState
+    /*
+    if (part.statusFlags != "someCondition")
+      continue;
+    */
+
+    if (part.pdgid != 22)
       continue;
 
-    if (part.pt < minPt_)
+    if (part.pt() < minPt_)
       continue;
 
     unsigned iP(0);
@@ -229,7 +255,7 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
 }
 
 double
-PhotonSelection::ptVariation(simpletree::Photon const& _photon, bool up)
+PhotonSelection::ptVariation(panda::XPhoton const& _photon, bool up)
 {
   if (up)
     return _photon.scRawPt * 1.015;
@@ -238,11 +264,11 @@ PhotonSelection::ptVariation(simpletree::Photon const& _photon, bool up)
 }
 
 bool
-PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
-
+    
     if (!photon.isEB)
       continue;
     
@@ -273,53 +299,50 @@ PhotonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
       _outEvent.photons.push_back(photon);
     }
   }
-
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_;
+  
+  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_ && _outEvent.photons[0].isEB;
 
   return _outEvent.photons.size() != 0;
 }
 
 int
-PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
+PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
 {
   BitMask cutres;
-  cutres[HOverE] = _photon.passHOverE(wp_);
-  cutres[Sieie] = _photon.passSieie(wp_);
-  cutres[CHIso] = _photon.passCHIso(wp_);
-  cutres[NHIso] = _photon.passNHIso(wp_);
-  cutres[PhIso] = _photon.passPhIso(wp_);
+  cutres[HOverE] = _photon.passHOverE(wp_, 0);
+  cutres[Sieie] = _photon.passSieie(wp_, 0);
+  cutres[CHIso] = _photon.passCHIsoS15(wp_);
+  cutres[NHIso] = _photon.passNHIsoS15(wp_);
+  cutres[PhIso] = _photon.passPhIsoS15(wp_);
+  cutres[CHIsoMax] = (_photon.chIsoMax < panda::XPhoton::chIsoCuts[0][0][wp_]);
   cutres[EVeto] = _photon.pixelVeto;
   cutres[CSafeVeto] = _photon.csafeVeto;
-  cutres[MIP49] = _photon.mipEnergy < 4.9;
-  cutres[Time] = std::abs(_photon.time) < 3.;
-  cutres[SieieNonzero] = _photon.sieie > 0.001;
-  cutres[SipipNonzero] = _photon.sipip > 0.001;
-  cutres[E2E995] = (_photon.emax + _photon.e2nd) / _photon.e33 < 0.95;
-  cutres[NoisyRegion] = !(_photon.eta > 0. && _photon.eta < 0.15 && _photon.phi > 0.527580 && _photon.phi < 0.541795);
+  cutres[MIP49] = (_photon.mipEnergy < 4.9);
+  cutres[Time] = (std::abs(_photon.time) < 3.);
+  cutres[SieieNonzero] = (_photon.sieie > 0.001);
+  cutres[SipipNonzero] = (_photon.sipip > 0.001);
+  cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795);
+  cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * _photon.scRawPt) < 0.95;
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
-  cutres[CHIso11] = (_photon.chIso < 11.);
-  cutres[NHIso11] = (_photon.nhIso < 11.);
-  cutres[PhIso3] = (_photon.phIso < 3.);
-  cutres[NHIsoTight] = _photon.passNHIso(2);
-  cutres[PhIsoTight] = _photon.passPhIso(2);
-  cutres[CHIsoMax] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[0][0][wp_]);
+  cutres[Sieie20] = (_photon.sieie < 0.020);
+  cutres[CHIso11] = (_photon.chIsoS15 < 11.);
   cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
-  cutres[CHWorstIso] = (_photon.chWorstIso < simpletree::Photon::chIsoCuts[0][0][wp_]);
-  cutres[CHWorstIso11] = (_photon.chWorstIso < 11.);
+  cutres[NHIsoLoose] = _photon.passNHIsoS15(0);
+  cutres[PhIsoLoose] = _photon.passPhIsoS15(0);
+  cutres[NHIsoTight] = _photon.passNHIsoS15(2);
+  cutres[PhIsoTight] = _photon.passPhIsoS15(2);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
-  cutres[CHIsoS16] = (_photon.chIsoS16 < simpletree::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][wp_]);
-  cutres[PhIsoS16] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][wp_]);
-  cutres[CHIsoMaxS16] = (_photon.chIsoMax < simpletree::Photon::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16Tight] = (_photon.nhIsoS16 < simpletree::Photon::nhIsoCuts[1][0][2]);
-  cutres[PhIsoS16Tight] = (_photon.phIsoS16 < simpletree::Photon::phIsoCuts[1][0][2]);
-  cutres[NHIsoS16VLoose] = (_photon.nhIsoS16 < 50.); // loose WP cut is 42.7 at 1 TeV (22.6 @ 500 GeV)
-  cutres[PhIsoS16VLoose] = (_photon.phIsoS16 < 11.); // loose WP cut is 8.3 at 1 TeV
-  cutres[CHIsoS16VLoose] = (_photon.chIsoS16 < 11.); 
-  cutres[NHIsoLoose] = (_photon.passNHIso(0));
-  cutres[PhIsoLoose] = (_photon.passPhIso(0));
+  cutres[NHIsoS16] = _photon.passNHIso(wp_);
+  cutres[PhIsoS16] = _photon.passPhIso(wp_);
+  cutres[CHIsoS16] = _photon.passCHIso(wp_);
+  cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::XPhoton::chIsoCuts[1][0][wp_]);
+  cutres[NHIsoS16Loose] = _photon.passNHIso(0); 
+  cutres[PhIsoS16Loose] = _photon.passPhIso(0); 
+  cutres[CHIsoS16Loose] = (_photon.chIso < 11.); 
+  cutres[NHIsoS16Tight] = _photon.passNHIso(2);
+  cutres[PhIsoS16Tight] = _photon.passPhIso(2);
 
   for (unsigned iC(0); iC != nSelections; ++iC) {
     cutRes_[iC] = cutres[iC];
@@ -369,11 +392,11 @@ PhotonSelection::selectPhoton(simpletree::Photon const& _photon)
 //--------------------------------------------------------------------
 
 bool
-ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.muons
   };
@@ -381,8 +404,8 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
   bool hasNonOverlapping(false);
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
-
-    if (!electron.loose || electron.pt < 10.)
+    
+    if (!electron.loose || electron.pt() < 10.)
       continue;
 
     bool overlap(false);
@@ -413,19 +436,19 @@ ElectronVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
 //--------------------------------------------------------------------
 
 bool
-MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
   };
 
   bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
-
-    if ( !muon.loose || muon.pt < 10.)
+    
+    if (!muon.loose || muon.pt() < 10.)
       continue;
 
     bool overlap(false);
@@ -447,7 +470,7 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
       hasNonOverlapping = true;
     }
   }
-
+  
  return !hasNonOverlapping;
 }
 
@@ -456,9 +479,9 @@ MuonVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{ 
-  simpletree::ParticleCollection* cols[] = {
+TauVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.muons,
     &_outEvent.electrons
@@ -468,7 +491,7 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   for (unsigned iTau(0); iTau != _event.taus.size(); ++iTau) {
     auto& tau(_event.taus[iTau]);
 
-    if (!tau.decayMode || tau.combIso > 5.)
+    if (!tau.decayMode || tau.isoDeltaBetaCorr > 5.)
       continue;
 
     bool overlap(false);
@@ -499,9 +522,9 @@ TauVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-LeptonMt::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonMt::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  simpletree::Lepton const* lepton(0);
+  panda::Lepton const* lepton(0);
   if (flavor_ == kElectron && _outEvent.electrons.size() != 0)
     lepton = &_outEvent.electrons[0];
   else if (flavor_ == kMuon && _outEvent.muons.size() != 0)
@@ -510,7 +533,7 @@ LeptonMt::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (!lepton)
     return false;
 
-  double mt2(2. * _event.t1Met.met * lepton->pt * (1. - std::cos(lepton->phi - _event.t1Met.phi)));
+  double mt2(2. * _event.t1Met.pt * lepton->pt() * (1. - std::cos(lepton->phi() - _event.t1Met.phi)));
 
   return mt2 > min_ * min_ && mt2 < max_ * max_;
 }
@@ -529,14 +552,14 @@ Mass::addBranches(TTree& _skimTree)
 }
 
 bool
-Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   mass_ = -1.;
   pt_ = -1.;
-  eta_ = -1.;
-  phi_ = -1.;
+  eta_ = -99.;
+  phi_ = -99.;
 
-  simpletree::ParticleCollection const* col[2]{};
+  panda::ParticleCollection const* col[2]{};
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
@@ -560,8 +583,7 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (!col[0] || !col[1] || col[0]->size() == 0 || col[1]->size() == 0)
     return false;
 
-  simpletree::LorentzVectorM pair;
-  pair.SetCoordinates(0., 0., 0., 0.);
+  TLorentzVector pair(0., 0., 0., 0.);
 
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
@@ -598,12 +620,12 @@ Mass::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
       }
     }
   }
-
+  
   mass_ = pair.M();
   pt_ = pair.Pt();
   eta_ = pair.Eta();
   phi_ = pair.Phi();
-  
+
   return false;
 }
 
@@ -618,11 +640,11 @@ OppositeSign::addBranches(TTree& _skimTree)
 }
 
 bool
-OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   oppSign_ = 0;
 
-  simpletree::LeptonCollection const* col[2]{};
+  panda::LeptonCollection const* col[2]{};
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
@@ -643,10 +665,10 @@ OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
-   
+    
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
-	oppSign_ = ((col[0]->at(i1).positive == col[0]->at(i2).positive) ? 0 : 1);
+	oppSign_ = ((col[0]->at(i1).charge == col[0]->at(i2).charge) ? 0 : 1);
 	
 	if (oppSign_)
 	  return true;
@@ -656,7 +678,7 @@ OppositeSign::pass(simpletree::Event const& _event, simpletree::Event& _outEvent
   else {
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
-	oppSign_ = ((col[0]->at(0).positive == col[1]->at(0).positive) ? 0 : 1);
+	oppSign_ = ((col[0]->at(0).charge == col[1]->at(0).charge) ? 0 : 1);
 	
 	if (oppSign_)
 	  return true; 
@@ -678,11 +700,11 @@ BjetVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-BjetVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+BjetVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.muons,
     &_outEvent.electrons,
@@ -693,7 +715,7 @@ BjetVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   bool hasNonOverlapping(false);
   for (unsigned iB(0); iB != _event.jets.size(); ++iB) {
     auto& jet(_event.jets[iB]);
-    if (jet.cisv < 0.800 || jet.pt < 20.)
+    if (jet.csv < 0.800 || jet.pt() < 20.)
       continue;
 
     bool overlap(false);
@@ -750,11 +772,11 @@ PhotonMetDPhi::addBranches(TTree& _skimTree)
 }
 
 bool
-PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   dPhi_ = 0.;
   if (_outEvent.photons.size() != 0) {
-    simpletree::CorrectedMet const* met(0);
+    panda::RecoMet const* met(0);
     if (metSource_ == kInMet)
       met = &_event.t1Met;
     else
@@ -767,19 +789,19 @@ PhotonMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEven
       metPhiGECDown = metVar_->gecDown().Phi();
     }
 
-    dPhi_ = std::abs(TVector2::Phi_mpi_pi(met->phi - _outEvent.photons[0].phi));
+    dPhi_ = std::abs(TVector2::Phi_mpi_pi(met->phi - _outEvent.photons[0].phi()));
 
-    dPhiJECUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrUp - _outEvent.photons[0].phi));
-    dPhiJECDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrDown - _outEvent.photons[0].phi));
-    dPhiUnclUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclUp - _outEvent.photons[0].phi));
-    dPhiUnclDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclDown - _outEvent.photons[0].phi));
+    dPhiJECUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrUp - _outEvent.photons[0].phi()));
+    dPhiJECDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiCorrDown - _outEvent.photons[0].phi()));
+    dPhiUnclUp_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclUp - _outEvent.photons[0].phi()));
+    dPhiUnclDown_ = std::abs(TVector2::Phi_mpi_pi(met->phiUnclDown - _outEvent.photons[0].phi()));
 
     if (metVar_) {
-      dPhiGECUp_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECUp - _outEvent.photons[0].phi));
-      dPhiGECDown_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECDown - _outEvent.photons[0].phi));
-      // dPhiJER_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jer().Phi() - _outEvent.photons[0].phi));
-      // dPhiJERUp_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerUp().Phi() - _outEvent.photons[0].phi));
-      // dPhiJERDown_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerDown().Phi() - _outEvent.photons[0].phi));      
+      dPhiGECUp_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECUp - _outEvent.photons[0].phi()));
+      dPhiGECDown_ = std::abs(TVector2::Phi_mpi_pi(metPhiGECDown - _outEvent.photons[0].phi()));
+      // dPhiJER_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jer().Phi() - _outEvent.photons[0].phi()));
+      // dPhiJERUp_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerUp().Phi() - _outEvent.photons[0].phi()));
+      // dPhiJERDown_ = std::abs(TVector2::Phi_mpi_pi(metVar_->jerDown().Phi() - _outEvent.photons[0].phi()));      
     }
   }
 
@@ -833,7 +855,7 @@ JetMetDPhi::addBranches(TTree& _skimTree)
 }
 
 bool
-JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+JetMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   unsigned nJ(0);
   unsigned nJCorrUp(0);
@@ -853,7 +875,7 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   // dPhiJERUp_ = 4.;
   // dPhiJERDown_ = 4.;
 
-  simpletree::CorrectedMet const* met(0);
+  panda::RecoMet const* met(0);
   if (metSource_ == kInMet)
     met = &_event.t1Met;
   else
@@ -869,41 +891,41 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
   for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
     auto& jet(_outEvent.jets[iJ]);
 
-    if (jet.pt > 30. && nJ < 4) {
+    if (jet.pt() > 30. && nJ < 4) {
       ++nJ;
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phi)));
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - met->phi)));
       if (dPhi < dPhi_)
         dPhi_ = dPhi;
 
       if (metVar_) {
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metPhiGECUp));
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi() - metPhiGECUp));
         if (dPhi < dPhiGECUp_)
           dPhiGECUp_ = dPhi;
 
-        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - metPhiGECDown));
+        dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi() - metPhiGECDown));
         if (dPhi < dPhiGECDown_)
           dPhiGECDown_ = dPhi;
       }
 
-      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiUnclUp));
+      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi() - met->phiUnclUp));
       if (dPhi < dPhiUnclUp_)
         dPhiUnclUp_ = dPhi;
 
-      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiUnclDown));
+      dPhi = std::abs(TVector2::Phi_mpi_pi(jet.phi() - met->phiUnclDown));
       if (dPhi < dPhiUnclDown_)
         dPhiUnclDown_ = dPhi;
     }
 
     if (jet.ptCorrUp > 30. && nJCorrUp < 4) {
       ++nJCorrUp;
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiCorrUp)));
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - met->phiCorrUp)));
       if (dPhi < dPhiJECUp_)
         dPhiJECUp_ = dPhi;
     }
 
     if (jet.ptCorrDown > 30. && nJCorrDown < 4) {
       ++nJCorrDown;
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - met->phiCorrDown)));
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - met->phiCorrDown)));
       if (dPhi < dPhiJECDown_)
         dPhiJECDown_ = dPhi;
     }
@@ -912,21 +934,21 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
     //   if (jetCleaning_) {
     //     if (jetCleaning_->ptScaled(iJ) > 30. && nJJER < 4) {
     //       ++nJJER;
-    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jer().Phi())));
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - metVar_->jer().Phi())));
     //       if (dPhi < dPhiJER_)
     //         dPhiJER_ = dPhi;
     //     }
         
     //     if (jetCleaning_->ptScaledUp(iJ) > 30. && nJJERUp < 4) {
     //       ++nJJERUp;
-    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerUp().Phi())));
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - metVar_->jerUp().Phi())));
     //       if (dPhi < dPhiJERUp_)
     //         dPhiJERUp_ = dPhi;
     //     }
         
     //     if (jetCleaning_->ptScaledDown(iJ) > 30. && nJJERDown < 4) {
     //       ++nJJERDown;
-    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - metVar_->jerDown().Phi())));
+    //       double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - metVar_->jerDown().Phi())));
     //       if (dPhi < dPhiJERDown_)
     //         dPhiJERDown_ = dPhi;
     //     }
@@ -961,26 +983,26 @@ JetMetDPhi::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   bool foundTight(false);
   unsigned nLooseIsoMuons(0);
 
-  std::vector<simpletree::ParticleCollection*> cols = {
+  std::vector<panda::ParticleCollection*> cols = {
     &_outEvent.photons
   };
 
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
 
-    if (nMu_ != 0 && muon.tight && muon.pt > 30. && muon.combRelIso < 0.15)
+    if (nMu_ != 0 && muon.tight && muon.pt() > 30. && (muon.combIso() / muon.pt()) < 0.15)
       foundTight = true;
     
     bool overlap(false);
     for (auto* col : cols) {
       unsigned iP(0);
       for (; iP != col->size(); ++iP) {
-	if ((*col)[iP].dR2(muon) < 0.25)
+        if ((*col)[iP].dR2(muon) < 0.25)
 	  break;
       }
       if (iP != col->size()) {
@@ -993,9 +1015,9 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     if (overlap)
       continue;
     
-    if (muon.loose && muon.pt > 10.) {
+    if (muon.loose && muon.pt() > 10.) {
       _outEvent.muons.push_back(muon);
-      if (muon.combRelIso < 0.25)
+      if ( (muon.combIso() / muon.pt()) < 0.25)
 	nLooseIsoMuons++;
     }
   }
@@ -1005,7 +1027,7 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
 
-    if (nEl_ != 0 && electron.tight && electron.pt > 30.)
+    if (nEl_ != 0 && electron.tight && electron.pt() > 30.)
       foundTight = true;
 
     bool overlap(false);
@@ -1024,8 +1046,8 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
     
     if (overlap)
       continue;
-   
-    if (electron.loose && electron.pt > 10.)
+    
+    if (electron.loose && electron.pt() > 10.)
       _outEvent.electrons.push_back(electron);
   }
 
@@ -1044,12 +1066,12 @@ LeptonSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEv
 //--------------------------------------------------------------------
 
 bool
-HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+HighMet::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (metSource_ == kInMet)
-    return _event.t1Met.met > min_;
+    return _event.t1Met.pt > min_;
   else
-    return _outEvent.t1Met.met > min_;
+    return _outEvent.t1Met.pt > min_;
 }
 
 //--------------------------------------------------------------------
@@ -1057,7 +1079,7 @@ HighMet::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MtRange::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (!calc_ || _outEvent.photons.size() == 0)
     return false;
@@ -1072,13 +1094,15 @@ MtRange::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 bool
-HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  for (auto& jet : _outEvent.jets) {
-    if (std::abs(jet.eta) > 5.)
+  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
+    auto& jet(_event.jets[iJ]);
+
+    if (std::abs(jet.eta()) > 5.)
       continue;
 
-    if (jet.pt < min_)
+    if (jet.pt() < min_)
       continue;
     
     return true;
@@ -1092,10 +1116,12 @@ HighPtJetSelection::pass(simpletree::Event const& _event, simpletree::Event& _ou
 //--------------------------------------------------------------------
 
 bool
-PhotonPtTruncator::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  for (auto& parton : _event.partons) {
-    if (parton.pid == 22 && parton.pt > max_)
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
+
+    if (parton.pdgid == 22 && parton.pt() > max_)
       return false;
   }
 
@@ -1107,18 +1133,26 @@ PhotonPtTruncator::pass(simpletree::Event const& _event, simpletree::Event& _out
 //--------------------------------------------------------------------
 
 bool
-GenParticleSelection::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  for (auto& part : _event.promptFinalStates) {
-    if (std::abs(part.pid) != pdgId_)
+  for (unsigned iP(0); iP != _event.genParticles.size(); ++iP) {
+    auto& part(_event.genParticles[iP]);
+
+    // probably need to add a check if it's prompt final state
+    /*
+    if (part.statusFlags != "someCondition")
+      continue;
+    */
+
+    if (std::abs(part.pdgid) != pdgId_)
       continue;
 
-    if (std::abs(part.eta) > maxEta_ || std::abs(part.eta) < minEta_ )
+    if (std::abs(part.eta()) > maxEta_ || std::abs(part.eta()) < minEta_ )
       continue;
 
-    if (part.pt < minPt_ || part.pt > maxPt_)
+    if (part.pt() < minPt_ || part.pt() > maxPt_)
       continue;
-    
+
     return true;
   }
 
@@ -1137,7 +1171,7 @@ EcalCrackVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+EcalCrackVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
@@ -1145,7 +1179,7 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
     if (photon.scRawPt < minPt_)
       continue;
 
-    if (std::abs(photon.eta) > 1.4 && std::abs(photon.eta) < 1.6) {
+    if (std::abs(photon.eta()) > 1.4 && std::abs(photon.eta()) < 1.6) {
       ecalCrackVeto_ = false;
       return false;
     }
@@ -1154,10 +1188,10 @@ EcalCrackVeto::pass(simpletree::Event const& _event, simpletree::Event& _outEven
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
-    if (jet.pt < minPt_)
+    if (jet.pt() < minPt_)
       continue;
 
-    if (std::abs(jet.eta) > 1.4 && std::abs(jet.eta) < 1.6) {
+    if (std::abs(jet.eta()) > 1.4 && std::abs(jet.eta()) < 1.6) {
       ecalCrackVeto_ = false;
       return false;
     }
@@ -1188,25 +1222,25 @@ TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
   switch (tagSpecies_) {
   case kMuons:
-    tags_ = new simpletree::MuonCollection("tag");
+    tags_ = new panda::MuonCollection("tag");
     break;
   case kElectrons:
-    tags_ = new simpletree::ElectronCollection("tag");
+    tags_ = new panda::ElectronCollection("tag");
     break;
   case kPhotons:
-    tags_ = new simpletree::PhotonCollection("tag");
+    tags_ = new panda::XPhotonCollection("tag");
     break;
   }
 
   switch (probeSpecies_) {
   case kMuons:
-    probes_ = new simpletree::MuonCollection("probe");
+    probes_ = new panda::MuonCollection("probe");
     break;
   case kElectrons:
-    probes_ = new simpletree::ElectronCollection("probe");
+    probes_ = new panda::ElectronCollection("probe");
     break;
   case kPhotons:
-    probes_ = new simpletree::PhotonCollection("probe");
+    probes_ = new panda::XPhotonCollection("probe");
     break;
   }
 
@@ -1218,35 +1252,34 @@ TagAndProbePairZ::addBranches(TTree& _skimTree)
 }
 
 bool
-TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  simpletree::LeptonCollection const* inTags(0);
-  simpletree::LeptonCollection const* inProbes(0);
-  simpletree::LorentzVectorM tnpPair;
-  tnpPair.SetCoordinates(0., 0., 0., 0.);
+  panda::LeptonCollection const* inTags(0);
+  panda::LeptonCollection const* inProbes(0);
+  TLorentzVector tnpPair(0., 0., 0., 0.);
 
   // OK, object-orientation and virtual methods cannot quite solve the problem at hand (push back the objects with full info).
   // We will cheat.
-  std::function<void(simpletree::Particle const&)> push_back_tag;
-  std::function<void(simpletree::Particle const&)> push_back_probe;
+  std::function<void(panda::Particle const&)> push_back_tag;
+  std::function<void(panda::Particle const&)> push_back_probe;
 
   switch (tagSpecies_) {
   case kMuons:
     inTags = &_event.muons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::MuonCollection*>(this->tags_)->push_back(static_cast<simpletree::Muon const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
     };
     break;
   case kElectrons:
     inTags = &_event.electrons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::ElectronCollection*>(this->tags_)->push_back(static_cast<simpletree::Electron const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
     };
     break;
   case kPhotons:
     // inTags = &_event.photons;
-    push_back_tag = [this](simpletree::Particle const& tag) {
-      static_cast<simpletree::PhotonCollection*>(this->tags_)->push_back(static_cast<simpletree::Photon const&>(tag));
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::XPhotonCollection*>(this->tags_)->push_back(static_cast<panda::XPhoton const&>(tag));
     };
     break;
   }
@@ -1254,20 +1287,20 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
   switch (probeSpecies_) {
   case kMuons:
     inProbes = &_event.muons;
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::MuonCollection*>(this->probes_)->push_back(static_cast<simpletree::Muon const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
     };
     break;
   case kElectrons:
     inProbes = &_event.electrons;
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::ElectronCollection*>(this->probes_)->push_back(static_cast<simpletree::Electron const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
     };
     break;
   case kPhotons:
     // inProbes = &_event.photons; 
-    push_back_probe = [this](simpletree::Particle const& probe) {
-      static_cast<simpletree::PhotonCollection*>(this->probes_)->push_back(static_cast<simpletree::Photon const&>(probe));
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::XPhotonCollection*>(this->probes_)->push_back(static_cast<panda::XPhoton const&>(probe));
     };
     break;
   }
@@ -1277,12 +1310,16 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
   probes_->clear();
   nUniqueZ_ = 0;
 
-  for (auto& tag : *inTags) {
-    if ( !(tag.tight && tag.pt > 30.))
+  for (unsigned iT(0); iT != inTags->size(); ++iT) {
+    auto& tag = inTags->at(iT);
+    
+    if ( !(tag.tight && tag.pt() > 30.))
       continue;
     
-    for (auto& probe : *inProbes) {
-      if ( !(probe.loose && probe.pt > 20.))
+    for (unsigned iP(0); iP != inProbes->size(); ++iP) {
+      auto& probe = inProbes->at(iP);
+      
+      if ( !(probe.loose && probe.pt() > 20.))
 	continue;
 
       // don't want the same object in case the tag and probe collections are the same
@@ -1302,11 +1339,8 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
       // cannot push back here; resize and use the last element
       zs_.resize(zs_.size() + 1);
       auto& z(zs_.back());
-      z.pt = tnpPair.Pt();
-      z.eta = tnpPair.Eta();
-      z.phi = tnpPair.Phi();
-      z.mass = mass;
-      zOppSign_ = ( (tag.positive == probe.positive) ? 0 : 1);
+      z.setPtEtaPhiM(tnpPair.Pt(), tnpPair.Eta(), tnpPair.Phi(), tnpPair.M());
+      zOppSign_ = ( (tag.charge == probe.charge) ? 0 : 1);
 
       // check if other tag-probe pairs match this pair
       unsigned iZ(0);
@@ -1329,16 +1363,18 @@ TagAndProbePairZ::pass(simpletree::Event const& _event, simpletree::Event& _outE
 //--------------------------------------------------------------------
 
 bool
-ZJetBackToBack::pass(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ZJetBackToBack::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (tnp_->getNUniqueZ() != 1)
     return false;
 
-  for (auto& jet : _outEvent.jets) {
-    if ( jet.pt < minJetPt_)
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet( _outEvent.jets[iJ]);
+
+    if ( jet.pt() < minJetPt_)
       continue;
 
-    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi - tnp_->getPhiZ(0))) > dPhiMin_ )
+    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi() - tnp_->getPhiZ(0))) > dPhiMin_ )
       return true;
   }
   return false;
@@ -1380,7 +1416,7 @@ TriggerEfficiency::addBranches(TTree& _skimTree)
 }
 
 void
-TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+TriggerEfficiency::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (!formula_ || _outEvent.photons.size() == 0)
     return;
@@ -1401,9 +1437,9 @@ TriggerEfficiency::apply(simpletree::Event const& _event, simpletree::Event& _ou
 //--------------------------------------------------------------------
 
 void
-ExtraPhotons::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+ExtraPhotons::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.electrons,
     &_outEvent.muons,
@@ -1466,9 +1502,9 @@ JetCleaning::addBranches(TTree& _skimTree)
 // }
 
 void
-JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  simpletree::ParticleCollection* cols[] = {
+  panda::ParticleCollection* cols[] = {
     &_outEvent.photons,
     &_outEvent.electrons,
     &_outEvent.muons,
@@ -1482,19 +1518,19 @@ JetCleaning::apply(simpletree::Event const& _event, simpletree::Event& _outEvent
 
     // printf("jet %u \n", iJ);
 
-    if (std::abs(jet.eta) > 5.)
+    if (std::abs(jet.eta()) > 5.)
       continue;
 
     // printf(" pass eta cut \n");
 
     // No JEC info stored in nero right now (at least samples I am using)
     // double maxPt(jet.ptCorrUp);
-    double maxPt(jet.pt);
+    double maxPt(jet.pt());
 
     // if (jer_) {
-    //   double res(jer_->resolution(jet.pt, jet.eta, _event.rho));
+    //   double res(jer_->resolution(jet.pt, jet.eta(), _event.rho));
     //   double sf, dsf;
-    //   jer_->scalefactor(jet.eta, sf, dsf);
+    //   jer_->scalefactor(jet.eta(), sf, dsf);
 
     //   unsigned iG(0);
     //   for (; iG != genJets.size(); ++iG) {
@@ -1572,7 +1608,7 @@ PhotonJetDPhi::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonJetDPhi::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   unsigned nJ(0);
   unsigned nJCorrUp(0);
@@ -1591,12 +1627,12 @@ PhotonJetDPhi::apply(simpletree::Event const& _event, simpletree::Event& _outEve
     for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
       auto& jet(_outEvent.jets[iJ]);
 
-      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi - photon.phi)));
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(jet.phi() - photon.phi())));
 
       if (iP == 0)
 	dPhi_[iJ] = dPhi;
       
-      if (jet.pt > 30. && nJ < 4) {
+      if (jet.pt() > 30. && nJ < 4) {
 	++nJ;
 	
 	if (dPhi < minDPhi_[iP])
@@ -1631,12 +1667,12 @@ PhotonMt::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonMt::apply(simpletree::Event const&, simpletree::Event& _outEvent)
+PhotonMt::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   auto& met(_outEvent.t1Met);
   for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
     auto& photon(_outEvent.photons[iP]);
-    mt_[iP] = std::sqrt(2. * met.met * photon.scRawPt * (1. - std::cos(met.phi - photon.phi)));
+    mt_[iP] = std::sqrt(2. * met.pt * photon.scRawPt * (1. - std::cos(met.phi - photon.phi())));
   }
 }
 
@@ -1652,9 +1688,9 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 }
 
 void
-LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+LeptonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  simpletree::LeptonCollection* col(0);
+  panda::LeptonCollection* col(0);
 
   switch (flavor_) {
   case kElectron:
@@ -1668,26 +1704,26 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
   }
 
   float inMets[] = {
-    _event.t1Met.met,
-    _event.t1Met.metCorrUp,
-    _event.t1Met.metCorrDown,
-    _event.t1Met.metUnclUp,
-    _event.t1Met.metUnclDown
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
   };
   float inPhis[] = {
-    _event.t1Met.phi,
-    _event.t1Met.phiCorrUp,
-    _event.t1Met.phiCorrDown,
-    _event.t1Met.phiUnclUp,
-    _event.t1Met.phiUnclDown
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
   };
 
   float* outRecoils[] = {
-    &_outEvent.t1Met.met,
-    &_outEvent.t1Met.metCorrUp,
-    &_outEvent.t1Met.metCorrDown,
-    &_outEvent.t1Met.metUnclUp,
-    &_outEvent.t1Met.metUnclDown
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
   };
   float* outRecoilPhis[] = {
     &_outEvent.t1Met.phi,
@@ -1720,9 +1756,11 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
   double lpx(0.);
   double lpy(0.);
     
-  for (auto& lep : *col) {
-    lpx += lep.pt * std::cos(lep.phi);
-    lpy += lep.pt * std::sin(lep.phi);
+  for (unsigned iL(0); iL != col->size(); ++iL) {
+    auto& lep = col->at(iL);
+
+    lpx += lep.pt() * std::cos(lep.phi());
+    lpy += lep.pt() * std::sin(lep.phi());
   }
 
   for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
@@ -1731,6 +1769,7 @@ LeptonRecoil::apply(simpletree::Event const& _event, simpletree::Event& _outEven
     *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
     *outRecoilPhis[iM] = std::atan2(mey, mex);
   }
+  
 }
 
 TVector2
@@ -1770,6 +1809,110 @@ LeptonRecoil::realMetUncl(int corr) const
 
   return vec;
 }
+//--------------------------------------------------------------------
+// EGCorrection
+//--------------------------------------------------------------------
+
+void
+EGCorrection::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.origMet", &origMet_, "origMet/F");
+  _skimTree.Branch("t1Met.origPhi", &origPhi_, "origPhi/F");
+  _skimTree.Branch("t1Met.corrMag", &corrMag_, "corrMag/F");
+  _skimTree.Branch("t1Met.corrPhi", &corrPhi_, "corrPhi/F");
+}
+
+void
+EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outMets[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outMetPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  double cpx(0.);
+  double cpy(0.);
+  double ptDiff(0.);
+
+  // add up corrections from photons
+  for (unsigned iL(0); iL != _outEvent.photons.size(); ++iL) {
+    auto& part = _outEvent.photons[iL];
+    
+    if (part.pfPt < 0) {
+      // printf("Warning!! negative pfPt! Photon wasn't matched to a pf candidate! \n");
+      ptDiff = 0.;
+    }
+    else
+      ptDiff = part.rawPt - part.pfPt;
+    
+    if (std::abs(ptDiff) > 50.)
+      printf("photon   ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
+  }
+
+  // add up corrections from electrons
+  for (unsigned iL(0); iL != _outEvent.electrons.size(); ++iL) {
+    auto& part = _outEvent.electrons[iL];
+    
+    if (part.pfPt < 0) {
+      // printf("Warning!! negative pfPt! Electron wasn't matched to a pf candidate! \n");
+      ptDiff = 0.;
+    }
+    else
+      ptDiff = part.rawPt - part.pfPt;
+    
+    if (std::abs(ptDiff) > 50.)
+      printf("electron ptDiff: %6.1f \n", ptDiff);
+
+    cpx += ptDiff * std::cos(part.phi());
+    cpy += ptDiff * std::sin(part.phi());
+  }
+  
+  // save correction
+  corrMag_ = std::sqrt(cpx * cpx + cpy * cpy);
+  corrPhi_ = std::atan2(cpy, cpx);
+  origMet_ = inMets[0];
+  origPhi_ = inPhis[0];
+
+  // if (corrMag_ > 50.)
+  //  printf("cpx: %6.1f  cpy: %6.1f  corrMag: %6.1f  corrPhi %6.2f \n", cpx, cpy, corrMag_, corrPhi_);
+
+  // apply correction
+  for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
+    double mex(inMets[iM] * std::cos(inPhis[iM]) - cpx); 
+    double mey(inMets[iM] * std::sin(inPhis[iM]) - cpy); 
+    *outMets[iM] = std::sqrt(mex * mex + mey * mey);
+    *outMetPhis[iM] = std::atan2(mey, mex);
+  }
+  
+}
 
 //--------------------------------------------------------------------
 // MetVariations
@@ -1786,24 +1929,24 @@ MetVariations::addBranches(TTree& _skimTree)
       _skimTree.Branch("t1Met.realPhiGECDown", &phiGECDown_, "realPhiGECDown/F");
     }
     else {
-      _skimTree.Branch("t1Met.metGECUp", &metGECUp_, "metGECUp/F");
+      _skimTree.Branch("t1Met.ptGECUp", &metGECUp_, "metGECUp/F");
       _skimTree.Branch("t1Met.phiGECUp", &phiGECUp_, "phiGECUp/F");
-      _skimTree.Branch("t1Met.metGECDown", &metGECDown_, "metGECDown/F");
+      _skimTree.Branch("t1Met.ptGECDown", &metGECDown_, "metGECDown/F");
       _skimTree.Branch("t1Met.phiGECDown", &phiGECDown_, "phiGECDown/F");
     }
   }
   // if (jetCleaning_) {
-  //   _skimTree.Branch("t1Met.metJER", &metJER_, "metJER/F");
+  //   _skimTree.Branch("t1Met.ptJER", &metJER_, "metJER/F");
   //   _skimTree.Branch("t1Met.phiJER", &phiJER_, "phiJER/F");
-  //   _skimTree.Branch("t1Met.metJERUp", &metJERUp_, "metJERUp/F");
+  //   _skimTree.Branch("t1Met.ptJERUp", &metJERUp_, "metJERUp/F");
   //   _skimTree.Branch("t1Met.phiJERUp", &phiJERUp_, "phiJERUp/F");
-  //   _skimTree.Branch("t1Met.metJERDown", &metJERDown_, "metJERDown/F");
+  //   _skimTree.Branch("t1Met.ptJERDown", &metJERDown_, "metJERDown/F");
   //   _skimTree.Branch("t1Met.phiJERDown", &phiJERDown_, "phiJERDown/F");
   // }
 }
 
 void
-MetVariations::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+MetVariations::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   metGECUp_ = 0.;
   phiGECUp_ = 0.;
@@ -1829,13 +1972,13 @@ MetVariations::apply(simpletree::Event const& _event, simpletree::Event& _outEve
     auto& photon(_outEvent.photons[0]);
 
     TVector2 nominal;
-    nominal.SetMagPhi(photon.scRawPt, photon.phi);
+    nominal.SetMagPhi(photon.scRawPt, photon.phi());
 
     TVector2 photonUp;
-    photonUp.SetMagPhi(photonSel_->ptVariation(photon, true), photon.phi);
+    photonUp.SetMagPhi(photonSel_->ptVariation(photon, true), photon.phi());
 
     TVector2 photonDown;
-    photonDown.SetMagPhi(photonSel_->ptVariation(photon, false), photon.phi);
+    photonDown.SetMagPhi(photonSel_->ptVariation(photon, false), photon.phi());
 
     TVector2 shiftUp(metV + nominal - photonUp);
     TVector2 shiftDown(metV + nominal - photonDown);
@@ -1855,23 +1998,23 @@ MetVariations::apply(simpletree::Event const& _event, simpletree::Event& _outEve
   //     auto& jet(_outEvent.jets[iJ]);
 
   //     TVector2 nominal;
-  //     nominal.SetMagPhi(jet.pt, jet.phi);
+  //     nominal.SetMagPhi(jet.pt, jet.phi());
 
   //     if (jetCleaning_->ptScaled(iJ) > 15.) {
   //       TVector2 resShift;
-  //       resShift.SetMagPhi(jetCleaning_->ptScaled(iJ), jet.phi);
+  //       resShift.SetMagPhi(jetCleaning_->ptScaled(iJ), jet.phi());
   //       shiftCentral += nominal - resShift;
   //     }
 
   //     if (jetCleaning_->ptScaledUp(iJ) > 15.) {
   //       TVector2 resShift;
-  //       resShift.SetMagPhi(jetCleaning_->ptScaledUp(iJ), jet.phi);
+  //       resShift.SetMagPhi(jetCleaning_->ptScaledUp(iJ), jet.phi());
   //       shiftUp += nominal - resShift;
   //     }
 
   //     if (jetCleaning_->ptScaledDown(iJ) > 15.) {
   //       TVector2 resShift;
-  //       resShift.SetMagPhi(jetCleaning_->ptScaledDown(iJ), jet.phi);
+  //       resShift.SetMagPhi(jetCleaning_->ptScaledDown(iJ), jet.phi());
   //       shiftDown += nominal - resShift;
   //     }
   //   }
@@ -1948,26 +2091,37 @@ PhotonPtWeight::useErrors(bool _b)
 }
 
 void
-PhotonPtWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   double maxPt(0.);
   switch (photonType_) {
   case kReco:
-    for (auto& photon : _outEvent.photons) {
+    for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+      auto& photon( _outEvent.photons[iP]);
+
       if (photon.scRawPt > maxPt)
         maxPt = photon.scRawPt;
     }
     break;
   case kParton:
-    for (auto& part : _event.partons) {
-      if (part.pid == 22 && part.pt > maxPt)
-        maxPt = part.pt;
+    for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+      auto& part( _event.partons[iP]);
+      
+      if (part.pdgid == 22 && part.pt() > maxPt)
+        maxPt = part.pt();
     }
     break;
   case kPostShower:
-    for (auto& fs : _event.promptFinalStates) {
-      if (fs.pid == 22 && fs.pt > maxPt)
-        maxPt = fs.pt;
+    for (unsigned iP(0); iP != _event.genParticles.size(); ++iP) {
+      auto& fs( _event.genParticles[iP]);
+      // probably need to add a check if it's prompt final state
+      /*
+	if (part.statusFlags != "someCondition")
+	continue;
+      */
+      
+      if (fs.pdgid == 22 && fs.pt() > maxPt)
+        maxPt = fs.pt();
     }
     break;
   default:
@@ -2040,10 +2194,10 @@ IDSFWeight::setVariable(Variable vx, Variable vy)
 }
 
 void
-IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::applyParticle(unsigned iP, panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   // simply consider the leading object. Ignores inefficiency scales etc.
-  simpletree::Particle const* part(0);
+  panda::Particle const* part(0);
 
   switch (object_) {
   case kPhoton:
@@ -2085,13 +2239,13 @@ IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletr
     int iBin(0);
     switch (variables_[iV]) {
     case kPt:
-      iBin = axis->FindFixBin(part->pt);
+      iBin = axis->FindFixBin(part->pt());
       break;
     case kEta:
-      iBin = axis->FindFixBin(part->eta);
+      iBin = axis->FindFixBin(part->eta());
       break;
     case kAbsEta:
-      iBin = axis->FindFixBin(std::abs(part->eta));
+      iBin = axis->FindFixBin(std::abs(part->eta()));
       break;
     case kNpv:
       iBin = axis->FindFixBin(_event.npvTrue);
@@ -2133,7 +2287,7 @@ IDSFWeight::applyParticle(unsigned iP, simpletree::Event const& _event, simpletr
 }
 
 void
-IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+IDSFWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   // not exactly sure why I need to reset these, but it's definitely necessary to get reasonable results
   weight_ = 1.;
@@ -2150,7 +2304,7 @@ IDSFWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
 //--------------------------------------------------------------------
 
 void
-NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
+NPVWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npv));
   if (iX == 0)
@@ -2158,29 +2312,6 @@ NPVWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
   if (iX > factors_->GetNbinsX())
     iX = factors_->GetNbinsX();
 
-  _outEvent.weight *= factors_->GetBinContent(iX);
-}
-
-//--------------------------------------------------------------------
-// PUWeight
-//--------------------------------------------------------------------
-
-void
-PUWeight::addBranches(TTree& _skimTree)
-{
-  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
-}
-
-void
-PUWeight::apply(simpletree::Event const& _event, simpletree::Event& _outEvent)
-{
-  int iX(factors_->FindFixBin(_event.npvTrue));
-  if (iX == 0)
-    iX = 1;
-  if (iX > factors_->GetNbinsX())
-    iX = factors_->GetNbinsX();
-
-  weight_ = factors_->GetBinContent(iX);
   _outEvent.weight *= factors_->GetBinContent(iX);
 }
 
@@ -2196,10 +2327,10 @@ NNPDFVariation::addBranches(TTree& _skimTree)
 }
 
 void
-NNPDFVariation::apply(simpletree::Event const& _event, simpletree::Event&)
+NNPDFVariation::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  weightUp_ = 1. + _event.pdfDW;
-  weightDown_ = 1. - _event.pdfDW;
+  weightUp_ = 1. + _event.genReweight.pdfDW;
+  weightDown_ = 1. - _event.genReweight.pdfDW;
 }
 
 //--------------------------------------------------------------------
@@ -2213,21 +2344,289 @@ GenPhotonDR::addBranches(TTree& _skimTree)
 }
 
 void
-GenPhotonDR::apply(simpletree::Event const& _event, simpletree::Event&)
+GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   minDR_ = -1.;
 
-  for (auto& parton : _event.partons) {
-    if (std::abs(parton.pid) != 22)
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton( _event.partons[iP]);
+    
+    if (std::abs(parton.pdgid) != 22)
       continue;
 
-    for (auto& p : _event.partons) {
+    for (unsigned iP2(0); iP2 != _event.partons.size(); ++iP2) {
+      auto& p( _event.partons[iP2]);
+      
       if (&p == &parton)
         continue;
 
       double dR(parton.dR(p));
       if (minDR_ < 0. || dR < minDR_)
         minDR_ = dR;
+    }
+  }
+}
+
+//--------------------------------------------------------------------
+// PhotonRecoil
+//--------------------------------------------------------------------
+
+void
+PhotonRecoil::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
+  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+}
+
+void
+PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outRecoils[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outRecoilPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  float* realMets[] = {
+    &realMet_,
+    &realMetCorrUp_,
+    &realMetCorrDown_,
+    &realMetUnclUp_,
+    &realMetUnclDown_
+  };
+  float* realPhis[] = {
+    &realPhi_,
+    &realPhiCorrUp_,
+    &realPhiCorrDown_,
+    &realPhiUnclUp_,
+    &realPhiUnclDown_
+  };
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    *realMets[iM] = inMets[iM];
+    *realPhis[iM] = inPhis[iM];
+  }
+
+  double phox(0.);
+  double phoy(0.);
+    
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    if (iP == 0)
+      continue;
+    
+    auto& pho = _outEvent.photons[iP];
+
+    phox += pho.pt() * std::cos(pho.phi());
+    phoy += pho.pt() * std::sin(pho.phi());
+  }
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    double mex(phox + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(phoy + inMets[iM] * std::sin(inPhis[iM]));
+    *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
+    *outRecoilPhis[iM] = std::atan2(mey, mex);
+  } 
+}
+
+// PUWeight
+//--------------------------------------------------------------------
+
+void
+PUWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+}
+
+bool
+PUWeight::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  int iX(factors_->FindFixBin(_event.npvTrue));
+  if (iX == 0)
+    iX = 1;
+  if (iX > factors_->GetNbinsX())
+    iX = factors_->GetNbinsX();
+
+  weight_ = factors_->GetBinContent(iX);
+  _outEvent.weight *= factors_->GetBinContent(iX);
+
+  return true;
+}
+
+//--------------------------------------------------------------------
+// TPElectronPhoton
+//--------------------------------------------------------------------
+
+void
+TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+{
+  for (auto& photon : _inEvent.photons) {
+    if (!photon.isEB || photon.scRawPt < 175.)
+      continue;
+
+    auto&& pg(photon.p4());
+
+    for (auto& electron : _inEvent.electrons) {
+      if (!electron.tight)
+        continue;
+
+      //      if (electron.pt() < 30. || std::abs(electron.eta()) > 2.1)
+      if (electron.pt() < 15. || std::abs(electron.eta()) > 2.1)
+        continue;
+
+      if (photon.dR2(electron) < 0.01)
+        continue;
+
+          // veto additional loose lepton
+      unsigned iVeto(0);
+      for (; iVeto != _inEvent.electrons.size(); ++iVeto) {
+        auto& veto(_inEvent.electrons[iVeto]);
+
+        if (&veto == &electron)
+          continue;
+
+        if (!veto.veto)
+          continue;
+
+        if (veto.pt() < 10.)
+          continue;
+            
+        // Our electron veto does not reject photons overlapping with e/mu
+        // Cases:
+        // 1. One electron radiates hard, gets deflected by a large angle
+        //   -> The radiation is a photon. Do not consider it in the set of probes for e->g fake rate measurement.
+        // 2. One electron radiates hard but stays collinear with the radiation
+        //   -> This is a fake photon.
+        // Large angle is defined by the isolation cone of the lepton; if the photon is within the cone, the lepton will fail the
+        // veto identification and therefore the event will stay in the candidate sample.
+        if (photon.dR2(veto) < 0.09)
+          continue;
+
+        break;
+      }
+      if (iVeto != _inEvent.electrons.size())
+        continue;
+
+      double mlg((pg + electron.p4()).M());
+
+      if (mlg < 20. || mlg > 160.)
+        continue;
+
+      auto& tp(_outEvent.tp.create_back());
+      tp.mass = mlg;
+            
+      _outEvent.tags.push_back(electron);
+      _outEvent.probes.push_back(photon);
+    }
+  }
+}
+
+void
+TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+{
+  for (auto& photon : _inEvent.photons) {
+    if (!photon.isEB || photon.scRawPt < 175.)
+      continue;
+
+    auto&& pg(photon.p4());
+
+    for (auto& muon : _inEvent.muons) {
+      if (!muon.tight || muon.combIso() / muon.pt() > 0.15)
+        continue;
+
+      //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)
+      if (muon.pt() < 15. || std::abs(muon.eta()) > 2.1)
+        continue;
+
+      if (photon.dR2(muon) < 0.01)
+        continue;
+
+      // veto additional loose lepton
+      unsigned iVeto(0);
+      for (; iVeto != _inEvent.muons.size(); ++iVeto) {
+        auto& veto(_inEvent.muons[iVeto]);
+
+        if (&veto == &muon)
+          continue;
+
+        if (!veto.loose)
+          continue;
+
+        if (veto.pt() < 10.)
+          continue;
+            
+        // Sync with electrons
+        if (photon.dR2(veto) < 0.09)
+          continue;
+
+        break;
+      }
+      if (iVeto != _inEvent.muons.size())
+        continue;
+
+      auto&& pm(muon.p4());
+
+      if (mode_ == kDouble) {
+        for (auto& looseMuon : _inEvent.muons) {
+          if (&looseMuon == &muon)
+            continue;
+
+          if (!looseMuon.loose)
+            continue;
+
+          if (photon.dR2(looseMuon) < 0.01)
+            continue;
+
+          TLorentzVector pll(pm + looseMuon.p4());
+          double mllg((pg + pll).M());
+
+          if (mllg < 20. || mllg > 160.)
+            continue;
+
+          auto& tp(_outEvent.tp.create_back());
+          tp.mass = mllg;
+          tp.mass2 = pll.M();
+
+          _outEvent.tags.push_back(muon);
+          _outEvent.looseTags.push_back(looseMuon);
+          _outEvent.probes.push_back(photon);
+        }
+      }
+      else {
+        double mlg((pg + pm).M());
+
+        if (mlg < 20. || mlg > 160.)
+          continue;
+
+        auto& tp(_outEvent.tp.create_back());
+        tp.mass = mlg;
+            
+        _outEvent.tags.push_back(muon);
+        _outEvent.probes.push_back(photon);
+      }
     }
   }
 }

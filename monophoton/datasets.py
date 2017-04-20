@@ -4,11 +4,13 @@ import re
 import os
 import math
 import fnmatch
+import subprocess
 
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
+catalogDir = '/home/cmsprod/catalog/t2mit'
 
 class SampleDef(object):
-    def __init__(self, name, title = '', book = '', fullname = '', crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
+    def __init__(self, name, title = '', book = '', fullname = '', additionalDatasets = [], crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
         self.name = name
         self.title = title
         self.book = book
@@ -24,21 +26,62 @@ class SampleDef(object):
         self.comments = comments
         self.custom = custom
 
-    def clone(self):
-        return SampleDef(self.name, title = self.title, book = self.book, fullname = self.fullname, crosssection = self.crosssection, nevents = self.nevents, sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
+        self.datasetNames = [self.fullname]
+        self.datasetSuffices = ['']
 
-    def dump(self, sourceDirs):
+        for name in additionalDatasets:
+            self.addDataset(name)
+
+        self._sumw2 = 0. # will be > 0 at the first call to _updateSumw
+        self._fullpaths = {} # {dataset: {fileset: [path]}}; loaded from catalog only on demand
+
+    def clone(self):
+        return SampleDef(self.name, title = self.title, book = self.book, fullname = self.fullname,
+            additionalDatasets = self.datasetNames, crosssection = self.crosssection, nevents = self.nevents,
+            sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
+
+    def addDataset(self, name):
+        if name in self.datasetNames:
+            return
+
+        # extract a suffix from the additional dataset name
+        start = 0
+        while True:
+            if name[start] != self.fullname[start]:
+                break
+            start += 1
+    
+        end = -1
+        while True:
+            if name[end] != self.fullname[end]:
+                break
+            end -= 1
+    
+        # end cannot be -1 - don't mix data from different tiers!
+        suffix = name[start:end + 1]
+        if suffix.endswith('-v'): # special case if we have e.g. extN suffix but the version number is the same
+            suffix = suffix[:-2]
+
+        self.datasetNames.append(name)
+        self.datasetSuffices.append(suffix)
+
+        self._sumw2 = 0.
+        self._fullpaths = {}
+
+    def dump(self):
         print 'name =', self.name
         print 'title =', self.title
         print 'book =', self.book
         print 'fullname =', self.fullname
+        print 'datasetNames =', self.datasetNames
+        print 'datasetSuffices =', self.datasetSuffices
         print 'crosssection =', self.crosssection
         print 'nevents =', self.nevents
-        if self.sumw >= 0.:
-            print 'sumw =', self.sumw
-        print 'lumi =', self.effectiveLumi(sourceDirs), 'pb'
+        print 'sumw =', self.sumw
+        print 'lumi =', self.effectiveLumi(), 'pb'
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
+        print 'filesets = ', self.filesets()
 
     def linedump(self):
         title = '"%s"' % self.title
@@ -63,84 +106,129 @@ class SampleDef(object):
         else:
             xsecstr = '%.{ndec}f'.format(ndec = ndec) % crosssection
 
+        fullnames = ' '.join(n for n in self.datasetNames)
+
         if self.comments != '':
             comments = " # " + self.comments
         else:
             comments = ''
             
-        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, self.fullname, comments)
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, fullnames, comments)
         return '%-16s %-35s %-20s %-10d %-20s %-20s %s%s' % lineTuple
 
-    def _getCounter(self, dirs):
+    def _updateSumw(self):
+        if self._sumw2 > 0.:
+            return
+
         import ROOT
 
-        fNames = []
-        for dName in dirs:
-            fullPath = dName
-            if os.path.exists(fullPath + '/' + self.name + '.root'):
-                fNames.append(self.name + '.root')
-                break
+        self.cache()
 
-            fullPath = dName + '/' + self.book + '/' + self.fullname
-            if os.path.isdir(fullPath):
-                fNames.extend(os.listdir(fullPath))
-                break
+        self.nevents = 0
+        self.sumw = 0.
 
-        if len(fNames) == 0:
-            print fullPath + ' has no files'
-            return None
+        for dataset in self.datasetNames:
+            for fileset, paths in self._fullpaths[dataset].items():
+                for path in paths:
+                    source = ROOT.TFile.Open(path)
+                    if not source:
+                        raise IOError('Could not open', path)
 
-        counter = None
-        for fName in fNames:
-            source = ROOT.TFile.Open(fullPath + '/' + fName)
-            if not source:
-                continue
+                    try:
+                        counter = source.Get('eventcounter')
+                        self.nevents += counter.GetBinContent(1)
+                        if not self.data:
+                            sumw = source.Get('hSumW')
+                            self.sumw += sumw.GetBinContent(1)
+                            self._sumw2 += math.pow(sumw.GetBinError(1), 2.)
 
-            try:
-                if counter is None:
-                    counter = source.Get('counter')
-                    counter.SetDirectory(ROOT.gROOT)
-                else:
-                    counter.Add(source.Get('counter'))
-            except:
-                print fullPath + '/' + fName
-                raise
+                    except:
+                        print path
+                        raise
 
-            source.Close()
+                    source.Close()
 
-        return counter
+    def _readCatalogs(self):
+        if len(self._fullpaths) != 0:
+            return
+
+        # Loop over dataset names of the sample
+        for dsuffix, dataset in zip(self.datasetSuffices, self.datasetNames):
+            self._fullpaths[dataset] = {}
+
+            directories = {} # fileset -> directory of source files
+
+            with open(catalogDir + '/' + self.book + '/' + dataset + '/Filesets') as filesetList:
+                for line in filesetList:
+                    fileset, xrdpath = line.split()[:2]
+                    fileset += dsuffix
     
-    def recomputeWeight(self, sourceDirs):
-        counter = self._getCounter(sourceDirs)
+                    directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+                    self._fullpaths[dataset][fileset] = []
+    
+            with open(catalogDir + '/' + self.book + '/' + dataset + '/Files') as fileList:
+                for line in fileList:
+                    fileset, fname = line.split()[:2]
+                    fileset += dsuffix
+    
+                    self._fullpaths[dataset][fileset].append(directories[fileset] + '/' + fname)
+    
+    def recomputeWeight(self):
+        self._sumw2 = 0.
 
-        if not counter:
+        self._updateSumw()
+
+        if self._sumw2 == 0.:
             print 'Failed at counting sample. Not changing anything!!!.'
             return
 
-        self.nevents = int(counter.GetBinContent(1))
-        if self.data:
-            self.sumw = -1.
-        else:
-            self.sumw = counter.GetBinContent(2)
-
-    def getSumw2(self, sourceDirs):
-        counter = self._getCounter(sourceDirs)
-
-        if not counter:
-            return 0.
-
-        return math.pow(counter.GetBinError(2), 2.)
-
-    def effectiveLumi(self, sourceDirs):
+    def effectiveLumi(self):
         if self.lumi > 0.:
             return self.lumi
         else:
-            sumw2 = self.getSumw2(sourceDirs)
+            self._updateSumw()
+            sumw2 = self._sumw2
             if sumw2 > 0.:
                 return math.pow(self.sumw, 2.) / sumw2 / self.crosssection
             else:
                 print 'sumw2 is zero'
                 return 0.
+
+    def cache(self, filesets = []):
+        self._readCatalogs()
+
+        for dataset in self.datasetNames:
+            for fileset, paths in self._fullpaths[dataset].items():
+                if len(filesets) != 0 and fileset not in filesets:
+                    continue
+
+                for path in paths:
+                    if not os.path.exists(path):
+                        fname = os.path.basename(path)
+                        dataset = os.path.basename(os.path.dirname(path))
+                        proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                        print proc.communicate()[0].strip()
+
+    def filesets(self, datasetNames = []):
+        self._readCatalogs()
+
+        if len(datasetNames) == 0:
+            datasetNames = self.datasetNames
+
+        return sum([sorted(self._fullpaths[d].keys()) for d in datasetNames], [])
+
+    def files(self, filesets = []):
+        self._readCatalogs()
+
+        paths = []
+
+        for dataset in self.datasetNames:
+            if len(filesets) != 0:
+                paths += sum([l for f, l in self._fullpaths[dataset].items() if f in filesets], [])
+            else:
+                paths += sum(self._fullpaths[dataset].values(), [])
+
+        return paths
 
 
 class SampleDefList(object):
@@ -170,23 +258,26 @@ class SampleDefList(object):
                 line = line.strip()
                 
                 if not line or line.startswith('#'):
-                    self._commentLines.append((name, line)) # dataset from one line above, line
+                    self._commentLines.append((name, line))
                     continue
         
-                matches = re.match('([^ ]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^ ]+)\s+([^ ]+)(| +#.*)', line.strip())
+                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line.strip())
                 if not matches:
                     print 'Ill-formed line in ' + listpath
                     print line
                     continue
         
-                name, title, crosssection, nevents, sumw, book, fullname, comments = [matches.group(i) for i in range(1, 9)]
-        
+                name, title, crosssection, nevents, sumw, book, fullnames, comments = [matches.group(i) for i in range(1, 9)]
+                fullnames = fullnames.split()
+
+                kwd = {'title': title, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
+
                 if sumw == '-':
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments.lstrip(' #'))
+                    kwd.update({'lumi': float(crosssection), 'data': True})
                 else:
-                    sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments.lstrip(' #'))
-        
-                self.samples.append(sdef)
+                    kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
+
+                self.samples.append(SampleDef(name, **kwd))
 
     def save(self, listpath):
         with open(listpath, 'w') as out:
@@ -230,7 +321,11 @@ class SampleDefList(object):
             if match:
                 samples += matching
             else:
-                samples += [s for s in self.samples if s not in matching]
+                for s in matching:
+                    try:
+                        samples.remove(s)
+                    except:
+                        pass
 
         return sorted(list(set(samples)), key = lambda s: s.name)
 
@@ -238,7 +333,6 @@ class SampleDefList(object):
 if __name__ == '__main__':
     import sys
     from argparse import ArgumentParser
-    import config
 
     argParser = ArgumentParser(description = 'Dataset information management')
     commandHelp = '''list [DATASETS]: List datasets with nevents > 0 (no argument) or datasets with names matching to the argument.
@@ -274,7 +368,7 @@ add INFO: Add a new dataset.'''
         except:
             print 'No sample', arguments[0]
 
-        sample.dump([config.photonSkimDir, config.ntuplesDir])
+        sample.dump()
 
     elif command == 'dump':
         if len(arguments) == 0:
@@ -294,27 +388,51 @@ add INFO: Add a new dataset.'''
             targets.extend(samples.getmany(name))
 
         for sample in targets:
-            sample.recomputeWeight([config.photonSkimDir, config.ntuplesDir])
+            sample.recomputeWeight()
             print sample.linedump()
 
     elif command == 'add':
         name, title, crosssection, nevents, sumw, book, fullname = arguments[:7]
-        try:
-            comments = arguments[7]
-        except IndexError:
-            comments = ''
-        
+        additionalDatasets = []
+        comments = ''
+
+        iarg = 7
+        while iarg < len(arguments):
+            if arguments[iarg].startswith('#'):
+                comments = ' '.join(arguments[iarg:])
+                break
+            else:
+                additionalDatasets.append(arguments[iarg])
+
+            iarg += 1
+
+        kwd = {'title': title, 'book': book, 'fullname': fullname, 'additionalDatasets': additionalDatasets, 'nevents': int(nevents), 'comments': comments.lstrip('#')}
+
         if sumw == '-':
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, lumi = float(crosssection), nevents = int(nevents), sumw = -1., data = True, comments = comments)
+            kwd.update({'lumi': float(crosssection), 'data': True})
         else:
-            sdef = SampleDef(name, title = title, book = book, fullname = fullname, crosssection = float(crosssection), nevents = int(nevents), sumw = float(sumw), comments = comments)
-        
-        samples.samples.append(sdef)
+            kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
+
+        samples.samples.append(SampleDef(name, **kwd))
 
     elif command == 'lumi':
         source = samples.getmany(arguments)
         print ' '.join(s.name for s in source)
         print sum(s.lumi for s in source)
+
+    elif command == 'download':
+        for sample in samples.getmany(arguments):
+            sample.cache()
+
+    elif command == 'check':
+        for sample in samples.getmany(arguments):
+            paths = sample.files()
+            for path in paths:
+                if not os.path.exists(path):
+                    print sample.name, '[NG] does not have all files'
+                    break
+            else:
+                print sample.name, '[OK] has all files'
 
     else:
         print 'Unknown command', command

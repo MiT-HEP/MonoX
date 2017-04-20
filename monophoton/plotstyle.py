@@ -96,11 +96,12 @@ class Legend(object):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
-        self.legend.SetTextSize(0.035)
+        self.legend.SetTextSize(0.035 / 4. * 3.)
         self.legend.SetTextFont(42)
         self.legend.SetTextAlign(12)
 
         self.entries = {}
+        self.ncolumns = 1
         self.defaultOrder = []
         self._modified = False
 
@@ -189,6 +190,13 @@ class Legend(object):
             order = self.defaultOrder
 
         self.legend.Clear()
+
+        if len(self.entries) % 5:
+            self.ncolumns = (int(len(self.entries)) / 5) + 1
+        else:
+            self.ncolumns = (int(len(self.entries)) / 5)
+
+        self.legend.SetNColumns(self.ncolumns)
 
         for name in order:
             ent = self.entries[name]
@@ -781,6 +789,9 @@ class RatioCanvas(SimpleCanvas):
         # map the original histograms to RooHists
         rooHists = {}
 
+        if hList is None:
+            hList = range(len(self._histograms))
+
         base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists, drawLegend = drawLegend)
 
         if base:
@@ -1033,6 +1044,12 @@ class DataMCCanvas(RatioCanvas):
                 r = fillcolor.GetRed() * 0.8
                 g = fillcolor.GetGreen() * 0.8
                 b = fillcolor.GetBlue() * 0.8
+                color = ROOT.TColor.GetColor(r, g, b)
+
+                fillcolor = ROOT.gROOT.GetColor(color)
+                r = fillcolor.GetRed() * 0.8
+                g = fillcolor.GetGreen() * 0.8
+                b = fillcolor.GetBlue() * 0.8
                 lcolor = ROOT.TColor.GetColor(r, g, b)
             else:
                 lcolor = color
@@ -1053,7 +1070,7 @@ class DataMCCanvas(RatioCanvas):
             # a new signal
             self._sigs.append(idx)
 
-            self.legend.add('sig%d' % idx, title = title, opt = 'L', color = color, lwidth = 2, lstyle = ROOT.kSolid, fstyle = 0)
+            self.legend.add('sig%d' % idx, title = title, opt = 'L', color = color, lwidth = 4, lstyle = ROOT.kSolid, fstyle = 0)
             self.legend.apply('sig%d' % idx, self._histograms[idx].histogram)
 
         self._modified()

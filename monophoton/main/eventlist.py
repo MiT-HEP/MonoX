@@ -12,7 +12,7 @@ import config
 
 region = sys.argv[1] 
 snames = sys.argv[2:]
-data = True
+data = False
 
 tree = ROOT.TChain('cutflow')
 for sr in snames:
@@ -26,9 +26,9 @@ run = array.array('I', [0])
 lumi = array.array('I', [0])
 event = array.array('I', [0])
 
-tree.SetBranchAddress('run', run)
-tree.SetBranchAddress('lumi', lumi)
-tree.SetBranchAddress('event', event)
+tree.SetBranchAddress('runNumber', run)
+tree.SetBranchAddress('lumiNumber', lumi)
+tree.SetBranchAddress('eventNumber', event)
 
 cuts = []
 

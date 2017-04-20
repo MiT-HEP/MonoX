@@ -26,8 +26,8 @@ ROOT.gROOT.SetBatch(True)
 # skim output directory
 outputDir = skimDir
 
-ROOT.gSystem.Load(config.libsimpletree)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+ROOT.gSystem.Load(config.libobjs)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/Objects/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
 
 lumi = 0.
@@ -37,21 +37,15 @@ for sname in lumiSamples:
 # ID integers stored in the trees.
 # Comes handy when processing a pool of samples through TChain
 sampleIds = {
-    'sph-16e': 0,
-    'sph-16f': 0,
-    'sph-16g': 0,
-    'sph-16h': 0,
-    'sph-16b-r': 0,
-    'sph-16c-r': 0,
-    'sph-16d-r': 0,
-    'sph-16e-r': 0,
-    'sph-16f-r': 0,
-    'sph-16g-r': 0,
-    'sel-16b2': 0,
-    'sel-16c2': 0,
-    'sel-16d2': 0,
-    'smu-16b2': 0,
-    'smu-16c2': 0,
+    'sph-16b-m': 0,
+    'sph-16c-m': 0,
+    'sph-16d-m': 0,
+    'sph-16e-m': 0,
+    'sph-16f-m': 0,
+    'sph-16g-m': 0,
+    'sph-16h-m': 0,
+    'smu-16b-m': 0,
+    'smu-16c-m': 0,
     'dy-50': 1,
     'gg-80': 2,
     'tt': 3,
@@ -92,12 +86,9 @@ if not puSource:
     print 'NPV reweight absent - run monophoton/ssw2.py'
     sys.exit(1)
 
-reweight = puSource.Get('puweight')
+reweight = puSource.Get('puweight_PUMoriond17')
 reweight.SetDirectory(ROOT.gROOT)
 puSource.Close()
-
-#npvSource = ROOT.TFile.Open('npvreweight.root')
-#reweight = npvSource.Get('reweight')
 
 for sample in samples:
     skimmer = ROOT.Skimmer()
@@ -106,13 +97,11 @@ for sample in samples:
         # Find the config group this sample is in
         confName, skimTypes = next((confName, skimTypes) for confName, (snames, skimTypes) in skimConfig.items() if sample.name in snames)
     except StopIteration:
-        print sname, 'not found in dataset list'
+        print sample.name, 'not found in dataset list'
         continue
 
     if confName == 'mc':
         skimmer.setReweight(reweight)
-
-#    skimmer.setReweight(reweight)
 
     for skimType in skimTypes:
         skimmer.addSkim(getattr(ROOT, skimType), outputDir + '/' + sample.name + '_' + suffix[skimType] + '.root')
@@ -124,7 +113,8 @@ for sample in samples:
         print 'Reading', sample.name, 'from photon skim'
         inputTree.Add(config.photonSkimDir + '/' + sample.name + '.root')
     else:
-        inputTree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
+        print 'No photon skim for', sample.name, 'found'
+        continue
 
     if sample.data:
         skimmer.fillSkim(inputTree, 1., sampleId, NENTRIES)

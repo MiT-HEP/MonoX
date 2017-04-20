@@ -3,339 +3,427 @@
 import sys
 import os
 import socket
+import time
+import shutil
+import collections
+import logging
+from subprocess import Popen, PIPE
+from argparse import ArgumentParser
+
+argParser = ArgumentParser(description = 'Plot and count')
+argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
+argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
+#argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
+argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
+argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
+argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
+argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
+argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
+argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
+argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files. No split mode available.')
+argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
+argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', help = 'Use condor-run to run one instance per fileset. Output is merged at the end.')
+argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
+argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
+argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
+argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
+argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
+
+# eosInput:
+# Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
+# not maintained any more - use github to recover
+
+args = argParser.parse_args()
+sys.argv = []
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
+monoxdir = os.path.dirname(basedir)
+
 sys.path.append(basedir)
-from datasets import allsamples
-import main.selectors as selectors
-import main.plotconfig as plotconfig
 import config
-from subprocess import Popen, PIPE
-import shutil
-from glob import glob
 
-defaultSelectors = {
-    'monoph': selectors.candidate,
-    'signalRaw': selectors.signalRaw,
-    'efake': selectors.eleProxy,
-    'hfake': selectors.hadProxy,
-    'hfakeTight': selectors.hadProxyTight,
-    'hfakeLoose': selectors.hadProxyLoose,
-    'hfakeVLoose': selectors.hadProxyVLoose,
-    'purity': selectors.purity,
-    'purityNom': selectors.purityNom,
-    'purityTight': selectors.purityTight,
-    'purityLoose': selectors.purityLoose,
-    'purityVLoose': selectors.purityVLoose,
-    'gjets': selectors.gjets,
-    'halo': selectors.halo,
-    'haloMIP': selectors.haloMIP,
-    'haloMET': selectors.haloMET,
-    'haloLoose': selectors.haloLoose,
-    'haloMIPLoose': selectors.haloMIPLoose,
-    'haloMETLoose': selectors.haloMETLoose,
-    'haloMedium': selectors.haloMedium,
-    'haloMIPMedium': selectors.haloMIPMedium,
-    'haloMETMedium': selectors.haloMETMedium,
-    'trivialShower': selectors.trivialShower,
-    'dimu': selectors.dimuon,
-    'dimuHfake': selectors.dimuonHadProxy,
-    'monomu': selectors.monomuon,
-    'monomuHfake': selectors.monomuonHadProxy,
-    'diel': selectors.dielectron,
-    'dielHfake': selectors.dielectronHadProxy,
-    'monoel': selectors.monoelectron,
-    'monoelHfake': selectors.monoelectronHadProxy,
-    'elmu': selectors.oppflavor,
-    'eefake': selectors.zee,
-    'wenu': selectors.wenuall,
-    'zeeJets': selectors.zeeJets,
-    'zmmJets': selectors.zmmJets
-}
+logging.basicConfig(level = config.printLevel)
+logger = logging.getLogger(__name__)
 
-def defaults(regions):
-    return [(region, defaultSelectors[region]) for region in regions]
+logger.debug('Running at %s', socket.gethostname())
 
-def applyMod(modifier, regions):
-    result = []
-    for entry in regions:
-        if type(entry) is tuple:
-            region, selector = entry
-        else:
-            region = entry
-            selector = defaultSelectors[region]
+from datasets import allsamples
+from main.skimconfig import selectors as allSelectors
 
-        result.append((region, modifier(selector)))
+sys.path.append(monoxdir + '/common')
+from goodlumi import makeGoodLumiFilter
 
-    return result
+sys.path.append('/home/yiiyama/lib')
+from condor_run import CondorRun
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
+batch = (args.split or args.merge) and not args.interactive
 
-data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
-data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
-data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
-data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
-data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
-data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
-data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-mc_cand = ['monoph'] # , 'purity']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'hfakeVLoose', 'purity', 'purityTight', 'purityLoose', 'purityVLoose', 'gjets'] 
-mc_sig = ['monoph', 'purity'] # , 'signalRaw']
-mc_lep = ['monomu', 'monoel']
-mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
+# no issue using batch merge and specifying selectors, just wasn't tested before
 
-wlnu = applyMod(selectors.wlnu, applyMod(selectors.genveto, mc_cand)) + applyMod(selectors.genveto, mc_lep) + defaults(['wenu', 'zmmJets', 'zeeJets'])
+if args.split and len(args.filesets) != 0:
+    logger.error('Split mode must be inclusive in filesets.')
+    sys.exit(1)
 
-selectors = {
-    # Data 2016
-    'sph-16b-r': defaults(data_sph),
-    'sph-16c-r': defaults(data_sph),
-    'sph-16d-r': defaults(data_sph),
-    'sph-16e-r': defaults(data_sph),
-    'sph-16f-r': defaults(data_sph),
-    'sph-16g-r': defaults(data_sph),
-    'sph-16h': defaults(data_sph),
-    'smu-16b-r': defaults(data_smu),
-    'smu-16c-r': defaults(data_smu),
-    'smu-16d-r': defaults(data_smu),
-    'smu-16e-r': defaults(data_smu),
-    'smu-16f-r': defaults(data_smu),
-    'smu-16g-r': defaults(data_smu),
-    'smu-16h': defaults(data_smu),
-    'sel-16b-r': defaults(data_sel),
-    'sel-16c-r': defaults(data_sel),
-    'sel-16d-r': defaults(data_sel),
-    'sel-16e-r': defaults(data_sel),
-    'sel-16f-r': defaults(data_sel),
-    'sel-16g-r': defaults(data_sel),
-    'sel-16h': defaults(data_sel),
-    # MC for signal region
-    'znng-130': applyMod(selectors.kfactor, mc_sig),
-    'wnlg-130': applyMod(selectors.kfactor, mc_sig + mc_lep),
-    'zllg-130': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
-    'wglo': applyMod(selectors.wglo, mc_cand + mc_lep),
-    'wglo-500': defaults(mc_cand + mc_lep),
-    'gj-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj-200': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj-400': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj-600': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj04-100': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj04-200': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj04-400': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gj04-600': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gg-40': defaults(mc_cand + mc_lep + mc_dilep),
-    'gg-80': defaults(mc_cand + mc_lep + mc_dilep),
-    'tt': defaults(mc_cand + mc_lep + mc_dilep),
-    'tg': defaults(mc_cand + mc_lep),
-    'ttg': defaults(mc_cand + mc_lep + mc_dilep),
-    'wwg': defaults(mc_cand + mc_lep + mc_dilep),
-    'ww': defaults(mc_cand + mc_lep + mc_dilep),
-    'wz': defaults(mc_cand + mc_lep + mc_dilep),
-    'zz': defaults(mc_cand + mc_lep + mc_dilep),
-    'wlnu-100': wlnu,
-    'wlnu-200': wlnu,
-    'wlnu-400': wlnu,
-    'wlnu-600': wlnu,
-    'wlnu-800': wlnu,
-    'wlnu-1200': wlnu,
-    'wlnu-2500': wlnu,
-    'dy-50': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-100': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-200': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-400': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-600': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-800': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-1200': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dy-50-2500': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'qcd-200': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-300': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-500': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-700': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-1000': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-1500': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
-    'qcd-2000': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep)
-}
+if len(args.files) != 0 and (len(args.filesets) != 0 or args.split):
+    logger.error('Cannot set filesets or split mode with --files option.')
+    sys.exit(1)
 
-# all the rest are mc_sig
-for sname in allsamples.names():
-    if sname not in selectors:
-        selectors[sname] = defaults(mc_sig)
+if len(args.selnames) != 0:
+    selectors = {}
+    for sname, sels in allSelectors.items():
+        selectors[sname] = []
+        for rname, gen in sels:
+            if rname in args.selnames:
+                selectors[sname].append((rname, gen))
 
-def processSampleNames(_inputNames, _selectorKeys, _plotConfig = ''):
-    snames = []
+else:
+    selectors = allSelectors
 
-    if _plotConfig:
-        # if a plot config is specified, use the samples for that
-        snames = plotconfig.getConfig(_plotConfig).samples()
+import ROOT
 
-    else:
-        snames = _inputNames
+ROOT.gSystem.Load(config.libobjs)
+ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
+ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
 
-    # handle special group names
-    if 'all' in snames:
-        snames.remove('all')
-        snames = _selectorKeys
-    if 'data16' in snames:
-        snames.remove('data16')
-        snames += [key for key in _selectorKeys if '16' in key and allsamples[key].data]
-    if 'bkgd' in snames:
-        snames.remove('bkgd')
-        snames += [key for key in _selectorKeys if not allsamples[key].data and not key.startswith('dm') and not key.startswith('add') and not key.endswith('-d')]
-    if 'dmfs' in snames:
-        snames.remove('dmfs')
-        snames += [key for key in _selectorKeys if key.startswith('dm') and key[3:5] == 'fs']
-    if 'dm' in snames:
-        snames.remove('dm')
-        snames += [key for key in _selectorKeys if key.startswith('dm') and not key[3:5] == 'fs']
-    if 'add' in snames:
-        snames.remove('add')
-        snames += [key for key in _selectorKeys if key.startswith('add')]
-    if 'fs' in snames:
-        snames.remove('fs')
-        snames += [key for key in _selectorKeys if 'fs' in key]
+logger.debug('dataformats: %s', config.dataformats)
 
-    # filter out empty samples
-    for name in list(snames):
-        if '*' in name: # wild card
-            snames.remove(name)
-            snames.extend([s.name for s in allsamples.getmany(name)])
+ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+try:
+    s = ROOT.Skimmer
+except:
+    logger.error("Couldn't compile Skimmer.cc. Quitting.")
+    sys.exit(1)
+
+if args.compileOnly:
+    sys.exit(0)
+
+if 'all' in args.snames:
+    spatterns = selectors.keys()
+elif 'bkgd' in args.snames:
+    spatterns = selectors.keys() + ['!add*', '!dm*']
+else:
+    spatterns = list(args.snames)
+
+samples = allsamples.getmany(spatterns)
+
+if args.list:
+    print ' '.join(sorted(s.name for s in samples))
+    sys.exit(0)
+
+if args.merge:
+    padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
+
+    mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
+    try:
+        os.makedirs(mergeDir)
+    except OSError:
+        pass
+
+    if not os.path.isdir(mergeDir):
+        mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
         try:
-            samp = allsamples[name]
-        except KeyError:
-            print name, "is not in datasets.csv. Removing it from the list of samples to run over."
-            snames.remove(name)
-            
+            os.makedirs(mergeDir)
+        except OSError:
+            pass
 
-    snames = [name for name in snames if allsamples[name].sumw != 0.]
+if len(args.files) != 0:
+    # make a dummy fileset
+    args.filesets = ['manual']
 
-    return snames
 
-if __name__ == '__main__':
+def executeSkim(sample, filesets, outDir):
+    """
+    Set up the skimmer, clean up the destination, request T2->T3 downloads if necessary, and execute the skim.
+    """
 
-    from argparse import ArgumentParser
-    import json
-    
-    argParser = ArgumentParser(description = 'Plot and count')
-    argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
-    argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
-    argParser.add_argument('--plot-config', '-p', metavar = 'PLOTCONFIG', dest = 'plotConfig', default = '', help = 'Run on samples used in PLOTCONFIG.')
-    argParser.add_argument('--eos-input', '-e', action = 'store_true', dest = 'eosInput', help = 'Specify that input needs to be read from eos.')
-    argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
-    argParser.add_argument('--files', '-f', metavar = 'nStart nEnd', dest = 'files', nargs = 2, type = int, default = [], help = 'Range of files to run on.')
-    argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-    
-    args = argParser.parse_args()
-    sys.argv = []
-
-    import ROOT
-
-    ROOT.gSystem.Load(config.libsimpletree)
-    ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-    ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/tools')
-    ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
-
-    compiled = ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
-    # doesn't seem to be returning different values if compilation fails :(
-    if (compiled < 0 ):
-        print "Couldn't compile Skimmer.cc. Quitting."
-        sys.exit()
-
-    if args.compileOnly:
-        sys.exit(0)
-
-    snames = processSampleNames(args.snames, selectors.keys(), args.plotConfig)
-
-    if args.list:
-        print ' '.join(sorted(snames))
-        # for sname in sorted(snames):
-            # print sname
-        sys.exit(0)
-    
     skimmer = ROOT.Skimmer()
-
-    if not os.path.exists(config.skimDir):
-        os.makedirs(config.skimDir)
-
-    if args.files:
-        nStart = args.files[0]
-        nEnd = args.files[1]
+    if args.skipPhotonSkim:
+        skimmer.skipPhotonSkim()
     else:
-        nStart = -1
-        nEnd = 100000
+        skimmer.setCommonSelection('superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442')
 
-    for sname in snames:
-        sample = allsamples[sname]
-        print 'Starting sample %s (%d/%d)' % (sname, snames.index(sname) + 1, len(snames))
-    
-        skimmer.reset()
-    
-        tree = ROOT.TChain('events')
+    for rname, gen in selectors[sample.name]:
+        selector = gen(sample, rname)
+        selector.setUseTimers(args.timer)
+        skimmer.addSelector(selector)
 
-        if os.path.exists(config.photonSkimDir + '/' + sname + '.root'):
-            print 'Reading', sname, 'from', config.photonSkimDir
-            tree.Add(config.photonSkimDir + '/' + sname + '.root')
+    tmpDir = '/local/' + os.environ['USER'] + '/' + sample.name
+    try:
+        os.makedirs(tmpDir)
+    except OSError:
+        pass
 
-        else:
-            if args.eosInput:
-                sourceDir = sample.book + '/' + sample.fullname
-            elif sample.data:
-                sourceDir = config.dataNtuplesDir + sample.book + '/' + sample.fullname
-            else:
-                sourceDir = config.ntuplesDir + sample.book + '/' + sample.fullname
-
-            print 'Reading', sname, 'from', sourceDir
-
-            if args.eosInput:
-                # lsCmd = ['/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select', 'ls', sourceDir + '/*.root']
-                lsCmd = ['lcg-ls', '-b', '-D', 'srmv2', 'srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN='+sourceDir]
-                listFiles = Popen(lsCmd, stdout=PIPE, stderr=PIPE)
-            
-                """
-                (lout, lerr) = listFiles.communicate()
-                print lout, '\n'
-                print lerr, '\n'
-                sys.exit()
-                """
-                
-                filesList = [ line for line in listFiles.stdout if line.endswith('.root\n') ] 
-                pathPrefix = 'root://eoscms'
-            else:
-                filesList = sorted(glob(sourceDir + '/*.root'))
-                
-            for iF, File in enumerate(filesList):
-                if iF < nStart:
-                    continue
-                if iF > nEnd:
-                    break
-                File = File.strip(' \n')
-                
-                if args.eosInput:
-                    print pathPrefix + File
-                    tree.Add(pathPrefix + File)
-                else:
-                    tree.Add(File)
-
-        print tree.GetEntries(), 'entries'
-        if tree.GetEntries() == 0:
-            print 'Tree has no entries. Skipping.'
-            continue
-
-        selnames = []
-        for rname, gen in selectors[sname]:
-            selnames.append(rname)
-            selector = gen(sample, rname)
-            skimmer.addSelector(selector)
-
-        if nStart >= 0:
-            sname = sname + '_' + str(nStart) + '-' + str(nEnd)
-
-        tmpDir = '/tmp/' + os.environ['USER']
-        if not os.path.exists(tmpDir):
+    if not os.path.isdir(tmpDir):
+        tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
+        try:
             os.makedirs(tmpDir)
-        skimmer.run(tree, tmpDir, sname, args.nentries)
+        except OSError:
+            pass
+
+    logger.debug('getting all input files')
+
+    if filesets[0] == 'manual':
+        for path in args.files:
+            skimmer.addPath(path)
+    else:
+        for path in sample.files(filesets):
+            if not os.path.exists(path):
+                fname = os.path.basename(path)
+                dataset = os.path.basename(os.path.dirname(path))
+                proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
+                print proc.communicate()[0].strip()
+    
+            logger.debug('Add input: %s', path)
+            skimmer.addPath(path)
+   
+    outNameBase = sample.name
+
+    outSuffix = None
+    if args.outSuffix:
+        outSuffix = args.outSuffix
+    elif len(filesets) == 1 and filesets[0] == 'manual':
+        outSuffix = filesets[0]
+    elif len(filesets) == 1 and len(sample.filesets()) > 1:
+        outSuffix = filesets[0]
+
+    if outSuffix is not None:
+        outNameBase += '_' + outSuffix
+
+    if args.skipExisting:
+        logger.info('Checking for existing files.')
+    else:
+        logger.info('Removing existing files.')
+
+    for selname in [rname for rname, gen in selectors[sample.name]]:
+        outName = outDir + '/' + outNameBase + '_' + selname + '.root'
+        logger.debug(outName)
+
+        if args.skipExisting:
+            if not os.path.exists(outName) or os.stat(outName).st_size == 0:
+                break
+            logger.debug('%s exists.', outName)
+        else:
+            try:
+                os.remove(outName)
+            except:
+                pass
+
+    else:
+        if args.skipExisting:
+            logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
+            return
+
+    if sample.data and args.json:
+        logger.info('Good lumi filter: %s', args.json)
+        skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
+
+    logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
+    skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
+
+    for rname, gen in selectors[sample.name]:
+        outName = outNameBase + '_' + rname + '.root'
+
+        logger.info('Copying output to %s/%s', outDir, outName)
+        shutil.copy(tmpDir + '/' + outName, outDir)
+        logger.info('Removing %s/%s', tmpDir, outName)
+        os.remove(tmpDir + '/' + outName)
+
+
+for sample in samples:
+    print 'Starting sample %s (%d/%d)' % (sample.name, samples.index(sample) + 1, len(samples))
+
+    splitOutDir = config.skimDir + '/' + sample.name
+
+    if len(args.filesets) != 0 and args.filesets[0] == 'manual':
+        outDir = config.skimDir
+        fslist = args.filesets
+    elif len(args.filesets) != 0 and len(sample.filesets()) > 1:
+        outDir = splitOutDir
+        fslist = args.filesets
+    else:
+        outDir = config.skimDir
+        fslist = sorted(sample.filesets())
+
+    try:
+        os.makedirs(outDir)
+    except OSError:
+        pass
+
+    if batch:
+        # Batch mode - only need to collect the input names
+        # Will spawn condor jobs below
+        continue
+
+    # Will do the actual merging
+    if args.merge:
+        print 'Merging.'
+
+        selnames = [rname for rname, gen in selectors[sample.name]]
+
         for selname in selnames:
-            if os.path.exists(config.skimDir + '/' + sname + '_' + selname + '.root'):
-                os.remove(config.skimDir + '/' + sname + '_' + selname + '.root')
-            shutil.move(tmpDir + '/' + sname + '_' + selname + '.root', config.skimDir)
+            for fileset in fslist:
+                fname = splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
+                if not os.path.exists(fname) or os.stat(fname).st_size == 0:
+                    raise RuntimeError('Missing input file', fname)
+
+            outName = sample.name + '_' + selname + '.root'
+
+            mergePath = mergeDir + '/' + outName
+
+            logger.debug('%s %s %s', padd, mergePath, ' '.join(splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist))
+            proc = Popen([padd, mergePath] + [splitOutDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
+            out, err = proc.communicate()
+            print out.strip()
+            print err.strip()
+    
+            logger.info('Copying output to %s/%s', config.skimDir, outName)
+            shutil.copy(mergePath, config.skimDir)
+            logger.info('Removing %s', mergePath)
+            os.remove(mergePath)
+
+    else:
+        # Will do the actual skimming
+        print 'Skimming.'
+        if args.split:
+            # Interactive + split -> not very useful. For debugging
+            for fileset in fslist:
+                executeSkim(sample, [fileset], outDir)
+        else:
+            executeSkim(sample, fslist, outDir)
+
+# Remainder of the script relates to condor submission
+if not batch:
+    sys.exit(0)
+
+
+def waitForCompletion(jobClusters):
+    heldJobs = []
+
+    while True:
+        proc = Popen(['condor_q'] + jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = PIPE, stderr = PIPE)
+        out, err = proc.communicate()
+        lines = out.split('\n')
+        completed = True
+        for line in lines:
+            if line.strip() == '':
+                continue
+
+            clusterId, jobStatus = line.split()[:2]
+            if jobStatus == '5':
+                sname, _, fileset = line.split()[3:6] # [2] is the executable
+                if (sname, fileset) in heldJobs:
+                    continue
+
+                print 'Job %s %s is held' % (sname, fileset)
+                heldJobs.append((sname, fileset))
+                continue
+            
+            completed = False
+
+        if completed:
+            break
+
+        time.sleep(10)
+
+
+submitter = CondorRun(os.path.realpath(__file__))
+submitter.logdir = '/local/' + os.environ['USER']
+submitter.hold_on_fail = True
+submitter.group = 'group_t3mit.urgent'
+
+if args.split:
+    print 'Submitting skim jobs.'
+
+    # Spawn condor jobs
+    arguments = []
+
+    # Collect arguments and remove output
+    for sample in samples:
+        if len(args.filesets) == 0:
+            fslist = sorted(sample.filesets())
+        else:
+            fslist = args.filesets
+
+        splitOutDir = config.skimDir + '/' + sample.name
+
+        for fileset in fslist:
+            if len(sample.filesets()) == 1:
+                arguments.append(sample.name)
+            else:
+                arguments.append((sample.name, fileset))
+
+            # clean up old .log files
+            logpath = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
+            logger.debug('Removing %s', logpath)
+            try:
+                os.remove(logpath)
+            except:
+                pass
+
+    submitter.job_args = []
+    submitter.job_names = []
+    for arg in arguments:
+        if type(arg) is tuple:
+            job_arg = '{0} -f {1}'.format(*arg)
+            job_name = '{0}_{1}'.format(*arg)
+        else:
+            job_arg = arg
+            job_name = '%s_0000' % arg
+
+        if args.skipExisting:
+            job_arg += ' -X'
+
+        if len(args.selnames) != 0:
+            job_arg += ' -s ' + ' '.join(args.selnames)
+
+        submitter.job_args.append(job_arg)
+        submitter.job_names.append(job_name)
+
+    jobClusters = submitter.submit(name = 'ssw2')
+
+    print 'Waiting for individual skim jobs to complete.'
+
+    waitForCompletion(jobClusters)
+
+    print 'All skim jobs finished.'
+
+if args.merge:
+    print 'Submitting merge jobs.'
+
+    # Spawn condor jobs
+    arguments = []
+
+    # Collect arguments and remove output
+    for sample in samples:
+        splitOutDir = config.skimDir + '/' + sample.name
+
+        for selname in [rname for rname, gen in selectors[sample.name]]:
+            arguments.append((sample.name, selname))
+
+            # clean up old .log files
+            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + selname + '.0.log'
+            logger.debug('Removing %s', path)
+            try:
+                os.remove(path)
+            except:
+                pass
+
+            # not sure if I want to delete old file immediately
+            path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
+            logger.debug('Removing %s', path)
+            try:
+                os.remove(path)
+            except:
+                pass
+
+    submitter.job_args = ['-M -I %s -s %s' % arg for arg in arguments]
+    submitter.job_names = ['%s_%s' % arg for arg in arguments]
+
+    jobClusters = submitter.submit(name = 'ssw2')
+
+    print 'Waiting for individual merge jobs to complete.'
+
+    waitForCompletion(jobClusters)
+
+    print 'All merge jobs finished.'

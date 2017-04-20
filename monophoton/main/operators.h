@@ -1,8 +1,8 @@
 #ifndef operators_h
 #define operators_h
 
-#include "TreeEntries_simpletree.h"
-#include "SimpleTreeUtils.h"
+#include "Objects/interface/EventMonophoton.h"
+#include "Objects/interface/EventTPPhoton.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -11,7 +11,6 @@
 
 #include "TDirectory.h"
 
-//#include "jer.h"
 #include "eventlist.h"
 
 #include <bitset>
@@ -55,6 +54,10 @@
 //     NPVWeight
 //     NNPDFVariation *
 //     GenPhotonDR *
+//   PUWeight
+//   TPOperator
+//     TPElectronPhoton
+//     TPMuonPhoton
 //--------------------------------------------------------------------
 
 enum LeptonFlavor {
@@ -76,6 +79,9 @@ enum MetSource {
   kOutMet
 };
 
+
+const UInt_t NMAX_PARTICLES = 64;
+
 //--------------------------------------------------------------------
 // Base classes
 //--------------------------------------------------------------------
@@ -86,9 +92,12 @@ class Operator {
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
 
-  virtual bool exec(simpletree::Event const&, simpletree::Event&) = 0;
+  virtual bool exec(panda::EventMonophoton const&, panda::EventBase&) = 0;
 
   virtual void addBranches(TTree& skimTree) {}
+  virtual void initialize(panda::EventMonophoton&) {}
+
+  virtual void registerCut(TTree&) {}
 
  protected:
   TString name_;
@@ -99,13 +108,14 @@ class Cut : public Operator {
   Cut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
   virtual ~Cut() {}
 
-  bool exec(simpletree::Event const&, simpletree::Event&) override;
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
-  virtual void registerCut(TTree& cutsTree) { cutsTree.Branch(name_, &result_, name_ + "/O"); }
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
 
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+
  protected:
-  virtual bool pass(simpletree::Event const&, simpletree::Event&) = 0;
+  virtual bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
 
  private:
   bool result_;
@@ -117,10 +127,26 @@ class Modifier : public Operator {
   Modifier(char const* name) : Operator(name) {}
   virtual ~Modifier() {}
 
-  bool exec(simpletree::Event const&, simpletree::Event&) override;
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
  protected:
-  virtual void apply(simpletree::Event const&, simpletree::Event&) = 0;
+  virtual void apply(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
+};
+
+class TPOperator : public Operator {
+ public:
+  TPOperator(char const* name) : Operator(name), result_(false) {}
+  ~TPOperator() {}
+
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
+
+  void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
+
+ protected:
+  virtual void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) = 0;
+
+ private:
+  bool result_;
 };
 
 //--------------------------------------------------------------------
@@ -132,13 +158,13 @@ class HLTFilter : public Cut {
   HLTFilter(char const* name = "PATHNAME");
   ~HLTFilter();
 
-  // to reset the tree number
-  void addBranches(TTree& skimTree) override;
-
+  void initialize(panda::EventMonophoton& _event) override;
+    
  protected:
-  bool pass(simpletree::Event const& _event, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const& _event, panda::EventMonophoton&) override;
 
-  std::vector<simpletree::TriggerHelper*> helpers_;
+  TString pathNames_{""};
+  std::vector<UInt_t> tokens_;
 };
 
 class MetFilters : public Cut {
@@ -149,7 +175,7 @@ class MetFilters : public Cut {
   void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
   void setEventList(char const* path, int decision);
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   int filterConfig_[6]{1, 1, 1, 1, 1, 1};
   std::vector<std::pair<EventList, int>> eventLists_;
@@ -164,7 +190,7 @@ class GenPhotonVeto : public Cut {
   void setMinDR(double m) { minDR_ = m; }
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double minPt_{130.}; // minimum pt of the gen photon to be vetoed
   double minDR_{0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
@@ -175,42 +201,39 @@ class PhotonSelection : public Cut {
   enum Selection {
     HOverE,               // 0
     Sieie,
-    CHIso,
     NHIso,
     PhIso,
-    EVeto,                // 5
+    CHIso,
+    CHIsoMax,             // 5
+    EVeto,
     CSafeVeto,
     MIP49,
     Time,
-    SieieNonzero,
-    SipipNonzero,         // 10
-    E2E995,
+    SieieNonzero,         // 10
+    SipipNonzero,
     NoisyRegion,
+    E2E995,
     Sieie12,
-    Sieie15,
-    CHIso11,              // 15
-    NHIso11,
-    PhIso3,
+    Sieie15,              // 15
+    Sieie20,
+    CHIso11,
+    CHIsoMax11,
+    NHIsoLoose,
+    PhIsoLoose,           // 20
     NHIsoTight,
     PhIsoTight,
-    CHIsoMax,             // 20
-    CHIsoMax11,
-    CHWorstIso,
-    CHWorstIso11,
     Sieie05,
-    Sipip05,              // 25 
-    CHIsoS16,
-    NHIsoS16,
+    Sipip05,
+    NHIsoS16,             // 25
     PhIsoS16,
+    CHIsoS16,
     CHIsoMaxS16,
-    NHIsoS16Tight,        // 30
+    NHIsoS16Loose,
+    PhIsoS16Loose,        // 30
+    CHIsoS16Loose,
+    NHIsoS16Tight,
     PhIsoS16Tight,
-    NHIsoS16VLoose,
-    PhIsoS16VLoose,
-    CHIsoS16VLoose,
-    NHIsoLoose,           // 35
-    PhIsoLoose,
-    nSelections           // 37
+    nSelections           // 34
   };
 
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
@@ -232,17 +255,17 @@ class PhotonSelection : public Cut {
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setWP(unsigned wp) { wp_ = wp; }
 
-  double ptVariation(simpletree::Photon const&, bool up);
+  double ptVariation(panda::XPhoton const&, bool up);
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
-  int selectPhoton(simpletree::Photon const&);
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+  int selectPhoton(panda::XPhoton const&);
 
   double minPt_{175.};
   double maxPt_{6500.};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
-  float ptVarUp_[simpletree::Particle::array_data::NMAX];
-  float ptVarDown_[simpletree::Particle::array_data::NMAX];
+  float ptVarUp_[NMAX_PARTICLES];
+  float ptVarDown_[NMAX_PARTICLES];
   // Will select photons based on the AND of the elements.
   // Within each element, multiple bits are considered as OR.
   typedef std::bitset<nSelections> BitMask;
@@ -258,21 +281,21 @@ class ElectronVeto : public Cut {
  public:
   ElectronVeto(char const* name = "ElectronVeto") : Cut(name) {}
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
 
 class MuonVeto : public Cut {
  public:
   MuonVeto(char const* name = "MuonVeto") : Cut(name) {}
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
 
 class TauVeto : public Cut {
  public:
   TauVeto(char const* name = "TauVeto") : Cut(name) {}
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
 
 class LeptonMt : public Cut {
@@ -284,7 +307,7 @@ class LeptonMt : public Cut {
   void setMax(double max) { max_ = max; }
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   LeptonFlavor flavor_;
 
@@ -305,15 +328,15 @@ class Mass : public Cut {
   void addBranches(TTree& skimTree) override;
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   TString prefix_{"generic"};
   Collection col_[2]{nCollections, nCollections};
 
   float mass_{-1.};
   float pt_{-1.};
-  float eta_{-1.};
-  float phi_{-1.};
+  float eta_{-99.};
+  float phi_{-99.};
   double min_{0.};
   double max_{14000.};
 };
@@ -329,7 +352,7 @@ class OppositeSign : public Cut {
   void addBranches(TTree& skimTree) override;
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   TString prefix_{"generic"};
   Collection col_[2]{nCollections, nCollections};
@@ -343,9 +366,9 @@ class BjetVeto : public Cut {
 
   void addBranches(TTree& skimTree) override;
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
-  simpletree::JetCollection bjets_;
+  panda::JetCollection bjets_;
 };
 
 class MetVariations; // defined below
@@ -361,7 +384,7 @@ class PhotonMetDPhi : public Cut {
   void setMetVariations(MetVariations* v) { metVar_ = v; }
   void invert(bool i) { invert_ = i; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   MetSource metSource_{kOutMet};
 
@@ -395,7 +418,7 @@ class JetMetDPhi : public Cut {
   /* void setJetCleaning(JetCleaning* jcl) { jetCleaning_ = jcl; } */
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   float dPhi_{0.};
   float dPhiJECUp_{0.};
@@ -424,7 +447,7 @@ class LeptonSelection : public Cut {
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   bool strictMu_{true};
   bool strictEl_{true};
@@ -439,7 +462,7 @@ class HighMet : public Cut {
   void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event& outEvent) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton& outEvent) override;
 
   MetSource metSource_{kOutMet};
   double min_{170.};
@@ -454,7 +477,7 @@ class MtRange : public Cut {
   void setRange(double min, double max) { min_ = min; max_ = max; }
   void setCalculator(PhotonMt const* calc) { calc_ = calc; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double min_{0.};
   double max_{6500.};
@@ -467,7 +490,7 @@ class HighPtJetSelection : public Cut {
 
   void setJetPtCut(double min) { min_ = min; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double min_{100.};
 };
@@ -478,7 +501,7 @@ class PhotonPtTruncator : public Cut {
 
   void setPtMax(double max) { max_ = max; }
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double max_{500.};
 };
@@ -487,16 +510,16 @@ class GenParticleSelection : public Cut {
  public:
   GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}
   
-  void setPdgId(unsigned pdgId) { pdgId_ = pdgId; }
+  void setPdgId(int pdgId) { pdgId_ = pdgId; }
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setMinEta(double minEta) { minEta_ = minEta; }
   void setMaxEta(double maxEta) { maxEta_ = maxEta; }
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
-  unsigned pdgId_{22};
+  int pdgId_{22};
   double minPt_{140.};
   double maxPt_{6500.};
   double minEta_{0.};
@@ -511,7 +534,7 @@ class EcalCrackVeto : public Cut {
   void setMinPt(double minPt) { minPt_ = minPt; }
 
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
   double minPt_{30.};
   Bool_t ecalCrackVeto_{true};
@@ -527,17 +550,17 @@ class TagAndProbePairZ : public Cut {
   void setProbeSpecies(unsigned species) { probeSpecies_ = species; }
 
   unsigned getNUniqueZ() const { return nUniqueZ_; }
-  float getPhiZ(unsigned idx) const { return zs_[idx].phi; }
+  float getPhiZ(unsigned idx) const { return zs_[idx].phi(); }
   
  protected:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   unsigned tagSpecies_{0};
   unsigned probeSpecies_{0};
 
-  simpletree::ParticleCollection* tags_{0};
-  simpletree::ParticleCollection* probes_{0};
-  simpletree::ParticleMCollection zs_;
+  panda::ParticleCollection* tags_{0};
+  panda::ParticleCollection* probes_{0};
+  panda::ParticleMCollection zs_;
   bool zOppSign_{0};
 
   unsigned nUniqueZ_{0};
@@ -552,7 +575,7 @@ class ZJetBackToBack: public Cut {
   void setMinJetPt(float minJetPt) { minJetPt_ = minJetPt; }
 
  private:
-  bool pass(simpletree::Event const&, simpletree::Event&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   float minJetPt_{30.};
   float dPhiMin_{2.5};
@@ -576,7 +599,7 @@ class TriggerEfficiency : public Modifier {
   void setDownFormula(char const* formula);
 
  protected:
-  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 
   double minPt_{0.};
   TF1* formula_{0};
@@ -595,7 +618,7 @@ class ExtraPhotons : public Modifier {
  protected:
   double minPt_{30.};
   
-  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 };
 
 
@@ -613,14 +636,14 @@ class JetCleaning : public Modifier {
   /* double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; } */
   
  protected:
-  void apply(simpletree::Event const&, simpletree::Event&) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
   std::bitset<nCollections> cleanAgainst_{};
 
   // will copy jer branches
-  /* float ptScaled_[simpletree::Particle::array_data::NMAX]; */
-  /* float ptScaledUp_[simpletree::Particle::array_data::NMAX]; */
-  /* float ptScaledDown_[simpletree::Particle::array_data::NMAX]; */
+  /* float ptScaled_[NMAX_PARTICLES]; */
+  /* float ptScaledUp_[NMAX_PARTICLES]; */
+  /* float ptScaledDown_[NMAX_PARTICLES]; */
 
   //  JER* jer_{0};
   //  TRandom3* rndm_{0};
@@ -633,12 +656,12 @@ class PhotonJetDPhi : public Modifier {
 
   void setMetVariations(MetVariations* v) { metVar_ = v; }
  protected:
-  void apply(simpletree::Event const&, simpletree::Event&) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
-  float dPhi_[simpletree::Particle::array_data::NMAX];
-  float minDPhi_[simpletree::Particle::array_data::NMAX];
-  float minDPhiJECUp_[simpletree::Particle::array_data::NMAX];
-  float minDPhiJECDown_[simpletree::Particle::array_data::NMAX];
+  float dPhi_[NMAX_PARTICLES];
+  float minDPhi_[NMAX_PARTICLES];
+  float minDPhiJECUp_[NMAX_PARTICLES];
+  float minDPhiJECDown_[NMAX_PARTICLES];
   MetVariations* metVar_{0};
 };
 
@@ -646,7 +669,7 @@ class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
-  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override { outEvent.t1Met = event.t1Met; }
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.t1Met; }
 };
 
 class PhotonMt : public Modifier {
@@ -656,9 +679,9 @@ class PhotonMt : public Modifier {
   
   double getMt(unsigned iP) const { return mt_[iP]; }
  protected:
-  void apply(simpletree::Event const& event, simpletree::Event& outEvent) override;
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 
-  float mt_[simpletree::Particle::array_data::NMAX];
+  float mt_[NMAX_PARTICLES];
 };
 
 class LeptonRecoil : public Modifier {
@@ -673,7 +696,7 @@ class LeptonRecoil : public Modifier {
   TVector2 realMetUncl(int corr) const;
 
  protected:
-  void apply(simpletree::Event const&, simpletree::Event&) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   LeptonFlavor flavor_;
   MetVariations* metVar_{0};
@@ -688,6 +711,20 @@ class LeptonRecoil : public Modifier {
   float realPhiUnclUp_;
   float realMetUnclDown_;
   float realPhiUnclDown_;
+};
+
+class EGCorrection : public Modifier {
+ public:
+  EGCorrection(char const* name = "EGCorrection") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+  
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  float origMet_{0.};
+  float origPhi_{0.};
+  float corrMag_{0.};
+  float corrPhi_{0.};
 };
 
 class MetVariations : public Modifier {
@@ -705,7 +742,7 @@ class MetVariations : public Modifier {
   /* TVector2 jerDown() const { TVector2 v; v.SetMagPhi(metJERDown_, phiJERDown_); return v; } */
 
  protected:
-  void apply(simpletree::Event const&, simpletree::Event&) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
   PhotonSelection* photonSel_{0};
   JetCleaning* jetCleaning_{0};
@@ -732,7 +769,7 @@ class ConstantWeight : public Modifier {
   void setUncertaintyDown(double delta) { weightDown_ = 1. - delta; }
 
  protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override { _outEvent.weight *= weight_; }
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override { _outEvent.weight *= weight_; }
   
   double weight_;
   double weightUp_{-1.};
@@ -757,7 +794,7 @@ class PhotonPtWeight : public Modifier {
   void addVariation(char const* suffix, TObject* corr);
   void useErrors(bool); // use errors of the nominal histogram weight for Up/Down variation
  protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   TObject* nominal_;
   double weight_;
@@ -791,8 +828,8 @@ class IDSFWeight : public Modifier {
   void setNParticles(unsigned _nP) { nParticles_ = _nP; }
   void addFactor(TH1* factor) { factors_.emplace_back(factor); }
  protected:
-  void applyParticle(unsigned iP, simpletree::Event const& _event, simpletree::Event& _outEvent);
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+  void applyParticle(unsigned iP, panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent);
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   Object object_;
   Variable variables_[2];
@@ -808,21 +845,9 @@ class NPVWeight : public Modifier {
  public:
   NPVWeight(TH1* factors, char const* name = "NPVWeight") : Modifier(name), factors_(factors) {}
  protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   TH1* factors_;
-};
-
-class PUWeight : public Modifier {
- public:
-  PUWeight(TH1* factors, char const* name = "PUWeight") : Modifier(name), factors_(factors) {}
-
-  void addBranches(TTree& _skimTree) override;
- protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
-
-  TH1* factors_;
-  double weight_;
 };
 
 class NNPDFVariation : public Modifier {
@@ -831,7 +856,7 @@ class NNPDFVariation : public Modifier {
 
   void addBranches(TTree& skimTree) override;
  protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   double weightUp_;
   double weightDown_;
@@ -843,9 +868,76 @@ class GenPhotonDR : public Modifier {
 
   void addBranches(TTree& skimTree) override;
  protected:
-  void apply(simpletree::Event const&, simpletree::Event& _outEvent) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   float minDR_;
+};
+
+class PhotonRecoil : public Modifier {
+ public:
+  PhotonRecoil(char const* name = "PhotonRecoil") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  float realMet_;
+  float realPhi_;
+  float realMetCorrUp_;
+  float realPhiCorrUp_;
+  float realMetCorrDown_;
+  float realPhiCorrDown_;
+  float realMetUnclUp_;
+  float realPhiUnclUp_;
+  float realMetUnclDown_;
+  float realPhiUnclDown_;
+};
+
+//--------------------------------------------------------------------
+// Simple reweights
+//--------------------------------------------------------------------
+
+class PUWeight : public Operator {
+ public:
+  PUWeight(TH1* factors, char const* name = "PUWeight") : Operator(name), factors_(factors) {}
+
+  void addBranches(TTree& _skimTree) override;
+
+  bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
+
+ protected:
+  TH1* factors_;
+  double weight_;
+};
+
+
+//--------------------------------------------------------------------
+// Tag & Probe
+//--------------------------------------------------------------------
+
+class TPElectronPhoton : public TPOperator {
+ public:
+  TPElectronPhoton(char const* name = "TPElectronPhoton") : TPOperator(name) {}
+  
+ protected:
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+};
+
+class TPMuonPhoton : public TPOperator {
+ public:
+  TPMuonPhoton(char const* name = "TPMuonPhoton") : TPOperator(name) {}
+
+  enum Mode {
+    kSingle,
+    kDouble
+  };
+
+  void setMode(Mode m) { mode_ = m; }
+  
+ protected:
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+
+  Mode mode_{kSingle};
 };
 
 #endif

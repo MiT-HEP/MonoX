@@ -9,8 +9,6 @@
 
 #include "RooUniformBinning.h"
 
-#include "TreeEntries_simpletree.h"
-
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -61,7 +59,7 @@ private:
 TemplateGenerator::TemplateGenerator()
 {
   for (auto*& tree : input_)
-    tree = new TChain("skimmedEvents");
+    tree = new TChain("events");
 }
 
 TemplateGenerator::~TemplateGenerator()
@@ -102,7 +100,7 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   unsigned const NMAX(256);
 
   unsigned size(0);
-  double weight(0.);
+  float weightIn(0.);
   unsigned short npv(0);
   float mass[NMAX];
   float probeScRawPt[NMAX];
@@ -113,7 +111,7 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   float tagPhi[NMAX];
 
   tree.SetBranchAddress("tp.size", &size);
-  tree.SetBranchAddress("weight", &weight);
+  tree.SetBranchAddress("weight", &weightIn);
   tree.SetBranchAddress("npv", &npv);
   switch (_var) {
   case kMass:
@@ -121,11 +119,11 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
     break;
   case kSCRawMass:
     tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
-    tree.SetBranchAddress("probes.eta", probeEta);
-    tree.SetBranchAddress("probes.phi", probePhi);
-    tree.SetBranchAddress("tags.pt", tagPt);
-    tree.SetBranchAddress("tags.eta", tagEta);
-    tree.SetBranchAddress("tags.phi", tagPhi);
+    tree.SetBranchAddress("probes.eta_", probeEta);
+    tree.SetBranchAddress("probes.phi_", probePhi);
+    tree.SetBranchAddress("tags.pt_", tagPt);
+    tree.SetBranchAddress("tags.eta_", tagEta);
+    tree.SetBranchAddress("tags.phi_", tagPhi);
     break;
   default:
     return 0;
@@ -165,7 +163,7 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
         mass[iP] = std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ));
       }
 
-      tmp->Fill(mass[iP], weight);
+      tmp->Fill(mass[iP], weightIn);
     }
   }
 
@@ -208,6 +206,7 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
   TTree* tempTree(new TTree(_name, ""));
 
   unsigned size(0);
+  float weightIn(0.);
   double weight(0.);
   unsigned short npv(0);
   float mass[NMAX];
@@ -223,7 +222,7 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
   tempTree->Branch("weight", &weight, "weight/D");
 
   tree.SetBranchAddress("tp.size", &size);
-  tree.SetBranchAddress("weight", &weight);
+  tree.SetBranchAddress("weight", &weightIn);
   tree.SetBranchAddress("npv", &npv);
   switch (_var) {
   case kMass:
@@ -232,11 +231,11 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
     break;
   case kSCRawMass:
     tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
-    tree.SetBranchAddress("probes.eta", probeEta);
-    tree.SetBranchAddress("probes.phi", probePhi);
-    tree.SetBranchAddress("tags.pt", tagPt);
-    tree.SetBranchAddress("tags.eta", tagEta);
-    tree.SetBranchAddress("tags.phi", tagPhi);
+    tree.SetBranchAddress("probes.eta_", probeEta);
+    tree.SetBranchAddress("probes.phi_", probePhi);
+    tree.SetBranchAddress("tags.pt_", tagPt);
+    tree.SetBranchAddress("tags.eta_", tagEta);
+    tree.SetBranchAddress("tags.phi_", tagPhi);
     tempTree->Branch("mass", &var, "mass/D");
     break;
   default:
@@ -257,6 +256,8 @@ TemplateGenerator::makeUnbinnedTemplate(SkimType _type, char const* _name, char 
       std::cerr << "Sublist not found for entry " << iListEntry << " " << iTreeEntry << " (" << tree.GetTreeNumber() << ", " << localEntry << ")" << std::endl;
       throw std::runtime_error("entrylist");
     }
+
+    weight = weightIn;
 
     for (int iE(0); iE != pList->GetN(); ++iE) {
       unsigned iP(pList->GetEntry(iE));

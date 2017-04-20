@@ -7,7 +7,8 @@
 #include "TROOT.h"
 #include "TEntryListArray.h"
 
-#include "TreeEntries_simpletree.h"
+#include "EventTPPhoton.h"
+#include "EventMonophoton.h"
 
 #include <stdexcept>
 #include <string>
@@ -29,8 +30,6 @@ public:
   ~Skimmer();
 
   void addSkim(SkimType, char const* fileName);
-  void limitSkim(SkimType t) { enabled_.set(t); }
-  void resetLimit() { enabled_.reset(); }
   void fillSkim(TTree*, double weight, unsigned sampleId, long nEntries = -1);
   void writeSkim();
   void setReweight(TH1* _rwgt) { reweight_ = _rwgt; }
@@ -38,19 +37,8 @@ public:
   TTree* getSkimTree(SkimType _t) const { return skimTrees_[_t]; }
 
 private:
-  static unsigned const NMAX{simpletree::Particle::array_data::NMAX};
-
   TTree* skimTrees_[nSkimTypes]{};
-  std::bitset<nSkimTypes> enabled_{};
-  simpletree::Event fullEvent_{};
-
-  unsigned nPairs_[nSkimTypes]{};
-  float mass_[nSkimTypes][NMAX * (NMAX - 1) / 2]{};
-  float mass2_[nSkimTypes][NMAX * (NMAX - 1) / 2]{};
-  simpletree::LeptonCollection tags_[nSkimTypes];
-  simpletree::LeptonCollection looseTags_[nSkimTypes];
-  simpletree::PhotonCollection probes_[nSkimTypes];
-  unsigned sampleId_{0};
+  panda::EventTPPhoton outEvent_[nSkimTypes]{};
 
   TH1* reweight_{0};
 };
@@ -75,22 +63,12 @@ Skimmer::addSkim(SkimType _type, char const* _fileName)
 
   file->cd();
 
-  auto* tree(new TTree("skimmedEvents", "template skim"));
-  fullEvent_.book(*tree, {"run", "lumi", "event", "weight", "rho", "npv", "jets", "t1Met"});
+  auto* tree(new TTree("events", "template skim events"));
+  panda::utils::BranchList blist{{"*"}};
+  if (_type == kEG || _type == kMG)
+    blist += {"!tp.mass2", "!looseTags"};
 
-  tree->Branch("tp.size", nPairs_ + _type, "size/i");
-  tree->Branch("tp.mass", mass_[_type], "mass[tp.size]/F");
-  tags_[_type].setName("tags");
-  probes_[_type].setName("probes");
-  tags_[_type].book(*tree);
-  probes_[_type].book(*tree);
-  if (_type == kMMG) {
-    tree->Branch("tp.mass2", mass2_[_type], "mass2[tp.size]/F");
-    looseTags_[_type].setName("looseTags");
-    looseTags_[_type].book(*tree);
-  }
-  tree->Branch("sample", &sampleId_, "sample/i");
-
+  outEvent_[_type].book(*tree, blist);
   skimTrees_[_type] = tree;
 }
 
@@ -99,27 +77,23 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
 {
   std::bitset<nSkimTypes> fill;
   for (unsigned iT(0); iT != nSkimTypes; ++iT) {
-    if ((enabled_.none() || enabled_[iT]) && skimTrees_[iT]) {
+    if (skimTrees_[iT]) {
       fill.set(iT);
+      outEvent_[iT].sample = _sampleId;
     }
   }
 
   if (fill.none())
     return;
 
-  sampleId_ = _sampleId;
-
-  simpletree::Event event;
-  event.setStatus(*_input, false);
-  flatutils::BranchList bList{"photons.pt", "photons.eta", "photons.phi", "photons.scRawPt", "photons.isEB",
-      "photons.chIso", "photons.chWorstIso", "photons.chIsoMax", "photons.nhIso", "photons.phIso", "photons.sieie", "photons.sipip", "photons.sieip",
-      "photons.hOverE", "photons.pixelVeto", "photons.csafeVeto", "photons.medium", "photons.matchedGen", "photons.matchHLT"};
+  panda::EventMonophoton event;
+  panda::utils::BranchList blist{{"photons"}};
   if (fill[kEG])
-    bList.push_back("electrons");
+    blist += {"electrons"};
   if (fill[kMG] || fill[kMMG])
-    bList.push_back("muons");
+    blist += {"muons"};
 
-  event.setAddress(*_input, bList);
+  event.setAddress(*_input, blist);
 
   TChain fullInput("events");
   if (_input->InheritsFrom(TChain::Class())) {
@@ -131,10 +105,11 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
     fullInput.Add(_input->GetCurrentFile()->GetName());
   }
 
-  bList = {"run", "lumi", "event", "weight", "rho", "npv", "npvTrue", "jets", "t1Met", "hlt"};
+  panda::EventMonophoton fullEvent;
 
-  fullEvent_.setStatus(fullInput, false);
-  fullEvent_.setAddress(fullInput, bList);
+  blist = {"run", "lumi", "event", "weight", "rho", "npv", "npvTrue", "jets", "t1Met"};
+
+  fullEvent.setAddress(fullInput, blist);
 
   enum Lepton {
     lElectron,
@@ -147,39 +122,35 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
   leptonMask[lMuon].set(kMG);
   leptonMask[lMuon].set(kMMG);
 
-  simpletree::LeptonCollection* leptons[nLeptons] = {
+  panda::LeptonCollection* leptons[nLeptons] = {
     &event.electrons,
     &event.muons
   };
 
-  // TEMPORARY
   std::function<bool(unsigned)> leptonTriggerMatch[nLeptons] = {
-    [](unsigned)->bool { return true; },
-    //    [&event](unsigned iL)->bool { return event.electrons[iL].ecalIso < 0.1 && event.electrons[iL].hcalIso < 0.1; },
-    //    [&event](unsigned iL)->bool { return event.electrons[iL].matchHLT[simpletree::fEl23Loose]; },
-    [](unsigned)->bool { return true; }
-    //    [&event](unsigned iL)->bool { return event.muons[iL].matchHLT[simpletree::fMu24]; }
+    [&event](unsigned iL)->bool { return event.electrons[iL].ecalIso < 0.1 && event.electrons[iL].hcalIso < 0.1; },
+    [&event](unsigned iL)->bool { return event.muons[iL].triggerMatch[panda::fMu24]; }
   };
 
   long iEntry(0);
-  while (iEntry != _nEntries && _input->GetEntry(iEntry++) > 0) {
+  while (iEntry != _nEntries && event.getEntry(*_input, iEntry++) > 0) {
     if (iEntry % 1000000 == 1)
       std::cout << "Processing event " << iEntry << std::endl;
 
     for (unsigned iT(0); iT != nSkimTypes; ++iT) {
-      nPairs_[iT] = 0;
-      tags_[iT].clear();
-      looseTags_[iT].clear();
-      probes_[iT].clear();
+      if (skimTrees_[iT])
+        outEvent_[iT].init();
     }
 
     bool loadEvent(false);
 
-    for (unsigned iP(0); iP != event.photons.size(); ++iP) {
-      auto& photon(event.photons[iP]);
+    for (auto& photon : event.photons) {
+      std::cout << "photon" << std::endl;
 
-      if (!photon.isEB)
+      if (!photon.isEB || photon.scRawPt < 175.)
         continue;
+
+      std::cout << "iseb" << std::endl;
 
       auto&& phoP(photon.p4());
       TLorentzVector pg(phoP.X(), phoP.Y(), phoP.Z(), phoP.E());
@@ -190,6 +161,8 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
         if ((fill & mask).none())
           continue;
 
+        std::cout << "mask" << std::endl;
+
         auto& lCol(*leptons[iLepton]);
 
         for (unsigned iL(0); iL != lCol.size(); ++iL) {
@@ -197,9 +170,12 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
           if (!lepton.tight)
             continue;
 
-          //          if ((lepton.pt < 27. && std::abs(lepton.eta) < 2.1) || (sampleId_ == 0 && !leptonTriggerMatch[iLepton](iL)))
-          if (lepton.pt < 27. || std::abs(lepton.eta) > 2.1)
+          std::cout << "lepton" << std::endl;
+
+          if ((lepton.pt() < 27. && std::abs(lepton.eta()) < 2.1) || (_sampleId == 0 && !leptonTriggerMatch[iLepton](iL)))
             continue;
+
+          std::cout << "trigger" << std::endl;
 
           if (photon.dR2(lepton) < 0.01)
             continue;
@@ -211,7 +187,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
               continue;
 
             auto& veto(lCol[iVeto]);
-            if (veto.pt < 10.)
+            if (veto.pt() < 10.)
               continue;
             
             // Our electron veto does not reject photons overlapping with e/mu
@@ -225,7 +201,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
             if (photon.dR2(veto) < 0.09)
               continue;
 
-            if (iLepton == lElectron && static_cast<simpletree::Electron const&>(veto).veto)
+            if (iLepton == lElectron && static_cast<panda::Electron const&>(veto).veto)
               break;
             if (iLepton == lMuon && veto.loose)
               break;
@@ -244,44 +220,12 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
             if (mlg < 20. || mlg > 160.)
               continue;
 
-            mass_[iT][nPairs_[iT]] = mlg;
-            tags_[iT].push_back(lepton);
-            probes_[iT].push_back(photon);
+            auto& tp(outEvent_[iT].tp.create_back());
+            tp.mass = mlg;
+            
+            outEvent_[iT].tags.push_back(lepton);
+            outEvent_[iT].probes.push_back(photon);
 
-	    // recompute S16 isolations
-	    double chIsoEA(0.);
-	    double absEta(std::abs(photon.scEta));
-	    if (absEta < 1.)
-	      chIsoEA = 0.0360;
-	    else if (absEta < 1.479)
-	      chIsoEA = 0.0377;
-	    else if (absEta < 2.)
-	      chIsoEA = 0.0306;
-	    else if (absEta < 2.2)
-	      chIsoEA = 0.0283;
-	    else if (absEta < 2.3)
-	      chIsoEA = 0.0254;
-	    else if (absEta < 2.4)
-	      chIsoEA = 0.0217;
-	    else
-	      chIsoEA = 0.0167;
-
-	    probes_[iT][nPairs_[iT]].chIsoS16 = photon.chIso - chIsoEA * event.rho;
-	    if (photon.isEB) {
-	      probes_[iT][nPairs_[iT]].nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
-	      probes_[iT][nPairs_[iT]].phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
-	    }
-	    else {
-	      probes_[iT][nPairs_[iT]].nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
-	      probes_[iT][nPairs_[iT]].phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
-	    }
-
-	    // EA computed with iso/worstIsoEA.py
-	    probes_[iT][nPairs_[iT]].chIsoMax -= 0.094 * event.rho;
-	    if (probes_[iT][nPairs_[iT]].chIsoMax < probes_[iT][nPairs_[iT]].chIso)
-	      probes_[iT][nPairs_[iT]].chIsoMax = probes_[iT][nPairs_[iT]].chIso;
-	    
-            ++nPairs_[iT];
             loadEvent = true;
           }
 
@@ -311,13 +255,14 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
               if (mllg < 20. || mllg > 160.)
                 continue;
 
-              mass_[iT][nPairs_[iT]] = mllg;
-              mass2_[iT][nPairs_[iT]] = pll.M();
-              tags_[iT].push_back(lepton);
-              looseTags_[iT].push_back(looseLepton);
-              probes_[iT].push_back(photon);
+              auto& tp(outEvent_[iT].tp.create_back());
+              tp.mass = mllg;
+              tp.mass2 = pll.M();
 
-              ++nPairs_[iT];
+              outEvent_[iT].tags.push_back(lepton);
+              outEvent_[iT].looseTags.push_back(looseLepton);
+              outEvent_[iT].probes.push_back(photon);
+
               loadEvent = true;
             }
           }
@@ -325,18 +270,15 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
       }
     }
 
-    // need to reset weight because data trees do not have weight branch any more
-    fullEvent_.weight = 1.;
-
-    if (loadEvent)
-      fullInput.GetEntry(iEntry - 1);
-    else
+    if (!loadEvent)
       continue;
 
-    fullEvent_.weight *= _weight;
+    fullEvent.getEntry(fullInput, iEntry - 1);
+
+    fullEvent.weight *= _weight;
 
     if (reweight_) {
-      int iBin(reweight_->FindFixBin(fullEvent_.npvTrue));
+      int iBin(reweight_->FindFixBin(fullEvent.npvTrue));
       //      int iBin(reweight_->FindFixBin(fullEvent_.npv)); // used for testing data PU reweight
       if (iBin == 0)
         iBin = 1;
@@ -349,12 +291,12 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
       if (w > 20.)
         w = 20.;
 
-      fullEvent_.weight *= w;
+      fullEvent.weight *= w;
     }
 
     for (unsigned iT(0); iT != nSkimTypes; ++iT) {
-      if (nPairs_[iT] != 0)
-        skimTrees_[iT]->Fill();
+      if (outEvent_[iT].tp.size() != 0)
+        outEvent_[iT].fill(*skimTrees_[iT]);
     }
   }
 

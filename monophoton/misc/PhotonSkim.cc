@@ -1,305 +1,191 @@
-#include "TreeEntries_simpletree.h"
-#include "SimpleTreeUtils.h"
+#include "Objects/interface/EventMonophoton.h"
+#include "Utils/interface/FileMerger.h"
 
 #include "GoodLumiFilter.h"
 
-#include "TFile.h"
-#include "TTree.h"
 #include "TString.h"
-#include "TSystem.h"
-#include "TH1D.h"
-#include "TKey.h"
 
-#include <vector>
-#include <map>
-#include <iostream>
-#include <stdexcept>
-#include <cstring>
-#include <tuple>
+#include <cmath>
 
 class PhotonSkimmer {
 public:
-  PhotonSkimmer() {}
-  ~PhotonSkimmer() {}
+  PhotonSkimmer();
+  void addSourcePath(char const* path) { merger_.addInput(path); }
+  void setLumiFilter(GoodLumiFilter* f) { goodlumi_ = f; }
+  void setPrintLevel(int l) { merger_.setPrintLevel(l); }
+  void run(char const*, bool doSkim, long = -1);
 
-  void setSecondaryInput(TTree* t) { secondaryInput_ = t; }
-
-  void run(char const* sourceDir, char const* outputPath, long _nEvents = -1, GoodLumiFilter* _goodlumi = 0);
+  bool skimFunction(panda::Event&, panda::EventMonophoton&);
 
 private:
-  bool pass()
-  {
-    for (auto& photon : event_.photons) {
-      if (photon.isEB && photon.scRawPt > 150.)
-        return true;
-    }
-    return false;
-  }
-
-  TTree* getLongestTree(char const* name);
-
-  TFile* source_{0};
-  TTree* secondaryInput_{0};
-  simpletree::Event event_;
+  panda::FileMerger merger_;
+  GoodLumiFilter* goodlumi_{0};
 };
 
-// fix for simpletree18 bug (latest cycle not necessarily the biggest tree)
-TTree*
-PhotonSkimmer::getLongestTree(char const* _name)
+PhotonSkimmer::PhotonSkimmer()
 {
-  TTree* longestTree(0);
-  
-  auto* keys(source_->GetListOfKeys());
-  for (auto* keyObj : *keys) {
-    auto* key(static_cast<TKey*>(keyObj));
-    if (std::strcmp(key->GetName(), _name) != 0)
-      continue;
-
-    auto* tree(static_cast<TTree*>(key->ReadObj()));
-
-    if (!longestTree || tree->GetEntries() > longestTree->GetEntries()) {
-      delete longestTree;
-      longestTree = tree;
-    }
-    else
-      delete tree;
-  }
-
-  return longestTree;
+  merger_.setPrintLevel(1);
+  merger_.setInputTimeout(600);
 }
 
 void
-PhotonSkimmer::run(char const* _sourceDir, char const* _outputPath, long _nEvents/* = -1*/, GoodLumiFilter* _goodlumi/* = 0*/)
+PhotonSkimmer::run(char const* _outputPath, bool _doSkim, long _nEvents/* = -1*/)
 {
-  std::vector<TString> sourcePaths;
+  panda::EventMonophoton monophEvent;
 
-  auto* dirp(gSystem->OpenDirectory(_sourceDir));
-  
-  while (true) {
-    TString path(gSystem->GetDirEntry(dirp));
-    if (path.Length() == 0)
+  panda::FileMerger::SkimFunction skim([this, &monophEvent](panda::EventBase& _event)->bool {
+      return this->skimFunction(static_cast<panda::Event&>(_event), monophEvent);
+    });
+
+  if (_doSkim) {
+    merger_.setOutEvent(&monophEvent);
+
+    merger_.setEventSelection("TMath::Abs(superClusters.eta) < 1.4442 && superClusters.rawPt > 150.");
+    merger_.setSkim(skim);
+  }
+  else {
+    // using this to merge photon skim - set input to EventMonophoton
+    merger_.setInEvent(&monophEvent);
+  }
+
+  panda::utils::BranchList branchList = {
+    "!pfCandidates",
+    "!puppiAK4Jets",
+    "!chsAK8Jets",
+    "!chsAK8Subjets",
+    "!puppiAK8Jets",
+    "!puppiAK8Subjets",
+    "!chsCA15Jets",
+    "!chsCA15Subjets",
+    "!puppiCA15Jets",
+    "!puppiCA15Subjets",
+    "!subjets",
+    "!ak8GenJets",
+    "!ca15GenJets",
+    "!puppiMet",
+    "!rawMet",
+    "!caloMet",
+    "!noMuMet",
+    "!noHFMet",
+    "!trkMet",
+    "!neutralMet",
+    "!photonMet",
+    "!hfMet",
+    "!recoil",
+    "t1Met",
+    "jets",
+    "genJets",
+    "photons"
+  };
+
+  merger_.selectBranches(branchList, true);
+
+  merger_.merge(_outputPath, _nEvents);
+}
+
+bool
+PhotonSkimmer::skimFunction(panda::Event& _event, panda::EventMonophoton& _outEvent)
+{
+  if (goodlumi_ && !goodlumi_->isGoodLumi(_event.runNumber, _event.lumiNumber))
+    return false;
+
+  unsigned iPh(0);
+  for (; iPh != _event.photons.size(); ++iPh) {
+    auto& photon(_event.photons[iPh]);
+    if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
       break;
-
-    if (path == "." || path == "..")
-      continue;
-
-    if (path.EndsWith(".root"))
-      sourcePaths.push_back(TString(_sourceDir) + "/" + path);
   }
+  if (iPh == _event.photons.size())
+    return false;
+
+  // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
+  _outEvent = _event;
   
-  gSystem->FreeDirectory(dirp);
+  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
+    auto& inPhoton(_event.photons[iPh]);
+    auto& superCluster(*inPhoton.superCluster);
+    auto& outPhoton(_outEvent.photons[iPh]);
 
-  std::cout << sourcePaths.size() << " files to merge" << std::endl;
+    outPhoton.scRawPt = superCluster.rawPt;
+    outPhoton.scEta = superCluster.eta;
+    outPhoton.e4 = inPhoton.eleft + inPhoton.eright + inPhoton.etop + inPhoton.ebottom;
+    outPhoton.isEB = std::abs(outPhoton.scEta) < 1.4442;
+      
+    double chIsoS16EA(0.);
+    double nhIsoS16EA(0.);
+    double phIsoS16EA(0.);
+    double nhIsoS15EA(0.);
+    double phIsoS15EA(0.);
+    double absEta(std::abs(outPhoton.scEta));
+    if (absEta < 1.) {
+      nhIsoS15EA = 0.0599;
+      phIsoS15EA = 0.1271;
+      chIsoS16EA = 0.0360;
+      nhIsoS16EA = 0.0597;
+      phIsoS16EA = 0.1210;
+    }
+    else if (absEta < 1.479) {
+      nhIsoS15EA = 0.0819;
+      phIsoS15EA = 0.1101;
+      chIsoS16EA = 0.0377;
+      nhIsoS16EA = 0.0807;
+      phIsoS16EA = 0.1107;
+    }
+    else if (absEta < 2.) {
+      nhIsoS15EA = 0.0696;
+      phIsoS15EA = 0.0756;
+      chIsoS16EA = 0.0306;
+      nhIsoS16EA = 0.0629;
+      phIsoS16EA = 0.0699;
+    }
+    else if (absEta < 2.2) {
+      nhIsoS15EA = 0.0360;
+      phIsoS15EA = 0.1175;
+      chIsoS16EA = 0.0283;
+      nhIsoS16EA = 0.0197;
+      phIsoS16EA = 0.1056;
+    }
+    else if (absEta < 2.3) {
+      nhIsoS15EA = 0.0360;
+      phIsoS15EA = 0.1498;
+      chIsoS16EA = 0.0254;
+      nhIsoS16EA = 0.0184;
+      phIsoS16EA = 0.1457;
+    }
+    else if (absEta < 2.4) {
+      nhIsoS15EA = 0.0462;
+      phIsoS15EA = 0.1857;
+      chIsoS16EA = 0.0217;
+      nhIsoS16EA = 0.0284;
+      phIsoS16EA = 0.1719;
+    }
+    else {
+      nhIsoS15EA = 0.0656;
+      phIsoS15EA = 0.2183;
+      chIsoS16EA = 0.0167;
+      nhIsoS16EA = 0.0591;
+      phIsoS16EA = 0.1998;
+    }
 
-  auto* outputFile(TFile::Open(_outputPath, "recreate"));
-  TTree* outEventTree(0);
-  TH1D* allEvents(0);
-  TH1D* eventCounter(0);
+    outPhoton.chIsoS15 = inPhoton.chIso;
+    if (outPhoton.isEB) {
+      outPhoton.nhIsoS15 = inPhoton.nhIso + (0.014 - 0.0148) * inPhoton.pt() + (0.000019 - 0.000017) * inPhoton.pt() * inPhoton.pt();
+      outPhoton.phIsoS15 = inPhoton.phIso + (0.0053 - 0.0047) * inPhoton.pt();
+    }
+    else {
+      outPhoton.nhIsoS15 = inPhoton.nhIso + (0.0139 - 0.0163) * inPhoton.pt() + (0.000025 - 0.000014) * inPhoton.pt() * inPhoton.pt();
+      outPhoton.phIsoS15 = inPhoton.phIso + (0.0034 - 0.0034) * inPhoton.pt();
+    }
 
-  typedef std::tuple<unsigned, unsigned, unsigned> EventID;
-  std::map<EventID, long> secondaryEvents;
-  if (secondaryInput_) {
-    secondaryInput_->SetBranchStatus("*", false);
-    event_.setAddress(*secondaryInput_, {"run", "lumi", "event"});
+    outPhoton.chIsoS15 += chIsoS16EA * _event.rho;
+    outPhoton.nhIsoS15 += (nhIsoS15EA - nhIsoS16EA) * _event.rho;
+    outPhoton.phIsoS15 += (phIsoS15EA - phIsoS16EA) * _event.rho;
 
-    long iEntry(0);
-    while (secondaryInput_->GetEntry(iEntry) > 0)
-      secondaryEvents.emplace(EventID(event_.run, event_.lumi, event_.event), iEntry++);
-
-    secondaryInput_->SetBranchStatus("*", true);
-    event_.setAddress(*secondaryInput_);
+    // EA computed with iso/worstIsoEA.py
+    outPhoton.chIsoMax -= 0.094 * _event.rho;
+    if (outPhoton.chIsoMax < outPhoton.chIso)
+      outPhoton.chIsoMax = outPhoton.chIso;
   }
 
-  simpletree::TriggerHelper hltPhoton165HE10Helper("HLT_Photon165_HE10");
-  bool hltPhoton165HE10(false);
-  simpletree::TriggerHelper hltPhoton135PFMET100Helper("HLT_Photon135_PFMET100");
-  bool hltPhoton135PFMET100(false);
-
-  simpletree::Run run;
-  std::vector<TString>* hltPaths(0);
-  std::map<unsigned, std::vector<TString>> hltMenus;
-
-  std::cout << "skimming events" << std::endl;
-
-  long nTotal(0);
-  long nPass(0);
-
-  for (auto& path : sourcePaths) {
-    source_ = TFile::Open(path);
-    if (!source_ || source_->IsZombie()) {
-      delete source_;
-      source_ = 0;
-      continue;
-    }
-
-    if (!allEvents) {
-      auto* h(source_->Get("hDAllEvents"));
-      if (h) {
-        outputFile->cd();
-        allEvents = static_cast<TH1D*>(h->Clone());
-      }
-    }
-    else
-      allEvents->Add(static_cast<TH1D*>(source_->Get("hDAllEvents")));
-
-    if (!eventCounter) {
-      auto* h(source_->Get("counter"));
-      if (h) {
-        outputFile->cd();
-        eventCounter = static_cast<TH1D*>(h->Clone());
-      }
-    }
-    else
-      eventCounter->Add(static_cast<TH1D*>(source_->Get("counter")));
-
-    TTree* inEventTree(getLongestTree("events"));
-
-    TTree* inRunTree(getLongestTree("runs"));
-    run.setAddress(*inRunTree);
-
-    TTree* inHLTTree(getLongestTree("hlt"));
-    if (inHLTTree) {
-      if (!hltPaths)
-        hltPaths = new std::vector<TString>;
-
-      inHLTTree->SetBranchAddress("paths", &hltPaths);
-    }
-
-    if (!outEventTree) {
-      outputFile->cd();
-      outEventTree = new TTree("events", "Events");
-
-      event_.book(*outEventTree);
-
-      // event branch addresses are copied through CloneTree
-      outEventTree->Branch("hlt.photon165HE10", &hltPhoton165HE10, "photon165HE10/O");
-      outEventTree->Branch("hlt.photon135PFMET100", &hltPhoton135PFMET100, "photon135PFMET100/O");
-    }
-
-    event_.setAddress(*inEventTree);
-
-    if (inHLTTree) {
-      hltPhoton165HE10Helper.reset();
-      hltPhoton135PFMET100Helper.reset();
-    }
-
-    long iEntry(0);
-    while (nTotal != _nEvents && inEventTree->GetEntry(iEntry++) > 0) {
-      ++nTotal;
-      if (nTotal % 100000 == 1)
-        std::cout << " " << nTotal << std::endl;
-
-      if (_goodlumi && !_goodlumi->isGoodLumi(event_.run, event_.lumi))
-        continue;
-
-      if (secondaryInput_) {
-        auto eItr(secondaryEvents.find(EventID(event_.run, event_.lumi, event_.event)));
-        if (eItr != secondaryEvents.end())
-          secondaryInput_->GetEntry(eItr->second);
-      }
-
-      if (!pass())
-        continue;
-
-      ++nPass;
-      if (inHLTTree) {
-        hltPhoton165HE10 = hltPhoton165HE10Helper.pass(event_);
-        hltPhoton135PFMET100 = hltPhoton135PFMET100Helper.pass(event_);
-      }
-
-      for (auto& photon : event_.photons) {
-        double chIsoEA(0.);
-        double absEta(std::abs(photon.scEta));
-        if (absEta < 1.)
-          chIsoEA = 0.0360;
-        else if (absEta < 1.479)
-          chIsoEA = 0.0377;
-        else if (absEta < 2.)
-          chIsoEA = 0.0306;
-        else if (absEta < 2.2)
-          chIsoEA = 0.0283;
-        else if (absEta < 2.3)
-          chIsoEA = 0.0254;
-        else if (absEta < 2.4)
-          chIsoEA = 0.0217;
-        else
-          chIsoEA = 0.0167;
-
-        photon.chIsoS16 = photon.chIso - chIsoEA * event_.rho;
-        if (photon.isEB) {
-          photon.nhIsoS16 = photon.nhIso + (0.014 - 0.0148) * photon.pt + (0.000019 - 0.000017) * photon.pt * photon.pt;
-          photon.phIsoS16 = photon.phIso + (0.0053 - 0.0047) * photon.pt;
-        }
-        else {
-          photon.nhIsoS16 = photon.nhIso + (0.0139 - 0.0163) * photon.pt + (0.000025 - 0.000014) * photon.pt * photon.pt;
-          photon.phIsoS16 = photon.phIso + (0.0034 - 0.0034) * photon.pt;
-        }
-
-        // EA computed with iso/worstIsoEA.py
-        photon.chIsoMax -= 0.094 * event_.rho;
-        if (photon.chIsoMax < photon.chIso)
-          photon.chIsoMax = photon.chIso;
-      }
-
-      outEventTree->Fill();
-    }
-
-    iEntry = 0;
-    while (inRunTree->GetEntry(iEntry++) > 0) {
-      if (_goodlumi && !_goodlumi->hasGoodLumi(run.run))
-        continue;
-
-      if (inHLTTree) {
-        inHLTTree->GetEntry(run.hltMenu);
-
-        auto hltItr(hltMenus.find(run.run));
-        if (hltItr == hltMenus.end())
-          hltMenus.emplace(run.run, *hltPaths);
-        else if (hltItr->second != *hltPaths) {
-          std::cerr << "Inconsistent HLT menu found for run " << run.run << " in file " << path << std::endl;
-          throw std::runtime_error("HLT");
-        }
-      }
-      else
-        hltMenus[run.run];
-    }
-
-    delete source_;
-    source_ = 0;
-  }
-
-  std::cout << "Event reduction: " << nPass << " / " << nTotal << std::endl;
-
-  outputFile->cd();
-  auto* outRunTree(new TTree("runs", "Runs"));
-  run.book(*outRunTree);
-  
-  TTree* outHLTTree(0);
-  if (hltPaths) {
-    outHLTTree = new TTree("hlt", "HLT");
-    outHLTTree->Branch("paths", "std::vector<TString>", &hltPaths);
-  }
-
-  unsigned iMenu(-1);
-  if (hltPaths)
-    hltPaths->clear();
-
-  std::cout << "writing runs and HLT menus" << std::endl;
-
-  for (auto& runHLT : hltMenus) {
-    run.run = runHLT.first;
-
-    if (hltPaths && runHLT.second != *hltPaths) {
-      *hltPaths = runHLT.second;
-      outHLTTree->Fill();
-      ++iMenu;
-    }
-
-    run.hltMenu = iMenu;
-
-    outRunTree->Fill();
-  }
-
-  outputFile->cd();
-  outputFile->Write();
+  return true;
 }

@@ -2,9 +2,9 @@ import os
 
 histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
-distribution = 'phoPtHighMet'
+distribution = 'mtPhoMet'
 
-version = 'gsfixed'
+version = 'dph'
 
 outdir = histDir + '/fit/' + version
 outname = outdir + '/ws_' + distribution + '.root'
@@ -18,9 +18,9 @@ histname = '{distribution}-{process}'
 # sr = 'bmonoph' # blinded version
 sr = 'monoph'
 
-regions = [sr, 'monoel', 'monomu', 'diel', 'dimu', 'lowdphi'] # , 'lowmt']
-processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'top']
-signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']
+regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowdphi'] # , 'lowmt']
+processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
+signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-125', 'dph-1000']
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 
@@ -36,9 +36,9 @@ links = [
     (('zg', 'monoel'), ('zg', sr)),
     (('zg', 'monomu'), ('zg', sr)),
     (('wg', sr), ('zg', sr)),
-    (('gjets', 'lowdphi'), ('gjets', sr)),
-    (('zg', 'lowdphi'), ('zg', sr)),
-    (('wg', 'lowdphi'), ('wg', sr))
+#     (('gjets', 'lowdphi'), ('gjets', sr)),
+#     (('zg', 'lowdphi'), ('zg', sr)),
+#     (('wg', 'lowdphi'), ('wg', sr))
 ]
 
 # Sample with free normalization that are not involved in links.
@@ -51,9 +51,9 @@ ignoredNuisances = {
     ('wg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
     ('zg', 'monoel'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
     ('zg', 'monomu'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
-    ('zg', 'lowdphi'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
-    ('wg', 'lowdphi'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
-    ('halo', 'lowdphi'): ['haloShape'],
+#     ('zg', 'lowdphi'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
+#     ('wg', 'lowdphi'): ['leptonVetoSF', 'vgPDF', 'vgQCDscale', 'EWK', 'gec'],
+#     ('halo', 'lowdphi'): ['haloShape'],
     ('wg', sr): ['leptonVetoSF', 'gec']
 }
 
