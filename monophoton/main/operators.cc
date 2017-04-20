@@ -421,6 +421,7 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
         break;
       }
     }
+
     if (!overlap) {
       _outEvent.electrons.push_back(electron);
       hasNonOverlapping = true;
@@ -463,13 +464,14 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
         break;
       }
     }
+
     if (!overlap) {
       _outEvent.muons.push_back(muon);
       hasNonOverlapping = true;
     }
   }
-
-  return !hasNonOverlapping;
+  
+ return !hasNonOverlapping;
 }
 
 //--------------------------------------------------------------------
@@ -663,11 +665,11 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
-
+    
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
 	oppSign_ = ((col[0]->at(i1).charge == col[0]->at(i2).charge) ? 0 : 1);
-		
+	
 	if (oppSign_)
 	  return true;
       }
@@ -677,13 +679,13 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
 	oppSign_ = ((col[0]->at(0).charge == col[1]->at(0).charge) ? 0 : 1);
-	    
+	
 	if (oppSign_)
 	  return true; 
       }
     }
   }
-
+  
   return false;
 }
 
@@ -1219,25 +1221,25 @@ void
 TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
   switch (tagSpecies_) {
-  case kMuon:
+  case kMuons:
     tags_ = new panda::MuonCollection("tag");
     break;
-  case kElectron:
+  case kElectrons:
     tags_ = new panda::ElectronCollection("tag");
     break;
-  case kPhoton:
+  case kPhotons:
     tags_ = new panda::XPhotonCollection("tag");
     break;
   }
 
   switch (probeSpecies_) {
-  case kMuon:
+  case kMuons:
     probes_ = new panda::MuonCollection("probe");
     break;
-  case kElectron:
+  case kElectrons:
     probes_ = new panda::ElectronCollection("probe");
     break;
-  case kPhoton:
+  case kPhotons:
     probes_ = new panda::XPhotonCollection("probe");
     break;
   }
@@ -1262,40 +1264,40 @@ TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventMonopho
   std::function<void(panda::Particle const&)> push_back_probe;
 
   switch (tagSpecies_) {
-  case kMuon:
+  case kMuons:
     inTags = &_event.muons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
     };
     break;
-  case kElectron:
+  case kElectrons:
     inTags = &_event.electrons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
     };
     break;
-  case kPhoton:
+  case kPhotons:
     // inTags = &_event.photons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::XPhotonCollection*>(this->tags_)->push_back(static_cast<panda::XPhoton const&>(tag));
     };
     break;
   }
-  
+
   switch (probeSpecies_) {
-  case kMuon:
+  case kMuons:
     inProbes = &_event.muons;
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
     };
     break;
-  case kElectron:
+  case kElectrons:
     inProbes = &_event.electrons;
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
     };
     break;
-  case kPhoton:
+  case kPhotons:
     // inProbes = &_event.photons; 
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::XPhotonCollection*>(this->probes_)->push_back(static_cast<panda::XPhoton const&>(probe));
