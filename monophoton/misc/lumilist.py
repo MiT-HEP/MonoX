@@ -86,10 +86,10 @@ if not args.list:
                 arun = array.array('I', [0])
                 alumi = array.array('I', [0])
                 tree.SetBranchStatus('*', False)
-                tree.SetBranchStatus('run', True)
-                tree.SetBranchStatus('lumi', True)
-                tree.SetBranchAddress('run', arun)
-                tree.SetBranchAddress('lumi', alumi)
+                tree.SetBranchStatus('runNumber', True)
+                tree.SetBranchStatus('lumiNumber', True)
+                tree.SetBranchAddress('runNumber', arun)
+                tree.SetBranchAddress('lumiNumber', alumi)
                 run = 0
                 lumi = 0
                 entry = 0

@@ -185,13 +185,13 @@ for era in Eras:
             elif era == 'Spring16':
                 nhIsoSel = '(photons.nhIsoS16 < '+str(nhIsoCuts[era][loc][pid])+')'
 
-            if pid == 'highpt':
-                phIsoSel = '(photons.phIso  + 0.0053*photons.pt < '+str(phIsoCuts[era][loc][pid])+')'
-            else:
-                if era == 'Spring15':
+            if era == 'Spring15':
+                if pid == 'highpt':
+                    phIsoSel = '(photons.phIso + 0.0053*photons.pt < '+str(phIsoCuts[era][loc][pid])+')'
+                else:
                     phIsoSel = '(photons.phIso < '+str(phIsoCuts[era][loc][pid])+')'
-                elif era == 'Spring16':
-                    phIsoSel = '(photons.phIsoS16 < '+str(phIsoCuts[era][loc][pid])+')'
+            elif era == 'Spring16':
+                phIsoSel = '(photons.phIsoS16 < '+str(phIsoCuts[era][loc][pid])+')'
 
             hOverESels[era][loc][pid] = hOverESel 
             sieieSels[era][loc][pid] = sieieSel

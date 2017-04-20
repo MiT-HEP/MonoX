@@ -1392,8 +1392,8 @@ def zeeBase(sample, selector):
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
-    tnp.setTagSpecies(ROOT.TagAndProbePairZ.kElectron)
-    tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kElectron)
+    tnp.setTagSpecies(ROOT.kElectrons)
+    tnp.setProbeSpecies(ROOT.kElectrons)
 
     return selector
 
@@ -1420,8 +1420,8 @@ def zmmBase(sample, selector):
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
-    tnp.setTagSpecies(ROOT.TagAndProbePairZ.kMuon)
-    tnp.setProbeSpecies(ROOT.TagAndProbePairZ.kMuon)
+    tnp.setTagSpecies(ROOT.kMuons)
+    tnp.setProbeSpecies(ROOT.kMuons)
     
     return selector
 
@@ -1429,7 +1429,7 @@ def zmmJets(sample, selector):
     """
     Require Z->mumu plus at least one high pt jet.
     """
-    selector = TagAndProbeBase(sample, selector)
+    selector = zmmBase(sample, selector)
 
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(selector.findOperator('TagAndProbePairZ'))

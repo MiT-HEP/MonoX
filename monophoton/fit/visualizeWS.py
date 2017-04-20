@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 import parameters
 
-plotDir = 'workspace'
+plotDir = 'monophoton/workspace'
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -57,32 +57,3 @@ for region in parameters.regions:
 
 rcanvas = RatioCanvas(name = 'datamc', lumi = 36400)
 rcanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
-
-for lep in ['mu', 'el']:
-    for tf in tfList:
-        if lep in tf:
-            hMcRatio = source.Get(tf)
-            hMcRatioUnc = source.Get(tf + '_uncertainties')
-
-    hDilepData = source.Get('data_obs_di' + lep + '__x')
-    hMonolepData = source.Get('data_obs_mono' + lep + '__x')
-    
-    hDataRatio = hDilepData.Clone('tf_data_'+lep)
-    hDataRatio.Divide(hMonolepData)
-
-    rcanvas.Clear()
-    rcanvas.legend.Clear()
-    rcanvas.legend.add('mc', 'Z/W MC', opt = 'L', color = ROOT.kBlue + 1)
-    rcanvas.legend.add('mcUnc', 'Z/W MC Uncertainty', opt = 'F', color = ROOT.kOrange + 1, fstyle = 1001)
-    rcanvas.legend.add('data', 'Z/W Data', opt = 'L', color = ROOT.kBlack, mstyle = 8)
-
-    rcanvas.legend.apply('mc', hMcRatio)
-    rcanvas.legend.apply('mcUnc', hMcRatioUnc)
-    rcanvas.legend.apply('data', hDataRatio)
-
-    iMc = rcanvas.addHistogram(hMcRatio, drawOpt = 'HIST')
-    iUnc = rcanvas.addHistogram(hMcRatioUnc, drawOpt = 'E2')
-    iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'EP')
-    
-    outName = 'tf_ratio_'+lep
-    rcanvas.printWeb(plotDir, outName, hList = [iUnc, iMc, iData], rList = [iMc, iUnc, iData], logy = False)
