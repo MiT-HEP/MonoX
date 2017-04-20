@@ -34,6 +34,7 @@ gj04 = ['gj04-100', 'gj04-200', 'gj04-400', 'gj04-600']
 wlnu = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500']
 dy = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600']
 qcd = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000']
+minor = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'] + wlnu
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi_[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.pt * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi_[0] - t1Met.phi)))'
@@ -93,7 +94,7 @@ def getConfig(confName):
             SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta), 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130', 'gg-40', 'gg-80'] + wlnu, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
@@ -348,9 +349,6 @@ def getConfig(confName):
             
         for gname in ['zg']:
             group = config.findGroup(gname)
-       
-        for gname in ['zg']:
-            group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             # group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
@@ -547,7 +545,7 @@ def getConfig(confName):
             SampleSpec('dmv-2000-1', 'DM2000', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -629,7 +627,7 @@ def getConfig(confName):
             SampleSpec('dmv-2000-1', 'DM2000', group = config.findGroup('dmv'), color = 50), # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
@@ -696,7 +694,7 @@ def getConfig(confName):
         config.baseline = 'photons.scRawPt[0] > 175. && (t1Met.minJetDPhi < 0.5 || t1Met.photonDPhi < 0.5) && t1Met.pt > 100. && TMath::Abs(TVector2::Phi_mpi_pi(photons.phi_[0] - jets.phi_[0])) > 3. && jets.size == 1 && jets.pt_[0] > 100.'
         config.fullSelection = 'photons.scRawPt[0] > 350.'
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
             GroupSpec('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa)),
@@ -730,7 +728,7 @@ def getConfig(confName):
         config.baseline = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi < 2. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[0] - t1Met.phi)) < 3.0'
         config.bkgGroups = [
-            GroupSpec('minor', 't#bar{t}, Z, #gamma#gamma', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('multiboson', 'multiboson', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
@@ -869,7 +867,7 @@ def getConfig(confName):
             GroupSpec('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', 'minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             # GroupSpec('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33)),
@@ -887,7 +885,7 @@ def getConfig(confName):
         config.baseline = 'photons.scRawPt[0] > 175. && photons.chIsoMax > 0.441 && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2. && t1Met.pt > 170.'
         config.fullSelection = 't1Met.pt > 170.'
         config.bkgGroups = [
-            GroupSpec('minor', 'Minor SM', samples = ['ttg', 'tg', 'zllg-130'] + wlnu + ['gg-80'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', 'Minor SM', samples = minor, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
             # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
