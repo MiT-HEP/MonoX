@@ -696,20 +696,8 @@ if __name__ == '__main__':
                     sbaseName = '{0}_{1}'.format(*sbase)
                     tfName = samp + '_' + region + '_' + sbaseName 
 
-                    print tfName
-
                     if hnominal is None:
-                        """
-                        (source, target) = pdf.GetName().split('_')
-                        nums = { 'zg' : 'Z(#nu#nu)', 'wg' : 'W(l#nu)' }
-                        denoms = { 'monoph' : 'W(l#nu)', 
-                                   'monoel' : { 'zg' : 'Z(ee)', 'wg' : 'W(e#nu)'}, 
-                                   'monomu' : 'W(#mu#nu)', 
-                                   'diel' : 'Z(ee)', 'dimu' : 'Z(#mu#mu)' }
-                        ytitle = nums[source] + '/' + denoms[target]
-                        """
                         hnominal = ROOT.TH1D('tf_' + tfName, ';' + config.xtitle, len(binning) - 1, binning)
-                        # hnominal.GetYaxis().SetTitle(ytitle)
                         huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
                         isTF = True
 
@@ -754,7 +742,7 @@ if __name__ == '__main__':
                         uncert2 = modRelUncert2(mod) * val
 
                         if uncert2 > 1000.:
-                            print modRelUncert2(mod, True), val, pdf.GetName(), mod.GetName()
+                            print modRelUncert2(mod), val, pdf.GetName(), mod.GetName()
 
                         if mod.GetName().endswith('_stat'):
                             if isTF: # nominal is 1/value
@@ -799,7 +787,6 @@ if __name__ == '__main__':
         for data in allData:
             hnominal = None
 
-            print signalRegion
             if signalRegion in data.GetName():
                 continue
 
