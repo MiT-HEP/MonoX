@@ -1040,7 +1040,7 @@ class DataMCCanvas(RatioCanvas):
             bkgHist = self._histograms[idx].histogram
 
             fillcolor = ROOT.gROOT.GetColor(color)
-            if fillcolor:
+            if fillcolor and color != 0:
                 r = fillcolor.GetRed() * 0.8
                 g = fillcolor.GetGreen() * 0.8
                 b = fillcolor.GetBlue() * 0.8

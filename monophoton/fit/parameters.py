@@ -4,7 +4,7 @@ histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
 
 distribution = 'mtPhoMet'
 
-version = 'dph'
+version = 'dphMt100'
 
 outdir = histDir + '/fit/' + version
 outname = outdir + '/ws_' + distribution + '.root'
@@ -20,7 +20,7 @@ sr = 'monoph'
 
 regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowdphi'] # , 'lowmt']
 processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
-signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-125', 'dph-1000']
+signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-1000', 'dph-125']
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 
