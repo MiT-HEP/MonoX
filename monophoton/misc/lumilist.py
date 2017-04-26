@@ -148,7 +148,7 @@ if not args.noCalc:
     proc = subprocess.Popen(['scp'] + sshOpts + ['_lumis_tmp.txt', 'lxplus.cern.ch:./_lumis_tmp.txt'])
     proc.communicate()
     
-    proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.0.3/bin:$PATH;brilcalc lumi --normtag ' + normtag + ' -i _lumis_tmp.txt'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.1.7/bin:$PATH;brilcalc lumi -b "STABLE BEAMS" --normtag ' + normtag + ' -i _lumis_tmp.txt;echo brilcalc version is `brilcalc --version`'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 
 if args.noCalc or args.savePlain:
     os.rename('_lumis_tmp.txt', basedir + '/data/lumis_plain.txt')

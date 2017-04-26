@@ -1,11 +1,11 @@
 ### Data 2016
-sph-16b-m        "SinglePhoton (2016B)"              5927.9               53780416   -                    pandaf/003           SinglePhoton+Run2016B-03Feb2017_ver2-v2+MINIAOD
-sph-16c-m        "SinglePhoton (2016C)"              2628.9               21900305   -                    pandaf/003           SinglePhoton+Run2016C-03Feb2017-v1+MINIAOD
-sph-16d-m        "SinglePhoton (2016D)"              4341.9               28933971   -                    pandaf/003           SinglePhoton+Run2016D-03Feb2017-v1+MINIAOD
-sph-16e-m        "SinglePhoton (2016E)"              4040.3               21020234   -                    pandaf/003           SinglePhoton+Run2016E-03Feb2017-v1+MINIAOD
-sph-16f-m        "SinglePhoton (2016F)"              3160.1               14309422   -                    pandaf/003           SinglePhoton+Run2016F-03Feb2017-v1+MINIAOD
-sph-16g-m        "SinglePhoton (2016G)"              7552.5               31876624   -                    pandaf/003           SinglePhoton+Run2016G-03Feb2017-v1+MINIAOD
-sph-16h-m        "SinglePhoton (2016H)"              8761.8               33674739   -                    pandaf/003           SinglePhoton+Run2016H-03Feb2017_ver2-v1+MINIAOD SinglePhoton+Run2016H-03Feb2017_ver3-v1+MINIAOD
+sph-16b-m        "SinglePhoton (2016B)"              6025.5               53780416   -                    pandaf/003           SinglePhoton+Run2016B-03Feb2017_ver2-v2+MINIAOD
+sph-16c-m        "SinglePhoton (2016C)"              2685.3               21900305   -                    pandaf/003           SinglePhoton+Run2016C-03Feb2017-v1+MINIAOD
+sph-16d-m        "SinglePhoton (2016D)"              4415.3               28933971   -                    pandaf/003           SinglePhoton+Run2016D-03Feb2017-v1+MINIAOD
+sph-16e-m        "SinglePhoton (2016E)"              4009.1               21020234   -                    pandaf/003           SinglePhoton+Run2016E-03Feb2017-v1+MINIAOD
+sph-16f-m        "SinglePhoton (2016F)"              3101.6               14309422   -                    pandaf/003           SinglePhoton+Run2016F-03Feb2017-v1+MINIAOD
+sph-16g-m        "SinglePhoton (2016G)"              7540.5               31876624   -                    pandaf/003           SinglePhoton+Run2016G-03Feb2017-v1+MINIAOD
+sph-16h-m        "SinglePhoton (2016H)"              8340.5               33674739   -                    pandaf/003           SinglePhoton+Run2016H-03Feb2017_ver2-v1+MINIAOD SinglePhoton+Run2016H-03Feb2017_ver3-v1+MINIAOD
 sel-16b-m        "SingleElectron (2016B)"            5919.9               239660865  -                    pandaf/002           SingleElectron+Run2016B-03Feb2017_ver2-v2+MINIAOD
 sel-16c-m        "SingleElectron (2016C)"            2643.7               93248667   -                    pandaf/002           SingleElectron+Run2016C-03Feb2017-v1+MINIAOD
 sel-16d-m        "SingleElectron (2016D)"            4350.4               146393047  -                    pandaf/002           SingleElectron+Run2016D-03Feb2017-v1+MINIAOD

@@ -1,2670 +1,2306 @@
 {
   "273158": {
-    "integrated": 51.635046,
+    "integrated": 50.288357,
     "lumisections": [
-      [3, 1279]
+-1]
     ]
   },
   "273302": {
-    "integrated": 16.819240,
+    "integrated": 16.356743,
     "lumisections": [
-      [1, 459]
+-1]
     ]
   },
   "273402": {
-    "integrated": 6.792208,
+    "integrated": 6.604643,
     "lumisections": [
-      [100, 292]
+-1]
     ]
   },
   "273403": {
-    "integrated": 1.878486,
+    "integrated": 1.826636,
     "lumisections": [
-      [1, 53]
+-1]
     ]
   },
   "273404": {
-    "integrated": 0.630136,
+    "integrated": 0.612743,
     "lumisections": [
-      [1, 18]
+-1]
     ]
   },
   "273405": {
-    "integrated": 0.824379,
+    "integrated": 0.801675,
     "lumisections": [
-      [2, 25]
+-1]
     ]
   },
   "273406": {
-    "integrated": 3.887743,
+    "integrated": 3.782185,
     "lumisections": [
-      [1, 112]
+-1]
     ]
   },
   "273408": {
-    "integrated": 0.185922,
+    "integrated": 0.180817,
     "lumisections": [
-      [1, 6]
+-1]
     ]
   },
   "273409": {
-    "integrated": 9.725934,
+    "integrated": 9.469341,
     "lumisections": [
-      [1, 309]
+-1]
     ]
   },
   "273410": {
-    "integrated": 2.817437,
+    "integrated": 2.739897,
     "lumisections": [
-      [1, 90]
+-1]
     ]
   },
   "273411": {
-    "integrated": 0.759190,
+    "integrated": 0.738286,
     "lumisections": [
-      [1, 29]
+-1]
     ]
   },
   "273425": {
-    "integrated": 27.512156,
+    "integrated": 26.788617,
     "lumisections": [
-      [62, 352],
-      [354, 733]
+-1]
     ]
   },
   "273446": {
-    "integrated": 2.202659,
+    "integrated": 2.140915,
     "lumisections": [
-      [1, 33]
+-1]
     ]
   },
   "273447": {
-    "integrated": 26.659723,
+    "integrated": 25.960431,
     "lumisections": [
-      [1, 113],
-      [115, 412]
+-1]
     ]
   },
   "273448": {
-    "integrated": 23.333828,
+    "integrated": 22.724941,
     "lumisections": [
-      [1, 391]
+-1]
     ]
   },
   "273449": {
-    "integrated": 11.742206,
+    "integrated": 11.418119,
     "lumisections": [
-      [7, 214]
+-1]
     ]
   },
   "273450": {
-    "integrated": 33.190912,
+    "integrated": 32.273755,
     "lumisections": [
-      [1, 214],
-      [219, 647]
+-1]
     ]
   },
   "273492": {
-    "integrated": 12.517186,
+    "integrated": 12.185435,
     "lumisections": [
-      [71, 71],
-      [73, 282],
-      [284, 325],
-      [327, 338]
+-1]
     ]
   },
   "273493": {
-    "integrated": 10.691190,
+    "integrated": 10.410897,
     "lumisections": [
-      [4, 233]
+-1]
     ]
   },
   "273494": {
-    "integrated": 8.704029,
+    "integrated": 8.479195,
     "lumisections": [
-      [1, 192]
+-1]
     ]
   },
   "273502": {
-    "integrated": 48.296079,
+    "integrated": 46.958501,
     "lumisections": [
-      [73, 256],
-      [258, 318],
-      [320, 813],
-      [815, 1064]
+-1]
     ]
   },
   "273503": {
-    "integrated": 26.175295,
+    "integrated": 25.452524,
     "lumisections": [
-      [1, 598]
+-1]
     ]
   },
   "273554": {
-    "integrated": 27.628361,
+    "integrated": 27.529658,
     "lumisections": [
-      [77, 437]
+-1]
     ]
   },
   "273555": {
-    "integrated": 12.597573,
+    "integrated": 12.563335,
     "lumisections": [
-      [1, 173]
+-1]
     ]
   },
   "273725": {
-    "integrated": 159.616079,
+    "integrated": 155.163352,
     "lumisections": [
-      [83, 252],
-      [254, 2545]
+-1]
     ]
   },
   "273728": {
-    "integrated": 5.010365,
+    "integrated": 4.870147,
     "lumisections": [
-      [2, 100]
+-1]
     ]
   },
   "273730": {
-    "integrated": 89.451997,
+    "integrated": 86.950366,
     "lumisections": [
-      [2, 1814],
-      [1820, 2126]
+-1]
     ]
   },
   "274094": {
-    "integrated": 10.059428,
+    "integrated": 9.744391,
     "lumisections": [
-      [108, 332]
+-1]
     ]
   },
   "274146": {
-    "integrated": 5.271397,
+    "integrated": 5.122044,
     "lumisections": [
-      [4, 67]
+-1]
     ]
   },
   "274157": {
-    "integrated": 41.202907,
+    "integrated": 40.014346,
     "lumisections": [
-      [105, 354],
-      [359, 534]
+-1]
     ]
   },
   "274159": {
-    "integrated": 3.668737,
+    "integrated": 3.565481,
     "lumisections": [
-      [1, 43]
+-1]
     ]
   },
   "274160": {
-    "integrated": 18.560369,
+    "integrated": 18.080033,
     "lumisections": [
-      [1, 207]
+-1]
     ]
   },
   "274161": {
-    "integrated": 43.482411,
+    "integrated": 42.264839,
     "lumisections": [
-      [1, 516]
+-1]
     ]
   },
   "274172": {
-    "integrated": 6.380273,
+    "integrated": 6.246872,
     "lumisections": [
-      [31, 95]
+-1]
     ]
   },
   "274198": {
-    "integrated": 12.694887,
+    "integrated": 12.685625,
     "lumisections": [
-      [81, 191]
+-1]
     ]
   },
   "274199": {
-    "integrated": 69.534025,
+    "integrated": 69.228277,
     "lumisections": [
-      [1, 623]
+-1]
     ]
   },
   "274200": {
-    "integrated": 66.425878,
+    "integrated": 66.100411,
     "lumisections": [
-      [5, 678]
+-1]
     ]
   },
   "274240": {
-    "integrated": 10.328979,
+    "integrated": 10.325544,
     "lumisections": [
-      [1, 40],
-      [42, 82]
+-1]
     ]
   },
   "274241": {
-    "integrated": 137.315788,
+    "integrated": 136.807508,
     "lumisections": [
-      [1, 1152],
-      [1161, 1176]
+-1]
     ]
   },
   "274244": {
-    "integrated": 59.427904,
+    "integrated": 58.664980,
     "lumisections": [
-      [15, 607]
+-1]
     ]
   },
   "274250": {
-    "integrated": 97.146811,
+    "integrated": 94.485232,
     "lumisections": [
-      [2, 701]
+-1]
     ]
   },
   "274251": {
-    "integrated": 67.084378,
+    "integrated": 65.213556,
     "lumisections": [
-      [1, 546]
+-1]
     ]
   },
   "274283": {
-    "integrated": 0.358762,
+    "integrated": 0.348610,
     "lumisections": [
-      [2, 19]
+-1]
     ]
   },
   "274284": {
-    "integrated": 30.760423,
+    "integrated": 29.898029,
     "lumisections": [
-      [1, 210]
+-1]
     ]
   },
   "274286": {
-    "integrated": 22.240953,
+    "integrated": 21.618631,
     "lumisections": [
-      [1, 154]
+-1]
     ]
   },
   "274314": {
-    "integrated": 9.756511,
+    "integrated": 9.480273,
     "lumisections": [
-      [97, 97],
-      [99, 158]
+-1]
     ]
   },
   "274315": {
-    "integrated": 68.207094,
+    "integrated": 66.287160,
     "lumisections": [
-      [1, 424]
+-1]
     ]
   },
   "274316": {
-    "integrated": 134.065239,
+    "integrated": 130.319337,
     "lumisections": [
-      [1, 959]
+-1]
     ]
   },
   "274317": {
-    "integrated": 0.310074,
+    "integrated": 0.301370,
     "lumisections": [
-      [1, 3]
+-1]
     ]
   },
   "274319": {
-    "integrated": 28.103258,
+    "integrated": 27.317247,
     "lumisections": [
-      [1, 225]
+-1]
     ]
   },
   "274335": {
-    "integrated": 146.491732,
+    "integrated": 142.379110,
     "lumisections": [
-      [60, 1003]
+-1]
     ]
   },
   "274336": {
-    "integrated": 1.790264,
+    "integrated": 1.740148,
     "lumisections": [
-      [1, 14]
+-1]
     ]
   },
   "274337": {
-    "integrated": 1.831090,
+    "integrated": 1.779892,
     "lumisections": [
-      [3, 17]
+-1]
     ]
   },
   "274338": {
-    "integrated": 91.493707,
+    "integrated": 88.944051,
     "lumisections": [
-      [1, 698]
+-1]
     ]
   },
   "274339": {
-    "integrated": 10.759423,
+    "integrated": 10.477205,
     "lumisections": [
-      [1, 24],
-      [26, 26],
-      [28, 28],
-      [31, 31],
-      [33, 33],
-      [35, 92]
+-1]
     ]
   },
   "274344": {
-    "integrated": 71.995570,
+    "integrated": 70.263637,
     "lumisections": [
-      [6, 632]
+-1]
     ]
   },
   "274345": {
-    "integrated": 18.266583,
+    "integrated": 17.817212,
     "lumisections": [
-      [1, 170]
+-1]
     ]
   },
   "274382": {
-    "integrated": 7.622787,
+    "integrated": 7.408443,
     "lumisections": [
-      [94, 144]
+-1]
     ]
   },
   "274387": {
-    "integrated": 59.660679,
+    "integrated": 58.096380,
     "lumisections": [
-      [88, 439]
+-1]
     ]
   },
   "274388": {
-    "integrated": 261.038800,
+    "integrated": 254.031853,
     "lumisections": [
-      [1, 1820]
+-1]
     ]
   },
   "274420": {
-    "integrated": 28.799016,
+    "integrated": 27.993061,
     "lumisections": [
-      [94, 268]
+-1]
     ]
   },
   "274421": {
-    "integrated": 55.267232,
+    "integrated": 53.833407,
     "lumisections": [
-      [1, 342]
+-1]
     ]
   },
   "274422": {
-    "integrated": 284.957505,
+    "integrated": 277.480088,
     "lumisections": [
-      [1, 2207]
+-1]
     ]
   },
   "274440": {
-    "integrated": 65.179944,
+    "integrated": 63.363551,
     "lumisections": [
-      [92, 493]
+-1]
     ]
   },
   "274441": {
-    "integrated": 65.643264,
+    "integrated": 63.821998,
     "lumisections": [
-      [1, 431]
+-1]
     ]
   },
   "274442": {
-    "integrated": 101.738862,
+    "integrated": 99.288062,
     "lumisections": [
-      [1, 752]
+-1]
     ]
   },
   "274954": {
-    "integrated": 0.990680,
+    "integrated": 0.962487,
     "lumisections": [
-      [37, 37],
-      [39, 57]
+-1]
     ]
   },
   "274955": {
-    "integrated": 4.903781,
+    "integrated": 4.764943,
     "lumisections": [
-      [1, 91]
+-1]
     ]
   },
   "274968": {
-    "integrated": 198.787386,
+    "integrated": 193.130328,
     "lumisections": [
-      [1, 1192]
+-1]
     ]
   },
   "274969": {
-    "integrated": 130.136708,
+    "integrated": 126.660718,
     "lumisections": [
-      [1, 1002]
+-1]
     ]
   },
   "274970": {
-    "integrated": 4.426188,
+    "integrated": 4.302592,
     "lumisections": [
-      [1, 47]
+-1]
     ]
   },
   "274971": {
-    "integrated": 100.582998,
+    "integrated": 97.784583,
     "lumisections": [
-      [1, 905]
+-1]
     ]
   },
   "274998": {
-    "integrated": 115.887069,
+    "integrated": 112.770625,
     "lumisections": [
-      [64, 240],
-      [242, 782]
+-1]
     ]
   },
   "274999": {
-    "integrated": 167.346834,
+    "integrated": 162.684499,
     "lumisections": [
-      [1, 1241]
+-1]
     ]
   },
   "275000": {
-    "integrated": 16.276449,
+    "integrated": 15.824436,
     "lumisections": [
-      [1, 136]
+-1]
     ]
   },
   "275001": {
-    "integrated": 203.827217,
+    "integrated": 198.471910,
     "lumisections": [
-      [1, 1781],
-      [1786, 2061]
+-1]
     ]
   },
   "275059": {
-    "integrated": 6.237815,
+    "integrated": 6.063149,
     "lumisections": [
-      [78, 81],
-      [105, 137]
+-1]
     ]
   },
   "275066": {
-    "integrated": 18.717463,
+    "integrated": 18.196029,
     "lumisections": [
-      [1, 96]
+-1]
     ]
   },
   "275067": {
-    "integrated": 72.728810,
+    "integrated": 70.798271,
     "lumisections": [
-      [1, 392]
+-1]
     ]
   },
   "275068": {
-    "integrated": 145.890404,
+    "integrated": 146.110113,
     "lumisections": [
-      [1, 915]
+-1]
     ]
   },
   "275073": {
-    "integrated": 69.945928,
+    "integrated": 69.839494,
     "lumisections": [
-      [1, 517]
+-1]
     ]
   },
   "275074": {
-    "integrated": 78.014694,
+    "integrated": 77.788693,
     "lumisections": [
-      [1, 442],
-      [444, 647]
+-1]
     ]
   },
   "275124": {
-    "integrated": 57.282240,
+    "integrated": 55.865478,
     "lumisections": [
-      [106, 106],
-      [108, 431]
+-1]
     ]
   },
   "275125": {
-    "integrated": 151.687693,
+    "integrated": 148.956430,
     "lumisections": [
-      [1, 490],
-      [497, 820],
-      [825, 989]
+-1]
     ]
   },
   "275282": {
-    "integrated": 15.120897,
+    "integrated": 14.696128,
     "lumisections": [
-      [91, 180]
+-1]
     ]
   },
   "275283": {
-    "integrated": 22.765754,
+    "integrated": 22.130779,
     "lumisections": [
-      [1, 132]
+-1]
     ]
   },
   "275284": {
-    "integrated": 12.635752,
+    "integrated": 12.283472,
     "lumisections": [
-      [1, 74]
+-1]
     ]
   },
   "275290": {
-    "integrated": 2.724125,
+    "integrated": 2.647932,
     "lumisections": [
-      [96, 143]
+-1]
     ]
   },
   "275291": {
-    "integrated": 52.618069,
+    "integrated": 51.149305,
     "lumisections": [
-      [1, 347]
+-1]
     ]
   },
   "275292": {
-    "integrated": 15.968244,
+    "integrated": 15.522821,
     "lumisections": [
-      [1, 121]
+-1]
     ]
   },
   "275293": {
-    "integrated": 25.627097,
+    "integrated": 24.910731,
     "lumisections": [
-      [1, 142],
-      [144, 201]
+-1]
     ]
   },
   "275309": {
-    "integrated": 84.180085,
+    "integrated": 81.829484,
     "lumisections": [
-      [55, 617]
+-1]
     ]
   },
   "275310": {
-    "integrated": 228.559918,
+    "integrated": 222.193517,
     "lumisections": [
-      [1, 1929]
+-1]
     ]
   },
   "275311": {
-    "integrated": 110.613086,
+    "integrated": 107.571934,
     "lumisections": [
-      [1, 1253]
+-1]
     ]
   },
   "275319": {
-    "integrated": 24.989476,
+    "integrated": 24.291172,
     "lumisections": [
-      [141, 282]
+-1]
     ]
   },
   "275337": {
-    "integrated": 70.068728,
+    "integrated": 68.117064,
     "lumisections": [
-      [1, 427]
+-1]
     ]
   },
   "275338": {
-    "integrated": 77.062388,
+    "integrated": 74.924094,
     "lumisections": [
-      [1, 520]
+-1]
     ]
   },
   "275344": {
-    "integrated": 51.398068,
+    "integrated": 49.970411,
     "lumisections": [
-      [76, 356]
+-1]
     ]
   },
   "275345": {
-    "integrated": 60.786304,
+    "integrated": 59.096950,
     "lumisections": [
-      [1, 353]
+-1]
     ]
   },
   "275370": {
-    "integrated": 52.765296,
+    "integrated": 51.296629,
     "lumisections": [
-      [81, 365]
+-1]
     ]
   },
   "275371": {
-    "integrated": 96.379522,
+    "integrated": 93.703624,
     "lumisections": [
-      [1, 22],
-      [28, 569]
+-1]
     ]
   },
   "275375": {
-    "integrated": 210.811737,
+    "integrated": 204.940070,
     "lumisections": [
-      [127, 1449]
+-1]
     ]
   },
   "275376": {
-    "integrated": 332.911667,
+    "integrated": 323.765133,
     "lumisections": [
-      [1, 2667],
-      [2669, 3096]
+-1]
     ]
   },
   "275657": {
-    "integrated": 20.104259,
+    "integrated": 19.540574,
     "lumisections": [
-      [1, 105]
+-1]
     ]
   },
   "275658": {
-    "integrated": 65.034132,
+    "integrated": 63.948781,
     "lumisections": [
-      [1, 312],
-      [317, 337]
+-1]
     ]
   },
   "275659": {
-    "integrated": 3.242785,
+    "integrated": 3.152269,
     "lumisections": [
-      [1, 17]
+-1]
     ]
   },
   "275761": {
-    "integrated": 1.706815,
+    "integrated": 1.659295,
     "lumisections": [
-      [1, 9]
+-1]
     ]
   },
   "275767": {
-    "integrated": 0.722033,
+    "integrated": 0.702001,
     "lumisections": [
-      [1, 4]
+-1]
     ]
   },
   "275772": {
-    "integrated": 10.594354,
+    "integrated": 10.299791,
     "lumisections": [
-      [1, 56]
+-1]
     ]
   },
   "275773": {
-    "integrated": 1.209542,
+    "integrated": 1.175993,
     "lumisections": [
-      [1, 7]
+-1]
     ]
   },
   "275774": {
-    "integrated": 55.639164,
+    "integrated": 54.823426,
     "lumisections": [
-      [1, 24],
-      [29, 311],
-      [315, 315]
+-1]
     ]
   },
   "275776": {
-    "integrated": 23.844819,
+    "integrated": 23.175545,
     "lumisections": [
-      [1, 140]
+-1]
     ]
   },
   "275777": {
-    "integrated": 49.161765,
+    "integrated": 47.783231,
     "lumisections": [
-      [1, 300]
+-1]
     ]
   },
   "275778": {
-    "integrated": 46.971371,
+    "integrated": 45.642441,
     "lumisections": [
-      [1, 305]
+-1]
     ]
   },
   "275782": {
-    "integrated": 102.352560,
+    "integrated": 99.508559,
     "lumisections": [
-      [1, 131],
-      [133, 762]
+-1]
     ]
   },
   "275832": {
-    "integrated": 71.961402,
+    "integrated": 72.159986,
     "lumisections": [
-      [1, 75],
-      [79, 164],
-      [169, 196],
-      [201, 367]
+-1]
     ]
   },
   "275833": {
-    "integrated": 46.660993,
+    "integrated": 46.085888,
     "lumisections": [
-      [1, 53],
-      [56, 115],
-      [117, 156],
-      [161, 251]
+-1]
     ]
   },
   "275834": {
-    "integrated": 53.227356,
+    "integrated": 51.726490,
     "lumisections": [
-      [1, 297]
+-1]
     ]
   },
   "275835": {
-    "integrated": 2.121591,
+    "integrated": 2.062116,
     "lumisections": [
-      [1, 13]
+-1]
     ]
   },
   "275836": {
-    "integrated": 188.703595,
+    "integrated": 184.336166,
     "lumisections": [
-      [1, 429],
-      [431, 471],
-      [478, 1163],
-      [1166, 1170],
-      [1184, 1293]
+-1]
     ]
   },
   "275837": {
-    "integrated": 84.529259,
+    "integrated": 83.530678,
     "lumisections": [
-      [1, 186],
-      [198, 582],
-      [589, 660],
-      [667, 726]
+-1]
     ]
   },
   "275847": {
-    "integrated": 203.418907,
+    "integrated": 199.660834,
     "lumisections": [
-      [1, 186],
-      [193, 210],
-      [217, 1186],
-      [1194, 2263]
+-1]
     ]
   },
   "275886": {
-    "integrated": 7.744155,
+    "integrated": 7.528495,
     "lumisections": [
-      [73, 109]
+-1]
     ]
   },
   "275890": {
-    "integrated": 240.257279,
+    "integrated": 234.492267,
     "lumisections": [
-      [1, 124],
-      [129, 1393]
+-1]
     ]
   },
   "275911": {
-    "integrated": 74.878108,
+    "integrated": 72.761652,
     "lumisections": [
-      [62, 298],
-      [300, 354],
-      [356, 440]
+-1]
     ]
   },
   "275912": {
-    "integrated": 53.245959,
+    "integrated": 51.823456,
     "lumisections": [
-      [1, 289]
+-1]
     ]
   },
   "275913": {
-    "integrated": 77.749193,
+    "integrated": 76.401766,
     "lumisections": [
-      [1, 231],
-      [237, 475]
+-1]
     ]
   },
   "275918": {
-    "integrated": 51.039089,
+    "integrated": 49.620341,
     "lumisections": [
-      [1, 318],
-      [348, 361]
+-1]
     ]
   },
   "275920": {
-    "integrated": 62.972829,
+    "integrated": 61.221215,
     "lumisections": [
-      [5, 463]
+-1]
     ]
   },
   "275921": {
-    "integrated": 1.032540,
+    "integrated": 1.003962,
     "lumisections": [
-      [1, 2],
-      [4, 5],
-      [17, 20]
+-1]
     ]
   },
   "275923": {
-    "integrated": 14.915919,
+    "integrated": 14.503278,
     "lumisections": [
-      [3, 53],
-      [63, 64],
-      [66, 126]
+-1]
     ]
   },
   "275931": {
-    "integrated": 10.722081,
+    "integrated": 10.424646,
     "lumisections": [
-      [1, 14],
-      [19, 89]
+-1]
     ]
   },
   "275963": {
-    "integrated": 19.953502,
+    "integrated": 19.397754,
     "lumisections": [
-      [82, 139],
-      [141, 172]
+-1]
     ]
   },
   "276092": {
-    "integrated": 15.083054,
+    "integrated": 14.666935,
     "lumisections": [
-      [74, 149]
+-1]
     ]
   },
   "276097": {
-    "integrated": 100.820073,
+    "integrated": 98.816954,
     "lumisections": [
-      [1, 233],
-      [238, 507]
+-1]
     ]
   },
   "276242": {
-    "integrated": 274.323562,
+    "integrated": 267.960576,
     "lumisections": [
-      [1, 7],
-      [18, 61],
-      [72, 1621],
-      [1626, 1641],
-      [1646, 1664]
+-1]
     ]
   },
   "276243": {
-    "integrated": 80.002918,
+    "integrated": 77.798918,
     "lumisections": [
-      [1, 15],
-      [18, 480],
-      [482, 591],
-      [593, 611]
+-1]
     ]
   },
   "276244": {
-    "integrated": 135.672503,
+    "integrated": 132.695107,
     "lumisections": [
-      [3, 766],
-      [773, 1202]
+-1]
     ]
   },
   "276282": {
-    "integrated": 209.196363,
+    "integrated": 204.664513,
     "lumisections": [
-      [75, 534],
-      [537, 609],
-      [612, 741],
-      [744, 1104],
-      [1106, 1142]
+-1]
     ]
   },
   "276283": {
-    "integrated": 168.125088,
+    "integrated": 166.643462,
     "lumisections": [
-      [3, 65],
-      [67, 180],
-      [184, 300],
-      [304, 408],
-      [412, 477],
-      [481, 712],
-      [714, 745],
-      [747, 806],
-      [811, 1087]
+-1]
     ]
   },
   "276315": {
-    "integrated": 34.592806,
+    "integrated": 33.842665,
     "lumisections": [
-      [40, 175],
-      [178, 217]
+-1]
     ]
   },
   "276317": {
-    "integrated": 26.892257,
+    "integrated": 26.169672,
     "lumisections": [
-      [3, 138]
+-1]
     ]
   },
   "276318": {
-    "integrated": 100.279132,
+    "integrated": 97.596975,
     "lumisections": [
-      [3, 103],
-      [106, 570]
+-1]
     ]
   },
   "276355": {
-    "integrated": 6.337751,
+    "integrated": 6.167283,
     "lumisections": [
-      [1, 33]
+-1]
     ]
   },
   "276361": {
-    "integrated": 152.228830,
+    "integrated": 148.806172,
     "lumisections": [
-      [1, 70],
-      [73, 78],
-      [81, 161],
-      [169, 208],
-      [210, 800],
-      [802, 833]
+-1]
     ]
   },
   "276363": {
-    "integrated": 211.595086,
+    "integrated": 206.134386,
     "lumisections": [
-      [1, 6],
-      [10, 140],
-      [142, 238],
-      [242, 1482]
+-1]
     ]
   },
   "276384": {
-    "integrated": 125.193608,
+    "integrated": 121.730546,
     "lumisections": [
-      [2, 1117]
+-1]
     ]
   },
   "276437": {
-    "integrated": 363.230509,
+    "integrated": 357.688234,
     "lumisections": [
-      [63, 224],
-      [227, 1074],
-      [1076, 1900],
-      [1905, 2060],
-      [2065, 2076],
-      [2081, 2190]
+-1]
     ]
   },
   "276454": {
-    "integrated": 65.824329,
+    "integrated": 64.143085,
     "lumisections": [
-      [1, 527]
+-1]
     ]
   },
   "276458": {
-    "integrated": 34.208740,
+    "integrated": 33.297549,
     "lumisections": [
-      [1, 341]
+-1]
     ]
   },
   "276495": {
-    "integrated": 38.883684,
+    "integrated": 37.911442,
     "lumisections": [
-      [87, 268]
+-1]
     ]
   },
   "276501": {
-    "integrated": 411.670896,
+    "integrated": 402.305737,
     "lumisections": [
-      [4, 221],
-      [223, 2547]
+-1]
     ]
   },
   "276502": {
-    "integrated": 87.951124,
+    "integrated": 85.884157,
     "lumisections": [
-      [2, 741]
+-1]
     ]
   },
   "276525": {
-    "integrated": 413.058120,
+    "integrated": 402.895884,
     "lumisections": [
-      [88, 469],
-      [471, 1606],
-      [1626, 2893]
+-1]
     ]
   },
   "276527": {
-    "integrated": 23.093998,
+    "integrated": 22.550613,
     "lumisections": [
-      [1, 214]
+-1]
     ]
   },
   "276528": {
-    "integrated": 39.543412,
+    "integrated": 38.516915,
     "lumisections": [
-      [4, 394]
+-1]
     ]
   },
   "276542": {
-    "integrated": 148.772680,
+    "integrated": 148.312203,
     "lumisections": [
-      [74, 461],
-      [473, 487],
-      [493, 857]
+-1]
     ]
   },
   "276543": {
-    "integrated": 150.865771,
+    "integrated": 148.035863,
     "lumisections": [
-      [1, 497],
-      [505, 638],
-      [643, 952]
+-1]
     ]
   },
   "276544": {
-    "integrated": 22.599776,
+    "integrated": 21.975971,
     "lumisections": [
-      [2, 161]
+-1]
     ]
   },
   "276545": {
-    "integrated": 27.386708,
+    "integrated": 26.651992,
     "lumisections": [
-      [2, 110],
-      [117, 213]
+-1]
     ]
   },
   "276581": {
-    "integrated": 75.636839,
+    "integrated": 73.740830,
     "lumisections": [
-      [79, 444]
+-1]
     ]
   },
   "276582": {
-    "integrated": 153.540105,
+    "integrated": 149.672039,
     "lumisections": [
-      [1, 871]
+-1]
     ]
   },
   "276583": {
-    "integrated": 8.046310,
+    "integrated": 7.823267,
     "lumisections": [
-      [1, 52]
+-1]
     ]
   },
   "276584": {
-    "integrated": 0.177293,
+    "integrated": 0.172381,
     "lumisections": [
-      [1, 2]
+-1]
     ]
   },
   "276585": {
-    "integrated": 35.841452,
+    "integrated": 34.864554,
     "lumisections": [
-      [1, 238],
-      [241, 242],
-      [245, 246]
+-1]
     ]
   },
   "276586": {
-    "integrated": 99.526397,
+    "integrated": 97.107427,
     "lumisections": [
-      [2, 658],
-      [680, 773]
+-1]
     ]
   },
   "276587": {
-    "integrated": 110.778976,
+    "integrated": 107.931548,
     "lumisections": [
-      [1, 1006]
+-1]
     ]
   },
   "276653": {
-    "integrated": 88.382469,
+    "integrated": 87.855774,
     "lumisections": [
-      [72, 550]
+-1]
     ]
   },
   "276655": {
-    "integrated": 163.131796,
+    "integrated": 163.739703,
     "lumisections": [
-      [1, 469],
-      [477, 593],
-      [595, 670],
-      [679, 721],
-      [723, 723],
-      [726, 1095],
-      [1097, 1102],
-      [1105, 1106]
+-1]
     ]
   },
   "276659": {
-    "integrated": 30.782867,
+    "integrated": 30.459073,
     "lumisections": [
-      [1, 127],
-      [129, 252]
+-1]
     ]
   },
   "276775": {
-    "integrated": 212.271160,
+    "integrated": 206.712527,
     "lumisections": [
-      [96, 1247],
-      [1249, 1249],
-      [1252, 1257],
-      [1259, 1259]
+-1]
     ]
   },
   "276776": {
-    "integrated": 241.809500,
+    "integrated": 236.293883,
     "lumisections": [
-      [1, 1542],
-      [1553, 1823]
+-1]
     ]
   },
   "276794": {
-    "integrated": 89.856378,
+    "integrated": 87.453311,
     "lumisections": [
-      [1, 885]
+-1]
     ]
   },
   "276807": {
-    "integrated": 31.086350,
+    "integrated": 30.243326,
     "lumisections": [
-      [66, 220]
+-1]
     ]
   },
   "276808": {
-    "integrated": 160.421776,
+    "integrated": 157.135728,
     "lumisections": [
-      [1, 560],
-      [567, 875]
+-1]
     ]
   },
   "276810": {
-    "integrated": 45.897434,
+    "integrated": 44.625587,
     "lumisections": [
-      [1, 287]
+-1]
     ]
   },
   "276811": {
-    "integrated": 310.487543,
+    "integrated": 301.930103,
     "lumisections": [
-      [1, 1270],
-      [1272, 2563]
+-1]
     ]
   },
   "276831": {
-    "integrated": 403.469044,
+    "integrated": 399.333611,
     "lumisections": [
-      [64, 540],
-      [547, 755],
-      [761, 2702]
+-1]
     ]
   },
   "276834": {
-    "integrated": 72.742064,
+    "integrated": 72.770457,
     "lumisections": [
-      [1, 710],
-      [713, 713],
-      [719, 719]
+-1]
     ]
   },
   "276870": {
-    "integrated": 526.680874,
+    "integrated": 524.964724,
     "lumisections": [
-      [78, 795],
-      [801, 1354],
-      [1356, 1563],
-      [1571, 3108],
-      [3111, 3258],
-      [3260, 3484]
+-1]
     ]
   },
   "276935": {
-    "integrated": 170.081835,
+    "integrated": 168.780486,
     "lumisections": [
-      [79, 184],
-      [186, 199],
-      [204, 838],
-      [842, 906]
+-1]
     ]
   },
   "276940": {
-    "integrated": 29.053602,
+    "integrated": 28.445458,
     "lumisections": [
-      [70, 213]
+-1]
     ]
   },
   "276946": {
-    "integrated": 4.295557,
+    "integrated": 4.219225,
     "lumisections": [
-      [1, 27]
+-1]
     ]
   },
   "276947": {
-    "integrated": 24.807392,
+    "integrated": 24.423784,
     "lumisections": [
-      [1, 89],
-      [91, 126],
-      [135, 140]
+-1]
     ]
   },
   "276948": {
-    "integrated": 86.520146,
+    "integrated": 85.455320,
     "lumisections": [
-      [1, 462],
-      [464, 474]
+-1]
     ]
   },
   "276950": {
-    "integrated": 322.818643,
+    "integrated": 322.814178,
     "lumisections": [
-      [1, 2353]
+-1]
     ]
   },
   "277069": {
-    "integrated": 75.378383,
+    "integrated": 74.745198,
     "lumisections": [
-      [81, 265],
-      [267, 295],
-      [300, 353],
-      [358, 379],
-      [385, 390]
+-1]
     ]
   },
   "277070": {
-    "integrated": 216.053444,
+    "integrated": 205.221246,
     "lumisections": [
-      [1, 309],
-      [311, 1059]
+-1]
     ]
   },
   "277071": {
-    "integrated": 27.545742,
+    "integrated": 26.269930,
     "lumisections": [
-      [1, 82],
-      [90, 171],
-      [173, 177]
+-1]
     ]
   },
   "277072": {
-    "integrated": 72.196463,
+    "integrated": 69.042144,
     "lumisections": [
-      [1, 253],
-      [256, 466]
+-1]
     ]
   },
   "277073": {
-    "integrated": 13.277529,
+    "integrated": 12.735576,
     "lumisections": [
-      [1, 90]
+-1]
     ]
   },
   "277076": {
-    "integrated": 130.930964,
+    "integrated": 125.991585,
     "lumisections": [
-      [6, 6],
-      [9, 35],
-      [38, 1037]
+-1]
     ]
   },
   "277087": {
-    "integrated": 89.028086,
+    "integrated": 86.667011,
     "lumisections": [
-      [204, 1191]
+-1]
     ]
   },
   "277094": {
-    "integrated": 130.065676,
+    "integrated": 130.033578,
     "lumisections": [
-      [1, 93],
-      [98, 161],
-      [164, 584]
+-1]
     ]
   },
   "277096": {
-    "integrated": 317.658462,
+    "integrated": 319.846105,
     "lumisections": [
-      [1, 1309],
-      [1311, 2084],
-      [2086, 2086]
+-1]
     ]
   },
   "277112": {
     "integrated": 17.121690,
     "lumisections": [
-      [1, 155]
+-1]
     ]
   },
   "277126": {
-    "integrated": 1.962825,
+    "integrated": 1.948607,
     "lumisections": [
-      [42, 59]
+-1]
     ]
   },
   "277127": {
-    "integrated": 182.257217,
+    "integrated": 182.772397,
     "lumisections": [
-      [1, 438],
-      [440, 902]
+-1]
     ]
   },
   "277148": {
-    "integrated": 127.512887,
+    "integrated": 127.277933,
     "lumisections": [
-      [83, 190],
-      [193, 700]
+-1]
     ]
   },
   "277166": {
-    "integrated": 70.227054,
+    "integrated": 70.204366,
     "lumisections": [
-      [77, 186],
-      [188, 431]
+-1]
     ]
   },
   "277168": {
-    "integrated": 312.932481,
+    "integrated": 318.468866,
     "lumisections": [
-      [1, 1026],
-      [1034, 1707],
-      [1711, 1822],
-      [1824, 2223]
+-1]
     ]
   },
   "277180": {
-    "integrated": 30.967462,
+    "integrated": 30.964769,
     "lumisections": [
-      [88, 228]
+-1]
     ]
   },
   "277194": {
-    "integrated": 362.103439,
+    "integrated": 364.997224,
     "lumisections": [
-      [113, 139],
-      [144, 497],
-      [500, 1115],
-      [1117, 1312],
-      [1320, 1749],
-      [1754, 2067],
-      [2070, 2070]
+-1]
     ]
   },
   "277305": {
-    "integrated": 159.472337,
+    "integrated": 152.878941,
     "lumisections": [
-      [62, 744]
+-1]
     ]
   },
   "277420": {
-    "integrated": 63.187336,
+    "integrated": 60.735589,
     "lumisections": [
-      [86, 291],
-      [293, 346]
+-1]
     ]
   },
   "277981": {
-    "integrated": 4.676595,
+    "integrated": 16.148363,
     "lumisections": [
-      [82, 82],
-      [85, 158]
+-1]
     ]
   },
   "277991": {
     "integrated": 4.812876,
     "lumisections": [
-      [1, 85]
+-1]
     ]
   },
   "277992": {
     "integrated": 17.132854,
     "lumisections": [
-      [1, 260],
-      [262, 312]
+-1]
     ]
   },
   "278017": {
-    "integrated": 127.722693,
+    "integrated": 123.542675,
     "lumisections": [
-      [77, 97],
-      [99, 213],
-      [215, 512],
-      [514, 589]
+-1]
     ]
   },
   "278018": {
-    "integrated": 218.009433,
+    "integrated": 212.914479,
     "lumisections": [
-      [1, 263],
-      [265, 422],
-      [424, 615],
-      [617, 627],
-      [642, 1011],
-      [1020, 1181]
+-1]
     ]
   },
   "278167": {
-    "integrated": 319.980915,
+    "integrated": 313.939378,
     "lumisections": [
-      [87, 394],
-      [397, 1153],
-      [1156, 1660],
-      [1662, 1707],
-      [1709, 2258]
+-1]
     ]
   },
   "278175": {
-    "integrated": 9.130917,
+    "integrated": 9.062941,
     "lumisections": [
-      [1, 88]
+-1]
     ]
   },
   "278193": {
-    "integrated": 35.040729,
+    "integrated": 34.277644,
     "lumisections": [
-      [77, 231]
+-1]
     ]
   },
   "278239": {
-    "integrated": 134.765423,
+    "integrated": 132.252598,
     "lumisections": [
-      [76, 339],
-      [341, 558],
-      [560, 740]
+-1]
     ]
   },
   "278240": {
-    "integrated": 199.697794,
+    "integrated": 196.423067,
     "lumisections": [
-      [1, 64],
-      [70, 113],
-      [115, 1121],
-      [1123, 1296],
-      [1299, 1309]
+-1]
     ]
   },
   "278273": {
-    "integrated": 5.979166,
+    "integrated": 5.811968,
     "lumisections": [
-      [75, 110]
+-1]
     ]
   },
   "278274": {
-    "integrated": 18.360834,
+    "integrated": 17.873916,
     "lumisections": [
-      [1, 18],
-      [20, 85]
+-1]
     ]
   },
   "278288": {
-    "integrated": 2.927769,
+    "integrated": 2.846159,
     "lumisections": [
-      [67, 81]
+-1]
     ]
   },
   "278289": {
-    "integrated": 9.639455,
+    "integrated": 9.374876,
     "lumisections": [
-      [1, 25],
-      [27, 42],
-      [44, 52]
+-1]
     ]
   },
   "278290": {
-    "integrated": 2.461298,
+    "integrated": 2.400670,
     "lumisections": [
-      [1, 11]
+-1]
     ]
   },
   "278308": {
-    "integrated": 326.826134,
+    "integrated": 311.519957,
     "lumisections": [
-      [87, 216],
-      [219, 587],
-      [589, 680],
-      [683, 1200],
-      [1217, 1410],
-      [1413, 1848],
-      [1880, 1880]
+-1]
     ]
   },
   "278310": {
-    "integrated": 89.112969,
+    "integrated": 88.449170,
     "lumisections": [
-      [1, 32],
-      [34, 709]
+-1]
     ]
   },
   "278315": {
-    "integrated": 138.806801,
+    "integrated": 136.488794,
     "lumisections": [
-      [73, 254],
-      [256, 661],
-      [663, 767]
+-1]
     ]
   },
   "278345": {
-    "integrated": 156.497179,
+    "integrated": 149.016980,
     "lumisections": [
-      [84, 500],
-      [503, 831]
+-1]
     ]
   },
   "278346": {
-    "integrated": 22.012367,
+    "integrated": 21.026768,
     "lumisections": [
-      [1, 117]
+-1]
     ]
   },
   "278349": {
-    "integrated": 95.989357,
+    "integrated": 94.507843,
     "lumisections": [
-      [1, 401],
-      [403, 612],
-      [632, 632]
+-1]
     ]
   },
   "278366": {
-    "integrated": 60.087716,
+    "integrated": 59.405044,
     "lumisections": [
-      [1, 453]
+-1]
     ]
   },
   "278406": {
-    "integrated": 300.275698,
+    "integrated": 295.446445,
     "lumisections": [
-      [85, 360],
-      [362, 1682]
+-1]
     ]
   },
   "278509": {
-    "integrated": 276.005818,
+    "integrated": 271.955916,
     "lumisections": [
-      [91, 1557]
+-1]
     ]
   },
   "278769": {
-    "integrated": 7.351674,
+    "integrated": 7.136340,
     "lumisections": [
-      [75, 104]
+-1]
     ]
   },
   "278770": {
-    "integrated": 166.317146,
+    "integrated": 162.628665,
     "lumisections": [
-      [1, 767]
+-1]
     ]
   },
   "278801": {
-    "integrated": 7.894233,
+    "integrated": 7.721911,
     "lumisections": [
-      [48, 85]
+-1]
     ]
   },
   "278802": {
-    "integrated": 1.756548,
+    "integrated": 1.692758,
     "lumisections": [
-      [1, 17]
+-1]
     ]
   },
   "278803": {
-    "integrated": 72.455807,
+    "integrated": 70.852437,
     "lumisections": [
-      [1, 87],
-      [91, 133],
-      [135, 297],
-      [299, 323]
+-1]
     ]
   },
   "278804": {
-    "integrated": 0.755908,
+    "integrated": 0.741602,
     "lumisections": [
-      [1, 4]
+-1]
     ]
   },
   "278805": {
-    "integrated": 56.041066,
+    "integrated": 55.068916,
     "lumisections": [
-      [3, 26],
-      [30, 167],
-      [170, 193],
-      [196, 280],
-      [283, 284],
-      [288, 288]
+-1]
     ]
   },
   "278808": {
-    "integrated": 271.563110,
+    "integrated": 269.144271,
     "lumisections": [
-      [1, 445],
-      [447, 462],
-      [464, 1793]
+-1]
     ]
   },
   "278820": {
-    "integrated": 289.334957,
+    "integrated": 285.103119,
     "lumisections": [
-      [17, 1533]
+-1]
     ]
   },
   "278822": {
-    "integrated": 191.510591,
+    "integrated": 191.413033,
     "lumisections": [
-      [1, 1627]
+-1]
     ]
   },
   "278873": {
-    "integrated": 2.093075,
+    "integrated": 2.000896,
     "lumisections": [
-      [70, 129]
+-1]
     ]
   },
   "278874": {
-    "integrated": 83.715111,
+    "integrated": 81.277165,
     "lumisections": [
-      [1, 273],
-      [275, 478]
+-1]
     ]
   },
   "278875": {
-    "integrated": 117.064919,
+    "integrated": 114.569838,
     "lumisections": [
-      [1, 210],
-      [212, 834]
+-1]
     ]
   },
   "278923": {
-    "integrated": 100.063524,
+    "integrated": 97.669010,
     "lumisections": [
-      [55, 467]
+-1]
     ]
   },
   "278957": {
-    "integrated": 36.728139,
+    "integrated": 35.821750,
     "lumisections": [
-      [79, 227]
+-1]
     ]
   },
   "278962": {
-    "integrated": 79.444244,
+    "integrated": 75.360756,
     "lumisections": [
-      [68, 408]
+-1]
     ]
   },
   "278963": {
-    "integrated": 38.716094,
+    "integrated": 36.805279,
     "lumisections": [
-      [1, 23],
-      [25, 175]
+-1]
     ]
   },
   "278969": {
-    "integrated": 286.500860,
+    "integrated": 280.741331,
     "lumisections": [
-      [70, 511],
-      [514, 1051],
-      [1053, 1291],
-      [1293, 1397],
-      [1399, 1460]
+-1]
     ]
   },
   "278975": {
-    "integrated": 121.213301,
+    "integrated": 119.911910,
     "lumisections": [
-      [1, 475],
-      [477, 745],
-      [747, 850]
+-1]
     ]
   },
   "278976": {
-    "integrated": 2.575870,
+    "integrated": 2.556652,
     "lumisections": [
-      [1, 20]
+-1]
     ]
   },
   "278986": {
-    "integrated": 31.993379,
+    "integrated": 31.228215,
     "lumisections": [
-      [71, 199]
+-1]
     ]
   },
   "279024": {
-    "integrated": 48.742105,
+    "integrated": 49.421146,
     "lumisections": [
-      [82, 363],
-      [372, 382]
+-1]
     ]
   },
   "279029": {
-    "integrated": 38.291984,
+    "integrated": 38.016693,
     "lumisections": [
-      [1, 260]
+-1]
     ]
   },
   "279071": {
-    "integrated": 22.881911,
+    "integrated": 22.570858,
     "lumisections": [
-      [71, 244]
+-1]
     ]
   },
   "279080": {
-    "integrated": 12.863054,
+    "integrated": 12.822498,
     "lumisections": [
-      [68, 197],
-      [199, 224]
+-1]
     ]
   },
   "279115": {
-    "integrated": 85.298183,
+    "integrated": 83.753331,
     "lumisections": [
-      [118, 524]
+-1]
     ]
   },
   "279116": {
-    "integrated": 91.508476,
+    "integrated": 90.121293,
     "lumisections": [
-      [38, 485]
+-1]
     ]
   },
   "279479": {
-    "integrated": 6.023263,
+    "integrated": 5.901617,
     "lumisections": [
-      [86, 190]
+-1]
     ]
   },
   "279588": {
-    "integrated": 231.777694,
+    "integrated": 227.277290,
     "lumisections": [
-      [100, 1259]
+-1]
     ]
   },
   "279653": {
-    "integrated": 44.093648,
+    "integrated": 42.999103,
     "lumisections": [
-      [77, 77],
-      [82, 261]
+-1]
     ]
   },
   "279654": {
-    "integrated": 242.983573,
+    "integrated": 239.178513,
     "lumisections": [
-      [1, 108],
-      [110, 1231],
-      [1285, 1299]
+-1]
     ]
   },
   "279656": {
-    "integrated": 5.717518,
+    "integrated": 5.676048,
     "lumisections": [
-      [1, 43]
+-1]
     ]
   },
   "279658": {
-    "integrated": 93.936571,
+    "integrated": 93.421895,
     "lumisections": [
-      [1, 689],
-      [691, 713]
+-1]
     ]
   },
   "279667": {
-    "integrated": 210.735958,
+    "integrated": 207.287700,
     "lumisections": [
-      [68, 1033]
+-1]
     ]
   },
   "279681": {
-    "integrated": 6.232599,
+    "integrated": 6.602507,
     "lumisections": [
-      [77, 100]
+-1]
     ]
   },
   "279682": {
-    "integrated": 7.873117,
+    "integrated": 7.700125,
     "lumisections": [
-      [1, 29],
-      [33, 34],
-      [37, 38]
+-1]
     ]
   },
   "279683": {
-    "integrated": 6.427767,
+    "integrated": 6.302769,
     "lumisections": [
-      [1, 26]
+-1]
     ]
   },
   "279684": {
-    "integrated": 5.351695,
+    "integrated": 5.255522,
     "lumisections": [
-      [1, 22]
+-1]
     ]
   },
   "279685": {
-    "integrated": 48.858534,
+    "integrated": 48.028759,
     "lumisections": [
-      [1, 93],
-      [95, 209]
+-1]
     ]
   },
   "279691": {
-    "integrated": 9.789294,
+    "integrated": 9.563126,
     "lumisections": [
-      [71, 113]
+-1]
     ]
   },
   "279694": {
-    "integrated": 406.149526,
+    "integrated": 404.594929,
     "lumisections": [
-      [1, 2235]
+-1]
     ]
   },
   "279715": {
-    "integrated": 129.239326,
+    "integrated": 126.832591,
     "lumisections": [
-      [71, 474],
-      [476, 477],
-      [480, 480],
-      [511, 511],
-      [523, 691]
+-1]
     ]
   },
   "279716": {
-    "integrated": 256.883080,
+    "integrated": 255.484330,
     "lumisections": [
-      [1, 860],
-      [875, 1528],
-      [1530, 1653]
+-1]
     ]
   },
   "279760": {
-    "integrated": 154.456609,
+    "integrated": 152.223771,
     "lumisections": [
-      [68, 578],
-      [585, 728]
+-1]
     ]
   },
   "279766": {
-    "integrated": 267.380895,
+    "integrated": 267.742314,
     "lumisections": [
-      [1, 1687]
+-1]
     ]
   },
   "279767": {
-    "integrated": 88.912500,
+    "integrated": 89.962167,
     "lumisections": [
-      [1, 776]
+-1]
     ]
   },
   "279794": {
-    "integrated": 223.412754,
+    "integrated": 221.531657,
     "lumisections": [
-      [77, 1100]
+-1]
     ]
   },
   "279823": {
-    "integrated": 82.173101,
+    "integrated": 81.076774,
     "lumisections": [
-      [61, 395]
+-1]
     ]
   },
   "279841": {
-    "integrated": 378.512877,
+    "integrated": 378.592318,
     "lumisections": [
-      [75, 398],
-      [407, 2122]
+-1]
     ]
   },
   "279844": {
-    "integrated": 56.663734,
+    "integrated": 56.006487,
     "lumisections": [
-      [72, 295]
+-1]
     ]
   },
   "279887": {
-    "integrated": 73.000236,
+    "integrated": 72.705745,
     "lumisections": [
-      [79, 221],
-      [225, 397]
+-1]
     ]
   },
   "279931": {
-    "integrated": 470.873972,
+    "integrated": 473.861061,
     "lumisections": [
-      [84, 628],
-      [630, 743],
-      [746, 801],
-      [803, 1043],
-      [1045, 3022]
+-1]
     ]
   },
   "279966": {
-    "integrated": 92.022446,
+    "integrated": 92.052131,
     "lumisections": [
-      [79, 441]
+-1]
     ]
   },
   "279975": {
-    "integrated": 236.204622,
+    "integrated": 236.984933,
     "lumisections": [
-      [70, 190],
-      [192, 253],
-      [256, 281],
-      [283, 709],
-      [734, 1121]
+-1]
     ]
   },
   "279993": {
-    "integrated": 18.107518,
+    "integrated": 17.874806,
     "lumisections": [
-      [85, 156]
+-1]
     ]
   },
   "279994": {
-    "integrated": 12.330676,
+    "integrated": 12.243268,
     "lumisections": [
-      [1, 47]
+-1]
     ]
   },
   "280013": {
-    "integrated": 5.548580,
+    "integrated": 5.593305,
     "lumisections": [
-      [1, 25]
+-1]
     ]
   },
   "280015": {
-    "integrated": 113.054018,
+    "integrated": 114.546388,
     "lumisections": [
-      [1, 39],
-      [41, 56],
-      [59, 554],
-      [560, 580]
+-1]
     ]
   },
   "280016": {
-    "integrated": 25.957976,
+    "integrated": 26.479061,
     "lumisections": [
-      [1, 149]
+-1]
     ]
   },
   "280017": {
-    "integrated": 95.328074,
+    "integrated": 97.778586,
     "lumisections": [
-      [1, 608]
+-1]
     ]
   },
   "280018": {
-    "integrated": 153.881356,
+    "integrated": 159.173342,
     "lumisections": [
-      [1, 1281]
+-1]
     ]
   },
   "280020": {
-    "integrated": 4.444247,
+    "integrated": 4.625934,
     "lumisections": [
-      [1, 45]
+-1]
     ]
   },
   "280024": {
-    "integrated": 40.270356,
+    "integrated": 41.973295,
     "lumisections": [
-      [1, 427]
+-1]
     ]
   },
   "280187": {
-    "integrated": 13.127688,
+    "integrated": 13.081073,
     "lumisections": [
-      [4, 59]
+-1]
     ]
   },
   "280188": {
-    "integrated": 60.737204,
+    "integrated": 60.961885,
     "lumisections": [
-      [1, 245]
+-1]
     ]
   },
   "280191": {
-    "integrated": 176.237364,
+    "integrated": 177.965887,
     "lumisections": [
-      [1, 781],
-      [783, 866],
-      [869, 900]
+-1]
     ]
   },
   "280194": {
-    "integrated": 35.838517,
+    "integrated": 36.018411,
     "lumisections": [
-      [1, 238]
+-1]
     ]
   },
   "280242": {
-    "integrated": 145.906651,
+    "integrated": 146.425842,
     "lumisections": [
-      [1, 411],
-      [414, 627]
+-1]
     ]
   },
   "280249": {
-    "integrated": 233.024892,
+    "integrated": 238.476178,
     "lumisections": [
-      [1, 486],
-      [488, 1433]
+-1]
     ]
   },
   "280251": {
-    "integrated": 45.578317,
+    "integrated": 47.205563,
     "lumisections": [
-      [1, 165],
-      [167, 372]
+-1]
     ]
   },
   "280327": {
-    "integrated": 8.675950,
+    "integrated": 8.631552,
     "lumisections": [
-      [49, 85]
+-1]
     ]
   },
   "280330": {
-    "integrated": 182.835179,
+    "integrated": 184.483834,
     "lumisections": [
-      [1, 857]
+-1]
     ]
   },
   "280349": {
-    "integrated": 101.204536,
+    "integrated": 103.920427,
     "lumisections": [
-      [1, 247],
-      [252, 623]
+-1]
     ]
   },
   "280363": {
-    "integrated": 47.820079,
+    "integrated": 49.990017,
     "lumisections": [
-      [1, 359]
+-1]
     ]
   },
   "280364": {
-    "integrated": 149.864421,
+    "integrated": 155.509213,
     "lumisections": [
-      [1, 370],
-      [372, 617],
-      [619, 619],
-      [621, 1090],
-      [1102, 1363]
+-1]
     ]
   },
   "280383": {
-    "integrated": 0.246948,
+    "integrated": 0.245381,
     "lumisections": [
-      [64, 65]
+-1]
     ]
   },
   "280384": {
-    "integrated": 7.705511,
+    "integrated": 7.732181,
     "lumisections": [
-      [2, 34]
+-1]
     ]
   },
   "280385": {
-    "integrated": 358.596325,
+    "integrated": 363.541034,
     "lumisections": [
-      [1, 519],
-      [523, 569],
-      [574, 1187],
-      [1189, 1533],
-      [1536, 2022]
+-1]
     ]
   },
   "281613": {
-    "integrated": 9.854375,
+    "integrated": 9.767035,
     "lumisections": [
-      [101, 118],
-      [124, 128],
-      [130, 130],
-      [136, 136],
-      [139, 139],
-      [143, 254],
-      [256, 256],
-      [261, 903]
+-1]
     ]
   },
   "281639": {
-    "integrated": 19.308561,
+    "integrated": 18.812857,
     "lumisections": [
-      [1, 132]
+-1]
     ]
   },
   "281641": {
-    "integrated": 39.613348,
+    "integrated": 39.058221,
     "lumisections": [
-      [1, 319]
+-1]
     ]
   },
   "281693": {
-    "integrated": 379.804279,
+    "integrated": 374.711806,
     "lumisections": [
-      [1, 2191]
+-1]
     ]
   },
   "281707": {
-    "integrated": 216.465978,
+    "integrated": 212.884457,
     "lumisections": [
-      [99, 982],
-      [1000, 1065]
+-1]
     ]
   },
   "281726": {
-    "integrated": 49.464990,
+    "integrated": 49.202660,
     "lumisections": [
-      [1, 288]
+-1]
     ]
   },
   "281727": {
-    "integrated": 201.466482,
+    "integrated": 202.138363,
     "lumisections": [
-      [1, 1605]
+-1]
     ]
   },
   "281797": {
-    "integrated": 398.620485,
+    "integrated": 395.548931,
     "lumisections": [
-      [125, 2176]
+-1]
     ]
   },
   "281975": {
-    "integrated": 54.523652,
+    "integrated": 53.369472,
     "lumisections": [
-      [1, 215]
+-1]
     ]
   },
   "281976": {
-    "integrated": 338.598800,
+    "integrated": 339.055904,
     "lumisections": [
-      [1, 2166]
+-1]
     ]
   },
   "282033": {
-    "integrated": 8.327948,
+    "integrated": 8.167929,
     "lumisections": [
-      [82, 117]
+-1]
     ]
   },
   "282034": {
-    "integrated": 8.729372,
+    "integrated": 8.533854,
     "lumisections": [
-      [1, 33]
+-1]
     ]
   },
   "282035": {
-    "integrated": 9.524277,
+    "integrated": 9.305641,
     "lumisections": [
-      [1, 40]
+-1]
     ]
   },
   "282037": {
-    "integrated": 329.266232,
+    "integrated": 329.984944,
     "lumisections": [
-      [1, 457],
-      [459, 1862]
+-1]
     ]
   },
   "282092": {
-    "integrated": 294.671286,
+    "integrated": 295.767660,
     "lumisections": [
-      [92, 222],
-      [624, 2276]
+-1]
     ]
   },
   "282708": {
-    "integrated": 2.160600,
+    "integrated": 2.089590,
     "lumisections": [
-      [1, 8]
+-1]
     ]
   },
   "282710": {
-    "integrated": 0.352758,
+    "integrated": 0.341841,
     "lumisections": [
-      [1, 2]
+-1]
     ]
   },
   "282712": {
-    "integrated": 16.840355,
+    "integrated": 16.482077,
     "lumisections": [
-      [1, 1],
-      [10, 68]
+-1]
     ]
   },
   "282730": {
-    "integrated": 20.857668,
+    "integrated": 20.114172,
     "lumisections": [
-      [89, 164]
+-1]
     ]
   },
   "282731": {
-    "integrated": 48.237440,
+    "integrated": 46.907397,
     "lumisections": [
-      [1, 172]
+-1]
     ]
   },
   "282732": {
-    "integrated": 18.284544,
+    "integrated": 17.881631,
     "lumisections": [
-      [1, 69]
+-1]
     ]
   },
   "282733": {
-    "integrated": 43.619653,
+    "integrated": 42.757547,
     "lumisections": [
-      [1, 177]
+-1]
     ]
   },
   "282734": {
-    "integrated": 71.106404,
+    "integrated": 69.985835,
     "lumisections": [
-      [1, 327]
+-1]
     ]
   },
   "282735": {
-    "integrated": 270.177410,
+    "integrated": 269.145185,
     "lumisections": [
-      [1, 642],
-      [645, 1232],
-      [1235, 1823]
+-1]
     ]
   },
   "282800": {
-    "integrated": 94.605088,
+    "integrated": 92.677915,
     "lumisections": [
-      [1, 377]
+-1]
     ]
   },
   "282807": {
-    "integrated": 71.097904,
+    "integrated": 70.059844,
     "lumisections": [
-      [1, 326]
+-1]
     ]
   },
   "282814": {
-    "integrated": 276.259359,
+    "integrated": 275.775686,
     "lumisections": [
-      [1, 1843]
+-1]
     ]
   },
   "282842": {
-    "integrated": 23.708711,
+    "integrated": 23.201106,
     "lumisections": [
-      [1, 80]
+-1]
     ]
   },
   "282917": {
-    "integrated": 18.051035,
+    "integrated": 17.782981,
     "lumisections": [
-      [117, 157],
-      [159, 191]
+-1]
     ]
   },
   "282918": {
-    "integrated": 12.937703,
+    "integrated": 12.751479,
     "lumisections": [
-      [1, 51]
+-1]
     ]
   },
   "282919": {
-    "integrated": 57.372141,
+    "integrated": 56.753870,
     "lumisections": [
-      [1, 243]
+-1]
     ]
   },
   "282922": {
-    "integrated": 25.522684,
+    "integrated": 25.379662,
     "lumisections": [
-      [1, 131]
+-1]
     ]
   },
   "282923": {
-    "integrated": 40.424893,
+    "integrated": 40.303520,
     "lumisections": [
-      [1, 17],
-      [19, 30],
-      [32, 36],
-      [41, 86],
-      [88, 224]
+-1]
     ]
   },
   "283042": {
-    "integrated": 1.426262,
+    "integrated": 1.404907,
     "lumisections": [
-      [1, 6]
+-1]
     ]
   },
   "283043": {
-    "integrated": 116.923995,
+    "integrated": 115.797718,
     "lumisections": [
-      [1, 105],
-      [108, 519]
+-1]
     ]
   },
   "283049": {
-    "integrated": 3.175222,
+    "integrated": 3.086873,
     "lumisections": [
-      [82, 93]
+-1]
     ]
   },
   "283050": {
-    "integrated": 58.159827,
+    "integrated": 57.216503,
     "lumisections": [
-      [1, 212]
+-1]
     ]
   },
   "283052": {
-    "integrated": 28.724168,
+    "integrated": 28.475509,
     "lumisections": [
-      [1, 111]
+-1]
     ]
   },
   "283059": {
-    "integrated": 98.464197,
+    "integrated": 87.764391,
     "lumisections": [
-      [1, 125],
-      [129, 451]
+-1]
     ]
   },
   "283270": {
-    "integrated": 393.348294,
+    "integrated": 378.833778,
     "lumisections": [
-      [76, 573],
-      [576, 1502],
-      [1504, 1888],
-      [1890, 1912]
+-1]
     ]
   },
   "283283": {
-    "integrated": 199.162973,
+    "integrated": 197.781482,
     "lumisections": [
-      [4, 1668],
-      [1670, 1748]
+-1]
     ]
   },
   "283305": {
-    "integrated": 1.468373,
+    "integrated": 1.371210,
     "lumisections": [
-      [79, 85]
+-1]
     ]
   },
   "283306": {
-    "integrated": 79.753466,
+    "integrated": 75.956105,
     "lumisections": [
-      [1, 289]
+-1]
     ]
   },
   "283307": {
-    "integrated": 103.024139,
+    "integrated": 99.491892,
     "lumisections": [
-      [1, 153],
-      [156, 456]
+-1]
     ]
   },
   "283308": {
-    "integrated": 162.810278,
+    "integrated": 142.859038,
     "lumisections": [
-      [1, 547],
-      [549, 571],
-      [573, 895],
-      [897, 948]
+-1]
     ]
   },
   "283353": {
-    "integrated": 196.744016,
+    "integrated": 189.108488,
     "lumisections": [
-      [80, 822]
+-1]
     ]
   },
   "283358": {
-    "integrated": 174.647926,
+    "integrated": 171.643957,
     "lumisections": [
-      [1, 243],
-      [245, 981]
+-1]
     ]
   },
   "283359": {
-    "integrated": 61.017106,
+    "integrated": 60.774746,
     "lumisections": [
-      [1, 428]
+-1]
     ]
   },
   "283407": {
-    "integrated": 10.350224,
+    "integrated": 9.666571,
     "lumisections": [
-      [82, 114]
+-1]
     ]
   },
   "283408": {
-    "integrated": 468.704518,
+    "integrated": 454.246055,
     "lumisections": [
-      [1, 27],
-      [29, 2088],
-      [2098, 2125],
-      [2203, 2416],
-      [2528, 2537],
-      [2539, 2539],
-      [2541, 2542]
+-1]
     ]
   },
   "283416": {
-    "integrated": 21.710441,
+    "integrated": 21.669540,
     "lumisections": [
-      [49, 151],
-      [154, 245]
+-1]
     ]
   },
   "283453": {
-    "integrated": 126.900159,
+    "integrated": 121.850876,
     "lumisections": [
-      [83, 537]
+-1]
     ]
   },
   "283469": {
-    "integrated": 0.032410,
+    "integrated": 0.030921,
     "lumisections": [
-      [74, 74]
+-1]
     ]
   },
   "283478": {
-    "integrated": 215.218493,
+    "integrated": 208.321852,
     "lumisections": [
-      [76, 303],
-      [324, 969]
+-1]
     ]
   },
   "283548": {
-    "integrated": 27.112199,
+    "integrated": 28.512829,
     "lumisections": [
-      [145, 288]
+-1]
     ]
   },
   "283680": {
-    "integrated": 19.593988,
+    "integrated": 18.781500,
     "lumisections": [
-      [1, 81]
+-1]
     ]
   },
   "283681": {
-    "integrated": 3.944255,
+    "integrated": 3.783952,
     "lumisections": [
-      [1, 17]
+-1]
     ]
   },
   "283682": {
-    "integrated": 82.392457,
+    "integrated": 70.439487,
     "lumisections": [
-      [1, 384]
+-1]
     ]
   },
   "283685": {
-    "integrated": 20.533633,
+    "integrated": 6.652208,
     "lumisections": [
-      [1, 314]
+-1]
     ]
   },
   "283820": {
-    "integrated": 265.195045,
+    "integrated": 258.204834,
     "lumisections": [
-      [67, 1548]
+-1]
     ]
   },
   "283830": {
-    "integrated": 103.658500,
+    "integrated": 102.196826,
     "lumisections": [
-      [1, 722]
+-1]
     ]
   },
   "283834": {
-    "integrated": 9.084641,
+    "integrated": 9.019016,
     "lumisections": [
-      [1, 67],
-      [69, 82]
+-1]
     ]
   },
   "283835": {
-    "integrated": 11.393896,
+    "integrated": 11.330600,
     "lumisections": [
-      [1, 14],
-      [16, 112]
+-1]
     ]
   },
   "283865": {
-    "integrated": 271.670050,
+    "integrated": 262.390123,
     "lumisections": [
-      [1, 1177]
+-1]
     ]
   },
   "283876": {
-    "integrated": 169.866311,
+    "integrated": 162.173875,
     "lumisections": [
-      [65, 211],
-      [215, 724]
+-1]
     ]
   },
   "283877": {
-    "integrated": 249.158191,
+    "integrated": 245.003055,
     "lumisections": [
-      [1, 1496]
+-1]
     ]
   },
   "283884": {
-    "integrated": 105.448032,
+    "integrated": 100.899514,
     "lumisections": [
-      [349, 504],
-      [509, 756]
+-1]
     ]
   },
   "283885": {
-    "integrated": 294.124871,
+    "integrated": 289.511177,
     "lumisections": [
-      [1, 1723]
+-1]
     ]
   },
   "283933": {
-    "integrated": 41.985914,
+    "integrated": 39.825998,
     "lumisections": [
-      [88, 232]
+-1]
     ]
   },
   "283934": {
-    "integrated": 274.706870,
+    "integrated": 267.575622,
     "lumisections": [
-      [1, 784],
-      [793, 870],
-      [875, 1245],
-      [1267, 1291]
+-1]
     ]
   },
   "283946": {
-    "integrated": 305.993369,
+    "integrated": 297.934758,
     "lumisections": [
-      [85, 1448],
-      [1450, 1462]
+-1]
     ]
   },
   "283964": {
-    "integrated": 58.543785,
+    "integrated": 58.613272,
     "lumisections": [
-      [1, 388]
+-1]
     ]
   },
   "284006": {
-    "integrated": 58.157779,
+    "integrated": 57.455131,
     "lumisections": [
-      [73, 390]
+-1]
     ]
   },
   "284014": {
-    "integrated": 48.066269,
+    "integrated": 47.653474,
     "lumisections": [
-      [1, 266]
+-1]
     ]
   },
   "284025": {
-    "integrated": 12.583194,
+    "integrated": 12.054006,
     "lumisections": [
-      [110, 157]
+-1]
     ]
   },
   "284029": {
-    "integrated": 30.804684,
+    "integrated": 29.600069,
     "lumisections": [
-      [1, 112]
+-1]
     ]
   },
   "284035": {
-    "integrated": 89.396412,
+    "integrated": 86.832570,
     "lumisections": [
-      [1, 360]
-    ]
-  },
-  "284036": {
-    "integrated": 72.605320,
-    "lumisections": [
-      [1, 140],
-      [143, 348]
-    ]
-  },
-  "284037": {
-    "integrated": 62.712873,
-    "lumisections": [
-      [1, 340]
-    ]
-  },
-  "284038": {
-    "integrated": 9.110978,
-    "lumisections": [
-      [1, 55]
-    ]
-  },
-  "284039": {
-    "integrated": 4.797844,
-    "lumisections": [
-      [1, 30]
-    ]
-  },
-  "284040": {
-    "integrated": 5.442366,
-    "lumisections": [
-      [1, 33]
-    ]
-  },
-  "284041": {
-    "integrated": 6.789121,
-    "lumisections": [
-      [1, 44]
-    ]
-  },
-  "284042": {
-    "integrated": 19.605487,
-    "lumisections": [
-      [1, 129]
-    ]
-  },
-  "284043": {
-    "integrated": 31.472838,
-    "lumisections": [
-      [1, 205],
-      [210, 224]
-    ]
-  },
-  "284044": {
-    "integrated": 4.246046,
-    "lumisections": [
-      [1, 30]
+-1]
     ]
   }
 }
