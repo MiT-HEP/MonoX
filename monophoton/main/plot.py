@@ -709,6 +709,7 @@ if __name__ == '__main__':
                 logy = vardef.logy
                 addLinear = False
 
+            canvas.ylimits = (vardef.ymin, vardef.ymax)
             canvas.Update(logy = logy, ymax = vardef.ymax)
 
             if vardef.fullyBlinded():
@@ -749,6 +750,7 @@ if __name__ == '__main__':
                     simple.ylimits = (0., -1.)
                     simple.minimum = -1.
                     vardef.ymax = -1.
+                    vardef.ymin = 0.
                     simple._needUpdate = True
                     simple.printWeb(plotDir, vardef.name + 'Linear', logy = False)
 
@@ -765,5 +767,6 @@ if __name__ == '__main__':
                     canvas.ylimits = (0., -1.)
                     canvas.minimum = -1.
                     vardef.ymax = -1.
+                    vardef.ymin = 0.
                     canvas._needUpdate = True
                     canvas.printWeb(plotDir, vardef.name + 'Linear', logy = False)

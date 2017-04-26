@@ -505,7 +505,9 @@ class SimpleCanvas(object):
                 else:
                     base.SetMinimum(0.)
             else:
-                base.GetYaxis().SetRangeUser(*self.ylimits)
+                if self.ylimits[0] > 0.:
+                    base.SetMinimum(self.ylimits[0])
+                base.SetMaximum(self.ylimits[1])
 
             if len(self.legend.entries) != 0 and drawLegend:
                 self.legend.Draw()

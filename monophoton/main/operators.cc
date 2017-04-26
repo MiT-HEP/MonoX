@@ -1870,7 +1870,7 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
       ptDiff = 0.;
     }
     else
-      ptDiff = part.pt() - part.pfPt;
+      ptDiff = part.pt() - part.originalPt;
     
     if (std::abs(ptDiff) > 50.)
       printf("photon   ptDiff: %6.1f \n", ptDiff);
@@ -1888,7 +1888,7 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
       ptDiff = 0.;
     }
     else
-      ptDiff = part.pt() - part.pfPt;
+      ptDiff = part.pt() - part.originalPt;
     
     if (std::abs(ptDiff) > 50.)
       printf("electron ptDiff: %6.1f \n", ptDiff);
