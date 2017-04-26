@@ -259,67 +259,66 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     outPhoton.scEta = superCluster.eta;
     outPhoton.e4 = inPhoton.eleft + inPhoton.eright + inPhoton.etop + inPhoton.ebottom;
     outPhoton.isEB = std::abs(outPhoton.scEta) < 1.4442;
-      
-    double chIsoS16EA(0.);
-    double nhIsoS16EA(0.);
-    double phIsoS16EA(0.);
-    double nhIsoS15EA(0.);
-    double phIsoS15EA(0.);
+
+    // Recomputing isolation with scRawPt
+    // S15 isolation valid only for panda >= 003
+    // In 002 we had Spring15 leakage correction but Spring16 effective areas (production error).
+
+    double chIsoEAS16(0.);
+    double nhIsoEAS16(0.);
+    double phIsoEAS16(0.);
+    double nhIsoEAS15(0.);
+    double phIsoEAS15(0.);
     double absEta(std::abs(outPhoton.scEta));
     if (absEta < 1.) {
-      nhIsoS15EA = 0.0599;
-      phIsoS15EA = 0.1271;
-      chIsoS16EA = 0.0360;
-      nhIsoS16EA = 0.0597;
-      phIsoS16EA = 0.1210;
+      nhIsoEAS15 = 0.0599;
+      phIsoEAS15 = 0.1271;
+      chIsoEAS16 = 0.0360;
+      nhIsoEAS16 = 0.0597;
+      phIsoEAS16 = 0.1210;
     }
     else if (absEta < 1.479) {
-      nhIsoS15EA = 0.0819;
-      phIsoS15EA = 0.1101;
-      chIsoS16EA = 0.0377;
-      nhIsoS16EA = 0.0807;
-      phIsoS16EA = 0.1107;
+      nhIsoEAS15 = 0.0819;
+      phIsoEAS15 = 0.1101;
+      chIsoEAS16 = 0.0377;
+      nhIsoEAS16 = 0.0807;
+      phIsoEAS16 = 0.1107;
     }
     else if (absEta < 2.) {
-      nhIsoS15EA = 0.0696;
-      phIsoS15EA = 0.0756;
-      chIsoS16EA = 0.0306;
-      nhIsoS16EA = 0.0629;
-      phIsoS16EA = 0.0699;
+      nhIsoEAS15 = 0.0696;
+      phIsoEAS15 = 0.0756;
+      chIsoEAS16 = 0.0306;
+      nhIsoEAS16 = 0.0629;
+      phIsoEAS16 = 0.0699;
     }
     else if (absEta < 2.2) {
-      nhIsoS15EA = 0.0360;
-      phIsoS15EA = 0.1175;
-      chIsoS16EA = 0.0283;
-      nhIsoS16EA = 0.0197;
-      phIsoS16EA = 0.1056;
+      nhIsoEAS15 = 0.0360;
+      phIsoEAS15 = 0.1175;
+      chIsoEAS16 = 0.0283;
+      nhIsoEAS16 = 0.0197;
+      phIsoEAS16 = 0.1056;
     }
     else if (absEta < 2.3) {
-      nhIsoS15EA = 0.0360;
-      phIsoS15EA = 0.1498;
-      chIsoS16EA = 0.0254;
-      nhIsoS16EA = 0.0184;
-      phIsoS16EA = 0.1457;
+      nhIsoEAS15 = 0.0360;
+      phIsoEAS15 = 0.1498;
+      chIsoEAS16 = 0.0254;
+      nhIsoEAS16 = 0.0184;
+      phIsoEAS16 = 0.1457;
     }
     else if (absEta < 2.4) {
-      nhIsoS15EA = 0.0462;
-      phIsoS15EA = 0.1857;
-      chIsoS16EA = 0.0217;
-      nhIsoS16EA = 0.0284;
-      phIsoS16EA = 0.1719;
+      nhIsoEAS15 = 0.0462;
+      phIsoEAS15 = 0.1857;
+      chIsoEAS16 = 0.0217;
+      nhIsoEAS16 = 0.0284;
+      phIsoEAS16 = 0.1719;
     }
     else {
-      nhIsoS15EA = 0.0656;
-      phIsoS15EA = 0.2183;
-      chIsoS16EA = 0.0167;
-      nhIsoS16EA = 0.0591;
-      phIsoS16EA = 0.1998;
+      nhIsoEAS15 = 0.0656;
+      phIsoEAS15 = 0.2183;
+      chIsoEAS16 = 0.0167;
+      nhIsoEAS16 = 0.0591;
+      phIsoEAS16 = 0.1998;
     }
-
-    // Redoing leakage correction with scRawPt
-    // Panda isolation has Spring15 leakage correction but Spring16 effective areas (production error).
-
-    outPhoton.chIsoS15 = inPhoton.chIso;
 
     double nhIsoE1S15, nhIsoE2S15, phIsoE1S15;
     double nhIsoE1S16, nhIsoE2S16, phIsoE1S16;
@@ -343,21 +342,26 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
       phIsoE1S16 = 0.0034;
     }
 
-    double nhIsoCore(inPhoton.nhIso + nhIsoE1S15 * inPhoton.pt() + nhIsoE2S15 * inPhoton.pt() * inPhoton.pt());
-    double phIsoCore(inPhoton.phIso + phIsoE1S15 * inPhoton.pt());
-    
-    outPhoton.nhIso = nhIsoCore - nhIsoE1S16 * outPhoton.scRawPt - nhIsoE2S16 * outPhoton.scRawPt * outPhoton.scRawPt;
-    outPhoton.phIso = phIsoCore - phIsoE1S16 * outPhoton.scRawPt;
-        
-    outPhoton.nhIsoS15 = nhIsoCore - nhIsoE1S15 * outPhoton.scRawPt - nhIsoE2S15 * outPhoton.scRawPt * outPhoton.scRawPt;
-    outPhoton.phIsoS15 = phIsoCore - phIsoE1S15 * outPhoton.scRawPt;
-    
-    outPhoton.chIsoS15 += chIsoS16EA * _event.rho;
-    outPhoton.nhIsoS15 += (nhIsoS16EA - nhIsoS15EA) * _event.rho;
-    outPhoton.phIsoS15 += (phIsoS16EA - phIsoS15EA) * _event.rho;
+    double pt(inPhoton.pt());
+    double pt2(pt * pt);
+    double scpt(outPhoton.scRawPt);
+    double scpt2(scpt * scpt);
+    double rho(_event.rho);
+
+    double chIsoCore(inPhoton.chIso + chIsoEAS16 * rho);
+    double nhIsoCore(inPhoton.nhIso + nhIsoEAS16 * rho + nhIsoE1S16 * pt + nhIsoE2S16 * pt2);
+    double phIsoCore(inPhoton.phIso + phIsoEAS16 * rho + phIsoE1S16 * pt);
+
+    // outPhoton.chIso = chIsoCore - chIsoEAS16 * rho; // identity
+    outPhoton.nhIso = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1S16 * scpt - nhIsoE2S16 * scpt2;
+    outPhoton.phIso = phIsoCore - phIsoEAS16 * rho - phIsoE1S16 * scpt;
+
+    outPhoton.chIsoS15 = chIsoCore;        
+    outPhoton.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
+    outPhoton.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
 
     // EA computed with iso/worstIsoEA.py
-    outPhoton.chIsoMax -= 0.094 * _event.rho;
+    outPhoton.chIsoMax -= 0.094 * rho;
     if (outPhoton.chIsoMax < outPhoton.chIso)
       outPhoton.chIsoMax = outPhoton.chIso;
   }

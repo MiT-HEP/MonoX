@@ -335,8 +335,8 @@ class Mass : public Cut {
 
   float mass_{-1.};
   float pt_{-1.};
-  float eta_{-99.};
-  float phi_{-99.};
+  float eta_{-1.};
+  float phi_{-1.};
   double min_{0.};
   double max_{14000.};
 };
@@ -542,6 +542,12 @@ class EcalCrackVeto : public Cut {
 
 class TagAndProbePairZ : public Cut {
  public:
+  enum Species {
+    kMuon,
+    kElectron,
+    kPhoton, // doesn't work currently
+    nSpecies 
+  };
 
   TagAndProbePairZ(char const* name = "TagAndProbePairZ");
   ~TagAndProbePairZ();
@@ -920,12 +926,14 @@ class TPElectronPhoton : public TPOperator {
   TPElectronPhoton(char const* name = "TPElectronPhoton") : TPOperator(name) {}
   
  protected:
-  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
 };
 
 class TPMuonPhoton : public TPOperator {
  public:
   TPMuonPhoton(char const* name = "TPMuonPhoton") : TPOperator(name) {}
+
+  void addBranches(TTree& skimTree) override;
 
   enum Mode {
     kSingle,
@@ -935,9 +943,10 @@ class TPMuonPhoton : public TPOperator {
   void setMode(Mode m) { mode_ = m; }
   
  protected:
-  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&);
+  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
 
   Mode mode_{kSingle};
+  TTree* skimTree_{0}; // need to hold the skim tree because we book looseTags at the first event
 };
 
 #endif
