@@ -250,7 +250,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, pa
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::fEl27Loose]))
+      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::Electron::fEl27Loose]))
         iElectron = iE;
       else
         break;
