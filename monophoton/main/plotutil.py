@@ -52,7 +52,7 @@ class SampleSpec(object):
 
 
 class VariableDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1.):
+    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1., ymin = 0.):
         self.name = name
         self.title = title
         self.unit = unit
@@ -65,6 +65,7 @@ class VariableDef(object):
         self.overflow = overflow
         self.logy = logy
         self.ymax = ymax
+        self.ymin = ymin
 
     def clone(self, name, **keywords):
         for vname in ['title', 'unit', 'expr', 'cut', 'applyBaseline', 'applyFullSel', 'binning', 'blind', 'overflow', 'logy', 'ymax']:
