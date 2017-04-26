@@ -1007,7 +1007,7 @@ def getConfig(confName):
     elif confName == 'nosel':
         config = PlotConfig('signalRaw', photonData)
         config.baseline = '' # 'photons.scRawPt[0] > 130. && t1Met.pt > 100.'
-        config.fullSelection = 'photons.scRawPt[0] > 130. && t1Met.pt > 100.'
+        config.fullSelection = 'photons.scRawPt[0] > 175. && t1Met.pt > 170.'
 
         dR2_pho0mu0 = 'TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.)'
         dR2_pho0mu1 = 'TMath::Power(photons.eta_[0] - muons.eta_[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[1]), 2.)'
