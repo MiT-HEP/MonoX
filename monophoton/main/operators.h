@@ -61,16 +61,16 @@
 //--------------------------------------------------------------------
 
 enum LeptonFlavor {
-  kElectron,
-  kMuon,
+  lElectron,
+  lMuon,
   nLeptonFlavors
 };
 
 enum Collection {
-  kPhotons,
-  kElectrons,
-  kMuons,
-  kTaus,
+  cPhotons,
+  cElectrons,
+  cMuons,
+  cTaus,
   nCollections
 };
 
@@ -335,8 +335,8 @@ class Mass : public Cut {
 
   float mass_{-1.};
   float pt_{-1.};
-  float eta_{-1.};
-  float phi_{-1.};
+  float eta_{-99.};
+  float phi_{-99.};
   double min_{0.};
   double max_{14000.};
 };
@@ -542,18 +542,11 @@ class EcalCrackVeto : public Cut {
 
 class TagAndProbePairZ : public Cut {
  public:
-  enum Species {
-    kMuon,
-    kElectron,
-    kPhoton, // doesn't work currently
-    nSpecies 
-  };
-
   TagAndProbePairZ(char const* name = "TagAndProbePairZ");
   ~TagAndProbePairZ();
   void addBranches(TTree& skimTree) override;
-  void setTagSpecies(unsigned species) { tagSpecies_ = species; }
-  void setProbeSpecies(unsigned species) { probeSpecies_ = species; }
+  void setTagSpecies(Collection species) { tagSpecies_ = species; }
+  void setProbeSpecies(Collection species) { probeSpecies_ = species; }
 
   unsigned getNUniqueZ() const { return nUniqueZ_; }
   float getPhiZ(unsigned idx) const { return zs_[idx].phi(); }
@@ -561,8 +554,8 @@ class TagAndProbePairZ : public Cut {
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
-  unsigned tagSpecies_{0};
-  unsigned probeSpecies_{0};
+  Collection tagSpecies_{nCollections};
+  Collection probeSpecies_{nCollections};
 
   panda::ParticleCollection* tags_{0};
   panda::ParticleCollection* probes_{0};
@@ -812,13 +805,6 @@ class PhotonPtWeight : public Modifier {
 
 class IDSFWeight : public Modifier {
  public:
-  enum Object {
-    kPhoton,
-    kElectron,
-    kMuon,
-    nObjects
-  };
-
   enum Variable {
     kPt,
     kEta,
@@ -827,7 +813,7 @@ class IDSFWeight : public Modifier {
     nVariables
   };
 
-  IDSFWeight(Object obj, char const* name = "IDSFWeight") : Modifier(name), object_(obj) {}
+  IDSFWeight(Collection obj, char const* name = "IDSFWeight") : Modifier(name), object_(obj) {}
 
   void addBranches(TTree& skimTree) override;
   void setVariable(Variable, Variable = nVariables);
@@ -837,7 +823,7 @@ class IDSFWeight : public Modifier {
   void applyParticle(unsigned iP, panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent);
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
-  Object object_;
+  Collection object_;
   Variable variables_[2];
   unsigned nParticles_{1};
   std::vector<TH1*> factors_;
