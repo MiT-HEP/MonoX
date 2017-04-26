@@ -3,8 +3,6 @@
 #include "TH1.h"
 #include "TF1.h"
 
-//#include "jer.h"
-
 #include <iostream>
 #include <functional>
 
@@ -142,11 +140,9 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
 {
   for (unsigned iG(0); iG != _event.genParticles.size(); ++iG) {
     auto& part(_event.genParticles[iG]);
-    // might need to add a check on if is promptFinalState
-    /*
-    if (part.statusFlags != "someCondition")
+
+    if (!part.finalState)
       continue;
-    */
 
     if (part.pdgid != 22)
       continue;
@@ -421,7 +417,6 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
         break;
       }
     }
-
     if (!overlap) {
       _outEvent.electrons.push_back(electron);
       hasNonOverlapping = true;
@@ -464,14 +459,13 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
         break;
       }
     }
-
     if (!overlap) {
       _outEvent.muons.push_back(muon);
       hasNonOverlapping = true;
     }
   }
-  
- return !hasNonOverlapping;
+
+  return !hasNonOverlapping;
 }
 
 //--------------------------------------------------------------------
@@ -525,9 +519,9 @@ bool
 LeptonMt::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   panda::Lepton const* lepton(0);
-  if (flavor_ == kElectron && _outEvent.electrons.size() != 0)
+  if (flavor_ == lElectron && _outEvent.electrons.size() != 0)
     lepton = &_outEvent.electrons[0];
-  else if (flavor_ == kMuon && _outEvent.muons.size() != 0)
+  else if (flavor_ == lMuon && _outEvent.muons.size() != 0)
     lepton = &_outEvent.muons[0];
 
   if (!lepton)
@@ -563,16 +557,16 @@ Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEve
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
-    case kPhotons:
+    case cPhotons:
       col[ic] = &_outEvent.photons;
       break;
-    case kElectrons:
+    case cElectrons:
       col[ic] = &_outEvent.electrons;
       break;
-    case kMuons:
+    case cMuons:
       col[ic] = &_outEvent.muons;
       break;
-    case kTaus:
+    case cTaus:
       col[ic] = &_outEvent.taus;
       break;
     default:
@@ -648,10 +642,10 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
 
   for (unsigned ic : {0, 1}) {
     switch (col_[ic]) {
-    case kElectrons:
+    case cElectrons:
       col[ic] = &_outEvent.electrons;
       break;
-    case kMuons:
+    case cMuons:
       col[ic] = &_outEvent.muons;
       break;
     default:
@@ -665,11 +659,11 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
   if (col[0] == col[1]) {
     if (col[0]->size() == 1)
       return false;
-    
+
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = i1; i2 != col[0]->size(); ++i2) {
 	oppSign_ = ((col[0]->at(i1).charge == col[0]->at(i2).charge) ? 0 : 1);
-	
+
 	if (oppSign_)
 	  return true;
       }
@@ -679,13 +673,13 @@ OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
     for (unsigned i1 = 0; i1 != col[0]->size(); ++i1) {
       for (unsigned i2 = 0; i2 != col[1]->size(); ++i2) {
 	oppSign_ = ((col[0]->at(0).charge == col[1]->at(0).charge) ? 0 : 1);
-	
+
 	if (oppSign_)
 	  return true; 
       }
     }
   }
-  
+
   return false;
 }
 
@@ -1221,27 +1215,31 @@ void
 TagAndProbePairZ::addBranches(TTree& _skimTree)
 {
   switch (tagSpecies_) {
-  case kMuons:
+  case cMuons:
     tags_ = new panda::MuonCollection("tag");
     break;
-  case kElectrons:
+  case cElectrons:
     tags_ = new panda::ElectronCollection("tag");
     break;
-  case kPhotons:
+  case cPhotons:
     tags_ = new panda::XPhotonCollection("tag");
     break;
+  default:
+    throw runtime_error("Invalid tag species");
   }
 
   switch (probeSpecies_) {
-  case kMuons:
+  case cMuons:
     probes_ = new panda::MuonCollection("probe");
     break;
-  case kElectrons:
+  case cElectrons:
     probes_ = new panda::ElectronCollection("probe");
     break;
-  case kPhotons:
+  case cPhotons:
     probes_ = new panda::XPhotonCollection("probe");
     break;
+  default:
+    throw runtime_error("Invalid tag species");
   }
 
   zs_.book(_skimTree);
@@ -1264,45 +1262,49 @@ TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventMonopho
   std::function<void(panda::Particle const&)> push_back_probe;
 
   switch (tagSpecies_) {
-  case kMuons:
+  case cMuons:
     inTags = &_event.muons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
     };
     break;
-  case kElectrons:
+  case cElectrons:
     inTags = &_event.electrons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
     };
     break;
-  case kPhotons:
+  case cPhotons:
     // inTags = &_event.photons;
     push_back_tag = [this](panda::Particle const& tag) {
       static_cast<panda::XPhotonCollection*>(this->tags_)->push_back(static_cast<panda::XPhoton const&>(tag));
     };
     break;
+  default:
+    throw runtime_error("Invalid tag species");
   }
-
+  
   switch (probeSpecies_) {
-  case kMuons:
+  case cMuons:
     inProbes = &_event.muons;
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
     };
     break;
-  case kElectrons:
+  case cElectrons:
     inProbes = &_event.electrons;
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
     };
     break;
-  case kPhotons:
+  case cPhotons:
     // inProbes = &_event.photons; 
     push_back_probe = [this](panda::Particle const& probe) {
       static_cast<panda::XPhotonCollection*>(this->probes_)->push_back(static_cast<panda::XPhoton const&>(probe));
     };
     break;
+  default:
+    throw runtime_error("Invalid tag species");
   }
 
   zs_.clear();
@@ -1693,10 +1695,10 @@ LeptonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   panda::LeptonCollection* col(0);
 
   switch (flavor_) {
-  case kElectron:
+  case lElectron:
     col = &_outEvent.electrons;
     break;
-  case kMuon:
+  case lMuon:
     col = &_outEvent.muons;
     break;
   default:
@@ -2200,15 +2202,15 @@ IDSFWeight::applyParticle(unsigned iP, panda::EventMonophoton const& _event, pan
   panda::Particle const* part(0);
 
   switch (object_) {
-  case kPhoton:
+  case cPhotons:
     if (_outEvent.photons.size() > iP)
       part = &_outEvent.photons.at(iP);
     break;
-  case kElectron:
+  case cElectrons:
     if (_outEvent.electrons.size() > iP)
       part = &_outEvent.electrons.at(iP);
     break;
-  case kMuon:
+  case cMuons:
     if (_outEvent.muons.size() > iP)
       part = &_outEvent.muons.at(iP);
     break;
@@ -2500,7 +2502,7 @@ TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::Even
       if (photon.dR2(electron) < 0.01)
         continue;
 
-          // veto additional loose lepton
+      // veto additional loose lepton
       unsigned iVeto(0);
       for (; iVeto != _inEvent.electrons.size(); ++iVeto) {
         auto& veto(_inEvent.electrons[iVeto]);
@@ -2545,8 +2547,21 @@ TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::Even
 }
 
 void
+TPMuonPhoton::addBranches(TTree& _skimTree)
+{
+  // remember the address of the output tree
+  if (mode_ == kDouble)
+    skimTree_ = &_skimTree;
+}
+
+void
 TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
 {
+  if (skimTree_) {
+    _outEvent.book(*skimTree_, {"looseTags"});
+    skimTree_ = 0;
+  }
+
   for (auto& photon : _inEvent.photons) {
     if (!photon.isEB || photon.scRawPt < 175.)
       continue;
@@ -2554,7 +2569,7 @@ TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPP
     auto&& pg(photon.p4());
 
     for (auto& muon : _inEvent.muons) {
-      if (!muon.tight || muon.combIso() / muon.pt() > 0.15)
+      if (!muon.tight)
         continue;
 
       //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)

@@ -250,7 +250,7 @@ ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, pa
       if (iElectron < _event.electrons.size())
         break;
 
-      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::Electron::fEl27Loose]))
+      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::Electron::fEl27Tight]))
         iElectron = iE;
       else
         break;
@@ -371,15 +371,18 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 void
 TagAndProbeSelector::setupSkim_(panda::EventMonophoton&, bool)
 {
-  outEvent_.book(*skimOut_);
+  // looseTags will be added by the TPMuonPhoton operator
+  outEvent_.book(*skimOut_, {"*", "!triggers", "!looseTags"});
 }
 
 void
 TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 {
   outEvent_.init();
+  outEvent_ = _event;
   inWeight_ = _event.weight;
-  outEvent_.weight = _event.weight;
+
+  outEvent_.sample = sampleId_;
 
   Clock::time_point start;
 
@@ -402,4 +405,3 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 
   cutsOut_->Fill();
 }
-

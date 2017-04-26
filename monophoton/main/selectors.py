@@ -185,7 +185,7 @@ def monophotonBase(sample, selector):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
@@ -237,7 +237,7 @@ def purityBase(sample, selector):
     selector.findOperator('PhotonSelection').setMinPt(100.)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
@@ -311,7 +311,7 @@ def leptonBase(sample, selector):
 
         addPUWeight(sample, selector)
 
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
         idsf.addFactor(photonSF)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
@@ -321,7 +321,7 @@ def leptonBase(sample, selector):
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('HighMet').setIgnoreDecision(True)
@@ -343,7 +343,7 @@ def zee(sample, name):
     eeSel.addSelection(False, ROOT.PhotonSelection.EVeto)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
 
     return selector
 
@@ -386,8 +386,8 @@ def TagAndProbeBase(sample, selector):
     selector.findOperator('ElectronVeto').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kTaus, False)
-    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.kElectrons, False)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cElectrons, False)
     selector.findOperator('HighMet').setThreshold(50.)
     selector.findOperator('HighMet').setIgnoreDecision(True)
 
@@ -405,7 +405,7 @@ def candidate(sample, selector):
     selector = monophotonBase(sample, selector)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, 'photonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
         idsf.addFactor(photonSF)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
@@ -450,8 +450,8 @@ def signalRaw(sample, selector):
     dimuMass.setPrefix('dimu')
     dimuMass.setMin(60.)
     dimuMass.setMax(120.)
-    dimuMass.setCollection1(ROOT.kMuons)
-    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setCollection1(ROOT.cMuons)
+    dimuMass.setCollection2(ROOT.cMuons)
     dimuMass.setIgnoreDecision(True)
     selector.addOperator(dimuMass)
 
@@ -459,8 +459,8 @@ def signalRaw(sample, selector):
     dielMass.setPrefix('diel')
     dielMass.setMin(60.)
     dielMass.setMax(120.)
-    dielMass.setCollection1(ROOT.kElectrons)
-    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setCollection1(ROOT.cElectrons)
+    dielMass.setCollection2(ROOT.cElectrons)
     dielMass.setIgnoreDecision(True)
     selector.addOperator(dielMass)
 
@@ -1053,13 +1053,13 @@ def trivialShower(sample, selector):
 
 def electronBase(sample, selector):
     selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setFlavor(ROOT.kElectron)
+    selector.findOperator('LeptonRecoil').setFlavor(ROOT.lElectron)
 
     return selector
 
 def muonBase(sample, selector):
     selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setFlavor(ROOT.kMuon)
+    selector.findOperator('LeptonRecoil').setFlavor(ROOT.lMuon)
 
     return selector
 
@@ -1072,27 +1072,27 @@ def dielectron(sample, selector):
     dielMass.setPrefix('diel')
     dielMass.setMin(60.)
     dielMass.setMax(120.)
-    dielMass.setCollection1(ROOT.kElectrons)
-    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setCollection1(ROOT.cElectrons)
+    dielMass.setCollection2(ROOT.cElectrons)
     dielMass.setIgnoreDecision(True)
     selector.addOperator(dielMass)
 
     dielSign = ROOT.OppositeSign()
     dielSign.setPrefix('diel')
-    dielSign.setCollection1(ROOT.kElectrons)
-    dielSign.setCollection2(ROOT.kElectrons)
+    dielSign.setCollection1(ROOT.cElectrons)
+    dielSign.setCollection2(ROOT.cElectrons)
     dielSign.setIgnoreDecision(True)
     selector.addOperator(dielSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
         idsf.addFactor(electronTightSF)
         idsf.addFactor(electronLooseSF)
         idsf.setNParticles(2)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.addFactor(electronTrackSF)
         track.setNParticles(2)
@@ -1111,27 +1111,27 @@ def dielectronHadProxy(sample, selector):
     dielMass.setPrefix('diel')
     dielMass.setMin(60.)
     dielMass.setMax(120.)
-    dielMass.setCollection1(ROOT.kElectrons)
-    dielMass.setCollection2(ROOT.kElectrons)
+    dielMass.setCollection1(ROOT.cElectrons)
+    dielMass.setCollection2(ROOT.cElectrons)
     dielMass.setIgnoreDecision(True)
     selector.addOperator(dielMass)
 
     dielSign = ROOT.OppositeSign()
     dielSign.setPrefix('diel')
-    dielSign.setCollection1(ROOT.kElectrons)
-    dielSign.setCollection2(ROOT.kElectrons)
+    dielSign.setCollection1(ROOT.cElectrons)
+    dielSign.setCollection2(ROOT.cElectrons)
     dielSign.setIgnoreDecision(True)
     selector.addOperator(dielSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
         idsf.addFactor(electronTightSF)
         idsf.addFactor(electronLooseSF)
         idsf.setNParticles(2)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.addFactor(electronTrackSF)
         track.setNParticles(2)
@@ -1147,7 +1147,7 @@ def monoelectron(sample, selector):
     selector.findOperator('LeptonSelection').setN(1, 0)
 
     mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.kElectron)
+    mtCut.setFlavor(ROOT.lElectron)
     mtCut.setMax(160.)
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
@@ -1159,12 +1159,12 @@ def monoelectron(sample, selector):
     selector.addOperator(metCut)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
         idsf.addFactor(electronTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1176,7 +1176,7 @@ def monoelectronHadProxy(sample, selector):
     selector.findOperator('LeptonSelection').setN(1, 0)
 
     mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.kElectron)
+    mtCut.setFlavor(ROOT.lElectron)
     mtCut.setMax(160.)
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
@@ -1188,12 +1188,12 @@ def monoelectronHadProxy(sample, selector):
     selector.addOperator(metCut)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
         idsf.addFactor(electronTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1211,27 +1211,27 @@ def dimuon(sample, selector):
     dimuMass.setPrefix('dimu')
     dimuMass.setMin(60.)
     dimuMass.setMax(120.)
-    dimuMass.setCollection1(ROOT.kMuons)
-    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setCollection1(ROOT.cMuons)
+    dimuMass.setCollection2(ROOT.cMuons)
     dimuMass.setIgnoreDecision(True)
     selector.addOperator(dimuMass)
 
     dimuSign = ROOT.OppositeSign()
     dimuSign.setPrefix('dimu')
-    dimuSign.setCollection1(ROOT.kMuons)
-    dimuSign.setCollection2(ROOT.kMuons)
+    dimuSign.setCollection1(ROOT.cMuons)
+    dimuSign.setCollection2(ROOT.cMuons)
     dimuSign.setIgnoreDecision(True)
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
         idsf.addFactor(muonTightSF)
         idsf.addFactor(muonLooseSF)
         idsf.setNParticles(2)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.addFactor(muonTrackSF)
         track.setNParticles(2)
@@ -1249,27 +1249,27 @@ def dimuonHadProxy(sample, selector):
     dimuMass.setPrefix('dimu')
     dimuMass.setMin(60.)
     dimuMass.setMax(120.)
-    dimuMass.setCollection1(ROOT.kMuons)
-    dimuMass.setCollection2(ROOT.kMuons)
+    dimuMass.setCollection1(ROOT.cMuons)
+    dimuMass.setCollection2(ROOT.cMuons)
     dimuMass.setIgnoreDecision(True)
     selector.addOperator(dimuMass)
 
     dimuSign = ROOT.OppositeSign()
     dimuSign.setPrefix('dimu')
-    dimuSign.setCollection1(ROOT.kMuons)
-    dimuSign.setCollection2(ROOT.kMuons)
+    dimuSign.setCollection1(ROOT.cMuons)
+    dimuSign.setCollection2(ROOT.cMuons)
     dimuSign.setIgnoreDecision(True)
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
         idsf.addFactor(muonTightSF)
         idsf.addFactor(muonLooseSF)
         idsf.setNParticles(2)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.addFactor(muonTrackSF)
         track.setNParticles(2)
@@ -1285,18 +1285,18 @@ def monomuon(sample, selector):
     selector.findOperator('LeptonSelection').setN(0, 1)
 
     mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.kMuon)
+    mtCut.setFlavor(ROOT.lMuon)
     mtCut.setMax(160.)
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
         idsf.addFactor(muonTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1308,18 +1308,18 @@ def monomuonHadProxy(sample, selector):
     selector.findOperator('LeptonSelection').setN(0, 1)
 
     mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.kMuon)
+    mtCut.setFlavor(ROOT.lMuon)
     mtCut.setMax(160.)
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
         idsf.addFactor(muonTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1333,12 +1333,12 @@ def oppflavor(sample, selector):
     selector.findOperator('LeptonSelection').setN(1, 1)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'ElectronSF')
+        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
         idsf.addFactor(electronTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kElectron, 'GsfTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1346,12 +1346,12 @@ def oppflavor(sample, selector):
         ### might not be 100% correct because there is no check 
         ### that both electron and muon are tight >.>
 
-        idsf = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonSF')
+        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
         idsf.addFactor(muonTightSF)
         idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
         selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.IDSFWeight.kMuon, 'MuonTrackSF')
+        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
@@ -1365,7 +1365,7 @@ def wenuall(sample, name):
 
     selector = monophotonBase(sample, ROOT.WenuSelector(name))
 
-    # selector.addOperator(ROOT.IDSFWeight(ROOT.IDSFWeight.kPhoton, photonSF, 'photonSF'))
+    # selector.addOperator(ROOT.IDSFWeight(ROOT.cPhotons, photonSF, 'photonSF'))
     # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         selector.addOperator(ROOT.NNPDFVariation())
@@ -1392,8 +1392,8 @@ def zeeBase(sample, selector):
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
-    tnp.setTagSpecies(ROOT.kElectrons)
-    tnp.setProbeSpecies(ROOT.kElectrons)
+    tnp.setTagSpecies(ROOT.cElectrons)
+    tnp.setProbeSpecies(ROOT.cElectrons)
 
     return selector
 
@@ -1420,8 +1420,8 @@ def zmmBase(sample, selector):
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
-    tnp.setTagSpecies(ROOT.kMuons)
-    tnp.setProbeSpecies(ROOT.kMuons)
+    tnp.setTagSpecies(ROOT.cMuons)
+    tnp.setProbeSpecies(ROOT.cMuons)
     
     return selector
 

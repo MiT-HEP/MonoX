@@ -142,11 +142,13 @@ public:
   ~TagAndProbeSelector() {}
 
   void selectEvent(panda::EventMonophoton&) override;
+  void setSampleId(unsigned id) { sampleId_ = id; }
 
  protected:
   void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) override;
 
   panda::EventTPPhoton outEvent_;
+  unsigned sampleId_; // outEvent_.sample gets reset at the beginning of each event
 };
 
 #endif
