@@ -576,7 +576,7 @@ class SimpleCanvas(object):
 
         if self.selection is not None:
             selFile = open(targetDir + '/' + name + '.txt', 'w')
-            selFile.write(self.selection)
+            selFile.write(self.selection + ' \n')
             selFile.close()
 
 class Normalizer(object):

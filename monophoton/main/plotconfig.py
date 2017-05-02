@@ -98,13 +98,13 @@ def getConfig(confName):
             SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta), 
         ]
         config.bkgGroups = [
-            GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
-            GroupSpec('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
-            GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
+            # GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
+            # GroupSpec('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            # GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
             GroupSpec('halo', 'Beam halo', samples = monophData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.), # norm set here
-            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            # GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
@@ -117,18 +117,18 @@ def getConfig(confName):
             VariableDef('recoil', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5)),
             VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi)),
             # VariableDef('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.)),
             VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5', overflow = True),
-            # VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline), overflow = True),
+            # VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + ' && ' + mtPhoMet + ' > 100.', overflow = True),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.'),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 0.5', overflow = True),
-            VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 0.5', overflow = True),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = re.sub(r't1Met\.minJetDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline), overflow = True),
+            VariableDef('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), overflow = True),
             VariableDef('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3),
             # VariableDef('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.'),
             VariableDef('jetPt', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True),
@@ -219,13 +219,13 @@ def getConfig(confName):
             VariableDef('recoil', 'Recoil', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'Recoil', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             # VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5)),
             # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5'),
-            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
+            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + ' && ' + mtPhoMet + ' > 100.', overflow = True),
             # VariableDef('dRPhoMu', '#DeltaR(#gamma, #mu)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (10, 0., 4.)),
             VariableDef('dimumass', 'M_{#mu#mu}', 'dimu.mass[0]', (12, 60., 120.), unit = 'GeV', overflow = True),
             VariableDef('zPt', 'p_{T}^{Z}', 'dimu.pt[0]', combinedFitPtBinning, unit = 'GeV'),
@@ -241,14 +241,11 @@ def getConfig(confName):
             VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt_[0]', [0., 50., 100.]  + [200. + 200. * x for x in range(5)], unit = 'GeV', overflow = True),
             # VariableDef('jetEta', '#eta_{j}', 'jets.eta_[0]', (10, -5., 5.)),
             # VariableDef('jetPhi', '#phi_{j}', 'jets.phi_[0]', (10, -math.pi, math.pi)),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi > 2. && jets.size != 0'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = re.sub(r't1Met\.minJetDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
             # VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (14, 0., 3.50), cut = 'jets.size != 0'),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (31, 0., 31.), overflow = True)
         ]
-
-        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet'))
-        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -303,14 +300,14 @@ def getConfig(confName):
             VariableDef('recoil', 'Recoil', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'Recoil', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             # VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5)),
             # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi)),
             # VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.realPhotonDPhi', (13, 0., 3.25)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5'),
-            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
+            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + ' && ' + mtPhoMet + ' > 100.', overflow = True),
             # VariableDef('dRPhoEl', '#DeltaR(#gamma, e)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_00, dR2_01), (10, 0., 4.)),
             VariableDef('dielmass', 'M_{ee}', 'diel.mass[0]', (12, 60., 120.), unit = 'GeV', overflow = True),
             VariableDef('zPt', 'p_{T}^{Z}', 'diel.pt[0]', combinedFitPtBinning, unit = 'GeV'),
@@ -326,14 +323,11 @@ def getConfig(confName):
             VariableDef('jetPt', 'p_{T}^{j}', 'jets.pt_[0]', [0., 50., 100.]  + [200. + 200. * x for x in range(5)], unit = 'GeV', overflow = True),
             # VariableDef('jetEta', '#eta_{j}', 'jets.eta_[0]', (10, -5., 5.)),
             # VariableDef('jetPhi', '#phi_{j}', 'jets.phi_[0]', (10, -math.pi, math.pi)),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = mass + ' > 60. && ' + mass + ' < 120. && photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi > 2. && jets.size != 0'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = re.sub(r't1Met\.minJetDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
             # VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (14, 0., 3.50), cut = 'jets.size != 0'),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (31, 0., 31.), overflow = True)
             ]
-
-        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet'))
-        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -395,14 +389,14 @@ def getConfig(confName):
             VariableDef('recoil', 'Recoil', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'Recoil', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             # VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5)),
             # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi)),
             # VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.realPhotonDPhi', (13, 0., 3.25)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160.'),
-            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160. && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
+            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + ' && ' + mtPhoMet + ' > 100.', overflow = True),
             # VariableDef('dRPhoMu', '#DeltaR(#gamma, #mu)', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.))', (10, 0., 4.)),
             VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [50. * x for x in range(6)] + [300., 400., 500.], unit = 'GeV', overflow = True),
             VariableDef('mt', 'M_{T}', mt, [0. + 20. * x for x in range(9)], unit = 'GeV', overflow = True),
@@ -416,14 +410,11 @@ def getConfig(confName):
             VariableDef('jetPt', 'p_{T}^{leading j}', 'jets.pt_[0]', [0., 50., 100.]  + [200. + 200. * x for x in range(5)], unit = 'GeV', overflow = True),
             # VariableDef('jetEta', '#eta_{leading j}', 'jets.eta_[0]', (10, -5., 5.)),
             # VariableDef('jetPhi', '#phi_{leading j}', 'jets.phi_[0]', (10, -math.pi, math.pi)),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi > 2. && ' + mt + ' < 160. && jets.size != 0'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = re.sub(r't1Met\.minJetDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
             # VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (14, 0., 3.50), cut = 'jets.size != 0'),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (31, 0., 31.), overflow = True)
         ]
-
-        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet'))
-        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -486,16 +477,16 @@ def getConfig(confName):
             VariableDef('recoil', 'Recoil', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'Recoil', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             # VariableDef('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5)),
             # VariableDef('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi)),
             # VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.realPhotonDPhi', (13, 0., 3.25)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160.'),
-            # VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.realMinJetDPhi > 0.5 && ' + mt + ' < 160. && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
+            # VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + '&& ' + mt + ' < 160. && ' + mtPhoMet + ' > 100.', overflow = True),
             # VariableDef('dRPhoMu', '#DeltaR(#gamma, #mu)', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.))', (10, 0., 4.)),
-            VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [50. * x for x in range(6)] + [300., 400., 500.], unit = 'GeV', overflow = True),
+            VariableDef('met', 'E_{T}^{miss}', 't1Met.realMet', [50. * x for x in range(6)] + [300., 400., 500.], unit = 'GeV', applyBaseline = False, cut = re.sub(r't1Met\.realMet > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline), overflow = True),
             VariableDef('mt', 'M_{T}', mt, [0. + 20. * x for x in range(9)], unit = 'GeV', overflow = True),
             # VariableDef('mtNMinusOne', 'M_{T}', mt, [0. + 20. * x for x in range(9)] + [200., 300., 400., 500.], unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi > 2. && t1Met.realMinJetDPhi > 0.5'),
             VariableDef('elPt', 'p_{T}^{e}', 'electrons.pt_[0]', [0., 50., 100., 150., 200., 250., 300., 400., 500.], unit = 'GeV', overflow = True),
@@ -507,14 +498,11 @@ def getConfig(confName):
             VariableDef('jetPt', 'p_{T}^{leading j}', 'jets.pt_[0]', [0., 50., 100.]  + [200. + 200. * x for x in range(5)], unit = 'GeV', overflow = True),
             # VariableDef('jetEta', '#eta_{leading j}', 'jets.eta_[0]', (10, -5., 5.)),
             # VariableDef('jetPhi', '#phi_{leading j}', 'jets.phi_[0]', (10, -math.pi, math.pi)),
-            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi > 2. && t1Met.realMet > 50. && ' + mt + ' < 160. && jets.size != 0'),
+            VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = re.sub(r't1Met\.minJetDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)),
             # VariableDef('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (14, 0., 3.50), cut = 'jets.size != 0'),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.)),
             # VariableDef('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (31, 0., 31.), overflow = True)
         ]
-
-        config.variables.append(config.getVariable('phoPt').clone('phoPtHighMet'))
-        config.getVariable('phoPtHighMet').binning = combinedFitPtBinning
 
         # Standard MC systematic variations
         for group in config.bkgGroups:
@@ -552,8 +540,8 @@ def getConfig(confName):
 
     elif confName == 'phistack':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5'
-        config.fullSelection = 't1Met.pt > 170.'
+        config.baseline = baseSel
+        config.fullSelection = ''
         config.signalPoints = [
             GroupSpec('add-5-2', 'ADD n=5 M_{D}=2TeV', color = 41), # 0.07069/pb
             GroupSpec('dmv-1000-150', 'DM V M_{med}=1TeV M_{DM}=150GeV', color = 46), # 0.01437/pb
@@ -578,7 +566,7 @@ def getConfig(confName):
         
     elif confName == 'lowmt':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.photonDPhi < 0.5 && t1Met.minJetDPhi > 0.5'
+        config.baseline = baseSel.replace('t1Met.photonDPhi > ', 't1Met.photonDPhi < ')
         config.fullSelection = 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[0] - t1Met.phi)) < 3.0'
         config.bkgGroups = [
             GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
@@ -632,15 +620,17 @@ def getConfig(confName):
             # VariableDef('sipipLowSx', '#sigma_{i#phii#phi}', 'photons.sipip[0]', (50, 0., 0.02), cut = 'photons.e4[0] / photons.emax[0] > 0.5')
         ]
 
+        """
         for variable in list(config.variables):
             if variable.name not in ['dPhiJetMet', 'dPhiJet1Met', 'dPhiJet2Met', 'dPhiJetMetMin']:
                 config.variables.append(variable.clone(variable.name + 'JetCleaned', applyFullSel = True))
-#                config.variables.remove(variable)
+                # config.variables.remove(variable)
+        """
 
     
     elif confName == 'lowdphi':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.minJetDPhi < 0.5 && t1Met.photonDPhi > 0.5 && t1Met.pt > 170.'
+        config.baseline = baseSel.replace('t1Met.minJetDPhi > ', 't1Met.minJetDPhi < ')
         config.fullSelection = ''
 
         config.sigGroups = [
@@ -669,12 +659,12 @@ def getConfig(confName):
             VariableDef('recoil', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True),
             # VariableDef('recoilScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             VariableDef('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, ymax = 25), 
-            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5'), 
+            # VariableDef('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline)), 
             VariableDef('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True),
             # VariableDef('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True),
             # VariableDef('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi)),
-            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi < 0.5', overflow = True),
-            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi < 0.5 && ' + mtPhoMet + ' > 100.', overflow = True),
+            VariableDef('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline), overflow = True),
+            VariableDef('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = re.sub(r't1Met\.photonDPhi > [-+]?[0-9]*\.?[0-9]+', '(1)', config.baseline) + ' && ' + mtPhoMet + ' > 100.', overflow = True),
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt_ > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
             VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
@@ -773,7 +763,7 @@ def getConfig(confName):
 
     elif confName == 'gjets':
         config = PlotConfig('monoph', photonData)
-        config.baseline = 'photons.scRawPt[0] > 175. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2. && t1Met.pt > 100. && t1Met.pt < 150.'
+        config.baseline = baseSel.replace('t1Met.pt > 170.', 't1Met.pt > 100. && t1Met.pt < 150.')
         config.fullSelection = ''
         config.sigGroups = [
             GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']),
@@ -804,6 +794,8 @@ def getConfig(confName):
             VariableDef('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt_ > 30.'),
             VariableDef('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True),
             VariableDef('njets', 'N_{jet}', 'jets.size', (10, 0., 10.)),
+            VariableDef('jetEta', '#eta^{j}', 'jets.eta_', (20, -5., 5.), cut = 'jets.size != 0'),
+            VariableDef('jetAbsEta', '#eta^{j}', 'TMath::Abs(jets.eta_)', (10, 0., 5.), cut = 'jets.size != 0'),
             VariableDef('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.'),
             VariableDef('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.)),
             VariableDef('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
