@@ -23,6 +23,8 @@ hstore = r.gROOT.mkdir('hstore')
 
 plotDir = 'monophoton/workspace'
 subtractBackground = True
+rlimits = (0.001, 0.5)
+systList = [('EWK', 1.0), ('vgPDF', 1.0), ('vgQCDscale', 0.8)]
 
 fetchHistograms(parameters, sources, sourcePlots, totals, hstore)
 
@@ -48,7 +50,7 @@ for lep in ['mu', 'el']:
     gMcRatio = r.TGraphAsymmErrors(hMcRatio)
     # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
 
-    for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
+    for nuis, corr in systList:
         print nuis, corr
         hMcDilepUp     = mcDilep[nuis+'Up']
         hMcMonolepUp   = mcMonolep[nuis+'Up']
@@ -125,7 +127,7 @@ for lep in ['mu', 'el']:
     rcanvas.legend.apply('data', hDataRatio)
 
     rcanvas.Clear()
-    rcanvas.ylimits = (0, 0.7)
+    rcanvas.ylimits = rlimits
 
     iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
     iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
@@ -157,7 +159,7 @@ hMcRatio.Divide(hMcMonolep)
 gMcRatio = r.TGraphAsymmErrors(hMcRatio)
 # print gMcRatio.GetErrorXlow(0), gMcRatio.GetErrorXhigh(gMcRatio.GetN()-1)
 
-for nuis, corr in [('EWK', 1.0), ('vgQCDscale', 0.8), ('vgPDF', 1.0)]:
+for nuis, corr in systList:
     print nuis, corr
     hMcDimuUp     = mcDimu[nuis+'Up']
     hMcMonomuUp   = mcMonomu[nuis+'Up']
@@ -274,7 +276,7 @@ rcanvas.legend.apply('mc', gMcRatio)
 rcanvas.legend.apply('data', hDataRatio)
 
 rcanvas.Clear()
-rcanvas.ylimits = (0, 0.7)
+rcanvas.ylimits = rlimits
 
 iData = rcanvas.addHistogram(hDataRatio, drawOpt = 'PE0')
 iUnc = rcanvas.addHistogram(gMcRatio, drawOpt = 'E2')
