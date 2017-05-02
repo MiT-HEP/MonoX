@@ -1031,6 +1031,25 @@ def haloMETMedium(sample, selector):
 
     return selector
 
+def haloNoShowerCut(sample, selector):
+    selector = monophotonBase(sample, selector)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.resetSelection()
+    photonSel.resetVeto()
+
+    for sel in photonFullSelection:
+        if sel == 'MIP49':
+            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+        elif sel == 'Sieie':
+            continue
+        else:
+            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    selector.findOperator('MetFilters').setFilter(0, -1)
+
+    return selector
+
 
 def trivialShower(sample, selector):
     """

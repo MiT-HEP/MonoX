@@ -29,6 +29,7 @@ defaultSelectors = {
     'haloMedium': selectors.haloMedium,
     'haloMIPMedium': selectors.haloMIPMedium,
     'haloMETMedium': selectors.haloMETMedium,
+    'haloNoShowerCut': selectors.haloNoShowerCut,
     'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
     'dimuHfake': selectors.dimuonHadProxy,
@@ -65,7 +66,7 @@ def applyMod(modifier, regions):
     return result
 
 data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
-data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
+data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
 data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
 data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
 data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
