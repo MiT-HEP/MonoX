@@ -168,7 +168,6 @@ def monophotonBase(sample, selector):
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
-        jetClean = selector.findOperator('JetCleaning')
         metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
 
         photonDPhi = selector.findOperator('PhotonMetDPhi')
@@ -270,7 +269,7 @@ def leptonBase(sample, selector):
 
     operators += [
         'LeptonRecoil',
-        ]
+    ]
 
     if not sample.data:
         operators.append('MetVariations')
@@ -1614,4 +1613,3 @@ def tpmmg(sample, selector):
     selector.addOperator(operator)
 
     return selector
-

@@ -46,13 +46,27 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
 
   setupSkim_(_inEvent, _isMC);
 
+  if (printLevel_ > 0 && printLevel_ <= INFO) {
+    *stream_ << "Operators for selector " << name() << std::endl;
+    for (auto* op : operators_) {
+      *stream_ << " " << op->expr() << std::endl;
+      op->setPrintLevel(printLevel_);
+      op->setOutputStream(*stream_);
+    }
+    *stream_ << std::endl;
+  }
+
+  if (printLevel_ > 0)
+    *stream_ << "Initializing operators" << std::endl;
+
   for (auto* op : operators_) {
     op->addBranches(*skimOut_);
     op->initialize(_inEvent);
     op->registerCut(*cutsOut_);
   }
 
-  // printf("Added all the operators. \n");
+  if (printLevel_ > 0)
+    *stream_ << std::endl;
 
   if (useTimers_)
     timers_.resize(operators_.size());
@@ -77,11 +91,11 @@ EventSelectorBase::finalize()
   cutsOut_ = 0;
 
   if (useTimers_) {
-    std::cout << "Operator runtimes for " << name() << " (CPU seconds):" << std::endl;
+    *stream_ << "Operator runtimes for " << name() << " (CPU seconds):" << std::endl;
     for (unsigned iO(0); iO != operators_.size(); ++iO) {
-      std::cout.flags(std::ios_base::fixed);
-      std::cout.width(5);
-      std::cout << " " << (std::chrono::duration_cast<std::chrono::nanoseconds>(timers_[iO]).count() * 1.e-9) << " " << operators_[iO]->name() << std::endl;
+      stream_->flags(std::ios_base::fixed);
+      stream_->width(5);
+      *stream_ << " " << (std::chrono::duration_cast<std::chrono::nanoseconds>(timers_[iO]).count() * 1.e-9) << " " << operators_[iO]->name() << std::endl;
     }
   }
 }

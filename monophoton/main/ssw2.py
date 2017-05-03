@@ -28,6 +28,8 @@ argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', h
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
 argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
 argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
+argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel')
+argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
 
 # eosInput:
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
@@ -43,7 +45,12 @@ monoxdir = os.path.dirname(basedir)
 sys.path.append(basedir)
 import config
 
-logging.basicConfig(level = config.printLevel)
+try:
+    printLevel = getattr(logging, args.printLevel.upper())
+except AttributeError:
+    printLevel = config.printLevel
+
+logging.basicConfig(level = printLevel)
 logger = logging.getLogger(__name__)
 
 logger.debug('Running at %s', socket.gethostname())
@@ -138,6 +145,9 @@ def executeSkim(sample, filesets, outDir):
     """
 
     skimmer = ROOT.Skimmer()
+
+    skimmer.setPrintLevel(printLevel)
+
     if args.skipPhotonSkim:
         skimmer.skipPhotonSkim()
     else:
@@ -224,11 +234,13 @@ def executeSkim(sample, filesets, outDir):
     for rname, gen in selectors[sample.name]:
         outName = outNameBase + '_' + rname + '.root'
 
-        logger.info('Copying output to %s/%s', outDir, outName)
-        shutil.copy(tmpDir + '/' + outName, outDir)
-        logger.info('Removing %s/%s', tmpDir, outName)
-        os.remove(tmpDir + '/' + outName)
-
+        if args.testRun:
+            logger.info('Output at %s/%s', tmpDir, outName)
+        else:
+            logger.info('Copying output to %s/%s', outDir, outName)
+            shutil.copy(tmpDir + '/' + outName, outDir)
+            logger.info('Removing %s/%s', tmpDir, outName)
+            os.remove(tmpDir + '/' + outName)
 
 for sample in samples:
     print 'Starting sample %s (%d/%d)' % (sample.name, samples.index(sample) + 1, len(samples))
@@ -277,10 +289,13 @@ for sample in samples:
             print out.strip()
             print err.strip()
     
-            logger.info('Copying output to %s/%s', config.skimDir, outName)
-            shutil.copy(mergePath, config.skimDir)
-            logger.info('Removing %s', mergePath)
-            os.remove(mergePath)
+            if args.testRun:
+                logger.info('Output at %s', mergePath)
+            else:
+                logger.info('Copying output to %s/%s', config.skimDir, outName)
+                shutil.copy(mergePath, config.skimDir)
+                logger.info('Removing %s', mergePath)
+                os.remove(mergePath)
 
     else:
         # Will do the actual skimming
