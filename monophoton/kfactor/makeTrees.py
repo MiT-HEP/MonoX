@@ -15,7 +15,7 @@ ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/PandaTree')
 
 ROOT.gROOT.LoadMacro('GenKinematics.cc+')
 
-snames = ['znng-130', 'znng-130-o', 'wnlg-130', 'wnlg-130-o', 'zllg-130', 'zllg-130-o']
+snames = ['znng-130', 'znng-130-o', 'wnlg-130', 'wnlg-130-o', 'zllg-130', 'zllg-130-o', 'znng', 'zllg', 'wnlg', 'wnlg-500', 'wglo', 'wglo-130', 'wglo-500']
 
 outputFile = ROOT.TFile.Open(config.histDir + '/kfactor_trees.root', 'recreate')
 
