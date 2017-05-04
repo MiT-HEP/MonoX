@@ -573,12 +573,9 @@ if __name__ == '__main__':
             canvas.Clear(full = True)
 
             nentries = (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints))
-            if nentries % 5:
-                ncolumns = (int(nentries) / 5) + 1 
-            else:
-                ncolumns = (int(nentries) / 5)
+            ncolumns = math.ceil(float(nentries) / 5.) 
 
-            canvas.legend.setPosition(1.0 - 0.2125 * ncolumns, SimpleCanvas.YMAX - 0.01 - 0.035 * 5, 0.92, SimpleCanvas.YMAX - 0.01)
+            canvas.legend.setPosition(0.55 - 0.2 * max(ncolumns - 2, 0.), SimpleCanvas.YMAX - 0.01 - 0.035 * 5, 0.92, SimpleCanvas.YMAX - 0.01)
             isSensitive = vardef.name in plotConfig.sensitiveVars
     
         if isSensitive:

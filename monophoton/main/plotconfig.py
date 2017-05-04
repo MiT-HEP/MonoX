@@ -98,13 +98,13 @@ def getConfig(confName):
             SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta), 
         ]
         config.bkgGroups = [
-            # GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
-            # GroupSpec('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
-            # GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
-            # GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
+            GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
+            GroupSpec('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff)),
+            GroupSpec('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99)),
+            GroupSpec('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff)),
             # GroupSpec('spike', 'Spikes', samples = [], color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 30.5 * 12.9 / 36.4, templateDir = spikeDir), # norm set here
             GroupSpec('halo', 'Beam halo', samples = monophData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.), # norm set here
-            # GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
+            GroupSpec('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)),
             GroupSpec('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff)),
             GroupSpec('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)),
             GroupSpec('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
