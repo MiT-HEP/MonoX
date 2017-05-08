@@ -96,7 +96,7 @@ class Legend(object):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
-        self.legend.SetTextSize(0.035 / 4. * 3.)
+        self.legend.SetTextSize(0.025)
         self.legend.SetTextFont(42)
         self.legend.SetTextAlign(12)
 
@@ -191,10 +191,7 @@ class Legend(object):
 
         self.legend.Clear()
 
-        if len(self.entries) % 5:
-            self.ncolumns = (int(len(self.entries)) / 5) + 1
-        else:
-            self.ncolumns = (int(len(self.entries)) / 5)
+        self.ncolumns = int(math.ceil(float(len(self.entries)) / 5.))
 
         self.legend.SetNColumns(self.ncolumns)
 
@@ -576,7 +573,7 @@ class SimpleCanvas(object):
 
         if self.selection is not None:
             selFile = open(targetDir + '/' + name + '.txt', 'w')
-            selFile.write(self.selection)
+            selFile.write(self.selection + ' \n')
             selFile.close()
 
 class Normalizer(object):
