@@ -1,6 +1,7 @@
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TCut.h"
 #include "TH1D.h"
 #include "TDirectory.h"
 #include "TLorentzVector.h"
@@ -87,16 +88,6 @@ TemplateGenerator::makeEmptyTemplate(char const* _name, Variable _var/*kMass*/)
 TH1D*
 TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _expr, Variable _var/* = kMass*/)
 {
-  auto& tree(*input_[_type]);
-
-  tree.Draw(">>elist", _expr, "entrylistarray");
-  auto* elist(static_cast<TEntryListArray*>(gDirectory->Get("elist")));
-
-  std::cout << "Tree " << skimTypes[_type] << ": making binned template from " << (elist ? elist->GetN() : 0) << " entries passing " << _expr << std::endl;
-
-  if (!elist)
-    return 0;
-
   unsigned const NMAX(256);
 
   unsigned size(0);
@@ -110,72 +101,122 @@ TemplateGenerator::makeTemplate(SkimType _type, char const* _name, char const* _
   float tagEta[NMAX];
   float tagPhi[NMAX];
 
-  tree.SetBranchAddress("tp.size", &size);
-  tree.SetBranchAddress("weight", &weightIn);
-  tree.SetBranchAddress("npv", &npv);
-  switch (_var) {
-  case kMass:
-    tree.SetBranchAddress("tp.mass", mass);
-    break;
-  case kSCRawMass:
-    tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
-    tree.SetBranchAddress("probes.eta_", probeEta);
-    tree.SetBranchAddress("probes.phi_", probePhi);
-    tree.SetBranchAddress("tags.pt_", tagPt);
-    tree.SetBranchAddress("tags.eta_", tagEta);
-    tree.SetBranchAddress("tags.phi_", tagPhi);
-    break;
-  default:
-    return 0;
-  };
-
   auto* tmp = makeEmptyTemplate(_name, _var);
 
-  tree.SetEntryList(elist);
+  // Instead of running Draw() on the entire tree (which may generate an EntryListArray of O(10M) events and consume up RAM)
+  // we run over individual files (or chunks of 100k events)
 
-  long iListEntry(0);
-  long iTreeEntry(0);
-  while ((iTreeEntry = tree.GetEntryNumber(iListEntry++)) >= 0) {
-    long localEntry(tree.LoadTree(iTreeEntry));
-    tree.GetEntry(iTreeEntry);
+  long const CHUNKSIZE(100000);
 
-    auto* pList(elist->GetSubListForEntry(localEntry, tree.GetTree()));
+  auto fillTemplate([&](TTree& tree, long start)->bool {
 
-    if (!pList) {
-      std::cerr << "Sublist not found for entry " << iListEntry << " " << iTreeEntry << " (" << tree.GetTreeNumber() << ", " << localEntry << ")" << std::endl;
-      throw std::runtime_error("entrylist");
-    }
+      //      std::cout << "fillTemplate " << tree.GetCurrentFile()->GetName() << " " << start << std::endl;
 
-    for (int iE(0); iE != pList->GetN(); ++iE) {
-      unsigned iP(pList->GetEntry(iE));
+      TCut selection(_expr);
 
-      if (_var == kSCRawMass) {
-        //        std::cout << probeScRawPt[iP] << " " << probeEta[iP] << " " << probePhi[iP] << " " << tagPt[iP] << " " << tagEta[iP] << " " << tagPhi[iP] << std::endl;
-        double pX(probeScRawPt[iP] * std::cos(probePhi[iP]));
-        double pY(probeScRawPt[iP] * std::sin(probePhi[iP]));
-        double pZ(probeScRawPt[iP] * std::sinh(probeEta[iP]));
-        double pE(probeScRawPt[iP] * std::cosh(probeEta[iP]));
-        double tX(tagPt[iP] * std::cos(tagPhi[iP]));
-        double tY(tagPt[iP] * std::sin(tagPhi[iP]));
-        double tZ(tagPt[iP] * std::sinh(tagEta[iP]));
-        double tE(tagPt[iP] * std::cosh(tagEta[iP]));
-        //        std::cout << std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ)) << std::endl;
-        mass[iP] = std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ));
+      long total(tree.GetEntries());
+      if (start != 0 || total > start + CHUNKSIZE)
+        selection *= TString::Format("Entry$ >= %ld && Entry$ < %ld", start, start + CHUNKSIZE);
+
+      tree.Draw(">>elist", selection, "entrylistarray");
+      auto* elist(static_cast<TEntryListArray*>(gDirectory->Get("elist")));
+
+      if (!elist) {
+        std::cerr << "Tree in " << tree.GetCurrentFile()->GetName() << " did not generate a valid entry list" << std::endl;
+        return true;
       }
 
-      tmp->Fill(mass[iP], weightIn);
+      tree.SetBranchAddress("tp.size", &size);
+      tree.SetBranchAddress("weight", &weightIn);
+      tree.SetBranchAddress("npv", &npv);
+      switch (_var) {
+      case kMass:
+        tree.SetBranchAddress("tp.mass", mass);
+        break;
+      case kSCRawMass:
+        tree.SetBranchAddress("probes.scRawPt", probeScRawPt);
+        tree.SetBranchAddress("probes.eta_", probeEta);
+        tree.SetBranchAddress("probes.phi_", probePhi);
+        tree.SetBranchAddress("tags.pt_", tagPt);
+        tree.SetBranchAddress("tags.eta_", tagEta);
+        tree.SetBranchAddress("tags.phi_", tagPhi);
+        break;
+      default:
+        return 0;
+      };
+
+      tree.SetEntryList(elist);
+
+      long iListEntry(0);
+      long iTreeEntry(0);
+      while ((iTreeEntry = tree.GetEntryNumber(iListEntry++)) >= 0) {
+        long localEntry(tree.LoadTree(iTreeEntry));
+        tree.GetEntry(iTreeEntry);
+
+        auto* pList(elist->GetSubListForEntry(localEntry, tree.GetTree()));
+
+        if (!pList) {
+          std::cerr << "Sublist not found for entry " << iListEntry << " " << iTreeEntry << " (" << tree.GetTreeNumber() << ", " << localEntry << ")" << std::endl;
+          throw std::runtime_error("entrylist");
+        }
+
+        for (int iE(0); iE != pList->GetN(); ++iE) {
+          unsigned iP(pList->GetEntry(iE));
+
+          if (_var == kSCRawMass) {
+            //        std::cout << probeScRawPt[iP] << " " << probeEta[iP] << " " << probePhi[iP] << " " << tagPt[iP] << " " << tagEta[iP] << " " << tagPhi[iP] << std::endl;
+            double pX(probeScRawPt[iP] * std::cos(probePhi[iP]));
+            double pY(probeScRawPt[iP] * std::sin(probePhi[iP]));
+            double pZ(probeScRawPt[iP] * std::sinh(probeEta[iP]));
+            double pE(probeScRawPt[iP] * std::cosh(probeEta[iP]));
+            double tX(tagPt[iP] * std::cos(tagPhi[iP]));
+            double tY(tagPt[iP] * std::sin(tagPhi[iP]));
+            double tZ(tagPt[iP] * std::sinh(tagEta[iP]));
+            double tE(tagPt[iP] * std::cosh(tagEta[iP]));
+            //        std::cout << std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ)) << std::endl;
+            mass[iP] = std::sqrt((pE + tE) * (pE + tE) - (pX + tX) * (pX + tX) - (pY + tY) * (pY + tY) - (pZ + tZ) * (pZ + tZ));
+          }
+
+          tmp->Fill(mass[iP], weightIn);
+        }
+      }
+
+      for (int iX(1); iX != nBins_[_var] + 1; ++iX) {
+        if (tmp->GetBinContent(iX) < 0.)
+          tmp->SetBinContent(iX, 0.);
+        if (tmp->GetBinContent(iX) - tmp->GetBinError(iX) < 0.)
+          tmp->SetBinError(iX, 0.);
+      }
+
+      tree.SetEntryList(0);
+      delete elist;
+
+      // return true if we have processed all events in this tree
+      return total <= start + CHUNKSIZE;
+    });
+
+  auto& input(*input_[_type]);
+
+  if (input.InheritsFrom(TChain::Class())) {
+    // don't run on the chain directly
+    for (auto* fname : *static_cast<TChain&>(input).GetListOfFiles()) {
+      TFile file(fname->GetTitle());
+      auto* tree(static_cast<TTree*>(file.Get(input.GetName())));
+      if (!tree) {
+        std::cerr << "No tree " << input.GetName() << " in " << fname->GetTitle() << std::endl;
+        continue;
+      }
+
+      long start(0);
+      while (!fillTemplate(*tree, start))
+        start += CHUNKSIZE;
     }
   }
-
-  for (int iX(1); iX != nBins_[_var] + 1; ++iX) {
-    if (tmp->GetBinContent(iX) < 0.)
-      tmp->SetBinContent(iX, 0.);
-    if (tmp->GetBinContent(iX) - tmp->GetBinError(iX) < 0.)
-      tmp->SetBinError(iX, 0.);
+  else {
+    long start(0);
+    while (!fillTemplate(input, start))
+      start += CHUNKSIZE;
   }
-
-  tree.SetEntryList(0);
-  delete elist;
 
   return tmp;
 }
