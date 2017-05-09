@@ -47,7 +47,7 @@ combinedFitPtBinning = [175.0, 200., 250., 300., 400., 600., 1000.0]
 fitTemplateExpression = '( ( (photons.scRawPt[0] - 175.) * (photons.scRawPt[0] < 1000.) + 800. * (photons.scRawPt[0] > 1000.) ) * TMath::Sign(1, TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - 1.570796)) - 1.570796) - 0.5) )'
 fitTemplateBinning = [-1 * (bin - 175.) for bin in reversed(combinedFitPtBinning)] + [bin - 175. for bin in combinedFitPtBinning[1:]]
 
-baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2.0 && t1Met.minJetDPhi > 0.5' # && ' + mtPhoMet + ' > 100.' #  && taus.size == 0' # && bjets.size == 0'
+baseSel = 'photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 0.5 && t1Met.minJetDPhi > 0.5' # && ' + mtPhoMet + ' > 100.' #  && taus.size == 0' # && bjets.size == 0'
 
 def getConfig(confName):
 
@@ -81,21 +81,16 @@ def getConfig(confName):
             GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']),
             GroupSpec('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1']),
             GroupSpec('dph', 'Dark Photon', samples = ['dph-*']),
+            GroupSpec('add', 'ADD', samples = ['add-3-*']),
 #            GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
             GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1']),
             GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'])
         ]            
         config.signalPoints = [
-            # SampleSpec('dmv-500-1', 'DMV500', group = config.findGroup('dmv'), color = ROOT.kCyan), 
-            # SampleSpec('dmv-1000-1', 'DMV1000', group = config.findGroup('dmv'), color = ROOT.kGreen),
-            # SampleSpec('dmv-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = ROOT.kYellow),
-            # SampleSpec('dmvlo-500-1', 'DMV500', group = config.findGroup('dmv'), color = ROOT.kCyan), 
+            SampleSpec('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kRed),
             SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = ROOT.kGreen), 
-            # SampleSpec('dmvlo-2000-1', 'DMV2000', group = config.findGroup('dmv'), color = ROOT.kYellow),
-            # SampleSpec('dma-1000-1', 'DMA1000', group = config.findGroup('dma'), color = ROOT.kRed), 
-            SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = ROOT.kRed), 
             SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kCyan),
-            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta), 
+            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta),
         ]
         config.bkgGroups = [
             GroupSpec('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22)),
@@ -1041,16 +1036,33 @@ def getConfig(confName):
         dR2_pho0el1 = 'TMath::Power(photons.eta_[0] - electrons.eta_[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - electrons.phi_[1]), 2.)'
 
         config.sigGroups = [
-            GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1']),
-            GroupSpec('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1']),
+            GroupSpec('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'], norm = 1.),
+            GroupSpec('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1'], norm = 1.),
             GroupSpec('dph', 'Dark Photon', samples = ['dph-*'], norm = 1.),
-            # GroupSpec('hgg', 'Dark Photon', samples = ['hgg-125', 'hgg-1000']),
+            GroupSpec('add', 'ADD', samples = ['add-3-*'], norm = 1.),
             # GroupSpec('dmewk', 'DM EWK', samples = ['dmewk-*']),
-            GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1']),
-            GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'])
+            GroupSpec('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1'], norm = 1.),
+            GroupSpec('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmvlo-2000-1'], norm = 1.)
         ]
         config.signalPoints = [
+            SampleSpec('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kRed),
+            SampleSpec('dmvlo-1000-1', 'DMV1000', group = config.findGroup('dmvlo'), color = ROOT.kGreen), 
+            SampleSpec('dmalo-1000-1', 'DMA1000', group = config.findGroup('dmalo'), color = ROOT.kBlue), 
+            SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kCyan),
+            SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kMagenta),
+        ]
+        """
+        config.signalPoints = [
+            SampleSpec('add-3-3', '#scale[0.7]{ADD +3d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kRed),
+            SampleSpec('add-3-4', '#scale[0.7]{ADD +4d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kBlue),
+            SampleSpec('add-3-5', '#scale[0.7]{ADD +5d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kGreen),
+            SampleSpec('add-3-6', '#scale[0.7]{ADD +6d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kMagenta),
+            SampleSpec('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', group = config.findGroup('add'), color = ROOT.kCyan),
+        ]
+
+        config.signalPoints = [
             SampleSpec('dph-125', 'DPH125', group = config.findGroup('dph'), color = ROOT.kRed),
+            # SampleSpec('dph-nlo-125', 'DPH125-NLO', group = config.findGroup('dph'), color = ROOT.kBlue),
             SampleSpec('dph-200', 'DPH200', group = config.findGroup('dph'), color = ROOT.kBlue),
             SampleSpec('dph-300', 'DPH300', group = config.findGroup('dph'), color = ROOT.kGreen),
             SampleSpec('dph-400', 'DPH400', group = config.findGroup('dph'), color = ROOT.kMagenta),
@@ -1061,7 +1073,7 @@ def getConfig(confName):
             SampleSpec('dph-900', 'DPH900', group = config.findGroup('dph'), color = ROOT.kMagenta+1),
             SampleSpec('dph-1000', 'DPH1000', group = config.findGroup('dph'), color = ROOT.kCyan+1),
         ]
-
+        """
         config.bkgGroups = [
             # GroupSpec('wnlg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.kWhite), # ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
             # GroupSpec('wnlg-nlo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.kWhite), # ROOT.TColor.GetColor(0x99, 0xee, 0xff)),
@@ -1113,7 +1125,7 @@ def getConfig(confName):
             VariableDef('dielMass', 'M_{ee}', 'diel.mass[0]', (36, 0., 180.), unit = 'GeV', overflow = True),
             VariableDef('dielPt', 'p_{T}^{Z}', 'diel.pt[0]',  (80, 0., 2000.), unit = 'GeV'),
             VariableDef('dielEta', '#eta_{Z}', 'diel.eta[0]', (10, -5., 5.)),
-            VariableDef('dielPhi', '#phi_{Z}', 'diel.phi[0]', (10, -math.pi, math.pi)),
+v            VariableDef('dielPhi', '#phi_{Z}', 'diel.phi[0]', (10, -math.pi, math.pi)),
             VariableDef('dRPhoMu0', '#DeltaR(#gamma, #mu_{leading})', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.))', (10, 0., 4.)),
             VariableDef('dRPhoMu1', '#DeltaR(#gamma, #mu_{trailing})', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[1]), 2.))', (10, 0., 4.)),
             VariableDef('dRPhoMuMin', '#DeltaR(#gamma, #mu)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_pho0mu0, dR2_pho0mu1), (10, 0., 4.)),
