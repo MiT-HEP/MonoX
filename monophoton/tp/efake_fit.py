@@ -221,9 +221,10 @@ elif runMode == 'single':
 random = ROOT.TRandom3(seed)
 
 ### Common setup done ###
+print 'Finished common setup.'
 
 ### Fitting routine ###
-def runFit(targ, model, printLevel = 1, vals = None):
+def runFit(targ, model, printLevel = 4, vals = None):
     for param, val in initVals.items():
         work.arg(param).setVal(val)
 
@@ -289,6 +290,8 @@ for binName, fitCut in fitBins:
             sigCore = work.factory('BreitWigner::sigCore_' + binName + '(mass, mZ, gammaZ)')
             res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
             sigModel = work.factory('FCONV::' + sigModelName + '(mass, sigCore_' + binName + ', res)')
+
+    print 'Made signal template.'
 
     intComp = sigModel.createIntegral(massset, 'compWindow')
     intFit = sigModel.createIntegral(massset, 'fitWindow')
@@ -371,6 +374,8 @@ for binName, fitCut in fitBins:
 
             vRaw[0] = targ.sumEntries()
 
+            print 'Made target template.'
+
             bkgModelName = 'bkgModel_' + conf + '_' + binName
 
             if pdf == 'altbkg':
@@ -401,12 +406,18 @@ for binName, fitCut in fitBins:
 
             getattr(work, 'import')(bkgModel, ROOT.RooFit.Silence())
    
+            print 'Made background template.'
+
             # full fit PDF
             model = work.factory('SUM::' + modelName + '(nbkg * ' + bkgModelName + ', nsignal * ' + sigModelName + ')')
     
+            print 'Made fit model.'
+
             # nominal fit
             vals = dict(initVals)
             runFit(targ, model, vals = vals)
+
+            print 'Finished fit.'
 
             # save result
             vNz[0] = vals['nsignal'] * (intComp.getVal() / intFit.getVal())
