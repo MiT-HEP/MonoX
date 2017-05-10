@@ -10,6 +10,15 @@
 // Base
 //--------------------------------------------------------------------
 
+TString
+Cut::expr() const
+{
+  if (ignoreDecision_)
+    return TString::Format("(%s)", name_.Data());
+  else
+    return TString::Format("[%s]", name_.Data());
+}
+
 bool
 Cut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
@@ -57,12 +66,14 @@ HLTFilter::initialize(panda::EventMonophoton& _event)
   TString path;
   UInt_t token(0);
 
-  printf("Triggers to add: %s \n", pathNames_.Data());
+  if (printLevel_ > 0)
+    *stream_ << "Triggers to add: " << pathNames_ << std::endl;
 
   while (pathNames_.Tokenize(path, pos, "_OR_")) {
     token = _event.registerTrigger(path.Data());
     tokens_.push_back(token);
-    printf("Added trigger path %s with token %u to tokens vector. \n", path.Data(), token);
+    if (printLevel_ > 0)
+      *stream_ << "Added trigger path " << path << " with token " << token << " to tokens vector." << std::endl;
   }
 }
 
@@ -169,12 +180,96 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
 // PhotonSelection
 //--------------------------------------------------------------------
 
+TString const
+PhotonSelection::selectionName[PhotonSelection::nSelections] = {
+  "HOverE",               // 0
+  "Sieie",
+  "NHIso",
+  "PhIso",
+  "CHIso",
+  "CHIsoMax",             // 5
+  "EVeto",
+  "CSafeVeto",
+  "MIP49",
+  "Time",
+  "SieieNonzero",         // 10
+  "SipipNonzero",
+  "NoisyRegion",
+  "E2E995",
+  "Sieie12",
+  "Sieie15",              // 15
+  "Sieie20",
+  "CHIso11",
+  "CHIsoMax11",
+  "NHIsoLoose",
+  "PhIsoLoose",           // 20
+  "NHIsoTight",
+  "PhIsoTight",
+  "Sieie05",
+  "Sipip05",
+  "NHIsoS16",             // 25
+  "PhIsoS16",
+  "CHIsoS16",
+  "CHIsoMaxS16",
+  "NHIsoS16Loose",
+  "PhIsoS16Loose",        // 30
+  "CHIsoS16Loose",
+  "NHIsoS16Tight",
+  "PhIsoS16Tight"
+};
+
+TString
+PhotonSelection::selToString(PhotonSelection::SelectionMask _mask)
+{
+  TString invert;
+  if (!_mask.first)
+    invert = "!";
+
+  TString value;
+  for (unsigned iS(0); iS != nSelections; ++iS) {
+    if (_mask.second[iS]) {
+      if (value.Length() == 0)
+        value = invert + selectionName[iS];
+      else
+        value += " OR " + invert + selectionName[iS];
+    }
+  }
+
+  return value;
+}
+
+void
+PhotonSelection::initialize(panda::EventMonophoton&)
+{
+  if (printLevel_ > 0 && printLevel_ <= INFO) {
+    if (selections_.size() != 0) {
+      *stream_ << "Photon selections for " << name_ << std::endl;
+      for (unsigned iT(0); iT != selections_.size(); ++iT) {
+        *stream_ << "[" << selToString(selections_[iT]) << "]";
+        if (iT != selections_.size() - 1)
+          *stream_ << " AND ";
+      }
+      *stream_ << std::endl;
+    }
+    if (vetoes_.size() != 0) {
+      *stream_ << "Extra photon veto for " << name_ << std::endl;
+      for (unsigned iT(0); iT != vetoes_.size(); ++iT) {
+        *stream_ << "[" << selToString(vetoes_[iT]) << "]";
+        if (iT != vetoes_.size() - 1)
+          *stream_ << " AND ";
+      }
+      *stream_ << std::endl;
+    }
+  }
+}
+
 void
 PhotonSelection::registerCut(TTree& cutsTree)
 {
   cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
 
-  cutsTree.Branch(name_ + "Bits", cutRes_, name_ + TString::Format("Bits[%d]/O", nSelections));
+  for (unsigned iS(0); iS != nSelections; ++iS)
+    cutsTree.Branch(name_ + "_" + selectionName[iS], cutRes_ + iS, name_ + "_" + selectionName[iS]);
 }
 
 void
@@ -214,7 +309,7 @@ PhotonSelection::removeSelection(unsigned _s1, unsigned _s2/* = nSelections*/, u
   for (auto&& itr(selections_.begin()); itr != selections_.end(); ++itr) {
     if (itr->second == sel) {
       selections_.erase(itr);
-      std::cout << "Removed photon selection " << sel.to_string() << std::endl;
+      *stream_ << "Removed photon selection " << selToString(*itr) << std::endl;
     }
   }
 }
@@ -245,7 +340,7 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
   for (auto&& itr(vetoes_.begin()); itr != vetoes_.end(); ++itr) {
     if (itr->second == sel) {
       vetoes_.erase(itr);
-      std::cout << "Removed photon selection " << sel.to_string() << std::endl;
+      *stream_ << "Removed photon selection " << selToString(*itr) << std::endl;
     }
   }
 }
@@ -280,7 +375,8 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 
     int selection(selectPhoton(photon));
 
-    // printf("Photon %u returned selection %d \n", iP, selection);
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << "Photon " << iP << " returned selection " << selection << std::endl;
 
     if (selection < 0) {
       // vetoed
@@ -1011,8 +1107,8 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     
     if (muon.loose && muon.pt() > 10.) {
       _outEvent.muons.push_back(muon);
-      if ( (muon.combIso() / muon.pt()) < 0.25)
-	nLooseIsoMuons++;
+      if ((muon.combIso() / muon.pt()) < 0.25)
+        ++nLooseIsoMuons;
     }
   }
 
@@ -1489,6 +1585,25 @@ JetCleaning::JetCleaning(char const* _name/* = "JetCleaning"*/) :
 }
 
 void
+JetCleaning::initialize(panda::EventMonophoton&)
+{
+  if (printLevel_ > 0 && printLevel_ <= INFO) {
+    *stream_ << "Jet cleaning " << name_ << " removes overlaps with ";
+    if (cleanAgainst_[cPhotons])
+      *stream_ << "photons ";
+    if (cleanAgainst_[cElectrons])
+      *stream_ << "electrons ";
+    if (cleanAgainst_[cMuons])
+      *stream_ << "muons ";
+    if (cleanAgainst_[cTaus])
+      *stream_ << "taus ";
+    if (cleanAgainst_.none())
+      *stream_ << "NONE";
+    *stream_ << std::endl;
+  }
+}
+
+void
 JetCleaning::addBranches(TTree& _skimTree)
 {
   // _skimTree.Branch("jets.ptResScaled", ptScaled_, "ptResScaled[jets.size]/F");
@@ -1518,12 +1633,14 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
-    // printf("jet %u \n", iJ);
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << "jet " << iJ << std::endl;
 
     if (std::abs(jet.eta()) > 5.)
       continue;
 
-    // printf(" pass eta cut \n");
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << " pass eta cut" << std::endl;
 
     // No JEC info stored in nero right now (at least samples I am using)
     // double maxPt(jet.ptCorrUp);
@@ -1568,7 +1685,8 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (maxPt < 30.)
       continue;
 
-    // printf(" pass pt selection \n");
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << " pass pt selection" << std::endl;
    
     unsigned iC(0);
     for (; iC != nCollections; ++iC) {
@@ -1588,11 +1706,13 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (iC != nCollections)
       continue;
 
-    // printf(" pass cleaning \n");
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << " pass cleaning" << std::endl;
 
     _outEvent.jets.push_back(jet);
-    
-    // printf(" added \n");
+
+    if (printLevel_ > 0 && printLevel_ <= DEBUG)
+      *stream_ << " added" << std::endl;
   }
 }
 
@@ -1866,14 +1986,15 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     auto& part = _outEvent.photons[iL];
     
     if (part.pfPt < 0) {
-      // printf("Warning!! negative pfPt! Photon wasn't matched to a pf candidate! \n");
+      if (printLevel_ > 0 && printLevel_ <= INFO)
+        *stream_ << "Warning!! negative pfPt! Photon wasn't matched to a pf candidate!" << std::endl;
       ptDiff = 0.;
     }
     else
       ptDiff = part.pt() - part.originalPt;
     
-    if (std::abs(ptDiff) > 50.)
-      printf("photon   ptDiff: %6.1f \n", ptDiff);
+    if (printLevel_ > 0 && printLevel_ <= INFO && std::abs(ptDiff) > 50.)
+      *stream_ << "photon   ptDiff: " << ptDiff << std::endl;
 
     cpx += ptDiff * std::cos(part.phi());
     cpy += ptDiff * std::sin(part.phi());
@@ -1884,14 +2005,15 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     auto& part = _outEvent.electrons[iL];
     
     if (part.pfPt < 0) {
-      // printf("Warning!! negative pfPt! Electron wasn't matched to a pf candidate! \n");
+      if (printLevel_ > 0 && printLevel_ <= INFO)
+        *stream_ << "Warning!! negative pfPt! Electron wasn't matched to a pf candidate!" << std::endl;
       ptDiff = 0.;
     }
     else
       ptDiff = part.pt() - part.originalPt;
     
-    if (std::abs(ptDiff) > 50.)
-      printf("electron ptDiff: %6.1f \n", ptDiff);
+    if (printLevel_ > 0 && printLevel_ <= INFO && std::abs(ptDiff) > 50.)
+      *stream_ << "electron ptDiff: " << ptDiff << std::endl;
 
     cpx += ptDiff * std::cos(part.phi());
     cpy += ptDiff * std::sin(part.phi());
@@ -1903,8 +2025,8 @@ EGCorrection::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   origMet_ = inMets[0];
   origPhi_ = inPhis[0];
 
-  // if (corrMag_ > 50.)
-  //  printf("cpx: %6.1f  cpy: %6.1f  corrMag: %6.1f  corrPhi %6.2f \n", cpx, cpy, corrMag_, corrPhi_);
+  if (printLevel_ > 0 && printLevel_ <= DEBUG && corrMag_ > 50.)
+    *stream_ << "cpx: " << cpx << "cpy: " << cpy << "  corrMag: " << corrMag_ << "  corrPhi " << corrPhi_ << std::endl;
 
   // apply correction
   for (unsigned iM(0); iM != sizeof(inMets) / sizeof(float*); ++iM) {
@@ -2277,12 +2399,10 @@ IDSFWeight::applyParticle(unsigned iP, panda::EventMonophoton const& _event, pan
 
   double relerror = error / weight;
 
-  /* 
-  if (relerror > 0.5) {
-    printf("relerror %6.4f, weight %6.4f, error %6.4f \n", relerror, weight, error);
-    printf("hist: %s, bin %d \n", factors_[iP]->GetDirectory()->GetName(), iCell);
+  if (printLevel_ > 0 && printLevel_ <= DEBUG && relerror > 0.5)  {
+    *stream_ << "relerror " << relerror << ", weight " << weight << ", error " << error << std::endl;
+    *stream_ << "hist: " << factors_[iP]->GetDirectory()->GetName() << ", bin " << iCell << std::endl;
   }
-  */
 
   weightUp_ += relerror;
   weightDown_ -= relerror;

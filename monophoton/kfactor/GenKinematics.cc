@@ -31,8 +31,14 @@ GenKinematics::makeTree(TDirectory* _outputDir, long _nEntries/* = -1*/)
   float jet2Eta;
   float vPt;
   float vEta;
+  float vM;
   float vgammaDPhi;
+  float vgammaPt;
+  float vgammaEta;
+  float vgammaM;
   float jgammaDPhi;
+  float pgammaPt;
+  float pgammaEta;
   bool hasPhoton;
   bool hasMatchingPhoton;
   bool hasBoson;
@@ -50,8 +56,14 @@ GenKinematics::makeTree(TDirectory* _outputDir, long _nEntries/* = -1*/)
   output->Branch("jet2Eta", &jet2Eta, "jet2Eta/F");
   output->Branch("vPt", &vPt, "vPt/F");
   output->Branch("vEta", &vEta, "vEta/F");
+  output->Branch("vM", &vM, "vM/F");
   output->Branch("vgammaDPhi", &vgammaDPhi, "vgammaDPhi/F");
+  output->Branch("vgammaPt", &vgammaPt, "vgammaPt/F");
+  output->Branch("vgammaEta", &vgammaEta, "vgammaEta/F");
+  output->Branch("vgammaM", &vgammaM, "vgammaM/F");
   output->Branch("jgammaDPhi", &jgammaDPhi, "jgammaDPhi/F");
+  output->Branch("pgammaPt", &pgammaPt, "pgammaPt/F");
+  output->Branch("pgammaEta", &pgammaEta, "pgammaEta/F");
   output->Branch("hasPhoton", &hasPhoton, "hasPhoton/O");
   output->Branch("hasMatchingPhoton", &hasMatchingPhoton, "hasMatchingPhoton/O");
   output->Branch("hasBoson", &hasBoson, "hasBoson/O");
@@ -81,8 +93,14 @@ GenKinematics::makeTree(TDirectory* _outputDir, long _nEntries/* = -1*/)
       jet2Eta = 0.;
       vPt = 0.;
       vEta = 0.;
+      vM = 0.;
       vgammaDPhi = 0.;
+      vgammaPt = 0.;
+      vgammaEta = 0.;
+      vgammaM = 0.;
       jgammaDPhi = 0.;
+      pgammaPt = 0.;
+      pgammaEta = 0.;
       hasPhoton = false;
       hasMatchingPhoton = false;
       hasBoson = false;
@@ -146,22 +164,32 @@ GenKinematics::makeTree(TDirectory* _outputDir, long _nEntries/* = -1*/)
       if (hasPhoton) {
         gammaPt = photon->pt();
         gammaEta = photon->eta();
+      }
 
-        for (auto& part : event.partons) {
-          if (part.pdgid == 22 && part.dR2(*photon) < 0.8) {
+      for (auto& part : event.partons) {
+        if (part.pdgid == 22) {
+          pgammaPt = part.pt();
+          pgammaEta = part.eta();
+          if (hasPhoton && part.dR2(*photon) < 0.8)
             hasMatchingPhoton = true;
-            break;
-          }
+
+          break;
         }
       }
 
       if (hasBoson) {
         vPt = pBoson.Pt();
         vEta = pBoson.Eta();
+        vM = pBoson.M();
       }
 
-      if (hasPhoton && hasBoson)
+      if (hasPhoton && hasBoson) {
         vgammaDPhi = std::abs(TVector2::Phi_mpi_pi(photon->phi() - pBoson.Phi()));
+        TLorentzVector pVG(photon->p4() + pBoson);
+        vgammaPt = pVG.Pt();
+        vgammaEta = pVG.Eta();
+        vgammaM = pVG.M();
+      }
 
       // genJets are sorted by pt
 

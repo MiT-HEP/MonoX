@@ -1,4 +1,5 @@
 #include "selectors.h"
+#include "logging.h"
 
 #include "TString.h"
 #include "TFile.h"
@@ -16,7 +17,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <chrono>
-typedef std::chrono::steady_clock SClock; 
+typedef std::chrono::steady_clock SClock;
 
 unsigned TIMEOUT(300);
 
@@ -34,6 +35,7 @@ public:
   bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
   // only copy prompt final state photons and leptons
   void copyGenParticles(panda::GenParticleCollection const&, panda::GenParticleCollection&);
+  void setPrintLevel(unsigned l) { printLevel_ = l; }
 
 private:
   std::vector<TString> paths_{};
@@ -41,6 +43,7 @@ private:
   TString commonSelection_{};
   bool doPhotonSkim_{true};
   GoodLumiFilter* goodLumiFilter_{};
+  unsigned printLevel_{0};
 };
 
 void
@@ -48,6 +51,14 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 {
   TString outputDir(_outputDir);
   TString sampleName(_sampleName);
+
+  std::ostream* stream(&std::cout);
+  std::ofstream debugFile;
+  if (printLevel_ > 0 && printLevel_ <= DEBUG) {
+    TString debugPath("debug_" + sampleName + ".txt");
+    debugFile.open(debugPath.Data());
+    stream = &debugFile;
+  }
 
   panda::Event event;
   panda::GenParticleCollection genParticles("genParticles");
@@ -87,6 +98,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   branchList += {"!genParticles"};
 
   for (auto* sel : selectors_) {
+    sel->setPrintLevel(printLevel_, stream);
+
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
     sel->initialize(outputPath, skimmedEvent, !isData);
   }
@@ -95,16 +108,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   event.run = skimmedEvent.run;
 
   if (goodLumiFilter_)
-    std::cout << "Appyling good lumi filter." << std::endl;
+    *stream << "Appyling good lumi filter." << std::endl;
 
   if (commonSelection_.Length() != 0)
-    std::cout << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
-
-  ofstream debugFile;
-  if (_nEntries > 0) {
-    TString debugPath("debug_" + sampleName + ".txt");
-    debugFile.open(debugPath.Data());
-  }
+    *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
   long iEntryGlobal(0);
   auto now = SClock::now();
@@ -170,10 +177,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (event.getEntry(*input, entryNumber) <= 0) // I/O error
         break;
 
-      if (iEntryGlobal % 10000 == 1) {
+      if (iEntryGlobal % 10000 == 1 && printLevel_ > 0) {
         auto past = now;
         now = SClock::now();
-        std::cout << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
+        *stream << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
       }
 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
@@ -187,7 +194,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         copyGenParticles(genParticles, skimmedEvent.genParticles);
       }
 
-      if (_nEntries > 0) {
+      if (printLevel_ > 0 && printLevel_ <= INFO) {
 	debugFile << std::endl << ">>>>> Printing event " << iEntryGlobal <<" !!! <<<<<" << std::endl;
 	debugFile << skimmedEvent.runNumber << ":" << skimmedEvent.lumiNumber << ":" << skimmedEvent.eventNumber << std::endl;
 	skimmedEvent.print(debugFile, 2);
@@ -226,12 +233,14 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   for (auto* sel : selectors_)
     sel->finalize();
 
-  if (_nEntries > 0) {
+  if (printLevel_ > 0 && printLevel_ <= INFO) {
     debugFile.close();
   }
 
-  now = SClock::now();
-  std::cout << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
+  if (printLevel_ > 0) {
+    now = SClock::now();
+    *stream << "Finished. Took " << std::chrono::duration_cast<std::chrono::seconds>(now - start).count() / 60. << " minutes in total. " << std::endl;
+  }
 }
 
 

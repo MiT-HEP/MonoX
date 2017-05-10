@@ -169,11 +169,11 @@ elif runMode == 'single':
     if dataType == 'data':
         # target samples
         for sname in skimConfig['phdata'][0]:
-            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '/*_tpeg.root')
     
         # background samples
         for sname in skimConfig['phdata'][0]:
-            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '_tpmg.root')
+            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '/*_tpmg.root')
 
         # will need MC signal template
 #        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
@@ -181,10 +181,10 @@ elif runMode == 'single':
 
     else:
         for sname in skimConfig['mc'][0]:
-            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
-            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '_tpmg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '/*_tpeg.root')
+            generator.addInput(ROOT.kMG, config.skimDir + '/' + sname + '/*_tpmg.root')
         for sname in skimConfig['mcgg'][0]:
-            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '_tpeg.root')
+            generator.addInput(ROOT.kEG, config.skimDir + '/' + sname + '/*_tpeg.root')
 
     work = ROOT.RooWorkspace('work', 'work')
     
@@ -245,6 +245,8 @@ def runFit(targ, model, printLevel = 4, vals = None):
 ### Run on ee and eg ###
 
 for binName, fitCut in fitBins:
+    print 'Run fits for', binName
+
     for iC, c in enumerate(binName):
         vBinName[iC] = c
 

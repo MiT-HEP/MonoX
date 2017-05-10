@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <chrono>
+#include <iostream>
 
 typedef std::chrono::high_resolution_clock Clock;
 
@@ -30,6 +31,7 @@ public:
   TString const& name() const { return name_; }
 
   void setUseTimers(bool b) { useTimers_ = b; }
+  void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
 
 protected:
   virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}
@@ -45,6 +47,9 @@ protected:
 
   bool useTimers_{false};
   std::vector<Clock::duration> timers_;
+
+  unsigned printLevel_{0};
+  std::ostream* stream_{&std::cout};
 };
 
 class EventSelector : public EventSelectorBase {

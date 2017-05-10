@@ -12,11 +12,13 @@
 #include "TDirectory.h"
 
 #include "eventlist.h"
+#include "logging.h"
 
 #include <bitset>
 #include <map>
 #include <vector>
 #include <utility>
+#include <iostream>
 
 //--------------------------------------------------------------------
 // Operator catalog
@@ -91,6 +93,7 @@ class Operator {
   Operator(char const* name) : name_(name) {}
   virtual ~Operator() {}
   char const* name() const { return name_.Data(); }
+  virtual TString expr() const { return name_; }
 
   virtual bool exec(panda::EventMonophoton const&, panda::EventBase&) = 0;
 
@@ -99,14 +102,20 @@ class Operator {
 
   virtual void registerCut(TTree&) {}
 
+  void setPrintLevel(unsigned l) { printLevel_ = l; }
+  void setOutputStream(std::ostream& st) { stream_ = &st; }
+
  protected:
   TString name_;
+  unsigned printLevel_{0};
+  std::ostream* stream_{&std::cout};
 };
 
 class Cut : public Operator {
  public:
   Cut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
   virtual ~Cut() {}
+  TString expr() const override;
 
   bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
@@ -236,8 +245,17 @@ class PhotonSelection : public Cut {
     nSelections           // 34
   };
 
+  // Will select photons based on the AND of the elements.
+  // Within each element, multiple bits are considered as OR.
+  typedef std::bitset<nSelections> BitMask;
+  typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
+
+  static TString const selectionName[nSelections];
+  static TString selToString(SelectionMask);
+
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
+  void initialize(panda::EventMonophoton&) override;
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
 
@@ -266,10 +284,7 @@ class PhotonSelection : public Cut {
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
   float ptVarUp_[NMAX_PARTICLES];
   float ptVarDown_[NMAX_PARTICLES];
-  // Will select photons based on the AND of the elements.
-  // Within each element, multiple bits are considered as OR.
-  typedef std::bitset<nSelections> BitMask;
-  typedef std::pair<bool, BitMask> SelectionMask; // pass/fail & bitmask
+
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
   bool cutRes_[nSelections];
@@ -626,6 +641,7 @@ class JetCleaning : public Modifier {
   JetCleaning(char const* name = "JetCleaning");
   ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
+  void initialize(panda::EventMonophoton&) override;
 
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
   //  void setJetResolution(char const* sourcePath);
