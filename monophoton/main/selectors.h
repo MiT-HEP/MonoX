@@ -63,6 +63,7 @@ public:
 
  protected:
   void setupSkim_(panda::EventMonophoton& event, bool isMC) override;
+  void prepareFill_(panda::EventMonophoton&);
 
   panda::EventMonophoton outEvent_;
 

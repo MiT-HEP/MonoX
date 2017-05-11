@@ -108,12 +108,21 @@ void
 EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
   // Branches to be directly copied from the input tree
+  // Add a prepareFill line below any time a collection branch is added
   if (_isMC)
-    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "partons", "genParticles"});
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "partons", "genParticles", "genVertex"});
   else
-    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "metFilters"});
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "metFilters"});
 
   outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+}
+
+void
+EventSelector::prepareFill_(panda::EventMonophoton& _inEvent)
+{
+  _inEvent.vertices.prepareFill(*skimOut_);
+  _inEvent.partons.prepareFill(*skimOut_);
+  _inEvent.genParticles.prepareFill(*skimOut_);
 }
 
 void
@@ -142,8 +151,15 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
       timers_[iO] += Clock::now() - start;
   }
 
-  if (pass)
-    skimOut_->Fill();
+  if (pass) {
+    // IMPORTATNT
+    // We link these skimOut branches to the input event. Need to refresh the addresses in case
+    // collections are resized.
+    prepareFill_(_event);
+
+    outEvent_.fill(*skimOut_);
+    std::cout << "skimout " << skimOut_->GetEntries() << std::endl;
+  }
 
   cutsOut_->Fill();
 }
@@ -201,8 +217,14 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
       for (; opItr != operators_.end(); ++opItr)
         pass = pass && (*opItr)->exec(_event, outEvent_);
 
-      if (pass)
-        skimOut_->Fill();
+      if (pass) {
+        // IMPORTATNT
+        // We link some of the skimOut branches to the input event. Need to refresh the addresses in case
+        // collections are resized.
+        prepareFill_(_event);
+        
+        outEvent_.fill(*skimOut_);
+      }
 
       cutsOut_->Fill();
     }
@@ -415,7 +437,7 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
   }
 
   if (pass)
-    skimOut_->Fill();
+    outEvent_.fill(*skimOut_);
 
   cutsOut_->Fill();
 }
