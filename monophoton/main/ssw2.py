@@ -35,6 +35,8 @@ argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRu
 # Case for running on LXPLUS (used for ICHEP 2016 with simpletree from MINIAOD)
 # not maintained any more - use github to recover
 
+DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
+
 args = argParser.parse_args()
 sys.argv = []
 
@@ -178,15 +180,19 @@ def executeSkim(sample, filesets, outDir):
             skimmer.addPath(path)
     else:
         for path in sample.files(filesets):
-            if not os.path.exists(path):
-                fname = os.path.basename(path)
-                dataset = os.path.basename(os.path.dirname(path))
-                proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
-                print proc.communicate()[0].strip()
+            if config.ntuplesDir == DEFAULT_NTUPLES_DIR:
+                if not os.path.exists(path):
+                    fname = os.path.basename(path)
+                    dataset = os.path.basename(os.path.dirname(path))
+                    proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
+                    print proc.communicate()[0].strip()
+
+            else:
+                path = path.replace(DEFAULT_NTUPLES_DIR, config.ntuplesDir)
     
             logger.debug('Add input: %s', path)
             skimmer.addPath(path)
-   
+
     outNameBase = sample.name
 
     outSuffix = None
