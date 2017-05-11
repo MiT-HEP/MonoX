@@ -68,7 +68,7 @@ class SampleDef(object):
         self._sumw2 = 0.
         self._fullpaths = {}
 
-    def dump(self):
+    def dump(self, effectiveLumi = False):
         print 'name =', self.name
         print 'title =', self.title
         print 'book =', self.book
@@ -78,10 +78,11 @@ class SampleDef(object):
         print 'crosssection =', self.crosssection
         print 'nevents =', self.nevents
         print 'sumw =', self.sumw
-        print 'lumi =', self.effectiveLumi(), 'pb'
+        if self.lumi > 0. or effectiveLumi:
+            print 'lumi =', self.effectiveLumi(), 'pb'
         print 'data =', self.data
         print 'comments = "' + self.comments + '"'
-        print 'filesets = ', self.filesets()
+        print 'filesets =', self.filesets()
 
     def linedump(self):
         title = '"%s"' % self.title
@@ -269,6 +270,42 @@ class SampleDefList(object):
         
                 name, title, crosssection, nevents, sumw, book, fullnames, comments = [matches.group(i) for i in range(1, 9)]
                 fullnames = fullnames.split()
+
+                for pattern in fullnames:
+                    if '{' in pattern: # bash-like substitution pattern delimited by ','
+                        fullnames.remove(pattern)
+                        sublists = []
+                        while True:
+                            op = pattern.find('{')
+                            if op < 0:
+                                break
+                            cl = pattern.find('}', op + 1)
+                            if cl < 0:
+                                raise RuntimeError('Invalid dataset name ' + pattern)
+
+                            sublist = pattern[op + 1:cl].split(',')
+                            sublists.append(sublist)
+
+                            pattern = pattern[:op] + '%s' + pattern[cl + 1:]
+                        
+                        # list of substitution options -> list of substitution sets
+                        substs = []
+                        for sublist in sublists:
+                            if len(substs) == 0:
+                                for sub in sublist:
+                                    substs.append((sub,))
+                            else:
+                                # [(sub0,)] -> [(sub0, sub1)]
+                                newsubsts = []
+                                for sub in sublist:
+                                    for prev in substs:
+                                        newsubsts.append(prev + (sub,))
+
+                                substs = newsubsts
+                        
+                        # finally add a full name per tuple
+                        for subst in substs:
+                            fullnames.append(pattern % subst)
 
                 kwd = {'title': title, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
 
