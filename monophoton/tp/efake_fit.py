@@ -23,6 +23,8 @@ binningName = sys.argv[2] # see efake_conf
 varType = 'kMass'
 plotDir = 'efake/fit_' + binningName
 
+monophSel = 'probes.medium && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' 
+
 try:
     os.makedirs(plotDir)
 except OSError:
@@ -64,7 +66,8 @@ else:
             pdf = 'altbkg'
 
     seed = 12345
-    confs = ['ee', 'eg']
+    # confs = ['ee', 'eg', 'pass', 'fail']
+    confs = ['pass', 'fail']
 
 sys.argv = []
 
@@ -304,8 +307,14 @@ for binName, fitCut in fitBins:
 
         if conf == 'ee':
             tpconf = 0
-        else:
+        elif conf == 'eg':
             tpconf = 1
+        elif conf == 'pass':
+            tpconf = 2
+        elif conf == 'fail':
+            tpconf = 3
+        else:
+            tpconf = 4
 
         if runMode == 'batchtoy':
             targ = work.data(targName)
@@ -331,12 +340,18 @@ for binName, fitCut in fitBins:
                 # target is a histogram with !csafeVeto
                 # perform binned max L fit
                 cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
-            else:
+            elif conf == 'eg':
                 # target is a tree with pixelVeto
                 # perform unbinned max L fit
                 cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
+            elif conf == 'pass':
+                cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            elif conf == 'fail':
+                cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            else:
+                cut = '({fitCut})'.format(fitCut = fitCut)
 
-            if conf == 'ee' or conf == 'eg':
+            if tpconf < 4: # conf is in [ ee, eg, pass, fail]
                 # USING BINNED FIT FOR ALL
                 htarg = generator.makeTemplate(ROOT.kEG, targName, cut, getattr(ROOT, varType))
                 htarg.SetDirectory(outputFile)
