@@ -1,0 +1,6 @@
+data ptalt 100 ee pt_175_200 1000
+data ptalt 100 eg pt_175_200 1001
+data ptalt 100 ee pt_200_250 1002
+data ptalt 100 eg pt_200_250 1003
+data ptalt 100 ee pt_250_6500 1004
+data ptalt 100 eg pt_250_6500 1005

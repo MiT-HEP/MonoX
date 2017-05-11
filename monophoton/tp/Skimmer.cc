@@ -129,7 +129,7 @@ Skimmer::fillSkim(TTree* _input, double _weight, unsigned _sampleId, long _nEntr
 
   std::function<bool(unsigned)> leptonTriggerMatch[nLeptons] = {
     [&event](unsigned iL)->bool { return event.electrons[iL].ecalIso < 0.1 && event.electrons[iL].hcalIso < 0.1; },
-    [&event](unsigned iL)->bool { return event.muons[iL].triggerMatch[panda::fMu24]; }
+    [&event](unsigned iL)->bool { return event.muons[iL].triggerMatch[panda::Muon::fIsoMu24]; }
   };
 
   long iEntry(0);

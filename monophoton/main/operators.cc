@@ -2693,7 +2693,7 @@ TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPP
         continue;
 
       //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)
-      if (muon.pt() < 15. || std::abs(muon.eta()) > 2.1)
+      if (muon.pt() < 15. || std::abs(muon.eta()) > 2.1 || (muon.combIso() / muon.pt()) > 0.15)
         continue;
 
       if (photon.dR2(muon) < 0.01)

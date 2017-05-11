@@ -1,6 +1,6 @@
 import os
 
-outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/efake'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.

@@ -9,10 +9,9 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
-from tp.efake_conf import skimDir, skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.Load(config.libsimpletree)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape

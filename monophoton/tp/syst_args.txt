@@ -1,0 +1,6 @@
+ptalt pt_175_200 sig 10 1000
+ptalt pt_175_200 bkg 10 1001
+ptalt pt_200_250 sig 10 1002
+ptalt pt_200_250 bkg 10 1003
+ptalt pt_250_6500 sig 10 1004
+ptalt pt_250_6500 bkg 10 1005

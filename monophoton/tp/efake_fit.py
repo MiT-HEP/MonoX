@@ -224,7 +224,7 @@ random = ROOT.TRandom3(seed)
 print 'Finished common setup.'
 
 ### Fitting routine ###
-def runFit(targ, model, printLevel = 4, vals = None):
+def runFit(targ, model, printLevel = 1, vals = None):
     for param, val in initVals.items():
         work.arg(param).setVal(val)
 
