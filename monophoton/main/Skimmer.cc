@@ -33,8 +33,6 @@ public:
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
   void skipPhotonSkim() { doPhotonSkim_ = false; }
   bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
-  // only copy prompt final state photons and leptons
-  void copyGenParticles(panda::GenParticleCollection const&, panda::GenParticleCollection&);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
 private:
@@ -191,7 +189,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
       if (!event.isData) {
         genParticles.getEntry(*genInput, entryNumber);
-        copyGenParticles(genParticles, skimmedEvent.genParticles);
+        skimmedEvent.copyGenParticles(genParticles);
       }
 
       if (printLevel_ > 0 && printLevel_ <= INFO) {
@@ -258,7 +256,7 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
 
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
   _outEvent = _event;
-  
+
   for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
     auto& inPhoton(_event.photons[iPh]);
     auto& superCluster(*inPhoton.superCluster);
@@ -365,6 +363,13 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     outPhoton.nhIso = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1S16 * scpt - nhIsoE2S16 * scpt2;
     outPhoton.phIso = phIsoCore - phIsoEAS16 * rho - phIsoE1S16 * scpt;
 
+    outPhoton.loose = outPhoton.passHOverE(0, 0) && outPhoton.passSieie(0, 0) &&
+      outPhoton.passCHIso(0) && outPhoton.passNHIso(0) && outPhoton.passCHIso(0);
+    outPhoton.medium = outPhoton.passHOverE(1, 0) && outPhoton.passSieie(1, 0) &&
+      outPhoton.passCHIso(1) && outPhoton.passNHIso(1) && outPhoton.passCHIso(1);
+    outPhoton.tight = outPhoton.passHOverE(2, 0) && outPhoton.passSieie(2, 0) &&
+      outPhoton.passCHIso(2) && outPhoton.passNHIso(2) && outPhoton.passCHIso(2);
+
     outPhoton.chIsoS15 = chIsoCore;        
     outPhoton.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
     outPhoton.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
@@ -373,29 +378,10 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     outPhoton.chIsoMax -= 0.094 * rho;
     if (outPhoton.chIsoMax < outPhoton.chIso)
       outPhoton.chIsoMax = outPhoton.chIso;
+
+    if (inPhoton.matchedGen.isValid())
+      outPhoton.matchedGenId = inPhoton.matchedGen->pdgid;
   }
 
   return true;
-}
-
-void
-Skimmer::copyGenParticles(panda::GenParticleCollection const& _inParticles, panda::GenParticleCollection& _outParticles)
-{
-  _outParticles.clear();
-  
-  // kIsPrompt && kIsLastCopy
-  unsigned short mask(1 | (1 << 13));
-
-  for (unsigned iP(0); iP != _inParticles.size(); ++iP) {
-    auto& part(_inParticles[iP]);
-    if ((part.statusFlags & mask) != mask)
-      continue;
-
-    unsigned absId(std::abs(part.pdgid));
-
-    if (absId != 11 && absId != 13 && absId != 22)
-      continue;
-
-    _outParticles.push_back(part);
-  }
 }
