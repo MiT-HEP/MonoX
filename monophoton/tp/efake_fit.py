@@ -10,7 +10,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 from datasets import allsamples
-from plotstyle import SimpleCanvas
+from plotstyle import RatioCanvas
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 # set to nonzero if you want to run toys in runMode single too
@@ -212,7 +212,7 @@ elif runMode == 'single':
     alpha = work.factory('alpha[0.01, 5.]')
     n = work.factory('n[1.01, 5.]')
 
-    canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
+    canvas = RatioCanvas(lumi = lumi, sim = (dataType == 'mc'))
     canvas.titlePave.SetX2NDC(0.5)
     canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
     canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
@@ -470,7 +470,41 @@ for binName, fitCut in fitBins:
                 canvas.legend.apply('mcbkg', hmcbkg)
                 canvas.addHistogram(hmcbkg)
 
+            canvas.Update(rList = [], logy = False)
+
             # adding ratio pad
+            fitcurve = frame.findObject(modelName)
+            dHist = targHist.createHistogram('dHist', mass)
+
+            print model
+
+            rdata = ROOT.TGraphErrors(dHist.GetNbinsX())
+            for iP in range(rdata.GetN()):
+                x = dHist.GetXaxis().GetBinCenter(iP + 1)
+                nData = dHist.GetBinError(iP + 1)
+                statErr = dHist.GetBinContent(iP + 1)
+                nFit = model.interpolate(x)
+                rdata.SetPoint(iP, x, (nData - nFit) / statErr)
+                # rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
+
+            rdata.SetMarkerStyle(8)
+            rdata.SetMarkerColor(ROOT.kBlack)
+            rdata.SetLineColor(ROOT.kBlack)
+
+            canvas.ratioPad.cd()
+
+            rframe = ROOT.TH1F('rframe', '', 1, fitBinning.lowBound(), fitBinning.highBound())
+            rframe.GetYaxis().SetRangeUser(0., 2.)
+            rframe.Draw()
+
+            line = ROOT.TLine(fitBinning.lowBound(), 1., fitBinning.highBound(), 1.)
+            line.SetLineWidth(2)
+            line.SetLineColor(ROOT.kBlue)
+            line.Draw()
+
+            rdata.Draw('EP')
+
+            canvas._needUpdate = False
 
             if pdf == 'altbkg':
                 canvas.printWeb(plotDir, 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
