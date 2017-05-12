@@ -1141,14 +1141,17 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       _outEvent.electrons.push_back(electron);
   }
 
+  if (requireTight_ && !foundTight)
+    return false;
+
   if (strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
+    return _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (strictMu_ && !strictEl_)
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
+    return _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
   else if (!strictMu_ && strictEl_)
-    return foundTight && _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
+    return _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
   else
-    return foundTight && _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
+    return _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
 }
 
 //--------------------------------------------------------------------

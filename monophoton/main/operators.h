@@ -461,11 +461,14 @@ class LeptonSelection : public Cut {
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
+  void setRequireTight(bool require) { requireTight_ = require; }
+
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   bool strictMu_{true};
   bool strictEl_{true};
+  bool requireTight_{true};
   unsigned nEl_{0};
   unsigned nMu_{0};
 };
