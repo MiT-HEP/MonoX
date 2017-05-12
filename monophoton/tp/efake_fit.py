@@ -91,7 +91,7 @@ else:
         outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altsig.root'
 
 
-fitBinning = ROOT.RooUniformBinning(60., 120., 60)
+fitBinning = ROOT.RooUniformBinning(60., 120., 120)
 compBinning = ROOT.RooUniformBinning(81., 101., 20)
 
 ### Common setup ###
@@ -301,6 +301,8 @@ for binName, fitCut in fitBins:
     intComp = sigModel.createIntegral(massset, 'compWindow')
     intFit = sigModel.createIntegral(massset, 'fitWindow')
 
+    generator.setTemplateBinning(fitBinning, getattr(ROOT, varType)) # avoid boundary effect
+
     for conf in confs:
         targName = 'target_' + conf + '_' + binName
         modelName = 'model_' + conf + '_' + binName
@@ -463,10 +465,12 @@ for binName, fitCut in fitBins:
             frame.SetMinimum(0.)
     
             canvas.Clear()
-            canvas.addHistogram(frame)
+            canvas.addHistogram(frame, clone = True, drawOpt = '')
             if dataType == 'mc':
                 canvas.legend.apply('mcbkg', hmcbkg)
                 canvas.addHistogram(hmcbkg)
+
+            # adding ratio pad
 
             if pdf == 'altbkg':
                 canvas.printWeb(plotDir, 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
