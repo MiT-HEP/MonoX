@@ -472,19 +472,24 @@ for binName, fitCut in fitBins:
 
             canvas.Update(rList = [], logy = False)
 
+            frame.Print()
+
             # adding ratio pad
-            fitcurve = frame.findObject(modelName)
+            fitcurve = frame.findObject(modelName + '_Norm[mass]')
             dHist = targHist.createHistogram('dHist', mass)
 
-            print model
+            print fitcurve
 
             rdata = ROOT.TGraphErrors(dHist.GetNbinsX())
             for iP in range(rdata.GetN()):
                 x = dHist.GetXaxis().GetBinCenter(iP + 1)
                 nData = dHist.GetBinError(iP + 1)
                 statErr = dHist.GetBinContent(iP + 1)
-                nFit = model.interpolate(x)
-                rdata.SetPoint(iP, x, (nData - nFit) / statErr)
+                nFit = fitcurve.interpolate(x)
+                print x, nData, statErr, nFit
+                print (nData - nFit) / nFit
+                print (nData - nFit) / statErr
+                rdata.SetPoint(iP, x, (nData - nFit) / nFit)
                 # rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
 
             rdata.SetMarkerStyle(8)
@@ -494,10 +499,10 @@ for binName, fitCut in fitBins:
             canvas.ratioPad.cd()
 
             rframe = ROOT.TH1F('rframe', '', 1, fitBinning.lowBound(), fitBinning.highBound())
-            rframe.GetYaxis().SetRangeUser(0., 2.)
+            rframe.GetYaxis().SetRangeUser(-2., 2.)
             rframe.Draw()
 
-            line = ROOT.TLine(fitBinning.lowBound(), 1., fitBinning.highBound(), 1.)
+            line = ROOT.TLine(fitBinning.lowBound(), 0., fitBinning.highBound(), 0.)
             line.SetLineWidth(2)
             line.SetLineColor(ROOT.kBlue)
             line.Draw()
