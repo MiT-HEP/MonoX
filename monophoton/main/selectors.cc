@@ -158,7 +158,6 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     prepareFill_(_event);
 
     outEvent_.fill(*skimOut_);
-    std::cout << "skimout " << skimOut_->GetEntries() << std::endl;
   }
 
   cutsOut_->Fill();
