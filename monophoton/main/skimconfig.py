@@ -32,6 +32,7 @@ defaultSelectors = {
     'haloNoShowerCut': selectors.haloNoShowerCut,
     'trivialShower': selectors.trivialShower,
     'dimu': selectors.dimuon,
+    'dimuAllPhoton': selectors.dimuonAllPhoton,
     'dimuHfake': selectors.dimuonHadProxy,
     'monomu': selectors.monomuon,
     'monomuHfake': selectors.monomuonHadProxy,
@@ -46,7 +47,8 @@ defaultSelectors = {
     'zmmJets': selectors.zmmJets,
     'tpeg': selectors.tpeg,
     'tpmg': selectors.tpmg,
-    'tpmmg': selectors.tpmmg
+    'tpmmg': selectors.tpmmg,
+    'zmumu': selectors.zmumu
 }
 
 def defaults(regions):
@@ -69,17 +71,17 @@ data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower']
 data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
 data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
 data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
-data_sph += ['dimu', 'diel', 'monomu', 'monoel'] 
+data_sph += ['dimu', 'dimuAllPhoton', 'diel', 'monomu', 'monoel'] 
 data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_sph += ['tpeg', 'tpmg']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
-data_smu += ['tpmg', 'tpmmg']
+data_smu += ['tpmg', 'tpmmg', 'zmumu']
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 mc_cand = ['monoph'] # , 'purity']
 mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'gjets'] 
 mc_sig = ['monoph', 'purity', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
-mc_dilep = ['dimu', 'diel', 'elmu', 'zmmJets', 'zeeJets']
+mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets']
 
 wlnu = applyMod(selectors.wlnu, applyMod(selectors.genveto, mc_cand)) + applyMod(selectors.genveto, mc_lep) + defaults(['wenu', 'zmmJets', 'zeeJets'])
 
@@ -163,6 +165,13 @@ selectors = {
     'wlnu-800': wlnu,
     'wlnu-1200': wlnu,
     'wlnu-2500': wlnu,
+    'znn-100': defaults(mc_cand),
+    'znn-200': defaults(mc_cand),
+    'znn-400': defaults(mc_cand),
+    'znn-600': defaults(mc_cand),
+    'znn-800': defaults(mc_cand),
+    'znn-1200': defaults(mc_cand),
+    'znn-2500': defaults(mc_cand),
     'dy-50': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
     'dy-50-100': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
     'dy-50-200': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),

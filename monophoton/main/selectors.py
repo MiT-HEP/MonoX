@@ -346,6 +346,40 @@ def zee(sample, name):
 
     return selector
 
+def zmumu(sample, name):
+    """
+    Just dimuon. 
+    """
+
+    selector = ROOT.EventSelector(name)
+    selector.setCanPhotonSkim(False)
+
+    selector.addOperator(ROOT.MetFilters())
+
+    leptons = ROOT.LeptonSelection()
+    leptons.setN(0, 2)
+    leptons.setStrictMu(False)
+    leptons.setRequireTight(False)
+    selector.addOperator(leptons)
+
+    mass = ROOT.Mass()
+    mass.setPrefix('dimu')
+    mass.setMin(60.)
+    mass.setMax(120.)
+    mass.setCollection1(ROOT.cMuons)
+    mass.setCollection2(ROOT.cMuons)
+    selector.addOperator(mass)
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
+
+    return selector
+
 def TagAndProbeBase(sample, selector):
     """
     Base for Z->ll tag and probe stuff.
@@ -1255,6 +1289,19 @@ def dimuon(sample, selector):
         track.setNParticles(2)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
+
+    return selector
+
+def dimuonAllPhoton(sample, selector):
+    selector = dimuon(sample, selector)
+
+    muons = selector.findOperator('LeptonSelection')
+    muons.setStrictMu(False)
+    muons.setRequireTight(False)
+
+    photons = selector.findOperator('PhotonSelection')
+    photons.resetSelection()
+    photons.addSelection(True, ROOT.PhotonSelection.HOverE)
 
     return selector
 
