@@ -30,6 +30,9 @@ public:
 
   TString const& name() const { return name_; }
 
+  void setCanPhotonSkim(bool b) { canPhotonSkim_ = b; }
+  bool getCanPhotonSkim() const { return canPhotonSkim_; }
+
   void setUseTimers(bool b) { useTimers_ = b; }
   void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
 
@@ -47,6 +50,8 @@ protected:
 
   bool useTimers_{false};
   std::vector<Clock::duration> timers_;
+
+  bool canPhotonSkim_{true};
 
   unsigned printLevel_{0};
   std::ostream* stream_{&std::cout};

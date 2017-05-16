@@ -26,9 +26,9 @@ argParser.add_argument('--split', '-B', action = 'store_true', dest = 'split', h
 argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--interactive', '-I', action = 'store_true', dest = 'interactive', help = 'Force interactive execution with split or merge.')
-argParser.add_argument('--skip-photonSkim', '-S', action = 'store_true', dest = 'skipPhotonSkim', help = 'Skip photon skim step.')
 argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
 argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel')
+argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
 argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
 
 # eosInput:
@@ -149,11 +149,6 @@ def executeSkim(sample, filesets, outDir):
     skimmer = ROOT.Skimmer()
 
     skimmer.setPrintLevel(printLevel)
-
-    if args.skipPhotonSkim:
-        skimmer.skipPhotonSkim()
-    else:
-        skimmer.setCommonSelection('superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442')
 
     for rname, gen in selectors[sample.name]:
         selector = gen(sample, rname)
@@ -403,11 +398,12 @@ if args.split:
 
     jobClusters = submitter.submit(name = 'ssw2')
 
-    print 'Waiting for individual skim jobs to complete.'
-
-    waitForCompletion(jobClusters)
-
-    print 'All skim jobs finished.'
+    if args.noWait:
+        print 'Jobs have been submitted.'
+    else:
+        print 'Waiting for individual skim jobs to complete.'
+        waitForCompletion(jobClusters)
+        print 'All skim jobs finished.'
 
 if args.merge:
     print 'Submitting merge jobs.'
@@ -443,8 +439,9 @@ if args.merge:
 
     jobClusters = submitter.submit(name = 'ssw2')
 
-    print 'Waiting for individual merge jobs to complete.'
-
-    waitForCompletion(jobClusters)
-
-    print 'All merge jobs finished.'
+    if args.noWait:
+        print 'Jobs have been submitted.'
+    else:
+        print 'Waiting for individual merge jobs to complete.'
+        waitForCompletion(jobClusters)
+        print 'All merge jobs finished.'

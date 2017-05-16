@@ -31,15 +31,14 @@ public:
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
-  void skipPhotonSkim() { doPhotonSkim_ = false; }
-  bool passPhotonSkim(panda::Event const&, panda::EventMonophoton&);
+  bool photonSkim(panda::Event const&) const;
+  void prepareEvent(panda::Event const&, panda::EventMonophoton&);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
 private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
-  TString commonSelection_{};
-  bool doPhotonSkim_{true};
+  TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim_ = true
   GoodLumiFilter* goodLumiFilter_{};
   unsigned printLevel_{0};
 };
@@ -95,12 +94,23 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   // will take care of genParticles individually
   branchList += {"!genParticles"};
 
+  bool doPhotonSkim(true);
+
   for (auto* sel : selectors_) {
     sel->setPrintLevel(printLevel_, stream);
 
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
     sel->initialize(outputPath, skimmedEvent, !isData);
+
+    if (!sel->getCanPhotonSkim())
+      doPhotonSkim = false;
   }
+
+  TString commonSelection;
+  if (doPhotonSkim)
+    commonSelection = "superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442";
+  if (commonSelection_.Length() != 0)
+    commonSelection = "(" + commonSelection + ") && (" + commonSelection_ + ")";
 
   // if the selectors register triggers, make sure the information is passed to the actual input event
   event.run = skimmedEvent.run;
@@ -108,8 +118,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (goodLumiFilter_)
     *stream << "Appyling good lumi filter." << std::endl;
 
-  if (commonSelection_.Length() != 0)
-    *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
+  if (commonSelection.Length() != 0)
+    *stream << "Applying baseline selection \"" << commonSelection << "\"" << std::endl;
 
   long iEntryGlobal(0);
   auto now = SClock::now();
@@ -150,9 +160,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw std::runtime_error("source");
     }
 
-    if (commonSelection_.Length() != 0) {
+    if (commonSelection.Length() != 0) {
       gROOT->cd();
-      input->Draw(">>elist", commonSelection_, "entrylist");
+      input->Draw(">>elist", commonSelection, "entrylist");
       auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
       input->SetEntryList(elist);
     }
@@ -184,8 +194,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
         continue;
 
-      if (!passPhotonSkim(event, skimmedEvent))
+      if (doPhotonSkim && !photonSkim(event))
         continue;
+
+      prepareEvent(event, skimmedEvent);
 
       if (!event.isData) {
         genParticles.getEntry(*genInput, entryNumber);
@@ -241,19 +253,19 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   }
 }
 
-
 bool
-Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _outEvent)
+Skimmer::photonSkim(panda::Event const& _event) const
 {
-  unsigned iPh(0);
-  for (; iPh != _event.photons.size(); ++iPh) {
-    auto& photon(_event.photons[iPh]);
+  for (auto& photon : _event.photons) {
     if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
-      break;
+      return true;
   }
-  if (doPhotonSkim_ && iPh == _event.photons.size())
-    return false;
+  return false;
+}
 
+void
+Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent)
+{
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
   _outEvent = _event;
 
@@ -382,6 +394,4 @@ Skimmer::passPhotonSkim(panda::Event const& _event, panda::EventMonophoton& _out
     if (inPhoton.matchedGen.isValid())
       outPhoton.matchedGenId = inPhoton.matchedGen->pdgid;
   }
-
-  return true;
 }
