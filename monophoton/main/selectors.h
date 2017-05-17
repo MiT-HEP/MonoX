@@ -24,7 +24,7 @@ public:
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
 
-  void initialize(char const* outputPath, panda::EventMonophoton& inEvent, bool isMC);
+  void initialize(char const* outputPath, panda::EventMonophoton& inEvent, panda::utils::BranchList& blist, bool isMC);
   void finalize();
   virtual void selectEvent(panda::EventMonophoton&) = 0;
 

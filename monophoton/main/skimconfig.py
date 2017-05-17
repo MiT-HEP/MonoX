@@ -20,6 +20,7 @@ defaultSelectors = {
     'purityTight': selectors.purityTight,
     'purityLoose': selectors.purityLoose,
     'gjets': selectors.gjets,
+    'dijet': selectors.dijet,
     'halo': selectors.halo,
     'haloMIP': selectors.haloMIP,
     'haloMET': selectors.haloMET,
@@ -74,6 +75,7 @@ data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLo
 data_sph += ['dimu', 'dimuAllPhoton', 'diel', 'monomu', 'monoel'] 
 data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_sph += ['tpeg', 'tpmg']
+data_sph += ['dijet']
 data_smu = ['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)
 data_smu += ['tpmg', 'tpmmg', 'zmumu']
 data_sel = ['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets'] # are SinglePhoton triggers in this PD? (do the samples know about them, obviously they are not used to define it)

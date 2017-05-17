@@ -31,7 +31,7 @@ EventSelectorBase::findOperator(char const* _name) const
 }
 
 void
-EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _inEvent, bool _isMC)
+EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _inEvent, panda::utils::BranchList& _blist, bool _isMC)
 {
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
@@ -60,6 +60,7 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
     *stream_ << "Initializing operators" << std::endl;
 
   for (auto* op : operators_) {
+    op->addInputBranch(_blist);
     op->addBranches(*skimOut_);
     op->initialize(_inEvent);
     op->registerCut(*cutsOut_);
@@ -110,9 +111,9 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   // Branches to be directly copied from the input tree
   // Add a prepareFill line below any time a collection branch is added
   if (_isMC)
-    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "partons", "genParticles", "genVertex"});
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "pfCandidates", "partons", "genParticles", "genVertex"});
   else
-    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "metFilters"});
+    _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "pfCandidates", "metFilters"});
 
   outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
 }
@@ -414,7 +415,7 @@ void
 TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 {
   outEvent_.init();
-  outEvent_ = _event;
+  outEvent_.copy(_event);
   inWeight_ = _event.weight;
 
   outEvent_.sample = sampleId_;

@@ -6,6 +6,12 @@
 #include <iostream>
 #include <functional>
 
+#include "fastjet/internal/base.hh"
+#include "fastjet/PseudoJet.hh"
+#include "fastjet/ClusterSequence.hh"
+#include "fastjet/Selector.hh"
+#include "fastjet/GhostedAreaSpec.hh"
+
 //--------------------------------------------------------------------
 // Base
 //--------------------------------------------------------------------
@@ -269,7 +275,7 @@ PhotonSelection::registerCut(TTree& cutsTree)
   cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
 
   for (unsigned iS(0); iS != nSelections; ++iS)
-    cutsTree.Branch(name_ + "_" + selectionName[iS], cutRes_ + iS, name_ + "_" + selectionName[iS]);
+    cutsTree.Branch(name_ + "_" + selectionName[iS], cutRes_ + iS, name_ + "_" + selectionName[iS] + "/O");
 }
 
 void
@@ -1189,19 +1195,16 @@ MtRange::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _out
 bool
 HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
+  unsigned nJets(0);
+
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
 
-    if (std::abs(jet.eta()) > 5.)
-      continue;
-
-    if (jet.pt() < min_)
-      continue;
-    
-    return true;
+    if (jet.pt() > min_ && std::abs(jet.eta()) < 5.)
+      ++nJets;
   }
 
-  return false;
+  return nJets >= nMin_ && nJets <= nMax_;
 }
 
 //--------------------------------------------------------------------
@@ -1639,7 +1642,7 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "jet " << iJ << std::endl;
 
-    if (std::abs(jet.eta()) > 5.)
+    if (jet.pt() < minPt_ || std::abs(jet.eta()) > 5.)
       continue;
 
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
@@ -2489,6 +2492,113 @@ GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
       if (minDR_ < 0. || dR < minDR_)
         minDR_ = dR;
     }
+  }
+}
+
+//--------------------------------------------------------------------
+// JetClustering
+//--------------------------------------------------------------------
+
+void
+JetClustering::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfCandidates"};
+}
+
+void
+JetClustering::addBranches(TTree& _skimTree)
+{
+  jets_.book(_skimTree, {"pt_", "eta_", "phi_", "mass_", "chf", "nhf", "constituents_"});
+}
+
+void
+JetClustering::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (_outEvent.jets.size() == 0)
+    return;
+
+  auto& outJets(overwrite_ ? _outEvent.jets : jets_);
+
+  outJets.data.constituentsContainer_ = &_event.pfCandidates;
+
+  auto& inputs(_event.pfCandidates);
+
+  std::vector<fastjet::PseudoJet> fjInputs;
+  fjInputs.reserve(inputs.size());
+
+  unsigned iI(-1);
+  for (auto& input : inputs) {
+    ++iI;
+    if (input.pt() < 100. * std::numeric_limits<double>::epsilon())
+      continue;
+
+    auto p4(input.p4());
+    fjInputs.emplace_back(p4.X(), p4.Y(), p4.Z(), p4.E());
+    fjInputs.back().set_user_index(iI);
+  }
+
+  fastjet::ClusterSequence clusterSeq(fjInputs, jetDef_);
+
+  auto&& fjJets(fastjet::sorted_by_pt(clusterSeq.inclusive_jets(minPt_)));
+
+  outJets.init();
+  for (auto& fjJet : fjJets) {
+    auto& outJet(outJets.create_back());
+    outJet.setXYZE(fjJet.px(), fjJet.py(), fjJet.pz(), fjJet.E());
+
+    auto&& fjConsts(fastjet::sorted_by_pt(fjJet.constituents()));
+
+    outJet.chf = 0.;
+    outJet.nhf = 0.;
+
+    for (auto& fjConst : fjConsts) {
+      auto index(fjConst.user_index());
+      if (index < 0 || unsigned(index) >= inputs.size())
+        continue;
+
+      auto& pf(inputs[index]);
+
+      switch (pf.ptype) {
+      case panda::PFCand::hm:
+      case panda::PFCand::hp:
+        outJet.chf += pf.e();
+        break;
+      case panda::PFCand::h0:
+      case panda::PFCand::h_HF:
+        outJet.nhf += pf.e();
+        break;
+      default:
+        break;
+      }
+
+      outJet.constituents.addRef(&pf);
+    }
+
+    outJet.chf /= outJet.e();
+    outJet.nhf /= outJet.e();
+  }
+}
+
+//--------------------------------------------------------------------
+// JetScore
+//--------------------------------------------------------------------
+
+void
+JetScore::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("jets.score", score_, "score[jets.size]/F");
+}
+
+void
+JetScore::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (_outEvent.jets.size() == 0)
+    return;
+
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet(_outEvent.jets[iJ]);
+    double che(jet.rawPt * jet.chf);
+    score_[iJ] = che * che * 0.8 * 0.8;
   }
 }
 

@@ -14,6 +14,8 @@
 #include "eventlist.h"
 #include "logging.h"
 
+#include "fastjet/JetDefinition.hh"
+
 #include <bitset>
 #include <map>
 #include <vector>
@@ -56,6 +58,8 @@
 //     NPVWeight
 //     NNPDFVariation *
 //     GenPhotonDR *
+//     JetClustering *
+//     JetScore *
 //   PUWeight
 //   TPOperator
 //     TPElectronPhoton
@@ -97,6 +101,7 @@ class Operator {
 
   virtual bool exec(panda::EventMonophoton const&, panda::EventBase&) = 0;
 
+  virtual void addInputBranch(panda::utils::BranchList&) {}
   virtual void addBranches(TTree& skimTree) {}
   virtual void initialize(panda::EventMonophoton&) {}
 
@@ -479,11 +484,13 @@ class HighMet : public Cut {
 
   void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
+  void setCeiling(double max) { max_ = max; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton& outEvent) override;
 
   MetSource metSource_{kOutMet};
   double min_{170.};
+  double max_{6500.};
 };
 
 class PhotonMt;
@@ -507,10 +514,14 @@ class HighPtJetSelection : public Cut {
   HighPtJetSelection(char const* name = "HighPtJetSelection") : Cut(name) {}
 
   void setJetPtCut(double min) { min_ = min; }
+  void setNMin(unsigned n) { nMin_ = n; }
+  void setNMax(unsigned n) { nMax_ = n; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double min_{100.};
+  unsigned nMin_{1};
+  unsigned nMax_{100};
 };
 
 class PhotonPtTruncator : public Cut {
@@ -648,6 +659,7 @@ class JetCleaning : public Modifier {
 
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
   //  void setJetResolution(char const* sourcePath);
+  void setMinPt(double min) { minPt_ = min; }
 
   /* double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; } */
   /* double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; } */
@@ -665,6 +677,7 @@ class JetCleaning : public Modifier {
 
   //  JER* jer_{0};
   //  TRandom3* rndm_{0};
+  double minPt_{0.};
 };
 
 class PhotonJetDPhi : public Modifier {
@@ -882,6 +895,35 @@ class GenPhotonDR : public Modifier {
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   float minDR_;
+};
+
+class JetClustering : public Modifier {
+ public:
+  JetClustering(char const* name = "JetClustering") : Modifier(name), jetDef_(fastjet::antikt_algorithm, 0.4) {}
+  
+  void addInputBranch(panda::utils::BranchList&) override;
+  void addBranches(TTree& skimTree) override;
+
+  void setMinPt(double p) { minPt_ = p; }
+  void setOverwrite(bool b) { overwrite_ = b; }
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  double minPt_{30.};
+  bool overwrite_{false};
+  panda::JetCollection jets_;
+  fastjet::JetDefinition jetDef_;
+};
+
+class JetScore : public Modifier {
+ public:
+  JetScore(char const* name = "JetScore") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  float score_[NMAX_PARTICLES];
 };
 
 class PhotonRecoil : public Modifier {

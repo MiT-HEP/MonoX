@@ -24,6 +24,7 @@ logger.setLevel(config.printLevel)
 import ROOT
 
 ROOT.gSystem.Load(config.libobjs)
+ROOT.gSystem.Load('libfastjet.so')
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
@@ -852,6 +853,57 @@ def gjSmeared(sample, name):
     smearing.SetParameters(mean, sigmar, alpha) # measured in gjets/smearfit.py
     selector.setNSamples(1)
     selector.setFunction(smearing)
+
+    return selector
+
+def dijet(sample, name):
+    """
+    Dijet events with no overlap removal for jet vertex score study.
+    """
+    
+    selector = ROOT.EventSelector(name)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+
+    photonSel = ROOT.PhotonSelection()
+
+    sels = [
+        'HOverE',
+        'Sieie15',
+        'NHIso',
+        'PhIso',
+        'CHIso',
+        'EVeto',
+        'MIP49',
+        'Time',
+        'SieieNonzero',
+        'SipipNonzero',
+        'NoisyRegion',
+    ]
+
+    for sel in sels:
+        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
+
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie)
+    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie)
+    selector.addOperator(photonSel)
+
+    jets = ROOT.JetClustering()
+    jets.setMinPt(30.)
+    jets.setOverwrite(True)
+    selector.addOperator(jets)
+
+    jetSel = ROOT.HighPtJetSelection()
+    jetSel.setJetPtCut(150.)
+    jetSel.setNMin(2)
+    jetSel.setNMax(2)
+    selector.addOperator(jetSel)
+
+    selector.addOperator(ROOT.JetScore())
+
+    selector.addOperator(ROOT.CopyMet())
 
     return selector
 

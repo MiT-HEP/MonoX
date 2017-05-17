@@ -61,6 +61,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   panda::GenParticleCollection genParticles("genParticles");
   panda::EventMonophoton skimmedEvent;
 
+  // will get updated by individual operators
   panda::utils::BranchList branchList = {
     "*",
     "!pfCandidates",
@@ -73,7 +74,6 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     "!chsCA15Subjets",
     "!puppiCA15Jets",
     "!puppiCA15Subjets",
-    "!chsAK4Jets.constituents",
     "!ak8GenJets",
     "!ca15GenJets",
     "!puppiMet",
@@ -100,7 +100,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     sel->setPrintLevel(printLevel_, stream);
 
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
-    sel->initialize(outputPath, skimmedEvent, !isData);
+    sel->initialize(outputPath, skimmedEvent, branchList, !isData);
 
     if (!sel->getCanPhotonSkim())
       doPhotonSkim = false;
@@ -267,7 +267,10 @@ void
 Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent)
 {
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
-  _outEvent = _event;
+  _outEvent.copy(_event);
+
+  if (_outEvent.run.runNumber != _event.run.runNumber)
+    _outEvent.run = _event.run;
 
   for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
     auto& inPhoton(_event.photons[iPh]);
