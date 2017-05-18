@@ -24,10 +24,12 @@ unsigned TIMEOUT(300);
 class Skimmer {
 public:
   Skimmer() {}
+  ~Skimmer();
 
   void reset() { paths_.clear(); selectors_.clear(); }
   void addPath(char const* _path) { paths_.emplace_back(_path); }
   void addSelector(EventSelectorBase* _sel) { selectors_.push_back(_sel); }
+  void setOwnSelectors(bool b) { ownSelectors_ = b; }
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
@@ -38,10 +40,19 @@ public:
 private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
+  bool ownSelectors_{true};
   TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim_ = true
   GoodLumiFilter* goodLumiFilter_{};
   unsigned printLevel_{0};
 };
+
+Skimmer::~Skimmer()
+{
+  if (ownSelectors_) {
+    for (auto* sel : selectors_)
+      delete sel;
+  }
+}
 
 void
 Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long _nEntries/* = -1*/)

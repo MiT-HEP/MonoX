@@ -10,6 +10,14 @@
 // EventSelectorBase
 //--------------------------------------------------------------------
 
+EventSelectorBase::~EventSelectorBase()
+{
+  if (ownOperators_) {
+    for (auto* op : operators_)
+      delete op;
+  }
+}
+
 void
 EventSelectorBase::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
@@ -122,6 +130,7 @@ void
 EventSelector::prepareFill_(panda::EventMonophoton& _inEvent)
 {
   _inEvent.vertices.prepareFill(*skimOut_);
+  _inEvent.pfCandidates.prepareFill(*skimOut_);
   _inEvent.partons.prepareFill(*skimOut_);
   _inEvent.genParticles.prepareFill(*skimOut_);
 }

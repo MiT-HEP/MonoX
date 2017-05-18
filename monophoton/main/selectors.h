@@ -1,12 +1,12 @@
 #ifndef selectors_h
 #define selectors_h
 
-#include "operators.h"
-
 #include "TTree.h"
 #include "TFile.h"
 #include "TString.h"
 #include "TF1.h"
+
+#include "operators.h"
 
 #include <vector>
 #include <chrono>
@@ -14,10 +14,12 @@
 
 typedef std::chrono::high_resolution_clock Clock;
 
+class Operator;
+
 class EventSelectorBase {
 public:
   EventSelectorBase(char const* name) : name_(name) {}
-  virtual ~EventSelectorBase() {}
+  virtual ~EventSelectorBase();
 
   void addOperator(Operator*, unsigned idx = -1);
   unsigned size() const { return operators_.size(); }
@@ -33,6 +35,7 @@ public:
   void setCanPhotonSkim(bool b) { canPhotonSkim_ = b; }
   bool getCanPhotonSkim() const { return canPhotonSkim_; }
 
+  void setOwnOperators(bool b) { ownOperators_ = b; }
   void setUseTimers(bool b) { useTimers_ = b; }
   void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
 
@@ -45,6 +48,7 @@ protected:
   TTree* cutsOut_{0};
 
   std::vector<Operator*> operators_;
+  bool ownOperators_{true};
 
   double inWeight_{1.};
 
