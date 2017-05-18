@@ -54,6 +54,24 @@ logger.debug('Running at %s', socket.gethostname())
 from datasets import allsamples
 from main.skimconfig import selectors as allSelectors
 
+import ROOT
+
+ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
+
+logger.debug('dataformats: %s', config.dataformats)
+
+ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+
+try:
+    s = ROOT.Skimmer
+except:
+    logger.error("Couldn't compile Skimmer.cc. Quitting.")
+    sys.exit(1)
+
+if args.compileOnly:
+    print 'hello'
+    sys.exit(0)
+
 sys.path.append(monoxdir + '/common')
 from goodlumi import makeGoodLumiFilter
 
@@ -75,23 +93,6 @@ if len(args.selnames) != 0:
 else:
     selectors = allSelectors
 
-import ROOT
-
-ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
-
-logger.debug('dataformats: %s', config.dataformats)
-
-ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
-
-try:
-    s = ROOT.Skimmer
-except:
-    logger.error("Couldn't compile Skimmer.cc. Quitting.")
-    sys.exit(1)
-
-if args.compileOnly:
-    sys.exit(0)
-
 if 'all' in args.snames:
     spatterns = selectors.keys()
 elif 'bkgd' in args.snames:
@@ -107,7 +108,6 @@ if args.list:
 
 if args.merge:
     padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
-
 
 if len(args.files) != 0:
     # make a dummy fileset
@@ -204,6 +204,8 @@ def executeSkim(sample, fileset, outDir):
 
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
+
+    del skimmer
 
     for rname, gen in selectors[sample.name]:
         outName = outNameBase + '_' + rname + '.root'
@@ -304,8 +306,13 @@ if not args.batch:
     sys.exit(0)
 
 
-def waitForCompletion(jobClusters):
+def waitForCompletion(jobClusters, argTemplate):
     heldJobs = []
+
+    argsToExtract = []
+    for ia, a in enumerate(argTemplate.split()):
+        if a == '%s':
+            argsToExtract.append(ia)
 
     while True:
         proc = Popen(['condor_q'] + jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = PIPE, stderr = PIPE)
@@ -316,14 +323,16 @@ def waitForCompletion(jobClusters):
             if line.strip() == '':
                 continue
 
-            clusterId, jobStatus = line.split()[:2]
+            words = line.split()
+
+            clusterId, jobStatus = words[:2]
             if jobStatus == '5':
-                sname, _, fileset = line.split()[3:6] # [2] is the executable
-                if (sname, fileset) in heldJobs:
+                args = tuple(words[3 + i] for i in argsToExtract)
+                if args in heldJobs:
                     continue
 
-                print 'Job %s %s is held' % (sname, fileset)
-                heldJobs.append((sname, fileset))
+                print 'Job %s is held' % str(args)
+                heldJobs.append(args)
                 continue
             
             completed = False
@@ -366,7 +375,8 @@ if args.merge:
             except:
                 pass
 
-    submitter.job_args = ['-M -I %s -s %s' % arg for arg in arguments]
+    argTemplate = '-M %s -s %s'
+    submitter.job_args = [argTemplate % arg for arg in arguments]
     submitter.job_names = ['%s_%s' % arg for arg in arguments]
 
     jobClusters = submitter.submit(name = 'ssw2')
@@ -375,7 +385,7 @@ if args.merge:
         print 'Jobs have been submitted.'
     else:
         print 'Waiting for individual merge jobs to complete.'
-        waitForCompletion(jobClusters)
+        waitForCompletion(jobClusters, argTemplate)
         print 'All merge jobs finished.'
 
 else:
@@ -392,10 +402,7 @@ else:
             fslist = args.filesets
 
         for fileset in fslist:
-            if len(sample.filesets()) == 1:
-                arguments.append(sample.name)
-            else:
-                arguments.append((sample.name, fileset))
+            arguments.append((sample.name, fileset))
 
             # clean up old .log files
             logpath = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
@@ -405,24 +412,18 @@ else:
             except:
                 pass
 
+    argTemplate = '%s -f %s'
+    if args.skipExisting:
+        argTemplate += ' -X'
+
+    if len(args.selnames) != 0:
+        argTemplate += ' -s ' + ' '.join(args.selnames)
+
     submitter.job_args = []
     submitter.job_names = []
     for arg in arguments:
-        if type(arg) is tuple:
-            job_arg = '{0} -f {1}'.format(*arg)
-            job_name = '{0}_{1}'.format(*arg)
-        else:
-            job_arg = arg
-            job_name = '%s_0000' % arg
-
-        if args.skipExisting:
-            job_arg += ' -X'
-
-        if len(args.selnames) != 0:
-            job_arg += ' -s ' + ' '.join(args.selnames)
-
-        submitter.job_args.append(job_arg)
-        submitter.job_names.append(job_name)
+        submitter.job_args.append(argTemplate % arg)
+        submitter.job_names.append('%s_%s' % arg)
 
     jobClusters = submitter.submit(name = 'ssw2')
 
@@ -430,5 +431,5 @@ else:
         print 'Jobs have been submitted.'
     else:
         print 'Waiting for individual skim jobs to complete.'
-        waitForCompletion(jobClusters)
+        waitForCompletion(jobClusters, argTemplate)
         print 'All skim jobs finished.'
