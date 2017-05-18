@@ -617,21 +617,46 @@ TauVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _out
 // LeptonMt
 //--------------------------------------------------------------------
 
+void
+LeptonMt::addBranches(TTree& _skimTree)
+{
+  TString prefix;
+  switch (flavor_) {
+  case lElectron:
+    prefix = "electrons";
+    break;
+  case lMuon:
+    prefix = "muons";
+    break;
+  default:
+    return;
+  }
+
+  _skimTree.Branch(prefix + ".mt", mt_, "mt[" + prefix + ".size]/F");
+}
+
 bool
 LeptonMt::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  panda::Lepton const* lepton(0);
+  panda::LeptonCollection const* leptons(0);
   if (flavor_ == lElectron && _outEvent.electrons.size() != 0)
-    lepton = &_outEvent.electrons[0];
+    leptons = &_outEvent.electrons;
   else if (flavor_ == lMuon && _outEvent.muons.size() != 0)
-    lepton = &_outEvent.muons[0];
-
-  if (!lepton)
+    leptons = &_outEvent.muons;
+  else
     return false;
 
-  double mt2(2. * _event.t1Met.pt * lepton->pt() * (1. - std::cos(lepton->phi() - _event.t1Met.phi)));
+  bool result(false);
+  unsigned iL(0);
+  for (auto& lepton : *leptons) {
+    mt_[iL] = std::sqrt(2. * _event.t1Met.pt * lepton.pt() * (1. - std::cos(lepton.phi() - _event.t1Met.phi)));
+    if ((iL == 0 || !onlyLeading_) && mt_[iL] > min_ && mt_[iL] < max_)
+      result = true;
 
-  return mt2 > min_ * min_ && mt2 < max_ * max_;
+    ++iL;
+  }
+
+  return result;
 }
 
 //--------------------------------------------------------------------
@@ -2508,15 +2533,13 @@ JetClustering::addInputBranch(panda::utils::BranchList& _blist)
 void
 JetClustering::addBranches(TTree& _skimTree)
 {
-  jets_.book(_skimTree, {"pt_", "eta_", "phi_", "mass_", "chf", "nhf", "constituents_"});
+  if (!overwrite_)
+    jets_.book(_skimTree, {"pt_", "eta_", "phi_", "mass_", "chf", "nhf", "constituents_"});
 }
 
 void
 JetClustering::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  if (_outEvent.jets.size() == 0)
-    return;
-
   auto& outJets(overwrite_ ? _outEvent.jets : jets_);
 
   outJets.data.constituentsContainer_ = &_event.pfCandidates;
@@ -2545,6 +2568,7 @@ JetClustering::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
   for (auto& fjJet : fjJets) {
     auto& outJet(outJets.create_back());
     outJet.setXYZE(fjJet.px(), fjJet.py(), fjJet.pz(), fjJet.E());
+    outJet.rawPt = outJet.pt();
 
     auto&& fjConsts(fastjet::sorted_by_pt(fjJet.constituents()));
 
@@ -2577,6 +2601,8 @@ JetClustering::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
     outJet.chf /= outJet.e();
     outJet.nhf /= outJet.e();
   }
+
+  outJets.data.constituentsContainer_ = 0;
 }
 
 //--------------------------------------------------------------------

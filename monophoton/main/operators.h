@@ -326,13 +326,19 @@ class LeptonMt : public Cut {
   void setMin(double min) { min_ = min; }
   void setMax(double max) { max_ = max; }
 
+  void addBranches(TTree& skimTree) override;
+
+  void setOnlyLeading(bool b) { onlyLeading_ = b; }
+
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   LeptonFlavor flavor_;
 
+  bool onlyLeading_{true};
   double min_{0.};
   double max_{14000.};
+  float mt_[NMAX_PARTICLES];
 };
 
 class Mass : public Cut {
@@ -899,11 +905,12 @@ class GenPhotonDR : public Modifier {
 
 class JetClustering : public Modifier {
  public:
-  JetClustering(char const* name = "JetClustering") : Modifier(name), jetDef_(fastjet::antikt_algorithm, 0.4) {}
+  JetClustering(char const* name = "JetClustering") : Modifier(name), jets_("ak4Jets"), jetDef_(fastjet::antikt_algorithm, 0.4) {}
   
   void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
 
+  void setJetsName(char const* n) { jets_.setName(n); }
   void setMinPt(double p) { minPt_ = p; }
   void setOverwrite(bool b) { overwrite_ = b; }
  protected:
