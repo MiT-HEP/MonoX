@@ -36,6 +36,7 @@ defaultSelectors = {
     'dimuAllPhoton': selectors.dimuonAllPhoton,
     'dimuHfake': selectors.dimuonHadProxy,
     'monomu': selectors.monomuon,
+    'monomuAllPhoton': selectors.monomuonAllPhoton,
     'monomuHfake': selectors.monomuonHadProxy,
     'diel': selectors.dielectron,
     'dielHfake': selectors.dielectronHadProxy,
@@ -68,11 +69,11 @@ def applyMod(modifier, regions):
 
     return result
 
-data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower'] 
+data_sph =  ['monoph', 'efake', 'hfake',  'trivialShower']
 data_sph += ['haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
 data_sph += ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
 data_sph += ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets'] 
-data_sph += ['dimu', 'dimuAllPhoton', 'diel', 'monomu', 'monoel'] 
+data_sph += ['dimu', 'dimuAllPhoton', 'diel', 'monomu', 'monomuAllPhoton', 'monoel'] 
 data_sph += ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake'] 
 data_sph += ['tpeg', 'tpmg']
 data_sph += ['dijet']
