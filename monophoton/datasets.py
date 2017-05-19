@@ -9,6 +9,84 @@ import subprocess
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
 catalogDir = '/home/cmsprod/catalog/t2mit'
 
+def expandBrace(pattern):
+    """Expand a string with a brace-enclosed substitution pattern."""
+
+    op = pattern.find('{')
+    if op < 0:
+        return
+
+    cl = pattern.find('}', op + 1)
+    if cl < 0:
+        raise RuntimeError('Invalid dataset name ' + pattern)
+
+    sublist = pattern[op + 1:cl].split(',')
+
+    template = pattern[:op] + '%s' + pattern[cl + 1:]
+
+    strings = []
+    for sub in sublist:
+        strings.append(template % sub)
+
+    return strings
+
+def strDiff(base, target):
+    """
+    Extract the difference between base and target. Return (begin, end, b, t)
+    where begin is the start position of the difference, end is the position from
+    the end (negative) of the first post-difference character, and end are the
+    positions in the string, b and t are the portions of the base and target
+    strings that differ from each other.
+    """
+
+    begin = 0
+    while True:
+        if target[begin] != base[begin]:
+            break
+        begin += 1
+
+    end = -1
+    while True:
+        if target[end] != base[end]:
+            break
+        end -= 1
+
+    # end cannot be -1 - don't mix data from different tiers!
+    if end == -1:
+        raise RuntimeError('Two strings are different all the way to the end!')
+
+    end += 1
+
+    b = base[begin:end]
+    t = target[begin:end]
+
+    return (begin, end, b, t)
+
+def braceContract(strings):
+    """Reverse operation of expandBrace."""
+
+    if len(strings) == 1:
+        return strings[0]
+
+    base = strings[0]
+    
+    start = len(base)
+    end = -len(base)
+
+    for target in strings[1:]:
+        s, e, _, _ = strDiff(base, target)
+
+        if s < start:
+            start = s
+
+        if e > end:
+            end = e
+
+    diffs = [s[start:end] for s in strings]
+
+    return base[:start] + '{' + ','.join(diffs) + '}' + base[end:]
+
+
 class SampleDef(object):
     def __init__(self, name, title = '', book = '', fullname = '', additionalDatasets = [], crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
         self.name = name
@@ -45,22 +123,7 @@ class SampleDef(object):
             return
 
         # extract a suffix from the additional dataset name
-        start = 0
-        while True:
-            if name[start] != self.fullname[start]:
-                break
-            start += 1
-    
-        end = -1
-        while True:
-            if name[end] != self.fullname[end]:
-                break
-            end -= 1
-    
-        # end cannot be -1 - don't mix data from different tiers!
-        suffix = name[start:end + 1]
-        if suffix.endswith('-v'): # special case if we have e.g. extN suffix but the version number is the same
-            suffix = suffix[:-2]
+        _, _, _, suffix = strDiff(self.fullname, name)
 
         self.datasetNames.append(name)
         self.datasetSuffices.append(suffix)
@@ -107,7 +170,7 @@ class SampleDef(object):
         else:
             xsecstr = '%.{ndec}f'.format(ndec = ndec) % crosssection
 
-        fullnames = ' '.join(n for n in self.datasetNames)
+        fullnames = braceContract(self.datasetNames)
 
         if self.comments != '':
             comments = " # " + self.comments
@@ -274,38 +337,7 @@ class SampleDefList(object):
                 for pattern in fullnames:
                     if '{' in pattern: # bash-like substitution pattern delimited by ','
                         fullnames.remove(pattern)
-                        sublists = []
-                        while True:
-                            op = pattern.find('{')
-                            if op < 0:
-                                break
-                            cl = pattern.find('}', op + 1)
-                            if cl < 0:
-                                raise RuntimeError('Invalid dataset name ' + pattern)
-
-                            sublist = pattern[op + 1:cl].split(',')
-                            sublists.append(sublist)
-
-                            pattern = pattern[:op] + '%s' + pattern[cl + 1:]
-                        
-                        # list of substitution options -> list of substitution sets
-                        substs = []
-                        for sublist in sublists:
-                            if len(substs) == 0:
-                                for sub in sublist:
-                                    substs.append((sub,))
-                            else:
-                                # [(sub0,)] -> [(sub0, sub1)]
-                                newsubsts = []
-                                for sub in sublist:
-                                    for prev in substs:
-                                        newsubsts.append(prev + (sub,))
-
-                                substs = newsubsts
-                        
-                        # finally add a full name per tuple
-                        for subst in substs:
-                            fullnames.append(pattern % subst)
+                        fullnames.extend(expandBrace(pattern))
 
                 kwd = {'title': title, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
 
@@ -404,6 +436,7 @@ add INFO: Add a new dataset.'''
             sample = samples[arguments[0]]
         except:
             print 'No sample', arguments[0]
+            sys.exit(1)
 
         sample.dump()
 
@@ -416,6 +449,7 @@ add INFO: Add a new dataset.'''
                 sample = samples[name]
             except:
                 print 'No sample', name
+                sys.exit(1)
 
             print sample.linedump()
 
