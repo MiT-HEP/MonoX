@@ -186,7 +186,7 @@ class SampleDef(object):
 
         import ROOT
 
-        self.cache()
+        self.download()
 
         self.nevents = 0
         self.sumw = 0.
@@ -258,7 +258,7 @@ class SampleDef(object):
                 print 'sumw2 is zero'
                 return 0.
 
-    def cache(self, filesets = []):
+    def download(self, filesets = []):
         self._readCatalogs()
 
         for dataset in self.datasetNames:
@@ -493,7 +493,7 @@ add INFO: Add a new dataset.'''
 
     elif command == 'download':
         for sample in samples.getmany(arguments):
-            sample.cache()
+            sample.download()
 
     elif command == 'check':
         for sample in samples.getmany(arguments):
