@@ -1,485 +1,502 @@
 #!/usr/bin/env python
 
-import sys
 import os
-import socket
-import time
-import shutil
-import collections
-import logging
-from subprocess import Popen, PIPE
-from argparse import ArgumentParser
+import subprocess
 
-argParser = ArgumentParser(description = 'Plot and count')
-argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
-argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
-argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
-argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
-argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
-argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
-argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
-argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
-argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
-argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
-argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
-argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
-argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
-argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel.')
-argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
-argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
-argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
-argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
+logger = None
 
 DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
+padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
 
-args = argParser.parse_args()
-sys.argv = []
+class SkimSlimWeight(object):
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-monoxdir = os.path.dirname(basedir)
+    config = {}
 
-sys.path.append(basedir)
-import config
-
-try:
-    printLevel = getattr(logging, args.printLevel.upper())
-except AttributeError:
-    printLevel = config.printLevel
-
-logging.basicConfig(level = printLevel)
-logger = logging.getLogger(__name__)
-
-logger.debug('Running at %s', socket.gethostname())
-
-from datasets import allsamples
-from main.skimconfig import selectors as allSelectors
-
-import ROOT
-
-ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
-
-logger.debug('dataformats: %s', config.dataformats)
-
-ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
-
-try:
-    s = ROOT.Skimmer
-except:
-    logger.error("Couldn't compile Skimmer.cc. Quitting.")
-    sys.exit(1)
-
-if args.compileOnly:
-    sys.exit(0)
-
-sys.path.append(monoxdir + '/common')
-from goodlumi import makeGoodLumiFilter
-
-sys.path.append('/home/yiiyama/lib')
-from condor_run import CondorRun
-
-if len(args.files) != 0 and len(args.filesets) != 0:
-    logger.error('Cannot set filesets and files simultaneously.')
-    sys.exit(1)
-
-if len(args.selnames) != 0:
-    selectors = {}
-    for sname, sels in allSelectors.items():
-        selectors[sname] = []
-        for rname, gen in sels:
-            if rname in args.selnames:
-                selectors[sname].append((rname, gen))
-
-else:
-    selectors = allSelectors
-
-if 'all' in args.snames:
-    spatterns = selectors.keys()
-elif 'bkgd' in args.snames:
-    spatterns = selectors.keys() + ['!add*', '!dm*']
-else:
-    spatterns = list(args.snames)
-
-samples = allsamples.getmany(spatterns)
-
-if args.list:
-    print ' '.join(sorted(s.name for s in samples))
-    sys.exit(0)
-
-if args.merge:
-    padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
-
-if len(args.files) != 0:
-    # make a dummy fileset
-    args.filesets = ['manual']
-
-def getTmpDir(sample):
-    if os.path.isdir('/local/' + os.environ['USER']):
-        return '/local/' + os.environ['USER'] + '/' + sample.name
-    else:
-        return '/tmp/' + os.environ['USER'] + '/' + sample.name
-
-def getOutDir(sample):
-    if len(args.filesets) != 0 and args.filesets[0] == 'manual':
-        return config.skimDir
-    elif len(sample.filesets()) > 1:
-        return config.skimDir + '/' + sample.name
-    else:
-        return config.skimDir
-
-def getMergeDir():
-    if os.path.isdir('/local/' + os.environ['USER']):
-        return '/local/' + os.environ['USER'] + '/ssw2/merge'
-    else:
-        return '/tmp/' + os.environ['USER'] + '/ssw2/merge'
-
-def setupSkim(sample, fileset):
-    """
-    Set up input / output and return a list of input paths
-    """
-
-    tmpDir = getTmpDir(sample)
-    if not os.path.exists(tmpDir):
-        try:
-            os.makedirs(tmpDir)
-        except OSError:
-            # did someone beat this job and made the directory?
-            if not os.path.exists(tmpDir):
-                raise
-
-    outDir = getOutDir(sample)
-    if not os.path.exists(outDir):
-        os.makedirs(outDir)
-
-    logger.debug('getting all input files')
-
-    if fileset != 'manual' and config.ntuplesDir == DEFAULT_NTUPLES_DIR:
-        for path in sample.files([fileset]):
-            if not os.path.exists(path):
-                fname = os.path.basename(path)
-                dataset = os.path.basename(os.path.dirname(path))
-                proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
-                print proc.communicate()[0].strip()
-
-    outNameBase = sample.name
-
-    outSuffix = None
-    if args.outSuffix:
-        outSuffix = args.outSuffix
-    elif fileset == 'manual':
-        outSuffix = 'manual'
-    elif len(sample.filesets()) > 1:
-        outSuffix = fileset
-
-    if outSuffix is not None:
-        outNameBase += '_' + outSuffix
-
-    if args.skipExisting:
-        logger.info('Checking for existing files.')
-    else:
-        logger.info('Removing existing files.')
-
-    # abort if any one of the selector output exists
-    for rname, gen in selectors[sample.name]:
-        outName = outNameBase + '_' + rname + '.root'
-        outPath = outDir + '/' + outName
-        logger.debug(outPath)
-
-        if args.skipExisting:
-            if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
-                logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
-                return False
+    def __init__(self, sample, selectors, flist, files = False):
+        self.sample = sample
+        self.selectors = selectors
+        if files:
+            self.manual = True
+            self.filesets = ['manual']
+            self.files = flist
         else:
-            try:
-                os.remove(outPath)
-            except:
-                pass
+            self.manual = False
+            self.filesets = flist
+            self.files = []
 
-    return True
+        if os.path.isdir('/local/' + os.environ['USER']):
+            self.tmpDir = '/local/' + os.environ['USER'] + '/' + sample.name
+        else:
+            self.tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
 
-#<- def setupSkim
+        if self.manual or sample.filesets() == 1:
+            self.outDir = SkimSlimWeight.config['skimDir']
+        else:
+            self.outDir = SkimSlimWeight.config['skimDir'] + '/' + sample.name
 
-def executeSkim(sample, fileset):
-    """
-    Set up the skimmer, clean up the destination, request T2->T3 downloads if necessary, and execute the skim.
-    """
+        if os.path.isdir('/local/' + os.environ['USER']):
+            self.mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
+        else:
+            self.mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
 
-    skimmer = ROOT.Skimmer()
+        # batch-mode attributes
+        self.jobClusters = []
+        self.argTemplate = ''
 
-    skimmer.setPrintEvery(args.printEvery)
-    skimmer.setPrintLevel(printLevel)
-    skimmer.setSkipMissingFiles(args.skipMissing)
+    def getOutNameBase(self, fileset):
+        if self.manual:
+            return self.sample.name + '_manual'
+        elif SkimSlimWeight.config['outSuffix']:
+            return self.sample.name + '_' + SkimSlimWeight.config['outSuffix']
+        else:
+            if len(self.sample.filesets()) > 1:
+                return self.sample.name + '_' + fileset
+            else:
+                return self.sample.name
 
-    for rname, gen in selectors[sample.name]:
-        selector = gen(sample, rname)
-        selector.setUseTimers(args.timer)
-        skimmer.addSelector(selector)
-
-    if sample.data and args.json:
-        logger.info('Good lumi filter: %s', args.json)
-        skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
-
-    if fileset == 'manual':
-        for path in args.files:
-            skimmer.addPath(path)
-    else:
-        for path in sample.files([fileset]):
-            if config.ntuplesDir != DEFAULT_NTUPLES_DIR:
-                path = path.replace(DEFAULT_NTUPLES_DIR, config.ntuplesDir)
+    def setupSkim(self):
+        """
+        Set up the skimmer, clean up the destination, request T2->T3 downloads if necessary.
+        """
     
-            logger.debug('Add input: %s', path)
-            skimmer.addPath(path)
+        if not os.path.exists(self.tmpDir):
+            try:
+                os.makedirs(self.tmpDir)
+            except OSError:
+                # did someone beat this job and made the directory?
+                if not os.path.exists(self.tmpDir):
+                    raise
+    
+        if not os.path.exists(self.outDir):
+            try:
+                os.makedirs(self.outDir)
+            except OSError:
+                if not os.path.exists(self.outDir):
+                    raise
+    
+        logger.debug('getting all input files')
 
-    tmpDir = getTmpDir(sample)
-    outDir = getOutDir(sample)
+        if not self.manual and SkimSlimWeight.config['ntuplesDir'] == DEFAULT_NTUPLES_DIR:
+            for path in self.sample.files(self.filesets):
+                if not os.path.exists(path):
+                    fname = os.path.basename(path)
+                    dataset = os.path.basename(os.path.dirname(path))
+                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    print proc.communicate()[0].strip()
 
-    outNameBase = sample.name
-
-    outSuffix = None
-    if args.outSuffix:
-        outSuffix = args.outSuffix
-    elif fileset == 'manual':
-        outSuffix = 'manual'
-    elif len(sample.filesets()) > 1:
-        outSuffix = fileset
-
-    if outSuffix is not None:
-        outNameBase += '_' + outSuffix
-
-    logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
-    skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
-
-    for rname, gen in selectors[sample.name]:
-        outName = outNameBase + '_' + rname + '.root'
-
-        if args.testRun:
-            logger.info('Output at %s/%s', tmpDir, outName)
+        if SkimSlimWeight.config['skipExisting']:
+            logger.info('Checking for existing files.')
         else:
-            logger.info('Copying output to %s/%s', outDir, outName)
-            shutil.copy(tmpDir + '/' + outName, outDir)
-            logger.info('Removing %s/%s', tmpDir, outName)
-            os.remove(tmpDir + '/' + outName)
+            logger.info('Removing existing files.')
+    
+        # abort if any one of the selector output exists
+        for fileset in self.filesets:
+            outNameBase = self.getOutNameBase(fileset)
 
-#<- def executeSkim
+            for rname in self.selectors:
+                outName = outNameBase + '_' + rname + '.root'
+                outPath = self.outDir + '/' + outName
+                logger.debug(outPath)
+    
+                if args.skipExisting:
+                    if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
+                        logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
+                        return False
+                else:
+                    try:
+                        os.remove(outPath)
+                    except:
+                        pass
+    
+        return True
 
-def setupMerge(sample, selname):
-    mergeDir = getMergeDir()
-    if not os.path.exists(mergeDir):
-        try:
-            os.makedirs(mergeDir)
-        except OSError:
-            # did someone beat this job and made the directory?
-            if not os.path.exists(mergeDir):
-                raise
+    def executeSkim(self):
+        """
+        Execute the skim.
+        """
 
-    outNameBase = sample.name + '_' + selname
-    outName = outNameBase + '.root'
-    outPath = config.skimDir + '/' + outName
+        skimmer = ROOT.Skimmer()
+    
+        skimmer.setPrintEvery(SkimSlimWeight.config['printEvery'])
+        skimmer.setPrintLevel(SkimSlimWeight.config['printLevel'])
+        skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
+    
+        for rname, gen in self.selectors.items():
+            selector = gen(self.sample, rname)
+            selector.setUseTimers(SkimSlimWeight.config['timer'])
+            skimmer.addSelector(selector)
+    
+        if self.sample.data and SkimslimWeight.config['json']:
+            logger.info('Good lumi filter: %s', SkimSlimWeight.config['json'])
+            skimmer.setGoodLumiFilter(makeGoodLumiFilter(SkimSlimWeight.config['json']))
 
-    if args.skipExisting:
-        if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
-            logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
-            return False
-    else:
-        try:
-            os.remove(outPath)
-        except:
-            pass
+        paths = {} # {filset: list of paths}
+    
+        if self.manual:
+            paths['manual'] = []
+            for path in self.files:
+                paths['manual'].append(path)
 
-    return True
+        else:
+            for fileset in self.filesets:
+                paths[fileset] = []
+                for path in sample.files([fileset]):
+                    if SkimSlimWeight.config['ntuplesDir'] != DEFAULT_NTUPLES_DIR:
+                        path = path.replace(DEFAULT_NTUPLES_DIR, SkimSlimWeight.config['ntuplesDir'])
+        
+                    logger.debug('Add input: %s %s', fileset, path)
+                    paths[fileset].append(path)
+    
+        for fileset, fnames in paths.items():
+            skimmer.clearPaths()
+            for fname in fnames:
+                skimmer.addPath(fname)
 
-#<- def setupMerge
+            outNameBase = self.getOutNameBase(fileset)
+            nentries = SkimSlimWeight.config['nentries']
+    
+            logger.debug('Skimmer.run(%s, %s, %s, %d)', self.tmpDir, outNameBase, self.sample.data, nentries)
+            skimmer.run(self.tmpDir, outNameBase, self.sample.data, nentries)
+    
+            for rname in self.selectors:
+                outName = outNameBase + '_' + rname + '.root'
+        
+                if SkimSlimWeight.config['testRun']:
+                    logger.info('Output at %s/%s', self.tmpDir, outName)
+                else:
+                    logger.info('Copying output to %s/%s', self.outDir, outName)
+                    shutil.copy(self.tmpDir + '/' + outName, self.outDir)
+                    logger.info('Removing %s/%s', self.tmpDir, outName)
+                    os.remove(self.tmpDir + '/' + outName)
 
-def executeMerge(sample, selname, fslist):
-    mergeDir = getMergeDir()
+    def setupMerge(self):
+        if not os.path.exists(self.mergeDir):
+            try:
+                os.makedirs(self.mergeDir)
+            except OSError:
+                # did someone beat this job and made the directory?
+                if not os.path.exists(self.mergeDir):
+                    raise
 
-    inDir = config.skimDir + '/' + sample.name
+        for rname in self.selectors:
+            outNameBase = self.sample.name + '_' + rname
+            outName = outNameBase + '.root'
+            outPath = SkimSlimWeight.config['skimDir'] + '/' + outName
+        
+            if SkimSlimWeight.config['skipExisting']:
+                if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
+                    logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
+                    return False
+            else:
+                try:
+                    os.remove(outPath)
+                except:
+                    pass
+    
+        return True
 
-    for fileset in fslist:
-        fname = inDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root'
-        if not os.path.exists(fname) or os.stat(fname).st_size == 0:
-            raise RuntimeError('Missing input file', fname)
+    def executeMerge(self):
+        inDir = SkimSlimWeight.config['skimDir'] + '/' + self.sample.name
 
-    outNameBase = sample.name + '_' + selname
-    outName = outNameBase + '.root'
+        for rname in self.selectors:
+            for fileset in self.filesets:
+                fname = inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root'
+                if not os.path.exists(fname) or os.stat(fname).st_size == 0:
+                    raise RuntimeError('Missing input file', fname)
+        
+            outNameBase = self.sample.name + '_' + rname
+            outName = outNameBase + '.root'
+        
+            mergePath = self.mergeDir + '/' + outName
+            outPath = SkimSlimWeight.config['skimDir'] + '/' + outName
+        
+            logger.debug('%s %s %s', padd, mergePath, ' '.join(inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root' for fileset in self.filesets))
+            proc = subprocess.Popen([padd, mergePath] + [inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root' for fileset in self.filesets], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            out, err = proc.communicate()
+            print out.strip()
+            print err.strip()
+        
+            if SkimSlimWeight.config['testRun']:
+                logger.info('Output at %s', mergePath)
+            else:
+                logger.info('Copying output to %s', outPath)
+                shutil.copy(mergePath, SkimSlimWeight.config['skimDir'])
+                logger.info('Removing %s', mergePath)
+                os.remove(mergePath)
 
-    mergePath = mergeDir + '/' + outName
-    outPath = config.skimDir + '/' + outName
+    def submitMerge(self, submitter):
+        arguments = []
+    
+        # Collect arguments and remove output
+        for rname in self.selectors:
 
-    logger.debug('%s %s %s', padd, mergePath, ' '.join(inDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist))
-    proc = Popen([padd, mergePath] + [inDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
-    out, err = proc.communicate()
-    print out.strip()
-    print err.strip()
-
-    if args.testRun:
-        logger.info('Output at %s', mergePath)
-    else:
-        logger.info('Copying output to %s', outPath)
-        shutil.copy(mergePath, config.skimDir)
-        logger.info('Removing %s', mergePath)
-        os.remove(mergePath)
-
-#<- def executeMerge
-
-
-for sample in samples:
-    print 'Starting sample %s (%d/%d)' % (sample.name, samples.index(sample) + 1, len(samples))
-
-    if args.batch:
-        # Batch mode - only need to collect the input names
-        # Will spawn condor jobs below
-        continue
-
-    if len(args.filesets) != 0:
-        fslist = sorted(args.filesets)
-    else:
-        fslist = sorted(sample.filesets())
-
-    # Will do the actual merging
-    if args.merge:
-        print 'Merging.'
-        # Merge outputs for each sample-selector combination
-        for rname, gen in selectors[sample.name]:
-            if setupMerge(sample, rname):
-                executeMerge(sample, rname, fslist)
-    else:
-        # Will do the actual skimming
-        print 'Skimming.'
-        # Create an output for each fileset separately
-        for fileset in fslist:
-            if setupSkim(sample, fileset):
-                executeSkim(sample, fileset)
-
-# Remainder of the script relates to condor submission
-if not args.batch:
-    sys.exit(0)
-
-
-def waitForCompletion(jobClusters, argTemplate):
-    heldJobs = []
-
-    argsToExtract = []
-    for ia, a in enumerate(argTemplate.split()):
-        if a == '%s':
-            argsToExtract.append(ia)
-
-    while True:
-        proc = Popen(['condor_q'] + jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = PIPE, stderr = PIPE)
-        out, err = proc.communicate()
-        lines = out.split('\n')
-        completed = True
-        for line in lines:
-            if line.strip() == '':
-                continue
-
-            words = line.split()
-
-            clusterId, jobStatus = words[:2]
-            if jobStatus == '5':
-                args = tuple(words[3 + i] for i in argsToExtract)
-                if args in heldJobs:
-                    continue
-
-                print 'Job %s is held' % str(args)
-                heldJobs.append(args)
-                continue
-            
-            completed = False
-
-        if completed:
-            break
-
-        time.sleep(10)
-
-
-submitter = CondorRun(os.path.realpath(__file__))
-submitter.logdir = '/local/' + os.environ['USER']
-submitter.hold_on_fail = True
-submitter.group = 'group_t3mit.urgent'
-
-if args.merge:
-    print 'Submitting merge jobs.'
-
-    # Spawn condor jobs
-    arguments = []
-
-    # Collect arguments and remove output
-    for sample in samples:
-        for rname, gen in selectors[sample.name]:
-            if not setupMerge(sample, rname):
-                continue
-
-            arguments.append((sample.name, rname))
+            arguments.append((self.sample.name, rname))
 
             # clean up old .log files
-            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + rname + '.0.log'
+            path = '/local/' + os.environ['USER'] + '/ssw2/' + self.sample.name + '_' + rname + '.0.log'
             logger.debug('Removing %s', path)
             try:
                 os.remove(path)
             except:
                 pass
+    
+        self.argTemplate = '-M %s -s %s'
+        submitter.job_args = [self.argTemplate % arg for arg in arguments]
+        submitter.job_names = ['%s_%s' % arg for arg in arguments]
+    
+        self.jobClusters = submitter.submit(name = 'ssw2')
 
-    argTemplate = '-M %s -s %s'
-    submitter.job_args = [argTemplate % arg for arg in arguments]
-    submitter.job_names = ['%s_%s' % arg for arg in arguments]
+    def submitSkim(self, submitter, skipMissing):
+        arguments = []
 
-    jobClusters = submitter.submit(name = 'ssw2')
-
-    if args.noWait:
-        print 'Jobs have been submitted.'
-    else:
-        print 'Waiting for individual merge jobs to complete.'
-        waitForCompletion(jobClusters, argTemplate)
-        print 'All merge jobs finished.'
-
-else:
-    print 'Submitting skim jobs.'
-
-    # Spawn condor jobs
-    arguments = []
-
-    # Collect arguments and remove output
-    for sample in samples:
-        if len(args.filesets) == 0:
-            fslist = sorted(sample.filesets())
-        else:
-            fslist = args.filesets
-
-        for fileset in fslist:
-            if not setupSkim(sample, fileset):
-                continue
-
-            arguments.append((sample.name, fileset))
+        for fileset in self.filesets:
+            arguments.append((self.sample.name, fileset))
 
             # clean up old .log files
-            logpath = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + fileset + '.0.log'
+            logpath = '/local/' + os.environ['USER'] + '/ssw2/' + self.sample.name + '_' + fileset + '.0.log'
             logger.debug('Removing %s', logpath)
             try:
                 os.remove(logpath)
             except:
                 pass
+    
+        self.argTemplate = '%s -f %s'
+    
+        if skipMissing:
+            self.argTemplate += ' -K'
+    
+        self.argTemplate += ' -s ' + ' '.join(self.selectors.keys())
+    
+        submitter.job_args = []
+        submitter.job_names = []
+        for arg in arguments:
+            submitter.job_args.append(self.argTemplate % arg)
+            submitter.job_names.append('%s_%s' % arg)
+    
+        self.jobClusters = submitter.submit(name = 'ssw2')
 
-    argTemplate = '%s -f %s'
+    def waitForCompletion(self):
+        heldJobs = []
+    
+        argsToExtract = []
+        for ia, a in enumerate(self.argTemplate.split()):
+            if a == '%s':
+                argsToExtract.append(ia)
+    
+        while True:
+            proc = subprocess.Popen(['condor_q'] + self.jobClusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            out, err = proc.communicate()
+            lines = out.split('\n')
+            completed = True
+            for line in lines:
+                if line.strip() == '':
+                    continue
+    
+                words = line.split()
+    
+                clusterId, jobStatus = words[:2]
+                if jobStatus == '5':
+                    args = tuple(words[3 + i] for i in argsToExtract)
+                    if args in heldJobs:
+                        continue
+    
+                    print 'Job %s is held' % str(args)
+                    heldJobs.append(args)
+                    continue
+                
+                completed = False
+    
+            if completed:
+                break
+    
+            time.sleep(10)
 
-    if args.skipMissing:
-        argTemplate += ' -K'
 
-    if len(args.selnames) != 0:
-        argTemplate += ' -s ' + ' '.join(args.selnames)
+if __name__ == '__main__':
 
-    submitter.job_args = []
-    submitter.job_names = []
-    for arg in arguments:
-        submitter.job_args.append(argTemplate % arg)
-        submitter.job_names.append('%s_%s' % arg)
+    import sys
+    import socket
+    import time
+    import shutil
+    import collections
+    import logging
+    from argparse import ArgumentParser
+    
+    argParser = ArgumentParser(description = 'Plot and count')
+    argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
+    argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
+    argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
+    argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
+    argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
+    argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
+    argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
+    argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
+    argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
+    argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
+    argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
+    argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
+    argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
+    argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
+    argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel.')
+    argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
+    argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
+    argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
+    argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
+    
+    args = argParser.parse_args()
+    sys.argv = []
 
-    jobClusters = submitter.submit(name = 'ssw2')
+    ## option conflicts
+    if len(args.files) != 0:
+        if len(args.filesets) != 0:
+            logger.error('Cannot set filesets and files simultaneously.')
+            sys.exit(1)
 
-    if args.noWait:
-        print 'Jobs have been submitted.'
+        if args.batch:
+            logger.error('Cannot use batch mode with individual files.')
+            sys.exit(1)
+
+    ## directories to include
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+    basedir = os.path.dirname(thisdir)
+    monoxdir = os.path.dirname(basedir)
+    
+    ## import the monophoton config
+    sys.path.append(basedir)
+    import config
+
+    ## set up logger
+    try:
+        printLevel = getattr(logging, args.printLevel.upper())
+    except AttributeError:
+        printLevel = config.printLevel
+    
+    logging.basicConfig(level = printLevel)
+    logger = logging.getLogger(__name__)
+
+    logger.debug('Running at %s', socket.gethostname())
+
+    ## set up global configurations with args and config
+    for key in dir(args):
+        if not key.startswith('_'):
+            SkimSlimWeight.config[key] = getattr(args, key)
+
+    for key in dir(config):
+        if not key.startswith('_'):
+            SkimSlimWeight.config[key] = getattr(config, key)
+
+    ## set up samples and selectors
+    from datasets import allsamples
+    from main.skimconfig import selectors as allSelectors
+
+    # construct {sname: {selector name: generator}}
+    selectors = {}
+    for sname, sels in allSelectors.items():
+        for rname, gen in sels:
+            if len(args.selnames) == 0 or rname in args.selnames:
+                try:
+                    selectors[sname][rname] = gen
+                except KeyError:
+                    selectors[sname] = {rname: gen}
+    
+    ## get the list of sample objects according to args.snames
+    if 'all' in args.snames:
+        spatterns = selectors.keys()
+    elif 'bkgd' in args.snames:
+        spatterns = selectors.keys() + ['!add*', '!dm*']
     else:
-        print 'Waiting for individual skim jobs to complete.'
-        waitForCompletion(jobClusters, argTemplate)
-        print 'All skim jobs finished.'
+        spatterns = list(args.snames)
+    
+    samples = allsamples.getmany(spatterns)
+    
+    if args.list:
+        print ' '.join(sorted(s.name for s in samples))
+        sys.exit(0)
+
+    ## compile and load the Skimmer
+    import ROOT
+    logger.debug('dataformats: %s', config.dataformats)
+    
+    ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
+    ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+    
+    try:
+        s = ROOT.Skimmer
+    except:
+        logger.error("Couldn't compile Skimmer.cc. Quitting.")
+        sys.exit(1)
+    
+    if args.compileOnly:
+        sys.exit(0)
+
+    ## load good lumi filter
+    sys.path.append(monoxdir + '/common')
+    from goodlumi import makeGoodLumiFilter
+
+    ## flist argument for SkimSlimWeight
+    if len(args.files) != 0:
+        flist = args.files
+        files = True
+    else:
+        flist = args.filesets
+        files = False
+
+    if args.batch:
+        ## load condor-run
+        sys.path.append('/home/yiiyama/lib')
+        from condor_run import CondorRun
+
+        submitter = CondorRun(os.path.realpath(__file__))
+        submitter.logdir = '/local/' + os.environ['USER']
+        submitter.hold_on_fail = True
+        submitter.group = 'group_t3mit.urgent'
+
+    ## construct and run SkimSlimWeight objects
+    for sample in samples:
+        if len(flist) == 0:
+            flist = sample.filesets()
+
+        ssw = SkimSlimWeight(sample, selectors[sample.name], flist, files)
+
+        if args.batch:
+            ## job submission only
+            if args.merge:
+                jobtype = 'merge'
+                setup = lambda: ssw.setupMerge()
+                sub = lambda: ssw.submitMerge(submitter)
+            else:
+                jobtype = 'skim'
+                setup = lambda: ssw.setupSkim()
+                sub = lambda: ssw.submitSkim(submitter, args.skipMissing)
+    
+            print 'Submitting ' + jobtype + ' jobs for ' + sample.name + '.'
+    
+            if not setup():
+                logger.warning('Failed to set up %s job for %s', jobtype, sample.name)
+                continue
+    
+            sub()
+    
+            if args.noWait:
+                print 'Jobs have been submitted.'
+            else:
+                print 'Waiting for individual ' + jobtype + ' jobs to complete.'
+                ssw.waitForCompletion()
+                print 'All merge jobs finished.'
+
+        else:
+            if args.merge:
+                print 'Merging.'
+                if not ssw.setupMerge():
+                    logger.warning('Failed to set up merge job for %s', sample.name)
+                    continue
+
+                ssw.executeMerge()
+
+            else:
+                print 'Skimming.'
+                if not ssw.setupSkim():
+                    logger.warning('Failed to set up skim job for %s', sample.name)
+                    continue
+                
+                ssw.executeSkim()

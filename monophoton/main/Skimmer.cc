@@ -26,8 +26,8 @@ public:
   Skimmer() {}
   ~Skimmer();
 
-  void reset() { paths_.clear(); selectors_.clear(); }
   void addPath(char const* _path) { paths_.emplace_back(_path); }
+  void clearPaths() { paths_.clear(); }
   void addSelector(EventSelectorBase* _sel) { selectors_.push_back(_sel); }
   void setOwnSelectors(bool b) { ownSelectors_ = b; }
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
