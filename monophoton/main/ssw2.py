@@ -25,8 +25,10 @@ argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', h
 argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
 argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
 argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
-argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel')
+argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel.')
+argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
 argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
+argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
 argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
 
 DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
@@ -69,7 +71,6 @@ except:
     sys.exit(1)
 
 if args.compileOnly:
-    print 'hello'
     sys.exit(0)
 
 sys.path.append(monoxdir + '/common')
@@ -113,53 +114,53 @@ if len(args.files) != 0:
     # make a dummy fileset
     args.filesets = ['manual']
 
+def getTmpDir(sample):
+    if os.path.isdir('/local/' + os.environ['USER']):
+        return '/local/' + os.environ['USER'] + '/' + sample.name
+    else:
+        return '/tmp/' + os.environ['USER'] + '/' + sample.name
 
-def executeSkim(sample, fileset, outDir):
+def getOutDir(sample):
+    if len(args.filesets) != 0 and args.filesets[0] == 'manual':
+        return config.skimDir
+    elif len(sample.filesets()) > 1:
+        return config.skimDir + '/' + sample.name
+    else:
+        return config.skimDir
+
+def getMergeDir():
+    if os.path.isdir('/local/' + os.environ['USER']):
+        return '/local/' + os.environ['USER'] + '/ssw2/merge'
+    else:
+        return '/tmp/' + os.environ['USER'] + '/ssw2/merge'
+
+def setupSkim(sample, fileset):
     """
-    Set up the skimmer, clean up the destination, request T2->T3 downloads if necessary, and execute the skim.
+    Set up input / output and return a list of input paths
     """
 
-    skimmer = ROOT.Skimmer()
-
-    skimmer.setPrintLevel(printLevel)
-
-    for rname, gen in selectors[sample.name]:
-        selector = gen(sample, rname)
-        selector.setUseTimers(args.timer)
-        skimmer.addSelector(selector)
-
-    tmpDir = '/local/' + os.environ['USER'] + '/' + sample.name
-    try:
-        os.makedirs(tmpDir)
-    except OSError:
-        pass
-
-    if not os.path.isdir(tmpDir):
-        tmpDir = '/tmp/' + os.environ['USER'] + '/' + sample.name
+    tmpDir = getTmpDir(sample)
+    if not os.path.exists(tmpDir):
         try:
             os.makedirs(tmpDir)
         except OSError:
-            pass
+            # did someone beat this job and made the directory?
+            if not os.path.exists(tmpDir):
+                raise
+
+    outDir = getOutDir(sample)
+    if not os.path.exists(outDir):
+        os.makedirs(outDir)
 
     logger.debug('getting all input files')
 
-    if fileset == 'manual':
-        for path in args.files:
-            skimmer.addPath(path)
-    else:
+    if fileset != 'manual' and config.ntuplesDir == DEFAULT_NTUPLES_DIR:
         for path in sample.files([fileset]):
-            if config.ntuplesDir == DEFAULT_NTUPLES_DIR:
-                if not os.path.exists(path):
-                    fname = os.path.basename(path)
-                    dataset = os.path.basename(os.path.dirname(path))
-                    proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
-                    print proc.communicate()[0].strip()
-
-            else:
-                path = path.replace(DEFAULT_NTUPLES_DIR, config.ntuplesDir)
-    
-            logger.debug('Add input: %s', path)
-            skimmer.addPath(path)
+            if not os.path.exists(path):
+                fname = os.path.basename(path)
+                dataset = os.path.basename(os.path.dirname(path))
+                proc = Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', sample.book], stdout = PIPE, stderr = PIPE)
+                print proc.communicate()[0].strip()
 
     outNameBase = sample.name
 
@@ -179,33 +180,75 @@ def executeSkim(sample, fileset, outDir):
     else:
         logger.info('Removing existing files.')
 
-    for selname in [rname for rname, gen in selectors[sample.name]]:
-        outName = outDir + '/' + outNameBase + '_' + selname + '.root'
-        logger.debug(outName)
+    # abort if any one of the selector output exists
+    for rname, gen in selectors[sample.name]:
+        outName = outNameBase + '_' + rname + '.root'
+        outPath = outDir + '/' + outName
+        logger.debug(outPath)
 
         if args.skipExisting:
-            if not os.path.exists(outName) or os.stat(outName).st_size == 0:
-                break
-            logger.debug('%s exists.', outName)
+            if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
+                logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
+                return False
         else:
             try:
-                os.remove(outName)
+                os.remove(outPath)
             except:
                 pass
 
-    else:
-        if args.skipExisting:
-            logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
-            return
+    return True
+
+#<- def setupSkim
+
+def executeSkim(sample, fileset):
+    """
+    Set up the skimmer, clean up the destination, request T2->T3 downloads if necessary, and execute the skim.
+    """
+
+    skimmer = ROOT.Skimmer()
+
+    skimmer.setPrintEvery(args.printEvery)
+    skimmer.setPrintLevel(printLevel)
+    skimmer.setSkipMissingFiles(args.skipMissing)
+
+    for rname, gen in selectors[sample.name]:
+        selector = gen(sample, rname)
+        selector.setUseTimers(args.timer)
+        skimmer.addSelector(selector)
 
     if sample.data and args.json:
         logger.info('Good lumi filter: %s', args.json)
         skimmer.setGoodLumiFilter(makeGoodLumiFilter(args.json))
 
+    if fileset == 'manual':
+        for path in args.files:
+            skimmer.addPath(path)
+    else:
+        for path in sample.files([fileset]):
+            if config.ntuplesDir != DEFAULT_NTUPLES_DIR:
+                path = path.replace(DEFAULT_NTUPLES_DIR, config.ntuplesDir)
+    
+            logger.debug('Add input: %s', path)
+            skimmer.addPath(path)
+
+    tmpDir = getTmpDir(sample)
+    outDir = getOutDir(sample)
+
+    outNameBase = sample.name
+
+    outSuffix = None
+    if args.outSuffix:
+        outSuffix = args.outSuffix
+    elif fileset == 'manual':
+        outSuffix = 'manual'
+    elif len(sample.filesets()) > 1:
+        outSuffix = fileset
+
+    if outSuffix is not None:
+        outNameBase += '_' + outSuffix
+
     logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpDir, outNameBase, sample.data, args.nentries)
     skimmer.run(tmpDir, outNameBase, sample.data, args.nentries)
-
-    del skimmer
 
     for rname, gen in selectors[sample.name]:
         outName = outNameBase + '_' + rname + '.root'
@@ -218,21 +261,38 @@ def executeSkim(sample, fileset, outDir):
             logger.info('Removing %s/%s', tmpDir, outName)
             os.remove(tmpDir + '/' + outName)
 
-#def executeSkim
+#<- def executeSkim
 
-def executeMerge(sample, selname, fslist):
-    mergeDir = '/local/' + os.environ['USER'] + '/ssw2/merge'
-    try:
-        os.makedirs(mergeDir)
-    except OSError:
-        pass
-
-    if not os.path.isdir(mergeDir):
-        mergeDir = '/tmp/' + os.environ['USER'] + '/ssw2/merge'
+def setupMerge(sample, selname):
+    mergeDir = getMergeDir()
+    if not os.path.exists(mergeDir):
         try:
             os.makedirs(mergeDir)
         except OSError:
+            # did someone beat this job and made the directory?
+            if not os.path.exists(mergeDir):
+                raise
+
+    outNameBase = sample.name + '_' + selname
+    outName = outNameBase + '.root'
+    outPath = config.skimDir + '/' + outName
+
+    if args.skipExisting:
+        if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
+            logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
+            return False
+    else:
+        try:
+            os.remove(outPath)
+        except:
             pass
+
+    return True
+
+#<- def setupMerge
+
+def executeMerge(sample, selname, fslist):
+    mergeDir = getMergeDir()
 
     inDir = config.skimDir + '/' + sample.name
 
@@ -241,9 +301,11 @@ def executeMerge(sample, selname, fslist):
         if not os.path.exists(fname) or os.stat(fname).st_size == 0:
             raise RuntimeError('Missing input file', fname)
 
-    outName = sample.name + '_' + selname + '.root'
+    outNameBase = sample.name + '_' + selname
+    outName = outNameBase + '.root'
 
     mergePath = mergeDir + '/' + outName
+    outPath = config.skimDir + '/' + outName
 
     logger.debug('%s %s %s', padd, mergePath, ' '.join(inDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist))
     proc = Popen([padd, mergePath] + [inDir + '/' + sample.name + '_' + fileset + '_' + selname + '.root' for fileset in fslist], stdout = PIPE, stderr = PIPE)
@@ -254,28 +316,16 @@ def executeMerge(sample, selname, fslist):
     if args.testRun:
         logger.info('Output at %s', mergePath)
     else:
-        logger.info('Copying output to %s/%s', config.skimDir, outName)
+        logger.info('Copying output to %s', outPath)
         shutil.copy(mergePath, config.skimDir)
         logger.info('Removing %s', mergePath)
         os.remove(mergePath)
 
-#def executeMerge
+#<- def executeMerge
 
 
 for sample in samples:
     print 'Starting sample %s (%d/%d)' % (sample.name, samples.index(sample) + 1, len(samples))
-
-    if len(args.filesets) != 0 and args.filesets[0] == 'manual':
-        outDir = config.skimDir
-    elif len(sample.filesets()) > 1:
-        outDir = config.skimDir + '/' + sample.name
-    else:
-        outDir = config.skimDir
-
-    try:
-        os.makedirs(outDir)
-    except OSError:
-        pass
 
     if args.batch:
         # Batch mode - only need to collect the input names
@@ -291,15 +341,16 @@ for sample in samples:
     if args.merge:
         print 'Merging.'
         # Merge outputs for each sample-selector combination
-        selnames = [rname for rname, gen in selectors[sample.name]]
-        for selname in selnames:
-            executeMerge(sample, selname, fslist)
+        for rname, gen in selectors[sample.name]:
+            if setupMerge(sample, rname):
+                executeMerge(sample, rname, fslist)
     else:
         # Will do the actual skimming
         print 'Skimming.'
         # Create an output for each fileset separately
         for fileset in fslist:
-            executeSkim(sample, fileset, outDir)
+            if setupSkim(sample, fileset):
+                executeSkim(sample, fileset)
 
 # Remainder of the script relates to condor submission
 if not args.batch:
@@ -356,19 +407,14 @@ if args.merge:
 
     # Collect arguments and remove output
     for sample in samples:
-        for selname in [rname for rname, gen in selectors[sample.name]]:
-            arguments.append((sample.name, selname))
+        for rname, gen in selectors[sample.name]:
+            if not setupMerge(sample, rname):
+                continue
+
+            arguments.append((sample.name, rname))
 
             # clean up old .log files
-            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + selname + '.0.log'
-            logger.debug('Removing %s', path)
-            try:
-                os.remove(path)
-            except:
-                pass
-
-            # not sure if I want to delete old file immediately
-            path = config.skimDir + '/' + sample.name + '_' + selname + '.root'
+            path = '/local/' + os.environ['USER'] + '/ssw2/' + sample.name + '_' + rname + '.0.log'
             logger.debug('Removing %s', path)
             try:
                 os.remove(path)
@@ -402,6 +448,9 @@ else:
             fslist = args.filesets
 
         for fileset in fslist:
+            if not setupSkim(sample, fileset):
+                continue
+
             arguments.append((sample.name, fileset))
 
             # clean up old .log files
@@ -413,8 +462,9 @@ else:
                 pass
 
     argTemplate = '%s -f %s'
-    if args.skipExisting:
-        argTemplate += ' -X'
+
+    if args.skipMissing:
+        argTemplate += ' -K'
 
     if len(args.selnames) != 0:
         argTemplate += ' -s ' + ' '.join(args.selnames)
