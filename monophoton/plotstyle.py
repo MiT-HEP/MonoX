@@ -582,13 +582,14 @@ class Normalizer(object):
     See the RatioCanvas docstring for details.
     """
 
-    def __init__(self, normObj):
+    def __init__(self, normObj, errtype):
         if not normObj.InheritsFrom(ROOT.TH1.Class()) and \
                 not normObj.InheritsFrom(ROOT.TGraph.Class()) and \
                 not normObj.InheritsFrom(ROOT.TF1.Class()):
             raise RuntimeError('Cannot normalize with ' + str(normObj))
 
         self._normObj = normObj
+        self._errtype = errtype
 
     def normalize(self, obj, name):
         if obj.InheritsFrom(ROOT.TH1.Class()):
@@ -616,6 +617,7 @@ class Normalizer(object):
                 if self._normObj.InheritsFrom(ROOT.TH1.Class()):
                     # base is TH1 -> bin-by-bin norm
                     norm = self._normObj.GetBinContent(iX)
+                    derr = self._normObj.GetBinError(iX)
 
                 elif self._normObj.InheritsFrom(ROOT.TGraph.Class()):
                     # base is TGraph -> find a point in the bin
@@ -633,9 +635,11 @@ class Normalizer(object):
                         raise RuntimeError('No graph point in bin ' + str(iX))
 
                     norm = self._normObj.GetY()[pnorm]
+                    derr = self._normObj.GetErrorY(pnorm)
 
                 elif self._normObj.InheritsFrom(ROOT.TF1.Class()):
                     norm = self._normObj.Integral(targAxis.GetBinLowEdge(iX), targAxis.GetBinUpEdge(iX))
+                    derr = 0.
 
                 if norm != 0.:
                     scale = 1. / norm
@@ -643,9 +647,26 @@ class Normalizer(object):
                     scale = 0.
 
                 targ.SetBinContent(iX, targ.GetBinContent(iX) * scale)
-                targ.SetBinError(iX, targ.GetBinError(iX) * scale)
+
+                if self._errtype == 'norm':
+                    targ.SetBinError(iX, targ.GetBinError(iX) * scale)
+                elif self._errtype == 'quad':
+                    if obj.GetBinContent(iX) > 0.:
+                        nrerr = obj.GetBinError(iX) / obj.GetBinContent(iX)
+                        drerr = derr * scale
+                        targ.SetBinError(iX, targ.GetBinContent(iX) * math.sqrt(nrerr * nrerr + drerr * drerr))
+                elif self._errtype == 'binom':
+                    if norm != 0.:
+                        up = ROOT.TEfficiency.ClopperPearson(int(norm), int(obj.GetBinContent(iX)), 0.6826895, True) - targ.GetBinContent(iX)
+                        down = targ.GetBinContent(iX) - ROOT.TEfficiency.ClopperPearson(int(norm), int(obj.GetBinContent(iX)), 0.6826895, False)
+                    else:
+                        up = 0.
+                        down = 0.
+
+                    targ.SetBinError(iX, (up + down) * 0.5)
 
         elif obj.InheritsFrom(ROOT.TGraph.Class()):
+            # normalizing a TGraph
             targ = obj.Clone(name)
 
             for iP in range(targ.GetN()):
@@ -654,15 +675,18 @@ class Normalizer(object):
                 if self._normObj.InheritsFrom(ROOT.TH1.Class()):
                     iX = self._normObj.FindFixBin(x)
                     norm = self._normObj.GetBinContent(iX)
+                    derr = self._normObj.GetBinError(iX)
 
                 elif self._normObj.InheritsFrom(ROOT.TGraph.Class()):
                     if not ROOT.TMath.AreEqualRel(x, self._normObj.GetX()[iP], 1.e-12):
                         raise RuntimeError('X values do not match')
 
                     norm = self._normObj.GetY()[iP]
+                    derr = self._normObj.GetErrorY(iP)
 
                 elif self._normObj.InheritsFrom(ROOT.TF1.Class()):
                     norm = self._normObj.Eval(x)
+                    derr = 0.
 
                 if norm != 0.:
                     scale = 1. / norm
@@ -670,11 +694,43 @@ class Normalizer(object):
                     scale = 0.
 
                 targ.SetPoint(iP, x, targ.GetY()[iP] * scale)
-                if targ.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
-                    targ.SetPointEYlow(iP, targ.GetErrorYlow(iP) * scale)
-                    targ.SetPointEYhigh(iP, targ.GetErrorYhigh(iP) * scale)
-                elif targ.InheritsFrom(ROOT.TGraphErrors.Class()):
-                    targ.SetPointError(iP, targ.GetErrorX(iP), targ.GetErrorY(iP) * scale)
+
+                sym = targ.InheritsFrom(ROOT.TGraphErrors.Class())
+                asym = targ.InheritsFrom(ROOT.TGraphAsymmErrors.Class())
+
+                if self._errtype == 'norm':
+                    if sym:
+                        targ.SetPointError(iP, targ.GetErrorX(iP), targ.GetErrorY(iP) * scale)
+                    else:
+                        targ.SetPointEYlow(iP, obj.GetErrorYlow(iP) * scale)
+                        targ.SetPointEYhigh(iP, obj.GetErrorYhigh(iP) * scale)
+
+                elif self._errtype == 'quad':
+                    drerr = derr * scale
+                    if obj.GetY()[iP] > 0.:
+                        y = targ.GetY()[iP]
+                        if sym:
+                            nrerr = obj.GetErrorY(iP) / obj.GetY()[iP]
+                            targ.SetPointError(iP, y * math.sqrt(nrerr * nrerr + drerr * drerr))
+                        else:
+                            nrerrup = obj.GetErrorYhigh(iP) / obj.GetY()[iP]
+                            nrerrdown = obj.GetErrorYlow(iP) / obj.GetY()[iP]
+                            targ.SetPointEYlow(iP, y * math.sqrt(nrerrup * nrerrup + drerr * drerr))
+                            targ.SetPointEYhigh(iP, y * math.sqrt(nrerrdown * nrerrdown + drerr * drerr))
+                        
+                elif self._errtype == 'binom':
+                    if norm != 0.:
+                        up = ROOT.TEfficiency.ClopperPearson(int(norm), int(obj.GetY()[iP]), 0.6826895, True) - targ.GetY()[iP]
+                        down = targ.GetY()[iP] - ROOT.TEfficiency.ClopperPearson(int(norm), int(obj.GetY()[iP]), 0.6826895, False)
+                    else:
+                        up = 0.
+                        down = 0.
+
+                    if sym:
+                        targ.SetPointError(iP, (up + down) * 0.5)
+                    else:
+                        targ.SetPointEYlow(iP, down)
+                        targ.SetPointEYhigh(iP, up)
 
         elif obj.InheritsFrom(ROOT.TF1.Class()):
             raise RuntimeError('Not implemented')
@@ -705,7 +761,11 @@ class RatioCanvas(SimpleCanvas):
     Similarly, TGraph/TGraph combination works only when abscissa (x) values align.
     TF1 target case is not implemented.
 
-    Error bars in the ratio plot receive identical normalization to y values.
+    By default, error bars in the ratio plot receive identical normalization to y values.
+    You can change the behavior by setting the rerr flag:
+     - 'norm': normalized numerator uncertainty (default)
+     - 'quad': propagated error on ratio
+     - 'binom': Clopper-Pearson binomial uncertainty (statistical, for efficiencies)
 
     Normalized values are set to 0 if the denominator is 0.
     """
@@ -729,6 +789,8 @@ class RatioCanvas(SimpleCanvas):
         self.rtitle = 'data / MC'
 
         self.rlimits = (0., 2.)
+
+        self.rerr = 'norm'
 
         self._makePads()
 
@@ -818,7 +880,7 @@ class RatioCanvas(SimpleCanvas):
             rbase.SetMinimum()
             self._temporaries.append(rbase)
 
-            normalizer = Normalizer(rbase)
+            normalizer = Normalizer(rbase, self.rerr)
 
             rframe = ROOT.TH1F('rframe', '', 1, rbase.GetXaxis().GetXmin(), rbase.GetXaxis().GetXmax())
             rframe.SetMinimum(self.rlimits[0])
