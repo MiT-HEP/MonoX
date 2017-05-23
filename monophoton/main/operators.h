@@ -60,6 +60,7 @@
 //     GenPhotonDR *
 //     JetClustering *
 //     JetScore *
+//     LeptonVertex *
 //   PUWeight
 //   TPOperator
 //     TPElectronPhoton
@@ -472,6 +473,7 @@ class LeptonSelection : public Cut {
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
+  void setRequireMedium(bool require, unsigned btof = false) { requireMedium_ = require; mediumBtoF_ = btof; }
   void setRequireTight(bool require) { requireTight_ = require; }
 
  protected:
@@ -479,6 +481,8 @@ class LeptonSelection : public Cut {
 
   bool strictMu_{true};
   bool strictEl_{true};
+  bool requireMedium_{true};
+  bool mediumBtoF_{false};
   bool requireTight_{true};
   unsigned nEl_{0};
   unsigned nMu_{0};
@@ -931,6 +935,24 @@ class JetScore : public Modifier {
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
   float score_[NMAX_PARTICLES];
+};
+
+class LeptonVertex : public Modifier {
+ public:
+  // use the vertex of the leading lepton
+  LeptonVertex(char const* name = "LeptonVertex") : Modifier(name) {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
+  void addBranches(TTree& skimTree) override;
+
+  void setSpecies(LeptonFlavor flavor) { flavor_ = flavor; }
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  LeptonFlavor flavor_;
+  short ivtx_;
+  short ivtxNoL_;
+  float score_;
 };
 
 class PhotonRecoil : public Modifier {

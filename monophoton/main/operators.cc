@@ -365,7 +365,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 {
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
-    
+
     if (!photon.isEB)
       continue;
     
@@ -1106,6 +1106,7 @@ JetMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 bool
 LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
+  bool foundMedium(false);
   bool foundTight(false);
   unsigned nLooseIsoMuons(0);
 
@@ -1116,8 +1117,12 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
 
-    if (nMu_ != 0 && muon.tight && muon.pt() > 30. && (muon.combIso() / muon.pt()) < 0.15)
-      foundTight = true;
+    if (nMu_ != 0 && muon.pt() > 30.) {
+      if (muon.tight && muon.combIso() / muon.pt() < 0.15)
+        foundTight = true;
+      if ((mediumBtoF_ && muon.mediumBtoF) || (!mediumBtoF_ && muon.medium))
+        foundMedium = true;
+    }
     
     bool overlap(false);
     for (auto* col : cols) {
@@ -1148,8 +1153,12 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
 
-    if (nEl_ != 0 && electron.tight && electron.pt() > 30.)
-      foundTight = true;
+    if (nEl_ != 0 && electron.pt() > 30.) {
+      if (electron.tight)
+        foundTight = true;
+      if (electron.medium)
+        foundMedium = true;
+    }
 
     bool overlap(false);
     for (auto* col : cols) {
@@ -1173,6 +1182,9 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   }
 
   if (requireTight_ && !foundTight)
+    return false;
+
+  if (requireMedium_ && !foundMedium)
     return false;
 
   if (strictMu_ && strictEl_)
@@ -2625,6 +2637,114 @@ JetScore::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _o
     auto& jet(_outEvent.jets[iJ]);
     double che(jet.rawPt * jet.chf);
     score_[iJ] = che * che * 0.8 * 0.8;
+  }
+}
+
+//--------------------------------------------------------------------
+// LeptonVertex
+//--------------------------------------------------------------------
+
+void
+LeptonVertex::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfCandidates"};
+}
+
+void
+LeptonVertex::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("lvertex.idx", &ivtx_, "idx/S");
+  _skimTree.Branch("lvertex.idxNoL", &ivtxNoL_, "idxNoL/S");
+  _skimTree.Branch("lvertex.score", &score_, "score/F");
+}
+
+void
+LeptonVertex::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  ivtx_ = -1;
+  ivtxNoL_ = -1;
+  score_ = 0.;
+
+  panda::LeptonCollection* col(0);
+  unsigned pdgId(0);
+
+  switch (flavor_) {
+  case lElectron:
+    col = &_outEvent.electrons;
+    pdgId = 11;
+    break;
+  case lMuon:
+    col = &_outEvent.muons;
+    pdgId = 13;
+    break;
+  default:
+    return;
+  }
+
+  if (col->size() == 0)
+    return;
+
+  std::vector<panda::PFCand const*> pfs;
+  pfs.reserve(16);
+  unsigned iPF(0);
+  for (auto& pf : _event.pfCandidates) {
+    if (std::abs(pf.pdgId()) == pdgId)
+      pfs.push_back(&pf);
+
+    ++iPF;
+  }
+
+  panda::PFCand const* cand(0);
+  for (auto& lepton : *col) {
+    for (auto* pf : pfs) {
+      if (pf->dR2(lepton) < 0.01) {
+        cand = pf;
+        break;
+      }
+    }
+    if (cand)
+      break;
+  }
+
+  if (!cand)
+    return;
+
+  unsigned iPFMin(0);
+  if (cand->vertex.idx() != 0)
+    iPFMin = _event.vertices[cand->vertex.idx() - 1].pfRangeMax;
+
+  ivtx_ = cand->vertex.idx();
+  auto& vertex(*cand->vertex);
+  score_ = vertex.score;
+
+  for (unsigned iPF(iPFMin); iPF != vertex.pfRangeMax; ++iPF) {
+    auto& pf(_event.pfCandidates[iPF]);
+
+    bool isLepton(&pf == cand);
+    if (!isLepton) {
+      if (std::abs(pf.pdgId()) != pdgId)
+        continue;
+
+      for (auto& lepton : *col) {
+        if (pf.dR2(lepton) < 0.01) {
+          isLepton = true;
+          break;
+        }
+      }
+    }
+    
+    if (!isLepton)
+      continue;
+
+    double pt(pf.pt()); // actually has to be pt - ptError
+    score_ -= pt * pt;
+  }
+
+  for (int iV(ivtx_ + 1); iV != int(_event.vertices.size()); ++iV) {
+    if (score_ > _event.vertices[iV].score) {
+      ivtxNoL_ = iV - 1;
+      break;
+    }
   }
 }
 
