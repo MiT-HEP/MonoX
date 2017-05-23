@@ -65,7 +65,7 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
   }
 
   if (printLevel_ > 0)
-    *stream_ << "Initializing operators" << std::endl;
+    *stream_ << "Initializing operators for " << name() << std::endl;
 
   for (auto* op : operators_) {
     op->addInputBranch(_blist);
@@ -316,10 +316,18 @@ ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, pa
 void
 WlnuSelector::selectEvent(panda::EventMonophoton& _event)
 {
+  bool accepted(acceptedId_ == 0);
   for (auto& parton : _event.partons) {
-    if (std::abs(parton.pdgid) == 11)
+    unsigned absId(std::abs(parton.pdgid));
+    if (absId == rejectedId_)
       return;
+    if (absId == acceptedId_) {
+      accepted = true;
+      break;
+    }
   }
+  if (!accepted)
+    return;
 
   EventSelector::selectEvent(_event);
 }

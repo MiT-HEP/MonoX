@@ -109,6 +109,13 @@ class WlnuSelector : public EventSelector {
   WlnuSelector(char const* name) : EventSelector(name) {}
 
   void selectEvent(panda::EventMonophoton&) override;
+
+  void setRejectedPdgId(unsigned id) { rejectedId_ = id; }
+  void setAcceptedPdgId(unsigned id) { acceptedId_ = id; }
+
+ private:
+  unsigned rejectedId_{11};
+  unsigned acceptedId_{0};
 };
 
 class WenuSelector : public EventSelector {
