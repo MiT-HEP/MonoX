@@ -32,6 +32,8 @@ public:
   void setOwnSelectors(bool b) { ownSelectors_ = b; }
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
+  void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
+  void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
   bool photonSkim(panda::Event const&) const;
   void prepareEvent(panda::Event const&, panda::EventMonophoton&);
@@ -43,6 +45,8 @@ private:
   bool ownSelectors_{true};
   TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim_ = true
   GoodLumiFilter* goodLumiFilter_{};
+  bool skipMissingFiles_{false};
+  unsigned printEvery_{10000};
   unsigned printLevel_{0};
 };
 
@@ -151,15 +155,25 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         delete source;
       }
 
+      if (skipMissingFiles_)
+        break;
+
       gSystem->Sleep(tryEvery * 1000.);
     }
 
     gErrorIgnoreLevel = originalErrorIgnoreLevel;
 
-    if (!source || source->IsZombie()) {
-      std::cerr << "Cannot open file " << path << std::endl;
-      delete source;
-      throw std::runtime_error("source");
+    if ((!source || source->IsZombie())) {
+      if (skipMissingFiles_) {
+        std::cerr << "Skipping missing file " << path << std::endl;
+        delete source;
+        continue;
+      }
+      else {
+        std::cerr << "Cannot open file " << path << std::endl;
+        delete source;
+        throw std::runtime_error("source");
+      }
     }
 
     auto* inputKey(static_cast<TKey*>(source->GetListOfKeys()->FindObject("events")));
@@ -196,7 +210,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (event.getEntry(*input, entryNumber) <= 0) // I/O error
         break;
 
-      if (iEntryGlobal % 10000 == 1 && printLevel_ > 0) {
+      if (iEntryGlobal % printEvery_ == 1 && printLevel_ > 0) {
         auto past = now;
         now = SClock::now();
         *stream << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
