@@ -16,13 +16,13 @@
  
  The electron->photon fake rate measurement proceeds in three steps:
 
- 1. skim (skim.py)
+ 1. ssw2.py
  2. fit (efake_fit.py)
  3. evaluate uncertianties (efake_fit.py, efake_tpsyst.py)
  3. compute (efake_compute.py)
 
- skim.py uses Skimmer.cc to produce a generic tag & probe skim from
- simpletrees.
+ sww2.py produces files sample_tpeg.root, sample_tpmg.root, and
+ sample_mmg.root for use by efake_fit.py.
 
  efake_fit.py is invoked four times:
   efake_fit.py (data|mc) (binning)
@@ -30,10 +30,13 @@
   efake_fit.py (data|mc) (binning) altbkg
  runs a fit for the nominal Z yield estimates. Yields as well as
  parameter values are recorded in the TTree yields in the file.
+
  Then
   efake_fit.py (data|mc) (binning) (N) (ee|eg) (bin name) (random seed)
  runs N toy fits for (ee|eg)_(bin name) with the specified random seed.
  This mode should be used in a batch system varying the seeds.
+  ~/bin/condor-run efake_fit.py -a toys_args.txt
+
  The output of toy generation should be combined with hadd into a file
  named toys_(data|mc)_(binning).root.
 
@@ -41,6 +44,8 @@
  altsig and altbkg models. Since it involves toy data generation, the
  script should be run in batch varying the seed.
   efake_tpsyst.py (binning) (bin name) (sig|bkg) (N) (random seed)
+  ~/bin/condor-run efake_tpsyst.py -a syst_args.txt
+
  The output should be combined with hadd into a file named
  tpsyst_data_(sig|bkg)_(binning).root.
 

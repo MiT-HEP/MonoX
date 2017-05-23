@@ -1125,7 +1125,7 @@ def getConfig(confName):
             VariableDef('dielMass', 'M_{ee}', 'diel.mass[0]', (36, 0., 180.), unit = 'GeV', overflow = True),
             VariableDef('dielPt', 'p_{T}^{Z}', 'diel.pt[0]',  (80, 0., 2000.), unit = 'GeV'),
             VariableDef('dielEta', '#eta_{Z}', 'diel.eta[0]', (10, -5., 5.)),
-v            VariableDef('dielPhi', '#phi_{Z}', 'diel.phi[0]', (10, -math.pi, math.pi)),
+            VariableDef('dielPhi', '#phi_{Z}', 'diel.phi[0]', (10, -math.pi, math.pi)),
             VariableDef('dRPhoMu0', '#DeltaR(#gamma, #mu_{leading})', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.))', (10, 0., 4.)),
             VariableDef('dRPhoMu1', '#DeltaR(#gamma, #mu_{trailing})', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[1], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[1]), 2.))', (10, 0., 4.)),
             VariableDef('dRPhoMuMin', '#DeltaR(#gamma, #mu)_{min}', 'TMath::Sqrt(TMath::Min(%s, %s))' % (dR2_pho0mu0, dR2_pho0mu1), (10, 0., 4.)),

@@ -1,6 +1,6 @@
 import os
 
-outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/efake'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.
@@ -19,7 +19,7 @@ def getBinning(binningName):
     if binningName == 'pt':
         binningTitle = 'p_{T}^{probe} (GeV)'
 #        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
-        binning = [175., 200., 6500.]
+        binning = [175., 200., 225., 250., 275., 300., 350., 400., 450., 500., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

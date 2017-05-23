@@ -14,7 +14,7 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
-from efake_conf import skimDir, skimConfig, lumiSamples
+from efake_conf import outputDir, skimConfig, lumiSamples
 
 targets = sys.argv[1:]
 
@@ -22,9 +22,6 @@ sys.argv = []
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
-
-# skim output directory
-outputDir = skimDir
 
 ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/Objects/interface')

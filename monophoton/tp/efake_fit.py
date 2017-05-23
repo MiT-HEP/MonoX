@@ -10,7 +10,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 from datasets import allsamples
-from plotstyle import SimpleCanvas
+from plotstyle import RatioCanvas
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 # set to nonzero if you want to run toys in runMode single too
@@ -22,6 +22,8 @@ binningName = sys.argv[2] # see efake_conf
 #varType = 'kSCRawMass'
 varType = 'kMass'
 plotDir = 'efake/fit_' + binningName
+
+monophSel = 'probes.medium && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' 
 
 try:
     os.makedirs(plotDir)
@@ -64,7 +66,8 @@ else:
             pdf = 'altbkg'
 
     seed = 12345
-    confs = ['ee', 'eg']
+    # confs = ['ee', 'eg', 'pass', 'fail']
+    confs = ['pass', 'fail']
 
 sys.argv = []
 
@@ -88,7 +91,7 @@ else:
         outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altsig.root'
 
 
-fitBinning = ROOT.RooUniformBinning(60., 120., 60)
+fitBinning = ROOT.RooUniformBinning(60., 120., 120)
 compBinning = ROOT.RooUniformBinning(81., 101., 20)
 
 ### Common setup ###
@@ -209,7 +212,7 @@ elif runMode == 'single':
     alpha = work.factory('alpha[0.01, 5.]')
     n = work.factory('n[1.01, 5.]')
 
-    canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
+    canvas = RatioCanvas(lumi = lumi, sim = (dataType == 'mc'))
     canvas.titlePave.SetX2NDC(0.5)
     canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
     canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
@@ -221,6 +224,7 @@ elif runMode == 'single':
 random = ROOT.TRandom3(seed)
 
 ### Common setup done ###
+print 'Finished common setup.'
 
 ### Fitting routine ###
 def runFit(targ, model, printLevel = 1, vals = None):
@@ -292,8 +296,12 @@ for binName, fitCut in fitBins:
             res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
             sigModel = work.factory('FCONV::' + sigModelName + '(mass, sigCore_' + binName + ', res)')
 
+    print 'Made signal template.'
+
     intComp = sigModel.createIntegral(massset, 'compWindow')
     intFit = sigModel.createIntegral(massset, 'fitWindow')
+
+    generator.setTemplateBinning(fitBinning, getattr(ROOT, varType)) # avoid boundary effect
 
     for conf in confs:
         targName = 'target_' + conf + '_' + binName
@@ -301,8 +309,14 @@ for binName, fitCut in fitBins:
 
         if conf == 'ee':
             tpconf = 0
-        else:
+        elif conf == 'eg':
             tpconf = 1
+        elif conf == 'pass':
+            tpconf = 2
+        elif conf == 'fail':
+            tpconf = 3
+        else:
+            tpconf = 4
 
         if runMode == 'batchtoy':
             targ = work.data(targName)
@@ -328,12 +342,18 @@ for binName, fitCut in fitBins:
                 # target is a histogram with !csafeVeto
                 # perform binned max L fit
                 cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
-            else:
+            elif conf == 'eg':
                 # target is a tree with pixelVeto
                 # perform unbinned max L fit
                 cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
+            elif conf == 'pass':
+                cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            elif conf == 'fail':
+                cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            else:
+                cut = '({fitCut})'.format(fitCut = fitCut)
 
-            if conf == 'ee' or conf == 'eg':
+            if tpconf < 4: # conf is in [ ee, eg, pass, fail]
                 # USING BINNED FIT FOR ALL
                 htarg = generator.makeTemplate(ROOT.kEG, targName, cut, getattr(ROOT, varType))
                 htarg.SetDirectory(outputFile)
@@ -373,6 +393,8 @@ for binName, fitCut in fitBins:
 
             vRaw[0] = targ.sumEntries()
 
+            print 'Made target template.'
+
             bkgModelName = 'bkgModel_' + conf + '_' + binName
 
             if pdf == 'altbkg':
@@ -403,12 +425,18 @@ for binName, fitCut in fitBins:
 
             getattr(work, 'import')(bkgModel, ROOT.RooFit.Silence())
    
+            print 'Made background template.'
+
             # full fit PDF
             model = work.factory('SUM::' + modelName + '(nbkg * ' + bkgModelName + ', nsignal * ' + sigModelName + ')')
     
+            print 'Made fit model.'
+
             # nominal fit
             vals = dict(initVals)
             runFit(targ, model, vals = vals)
+
+            print 'Finished fit.'
 
             # save result
             vNz[0] = vals['nsignal'] * (intComp.getVal() / intFit.getVal())
@@ -437,10 +465,51 @@ for binName, fitCut in fitBins:
             frame.SetMinimum(0.)
     
             canvas.Clear()
-            canvas.addHistogram(frame)
+            canvas.addHistogram(frame, clone = True, drawOpt = '')
             if dataType == 'mc':
                 canvas.legend.apply('mcbkg', hmcbkg)
                 canvas.addHistogram(hmcbkg)
+
+            canvas.Update(rList = [], logy = False)
+
+            frame.Print()
+
+            # adding ratio pad
+            fitcurve = frame.findObject(modelName + '_Norm[mass]')
+            dHist = targHist.createHistogram('dHist', mass)
+
+            print fitcurve
+
+            rdata = ROOT.TGraphErrors(dHist.GetNbinsX())
+            for iP in range(rdata.GetN()):
+                x = dHist.GetXaxis().GetBinCenter(iP + 1)
+                nData = dHist.GetBinError(iP + 1)
+                statErr = dHist.GetBinContent(iP + 1)
+                nFit = fitcurve.interpolate(x)
+                print x, nData, statErr, nFit
+                print (nData - nFit) / nFit
+                print (nData - nFit) / statErr
+                rdata.SetPoint(iP, x, (nData - nFit) / nFit)
+                # rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
+
+            rdata.SetMarkerStyle(8)
+            rdata.SetMarkerColor(ROOT.kBlack)
+            rdata.SetLineColor(ROOT.kBlack)
+
+            canvas.ratioPad.cd()
+
+            rframe = ROOT.TH1F('rframe', '', 1, fitBinning.lowBound(), fitBinning.highBound())
+            rframe.GetYaxis().SetRangeUser(-2., 2.)
+            rframe.Draw()
+
+            line = ROOT.TLine(fitBinning.lowBound(), 0., fitBinning.highBound(), 0.)
+            line.SetLineWidth(2)
+            line.SetLineColor(ROOT.kBlue)
+            line.Draw()
+
+            rdata.Draw('EP')
+
+            canvas._needUpdate = False
 
             if pdf == 'altbkg':
                 canvas.printWeb(plotDir, 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)

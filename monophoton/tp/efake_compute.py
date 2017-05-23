@@ -193,7 +193,7 @@ canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 canvas.legend.add('frate', 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.apply('frate', frate)
 canvas.ylimits = (0., 0.05)
-canvas.SetGrid(True, True)
+canvas.SetGrid(False, True)
 canvas.addHistogram(frate, drawOpt = 'EP')
 
 canvas.xtitle = binningTitle
