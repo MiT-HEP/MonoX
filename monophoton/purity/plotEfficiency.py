@@ -18,7 +18,7 @@ outDir = os.path.join(versDir, 'ScaleFactor')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-bases = ['loose', 'medium', 'tight', 'highpt']
+bases = ['loose', 'medium', 'tight']
 mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # '-pixel-monoph-worst', 
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]

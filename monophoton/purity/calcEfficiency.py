@@ -12,17 +12,17 @@ import selections as s
 
 ROOT.gROOT.LoadMacro(thisdir + '/Calculator.cc+')
 
-loc = sys.argv[1]
-pid = sys.argv[2]
-pt = sys.argv[3]
-met = sys.argv[4]
+loc = sys.argv[1] # barrel or endcap
+wp = sys.argv[2] # (loose|medium|tight)
+pt = sys.argv[3] # Inclusive or (Min)to(Max)
+met = sys.argv[4] # Inclusive or (Min)to(Max)
 
 try:
     era = sys.argv[5]
 except:
     era = 'Spring15'
 
-inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
+inputKey = era+'_'+loc+'_'+wp+'_PhotonPt'+pt+'_Met'+met
 
 versDir = s.versionDir
 plotDir = os.path.join(versDir,inputKey)
@@ -33,6 +33,7 @@ else:
     shutil.rmtree(outDir)
     os.makedirs(outDir)
 """
+treeFilePath = os.path.join(plotDir, 'mceff.root')
 filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
@@ -42,9 +43,9 @@ print config.skimDir
 # tree.Add(config.skimDir + '/gj-200_purity.root')
 # tree.Add(config.skimDir + '/gj-400_purity.root')
 # tree.Add(config.skimDir + '/gj-600_purity.root')
-tree.Add(config.skimDir + '/znng-130_purity.root')
-tree.Add(config.skimDir + '/zllg-130_purity.root')
-tree.Add(config.skimDir + '/wnlg-130_purity.root')
+tree.Add(config.skimDir + '/znng-130-o_purity.root')
+#tree.Add(config.skimDir + '/zllg-130-o_purity.root')
+#tree.Add(config.skimDir + '/wnlg-130-o_purity.root')
 """
 for samp in ['dma', 'dmv']:
     tree.Add(config.skimDir + '/' + samp + '-500-1_purity.root')
@@ -73,27 +74,8 @@ elif loc == 'endcap':
 calc.setMinEta(minEta)
 calc.setMaxEta(maxEta)
 
-pids = pid.split('-')
-if len(pids) > 1:
-    pid = pids[0]
-    extras = pids[1:]
-elif len(pids) == 1:
-    pid = pids[0]
-    extras = []
-
-idmap = { 'loose' : 0, 'medium' : 1, 'tight' : 2, 'highpt' : 3 }
-calc.setWorkingPoint(idmap[pid])
-if 'pixel' in extras:
-    calc.applyPixelVeto()
-if 'monoph' in extras:
-    calc.applyMonophID()
-if 'worst' in extras:
-    calc.applyWorstIso()
-elif 'max' in extras:
-    calc.applyMaxIso()
-
-if era == 'Spring16':
-    calc.setEra(1)
+calc.setWorkingPoint(getattr(ROOT.Calculator, 'WP' + wp))
+calc.setEra(getattr(ROOT.Calculator, era))
 
 if pt == 'Inclusive':
     minPt = 175.
@@ -115,25 +97,65 @@ if maxMet == 'Inf':
 calc.setMinMet(float(minMet))
 calc.setMaxMet(float(maxMet))
 
-calc.calculate(tree)
+outputFile = ROOT.TFile.Open(treeFilePath, 'recreate')
+
+nGen = calc.calculate(tree, outputFile)
+
+outputFile.cd()
+outputFile.Write()
 
 print filePath
 output = file(filePath, 'w')
 
-cuts = ['match', 'hOverE', 'sieie', 'nhIso', 'phIso', 'chIso', 'eveto', 'spike', 'halo', 'worst']
-effs= []
-for iEff, cut in enumerate(cuts):
-    if not 'pixel' in extras and cut == 'eveto':
-        print 'blah'
-        break
-    if not 'monoph' in extras and cut == 'spike':
-        break
-    if cut == 'worst':
-        if not ('max' in extras or 'worst' in extras):
-            break
+cutTree = outputFile.Get('cutflow')
+nMatched = cutTree.GetEntries('Match')
+nUnmatched = cutTree.GetEntries('!Match')
 
-    eff = calc.getEfficiency(iEff)
-    string = "Efficiency after %6s cut is %f +%f -%f \n" % (cut, eff[0], eff[1], eff[2])
+eff = float(nMatched) / nGen
+errh = ROOT.TEfficiency.ClopperPearson(nGen, nMatched, 0.6827, True) - eff
+errl = eff - ROOT.TEfficiency.ClopperPearson(nGen, nMatched, 0.6827, False)
+
+string = "Matching efficiency is %f +%f -%f \n" % (eff, errh, errl)
+print string.strip('\n')
+output.write(string)
+
+cuts =[
+  "HoverE",
+  "Sieie",
+  "NHIso",
+  "PhIso",
+  "CHIso",
+  "Eveto",
+#  "Spike",
+#  "Halo",
+  "CHMaxIso"
+]
+
+sequential = ['Match']
+for cut in cuts:
+    sequential.append(cut)
+
+    nSelected = cutTree.GetEntries(' && '.join(sequential))
+
+    eff = float(nSelected) / nMatched
+    errh = ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, True) - eff
+    errl = eff - ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, False)
+    
+    string = "Efficiency after %s cut is %f +%f -%f \n" % (cut, eff, errh, errl)
+    print string.strip('\n')
+    output.write(string)
+
+sequential = ['!Match']
+for cut in cuts:
+    sequential.append(cut)
+
+    nSelected = cutTree.GetEntries(' && '.join(sequential))
+
+    eff = float(nSelected) / nUnmatched
+    errh = ROOT.TEfficiency.ClopperPearson(nUnmatched, nSelected, 0.6827, True) - eff
+    errl = eff - ROOT.TEfficiency.ClopperPearson(nUnmatched, nSelected, 0.6827, False)
+    
+    string = "Fake rate after %s cut is %f +%f -%f \n" % (cut, eff, errh, errl)
     print string.strip('\n')
     output.write(string)
 

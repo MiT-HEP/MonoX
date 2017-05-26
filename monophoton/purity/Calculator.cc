@@ -8,13 +8,42 @@
 #include "TEntryListArray.h"
 #include "TEfficiency.h"
 
-#include "TreeEntries_simpletree.h"
+#include "Objects/interface/EventMonophoton.h"
+
+#include <cmath>
 
 class Calculator {
 public:
+  enum Era {
+    Spring15,
+    Spring16,
+    nEras
+  };
+
+  enum WP {
+    WPloose,
+    WPmedium,
+    WPtight
+  };
+
+  enum Cut {
+    sMatch,
+    sHoverE,
+    sSieie,
+    sNHIso,
+    sPhIso,
+    sCHIso,
+    sEveto,
+    sSpike,
+    sHalo,
+    sCHMaxIso,
+    nCuts
+  };
+
+  static TString cutNames[nCuts];
+
   Calculator() {}
-  void calculate(TTree* _input);
-  double* getEfficiency(unsigned iEff);
+  unsigned calculate(TTree* _input, TFile* _outputFile);
 
   void setMinPhoPt(float minPhoPt) { minPhoPt_ = minPhoPt; }
   void setMaxPhoPt(float maxPhoPt) { maxPhoPt_ = maxPhoPt; }
@@ -26,235 +55,153 @@ public:
   void setMaxDR(float maxDR) { maxDR_ = maxDR; }
   void setMaxDPt(float maxDPt) { maxDPt_ = maxDPt; }
 
-  void setWorkingPoint(unsigned wp) { wp_ = wp; }
-  void setEra(unsigned era) { era_ = era; }
-  void applyPixelVeto() { eveto_ = true; }
-  void applyMonophID() { monoph_ = true; }
-  void applyWorstIso() { worst_ = true; }
-  void applyMaxIso() { max_ = true; }
+  void setWorkingPoint(WP wp) { wp_ = wp; }
+  void setEra(Era era) { era_ = era; }
 
 private:
-  float minPhoPt_{175.};
-  float maxPhoPt_{6500.};
-  float minMet_{0.};
-  float maxMet_{60.};
-  float minEta_{0.};
-  float maxEta_{1.5};
+  double minPhoPt_{175.};
+  double maxPhoPt_{6500.};
+  double minMet_{0.};
+  double maxMet_{60.};
+  double minEta_{0.};
+  double maxEta_{1.5};
   
-  float maxDR_{0.2};
-  float maxDPt_{0.2};
+  double maxDR_{0.2};
+  double maxDPt_{0.2};
 
-  unsigned wp_{1};
-  unsigned era_{0};
-  bool eveto_{false};
-  bool monoph_{false};
-  bool worst_{false};
-  bool max_{false};
-  
-  const static unsigned nSteps{9};
-  double efficiencies[nSteps+1][3];
-  double temp[3] = {-1., 0., 0.};
-  
+  WP wp_{Medium};
+  Era era_{Spring16};
 };
 
-double*
-Calculator::getEfficiency(unsigned iEff){
-  if (iEff > nSteps) {
-    return temp;
-  }
-  else
-    return efficiencies[iEff];
-}
+TString Calculator::cutNames[Calculator::nCuts] = {
+  "Match",
+  "HoverE",
+  "Sieie",
+  "NHIso",
+  "PhIso",
+  "CHIso",
+  "Eveto",
+  "Spike",
+  "Halo",
+  "CHMaxIso"
+};
 
+unsigned
+Calculator::calculate(TTree* _input, TFile* _outputFile)
+{
+  panda::EventMonophoton event;
+  event.setReadRunTree(false);
 
-void 
-Calculator::calculate(TTree* _input) {
-  
-  simpletree::Event event;
-  event.setStatus(*_input, false, {"*"});
-  event.setAddress(*_input, {"run", "lumi", "event", "weight", "npv", "npvTrue", "promptFinalStates", "photons", "t1Met"});
-  float minGenPt_ = minPhoPt_ / ( 1 + maxDPt_ );
-  float maxGenPt_ = maxPhoPt_ / ( 1 - maxDPt_ );
-  float minGenEta_ = minEta_ - maxDR_;
-  float maxGenEta_ = maxEta_ + maxDR_;
+  _input->SetBranchStatus("*", false);
+  event.setAddress(*_input, {"runNumber", "lumiNumber", "eventNumber", "weight", "npv", "npvTrue", "genParticles", "photons", "t1Met", "rho", "superClusters"});
+  double minGenPt_ = minPhoPt_ / ( 1 + maxDPt_ );
+  double maxGenPt_ = maxPhoPt_ / ( 1 - maxDPt_ );
+  double minGenEta_ = std::max(0., minEta_ - maxDR_);
+  double maxGenEta_ = maxEta_ + maxDR_;
 
   printf("%.0f < gen pt  < %.0f \n", minGenPt_, maxGenPt_);
   printf("%.2f < gen eta < %.2f \n", minGenEta_, maxGenEta_);
 
-  unsigned iReco(0);
-  double nGenPhotons(0.);
-  double nMatchedPhotons(0.);
-  double nRecoPhotons[nSteps];
-  for (; iReco != nSteps; iReco++)
-    nRecoPhotons[iReco] = 0.;
+  _outputFile->cd();
+  auto* output(new TTree("cutflow", "cutflow"));
+  event.book(*output, {"runNumber", "lumiNumber", "eventNumber", "npv"});
+
+  float pt;
+  float eta;
+  float phi;
+  output->Branch("pt", &pt, "pt/F");
+  output->Branch("eta", &eta, "eta/F");
+  output->Branch("phi", &phi, "phi/F");
+
+  bool results[nCuts]{};
+  for (unsigned iC(0); iC != nCuts; ++iC)
+    output->Branch(cutNames[iC], results + iC, cutNames[iC] + "/O");
+
+  unsigned nGenPhotons(0);
+  unsigned nMatchedPhotons(0);
 
   long iEntry(0);
-  while (_input->GetEntry(iEntry++) > 0) {
+  while (event.getEntry(*_input, iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
     
-    if (event.t1Met.met > maxMet_ || event.t1Met.met < minMet_)
+    if (event.t1Met.pt > maxMet_ || event.t1Met.pt < minMet_)
       continue;
 
-    // printf("met: %.0f \n", event.t1Met.met);
+    std::fill_n(results, nCuts, false);
 
-    auto& promptFinalStates(event.promptFinalStates);
+    std::vector<panda::UnpackedGenParticle const*> genPhotons;
 
-    // std::cout << "PromptFinalStates " << event.promptFinalStates.size() << std::endl;
-    
-    auto& photons(event.photons);
+    for (auto& gen : event.genParticles) {
+      // 22 is already testFlag-ed to be IsPrompt in EventMonophoton::copyGenParticles
+      if (gen.pdgid != 22)
+        continue;
 
-    for (unsigned iPFS(0); iPFS != promptFinalStates.size(); ++iPFS) {
-      auto& pfs(promptFinalStates[iPFS]);
+      if ( gen.pt() < minGenPt_ || gen.pt() > maxGenPt_ )
+        continue;
+
+      if ( std::abs(gen.eta()) < minGenEta_ || std::abs(gen.eta()) > maxGenEta_ )
+        continue;
+
+      genPhotons.push_back(&gen);
+    }
+
+    nGenPhotons += genPhotons.size();
       
-      if (pfs.pid != 22)
-	continue;
+    for (auto& pho : event.photons) {
+      if ( pho.scRawPt > maxPhoPt_ || pho.scRawPt < minPhoPt_ )
+        continue;
 
-      // printf("pdg id: %i \n", pfs.pid);
+      if ( std::abs(pho.eta()) > maxEta_ || std::abs(pho.eta()) < minEta_ )
+        continue;
 
-      // printf("got a gen photon w/pt %.2f \n", pfs.pt);
-      
-      // if ( pfs.pt < minPhoPt_ || pfs.pt > maxPhoPt_ )
-      if ( pfs.pt < minGenPt_ || pfs.pt > maxGenPt_ )
-	continue;
+      pt = pho.pt();
+      eta = pho.eta();
+      phi = pho.phi();
 
-      // printf("it's in the pt range \n");
-
-      if ( std::abs(pfs.eta) < minGenEta_ || std::abs(pfs.eta) > maxGenEta_ )
-	continue;
-
-      // printf("it's in the eta range \n");
-
-      nGenPhotons++;
-      
-      for (unsigned iPho(0); iPho != photons.size(); ++iPho) {
-	auto& pho(photons[iPho]);
-	
-	if ( pho.pt > maxPhoPt_ || pho.pt < minPhoPt_ )
-	  continue;
-
-	if ( std::abs(pho.eta) > maxEta_ || std::abs(pho.eta) < minEta_ )
-	  continue;
-	
-	if (pfs.dR2(pho) > maxDR_ * maxDR_)
-	  continue;
-	
-	if ( std::abs(pfs.pt - pho.pt) / pfs.pt  > maxDPt_)
-	  continue;
-
-	// if (pho.genIso > 0)
-	//   continue;
-	
-	nMatchedPhotons++;
-
-	if ( !pho.passHOverE(wp_, era_))
-	  continue;
-
-	iReco = 0;
-	nRecoPhotons[iReco]++;
-
-	if ( !pho.passSieie(wp_, era_))
-	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if (era_ == 0) {
-	  if (!pho.passNHIso(wp_, era_))
-	    continue;
-	}
-	else {
-	  if ( !(pho.nhIsoS16 < simpletree::Photon::nhIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
-	    continue;
-	}	
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if (era_ == 0) {
-	  if (wp_ == 3 && !( (pho.phIso + 0.0053*pho.pt) < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
-	    continue;
-	  else if ( !pho.passPhIso(wp_, era_))
-	    continue;
-	}
-	else {
-	  if ( !(pho.phIsoS16 < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
-	    continue;
-	}
-	
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if (era_ == 0) {
-	  if ( !pho.passCHIso(wp_, era_))
-	    continue;
-	}
-	else {
-	  if ( !(pho.chIsoS16 < simpletree::Photon::phIsoCuts[era_][pho.isEB ? 0 : 1][wp_]))
-	    continue;
-	}
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if ( !eveto_ )
-	  continue;
-
-	if ( !pho.pixelVeto )
-	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if ( !monoph_ )
-	  continue;
-
-	if ( !( std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta > 0. && pho.eta < 0.15 && pho.phi > 0.527580 && pho.phi < 0.541795)) ) 
-	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if ( !(pho.mipEnergy < 4.9) )
-	  continue;
-
-	iReco++;
-	nRecoPhotons[iReco]++;
-
-	if ( worst_) {
-	  if ( !(pho.chWorstIso < simpletree::Photon::chIsoCuts[era_][0][wp_]))
-	    continue;
-	  
-	  iReco++;
-	  nRecoPhotons[iReco]++;
-	}
-	
-	else if ( max_) {
-	 if ( !(pho.chIsoMax < simpletree::Photon::chIsoCuts[era_][0][wp_]))
-	    continue;
-	  
-	  iReco++;
-	  nRecoPhotons[iReco]++;
-	} 
+      for (auto* gen : genPhotons) {
+        if (gen->dR2(pho) < maxDR_ * maxDR_ &&
+            std::abs(gen->pt() - pho.scRawPt) / gen->pt() < maxDPt_) {
+          results[sMatch] = true;
+          break;
+        }
       }
+
+      double pt2(pt * pt);
+      //        double scEta(std::abs(pho.superCluster->eta));
+      double scEta(std::abs(pho.eta()));
+
+      // Spring16
+      // results[sHoverE] = pho.passHOverE(wp_, era_);
+      // results[sSieie] = pho.passSieie(wp_, era_);
+      // results[sNHIso] = pho.nhIso < panda::XPhoton::nhIsoCuts[era_][0][wp_];
+      // results[sPhIso] = pho.phIso < panda::XPhoton::phIsoCuts[era_][0][wp_];
+      // results[sCHIso] = pho.chIso < panda::XPhoton::chIsoCuts[era_][0][wp_];
+      // results[sCHMaxIso] = pho.chIsoMax < panda::XPhoton::chIsoCuts[era_][0][wp_];
+
+      // ZG_CWIso
+      results[sHoverE] = pho.hOverE < 0.0263;
+      results[sSieie] = pho.sieie < 0.01002;
+      results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 7.005;
+      results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 3.271;
+      results[sCHIso] = pho.chIso + event.rho * (scEta < 1. ? 0.036 : 0.0377) < 1.163;
+      results[sCHMaxIso] = pho.chIsoMax - event.rho * (scEta < 1. ? 0.1064 : 0.1026) < 1.163;
+
+      // GJets_CIso
+      // results[sHoverE] = pho.hOverE < 0.0232;
+      // results[sSieie] = pho.sieie < 0.00997;
+      // results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 0.321;
+      // results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 2.141;
+      // results[sCHIso] = pho.chIso < 0.584;
+      // results[sCHMaxIso] = true;
+
+      results[sEveto] = pho.pixelVeto;
+      results[sSpike] = std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta() > 0. && pho.eta() < 0.15 && pho.phi() > 0.527580 && pho.phi() < 0.541795);
+      results[sHalo] = pho.mipEnergy < 4.9;
+
+      output->Fill();
     }
   }
 
-  printf("nGenPhotons: %f \n", nGenPhotons);
-  printf("nMatchedPhotons: %f \n", nMatchedPhotons);
-  
-  efficiencies[0][0] = nMatchedPhotons / nGenPhotons;
-  double upper = TEfficiency::ClopperPearson( nGenPhotons, nMatchedPhotons, 0.6827, true);
-  double lower = TEfficiency::ClopperPearson( nGenPhotons, nMatchedPhotons, 0.6827, false);
-  efficiencies[0][1] = upper - efficiencies[0][0];
-  efficiencies[0][2] = efficiencies[0][0] - lower;
-
-  for (iReco = 0; iReco != nSteps; ++iReco) {
-    printf("nRecoPhotons[%d]: %f \n", iReco, nRecoPhotons[iReco]);
-    efficiencies[iReco+1][0] = nRecoPhotons[iReco] / nMatchedPhotons;
-    upper = TEfficiency::ClopperPearson( nMatchedPhotons, nRecoPhotons[iReco], 0.6827, true);
-    lower = TEfficiency::ClopperPearson( nMatchedPhotons, nRecoPhotons[iReco], 0.6827, false);
-    efficiencies[iReco+1][1] = upper - efficiencies[iReco+1][0];
-    efficiencies[iReco+1][2] = efficiencies[iReco+1][0] - lower;
-  }
+  return nGenPhotons;
 }
