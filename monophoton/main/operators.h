@@ -49,6 +49,7 @@
 //   Modifier
 //     JetCleaning *
 //     CopyMet
+//     CopySuperClusters
 //     PhotonMt *
 //     LeptonRecoil *
 //     MetVariations *
@@ -711,6 +712,13 @@ class CopyMet : public Modifier {
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
  protected:
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.t1Met; }
+};
+
+class CopySuperClusters : public Modifier {
+ public:
+  CopySuperClusters(char const* name = "CopySuperClusters") : Modifier(name) {}
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
 
 class PhotonMt : public Modifier {

@@ -1271,12 +1271,6 @@ GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventMon
   for (unsigned iP(0); iP != _event.genParticles.size(); ++iP) {
     auto& part(_event.genParticles[iP]);
 
-    // probably need to add a check if it's prompt final state
-    /*
-    if (part.statusFlags != "someCondition")
-      continue;
-    */
-
     if (std::abs(part.pdgid) != pdgId_)
       continue;
 
@@ -1818,6 +1812,42 @@ PhotonJetDPhi::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
 	}
       }
     }
+  }
+}
+
+//--------------------------------------------------------------------
+// CopySuperClusters
+//--------------------------------------------------------------------
+
+void
+CopySuperClusters::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  // collect the ids of the input superclusters from output collections
+  std::map<unsigned, unsigned> referenced;
+
+  for (auto& photon : _outEvent.photons) {
+    if (photon.superCluster.idx() != -1)
+      referenced.emplace(unsigned(photon.superCluster.idx()), unsigned(-1));
+  }
+
+  for (auto& electron : _outEvent.electrons) {
+    if (electron.superCluster.idx() != -1)
+      referenced.emplace(unsigned(electron.superCluster.idx()), unsigned(-1));
+  }
+
+  for (auto& p : referenced) {
+    p.second = _outEvent.superClusters.size();
+    _outEvent.superClusters.push_back(_event.superClusters[p.first]);
+  }
+
+  for (auto& photon : _outEvent.photons) {
+    if (photon.superCluster.idx() != -1)
+      photon.superCluster.idx() = referenced[photon.superCluster.idx()];
+  }
+
+  for (auto& electron : _outEvent.electrons) {
+    if (electron.superCluster.idx() != -1)
+      electron.superCluster.idx() = referenced[electron.superCluster.idx()];
   }
 }
 
