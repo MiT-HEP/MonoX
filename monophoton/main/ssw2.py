@@ -76,13 +76,9 @@ class SkimSlimWeight(object):
     
         logger.debug('getting all input files')
 
-        if not self.manual and SkimSlimWeight.config['ntuplesDir'] == DEFAULT_NTUPLES_DIR:
-            for path in self.sample.files(self.filesets):
-                if not os.path.exists(path):
-                    fname = os.path.basename(path)
-                    dataset = os.path.basename(os.path.dirname(path))
-                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.sample.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                    print proc.communicate()[0].strip()
+        if not SkimSlimWeight.config['readRemote'] and not self.manual and SkimSlimWeight.config['ntuplesDir'] == DEFAULT_NTUPLES_DIR:
+            # check for missing local copies and issue a smartcache download request
+            self.sample.download()
 
         if SkimSlimWeight.config['skipExisting']:
             logger.info('Checking for existing files.')
@@ -98,11 +94,11 @@ class SkimSlimWeight(object):
                 outPath = self.outDir + '/' + outName
                 logger.debug(outPath)
     
-                if args.skipExisting:
+                if SkimSlimWeight.config['skipExisting']:
                     if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
                         logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
                         return False
-                else:
+                elif not SkimSlimWeight.config['testRun']:
                     try:
                         os.remove(outPath)
                     except:
@@ -120,13 +116,14 @@ class SkimSlimWeight(object):
         skimmer.setPrintEvery(SkimSlimWeight.config['printEvery'])
         skimmer.setPrintLevel(SkimSlimWeight.config['printLevel'])
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
+        skimmer.setForceAllEvents(SkimSlimWeight.config['noPhotonSkim'])
     
         for rname, gen in self.selectors.items():
             selector = gen(self.sample, rname)
             selector.setUseTimers(SkimSlimWeight.config['timer'])
             skimmer.addSelector(selector)
     
-        if self.sample.data and SkimslimWeight.config['json']:
+        if self.sample.data and SkimSlimWeight.config['json']:
             logger.info('Good lumi filter: %s', SkimSlimWeight.config['json'])
             skimmer.setGoodLumiFilter(makeGoodLumiFilter(SkimSlimWeight.config['json']))
 
@@ -143,6 +140,9 @@ class SkimSlimWeight(object):
                 for path in sample.files([fileset]):
                     if SkimSlimWeight.config['ntuplesDir'] != DEFAULT_NTUPLES_DIR:
                         path = path.replace(DEFAULT_NTUPLES_DIR, SkimSlimWeight.config['ntuplesDir'])
+                    elif SkimSlimWeight.config['readRemote']:
+                        if not os.path.exists(path) or os.stat(path).st_size == 0:
+                            path = path.replace('/mnt/hadoop/cms', 'root://xrootd.cmsaf.mit.edu/')
         
                     logger.debug('Add input: %s %s', fileset, path)
                     paths[fileset].append(path)
@@ -187,7 +187,7 @@ class SkimSlimWeight(object):
                 if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
                     logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
                     return False
-            else:
+            elif not SkimSlimWeight.config['testRun']:
                 try:
                     os.remove(outPath)
                 except:
@@ -224,54 +224,62 @@ class SkimSlimWeight(object):
                 logger.info('Removing %s', mergePath)
                 os.remove(mergePath)
 
-    def submitMerge(self, submitter):
+
+class BatchManager(object):
+
+    def __init__(self, submitter, skipMissing, readRemote):
+        self.submitter = submitter
+        self.skipMissing = skipMissing
+        self.readRemote = readRemote
+        self.argTemplate = ''
+        self.jobClusters = []
+
+    def submitMerge(self, ssws):
         arguments = []
+
+        for ssw in ssws:
+            # Collect arguments and remove output
+            for rname in ssw.selectors:
+                arguments.append((ssw.sample.name, rname))
     
-        # Collect arguments and remove output
-        for rname in self.selectors:
-
-            arguments.append((self.sample.name, rname))
-
-            # clean up old .log files
-            path = '/local/' + os.environ['USER'] + '/ssw2/' + self.sample.name + '_' + rname + '.0.log'
-            logger.debug('Removing %s', path)
-            try:
-                os.remove(path)
-            except:
-                pass
+                # clean up old .log files
+                path = '/local/' + os.environ['USER'] + '/ssw2/' + ssw.sample.name + '_' + rname + '.0.log'
+                logger.debug('Removing %s', path)
+                try:
+                    os.remove(path)
+                except:
+                    pass
     
         self.argTemplate = '-M %s -s %s'
-        submitter.job_args = [self.argTemplate % arg for arg in arguments]
-        submitter.job_names = ['%s_%s' % arg for arg in arguments]
+        self.submitter.job_args = [self.argTemplate % arg for arg in arguments]
+        self.submitter.job_names = ['%s_%s' % arg for arg in arguments]
     
-        self.jobClusters = submitter.submit(name = 'ssw2')
+        self.jobClusters = self.submitter.submit(name = 'ssw2')
 
-    def submitSkim(self, submitter, skipMissing):
-        arguments = []
-
-        for fileset in self.filesets:
-            arguments.append((self.sample.name, fileset))
-
-            # clean up old .log files
-            logpath = '/local/' + os.environ['USER'] + '/ssw2/' + self.sample.name + '_' + fileset + '.0.log'
-            logger.debug('Removing %s', logpath)
-            try:
-                os.remove(logpath)
-            except:
-                pass
-    
+    def submitSkim(self, ssws):
         self.argTemplate = '%s -f %s'
     
-        if skipMissing:
+        if self.skipMissing:
             self.argTemplate += ' -K'
+
+        if self.readRemote:
+            self.argTemplate += ' -R'
+
+        self.submitter.job_args = []
+        self.submitter.job_names = []
+
+        for ssw in ssws:
+            for fileset in ssw.filesets:
+                self.submitter.job_args.append(self.argTemplate % (ssw.sample.name, fileset) + ' -s ' + ' '.join(ssw.selectors.keys()))
+                self.submitter.job_names.append('%s_%s' % (ssw.sample.name, fileset))
     
-        self.argTemplate += ' -s ' + ' '.join(self.selectors.keys())
-    
-        submitter.job_args = []
-        submitter.job_names = []
-        for arg in arguments:
-            submitter.job_args.append(self.argTemplate % arg)
-            submitter.job_names.append('%s_%s' % arg)
+                # clean up old .log files
+                logpath = '/local/' + os.environ['USER'] + '/ssw2/' + ssw.sample.name + '_' + fileset + '.0.log'
+                logger.debug('Removing %s', logpath)
+                try:
+                    os.remove(logpath)
+                except:
+                    pass
     
         self.jobClusters = submitter.submit(name = 'ssw2')
 
@@ -334,12 +342,14 @@ if __name__ == '__main__':
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
     argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
     argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
+    argParser.add_argument('--no-photonskim', '-P', action = 'store_true', dest = 'noPhotonSkim', help = 'Force skim on all events.')
     argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
     argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
     argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '+', default = [], help = 'Selectors to process.')
-    argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = '', help = 'Override config.printLevel.')
+    argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = 'WARNING', help = 'Override config.printLevel.')
     argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
     argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
+    argParser.add_argument('--read-remote', '-R', action = 'store_true', dest = 'readRemote', help = 'Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
     argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
     argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
     
@@ -366,11 +376,9 @@ if __name__ == '__main__':
     import config
 
     ## set up logger
-    try:
-        printLevel = getattr(logging, args.printLevel.upper())
-    except AttributeError:
-        printLevel = config.printLevel
-    
+    printLevel = getattr(logging, args.printLevel.upper())
+    args.printLevel = printLevel
+
     logging.basicConfig(level = printLevel)
     logger = logging.getLogger(__name__)
 
@@ -433,15 +441,36 @@ if __name__ == '__main__':
     sys.path.append(monoxdir + '/common')
     from goodlumi import makeGoodLumiFilter
 
-    ## flist argument for SkimSlimWeight
-    if len(args.files) != 0:
-        flist = args.files
-        files = True
-    else:
-        flist = args.filesets
-        files = False
+    ## construct and run SkimSlimWeight objects
+    ssws = []
+    for sample in samples:
+        if len(args.files) != 0:
+            flist = args.files
+            files = True
+        else:
+            flist = args.filesets
+            files = False
+
+        if len(flist) == 0:
+            flist = sample.filesets()
+
+        ssw = SkimSlimWeight(sample, selectors[sample.name], flist, files)
+
+        if args.merge:
+            if not ssw.setupMerge():
+                logger.warning('Failed to set up merge job for %s', sample.name)
+                continue
+        else:
+            if not ssw.setupSkim():
+                logger.warning('Failed to set up skim job for %s', sample.name)
+                continue
+
+        ssws.append(ssw)
 
     if args.batch:
+        ## job submission only
+        print 'Submitting jobs.'
+
         ## load condor-run
         sys.path.append('/home/yiiyama/lib')
         from condor_run import CondorRun
@@ -450,53 +479,28 @@ if __name__ == '__main__':
         submitter.logdir = '/local/' + os.environ['USER']
         submitter.hold_on_fail = True
         submitter.group = 'group_t3mit.urgent'
+        
+        batchManager = BatchManager(submitter, args.skipMissing, args.readRemote)
 
-    ## construct and run SkimSlimWeight objects
-    for sample in samples:
-        if len(flist) == 0:
-            flist = sample.filesets()
-
-        ssw = SkimSlimWeight(sample, selectors[sample.name], flist, files)
-
-        if args.batch:
-            ## job submission only
-            if args.merge:
-                jobtype = 'merge'
-                setup = lambda: ssw.setupMerge()
-                sub = lambda: ssw.submitMerge(submitter)
-            else:
-                jobtype = 'skim'
-                setup = lambda: ssw.setupSkim()
-                sub = lambda: ssw.submitSkim(submitter, args.skipMissing)
-    
-            print 'Submitting ' + jobtype + ' jobs for ' + sample.name + '.'
-    
-            if not setup():
-                logger.warning('Failed to set up %s job for %s', jobtype, sample.name)
-                continue
-    
-            sub()
-    
-            if args.noWait:
-                print 'Jobs have been submitted.'
-            else:
-                print 'Waiting for individual ' + jobtype + ' jobs to complete.'
-                ssw.waitForCompletion()
-                print 'All merge jobs finished.'
-
+        if args.merge:
+            batchManager.submitMerge(ssws)
         else:
-            if args.merge:
-                print 'Merging.'
-                if not ssw.setupMerge():
-                    logger.warning('Failed to set up merge job for %s', sample.name)
-                    continue
+            batchManager.submitSkim(ssws)
 
+        if args.noWait:
+            print 'Jobs have been submitted.'
+        else:
+            print 'Waiting for all jobs to complete.'
+            batchManager.waitForCompletion()
+            print 'All merge jobs finished.'
+
+    else:
+        if args.merge:
+            print 'Merging.'
+            for ssw in ssws:
                 ssw.executeMerge()
 
-            else:
-                print 'Skimming.'
-                if not ssw.setupSkim():
-                    logger.warning('Failed to set up skim job for %s', sample.name)
-                    continue
-                
+        else:
+            print 'Skimming.'
+            for ssw in ssws:
                 ssw.executeSkim()
