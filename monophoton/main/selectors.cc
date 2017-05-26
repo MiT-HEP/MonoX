@@ -123,7 +123,7 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   else
     _inEvent.book(*skimOut_, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "pfCandidates", "metFilters"});
 
-  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "t1Met"});
+  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"});
 }
 
 void
@@ -150,7 +150,7 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
   bool pass(true);
   for (unsigned iO(0); iO != operators_.size(); ++iO) {
     auto& op(*operators_[iO]);
-
+    
     if (useTimers_)
       start = Clock::now();
 

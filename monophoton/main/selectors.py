@@ -19,7 +19,6 @@ if basedir not in sys.path:
 import config
 
 logger = logging.getLogger(__name__)
-logger.setLevel(config.printLevel)
 
 import ROOT
 
@@ -27,8 +26,26 @@ ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.Load('libfastjet.so')
 ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 
+# if the objects library is compiled with CLING dictionaries, ROOT must load the
+# full library first before compiling the macros.
+try:
+    e = ROOT.panda.Event
+except AttributeError:
+    pass
+
 ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
+try:
+    o = ROOT.Operator
+except:
+    logger.error("Couldn't compile operators.cc. Quitting.")
+    sys.exit(1)
+
 ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
+try:
+    o = ROOT.EventSelectorBase
+except:
+    logger.error("Couldn't compile selectors.cc. Quitting.")
+    sys.exit(1)
 
 photonFullSelection = [
     'HOverE',
@@ -145,7 +162,8 @@ def monophotonBase(sample, selector):
         'TauVeto',
         'BjetVeto',
         'JetCleaning',
-        'CopyMet'
+        'CopyMet',
+        'CopySuperClusters'
     ]
 
     if not sample.data:
@@ -212,7 +230,8 @@ def purityBase(sample, selector):
         'BjetVeto',
         'JetCleaning',
         'HighPtJetSelection',
-        'CopyMet'
+        'CopyMet',
+        'CopySuperClusters'
     ]
 
     # if sample.data:
@@ -263,6 +282,7 @@ def leptonBase(sample, selector):
         'BjetVeto',
         'JetCleaning',
         'CopyMet',
+        'CopySuperClusters'
     ]
 
     # if sample.data:
@@ -398,6 +418,7 @@ def TagAndProbeBase(sample, selector):
         'TagAndProbePairZ',
         'JetCleaning',
         'CopyMet',
+        'CopySuperClusters'
     ]
 
     # if sample.data:
@@ -538,12 +559,7 @@ def purity(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.resetSelection()
     photonSel.resetVeto()
-
-    sels = []
-    sels.append('Sieie15')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    photonSel.addSelection(True, ROOT.PhotonSelection.Sieie15)
 
     if not sample.data:
         genPhotonSel = ROOT.GenParticleSelection("GenPhotonSelection")
@@ -554,7 +570,7 @@ def purity(sample, selector):
         # GenParticles not being filled currently
         selector.addOperator(genPhotonSel, 1)
         
-        photonSel.setIgnoreDecision(True)        
+#        photonSel.setIgnoreDecision(True)        
         selector.findOperator('HighPtJetSelection').setIgnoreDecision(True)
 
     return selector
@@ -895,11 +911,13 @@ def dijet(sample, name):
     jets.setOverwrite(True)
     selector.addOperator(jets)
 
-    jetSel = ROOT.HighPtJetSelection()
-    jetSel.setJetPtCut(150.)
-    jetSel.setNMin(2)
-    jetSel.setNMax(2)
-    selector.addOperator(jetSel)
+    photonSel.setIgnoreDecision(True)
+
+#    jetSel = ROOT.HighPtJetSelection()
+#    jetSel.setJetPtCut(150.)
+#    jetSel.setNMin(2)
+#    jetSel.setNMax(2)
+#    selector.addOperator(jetSel)
 
     selector.addOperator(ROOT.JetScore())
 
@@ -1202,7 +1220,23 @@ def dielectron(sample, selector):
         track.setNParticles(2)
         track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
-        
+
+    return selector
+
+def dielectronAllPhoton(sample, selector):
+    selector = dielectron(sample, selector)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lElectron)
+    selector.addOperator(vtx)
+
+    electrons = selector.findOperator('LeptonSelection')
+    electrons.setStrictEl(True)
+    electrons.setRequireTight(True)
+
+    photons = selector.findOperator('PhotonSelection')
+    photons.resetSelection()
+    photons.addSelection(True, ROOT.PhotonSelection.HOverE)
 
     return selector
 
@@ -1347,9 +1381,14 @@ def dimuon(sample, selector):
 def dimuonAllPhoton(sample, selector):
     selector = dimuon(sample, selector)
 
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lMuon)
+    selector.addOperator(vtx)
+
     muons = selector.findOperator('LeptonSelection')
-    muons.setStrictMu(False)
+    muons.setStrictMu(True)
     muons.setRequireTight(False)
+    muons.setRequireMedium(True)
 
     photons = selector.findOperator('PhotonSelection')
     photons.resetSelection()
@@ -1417,6 +1456,23 @@ def monomuon(sample, selector):
         track.addFactor(muonTrackSF)
         track.setVariable(ROOT.IDSFWeight.kNpv)
         selector.addOperator(track)
+
+    return selector
+
+def monomuonAllPhoton(sample, selector):
+    selector = monomuon(sample, selector)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lMuon)
+    selector.addOperator(vtx)
+
+    muons = selector.findOperator('LeptonSelection')
+    muons.setStrictMu(True)
+    muons.setRequireMedium(True)
+
+    photons = selector.findOperator('PhotonSelection')
+    photons.resetSelection()
+    photons.addSelection(True, ROOT.PhotonSelection.HOverE)
 
     return selector
 
@@ -1499,6 +1555,81 @@ def wenuall(sample, name):
 
     return selector
 
+def monoelVertex(sample, name):
+    """
+    Monoel-like selection with e or mu, with LeptonVertex
+    """
+
+    selector = ROOT.WlnuSelector(name)
+    selector.setRejectedPdgId(0)
+    selector.setAcceptedPdgId(11)
+
+    selector = monoelectron(sample, selector)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lElectron)
+    selector.addOperator(vtx)
+
+    return selector
+
+def monomuVertex(sample, name):
+    """
+    Monomu-like selection with e or mu, with LeptonVertex
+    """
+
+    selector = ROOT.WlnuSelector(name)
+    selector.setRejectedPdgId(0)
+    selector.setAcceptedPdgId(13)
+
+    selector = monomuon(sample, selector)
+
+    leptons = selector.findOperator('LeptonSelection')
+    leptons.setRequireTight(False)
+    leptons.setRequireMedium(True)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lMuon)
+    selector.addOperator(vtx)
+
+    return selector
+
+def dielVertex(sample, name):
+    """
+    Diel-like selection with e or mu, with LeptonVertex
+    """
+
+    selector = ROOT.WlnuSelector(name)
+    selector.setRejectedPdgId(0)
+    selector.setAcceptedPdgId(11)
+
+    selector = dielectron(sample, selector)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lElectron)
+    selector.addOperator(vtx)
+
+    return selector
+
+def dimuVertex(sample, name):
+    """
+    Dimu-like selection with e or mu, with LeptonVertex
+    """
+
+    selector = ROOT.WlnuSelector(name)
+    selector.setRejectedPdgId(0)
+    selector.setAcceptedPdgId(13)
+
+    selector = dimuon(sample, selector)
+
+    leptons = selector.findOperator('LeptonSelection')
+    leptons.setRequireTight(True)
+#    leptons.setRequireMedium(True)
+
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lMuon)
+    selector.addOperator(vtx)
+
+    return selector
 
 def zeeBase(sample, selector):
     """
