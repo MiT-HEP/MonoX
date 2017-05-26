@@ -1,5 +1,6 @@
 #include "selectors.h"
 #include "logging.h"
+#include "../misc/photon_extra.h"
 
 #include "TString.h"
 #include "TFile.h"
@@ -32,6 +33,7 @@ public:
   void setOwnSelectors(bool b) { ownSelectors_ = b; }
   void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
+  void setForceAllEvents(bool b) { forceAllEvents_ = b; }
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
@@ -43,8 +45,9 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
   bool ownSelectors_{true};
-  TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim_ = true
+  TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim = true
   GoodLumiFilter* goodLumiFilter_{};
+  bool forceAllEvents_{false}; // Override photon skim decisions made by the selectors
   bool skipMissingFiles_{false};
   unsigned printEvery_{10000};
   unsigned printLevel_{0};
@@ -74,6 +77,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   panda::Event event;
   panda::GenParticleCollection genParticles("genParticles");
+  genParticles.data.parentContainer_ = &genParticles;
   panda::EventMonophoton skimmedEvent;
 
   // will get updated by individual operators
@@ -120,6 +124,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     if (!sel->getCanPhotonSkim())
       doPhotonSkim = false;
   }
+
+  if (forceAllEvents_)
+    doPhotonSkim = false;
 
   TString commonSelection;
   if (doPhotonSkim)
@@ -297,129 +304,6 @@ Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEv
   if (_outEvent.run.runNumber != _event.run.runNumber)
     _outEvent.run = _event.run;
 
-  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
-    auto& inPhoton(_event.photons[iPh]);
-    auto& superCluster(*inPhoton.superCluster);
-    auto& outPhoton(_outEvent.photons[iPh]);
-
-    outPhoton.scRawPt = superCluster.rawPt;
-    outPhoton.scEta = superCluster.eta;
-    outPhoton.e4 = inPhoton.eleft + inPhoton.eright + inPhoton.etop + inPhoton.ebottom;
-    outPhoton.isEB = std::abs(outPhoton.scEta) < 1.4442;
-
-    // Recomputing isolation with scRawPt
-    // S15 isolation valid only for panda >= 003
-    // In 002 we had Spring15 leakage correction but Spring16 effective areas (production error).
-
-    double chIsoEAS16(0.);
-    double nhIsoEAS16(0.);
-    double phIsoEAS16(0.);
-    double nhIsoEAS15(0.);
-    double phIsoEAS15(0.);
-    double absEta(std::abs(outPhoton.scEta));
-    if (absEta < 1.) {
-      nhIsoEAS15 = 0.0599;
-      phIsoEAS15 = 0.1271;
-      chIsoEAS16 = 0.0360;
-      nhIsoEAS16 = 0.0597;
-      phIsoEAS16 = 0.1210;
-    }
-    else if (absEta < 1.479) {
-      nhIsoEAS15 = 0.0819;
-      phIsoEAS15 = 0.1101;
-      chIsoEAS16 = 0.0377;
-      nhIsoEAS16 = 0.0807;
-      phIsoEAS16 = 0.1107;
-    }
-    else if (absEta < 2.) {
-      nhIsoEAS15 = 0.0696;
-      phIsoEAS15 = 0.0756;
-      chIsoEAS16 = 0.0306;
-      nhIsoEAS16 = 0.0629;
-      phIsoEAS16 = 0.0699;
-    }
-    else if (absEta < 2.2) {
-      nhIsoEAS15 = 0.0360;
-      phIsoEAS15 = 0.1175;
-      chIsoEAS16 = 0.0283;
-      nhIsoEAS16 = 0.0197;
-      phIsoEAS16 = 0.1056;
-    }
-    else if (absEta < 2.3) {
-      nhIsoEAS15 = 0.0360;
-      phIsoEAS15 = 0.1498;
-      chIsoEAS16 = 0.0254;
-      nhIsoEAS16 = 0.0184;
-      phIsoEAS16 = 0.1457;
-    }
-    else if (absEta < 2.4) {
-      nhIsoEAS15 = 0.0462;
-      phIsoEAS15 = 0.1857;
-      chIsoEAS16 = 0.0217;
-      nhIsoEAS16 = 0.0284;
-      phIsoEAS16 = 0.1719;
-    }
-    else {
-      nhIsoEAS15 = 0.0656;
-      phIsoEAS15 = 0.2183;
-      chIsoEAS16 = 0.0167;
-      nhIsoEAS16 = 0.0591;
-      phIsoEAS16 = 0.1998;
-    }
-
-    double nhIsoE1S15, nhIsoE2S15, phIsoE1S15;
-    double nhIsoE1S16, nhIsoE2S16, phIsoE1S16;
-
-    if (outPhoton.isEB) {
-      nhIsoE1S15 = 0.014;
-      nhIsoE2S15 = 0.000019;
-      phIsoE1S15 = 0.0053;
-
-      nhIsoE1S16 = 0.0148;
-      nhIsoE2S16 = 0.000017;
-      phIsoE1S16 = 0.0047;
-    }
-    else {
-      nhIsoE1S15 = 0.0139;
-      nhIsoE2S15 = 0.000025;
-      phIsoE1S15 = 0.0034;
-
-      nhIsoE1S16 = 0.0163;
-      nhIsoE2S16 = 0.000014;
-      phIsoE1S16 = 0.0034;
-    }
-
-    double pt(inPhoton.pt());
-    double pt2(pt * pt);
-    double scpt(outPhoton.scRawPt);
-    double scpt2(scpt * scpt);
-    double rho(_event.rho);
-
-    double chIsoCore(inPhoton.chIso + chIsoEAS16 * rho);
-    double nhIsoCore(inPhoton.nhIso + nhIsoEAS16 * rho + nhIsoE1S16 * pt + nhIsoE2S16 * pt2);
-    double phIsoCore(inPhoton.phIso + phIsoEAS16 * rho + phIsoE1S16 * pt);
-
-    // outPhoton.chIso = chIsoCore - chIsoEAS16 * rho; // identity
-    outPhoton.nhIso = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1S16 * scpt - nhIsoE2S16 * scpt2;
-    outPhoton.phIso = phIsoCore - phIsoEAS16 * rho - phIsoE1S16 * scpt;
-
-    outPhoton.loose = outPhoton.passHOverE(0, 0) && outPhoton.passSieie(0, 0) &&
-      outPhoton.passCHIso(0) && outPhoton.passNHIso(0) && outPhoton.passCHIso(0);
-    outPhoton.medium = outPhoton.passHOverE(1, 0) && outPhoton.passSieie(1, 0) &&
-      outPhoton.passCHIso(1) && outPhoton.passNHIso(1) && outPhoton.passCHIso(1);
-    outPhoton.tight = outPhoton.passHOverE(2, 0) && outPhoton.passSieie(2, 0) &&
-      outPhoton.passCHIso(2) && outPhoton.passNHIso(2) && outPhoton.passCHIso(2);
-
-    outPhoton.chIsoS15 = chIsoCore;        
-    outPhoton.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
-    outPhoton.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
-
-    // EA computed with iso/worstIsoEA.py
-    outPhoton.chIsoMax -= 0.094 * rho;
-    if (outPhoton.chIsoMax < outPhoton.chIso)
-      outPhoton.chIsoMax = outPhoton.chIso;
-
-    if (inPhoton.matchedGen.isValid())
-      outPhoton.matchedGenId = inPhoton.matchedGen->pdgid;
-  }
+  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh)
+    panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho);
 }
