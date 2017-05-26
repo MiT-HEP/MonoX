@@ -261,17 +261,11 @@ class SampleDef(object):
     def download(self, filesets = []):
         self._readCatalogs()
 
-        for dataset in self.datasetNames:
-            for fileset, paths in self._fullpaths[dataset].items():
-                if len(filesets) != 0 and fileset not in filesets:
-                    continue
-
-                for path in paths:
-                    if not os.path.exists(path):
-                        fname = os.path.basename(path)
-                        dataset = os.path.basename(os.path.dirname(path))
-                        proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                        print proc.communicate()[0].strip()
+        for path in [p for p in self.files(filesets) if not os.path.exists(p)]:
+            fname = os.path.basename(path)
+            dataset = os.path.basename(os.path.dirname(path))
+            proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
