@@ -32,6 +32,9 @@
 # Compiled python scripts
 *.pyc
 
+# Auto-generated ROOT dictionaries
+*_ACLiC_*
+
 # Emacs backup files
 *~
 
