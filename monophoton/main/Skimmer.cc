@@ -192,6 +192,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw std::runtime_error("source");
     }
 
+    input->SetCacheSize(100000000);
+
     if (commonSelection.Length() != 0) {
       gROOT->cd();
       input->Draw(">>elist", commonSelection, "entrylist");
@@ -204,6 +206,11 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
     genInput->SetBranchStatus("*", false);
     genParticles.setAddress(*genInput);
+
+    event.electrons.data.matchedGenContainer_ = &genParticles;
+    event.muons.data.matchedGenContainer_ = &genParticles;
+    event.taus.data.matchedGenContainer_ = &genParticles;
+    event.photons.data.matchedGenContainer_ = &genParticles;
 
     long iEntry(0);
     while (iEntryGlobal != _nEntries) {
