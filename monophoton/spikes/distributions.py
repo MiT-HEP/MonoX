@@ -13,6 +13,7 @@ lumi = sum(s.lumi for s in allsamples.getmany('sph-16*'))
 
 canvas = SimpleCanvas(lumi = lumi)
 
+finePtBinning = array.array('d', [175. + 25 * x for x in range(17)] + [600., 700., 800., 1000.])
 combinedFitPtBinning = array.array('d', [175.0, 200., 250., 300., 400., 600., 1000.0])
 fitTemplateBinning = array.array('d', [-1 * (bin - 175.) for bin in reversed(combinedFitPtBinning)] + [bin - 175. for bin in combinedFitPtBinning[1:]])
 fitTemplateExpression = '( ( (cluster.rawPt - 175.) * (cluster.rawPt < 1000.) + 800. * (cluster.rawPt > 1000.) ) * TMath::Sign(1, TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(cluster.phi + 0.005) - 1.570796)) - 1.570796) - 0.5) )'
@@ -25,6 +26,24 @@ outputFile = ROOT.TFile.Open(config.histDir + '/spikes.root', 'recreate')
 
 spikeTree = ROOT.TChain('events')
 spikeTree.Add('/data/t3home000/yiiyama/simpletree/uncleanedSkimmed/sph-16*_highmet.root')
+
+# pt fine
+
+outputFile.cd()
+uncleanedPt = ROOT.TH1D('uncleanedPt', ';E_{T}^{SC} (GeV)', len(finePtBinning) - 1, finePtBinning)
+spikeTree.Draw('cluster.rawPt>>uncleanedPt', 'cluster.time > -15. && cluster.time < -10. && cluster.sieie < 0.0102 && cluster.sieie > 0.001 && cluster.sipip > 0.001')
+uncleanedPt.Write()
+
+uncleanedPt.SetLineColor(ROOT.kBlack)
+
+uncleanedPt.Scale(1., 'width')
+
+canvas.addHistogram(uncleanedPt)
+
+canvas.printWeb('spike', 'uncleanedPtFine')
+canvas.Clear()
+
+sys.exit(0)
 
 # time
 
