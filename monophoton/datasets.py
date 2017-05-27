@@ -368,14 +368,25 @@ class SampleDefList(object):
     def getmany(self, names):
         if type(names) is str:
             names = [names]
+        else:
+            names = list(names) # make a copy
 
         samples = []
-        for name in names:
+        iname = 0
+        while iname != len(names): # iterate by len because the length can change
+            name = names[iname]
+            iname += 1
+
             match = True
             if name.startswith('!'):
                 name = name[1:]
                 match = False
 
+            if '{' in name:
+                expanded = expandBrace(name)
+                name = expanded[0]
+                names.extend(expanded[1:]) # add to the end of list
+            
             if '*' in name:
                 matching = [s for s in self.samples if fnmatch.fnmatch(s.name, name)]
             else:
