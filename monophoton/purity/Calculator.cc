@@ -69,7 +69,7 @@ private:
   double maxDR_{0.2};
   double maxDPt_{0.2};
 
-  WP wp_{Medium};
+  WP wp_{WPmedium};
   Era era_{Spring16};
 };
 
