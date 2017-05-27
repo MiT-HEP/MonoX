@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
     ## set up samples and selectors
     from datasets import allsamples
-    from main.skimconfig import selectors as allSelectors
+    from main.skimconfig import allSelectors
 
     # construct {sname: {selector name: generator}}
     selectors = {}
