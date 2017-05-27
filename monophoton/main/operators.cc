@@ -170,7 +170,7 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
     unsigned iP(0);
     for (; iP != _event.partons.size(); ++iP) {
       auto& parton(_event.partons[iP]);
-      if (parton.dR2(part) < minDR_ * minDR_)
+      if (parton.dR2(part) < minPartonDR2_)
         break;
     }
     if (iP != _event.partons.size())
@@ -2895,7 +2895,7 @@ void
 TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
 {
   for (auto& photon : _inEvent.photons) {
-    if (!photon.isEB || photon.scRawPt < 175.)
+    if (!photon.isEB || photon.scRawPt < minProbePt_)
       continue;
 
     auto&& pg(photon.p4());
@@ -2904,8 +2904,11 @@ TPElectronPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::Even
       if (!electron.tight)
         continue;
 
+      if (tagTriggerMatch_ && !electron.triggerMatch[panda::Electron::fEl27Tight])
+        continue;
+
       //      if (electron.pt() < 30. || std::abs(electron.eta()) > 2.1)
-      if (electron.pt() < 15. || std::abs(electron.eta()) > 2.1)
+      if (electron.pt() < minTagPt_ || std::abs(electron.eta()) > 2.1)
         continue;
 
       if (photon.dR2(electron) < 0.01)
@@ -2979,6 +2982,9 @@ TPMuonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPP
 
     for (auto& muon : _inEvent.muons) {
       if (!muon.tight)
+        continue;
+
+      if (tagTriggerMatch_ && !(muon.triggerMatch[panda::Muon::fIsoMu24] || muon.triggerMatch[panda::Muon::fIsoTkMu24]))
         continue;
 
       //      if (muon.pt() < 30. || std::abs(muon.eta()) > 2.1)

@@ -348,7 +348,7 @@ def leptonBase(sample, selector):
 
     return selector
 
-def zee(sample, name):
+def eefake(sample, name):
     selector = ROOT.ZeeEventSelector(name)
 
     eeSel = selector.findOperator('EEPairSelection')
@@ -448,11 +448,31 @@ def TagAndProbeBase(sample, selector):
 
     return selector
 
+def tagprobeBase(sample, selector):
+    """
+    Base for selectors skimming tag & probe input trees.
+    """
+
+    if type(selector) is str: # this is a name for the selector
+        selector = ROOT.TagAndProbeSelector(selector)
+
+    if sample.name.startswith('sph'):
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    elif sample.name.startswith('sel'):
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+    elif sample.name.startswith('smu'):
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
+    if not sample.data:
+        addPUWeight(sample, selector)
+
+    return selector
+
 #####################
 # DERIVED SELECTORS #
 #####################
 
-def candidate(sample, selector):
+def monoph(sample, selector):
     """
     Full monophoton selection.
     """
@@ -521,7 +541,7 @@ def signalRaw(sample, selector):
 
     return selector
 
-def eleProxy(sample, selector):
+def efake(sample, selector):
     """
     Candidate-like but with inverted electron veto
     """
@@ -689,7 +709,7 @@ def purityLoose(sample, selector):
 
     return selector
 
-def hadProxy(sample, selector):
+def hfake(sample, selector):
     """
     Candidate-like but with inverted sieie or CHIso.
     """
@@ -730,7 +750,7 @@ def hadProxy(sample, selector):
 
     return selector
 
-def hadProxyTight(sample, selector):
+def hfakeTight(sample, selector):
     """
     Candidate-like with tight NHIso and PhIso, with inverted sieie or CHIso.
     """
@@ -772,7 +792,7 @@ def hadProxyTight(sample, selector):
 
     return selector
 
-def hadProxyLoose(sample, selector):
+def hfakeLoose(sample, selector):
     """
     Candidate-like with Loose NHIso and PhIso, with inverted sieie or CHIso.
     """
@@ -1185,7 +1205,7 @@ def muonBase(sample, selector):
 
     return selector
 
-def dielectron(sample, selector):
+def diel(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
     # selector.findOperator('LeptonSelection').setStrictEl(False)
@@ -1223,8 +1243,8 @@ def dielectron(sample, selector):
 
     return selector
 
-def dielectronAllPhoton(sample, selector):
-    selector = dielectron(sample, selector)
+def dielAllPhoton(sample, selector):
+    selector = diel(sample, selector)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1240,7 +1260,7 @@ def dielectronAllPhoton(sample, selector):
 
     return selector
 
-def dielectronHadProxy(sample, selector):
+def dielHfake(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(2, 0)
     # selector.findOperator('LeptonSelection').setStrictEl(False)
@@ -1280,7 +1300,7 @@ def dielectronHadProxy(sample, selector):
 
     return selector
 
-def monoelectron(sample, selector):
+def monoel(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
@@ -1309,7 +1329,7 @@ def monoelectron(sample, selector):
 
     return selector
 
-def monoelectronHadProxy(sample, selector):
+def monoelHfake(sample, selector):
     selector = electronBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
@@ -1340,7 +1360,7 @@ def monoelectronHadProxy(sample, selector):
 
     return selector
 
-def dimuon(sample, selector):
+def dimu(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
     # selector.findOperator('LeptonSelection').setStrictMu(False)
@@ -1378,8 +1398,8 @@ def dimuon(sample, selector):
 
     return selector
 
-def dimuonAllPhoton(sample, selector):
-    selector = dimuon(sample, selector)
+def dimuAllPhoton(sample, selector):
+    selector = dimu(sample, selector)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lMuon)
@@ -1396,7 +1416,7 @@ def dimuonAllPhoton(sample, selector):
 
     return selector
 
-def dimuonHadProxy(sample, selector):
+def dimuHfake(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 2)
     # selector.findOperator('LeptonSelection').setStrictMu(False)
@@ -1436,7 +1456,7 @@ def dimuonHadProxy(sample, selector):
 
     return selector
 
-def monomuon(sample, selector):
+def monomu(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
@@ -1459,8 +1479,8 @@ def monomuon(sample, selector):
 
     return selector
 
-def monomuonAllPhoton(sample, selector):
-    selector = monomuon(sample, selector)
+def monomuAllPhoton(sample, selector):
+    selector = monomu(sample, selector)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lMuon)
@@ -1476,7 +1496,7 @@ def monomuonAllPhoton(sample, selector):
 
     return selector
 
-def monomuonHadProxy(sample, selector):
+def monomuHfake(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
@@ -1501,7 +1521,7 @@ def monomuonHadProxy(sample, selector):
 
     return selector
 
-def oppflavor(sample, selector):
+def elmu(sample, selector):
     selector = muonBase(sample, selector)
     selector.findOperator('LeptonSelection').setN(1, 1)
 
@@ -1531,7 +1551,7 @@ def oppflavor(sample, selector):
 
     return selector
 
-def wenuall(sample, name):
+def wenu(sample, name):
     """
     Candidate-like selection but for W->enu, no pixel veto on the photon.
     """
@@ -1564,7 +1584,7 @@ def monoelVertex(sample, name):
     selector.setRejectedPdgId(0)
     selector.setAcceptedPdgId(11)
 
-    selector = monoelectron(sample, selector)
+    selector = monoel(sample, selector)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1581,7 +1601,7 @@ def monomuVertex(sample, name):
     selector.setRejectedPdgId(0)
     selector.setAcceptedPdgId(13)
 
-    selector = monomuon(sample, selector)
+    selector = monomu(sample, selector)
 
     leptons = selector.findOperator('LeptonSelection')
     leptons.setRequireTight(False)
@@ -1602,7 +1622,7 @@ def dielVertex(sample, name):
     selector.setRejectedPdgId(0)
     selector.setAcceptedPdgId(11)
 
-    selector = dielectron(sample, selector)
+    selector = diel(sample, selector)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1619,7 +1639,7 @@ def dimuVertex(sample, name):
     selector.setRejectedPdgId(0)
     selector.setAcceptedPdgId(13)
 
-    selector = dimuon(sample, selector)
+    selector = dimu(sample, selector)
 
     leptons = selector.findOperator('LeptonSelection')
     leptons.setRequireTight(True)
@@ -1687,9 +1707,72 @@ def zmmJets(sample, selector):
 
     return selector
 
-if needHelp:
-    sys.argv.append('--help')
+def tpeg(sample, selector):
+    """
+    Electron + photon tag & probe.
+    """
 
+    selector = tagprobeBase(sample, selector)
+    selector.addOperator(ROOT.TPElectronPhoton())
+
+    return selector
+
+def tpmg(sample, selector):
+    """
+    Muon + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    selector.addOperator(ROOT.TPMuonPhoton())
+
+    return selector
+
+def tpegLowPt(sample, selector):
+    """
+    Electron + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    tp = ROOT.TPElectronPhoton()
+    tp.setMinProbePt(25.)
+    tp.setMinTagPt(30.)
+    tp.setTagTriggerMatch(True)
+
+    selector.addOperator(tp)
+
+    selector.setCanPhotonSkim(False)
+
+    return selector
+
+def tpmgLowPt(sample, selector):
+    """
+    Muon + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    tp = ROOT.TPMuonPhoton()
+    tp.setMinProbePt(25.)
+    tp.setMinTagPt(30.)
+    tp.setTagTriggerMatch(True)
+
+    selector.addOperator(tp)
+
+    selector.setCanPhotonSkim(False)
+
+    return selector
+
+
+def tpmmg(sample, selector):
+    """
+    Dimuon + photon tag & probe.
+    """
+
+    selector = tagprobeBase(sample, selector)
+    operator = ROOT.TPMuonPhoton()
+    operator.setMode(ROOT.TPMuonPhoton.kDouble)
+    selector.addOperator(operator)
+
+    return selector
 
 #####################
 # SELECTOR WRAPPERS #
@@ -1749,6 +1832,8 @@ def genveto(generator):
         selector = generator(sample, name)
 
         veto = ROOT.GenPhotonVeto()
+        veto.setMinPt(130.)
+        veto.setMinPartonDR(0.5)
 
         selector.addOperator(veto, 0)
 
@@ -1797,49 +1882,6 @@ def dph(generator):
 
     return invisible
 
-def tagprobeBase(sample, selector):
-    """
-    Base for selectors skimming tag & probe input trees.
-    """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.TagAndProbeSelector(selector)
-
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
-    else:
-        addPUWeight(sample, selector)
-
-    return selector
-
-def tpeg(sample, selector):
-    """
-    Electron + photon tag & probe.
-    """
-
-    selector = tagprobeBase(sample, selector)
-    selector.addOperator(ROOT.TPElectronPhoton())
-
-    return selector
-
-def tpmg(sample, selector):
-    """
-    Muon + photon tag & probe.
-    """
-
-    selector = tagprobeBase(sample, selector)
-    selector.addOperator(ROOT.TPMuonPhoton())
-
-    return selector
-
-def tpmmg(sample, selector):
-    """
-    Dimuon + photon tag & probe.
-    """
-
-    selector = tagprobeBase(sample, selector)
-    operator = ROOT.TPMuonPhoton()
-    operator.setMode(ROOT.TPMuonPhoton.kDouble)
-    selector.addOperator(operator)
-
-    return selector
+if needHelp:
+    sys.argv.append('--help')

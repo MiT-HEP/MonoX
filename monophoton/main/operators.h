@@ -158,8 +158,16 @@ class TPOperator : public Operator {
 
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
 
+  void setMinProbePt(double d) { minProbePt_ = d; }
+  void setMinTagPt(double d) { minTagPt_ = d; }
+  void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
+
  protected:
   virtual void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) = 0;
+
+  double minProbePt_{175.};
+  double minTagPt_{15.};
+  bool tagTriggerMatch_{false};
 
  private:
   bool result_;
@@ -203,13 +211,13 @@ class GenPhotonVeto : public Cut {
   GenPhotonVeto(char const* name = "GenPhotonVeto") : Cut(name) {}
 
   void setMinPt(double m) { minPt_ = m; }
-  void setMinDR(double m) { minDR_ = m; }
+  void setMinPartonDR(double m) { minPartonDR2_ = m * m; }
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   double minPt_{130.}; // minimum pt of the gen photon to be vetoed
-  double minDR_{0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
+  double minPartonDR2_{0.5 * 0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
 };
 
 class PhotonSelection : public Cut {
