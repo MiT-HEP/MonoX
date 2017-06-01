@@ -479,6 +479,7 @@ if __name__ == '__main__':
         submitter.logdir = '/local/' + os.environ['USER']
         submitter.hold_on_fail = True
         submitter.group = 'group_t3mit.urgent'
+        submitter.min_memory = 1
         
         batchManager = BatchManager(submitter, args.skipMissing, args.readRemote)
 
@@ -492,7 +493,7 @@ if __name__ == '__main__':
         else:
             print 'Waiting for all jobs to complete.'
             batchManager.waitForCompletion()
-            print 'All merge jobs finished.'
+            print 'All jobs finished.'
 
     else:
         if args.merge:
