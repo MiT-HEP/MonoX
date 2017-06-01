@@ -10,6 +10,8 @@ sys.path.append(basedir)
 import config
 import selections as s
 
+OVERWRITE = True
+
 ROOT.gROOT.LoadMacro(thisdir + '/Calculator.cc+')
 
 loc = sys.argv[1] # barrel or endcap
@@ -97,17 +99,29 @@ if maxMet == 'Inf':
 calc.setMinMet(float(minMet))
 calc.setMaxMet(float(maxMet))
 
-outputFile = ROOT.TFile.Open(treeFilePath, 'recreate')
+if not os.path.exists(treeFilePath) or OVERWRITE:
+    outputFile = ROOT.TFile.Open(treeFilePath, 'recreate')
 
-nGen = calc.calculate(tree, outputFile)
+    nGen = calc.calculate(tree, outputFile)
 
-outputFile.cd()
-outputFile.Write()
+    outputFile.cd()
+    outputFile.Write()
+    cutTree = outputFile.Get('cutflow')
+
+else:
+    print 'Reading cutflow tree from existing file', treeFilePath
+
+    source = ROOT.TFile.Open(treeFilePath)
+    cutTree = source.Get('cutflow')
+    for key in source.GetListOfKeys():
+        name = key.GetName()
+        if name.startswith('gen='):
+            nGen = int(name[name.find('=') + 1:])
+            break
 
 print filePath
 output = file(filePath, 'w')
 
-cutTree = outputFile.Get('cutflow')
 nMatched = cutTree.GetEntries('Match')
 nUnmatched = cutTree.GetEntries('!Match')
 
@@ -128,7 +142,7 @@ cuts =[
   "Eveto",
 #  "Spike",
 #  "Halo",
-  "CHMaxIso"
+#  "CHMaxIso"
 ]
 
 sequential = ['Match']
@@ -160,7 +174,6 @@ for cut in cuts:
     output.write(string)
 
 output.close()
-print 'Closed'
 
 calc = None
 print 'Done'
