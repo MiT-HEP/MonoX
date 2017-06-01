@@ -60,10 +60,11 @@ def plotiso(loc, pid, pt, met, era):
     colors = [kBlue, kRed, kBlack]
     
     truthSel = '(photons.matchedGenId == -22)'
-    fullSel = baseSel+' && '+truthSel
     
-    extractor = HistExtractor(Samples[skim[1]])
-    raw = extractor.extract(skim[0], skim[2], var[0], var[3][iloc], fullSel)
+    extractor = HistExtractor('gjetsMc', Samples[skim[1]], var[0])
+    extractor.setBaseSel(baseSel + ' && ' + truthSel)
+    extractor.categories.append((skim[0], skim[2], '1'))
+    raw = extractor.extract(var[3][iloc])[0]
     raw.SetName("rawmc")
     histograms[0].append(raw)
 
@@ -73,7 +74,7 @@ def plotiso(loc, pid, pt, met, era):
     
     # mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
     # mcTree = mcFile.Get("skimmedEvents")
-    mcTree = TChain('skimmedEvents')
+    mcTree = TChain('events')
     mcTree.Add(os.path.join(skimDir, 'dy-50_tpeg.root'))
     mcHist = raw.Clone("emc")
     mcHist.Reset()
@@ -83,7 +84,7 @@ def plotiso(loc, pid, pt, met, era):
     
     # dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
     # dataTree = dataFile.Get("skimmedEvents")
-    dataTree = TChain('skimmedEvents')
+    dataTree = TChain('events')
     dataTree.Add(os.path.join(skimDir, 'sph-16*_tpeg.root'))
     dataHist = raw.Clone("edata")
     dataHist.Reset()
