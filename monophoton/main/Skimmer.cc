@@ -84,6 +84,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   panda::utils::BranchList branchList = {
     "*",
     "!pfCandidates",
+    "!tracks",
     "!puppiAK4Jets",
     "!chsAK8Jets",
     "!chsAK8Subjets",
@@ -112,6 +113,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   // will take care of genParticles individually
   branchList += {"!genParticles"};
+
+  if (printLevel_ == INFO)
+    branchList.setVerbosity(1);
 
   bool doPhotonSkim(true);
 
@@ -201,7 +205,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       input->SetEntryList(elist);
     }
 
-    event.setAddress(*input, branchList);
+    event.setStatus(*input, branchList);
+    event.setAddress(*input, {"*"}, false);
 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
     genInput->SetBranchStatus("*", false);
