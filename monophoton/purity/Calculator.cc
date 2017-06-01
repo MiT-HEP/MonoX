@@ -17,6 +17,8 @@ public:
   enum Era {
     Spring15,
     Spring16,
+    Ashim_ZG_CWIso,
+    Ashim_GJets_CIso,
     nEras
   };
 
@@ -171,29 +173,42 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
       //        double scEta(std::abs(pho.superCluster->eta));
       double scEta(std::abs(pho.eta()));
 
-      // Spring16
-      // results[sHoverE] = pho.passHOverE(wp_, era_);
-      // results[sSieie] = pho.passSieie(wp_, era_);
-      // results[sNHIso] = pho.nhIso < panda::XPhoton::nhIsoCuts[era_][0][wp_];
-      // results[sPhIso] = pho.phIso < panda::XPhoton::phIsoCuts[era_][0][wp_];
-      // results[sCHIso] = pho.chIso < panda::XPhoton::chIsoCuts[era_][0][wp_];
-      // results[sCHMaxIso] = pho.chIsoMax < panda::XPhoton::chIsoCuts[era_][0][wp_];
-
-      // ZG_CWIso
-      results[sHoverE] = pho.hOverE < 0.0263;
-      results[sSieie] = pho.sieie < 0.01002;
-      results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 7.005;
-      results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 3.271;
-      results[sCHIso] = pho.chIso + event.rho * (scEta < 1. ? 0.036 : 0.0377) < 1.163;
-      results[sCHMaxIso] = pho.chIsoMax - event.rho * (scEta < 1. ? 0.1064 : 0.1026) < 1.163;
-
-      // GJets_CIso
-      // results[sHoverE] = pho.hOverE < 0.0232;
-      // results[sSieie] = pho.sieie < 0.00997;
-      // results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 0.321;
-      // results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 2.141;
-      // results[sCHIso] = pho.chIso < 0.584;
-      // results[sCHMaxIso] = true;
+      switch (era_) {
+      case Spring15:
+        results[sHoverE] = pho.passHOverE(wp_, era_);
+        results[sSieie] = pho.passSieie(wp_, era_);
+        results[sNHIso] = pho.nhIsoS15 < panda::XPhoton::nhIsoCuts[era_][0][wp_];
+        results[sPhIso] = pho.phIsoS15 < panda::XPhoton::phIsoCuts[era_][0][wp_];
+        results[sCHIso] = pho.chIsoS15 < panda::XPhoton::chIsoCuts[era_][0][wp_];
+        results[sCHMaxIso] = pho.chIsoMax < panda::XPhoton::chIsoCuts[era_][0][wp_];
+        break;
+      case Spring16:
+        results[sHoverE] = pho.passHOverE(wp_, era_);
+        results[sSieie] = pho.passSieie(wp_, era_);
+        results[sNHIso] = pho.nhIso < panda::XPhoton::nhIsoCuts[era_][0][wp_];
+        results[sPhIso] = pho.phIso < panda::XPhoton::phIsoCuts[era_][0][wp_];
+        results[sCHIso] = pho.chIso < panda::XPhoton::chIsoCuts[era_][0][wp_];
+        results[sCHMaxIso] = pho.chIsoMax < panda::XPhoton::chIsoCuts[era_][0][wp_];
+        break;
+      case Ashim_ZG_CWIso:
+        results[sHoverE] = pho.hOverE < 0.0263;
+        results[sSieie] = pho.sieie < 0.01002;
+        results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 7.005;
+        results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 3.271;
+        results[sCHIso] = pho.chIso < 1.163;
+        results[sCHMaxIso] = pho.chIsoMax - event.rho * (scEta < 1. ? 0.1064 : 0.1026) < 1.163;
+        break;
+      case Ashim_GJets_CIso:
+        results[sHoverE] = pho.hOverE < 0.0232;
+        results[sSieie] = pho.sieie < 0.00997;
+        results[sNHIso] = pho.nhIso + (0.0148 - 0.0112) * pt + (0.000017 - 0.000028) * pt2 < 0.321;
+        results[sPhIso] = pho.phIso + (0.0047 - 0.0043) * pt < 2.141;
+        results[sCHIso] = pho.chIso < 0.584;
+        results[sCHMaxIso] = true;
+        break;
+      default:
+        break;
+      }
 
       results[sEveto] = pho.pixelVeto;
       results[sSpike] = std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta() > 0. && pho.eta() < 0.15 && pho.phi() > 0.527580 && pho.phi() < 0.541795);
@@ -202,6 +217,9 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
       output->Fill();
     }
   }
+
+  _outputFile->cd();
+  TObjString(TString::Format("gen=%d", nGenPhotons)).Write();
 
   return nGenPhotons;
 }
