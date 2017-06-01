@@ -19,7 +19,7 @@ ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 
 print 'bloop'
 
-Eras = ['Spring15', 'Spring16']
+Eras = ['Spring15', 'Spring16', 'Ashim_ZG_CWIso']
 Locations = [ 'barrel', 'endcap' ]
 PhotonIds = [ 'none', 'loose', 'medium', 'tight', 'highpt' ]
 
@@ -83,10 +83,8 @@ Variables = {
 }
                
 # Skims for Purity Calculation
-#sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
-sphData = ['sph-16b-m']
-#gjetsMc = ['gj04-100','gj04-200','gj04-400','gj04-600']
-gjetsMc = ['gj04-100']
+sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
+gjetsMc = ['gj04-100','gj04-200','gj04-400','gj04-600']
 qcdMc = [ 'qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
 gjetsMcNero = ['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d']
@@ -155,6 +153,7 @@ for era in Eras:
 
         for sel in [sieieSels, chIsoSels, chWorstIsoSels, nhIsoSels, phIsoSels]:
             sel[era][loc]['none'] = '(1)'
+
         hOverESels[era][loc]['none'] = '(photons.hOverE < 0.06)'
         SigmaIetaIetaSels[era][loc]['none'] = '('+locationSels[loc]+' && '+hOverESels[era][loc]['none']+' && '+nhIsoSels[era][loc]['none']+' && '+phIsoSels[era][loc]['none']+')'
         PhotonIsolationSels[era][loc]['none'] = '('+locationSels[loc]+' && '+hOverESels[era][loc]['none']+' && '+chIsoSels[era][loc]['none']+' && '+nhIsoSels[era][loc]['none']+')'
@@ -171,11 +170,17 @@ for era in Eras:
                 chIsoSel = '(photons.chIsoS15 < '+str(chIsoCuts[era][loc][pid])+')'
             elif era == 'Spring16':
                 chIsoSel = '(photons.chIso < '+str(chIsoCuts[era][loc][pid])+')'
+            elif era == 'Ashim_ZG_CWIso':
+#                chIsoSel = '(photons.chIsoZG < 1.163)'
+                chIsoSel = '(photons.chIso < 1.163)'
 
             if era == 'Spring15':
                 nhIsoSel = '(photons.nhIsoS15 < '+str(nhIsoCuts[era][loc][pid])+')'
             elif era == 'Spring16':
                 nhIsoSel = '(photons.nhIso < '+str(nhIsoCuts[era][loc][pid])+')'
+            elif era == 'Ashim_ZG_CWIso':
+#                nhIsoSel = '(photons.nhIsoZG < 7.005)'
+                nhIsoSel = '(photons.nhIso + (0.0148 - 0.0112) * photons.scRawPt + (0.000017 - 0.000028) * photons.scRawPt * photons.scRawPt < 7.005)'
 
             if era == 'Spring15':
                 if pid == 'highpt':
@@ -184,6 +189,9 @@ for era in Eras:
                     phIsoSel = '(photons.phIsoS15 < '+str(phIsoCuts[era][loc][pid])+')'
             elif era == 'Spring16':
                 phIsoSel = '(photons.phIso < '+str(phIsoCuts[era][loc][pid])+')'
+            elif era == 'Ashim_ZG_CWIso':
+#                nhIsoSel = '(photons.phIsoZG < 3.271)'
+                nhIsoSel = '(photons.phIso + (0.0047 - 0.0043) * photons.scRawPt < 3.271)'
 
             hOverESels[era][loc][pid] = hOverESel 
             sieieSels[era][loc][pid] = sieieSel
@@ -241,45 +249,67 @@ ChIsoSbSels = { 'ChIso50to80'  : '(photons.chIso > 5.0 && photons.chIso < 8.0)',
 
 # Function for making templates!
 class HistExtractor(object):
-    def __init__(self, snames):
+    def __init__(self, name, snames, variable):
+        self.name = name
         self.tree = TChain('events')
         self.tree.SetCacheSize(100000000)
         for sname in snames:
-#            inName = os.path.join(config.skimDir, sname+'_purity.root')
-            inName = os.path.join(config.skimDir, sname, sname + '_0000_purity.root')
-            print 'Adding', inName, "to chain"
+            inName = os.path.join('/local/yiiyama/monophoton/skim', sname+'_purity.root')
+            print 'Adding', inName, "to", self.name
             self.tree.Add(inName)
 
+        self.variable = variable
+
         self.baseSel = ''
+        self.categories = [] # [(name, title, sel)]
 
     def setBaseSel(self, sel):
+        print 'Applying base selection', sel, 'to', self.name
         self.baseSel = sel
-        self.tree.Draw('>>elist', self.baseSel, 'entrylist')
-        elist = gDirectory.Get('elist')
+        self.tree.Draw('>>elist_' + self.name, self.baseSel, 'entrylist')
+        elist = gDirectory.Get('elist_' + self.name)
         self.tree.SetEntryList(elist)
         
-    def extract(self, name, title, expr, binning, sel):
+    def extract(self, binning, outFile = None):
         if type(binning) is tuple:
-            h = TH1D(name, title, *binning)
+            hall = TH2D('hall_' + self.name, '', *(binning + (len(self.categories), 1., len(self.categories) + 1.)))
         else:
-            h = TH1D(name, title, len(binning) - 1, array.array('d', binning))
+            hall = TH2D('hall_' + self.name, '', len(binning) - 1, array.array('d', binning), len(self.categories), 1., len(self.categories) + 1.)
 
-        h.Sumw2()
+        hall.Sumw2()
 
-        if not sel:
-            sel = '1'
+        exprs = []
+        for ic, (name, title, sel) in enumerate(self.categories):
+            exprs.append('%d * (%s)' % (ic + 1, sel))
 
-        self.tree.Draw(expr + '>>' + name, 'weight * (%s)' % sel, 'goff')
+        expr = ' + '.join(exprs) + ':' + self.variable
+        print 'Expression for template generation:', expr
 
-        if 'Fit' not in name:
-            for iBin in range(1, h.GetNbinsX() + 1):
-                if h.GetBinContent(iBin) <= 0.:
-                    h.SetBinContent(iBin, 0.0000001)
+        self.tree.Draw(expr + '>>hall_' + self.name, 'weight * (%s)' % self.baseSel, 'goff')
 
-        print h.Integral()
+        print hall.GetEntries(), 'entries in the full histogram'
 
-        return h
+        if outFile is not None:
+            hall.SetDirectory(outFile)
+            outFile.cd()
+            hall.Write()
 
+        histograms = []
+
+        for ic, (name, title, sel) in enumerate(self.categories):
+            h = hall.ProjectionX(name, ic + 1, ic + 1, 'e')
+            h.SetTitle(title)
+
+            if 'Fit' not in name:
+                for iBin in range(1, h.GetNbinsX() + 1):
+                    if h.GetBinContent(iBin) <= 0.:
+                        h.SetBinContent(iBin, 0.0000001)
+
+            print 'Integral of ' + name + ' is', h.Integral()
+
+            histograms.append(h)
+
+        return histograms
 
 def MakeRooRealVar(_name, _iloc):
     var = Variables[_name]
@@ -344,7 +374,7 @@ def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
     nsig = RooRealVar('nsig', 'nsig', nEvents/2, nEvents*0.01, nEvents*1.5)
     nbkg = RooRealVar('nbkg', 'nbkg', nEvents/2, 0., nEvents*1.5)
     model = RooAddPdf("model", "model", RooArgList(sigpdf, bkgpdf), RooArgList(nsig, nbkg))
-    model.fitTo(_datahist) # , Extended(True), Minimizer("Minuit2", "migrad"))
+    model.fitTo(_datahist, ROOT.RooFit.PrintLevel(1)) # , Extended(True), Minimizer("Minuit2", "migrad"))
     
     canvas = TCanvas()
 
