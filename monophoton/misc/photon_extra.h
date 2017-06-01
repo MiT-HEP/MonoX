@@ -19,12 +19,13 @@ namespace panda {
     // S15 isolation valid only for panda >= 003
     // In 002 we had Spring15 leakage correction but Spring16 effective areas (production error).
 
+    double absEta(std::abs(_dest.scEta));
+
     double chIsoEAS16(0.);
     double nhIsoEAS16(0.);
     double phIsoEAS16(0.);
     double nhIsoEAS15(0.);
     double phIsoEAS15(0.);
-    double absEta(std::abs(_dest.scEta));
     if (absEta < 1.) {
       nhIsoEAS15 = 0.0599;
       phIsoEAS15 = 0.1271;
@@ -77,6 +78,7 @@ namespace panda {
 
     double nhIsoE1S15, nhIsoE2S15, phIsoE1S15;
     double nhIsoE1S16, nhIsoE2S16, phIsoE1S16;
+    double nhIsoE1ZG, nhIsoE2ZG, phIsoE1ZG;
 
     if (_dest.isEB) {
       nhIsoE1S15 = 0.014;
@@ -86,6 +88,10 @@ namespace panda {
       nhIsoE1S16 = 0.0148;
       nhIsoE2S16 = 0.000017;
       phIsoE1S16 = 0.0047;
+
+      nhIsoE1ZG = 0.0112;
+      nhIsoE2ZG = 0.000028;
+      phIsoE1ZG = 0.0043;
     }
     else {
       nhIsoE1S15 = 0.0139;
@@ -95,6 +101,11 @@ namespace panda {
       nhIsoE1S16 = 0.0163;
       nhIsoE2S16 = 0.000014;
       phIsoE1S16 = 0.0034;
+
+      // undefined - just using S16
+      nhIsoE1ZG = 0.0163;
+      nhIsoE2ZG = 0.000014;
+      phIsoE1ZG = 0.0034;
     }
 
     double pt(_src.pt());
@@ -120,6 +131,11 @@ namespace panda {
     _dest.chIsoS15 = chIsoCore;        
     _dest.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
     _dest.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
+
+    // using the same rho correction as S16
+    _dest.chIsoZG = _src.chIso;
+    _dest.nhIsoZG = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1ZG * scpt - nhIsoE2ZG * scpt2;
+    _dest.phIsoZG = phIsoCore - phIsoEAS16 * rho - phIsoE1ZG * scpt;
 
     // EA computed with iso/worstIsoEA.py
     _dest.chIsoMax -= 0.094 * rho;
