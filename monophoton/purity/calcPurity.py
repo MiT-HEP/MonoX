@@ -13,6 +13,9 @@ import time
 from ROOT import *
 gROOT.SetBatch(True)
 
+QUICKFIT = True # just run one main fit
+FORCEHIST = True
+
 ### take inputs and make sure they match a selection
 loc = sys.argv[1] # barrel, endcap
 pid = sys.argv[2] # (loose|medium|tight)[-optional]
@@ -49,42 +52,46 @@ except KeyError:
 versDir = s.versionDir
 #plotDir = os.path.join(versDir,inputKey)
 plotDir = '/home/yiiyama/public_html/cmsplots/purity'
+histDir = os.path.join(versDir, inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
+if not os.path.exists(histDir):
+    os.makedirs(histDir)
 
-### Get ChIso Curve for true photons
-#plotiso.plotiso(loc, pid, pt, met, era)
-#
-#isoFile = TFile(os.path.join(plotDir,'chiso_'+inputKey+'.root'))
-#
-#labels = [ 'rawmc', 'scaledmc' ] 
-#isoHists = {}
-#
-#for chkey in s.ChIsoSbSels:
-#    isoHists[chkey] = []
-#    splits = chkey.strip('ChIso').split('to')
-#    minIso = float(splits[0])/10.0
-#    maxIso = float(splits[1])/10.0
-#
-#    for label in labels:
-#        isoHist = isoFile.Get(label)
-#
-#        ### Get Sig and Sideband fractions
-#        minIsoBin = 1
-#        maxIsoBin = isoHist.GetNbinsX()
-#        for bin in range(isoHist.GetNbinsX()+1):
-#            binLowEdge = isoHist.GetXaxis().GetBinLowEdge(bin)
-#            if (binLowEdge == minIso):
-#                minIsoBin = bin
-#            binUpEdge = isoHist.GetXaxis().GetBinUpEdge(bin)
-#            if (binUpEdge == maxIso):
-#                maxIsoBin = bin
-#        sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
-#        print "Fraction in sideband:", sbFrac
-#
-#        sigFrac = isoHist.Integral(1,3)
-#        print "Fraction in signal:", sigFrac
-#        isoHists[chkey].append( (isoHist, sbFrac, sigFrac) )
+if not QUICKFIT:
+    ### Get ChIso Curve for true photons
+    plotiso.plotiso(loc, pid, pt, met, era)
+    
+    isoFile = TFile(os.path.join(plotDir,'chiso_'+inputKey+'.root'))
+    
+    labels = [ 'rawmc', 'scaledmc' ] 
+    isoHists = {}
+    
+    for chkey in s.ChIsoSbSels:
+        isoHists[chkey] = []
+        splits = chkey.strip('ChIso').split('to')
+        minIso = float(splits[0])/10.0
+        maxIso = float(splits[1])/10.0
+    
+        for label in labels:
+            isoHist = isoFile.Get(label)
+    
+            ### Get Sig and Sideband fractions
+            minIsoBin = 1
+            maxIsoBin = isoHist.GetNbinsX()
+            for bin in range(isoHist.GetNbinsX()+1):
+                binLowEdge = isoHist.GetXaxis().GetBinLowEdge(bin)
+                if (binLowEdge == minIso):
+                    minIsoBin = bin
+                binUpEdge = isoHist.GetXaxis().GetBinUpEdge(bin)
+                if (binUpEdge == maxIso):
+                    maxIsoBin = bin
+            sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
+            print "Fraction in sideband:", sbFrac
+    
+            sigFrac = isoHist.Integral(1,3)
+            print "Fraction in signal:", sigFrac
+            isoHists[chkey].append( (isoHist, sbFrac, sigFrac) )
 
 ### Get Purity (first time)
 varName = 'sieie'
@@ -109,31 +116,14 @@ ChIsoNear = 'ChIso35to50'
 ChIsoNominal = 'ChIso50to75'
 ChIsoFar = 'ChIso75to90'
 
-sigSel = baseSel+' && '+s.chIsoSels[era][loc][pid]
-sbSel = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNominal]
-sbSelNear = baseSel + ' && ' + s.ChIsoSbSels[ChIsoNear]
-sbSelFar  = baseSel + ' && ' + s.ChIsoSbSels[ChIsoFar]
+sigSel = s.chIsoSels[era][loc][pid]
+sbSel = s.ChIsoSbSels[ChIsoNominal]
+sbSelNear = s.ChIsoSbSels[ChIsoNear]
+sbSelFar  = s.ChIsoSbSels[ChIsoFar]
 truthSel =  '(photons.matchedGenId == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
 skims = s.Measurement['bambu']
-sels = [  sigSel
-         ,sigSel + ' && ' + truthSel
-         ,sbSel + ' && ' + truthSel
-         ,sbSel
-         ,sbSelNear + ' && ' + truthSel
-         ,sbSelNear
-         ,sbSelFar + ' && ' + truthSel
-         ,sbSelFar
-         ]
-
-if 'worst' in extras:
-    sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
-    sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
-elif 'max' in extras:
-    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
-    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
-
 
 # get initial templates
 print '\n'
@@ -142,24 +132,83 @@ print '######## Doing initial skims ########'
 print '#####################################'
 print '\n'
 
-extractors = {
-    'sphData': s.HistExtractor(s.sphData),
-    'gjetsMc': s.HistExtractor(s.gjetsMc)
-}
-for ext in extractors.values():
-    ext.setBaseSel(baseSel)
-
-initialHists = []
-initialTemplates = []
-for skim, sel in zip(skims, sels):
+if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
+    extractors = {
+        'sphData': s.HistExtractor('sphData', s.sphData, var[0]),
+        'gjetsMc': s.HistExtractor('gjetsMc', s.gjetsMc, var[0])
+    }
+    
     start = time.time()
-    ext = extractors[skim[1]]
-    hist = ext.extract(skim[0], skim[2], var[0], var[3][iloc], sel)
-    initialHists.append(hist)
+    extractors['sphData'].setBaseSel(baseSel)
+    print 'Took', (time.time() - start), 'seconds'
+    
+    start = time.time()
+    extractors['gjetsMc'].setBaseSel(baseSel + ' && (photons.matchedGenId == -22)')
+    print 'Took', (time.time() - start), 'seconds'
+    
+    # why this ordering?
+    extractors['sphData'].categories.append((skims[0][0], skims[0][2], sigSel))
+    extractors['gjetsMc'].categories.append((skims[1][0], skims[1][2], sigSel))
+    extractors['gjetsMc'].categories.append((skims[2][0], skims[2][2], sbSel))
+    extractors['sphData'].categories.append((skims[3][0], skims[3][2], sbSel))
+    extractors['gjetsMc'].categories.append((skims[4][0], skims[4][2], sbSelNear))
+    extractors['sphData'].categories.append((skims[5][0], skims[5][2], sbSelNear))
+    extractors['gjetsMc'].categories.append((skims[6][0], skims[6][2], sbSelFar))
+    extractors['sphData'].categories.append((skims[7][0], skims[7][2], sbSelFar))
+    
+    #if 'worst' in extras:
+    #    sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+    #    sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
+    #elif 'max' in extras:
+    #    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+    #    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+    
+    histFile = TFile.Open(os.path.join(histDir, 'initialHists.root'), 'recreate')
+    
+    start = time.time()
+    dataTemplates = extractors['sphData'].extract(var[3][iloc], histFile)
+    print 'Took', (time.time() - start), 'seconds to extract data templates'
+    
+    start = time.time()
+    mcTemplates = extractors['gjetsMc'].extract(var[3][iloc], histFile)
+    print 'Took', (time.time() - start), 'seconds to extract MC templates'
+    
+    initialHists = [
+        dataTemplates[0],
+        mcTemplates[0],
+        mcTemplates[1],
+        dataTemplates[1],
+        mcTemplates[2],
+        dataTemplates[2],
+        mcTemplates[3],
+        dataTemplates[3]
+    ]
+    
+    for hist in initialHists:
+        hist.SetDirectory(histFile)
+        
+    histFile.Write()
+
+else:
+    histFile = TFile.Open(os.path.join(histDir, 'initialHists.root'))
+
+    initialHists = [
+        histFile.Get(skims[0][0]),
+        histFile.Get(skims[1][0]),
+        histFile.Get(skims[2][0]),
+        histFile.Get(skims[3][0]),
+        histFile.Get(skims[4][0]),
+        histFile.Get(skims[5][0]),
+        histFile.Get(skims[6][0]),
+        histFile.Get(skims[7][0])
+    ]
+
+initialTemplates = []
+for hist in initialHists:
     template = s.HistToTemplate(hist,roofitVar,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
-    elapsed = time.time() - start
-    print 'Took ' + str(elapsed) + ' seconds'
+
+    
 
 print '\n'
 print '##################################################'
@@ -167,12 +216,18 @@ print '######## Doing initial purity calculation ########'
 print '##################################################'
 print '\n'
 
+if QUICKFIT:
+    dataName = os.path.join(plotDir, 'nominal', "purity_v0_" + inputKey)
+    dataPurity = s.FitTemplates(dataName, 'Photon Purity in SinglePhoton DataSet', roofitVar, var[1][era][loc][pid], initialTemplates[0], initialTemplates[1], initialTemplates[3])
+    print "Purity:", dataPurity[0]
+
+    sys.exit(0)
+
 ### Get nominal value
 nominalHists = deepcopy(initialHists[:4])
 nominalTemplates = deepcopy(initialTemplates[:4])
 nominalSkims = skims[:4]
-#nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
-nominalRatio = 0.3
+nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
 nominalDir = os.path.join(plotDir,'nominal')
 if not os.path.exists(nominalDir):
     os.makedirs(nominalDir)
@@ -189,8 +244,7 @@ print '\n'
 nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
 nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
 nearSkims = skims[:4]
-#nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
-nearRatio = 0.3
+nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
 nearDir = os.path.join(plotDir,'near')
 if not os.path.exists(nearDir):
     os.makedirs(nearDir)
@@ -201,8 +255,7 @@ nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,roo
 farHists = deepcopy(initialHists[:2] + initialHists[6:])
 farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
 farSkims = skims[:4]
-#farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
-farRatio = 0.3
+farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
 farDir = os.path.join(plotDir,'far')
 if not os.path.exists(farDir):
     os.makedirs(farDir)
@@ -224,8 +277,7 @@ scaledSkims = skims[:4]
 scaledDir = os.path.join(plotDir,'scaled')
 if not os.path.exists(scaledDir):
     os.makedirs(scaledDir)
-#scaledRatio = float(isoHists[ChIsoNominal][1][1]) / float(isoHists[ChIsoNominal][1][2])
-scaledRatio = 0.3
+scaledRatio = float(isoHists[ChIsoNominal][1][1]) / float(isoHists[ChIsoNominal][1][2])
 
 scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,roofitVar,var[1][era][loc][pid],inputKey,scaledDir)
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )
