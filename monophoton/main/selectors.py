@@ -47,55 +47,66 @@ except:
     logger.error("Couldn't compile selectors.cc. Quitting.")
     sys.exit(1)
 
+# MEDIUM ID
+photonWP = 1
+
 photonFullSelection = [
     'HOverE',
     'Sieie',
     'NHIso',
     'PhIso',
-    'CHIsoMax',
-    # 'CHIsoMaxS16',
-    # 'CHIsoS16',
-    # 'NHIsoS16',
-    # 'PhIsoS16',
+    'CHIso',
     'EVeto',
     'MIP49',
     'Time',
     'SieieNonzero',
     'SipipNonzero',
-    'NoisyRegion',
-    # 'E2E995',
+    'NoisyRegion'
 ]
 
-# MEDIUM ID
-photonWP = 1
+def setupPhotonSelection(operator, veto = False, changes = []):
+    operator.resetSelection()
+    operator.resetVeto()
 
-# LOOSE ID
-# photonWP = 0
+    sels = list(photonFullSelection)
 
-# PU reweight
-puWeights = []
-f = ROOT.TFile.Open(datadir + '/pileup.root')
-for k in f.GetListOfKeys():
-    if k.GetName().startswith('puweight_'):
-        ROOT.gROOT.cd()
-        logger.debug('Loading PU weights %s', k.GetName())
-        puWeights.append((k.GetName().replace('puweight_', ''), k.ReadObj().Clone()))
+    for change in changes:
+        if change.startswith('-'):
+            sels.remove(change[1:])
+        elif change.startswith('+'):
+            sels.append(change[1:])
+        elif change.startswith('!'):
+            try:
+                sels.remove(change[1:])
+            except:
+                pass
+            sels.append(change)
 
-f.Close()
-
-def addPUWeight(sample, selector):
-    for name, hist in puWeights:
-        if name in sample.fullname:
-            logger.debug('Using PU weights %s for %s', name, sample.name)
-            selector.addOperator(ROOT.PUWeight(hist))
-            break
+    if veto:
+        for sel in sels:
+            if sel.startswith('!'):
+                operator.addVeto(False, getattr(ROOT.PhotonSelection, sel))
+            else:
+                operator.addVeto(True, getattr(ROOT.PhotonSelection, sel))
     else:
-        raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
+        for sel in sels:
+            if sel.startswith('!'):
+                operator.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+            else:
+                operator.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    
+
+# avoid auto-deletion by python
+_garbage = []
 
 # Other weights
 def getFromFile(path, name, newname = ''):
     if newname == '':
         newname = name
+
+    obj = ROOT.gROOT.Get(newname)
+    if obj:
+        return obj
 
     f = ROOT.TFile.Open(path)
     ROOT.gROOT.cd()
@@ -103,53 +114,25 @@ def getFromFile(path, name, newname = ''):
     f.Close()
 
     logger.debug('Picked up %s from %s', name, path)
+    
+    _garbage.append(obj)
 
     return obj
-
-photonSF = getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', 'photonSF')
-
-hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
-hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
-hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
-hadproxyVLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactVLoose')
-hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
-hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
-
-eleproxyWeight = getFromFile(datadir + '/efake_data_pt.root', 'frate')
-
-muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape') # x: abs eta, y: pt
-muonLooseSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape') # x: abs eta, y: pt
-muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
-muonTrigSF = getFromFile(datadir + '/muonTrigSF.root', 'mutrksfptg10')
-
-electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
-electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
-electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
-
-gjSmearParams = {}
-gjSmearParamsFile = file(datadir + '/gjSmearParams_linear.txt', 'r')
-for line in gjSmearParamsFile:
-    param = line.split()
-    gjSmearParams[param[0]] = (param[1], param[2])
-gjSmearParamsFile.close()
-
-##############################################################
-# Argument "selector" in all functions below can either be an
-# actual Selector object or a name for the selector.
-##############################################################
 
 ##################
 # BASE SELECTORS #
 ##################
 
-def monophotonBase(sample, selector):
+def monophotonBase(sample, rname, selcls = None):
     """
     Monophoton candidate-like selection (high-pT photon, lepton veto, dphi(photon, MET) and dphi(jet, MET)).
     Base for other selectors.
     """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.EventSelector(selector)
+    if selcls is None:
+        selector = ROOT.EventSelector(rname)
+    else:
+        selector = selcls(rname)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
@@ -168,8 +151,6 @@ def monophotonBase(sample, selector):
 
     if not sample.data:
         operators.append('MetVariations')
-    # else:
-    #     operators.append('EGCorrection')
         
     operators += [
         'PhotonMetDPhi',
@@ -183,11 +164,12 @@ def monophotonBase(sample, selector):
         selector.addOperator(getattr(ROOT, op)())
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMinPt(175.)
     photonSel.setWP(photonWP)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
-        metVar.setPhotonSelection(selector.findOperator('PhotonSelection'))
+        metVar.setPhotonSelection(photonSel)
 
         photonDPhi = selector.findOperator('PhotonMetDPhi')
         photonDPhi.setMetVariations(metVar)
@@ -200,6 +182,7 @@ def monophotonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
         addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -210,69 +193,44 @@ def monophotonBase(sample, selector):
 
     return selector
 
-def purityBase(sample, selector):
+def emjetBase(sample, rname):
     """
-    Base selector for EM+Jet control region.
+    Base selector for EM+Jet control region. For MC, a gen-level photon is required.
     """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.EventSelector(selector)
+    selector = monophotonBase(sample, rname)
 
-    if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    selector.removeOperator('HighMet')
+    selector.removeOperator('PhotonMt')
 
-    operators = [
-        'MetFilters',
-        'PhotonSelection',
-        'MuonVeto',
-        'ElectronVeto',
-        'TauVeto',
-        'BjetVeto',
-        'JetCleaning',
-        'HighPtJetSelection',
-        'CopyMet',
-        'CopySuperClusters'
-    ]
-
-    # if sample.data:
-    #     operators.append('EGCorrection')
-
-    operators += [
-        'JetMetDPhi',
-        'PhotonMetDPhi'
-    ]
-
-    for op in operators:
-        selector.addOperator(getattr(ROOT, op)())
-
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setWP(photonWP)
+    jets = ROOT.HighPtJetSelection()
+    jets.setJetPtCut(100.)
+    selector.addOperator(jets)
 
     if not sample.data:
-        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+        genPhotonSel = ROOT.GenParticleSelection("GenPhotonSelection")
+        genPhotonSel.setPdgId(22)
+        genPhotonSel.setMinPt(140.)
+        genPhotonSel.setMaxEta(1.7)
 
-        addPUWeight(sample, selector)
-
-    selector.findOperator('PhotonSelection').setMinPt(100.)
-    selector.findOperator('TauVeto').setIgnoreDecision(True)
-    selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
-    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
-    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+        selector.addOperator(genPhotonSel, 1)
 
     return selector
 
-def leptonBase(sample, selector):
+def leptonBase(sample, rname, flavor):
     """
     Base for n-lepton + photon selection
     """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.EventSelector(selector)
-
     if sample.data:
+        selector = ROOT.EventSelector(rname)
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    else:
+        selector = ROOT.PartonSelector(rname)
+        if flavor == ROOT.lElectron:
+            selector.setAcceptedPdgId(11)
+        elif flavor == ROOT.lMuon:
+            selector.setAcceptedPdgId(13)
 
     operators = [
         'MetFilters',
@@ -282,13 +240,7 @@ def leptonBase(sample, selector):
         'BjetVeto',
         'JetCleaning',
         'CopyMet',
-        'CopySuperClusters'
-    ]
-
-    # if sample.data:
-    #     operators.append('EGCorrection')
-
-    operators += [
+        'CopySuperClusters',
         'LeptonRecoil',
     ]
 
@@ -310,10 +262,9 @@ def leptonBase(sample, selector):
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setWP(photonWP)
 
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-    for sel in photonFullSelection:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel)
+
+    selector.findOperator('LeptonRecoil').setFlavor(flavor)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -330,14 +281,13 @@ def leptonBase(sample, selector):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
         addPUWeight(sample, selector)
+        addIDSFWeight(sample, selector)
+        addPDFVariation(sample, selector)
 
-        idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
-        idsf.addFactor(photonSF)
-        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-        # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-            selector.addOperator(ROOT.NNPDFVariation())
+        if flavor == ROOT.lElectron:
+            addElectronIDSFWeight(sample, selector)
+        else:
+            addMuonIDSFWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -348,31 +298,25 @@ def leptonBase(sample, selector):
 
     return selector
 
-def eefake(sample, name):
-    selector = ROOT.ZeeEventSelector(name)
+def eefake(sample, rname):
+    selector = ROOT.ZeeEventSelector(rname)
 
     eeSel = selector.findOperator('EEPairSelection')
     eeSel.setMinPt(140.)
 
-    sels = list(photonFullSelection)
-    sels.remove('EVeto')
-
-    for sel in sels:
-        eeSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-
-    eeSel.addSelection(False, ROOT.PhotonSelection.EVeto)
+    setupPhotonSelection(eeSel, changes = ['!EVeto'])
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
 
     return selector
 
-def zmumu(sample, name):
+def zmumu(sample, rname):
     """
     Just dimuon. 
     """
 
-    selector = ROOT.EventSelector(name)
+    selector = ROOT.EventSelector(rname)
     selector.setCanPhotonSkim(False)
 
     selector.addOperator(ROOT.MetFilters())
@@ -401,13 +345,12 @@ def zmumu(sample, name):
 
     return selector
 
-def TagAndProbeBase(sample, selector):
+def TagAndProbeBase(sample, rname):
     """
     Base for Z->ll tag and probe stuff.
     """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.EventSelector(selector)
+    selector = ROOT.EventSelector(rname)
 
     operators = [
         'MetFilters',
@@ -418,13 +361,7 @@ def TagAndProbeBase(sample, selector):
         'TagAndProbePairZ',
         'JetCleaning',
         'CopyMet',
-        'CopySuperClusters'
-    ]
-
-    # if sample.data:
-    #     operators.append('EGCorrection')
-
-    operators += [ 
+        'CopySuperClusters',
         'JetMetDPhi',
         'HighMet'
     ]
@@ -448,13 +385,12 @@ def TagAndProbeBase(sample, selector):
 
     return selector
 
-def tagprobeBase(sample, selector):
+def tagprobeBase(sample, rname):
     """
     Base for selectors skimming tag & probe input trees.
     """
 
-    if type(selector) is str: # this is a name for the selector
-        selector = ROOT.TagAndProbeSelector(selector)
+    selector = ROOT.TagAndProbeSelector(rname)
 
     if sample.name.startswith('sph'):
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
@@ -472,37 +408,40 @@ def tagprobeBase(sample, selector):
 # DERIVED SELECTORS #
 #####################
 
-def monoph(sample, selector):
+def monoph(sample, rname):
     """
     Full monophoton selection.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
-        idsf.addFactor(photonSF)
-        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-        # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-            selector.addOperator(ROOT.NNPDFVariation())
-
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-
-    for sel in photonFullSelection:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+        addIDSFWeight(sample, selector)
 
     return selector
 
-def signalRaw(sample, selector):
+def monophNoE(sample, rname):
+    """
+    Full monophoton selection filtering out electron events.
+    """
+
+    selector = monophotonBase(sample, rname, selcls = ROOT.PartonSelector)
+    selector.setRejectedPdgId(11)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    addIDSFWeight(sample, selector)
+
+    return selector
+
+def signalRaw(sample, rname):
     """
     Ignore decisions of all cuts to compare shapes for different simulations.
     """
 
-    selector = candidate(sample, selector)
+    selector = monoph(sample, rname)
 
     cuts = [
         'MetFilters',
@@ -541,389 +480,175 @@ def signalRaw(sample, selector):
 
     return selector
 
-def efake(sample, selector):
+def efake(sample, rname):
     """
     Candidate-like but with inverted electron veto
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
-    weight = ROOT.PhotonPtWeight(eleproxyWeight, 'egfakerate')
+    weight = ROOT.PhotonPtWeight(getFromFile(datadir + '/efake_data_pt.root', 'frate'), 'egfakerate')
     weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('EVeto')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.EVeto)
-    photonSel.addSelection(False, ROOT.PhotonSelection.CSafeVeto)
-    photonSel.addVeto(True, ROOT.PhotonSelection.EVeto)
+    setupPhotonSelection(photonSel, changes = ['!EVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
-def purity(sample, selector):
+def emjet(sample, rname):
     """
-    EM Object is baseline photon, used for efficiency and SF measurements as well.
+    EM Object is candidate-like. used for photon purity measurement.
     """
 
-    selector = purityBase(sample, selector)
+    selector = emjetBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-    photonSel.addSelection(True, ROOT.PhotonSelection.Sieie15)
-
-    if not sample.data:
-        genPhotonSel = ROOT.GenParticleSelection("GenPhotonSelection")
-        genPhotonSel.setPdgId(22)
-        genPhotonSel.setMinPt(140.)
-        genPhotonSel.setMaxEta(1.7)
-
-        # GenParticles not being filled currently
-        selector.addOperator(genPhotonSel, 1)
+    
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15'])
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
         
-#        photonSel.setIgnoreDecision(True)        
-        selector.findOperator('HighPtJetSelection').setIgnoreDecision(True)
-
     return selector
 
-def purityNom(sample, selector):
+def emjetTight(sample, rname):
     """
-    EM Object is true photon like, but with inverted sieie and CHIso requirements.
+    EM Object is candidate-like, but with tightened NHIso and PhIso requirements.
+    Sieie and CHIso are also capped. Used for hadronTFactor derivation.
     """
 
-    selector = purityBase(sample, selector)
+    selector = emjetBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.remove('CHIsoMax')
-    sels.append('Sieie15')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-NHIso', '-PhIso', '-CHIso', '+Sieie15', '+NHIsoTight', '+PhIsoTight', '+CHIso11'])
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
 
     return selector
 
-def purityTight(sample, selector):
+def emjetLoose(sample, rname):
     """
-    EM Object is true photon like, but with tightened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
+    EM Object is candidate-like, but with loosened NHIso and PhIso requirements.
+    Sieie and CHIso are also capped. Used for hadronTFactor derivation.
     """
 
-    selector = purityBase(sample, selector)
+    selector = emjetBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.remove('CHIsoMax')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.append('Sieie15')
-    sels.append('NHIsoTight')
-    sels.append('PhIsoTight')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-    # sels.append('NHIsoS16Tight')
-    # sels.append('PhIsoS16Tight')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-NHIso', '-PhIso', '-CHIso', '+Sieie15', '+NHIsoLoose', '+PhIsoLoose', '+CHIso11'])
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
 
     return selector
 
-def purityLoose(sample, selector):
+def hfake(sample, rname):
     """
-    EM Object is true photon like, but with loosened NHIso and PhIso requirements and inverted sieie and CHIso requirements.
+    Candidate-like but with inverted CHIso.
     """
 
-    selector = purityBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.remove('NHIso')
-    sels.remove('PhIso')
-    sels.remove('CHIsoMax')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    # sels.remove('NHIsoS16')
-    # sels.remove('PhIsoS16')
-    sels.append('Sieie15')
-    sels.append('NHIsoLoose')
-    sels.append('PhIsoLoose')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-    # sels.append('NHIsoS16Loose')
-    # sels.append('PhIsoS16Loose')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    modHfake(selector)
 
     return selector
 
-def hfake(sample, selector):
+def hfakeTight(sample, rname):
     """
-    Candidate-like but with inverted sieie or CHIso.
-    """
-
-    if type(selector) is str:
-        selector = monophotonBase(sample, selector)
-
-    weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
-    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
-    weight.addVariation('purityUp', hadproxyPurityUpWeight)
-    weight.addVariation('purityDown', hadproxyPurityDownWeight)
-    selector.addOperator(weight)
-
-    photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.remove('CHIsoMax')
-    sels.append('Sieie15')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
-
-    return selector
-
-def hfakeTight(sample, selector):
-    """
-    Candidate-like with tight NHIso and PhIso, with inverted sieie or CHIso.
+    Candidate-like with tight NHIso and PhIso, with inverted CHIso.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     weight = ROOT.PhotonPtWeight(hadproxyTightWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.remove('CHIsoMax')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.append('Sieie15')
-    sels.append('NHIsoTight')
-    sels.append('PhIsoTight')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-    # sels.append('NHIsoS16Tight')
-    # sels.append('PhIsoS16Tight')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '-NHIso', '-PhIso', '+NHIsoTight', '+PhIsoTight', '+CHIso11'])
+    setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
-def hfakeLoose(sample, selector):
+def hfakeLoose(sample, rname):
     """
-    Candidate-like with Loose NHIso and PhIso, with inverted sieie or CHIso.
+    Candidate-like with Loose NHIso and PhIso, with inverted CHIso.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     weight = ROOT.PhotonPtWeight(hadproxyLooseWeight)
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.remove('NHIso')
-    sels.remove('PhIso')
-    sels.remove('CHIsoMax')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.append('Sieie15')
-    sels.append('NHIsoLoose')
-    sels.append('PhIsoLoose')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-    # sels.append('NHIsoS16Tight')
-    # sels.append('PhIsoS16Tight')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '-NHIso', '-PhIso', '+NHIsoLoose', '+PhIsoLoose', '+CHIso11'])
+    setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
-def gjets(sample, selector):
+def gjets(sample, rname):
     """
     Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
     """
     
-    selector = monophotonBase(sample, selector)
+    selector = emjetBase(sample, rname)
     
-    selector.addOperator(ROOT.HighPtJetSelection())
-    selector.findOperator('HighPtJetSelection').setJetPtCut(100.)
-
     selector.addOperator(ROOT.GenPhotonDR())
-    
+
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    # sels.remove('CHIsoMaxS16')
-    # sels.remove('CHIsoS16')
-    sels.remove('CHIsoMax')
-    sels.append('Sieie15')
-    sels.append('CHIsoMax11')
-    # sels.append('CHIsoS16VLoose')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMax)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMax)
-
-    # photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIsoMaxS16)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.Sieie12)
-    # photonSel.addVeto(True, ROOT.PhotonSelection.CHIsoMaxS16)
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
+    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIso)
+    setupPhotonSelection(photonSel, veto = True)
     
     return selector
 
-def gjSmeared(sample, name):
+def gjSmeared(sample, rname):
     """
     Candidate-like, with a smeared MET distribution.
     """
 
-    selector = candidate(sample, ROOT.SmearingSelector(name))
+    selector = monophotonBase(sample, rname, selcls = ROOT.SmearingSelector)
+
+    params = {}
+    paramsFile = file(datadir + '/gjSmearParams_linear.txt', 'r')
+    for line in paramsFile:
+        param = line.split()
+        params[param[0]] = (param[1], param[2])
+    paramsFile.close()
 
     smearing = ROOT.TF1('smearing', 'TMath::Landau(x, [0], [1]*(1. + [2]*x))', 0., 100.)
-    mean = gjSmearParams['mean'][0]
-    sigmar = gjSmearParams['sigmar'][0]
-    alpha = gjSmearParams['alpha'][0]
+    mean = params['mean'][0]
+    sigmar = params['sigmar'][0]
+    alpha = params['alpha'][0]
     smearing.SetParameters(mean, sigmar, alpha) # measured in gjets/smearfit.py
     selector.setNSamples(1)
     selector.setFunction(smearing)
 
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    addIDSFWeight(sample, selector)
+
     return selector
 
-def dijet(sample, name):
+def dijet(sample, rname):
     """
     Dijet events with no overlap removal for jet vertex score study.
     """
     
-    selector = ROOT.EventSelector(name)
+    selector = ROOT.EventSelector(rname)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
     photonSel = ROOT.PhotonSelection()
+    
+    setupPhotonSelection(photonSel, changes = ['!Sieie'])
+    setupPhotonSelection(photonSel, veto = True)
 
-    sels = [
-        'HOverE',
-        'Sieie15',
-        'NHIso',
-        'PhIso',
-        'CHIso',
-        'EVeto',
-        'MIP49',
-        'Time',
-        'SieieNonzero',
-        'SipipNonzero',
-        'NoisyRegion',
-    ]
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-        photonSel.addVeto(True, getattr(ROOT.PhotonSelection, sel))
-
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie)
-    photonSel.addVeto(True, ROOT.PhotonSelection.Sieie)
     selector.addOperator(photonSel)
 
     jets = ROOT.JetClustering()
@@ -943,270 +668,172 @@ def dijet(sample, name):
 
     selector.addOperator(ROOT.CopyMet())
 
+    if not sample.data:
+        addPDFVariation(sample, selector)
+
     return selector
 
-def halo(sample, selector):
+def halo(sample, rname):
     """
     Candidate sample but with inverted MIP cut and halo tag.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    for sel in photonFullSelection:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloMIP(sample, selector):
+def haloMIP(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    for sel in photonFullSelection:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49'])
 
     selector.findOperator('MetFilters').setFilter(0, 0)
 
     return selector
 
-def haloMET(sample, selector):
+def haloMET(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('MIP49')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['-MIP49'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloLoose(sample, selector):
+def haloLoose(sample, rname):
     """
     Candidate sample but with inverted MIP cut and halo tag.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.append('Sieie15')
-
-    for sel in sels:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie15'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloMIPLoose(sample, selector):
+def haloMIPLoose(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.append('Sieie15')
-
-    for sel in sels:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie15'])
 
     selector.findOperator('MetFilters').setFilter(0, 0)
 
     return selector
 
-def haloMETLoose(sample, selector):
+def haloMETLoose(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('MIP49')
-    sels.remove('Sieie')
-    sels.append('Sieie15')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie15'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloMedium(sample, selector):
+def haloMedium(sample, rname):
     """
     Candidate sample but with inverted MIP cut and halo tag.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.append('Sieie12')
-
-    for sel in sels:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie12'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloMIPMedium(sample, selector):
+def haloMIPMedium(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('Sieie')
-    sels.append('Sieie12')
-
-    for sel in sels:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie12'])
 
     selector.findOperator('MetFilters').setFilter(0, 0)
 
     return selector
 
-def haloMETMedium(sample, selector):
+def haloMETMedium(sample, rname):
     """
     Candidate sample but with inverted MIP cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    sels = list(photonFullSelection)
-    sels.remove('MIP49')
-    sels.remove('Sieie')
-    sels.append('Sieie12')
-
-    for sel in sels:
-        photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie12'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-def haloNoShowerCut(sample, selector):
-    selector = monophotonBase(sample, selector)
+def haloNoShowerCut(sample, rname):
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    for sel in photonFullSelection:
-        if sel == 'MIP49':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        elif sel == 'Sieie':
-            continue
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie'])
 
     selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
-
-def trivialShower(sample, selector):
+def trivialShower(sample, rname):
     """
     Candidate sample but with inverted sieie cut.
     """
 
-    selector = monophotonBase(sample, selector)
+    selector = monophotonBase(sample, rname)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
 
-    for sel in photonFullSelection:
-        if sel == 'SieieNonzero':
-            photonSel.addSelection(False, getattr(ROOT.PhotonSelection, sel))
-        else:
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+    setupPhotonSelection(photonSel, changes = ['!SieieNonzero'])
 
     return selector
 
-def electronBase(sample, selector):
-    selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setFlavor(ROOT.lElectron)
-
-    return selector
-
-def muonBase(sample, selector):
-    selector = leptonBase(sample, selector)
-    selector.findOperator('LeptonRecoil').setFlavor(ROOT.lMuon)
-
-    return selector
-
-def diel(sample, selector):
-    selector = electronBase(sample, selector)
+def diel(sample, rname):
+    selector = leptonBase(sample, rname, ROOT.lElectron)
     selector.findOperator('LeptonSelection').setN(2, 0)
     # selector.findOperator('LeptonSelection').setStrictEl(False)
 
@@ -1227,24 +854,21 @@ def diel(sample, selector):
     selector.addOperator(dielSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
-        idsf.addFactor(electronTightSF)
+        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
+        electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+
+        idsf = selector.findOperator('ElectronSF')
         idsf.addFactor(electronLooseSF)
         idsf.setNParticles(2)
-        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
-        track.addFactor(electronTrackSF)
+        track = selector.findOperator('GsfTrackSF')
         track.addFactor(electronTrackSF)
         track.setNParticles(2)
-        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
 
     return selector
 
-def dielAllPhoton(sample, selector):
-    selector = diel(sample, selector)
+def dielAllPhoton(sample, rname):
+    selector = diel(sample, rname)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1260,48 +884,15 @@ def dielAllPhoton(sample, selector):
 
     return selector
 
-def dielHfake(sample, selector):
-    selector = electronBase(sample, selector)
-    selector.findOperator('LeptonSelection').setN(2, 0)
-    # selector.findOperator('LeptonSelection').setStrictEl(False)
-
-    dielMass = ROOT.Mass()
-    dielMass.setPrefix('diel')
-    dielMass.setMin(60.)
-    dielMass.setMax(120.)
-    dielMass.setCollection1(ROOT.cElectrons)
-    dielMass.setCollection2(ROOT.cElectrons)
-    dielMass.setIgnoreDecision(True)
-    selector.addOperator(dielMass)
-
-    dielSign = ROOT.OppositeSign()
-    dielSign.setPrefix('diel')
-    dielSign.setCollection1(ROOT.cElectrons)
-    dielSign.setCollection2(ROOT.cElectrons)
-    dielSign.setIgnoreDecision(True)
-    selector.addOperator(dielSign)
-
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
-        idsf.addFactor(electronTightSF)
-        idsf.addFactor(electronLooseSF)
-        idsf.setNParticles(2)
-        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
-        track.addFactor(electronTrackSF)
-        track.addFactor(electronTrackSF)
-        track.setNParticles(2)
-        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
+def dielHfake(sample, rname):
+    selector = diel(sample, rname)
         
-    selector = hadProxy(sample, selector)
+    modHfake(selector)
 
     return selector
 
-def monoel(sample, selector):
-    selector = electronBase(sample, selector)
+def monoel(sample, rname):
+    selector = leptonBase(sample, rname, ROOT.lElectron)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
     mtCut = ROOT.LeptonMt()
@@ -1316,52 +907,17 @@ def monoel(sample, selector):
     metCut.setIgnoreDecision(True)
     selector.addOperator(metCut)
 
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
-        idsf.addFactor(electronTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
+    return selector
 
-        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
-        track.addFactor(electronTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
+def monoelHfake(sample, rname):
+    selector = monoel(sample, rname)
+    
+    modHfake(selector)
 
     return selector
 
-def monoelHfake(sample, selector):
-    selector = electronBase(sample, selector)
-    selector.findOperator('LeptonSelection').setN(1, 0)
-
-    mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.lElectron)
-    mtCut.setMax(160.)
-    mtCut.setIgnoreDecision(True)
-    selector.addOperator(mtCut)
-
-    metCut = ROOT.HighMet('RealMetCut')
-    metCut.setMetSource(ROOT.kInMet)
-    metCut.setThreshold(50.)
-    metCut.setIgnoreDecision(True)
-    selector.addOperator(metCut)
-
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
-        idsf.addFactor(electronTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
-        track.addFactor(electronTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
-
-    selector = hadProxy(sample, selector)
-
-    return selector
-
-def dimu(sample, selector):
-    selector = muonBase(sample, selector)
+def dimu(sample, rname):
+    selector = leptonBase(sample, rname, ROOT.lMuon)
     selector.findOperator('LeptonSelection').setN(0, 2)
     # selector.findOperator('LeptonSelection').setStrictMu(False)
 
@@ -1382,24 +938,21 @@ def dimu(sample, selector):
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
-        idsf.addFactor(muonTightSF)
+        muonLooseSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape') # x: abs eta, y: pt
+        muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
+
+        idsf = selector.findOperator('MuonSF')
         idsf.addFactor(muonLooseSF)
         idsf.setNParticles(2)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
 
-        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
-        track.addFactor(muonTrackSF)
+        track = selector.findOperator('MuonTrackSF')
         track.addFactor(muonTrackSF)
         track.setNParticles(2)
-        track.setVariable(ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
 
     return selector
 
-def dimuAllPhoton(sample, selector):
-    selector = dimu(sample, selector)
+def dimuAllPhoton(sample, rname):
+    selector = dimu(sample, rname)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lMuon)
@@ -1416,48 +969,15 @@ def dimuAllPhoton(sample, selector):
 
     return selector
 
-def dimuHfake(sample, selector):
-    selector = muonBase(sample, selector)
-    selector.findOperator('LeptonSelection').setN(0, 2)
-    # selector.findOperator('LeptonSelection').setStrictMu(False)
+def dimuHfake(sample, rname):
+    selector = dimu(sample, rname)
 
-    dimuMass = ROOT.Mass()
-    dimuMass.setPrefix('dimu')
-    dimuMass.setMin(60.)
-    dimuMass.setMax(120.)
-    dimuMass.setCollection1(ROOT.cMuons)
-    dimuMass.setCollection2(ROOT.cMuons)
-    dimuMass.setIgnoreDecision(True)
-    selector.addOperator(dimuMass)
-
-    dimuSign = ROOT.OppositeSign()
-    dimuSign.setPrefix('dimu')
-    dimuSign.setCollection1(ROOT.cMuons)
-    dimuSign.setCollection2(ROOT.cMuons)
-    dimuSign.setIgnoreDecision(True)
-    selector.addOperator(dimuSign)
-
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
-        idsf.addFactor(muonTightSF)
-        idsf.addFactor(muonLooseSF)
-        idsf.setNParticles(2)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
-        track.addFactor(muonTrackSF)
-        track.addFactor(muonTrackSF)
-        track.setNParticles(2)
-        track.setVariable(ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
-
-    selector = hadProxy(sample, selector)
+    modHfake(selector)
 
     return selector
 
-def monomu(sample, selector):
-    selector = muonBase(sample, selector)
+def monomu(sample, rname):
+    selector = leptonBase(sample, rname, ROOT.lMuon)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
     mtCut = ROOT.LeptonMt()
@@ -1466,21 +986,10 @@ def monomu(sample, selector):
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
 
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
-        idsf.addFactor(muonTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
-        track.addFactor(muonTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
-
     return selector
 
-def monomuAllPhoton(sample, selector):
-    selector = monomu(sample, selector)
+def monomuAllPhoton(sample, rname):
+    selector = monomu(sample, rname)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lMuon)
@@ -1496,95 +1005,43 @@ def monomuAllPhoton(sample, selector):
 
     return selector
 
-def monomuHfake(sample, selector):
-    selector = muonBase(sample, selector)
-    selector.findOperator('LeptonSelection').setN(0, 1)
+def monomuHfake(sample, rname):
+    selector = monomu(sample, rname)
 
-    mtCut = ROOT.LeptonMt()
-    mtCut.setFlavor(ROOT.lMuon)
-    mtCut.setMax(160.)
-    mtCut.setIgnoreDecision(True)
-    selector.addOperator(mtCut)
-
-    if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
-        idsf.addFactor(muonTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
-        track.addFactor(muonTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
-
-    selector = hadProxy(sample, selector)
+    modHfake(selector)
 
     return selector
 
-def elmu(sample, selector):
-    selector = muonBase(sample, selector)
+def elmu(sample, rname):
+    selector = leptonBase(sample, rname, ROOT.lMuon)
     selector.findOperator('LeptonSelection').setN(1, 1)
 
     if not sample.data:
-        idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
-        idsf.addFactor(electronTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
-        track.addFactor(electronTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
-
-        ### might not be 100% correct because there is no check 
-        ### that both electron and muon are tight >.>
-
-        idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
-        idsf.addFactor(muonTightSF)
-        idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
-        selector.addOperator(idsf)
-
-        track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
-        track.addFactor(muonTrackSF)
-        track.setVariable(ROOT.IDSFWeight.kNpv)
-        selector.addOperator(track)
+        addElectronIDSFWeight(sample, selector)
 
     return selector
 
-def wenu(sample, name):
+def wenu(sample, rname):
     """
     Candidate-like selection but for W->enu, no pixel veto on the photon.
     """
 
-    selector = monophotonBase(sample, ROOT.WenuSelector(name))
-
-    # selector.addOperator(ROOT.IDSFWeight(ROOT.cPhotons, photonSF, 'photonSF'))
-    # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
-    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-        selector.addOperator(ROOT.NNPDFVariation())
+    selector = monophotonBase(sample, rname, selcls = ROOT.PartonSelector)
+    selector.setAcceptedPdgId(11)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.resetSelection()
-    photonSel.resetVeto()
-
-    for sel in photonFullSelection:
-        if sel != 'EVeto':
-            photonSel.addSelection(True, getattr(ROOT.PhotonSelection, sel))
-
     photonSel.setMinPt(15.)
+    
+    setupPhotonSelection(photonSel, changes = ['-EVeto'])
 
     return selector
 
-def monoelVertex(sample, name):
+def monoelVertex(sample, rname):
     """
     Monoel-like selection with e or mu, with LeptonVertex
     """
 
-    selector = ROOT.WlnuSelector(name)
-    selector.setRejectedPdgId(0)
-    selector.setAcceptedPdgId(11)
-
-    selector = monoel(sample, selector)
+    selector = monoel(sample, rname)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1592,16 +1049,12 @@ def monoelVertex(sample, name):
 
     return selector
 
-def monomuVertex(sample, name):
+def monomuVertex(sample, rname):
     """
     Monomu-like selection with e or mu, with LeptonVertex
     """
 
-    selector = ROOT.WlnuSelector(name)
-    selector.setRejectedPdgId(0)
-    selector.setAcceptedPdgId(13)
-
-    selector = monomu(sample, selector)
+    selector = monomu(sample, rname)
 
     leptons = selector.findOperator('LeptonSelection')
     leptons.setRequireTight(False)
@@ -1613,16 +1066,12 @@ def monomuVertex(sample, name):
 
     return selector
 
-def dielVertex(sample, name):
+def dielVertex(sample, rname):
     """
     Diel-like selection with e or mu, with LeptonVertex
     """
 
-    selector = ROOT.WlnuSelector(name)
-    selector.setRejectedPdgId(0)
-    selector.setAcceptedPdgId(11)
-
-    selector = diel(sample, selector)
+    selector = diel(sample, rname)
 
     vtx = ROOT.LeptonVertex()
     vtx.setSpecies(ROOT.lElectron)
@@ -1630,16 +1079,12 @@ def dielVertex(sample, name):
 
     return selector
 
-def dimuVertex(sample, name):
+def dimuVertex(sample, rname):
     """
     Dimu-like selection with e or mu, with LeptonVertex
     """
 
-    selector = ROOT.WlnuSelector(name)
-    selector.setRejectedPdgId(0)
-    selector.setAcceptedPdgId(13)
-
-    selector = dimu(sample, selector)
+    selector = dimu(sample, rname)
 
     leptons = selector.findOperator('LeptonSelection')
     leptons.setRequireTight(True)
@@ -1651,11 +1096,12 @@ def dimuVertex(sample, name):
 
     return selector
 
-def zeeBase(sample, selector):
+def zeeJets(sample, rname):
     """
-    Select Z->ee events.
+    Require Z->ee plus at least one high pt jet.
     """
-    selector = TagAndProbeBase(sample, selector)
+
+    selector = TagAndProbeBase(sample, rname)
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
 
@@ -1663,14 +1109,6 @@ def zeeBase(sample, selector):
     tnp.setTagSpecies(ROOT.cElectrons)
     tnp.setProbeSpecies(ROOT.cElectrons)
 
-    return selector
-
-def zeeJets(sample, selector):
-    """
-    Require Z->ee plus at least one high pt jet.
-    """
-    selector = zeeBase(sample, selector)
-
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(selector.findOperator('TagAndProbePairZ'))
     b2b.setMinJetPt(100.)
@@ -1679,25 +1117,18 @@ def zeeJets(sample, selector):
 
     return selector
 
-def zmmBase(sample, selector):
+def zmmJets(sample, rname):
     """
-    Select Z->mumu events.
+    Require Z->mumu plus at least one high pt jet.
     """
-    selector = TagAndProbeBase(sample, selector)
+
+    selector = TagAndProbeBase(sample, rname)
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.cMuons)
     tnp.setProbeSpecies(ROOT.cMuons)
-    
-    return selector
-
-def zmmJets(sample, selector):
-    """
-    Require Z->mumu plus at least one high pt jet.
-    """
-    selector = zmmBase(sample, selector)
 
     b2b = ROOT.ZJetBackToBack()
     b2b.setTagAndProbePairZ(selector.findOperator('TagAndProbePairZ'))
@@ -1707,33 +1138,38 @@ def zmmJets(sample, selector):
 
     return selector
 
-def tpeg(sample, selector):
+def tpeg(sample, rname):
     """
     Electron + photon tag & probe.
     """
 
-    selector = tagprobeBase(sample, selector)
-    selector.addOperator(ROOT.TPElectronPhoton())
+    selector = tagprobeBase(sample, rname)
+    tp = ROOT.TPLeptonPhoton()
+    tp.setFlavor(ROOT.lElectron)
+    selector.addOperator(tp)
 
     return selector
 
-def tpmg(sample, selector):
+def tpmg(sample, rname):
     """
     Muon + photon tag & probe.
     """
 
-    selector = tagprobeBase(sample, selector)
-    selector.addOperator(ROOT.TPMuonPhoton())
+    selector = tagprobeBase(sample, rname)
+    tp = ROOT.TPLeptonPhoton()
+    tp.setFlavor(ROOT.lMuon)
+    selector.addOperator(tp)
 
     return selector
 
-def tpegLowPt(sample, selector):
+def tpegLowPt(sample, rname):
     """
     Electron + photon tag & probe.
     """
 
-    selector = tagprobeBase(sample, selector)
-    tp = ROOT.TPElectronPhoton()
+    selector = tagprobeBase(sample, rname)
+    tp = ROOT.TPLeptonPhoton()
+    tp.setFlavor(ROOT.lElectron)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
@@ -1744,13 +1180,14 @@ def tpegLowPt(sample, selector):
 
     return selector
 
-def tpmgLowPt(sample, selector):
+def tpmgLowPt(sample, rname):
     """
     Muon + photon tag & probe.
     """
 
-    selector = tagprobeBase(sample, selector)
-    tp = ROOT.TPMuonPhoton()
+    selector = tagprobeBase(sample, rname)
+    tp = ROOT.TPLeptonPhoton()
+    tp.setFlavor(ROOT.lMuon)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
@@ -1761,126 +1198,174 @@ def tpmgLowPt(sample, selector):
 
     return selector
 
-
-def tpmmg(sample, selector):
+def tpmmg(sample, rname):
     """
     Dimuon + photon tag & probe.
     """
 
-    selector = tagprobeBase(sample, selector)
-    operator = ROOT.TPMuonPhoton()
-    operator.setMode(ROOT.TPMuonPhoton.kDouble)
-    selector.addOperator(operator)
+    selector = tagprobeBase(sample, rname)
+    tp = ROOT.TPLeptonPhoton()
+    tp.setFlavor(ROOT.lMuon)
+    tp.setMinProbePt(25.)
+    tp.setMinTagPt(30.)
+    tp.setTagTriggerMatch(True)
+    tp.setMode(ROOT.TPLeptonPhoton.kDouble)
+
+    selector.addOperator(tp)
+
+    selector.setCanPhotonSkim(False)
 
     return selector
 
-#####################
-# SELECTOR WRAPPERS #
-#####################
+######################
+# SELECTOR MODIFIERS #
+######################
 
-def kfactor(generator):
+def addPUWeight(sample, selector):
+    pudir = ROOT.gROOT.GetDirectory('puweights')
+
+    if not pudir:
+        pudir = ROOT.gROOT.mkdir('puweights')
+        f = ROOT.TFile.Open(datadir + '/pileup.root')
+        for k in f.GetListOfKeys():
+            if k.GetName().startswith('puweight_'):
+                logger.debug('Loading PU weights %s', k.GetName())
+                pudir.cd()
+                obj = k.ReadObj().Clone(k.GetName().replace('puweight_', ''))
+                _garbage.append(obj)
+        
+        f.Close()
+
+    for hist in pudir.GetList():
+        if hist.GetName() in sample.fullname:
+            logger.debug('Using PU weights %s for %s', hist.GetName(), sample.name)
+            selector.addOperator(ROOT.PUWeight(hist))
+            break
+    else:
+        raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
+
+def addIDSFWeight(sample, selector):
+    idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
+    idsf.addFactor(getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', newname = 'photonSF'))
+    idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
+    selector.addOperator(idsf)
+    # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+
+def addElectronIDSFWeight(sample, selector):
+    electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
+    electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+
+    idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
+    idsf.addFactor(electronTightSF)
+    idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
+    selector.addOperator(idsf)
+
+    track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
+    track.addFactor(electronTrackSF)
+    track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
+    selector.addOperator(track)
+
+def addMuonIDSFWeight(sample, selector):
+    muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape') # x: abs eta, y: pt
+    muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
+
+    idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
+    idsf.addFactor(muonTightSF)
+    idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+    selector.addOperator(idsf)
+
+    track = ROOT.IDSFWeight(ROOT.cMuons, 'MuonTrackSF')
+    track.addFactor(muonTrackSF)
+    track.setVariable(ROOT.IDSFWeight.kNpv)
+    selector.addOperator(track)
+
+def addPDFVariation(sample, selector):
+    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+        selector.addOperator(ROOT.NNPDFVariation())
+
+def addKfactor(sample, selector):
     """
-    Wrapper for applying the k-factor corrections to the selector returned by the generator in the argument.
+    Apply the k-factor corrections.
     """
 
-    def scaled(sample, name):
-        selector = generator(sample, name)
+    sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('wglo', 'wnlg').replace('-o', '')
 
-        sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('wglo', 'wnlg').replace('-o', '')
-
-        qcdSource = ROOT.TFile.Open(datadir + '/kfactor.root')
-        corr = qcdSource.Get(sname)
-
+    # temporarily don't apply QCD k-factor until we redrive for nlo samples
+    if sample.name not in ['znng', 'znng-130', 'zllg', 'zllg-130', 'wnlg', 'wnlg-130', 'wnlg-500']:
+        corr = ROOT.gROOT.Get(sname + '_kfactor')
+        if not corr:
+            corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
+    
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
-
+    
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
-            vcorr = qcdSource.Get(sname + '_' + variation)
+            vcorr = ROOT.gROOT.Get(sname + '_' + variation)
+            if not vcorr:
+                vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
+    
             if vcorr:
                 logger.debug('applying qcd var %s %s', variation, sample.name)
                 qcd.addVariation('qcd' + variation, vcorr)
 
-        # temporarily don't apply QCD k-factor until we redrive for nlo samples
-        if not sample.name in ['znng', 'znng-130', 'zllg', 'zllg-130', 'wnlg', 'wnlg-130', 'wnlg-500']:
-            selector.addOperator(qcd)
+        selector.addOperator(qcd)
 
-        ewkSource = ROOT.TFile.Open(datadir + '/ewk_corr.root')
-        corr = ewkSource.Get(sname)
-        if corr:
-            logger.debug('applying ewk %s', sample.name)
-            ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
-            ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
+    corr = ROOT.gROOT.Get(sname + '_ewkcorr')
+    if not corr:
+        corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
 
-            for variation in ['Up', 'Down']:
-                vcorr = ewkSource.Get(sname + '_' + variation)
-                if vcorr:
-                    logger.debug('applying ewk var %s %s', variation, sample.name)
-                    ewk.addVariation('ewk' + variation, vcorr)
+    if corr:
+        logger.debug('applying ewk %s', sample.name)
+        ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
+        ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
-            selector.addOperator(ewk)
+        for variation in ['Up', 'Down']:
+            vcorr = ewkSource.Get(sname + '_' + variation)
+            if vcorr:
+                logger.debug('applying ewk var %s %s', variation, sample.name)
+                ewk.addVariation('ewk' + variation, vcorr)
 
-        return selector
+        selector.addOperator(ewk)
 
-    return scaled
+def addGenPhotonVeto(sample, selector):
+    veto = ROOT.GenPhotonVeto()
+    veto.setMinPt(130.)
+    veto.setMinPartonDR(0.5)
 
-def genveto(generator):
-    """
-    Wrapper for vetoing gen-level photons.
-    """
+    selector.addOperator(veto, 0)
 
-    def vetoed(sample, name):
-        selector = generator(sample, name)
+def addGenPhotonPtCut(sample, selector):
+    truncator = ROOT.PhotonPtTruncator()
+    truncator.setPtMax(500.)
 
-        veto = ROOT.GenPhotonVeto()
-        veto.setMinPt(130.)
-        veto.setMinPartonDR(0.5)
+    selector.addOperator(truncator, 0)
 
-        selector.addOperator(veto, 0)
-
-        return selector
-
-    return vetoed
-
-def wlnu(generator):
-    """
-    Wrapper for W->lnu sample to pick out non-electron decays only.
-    """
-
-    def filtered(sample, name):
-        return generator(sample, ROOT.WlnuSelector(name))
-
-    return filtered
-
-def wglo(generator):
-    """
-    Wrapper for adding an LHE photon pT cut.
-    """
-
-    def truncated(sample, name):
-        selector = generator(sample, name)
-
-        truncator = ROOT.PhotonPtTruncator()
-        truncator.setPtMax(500.)
-        selector.addOperator(truncator, 0)
-
-        return selector
-
-    return truncated
-
-def dph(generator):
+def addPhotonRecoil(sample, selector):
     """
     Wrapper for diphoton samples to turn them into photon+dark photon samples by 'removing' one of the photons and adding it to the MET.
     """
+    selector.addOperator(ROOT.PhotonRecoil())
 
-    def invisible(sample, name):
-        selector = generator(sample, name)
-        
-        recoil = ROOT.PhotonRecoil()
-        selector.addOperator(recoil)
+def modHfake(selector):
+    """Append PhotonPtWeight with hadProxyWeights and set up the photon selections."""
 
-        return selector
+    hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
+    hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
+    hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
+    hadproxyVLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactVLoose')
+    hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
+    hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
-    return invisible
+    weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
+    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11'])
+    setupPhotonSelection(photonSel, veto = True)
 
 
 if needHelp:
