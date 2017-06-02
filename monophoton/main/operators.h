@@ -1013,17 +1013,9 @@ class PUWeight : public Operator {
 // Tag & Probe
 //--------------------------------------------------------------------
 
-class TPElectronPhoton : public TPOperator {
+class TPLeptonPhoton : public TPOperator {
  public:
-  TPElectronPhoton(char const* name = "TPElectronPhoton") : TPOperator(name) {}
-  
- protected:
-  void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
-};
-
-class TPMuonPhoton : public TPOperator {
- public:
-  TPMuonPhoton(char const* name = "TPMuonPhoton") : TPOperator(name) {}
+  TPLeptonPhoton(char const* name = "TPLeptonPhoton") : TPOperator(name) {}
 
   void addBranches(TTree& skimTree) override;
 
@@ -1032,11 +1024,13 @@ class TPMuonPhoton : public TPOperator {
     kDouble
   };
 
+  void setFlavor(LeptonFlavor flavor) { flavor_ = flavor; }
   void setMode(Mode m) { mode_ = m; }
   
  protected:
   void findCombos(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
 
+  LeptonFlavor flavor_{nLeptonFlavors};
   Mode mode_{kSingle};
   TTree* skimTree_{0}; // need to hold the skim tree because we book looseTags at the first event
 };

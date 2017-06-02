@@ -6,86 +6,101 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 from datasets import allsamples
-import selectors
+import selectors as s
 
-def defaults(regions):
-    return [(region, getattr(selectors, region)) for region in regions]
-
-def applyMod(modifier, regions):
+def applyMod(sels, *mods):
     result = []
-    for entry in regions:
-        if type(entry) is tuple:
-            region, selector = entry
+    for sel in sels:
+        if type(sel) is str:
+            result.append((sel, getattr(s, sel)) + mods)
         else:
-            region = entry
-            selector = getattr(selectors, region)
-
-        result.append((region, modifier(selector)))
+            result.append(sel + mods)
 
     return result
 
+data_sph = [
+    'monoph', 'efake', 'hfake',  'trivialShower',
+    'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut',
+    'hfakeTight', 'hfakeLoose',
+    'emjet', 'emjetTight', 'emjetLoose',
+    'dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel',
+    'dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake',
+    'tpeg', 'tpmg',
+    'dijet'
+]
 
-mc_cand = ['monoph'] # , 'purity']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'gjets'] 
-mc_sig = ['monoph', 'purity', 'signalRaw']
+data_smu = [
+    'dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets', 'zmumu', 'tpmmg',
+    ('tpmg', s.tpmgLowPt)
+]
+
+data_sel = [
+    'diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets',
+    ('tpeg', s.tpegLowPt)
+]
+
+mc_cand = ['monoph'] # , 'emjet']
+mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'emjet', 'emjetTight', 'emjetLoose'] # , 'gjets'] 
+mc_sig = ['monoph', 'emjet', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex']
 
-wlnu = applyMod(selectors.wlnu, applyMod(selectors.genveto, mc_cand)) + applyMod(selectors.genveto, mc_lep) + defaults(['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex'])
+mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = {
     # Data 2016
-    'sph-16*': defaults(['monoph', 'efake', 'hfake',  'trivialShower']
-                        + ['haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut'] # , 'halo', 'haloMIP', 'haloMET', 'haloMedium', 'haloMIPMedium', 'haloMETMedium']
-                        + ['hfakeTight', 'hfakeLoose'] # , 'hfakeVLoose']
-                        + ['purity', 'purityNom', 'purityTight', 'purityLoose'] # , 'purityVLoose'] # , 'gjets']
-                        + ['dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel']
-                        + ['dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake']
-                        + ['tpeg', 'tpmg']
-                        + ['dijet']),
-    'smu-16*': defaults(['dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets', 'zmumu', 'tpmmg']) + [('tpmg', selectors.tpmgLowPt)],
-    'sel-16*': defaults(['diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets']) + [('tpeg', selectors.tpegLowPt)],
-    # Hgg -> Dark Photon MC no gen changes
-    'hgg-*': applyMod(selectors.dph, mc_sig),
+    'sph-16*': data_sph,
+    'smu-16*': data_smu,
+    'sel-16*': data_sel,
     # MC
-    'znng': defaults(mc_sig),
-    'znng-130': applyMod(selectors.kfactor, mc_sig),
-    'zllg': defaults(mc_sig + mc_lep + mc_dilep),
-    'zllg-130': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
-    'wnlg': defaults(mc_sig + mc_lep),
-    'wnlg-{130,500}': applyMod(selectors.kfactor, mc_sig + mc_lep),
-    'wglo': defaults(mc_cand + mc_lep),
-    'wglo-{130,500}': applyMod(selectors.kfactor, mc_cand + mc_lep),
-    'znng-40-o': defaults(mc_sig),
-    'znng-130-o': applyMod(selectors.kfactor, mc_sig),
-    'zllg-130-o': applyMod(selectors.kfactor, mc_sig + mc_lep + mc_dilep),
-    'wnlg-40-o': defaults(mc_sig + mc_lep),
-    'wnlg-130-o': applyMod(selectors.kfactor, mc_sig + mc_lep),
-    'gj{,04}-*': applyMod(selectors.kfactor, mc_qcd + mc_cand),
-    'gg-*': defaults(mc_cand + mc_lep + mc_dilep),
-    'ttg': defaults(mc_cand + mc_lep + mc_dilep),
-    'tg': defaults(mc_cand + mc_lep),
-    'ww': defaults(mc_cand + mc_lep + mc_dilep),
-    'wz': defaults(mc_cand + mc_lep + mc_dilep),
-    'zz': defaults(mc_cand + mc_lep + mc_dilep),
-    'tt': defaults(mc_cand + mc_lep + mc_dilep),
-    'wlnu*': wlnu,
-    'wlnun-*': wlnu,
-    'znn-*': defaults(mc_cand),
-    'znnn-*': defaults(mc_cand),
-    'dy-50*': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'dyn-50-*': applyMod(selectors.genveto, mc_cand + mc_lep + mc_dilep),
-    'qcd-*': defaults(mc_cand + mc_qcd + mc_dilep + mc_lep),
+    'znng': mc_sig,
+    'znng-130': applyMod(mc_sig, s.addKfactor),
+    'zllg': mc_sig + mc_lep + mc_dilep + ['tpmmg'],
+    'zllg-130': mc_sig + mc_lep + mc_dilep + ['tpmmg'],
+    'wnlg': mc_sig + mc_lep,
+    'wnlg-{130,500}': applyMod(mc_sig + mc_lep, s.addKfactor),
+    'wglo': mc_cand + mc_lep,
+    'wglo-{130,500}': applyMod(mc_cand + mc_lep, s.addKfactor),
+    'znng-40-o': mc_sig,
+    'znng-130-o': applyMod(mc_sig, s.addKfactor),
+    'zllg-*-o': applyMod(mc_sig + mc_lep + mc_dilep + ['tpmmg'], s.addKfactor),
+    'wnlg-40-o': mc_sig + mc_lep,
+    'wnlg-130-o': applyMod(mc_sig + mc_lep, s.addKfactor),
+    'gj{,04}-*': applyMod(mc_qcd + mc_cand, s.addKfactor),
+    'gg-*': mc_cand + mc_lep + mc_dilep,
+    'ttg': mc_cand + mc_lep + mc_dilep,
+    'tg': mc_cand + mc_lep,
+    'ww': mc_cand + mc_lep + mc_dilep,
+    'wz': mc_cand + mc_lep + mc_dilep,
+    'zz': mc_cand + mc_lep + mc_dilep,
+    'tt': mc_cand + mc_lep + mc_dilep,
+    'wlnu-*': mc_wlnu,
+    'wlnun-*': mc_wlnu,
+    'znn-*': mc_cand,
+    'znnn-*': mc_cand,
+    'dy-50*': applyMod(mc_cand + mc_lep + mc_dilep + ['tpeg', 'tpegLowPt'], s.addGenPhotonVeto),
+    'dyn-50-*': applyMod(mc_cand + mc_lep + mc_dilep, s.addGenPhotonVeto),
+    'qcd-*': mc_cand + mc_qcd + mc_dilep + mc_lep,
+    'add-*': mc_sig,
+    'dm*': mc_sig,
+    'dph*': mc_sig
 }
 
 allSelectors = {}
-for key, sels in allSelectors_byPattern.items():
-    samples = allsamples.getmany(key)
+for pat, sels in allSelectors_byPattern.items():
+    samples = allsamples.getmany(pat)
     for sample in samples:
-        allSelectors[sample.name] = sels
+        if sample in allSelectors:
+            raise RuntimeError('Duplicate skim config for ' + sample.name)
 
-# all the rest are mc_sig
-for sname in allsamples.names():
-    if sname not in allSelectors:
-        # print 'Sample ' + sname + ' not found in selectors dict. Appyling mc_sig.'
-        allSelectors[sname] = defaults(mc_sig)
+        sampleSelectors = {}
+        for sel in sels:
+            # sel has to be either a selector function name or a tuple of form (region, selector[, modifiers])
+            if type(sel) is str:
+                sampleSelectors[sel] = getattr(s, sel)
+            elif len(sel) == 2:
+                sampleSelectors[sel[0]] = sel[1]
+            else:
+                sampleSelectors[sel[0]] = sel[1:]
+            
+        allSelectors[sample] = sampleSelectors

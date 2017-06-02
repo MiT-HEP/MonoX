@@ -39,8 +39,22 @@ EventSelectorBase::findOperator(char const* _name) const
 }
 
 void
+EventSelectorBase::removeOperator(char const* _name)
+{
+  for (auto itr(operators_.begin()); itr != operators_.end(); ++itr) {
+    if (std::strcmp((*itr)->name(), _name) == 0) {
+      operators_.erase(itr);
+      break;
+    }
+  }
+}
+
+void
 EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _inEvent, panda::utils::BranchList& _blist, bool _isMC)
 {
+  if (printLevel_ > 0)
+    *stream_ << "Initializing " << className() << "::" << name() << std::endl;
+
   auto* outputFile(new TFile(_outputPath, "recreate"));
 
   skimOut_ = new TTree("events", "Events");
@@ -63,9 +77,6 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
     }
     *stream_ << std::endl;
   }
-
-  if (printLevel_ > 0)
-    *stream_ << "Initializing operators for " << name() << std::endl;
 
   for (auto* op : operators_) {
     op->addInputBranch(_blist);
@@ -313,42 +324,38 @@ ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, pa
 }
 
 //--------------------------------------------------------------------
-// WlnuSelector
+// PartonSelector
 //--------------------------------------------------------------------
 
 void
-WlnuSelector::selectEvent(panda::EventMonophoton& _event)
+PartonSelector::selectEvent(panda::EventMonophoton& _event)
 {
   bool accepted(acceptedId_ == 0);
-  for (auto& parton : _event.partons) {
-    unsigned absId(std::abs(parton.pdgid));
-    if (absId == rejectedId_)
-      return;
-    if (absId == acceptedId_) {
-      accepted = true;
-      break;
+  
+  if (_event.partons.size() != 0) {
+    for (auto& parton : _event.partons) {
+      unsigned absId(std::abs(parton.pdgid));
+      if (absId == rejectedId_)
+        return;
+      if (absId == acceptedId_) {
+        accepted = true;
+        break;
+      }
     }
   }
-  if (!accepted)
-    return;
-
-  EventSelector::selectEvent(_event);
-}
-
-//--------------------------------------------------------------------
-// WenuSelector
-//--------------------------------------------------------------------
-
-void
-WenuSelector::selectEvent(panda::EventMonophoton& _event)
-{
-  unsigned iP(0);
-  for (; iP != _event.partons.size(); ++iP) {
-    auto& parton(_event.partons[iP]);
-    if (std::abs(parton.pdgid) == 11)
-      break;
+  else {
+    for (auto& part : _event.genParticles) {
+      unsigned absId(std::abs(part.pdgid));
+      if (absId == rejectedId_)
+        return;
+      if (absId == acceptedId_) {
+        accepted = true;
+        break;
+      }
+    }
   }
-  if (iP == _event.partons.size())
+
+  if (!accepted)
     return;
 
   EventSelector::selectEvent(_event);

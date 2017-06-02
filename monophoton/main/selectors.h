@@ -25,12 +25,14 @@ public:
   unsigned size() const { return operators_.size(); }
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
+  void removeOperator(char const* name);
 
   void initialize(char const* outputPath, panda::EventMonophoton& inEvent, panda::utils::BranchList& blist, bool isMC);
   void finalize();
   virtual void selectEvent(panda::EventMonophoton&) = 0;
 
   TString const& name() const { return name_; }
+  virtual char const* className() const = 0;
 
   void setCanPhotonSkim(bool b) { canPhotonSkim_ = b; }
   bool getCanPhotonSkim() const { return canPhotonSkim_; }
@@ -68,6 +70,8 @@ public:
 
   void selectEvent(panda::EventMonophoton&) override;
 
+  char const* className() const override { return "EventSelector"; }
+
   void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
 
  protected:
@@ -88,6 +92,8 @@ class ZeeEventSelector : public EventSelector {
 
   void selectEvent(panda::EventMonophoton&) override;
 
+  char const* className() const override { return "ZeeEventSelector"; }
+
   class EEPairSelection : public PhotonSelection {
   public:
     EEPairSelection(char const* name = "EEPairSelection");
@@ -103,27 +109,24 @@ class ZeeEventSelector : public EventSelector {
   std::vector<Operator*>::iterator eePairSel_;
 };
 
-class WlnuSelector : public EventSelector {
-  // Special event selector that considers only non-electron decays of W
+class PartonSelector : public EventSelector {
+  // Special event selector that considers events with specified lepton flavors in LHE
  public:
-  WlnuSelector(char const* name) : EventSelector(name) {}
+  PartonSelector(char const* name) : EventSelector(name) {}
 
   void selectEvent(panda::EventMonophoton&) override;
+
+  char const* className() const override { return "PartonSelector"; }
 
   void setRejectedPdgId(unsigned id) { rejectedId_ = id; }
   void setAcceptedPdgId(unsigned id) { acceptedId_ = id; }
 
+  unsigned getRejectedPdgId() const { return rejectedId_; }
+  unsigned getAcceptedPdgId() const { return acceptedId_; }
+
  private:
-  unsigned rejectedId_{11};
+  unsigned rejectedId_{0};
   unsigned acceptedId_{0};
-};
-
-class WenuSelector : public EventSelector {
-  // Special event selector that considers only electron decays of W
- public:
-  WenuSelector(char const* name) : EventSelector(name) {}
-
-  void selectEvent(panda::EventMonophoton&) override;
 };
 
 class NormalizingSelector : public EventSelector {
@@ -150,6 +153,8 @@ class SmearingSelector : public EventSelector {
 
   void selectEvent(panda::EventMonophoton&) override;
 
+  char const* className() const override { return "SmearingSelector"; }
+
   void setNSamples(unsigned n) { nSamples_ = n; }
   void setFunction(TF1* func) { func_ = func; }
 
@@ -164,6 +169,9 @@ public:
   ~TagAndProbeSelector() {}
 
   void selectEvent(panda::EventMonophoton&) override;
+
+  char const* className() const override { return "TagAndProbeSelector"; }
+
   void setSampleId(unsigned id) { sampleId_ = id; }
 
  protected:

@@ -118,8 +118,14 @@ class SkimSlimWeight(object):
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
         skimmer.setForceAllEvents(SkimSlimWeight.config['noPhotonSkim'])
     
-        for rname, gen in self.selectors.items():
-            selector = gen(self.sample, rname)
+        for rname, selgen in self.selectors.items():
+            if type(selgen) is tuple: # has modifiers
+                selector = selgen[0](self.sample, rname)
+                for mod in selgen[1:]:
+                    mod(self.sample, selector)
+            else:
+                selector = selgen(self.sample, rname)
+
             selector.setUseTimers(SkimSlimWeight.config['timer'])
             skimmer.addSelector(selector)
     
@@ -395,17 +401,6 @@ if __name__ == '__main__':
 
     ## set up samples and selectors
     from datasets import allsamples
-    from main.skimconfig import allSelectors
-
-    # construct {sname: {selector name: generator}}
-    selectors = {}
-    for sname, sels in allSelectors.items():
-        for rname, gen in sels:
-            if len(args.selnames) == 0 or rname in args.selnames:
-                try:
-                    selectors[sname][rname] = gen
-                except KeyError:
-                    selectors[sname] = {rname: gen}
     
     ## get the list of sample objects according to args.snames
     if 'all' in args.snames:
@@ -420,6 +415,18 @@ if __name__ == '__main__':
     if args.list:
         print ' '.join(sorted(s.name for s in samples))
         sys.exit(0)
+
+    # filter out the selectors
+    from main.skimconfig import allSelectors
+
+    selectors = {}
+    for sample in samples:
+        for rname, selgen in allSelectors[sample].items():
+            if len(args.selnames) == 0 or rname in args.selnames:
+                try:
+                    selectors[sample][rname] = selgen
+                except KeyError:
+                    selectors[sample] = {rname: selgen}
 
     ## compile and load the Skimmer
     import ROOT
@@ -454,7 +461,7 @@ if __name__ == '__main__':
         if len(flist) == 0:
             flist = sample.filesets()
 
-        ssw = SkimSlimWeight(sample, selectors[sample.name], flist, files)
+        ssw = SkimSlimWeight(sample, selectors[sample], flist, files)
 
         if args.merge:
             if not ssw.setupMerge():
