@@ -50,8 +50,7 @@ except KeyError:
 
 ### Directory stuff so that results are saved and such
 versDir = s.versionDir
-#plotDir = os.path.join(versDir,inputKey)
-plotDir = '/home/yiiyama/public_html/cmsplots/purity'
+plotDir = os.path.join(versDir, inputKey)
 histDir = os.path.join(versDir, inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
@@ -62,7 +61,7 @@ if not QUICKFIT:
     ### Get ChIso Curve for true photons
     plotiso.plotiso(loc, pid, pt, met, era)
     
-    isoFile = TFile(os.path.join(plotDir,'chiso_'+inputKey+'.root'))
+    isoFile = TFile(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
     
     labels = [ 'rawmc', 'scaledmc' ] 
     isoHists = {}
@@ -106,6 +105,7 @@ elif len(pids) == 1:
     pid = pids[0]
     extras = []
 
+# high-pt jet + met + photon pt + photon hOverE/NHIso/PhIso
 baseSel = 'jets.pt_[0] > 100. && ' + ptSel + ' && ' + metSel + ' && ' + s.SigmaIetaIetaSels[era][loc][pid]
 if 'pixel' in extras:
     baseSel = baseSel+' && '+s.pixelVetoCut
@@ -120,7 +120,7 @@ sigSel = s.chIsoSels[era][loc][pid]
 sbSel = s.ChIsoSbSels[ChIsoNominal]
 sbSelNear = s.ChIsoSbSels[ChIsoNear]
 sbSelFar  = s.ChIsoSbSels[ChIsoFar]
-truthSel =  '(photons.matchedGenId == -22)'
+truthSel =  '(photons.matchedGenId[0] == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
 skims = s.Measurement['bambu']
@@ -143,7 +143,7 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     print 'Took', (time.time() - start), 'seconds'
     
     start = time.time()
-    extractors['gjetsMc'].setBaseSel(baseSel + ' && (photons.matchedGenId == -22)')
+    extractors['gjetsMc'].setBaseSel(baseSel + ' && ' + truthSel)
     print 'Took', (time.time() - start), 'seconds'
     
     # why this ordering?
@@ -162,6 +162,13 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     #elif 'max' in extras:
     #    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
     #    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
+
+#    source = TFile.Open(s.config.workDir + '/data/sieie_ratio.root')
+#    mcReweight = source.Get('ratio')
+#    mcReweight.SetName('mcReweight')
+#    mcReweight.SetDirectory(gROOT)
+#    source.Close()
+#    extractors['gjetsMc'].reweight = mcReweight
     
     histFile = TFile.Open(os.path.join(histDir, 'initialHists.root'), 'recreate')
     
@@ -216,21 +223,22 @@ print '######## Doing initial purity calculation ########'
 print '##################################################'
 print '\n'
 
+### Get nominal value
+nominalTemplates = deepcopy(initialTemplates[:4])
+nominalDir = os.path.join(plotDir,'nominal')
+if not os.path.exists(nominalDir):
+    os.makedirs(nominalDir)
+
 if QUICKFIT:
-    dataName = os.path.join(plotDir, 'nominal', "purity_v0_" + inputKey)
-    dataPurity = s.FitTemplates(dataName, 'Photon Purity in SinglePhoton DataSet', roofitVar, var[1][era][loc][pid], initialTemplates[0], initialTemplates[1], initialTemplates[3])
+    dataName = os.path.join(nominalDir, "purity_v0_" + inputKey)
+    dataPurity = s.FitTemplates(dataName, 'Photon Purity in SinglePhoton DataSet', roofitVar, var[1][era][loc][pid], nominalTemplates[0], nominalTemplates[1], nominalTemplates[3])
     print "Purity:", dataPurity[0]
 
     sys.exit(0)
 
-### Get nominal value
 nominalHists = deepcopy(initialHists[:4])
-nominalTemplates = deepcopy(initialTemplates[:4])
 nominalSkims = skims[:4]
 nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
-nominalDir = os.path.join(plotDir,'nominal')
-if not os.path.exists(nominalDir):
-    os.makedirs(nominalDir)
 
 nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,nominalDir)
 
