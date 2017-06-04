@@ -20,9 +20,9 @@ def applyMod(sels, *mods):
 
 data_sph = [
     'monoph', 'efake', 'hfake',  'trivialShower',
-    'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut',
+    'halo', 'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut',
     'hfakeTight', 'hfakeLoose',
-    'emjet', 'emjetTight', 'emjetLoose',
+    'emjet',
     'dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel',
     'dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake',
     'tpeg', 'tpmg',
@@ -40,7 +40,7 @@ data_sel = [
 ]
 
 mc_cand = ['monoph'] # , 'emjet']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'emjet', 'emjetTight', 'emjetLoose'] # , 'gjets'] 
+mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'emjet']
 mc_sig = ['monoph', 'emjet', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex']
@@ -74,10 +74,8 @@ allSelectors_byPattern = {
     'wz': mc_cand + mc_lep + mc_dilep,
     'zz': mc_cand + mc_lep + mc_dilep,
     'tt': mc_cand + mc_lep + mc_dilep,
-    'wlnu-*': mc_wlnu,
-    'wlnun-*': mc_wlnu,
-    'znn-*': mc_cand,
-    'znnn-*': mc_cand,
+    'wlnu{,n}-*': mc_wlnu,
+    'znn{,n}-*': mc_cand,
     'dy-50*': applyMod(mc_cand + mc_lep + mc_dilep + ['tpeg', 'tpegLowPt'], s.addGenPhotonVeto),
     'dyn-50-*': applyMod(mc_cand + mc_lep + mc_dilep, s.addGenPhotonVeto),
     'qcd-*': mc_cand + mc_qcd + mc_dilep + mc_lep,

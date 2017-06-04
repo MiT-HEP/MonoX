@@ -80,18 +80,19 @@ def setupPhotonSelection(operator, veto = False, changes = []):
                 sels.remove(change[1:])
             except:
                 pass
+
             sels.append(change)
 
     if veto:
         for sel in sels:
             if sel.startswith('!'):
-                operator.addVeto(False, getattr(ROOT.PhotonSelection, sel))
+                operator.addVeto(False, getattr(ROOT.PhotonSelection, sel[1:]))
             else:
                 operator.addVeto(True, getattr(ROOT.PhotonSelection, sel))
     else:
         for sel in sels:
             if sel.startswith('!'):
-                operator.addSelection(False, getattr(ROOT.PhotonSelection, sel))
+                operator.addSelection(False, getattr(ROOT.PhotonSelection, sel[1:]))
             else:
                 operator.addSelection(True, getattr(ROOT.PhotonSelection, sel))
     
@@ -109,8 +110,13 @@ def getFromFile(path, name, newname = ''):
         return obj
 
     f = ROOT.TFile.Open(path)
+    orig = f.Get(name)
+    if not orig:
+        return None
+
     ROOT.gROOT.cd()
-    obj = f.Get(name).Clone(newname)
+    obj = orig.Clone(newname)
+
     f.Close()
 
     logger.debug('Picked up %s from %s', name, path)
@@ -143,8 +149,8 @@ def monophotonBase(sample, rname, selcls = None):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
-        'BjetVeto',
         'JetCleaning',
+        'BjetVeto',
         'CopyMet',
         'CopySuperClusters'
     ]
@@ -237,8 +243,8 @@ def leptonBase(sample, rname, flavor):
         'PhotonSelection',
         'LeptonSelection',
         'TauVeto',
-        'BjetVeto',
         'JetCleaning',
+        'BjetVeto',
         'CopyMet',
         'CopySuperClusters',
         'LeptonRecoil',
@@ -357,9 +363,9 @@ def TagAndProbeBase(sample, rname):
         'MuonVeto',
         'ElectronVeto',
         'TauVeto',
-        'BjetVeto',
         'TagAndProbePairZ',
         'JetCleaning',
+        'BjetVeto',
         'CopyMet',
         'CopySuperClusters',
         'JetMetDPhi',
@@ -500,46 +506,20 @@ def efake(sample, rname):
 
 def emjet(sample, rname):
     """
-    EM Object is candidate-like. used for photon purity measurement.
+    EM Object is candidate-like. used for photon purity measurement and hadronTFactor derivation.
     """
 
     selector = emjetBase(sample, rname)
+
+    if not sample.data:
+        # measure the parton-level dR between gamma and q/g.
+        selector.addOperator(ROOT.GJetsDR())
 
     photonSel = selector.findOperator('PhotonSelection')
     
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15'])
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
+#    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto', '-MIP49', '-Time', '-SieieNonzero', '-SipipNonzero', '-NoisyRegion'])
         
-    return selector
-
-def emjetTight(sample, rname):
-    """
-    EM Object is candidate-like, but with tightened NHIso and PhIso requirements.
-    Sieie and CHIso are also capped. Used for hadronTFactor derivation.
-    """
-
-    selector = emjetBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '-NHIso', '-PhIso', '-CHIso', '+Sieie15', '+NHIsoTight', '+PhIsoTight', '+CHIso11'])
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
-
-    return selector
-
-def emjetLoose(sample, rname):
-    """
-    EM Object is candidate-like, but with loosened NHIso and PhIso requirements.
-    Sieie and CHIso are also capped. Used for hadronTFactor derivation.
-    """
-
-    selector = emjetBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '-NHIso', '-PhIso', '-CHIso', '+Sieie15', '+NHIsoLoose', '+PhIsoLoose', '+CHIso11'])
-    photonSel.addSelection(False, ROOT.PhotonSelection.Sieie, ROOT.PhotonSelection.CHIso)
-
     return selector
 
 def hfake(sample, rname):
@@ -591,12 +571,13 @@ def hfakeLoose(sample, rname):
 
 def gjets(sample, rname):
     """
-    Candidate-like, but with a high pT jet and inverted sieie and chIso on the photon.
+    For GJets MC study. 
     """
     
     selector = emjetBase(sample, rname)
-    
-    selector.addOperator(ROOT.GenPhotonDR())
+
+    # measure the parton-level dR between gamma and q/g.
+    selector.addOperator(ROOT.GJetsDR())
 
     photonSel = selector.findOperator('PhotonSelection')
 
@@ -1292,35 +1273,29 @@ def addKfactor(sample, selector):
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     if sample.name not in ['znng', 'znng-130', 'zllg', 'zllg-130', 'wnlg', 'wnlg-130', 'wnlg-500']:
-        corr = ROOT.gROOT.Get(sname + '_kfactor')
+        corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
         if not corr:
-            corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
+            raise RuntimeError('kfactor not found for ' + sample.name)
     
         qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
         qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
     
         for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
-            vcorr = ROOT.gROOT.Get(sname + '_' + variation)
-            if not vcorr:
-                vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
-    
+            vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
             if vcorr:
                 logger.debug('applying qcd var %s %s', variation, sample.name)
                 qcd.addVariation('qcd' + variation, vcorr)
 
         selector.addOperator(qcd)
 
-    corr = ROOT.gROOT.Get(sname + '_ewkcorr')
-    if not corr:
-        corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
-
+    corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
     if corr:
         logger.debug('applying ewk %s', sample.name)
         ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
         ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
         for variation in ['Up', 'Down']:
-            vcorr = ewkSource.Get(sname + '_' + variation)
+            vcorr = getFromFile(datadir + '/ewk_corr.root', sname + '_' + variation)
             if vcorr:
                 logger.debug('applying ewk var %s %s', variation, sample.name)
                 ewk.addVariation('ewk' + variation, vcorr)
