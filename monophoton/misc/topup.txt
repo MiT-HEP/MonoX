@@ -1,6 +1,3 @@
-. Make photon skims
-  misc/photonskim.py
-
 . Compute the luminosity (uses source simpletree)
   misc/lumilist.py <samples> [--mask <lumimask>] --save --save-plain
 
@@ -10,7 +7,6 @@
 . Compute the data pileup distribution and construct the PU weights
   pileupCalc.py -i data/lumis_plain.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 71300 --maxPileupBin 80 dataPileup.root
   misc/puweight.py dataPileup.root 2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU $PWD/data/pileup.root
-  !!! puweight.py is currently hacked to cap the reweight factor at 4
 
 . Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
   condor-run $PWD/trigger/skim.py -j "electron sel-X" "muon smu-X"
