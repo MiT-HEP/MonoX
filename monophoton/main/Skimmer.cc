@@ -11,6 +11,7 @@
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TDirectory.h"
+#include "TTreeFormula.h"
 
 #include "GoodLumiFilter.h"
 
@@ -37,7 +38,7 @@ public:
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
-  bool photonSkim(panda::Event const&) const;
+  bool preskim(panda::Event const&, TTreeFormula*) const;
   void prepareEvent(panda::Event const&, panda::EventMonophoton&);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
@@ -45,7 +46,7 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
   bool ownSelectors_{true};
-  TString commonSelection_{}; // ANDed with superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim = true
+  TString commonSelection_{};
   GoodLumiFilter* goodLumiFilter_{};
   bool forceAllEvents_{false}; // Override photon skim decisions made by the selectors
   bool skipMissingFiles_{false};
@@ -117,7 +118,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (printLevel_ == INFO)
     branchList.setVerbosity(1);
 
-  bool doPhotonSkim(true);
+  bool doPreskim(true);
 
   for (auto* sel : selectors_) {
     sel->setPrintLevel(printLevel_, stream);
@@ -126,26 +127,20 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     sel->initialize(outputPath, skimmedEvent, branchList, !isData);
 
     if (!sel->getCanPhotonSkim())
-      doPhotonSkim = false;
+      doPreskim = false;
   }
 
   if (forceAllEvents_)
-    doPhotonSkim = false;
-
-  TString commonSelection;
-  if (doPhotonSkim)
-    commonSelection = "superClusters.rawPt > 175. && TMath::Abs(superClusters.eta) < 1.4442";
-  if (commonSelection_.Length() != 0)
-    commonSelection = "(" + commonSelection + ") && (" + commonSelection_ + ")";
+    doPreskim = false;
 
   // if the selectors register triggers, make sure the information is passed to the actual input event
   event.run = skimmedEvent.run;
 
   if (goodLumiFilter_)
-    *stream << "Appyling good lumi filter." << std::endl;
+    *stream << "Applying good lumi filter." << std::endl;
 
-  if (commonSelection.Length() != 0)
-    *stream << "Applying baseline selection \"" << commonSelection << "\"" << std::endl;
+  if (commonSelection_.Length() != 0)
+    *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
   long iEntryGlobal(0);
   auto now = SClock::now();
@@ -198,14 +193,18 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
     input->SetCacheSize(100000000);
 
-    if (commonSelection.Length() != 0) {
-      gROOT->cd();
-      input->Draw(">>elist", commonSelection, "entrylist");
-      auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
-      input->SetEntryList(elist);
-    }
+    TTreeFormula* commonSelection(0);
+    if (commonSelection_.Length() != 0 && doPreskim)
+      commonSelection = new TTreeFormula("preskim", commonSelection_, input);
 
     event.setStatus(*input, branchList);
+    if (commonSelection) {
+      TLeaf* leaf(0);
+      int iL(0);
+      while ((leaf = commonSelection->GetLeaf(iL++)))
+        input->SetBranchStatus(leaf->GetBranch()->GetName(), true);
+    }
+
     event.setAddress(*input, {"*"}, false);
 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
@@ -238,7 +237,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
         continue;
 
-      if (doPhotonSkim && !photonSkim(event))
+      if (doPreskim && !preskim(event, commonSelection))
         continue;
 
       prepareEvent(event, skimmedEvent);
@@ -298,12 +297,24 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 }
 
 bool
-Skimmer::photonSkim(panda::Event const& _event) const
+Skimmer::preskim(panda::Event const& _event, TTreeFormula* _formula) const
 {
+  if (_formula) {
+    int iD(0);
+    int nD(_formula->GetNdata());
+    for (; iD != nD; ++iD) {
+      if (_formula->EvalInstance64(iD) != 0)
+        break;
+    }
+    if (iD == nD)
+      return false;
+  }
+
   for (auto& photon : _event.photons) {
     if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
       return true;
   }
+
   return false;
 }
 
