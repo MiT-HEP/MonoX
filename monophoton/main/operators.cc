@@ -272,7 +272,7 @@ PhotonSelection::initialize(panda::EventMonophoton&)
 void
 PhotonSelection::registerCut(TTree& cutsTree)
 {
-  cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
+  cutsTree.Branch(name_ + "_nominal", &nominalResult_, name_ + "_nominal/O");
 
   for (unsigned iS(0); iS != nSelections; ++iS)
     cutsTree.Branch(name_ + "_" + selectionName[iS], cutRes_ + iS, name_ + "_" + selectionName[iS] + "/O");

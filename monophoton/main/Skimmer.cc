@@ -11,7 +11,6 @@
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TDirectory.h"
-#include "TTreeFormula.h"
 
 #include "GoodLumiFilter.h"
 
@@ -38,7 +37,7 @@ public:
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
-  bool preskim(panda::Event const&, TTreeFormula*) const;
+  bool preskim(panda::Event const&) const;
   void prepareEvent(panda::Event const&, panda::EventMonophoton&);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
@@ -46,7 +45,7 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
   bool ownSelectors_{true};
-  TString commonSelection_{};
+  TString commonSelection_{}; // ANDed with superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442 if doPhotonSkim = true
   GoodLumiFilter* goodLumiFilter_{};
   bool forceAllEvents_{false}; // Override photon skim decisions made by the selectors
   bool skipMissingFiles_{false};
@@ -133,14 +132,22 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (forceAllEvents_)
     doPreskim = false;
 
+  TString commonSelection;
+  if (doPreskim) {
+    // skimming with TTree::Draw on superClusters reduces the I/O if the main loop has to read e.g. pfCandidates
+    commonSelection = "superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442";
+    if (commonSelection_.Length() != 0)
+      commonSelection = "(" + commonSelection + ") && (" + commonSelection_ + ")";
+  }
+
   // if the selectors register triggers, make sure the information is passed to the actual input event
   event.run = skimmedEvent.run;
 
   if (goodLumiFilter_)
     *stream << "Applying good lumi filter." << std::endl;
 
-  if (commonSelection_.Length() != 0)
-    *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
+  if (commonSelection.Length() != 0)
+    *stream << "Applying baseline selection \"" << commonSelection << "\"" << std::endl;
 
   long iEntryGlobal(0);
   auto now = SClock::now();
@@ -193,18 +200,16 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
     input->SetCacheSize(100000000);
 
-    TTreeFormula* commonSelection(0);
-    if (commonSelection_.Length() != 0 && doPreskim)
-      commonSelection = new TTreeFormula("preskim", commonSelection_, input);
-
-    event.setStatus(*input, branchList);
-    if (commonSelection) {
-      TLeaf* leaf(0);
-      int iL(0);
-      while ((leaf = commonSelection->GetLeaf(iL++)))
-        input->SetBranchStatus(leaf->GetBranch()->GetName(), true);
+    if (commonSelection.Length() != 0) {
+      gROOT->cd();
+      input->Draw(">>elist", commonSelection, "entrylist");
+      auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
+      elist->SetDirectory(0);
+      elist->SetBit(kCanDelete);
+      input->SetEntryList(elist);
     }
 
+    event.setStatus(*input, branchList);
     event.setAddress(*input, {"*"}, false);
 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
@@ -237,7 +242,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
         continue;
 
-      if (doPreskim && !preskim(event, commonSelection))
+      if (doPreskim && !preskim(event))
         continue;
 
       prepareEvent(event, skimmedEvent);
@@ -297,21 +302,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 }
 
 bool
-Skimmer::preskim(panda::Event const& _event, TTreeFormula* _formula) const
+Skimmer::preskim(panda::Event const& _event) const
 {
-  if (_formula) {
-    int iD(0);
-    int nD(_formula->GetNdata());
-    for (; iD != nD; ++iD) {
-      if (_formula->EvalInstance64(iD) != 0)
-        break;
-    }
-    if (iD == nD)
-      return false;
-  }
-
   for (auto& photon : _event.photons) {
-    if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 150.)
+    if (std::abs(photon.superCluster->eta) < 1.4442 && photon.superCluster->rawPt > 165.)
       return true;
   }
 
