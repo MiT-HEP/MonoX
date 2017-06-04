@@ -834,8 +834,8 @@ BjetVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
 
   bjets_.clear();
   bool hasNonOverlapping(false);
-  for (unsigned iB(0); iB != _event.jets.size(); ++iB) {
-    auto& jet(_event.jets[iB]);
+  for (unsigned iB(0); iB != _outEvent.jets.size(); ++iB) {
+    auto& jet(_outEvent.jets[iB]);
     if (jet.csv < 0.800 || jet.pt() < 20.)
       continue;
 
@@ -1234,8 +1234,8 @@ HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonop
 {
   unsigned nJets(0);
 
-  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
-    auto& jet(_event.jets[iJ]);
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet(_outEvent.jets[iJ]);
 
     if (jet.pt() > min_ && std::abs(jet.eta()) < 5.)
       ++nJets;
@@ -1732,12 +1732,16 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
 
       auto& col(*cols[iC]);
 
+      unsigned nP(col.size());
+      if (iC == cPhotons && nP > 1)
+        nP = 1;
+
       unsigned iP(0);
-      for (; iP != col.size(); ++iP) {
+      for (; iP != nP; ++iP) {
         if (jet.dR2(col[iP]) < 0.16)
           break;
       }
-      if (iP != col.size())
+      if (iP != nP)
         break;
     }
     if (iC != nCollections)
@@ -2529,33 +2533,33 @@ NNPDFVariation::apply(panda::EventMonophoton const& _event, panda::EventMonophot
 }
 
 //--------------------------------------------------------------------
-// GenPhotonDR
+// GJetsDR
 //--------------------------------------------------------------------
 
 void
-GenPhotonDR::addBranches(TTree& _skimTree)
+GJetsDR::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("genPhotonDR", &minDR_, "genPhotonDR/F");
 }
 
 void
-GenPhotonDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+GJetsDR::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   minDR_ = -1.;
 
-  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
-    auto& parton( _event.partons[iP]);
-    
-    if (std::abs(parton.pdgid) != 22)
+  for (auto& photon : _event.partons) {
+    if (std::abs(photon.pdgid) != 22)
       continue;
 
-    for (unsigned iP2(0); iP2 != _event.partons.size(); ++iP2) {
-      auto& p( _event.partons[iP2]);
-      
-      if (&p == &parton)
+    for (auto& parton : _event.partons) {
+      if (&parton == &photon)
         continue;
 
-      double dR(parton.dR(p));
+      unsigned absId(std::abs(parton.pdgid));
+      if (!(absId == 21 || absId < 7))
+        continue;
+
+      double dR(photon.dR(parton));
       if (minDR_ < 0. || dR < minDR_)
         minDR_ = dR;
     }

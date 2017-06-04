@@ -58,7 +58,7 @@
 //     IDSFWeight *
 //     NPVWeight
 //     NNPDFVariation *
-//     GenPhotonDR *
+//     GJetsDR *
 //     JetClustering *
 //     JetScore *
 //     LeptonVertex *
@@ -670,6 +670,7 @@ class ExtraPhotons : public Modifier {
 
 
 class JetCleaning : public Modifier {
+  // For photons, only clean overlap with the leading
  public:
   JetCleaning(char const* name = "JetCleaning");
   ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
@@ -912,9 +913,9 @@ class NNPDFVariation : public Modifier {
   double weightDown_;
 };
 
-class GenPhotonDR : public Modifier {
+class GJetsDR : public Modifier {
  public:
-  GenPhotonDR(char const* name = "GenPhotonDR") : Modifier(name) {}
+  GJetsDR(char const* name = "GJetsDR") : Modifier(name) {}
 
   void addBranches(TTree& skimTree) override;
  protected:
