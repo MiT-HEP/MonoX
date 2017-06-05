@@ -13,298 +13,166 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-# DOSYSTEMATICS = True
-DOSYSTEMATICS = False
-
-# global variables to be set in __main__
-allsamples = None 
-
-def groupHist(group, vardef, plotConfig, outFile, skimDir = '', samples = [], name = '', template = None, lumi = 0., postscale = 1.):
-    """
-    Fill and write the group histogram and its systematic variations.
-    For normal group with a list of samples, stack up histograms from the samples.
-    Needs a template histogram if the group has no shape (null list of samples).
-    Argument samples can be used to limit plotting to a subset of group samples.
-    """
-
-    sampleDir = outFile.GetDirectory('samples')
-
+def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0):
     if group.region:
         region = group.region
     else:
         region = plotConfig.name
 
-    if len(samples) == 0:
-        samples = group.samples
+    # run the Plotter for each sample
+    for sample in group.samples:
+        dname = sample.name + '_' + region
 
-    if not name:
-        name = group.name
-
-    print group.name, 'nominal'
-
-    hist = vardef.makeHist(name, outDir = outFile)
-    if args.saveTrees:
-        hist = []
-    shists = {}
-
-    if template:
-        # when the group does not have a shape of its own
-        norm = template.GetSumOfWeights()
-        for iC in range(template.GetNcells()):
-            hist.SetBinContent(iC, template.GetBinContent(iC) * group.count / norm / postscale)
+        print '   ', dname
+    
+        sourceName = sourceDir + '/' + dname + '.root'
+        if not os.path.exists(sourceName):
+            raise RuntimeError('Cannot open file ' + sourceName)
+    
+        histograms = []
    
-    elif len(samples) != 0:
-        # nominal. name: variable-group
-        for sname in samples:
-            if group.region:
-                hname = sname + '_' + group.region
-            else:
-                hname = ''
+        plotter = ROOT.Plotter(sourceName)
+        plotter.setPrintLevel(printLevel)
 
-            # print 'starting', sname
+        cuts = []
+        if plotConfig.baseline.strip():
+            cuts.append('(' + plotConfig.baseline.strip() + ')')
+        if group.cut.strip():
+            cuts.append('(' + group.cut + ')')
 
-            # add up histograms from individual samples (saved to sampleDir)
-            sample = allsamples[sname]
-            if sample.data:
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = postscale / group.scale, outDir = sampleDir)
-            else:
-                shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = region, hname = hname, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
+        baseSel = ' && '.join(cuts)
 
-            if args.saveTrees:
-                hist += shist
-            else:
-                hist.Add(shist)
-            
-            # print 'finished', sname
-            
-            shists[sname] = shist
+        if printLevel > 0:
+            print '      Baseline selection:', baseSel
+            print '      Full selection:', plotConfig.fullSelection.strip()
 
-    else:
-        # the group must have a template for this vardef
-        hist.Add(group.templates[vardef.name])
+        plotter.setBaseSelection(baseSel)
+        plotter.setFullSelection(plotConfig.fullSelection.strip())
 
-    normscale = 1.
-    if group.norm >= 0. and hist.GetSumOfWeights() != 0.:
-        normscale = group.norm / hist.GetSumOfWeights()
-        hist.Scale(normscale)
-
-    varhists = {}
-
-    if DOSYSTEMATICS:
-        print group.name, 'variations'
-   
-        # systematics variations
-        for variation in group.variations:
-            # up & down variations
-            vhists = tuple([vardef.makeHist(name + '_' + variation.name + v, outDir = outFile) for v in ['Up', 'Down']])
-            if args.saveTrees:
-                vhists = [[], []]
-
-            for iV in range(2):
-                v = 'Up' if iV == 0 else 'Down'
-                varname = variation.name + v
-
-                if variation.region is not None:
-                    vregion = variation.region[iV]
-                else:
-                    vregion = region
-
-                if variation.replacements is not None:
-                    repl = variation.replacements[iV]
-                else:
-                    repl = []
-
-                if type(variation.reweight) is str:
-                    reweight = 'reweight_' + variation.reweight + v
-                elif type(variation.reweight) is float:
-                    reweight = 1. + variation.reweight * ( 1 - 2 * iV )
-                else:
-                    reweight = None
-
-                for sname in samples:
-                    if group.region:
-                        hname = sname + '_' + group.region + '_' + varname
-                    else:
-                        hname = sname + '_' + varname
-
-                    sample = allsamples[sname]
-
-                    if sample.data:
-                        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = postscale / group.scale, outDir = sampleDir)
-                    else:
-                        shist = getHist(sname, allsamples[sname], plotConfig, vardef, skimDir, region = vregion, hname = hname, cutReplacements = repl, reweight = reweight, postscale = 1. / group.scale, lumi = lumi, outDir = sampleDir)
-                        
-                    if args.saveTrees:
-                        vhists[iV] += shist
-                    else:
-                        vhists[iV].Add(shist)
-
-            varhists[variation.name] = vhists
-
-    if group.norm >= 0.:
-        for vhists in varhists.values():
-            for vhist in vhists:
-                if vhist.GetSumOfWeights() != 0.:
-                    vhist.Scale(normscale)
-
-    # write raw histograms before formatting (which includes bin width normalization)
-    if args.saveTrees:
-        tree = makeTree(name, hist, outDir = outFile)
-        writeHist(tree)
-        for vkey in varhists:
-            if len(varhists[vkey]) == 2:
-                vtreeUp = makeTree(name+'_'+vkey+'Up', varhists[vkey][0], outDir = outFile)
-                writeHist(vtreeUp)
-                vtreeDown = makeTree(name+'_'+vkey+'Down', varhists[vkey][1], outDir = outFile)
-                writeHist(vtreeDown)
-            elif len(varhists[vkey]) == 1:
-                vtree = makeTree(name+'_'+vkey, varhists[vkey][0], outDir = outFile)
-                writeHist(vtree)
-            else:
-                print "Too many trees for variation %s. Skipping..." % vkey
-                continue
-                
-        return tree
-    else:
-        writeHist(hist)
-        for vhists in varhists.values():
-            for vhist in vhists:
-                # print vhist.GetSumOfWeights()
-                writeHist(vhist)
-
-    # apply variations as uncertainties
-    for vhists in varhists.values():
-        if len(vhists) == 1:
-            vhist = vhists[0]
-            vhist.Add(hist, -1.)
-        else:
-            # take the average variation as uncertainty
-            vhist = vhists[0].Clone(hist.GetName() + '_var')
-            vhist.Add(vhists[1], -1.)
-            vhist.Scale(0.5)
-
-        for iX in range(1, hist.GetNbinsX() + 1):
-            err = math.sqrt(math.pow(hist.GetBinError(iX), 2.) + math.pow(vhist.GetBinContent(iX), 2.))
-            hist.SetBinError(iX, err)
-
-        if len(vhists) == 2:
-            vhist.Delete()
-
-    formatHist(hist, vardef)
-
-    return hist
-
-
-def getHist(sname, sample, plotConfig, vardef, skimDir, region = '', hname = '', cutReplacements = [], reweight = None, prescale = 1, postscale = 1., lumi = 0., outDir = None, plotAcceptance = False):
-    """
-    Create a histogram object for a given variable (vardef) from a given sample and region (=plotConfig.name by default).
-    Baseline cut is applied before the vardef-specific cuts, unless vardef.applyBaseline is False.
-    """
-
-    if not hname:
-        hname = sname
-
-    if not region:
-        region = plotConfig.name
-
-    # open the source file
-    sourceName = skimDir + '/' + sname + '_' + region + '.root'
-    if not os.path.exists(sourceName):
-        print 'Error: Cannot open file', sourceName
-        # return an empty histogram
-        if args.saveTrees:
-            return []
-        return vardef.makeHist(hname)
-
-    # quantity to be plotted
-    expr = vardef.formExpression(replacements = cutReplacements)
-
-    # cuts and weights
-    selection = vardef.formSelection(plotConfig, prescale = prescale, replacements = cutReplacements)
-
-    source = ROOT.TFile.Open(sourceName)
-    tree = source.Get('events')
-
-    hist = vardef.makeHist(hname, outDir = outDir)
-
-    if plotAcceptance:
-        weight = '1.'
-    else:
-        weight = 'weight'
         if not sample.data:
-            weight += '*' + str(lumi)
+            plotter.setLuminosity(lumi)
 
-        if type(reweight) is float:
-            weight += '*' + str(reweight)
-        elif type(reweight) is str:
-            weight += '*' + reweight
+        if group == plotConfig.obs:
+            plotter.setPrescale(plotConfig.prescales[sample])
+    
+        for plotdef in plotdefs:
+            if not outFile.GetDirectory(plotdef.name):
+                outFile.mkdir(plotdef.name)
 
-    if args.saveTrees:
-        tree.SetEstimate(tree.GetEntries() + 1); 
-        nEntries = tree.Draw(expr + ':' + weight, selection, 'goff')
-        # print 'drew', hname
-        branch = [ pair for pair in enumerate(itertools.izip(treeGen(tree.GetV1(),nEntries), treeGen(tree.GetV2(),nEntries))) ]
-        # print 'made branch'
-        source.Close()
-        return branch
+            outDir = outFile.GetDirectory(plotdef.name + '/samples')
+            if not outDir:
+                outDir = outFile.GetDirectory(plotdef.name).mkdir('samples')
 
-    selExpr = weight
-    if selection != '':
-        selExpr += ' * (%s)' % selection
+            hist = plotdef.makeHist(dname, outDir = outDir)
+            histograms.append(hist)
 
-    tree.Draw(expr + '>>' + hist.GetName(), selExpr, 'goff')
+            # nominal distribution
+            plotter.addPlot(
+                hist,
+                plotdef.formExpression(),
+                plotdef.cut.strip(),
+                plotdef.applyBaseline,
+                plotdef.applyFullSel
+            )
+    
+            # systematic variations
+            for variation in group.variations:
+                for iv, direction in [(0, 'Up'), (1, 'Down')]:
+                    hist = plotdef.makeHist(dname + '_' + variation.name + direction, outDir = outDir)
+                    histograms.append(hist)
+    
+                    if type(variation.reweight) is str:
+                        reweight = 'reweight_' + variation.reweight + direction
+                    elif type(variation.reweight) is float:
+                        reweight = str(1. + variation.reweight * (1. - 2. * iv))
+                    else:
+                        reweight = ''
 
-    if vardef.overflow:
-        iOverflow = hist.GetNbinsX()
-        cont = hist.GetBinContent(iOverflow)
-        err2 = math.pow(hist.GetBinError(iOverflow), 2.)
-        hist.SetBinContent(iOverflow, cont + hist.GetBinContent(iOverflow + 1))
-        hist.SetBinError(iOverflow, math.sqrt(err2 + math.pow(hist.GetBinError(iOverflow + 1), 2.)))
+                    if variation.cuts is not None:
+                        # variation cuts override the plotdef cut
+                        cut = variation.cuts[iv].strip()
+                    else:
+                        cut = plotdef.cut.strip()
 
-    if vardef.ndim() == 1:
-        for iX in range(1, hist.GetNbinsX() + 1):
-            if hist.GetBinContent(iX) < 0.:
-                hist.SetBinContent(iX, 0.)
-            if hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
-                hist.SetBinError(iX, hist.GetBinContent(iX) - 1.e-6)
+                    plotter.addPlot(
+                        hist,
+                        plotdef.formExpression(variation.replacements[iv]),
+                        cut,
+                        plotdef.applyBaseline,
+                        plotdef.applyFullSel,
+                        reweight
+                    )
 
-    if plotAcceptance:
-        hist.Scale(1. / sample.nevents)
+        # setup complete. Fill all plots in one go
+        plotter.fillPlots()
+    
+        for hist in histograms:
+            # ad-hoc scaling
+            hist.Scale(group.scale)
 
-    writeHist(hist)
+            if sample.data and group != plotConfig.obs:
+                # this is a data-driven background sample
+                hist.Scale(postscale)
 
-    # we don't need the tree any more
-    source.Close()
+            writeHist(hist)
+            hist.Delete()
 
-    if vardef.blind is None:
-        hist.Scale(1. / postscale)
+    # aggregate group plots
 
-    return hist
+    # not for signal
+    if group in plotConfig.sigGroups:
+        return
 
-def treeGen(array, nElem):
-    iElem = 0
-    while iElem < nElem:
-        yield array[iElem]
-        iElem += 1
+    for plotdef in plotdefs:
+        outDir = outFile.GetDirectory(plotdef.name)
 
-def makeTree(name, nomlist, outDir = None):
-    tree = ROOT.TTree(vardef.histName(name, rname = plotConfig.name), '')
-    tree.SetDirectory(outDir)
-    var = array.array('d', [0.])
-    tree.Branch(vardef.name, var, vardef.name+'/D')
-    weight = array.array('d', [0.])
-    tree.Branch('weight', weight, 'weight/D')
-        
-    # print 'making tree'
-    iEntry = 0
-    while iEntry < len(nomlist):
-        var[0] = nomlist[iEntry][1][0]
-        weight[0] = nomlist[iEntry][1][1]
-        tree.Fill()
-        iEntry += 1
-            
-    # print 'finished tree'
-    return tree
+        # simple sum of samples
+        ghist = plotdef.makeHist(group.name, outDir = outDir)
+
+        for sample in group.samples:
+            shist = outDir.Get('samples/' + sample.name + '_' + region)
+            ghist.Add(shist)
+
+        writeHist(ghist)
+
+        if group == plotConfig.obs:
+            # take care of masking
+            if plotdef.blind is not None:
+                for iBin in range(1, obshist.GetNbinsX()+1):
+                    binCenter = obshist.GetBinCenter(iBin)
+                    if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
+                        obshist.SetBinContent(iBin, 0.)
+                        obshist.SetBinError(iBin, 0.)
+
+        else:
+            # write a group total histogram with systematic uncertainties added in quadrature (for display)
+            outDir.cd()
+            ghistSyst = ghist.Clone(group.name + '_syst')
+    
+            # variation Ups and Downs
+            for variation in group.variations:
+                uphist = plotdef.makeHist(group.name + '_' + variation.name + 'Up', outDir = outDir)
+                downhist = plotdef.makeHist(group.name + '_' + variation.name + 'Down', outDir = outDir)
+    
+                for sample in group.samples:
+                    suphist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Up')
+                    sdownhist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Down')
+                    uphist.Add(suphist)
+                    downhist.Add(sdownhist)
+    
+                writeHist(uphist)
+                writeHist(downhist)
+                
+                # add the average variation as systematics
+                uphist.Add(downhist, -1.)
+                uphist.Scale(0.5)
+    
+                for iX in range(1, hist.GetNbinsX() + 1):
+                    err = math.sqrt(math.pow(ghistSyst.GetBinError(iX), 2.) + math.pow(uphist.GetBinContent(iX), 2.))
+                    ghistSyst.SetBinError(iX, err)
+    
+            writeHist(ghistSyst)
+
 
 def writeHist(hist):
     if not hist.GetDirectory() or not hist.GetDirectory().GetFile():
@@ -316,14 +184,14 @@ def writeHist(hist):
     gd.cd()
 
 
-def formatHist(hist, vardef):
+def formatHist(hist, plotdef):
     # Label the axes and normalize bin contents by width
-    if vardef.ndim() == 1:
+    if plotdef.ndim() == 1:
         for iX in range(1, hist.GetNbinsX() + 1):
             cont = hist.GetBinContent(iX)
             err = hist.GetBinError(iX)
             w = hist.GetXaxis().GetBinWidth(iX)
-            if vardef.unit:
+            if plotdef.unit:
                 hist.SetBinContent(iX, cont / w)
                 hist.SetBinError(iX, err / w)
             else:
@@ -333,21 +201,22 @@ def formatHist(hist, vardef):
                 hist.SetBinContent(iX, cont / (w / wnorm))
                 hist.SetBinError(iX, err / (w / wnorm))
 
-    hist.GetXaxis().SetTitle(vardef.xtitle())
-    hist.GetYaxis().SetTitle(vardef.ytitle(binNorm = True))
+    hist.GetXaxis().SetTitle(plotdef.xtitle())
+    hist.GetYaxis().SetTitle(plotdef.ytitle(binNorm = True))
 
-    if vardef.ndim() != 1:
+    if plotdef.ndim() != 1:
         hist.GetZaxis().SetTitle('Events')
         hist.SetMinimum(0.)
 
-def unformatHist(hist, vardef):
+
+def unformatHist(hist, plotdef):
     # Recompute raw bin contents
-    if vardef.ndim() == 1:
+    if plotdef.ndim() == 1:
         for iX in range(1, hist.GetNbinsX() + 1):
             cont = hist.GetBinContent(iX)
             err = hist.GetBinError(iX)
             w = hist.GetXaxis().GetBinWidth(iX)
-            if vardef.unit:
+            if plotdef.unit:
                 hist.SetBinContent(iX, cont * w)
                 hist.SetBinError(iX, err * w)
             else:
@@ -392,7 +261,7 @@ def printCounts(counters, plotConfig):
         print '%+12s  %d' % ('data_obs', int(counters['data_obs'].GetBinContent(1)))
     
 
-def printBinByBin(stack, plotConfig, precision = '.2f'):
+def printBinByBin(stack, plotdef, plotConfig, precision = '.2f'):
     obs = stack['data_obs']
     nBins = obs.GetNbinsX()
 
@@ -401,6 +270,7 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
         boundaries.append('%12s' % ('[%.0f, %.0f]' % (obs.GetXaxis().GetBinLowEdge(iX), obs.GetXaxis().GetBinUpEdge(iX))))
     boundaries.append('%12s' % 'total')
 
+    print 'Bin-by-bin yield for plot', plotdef.name
     print '           ' + ' '.join(boundaries)
     print '===================================================================================='
 
@@ -420,7 +290,8 @@ def printBinByBin(stack, plotConfig, precision = '.2f'):
     print '===================================================================================='
     print ('%+12s' % 'data_obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
 
-def printChi2(stack, plotConfig, precision = '.2f'):
+
+def printChi2(stack, plotdef, plotConfig, precision = '.2f'):
     obs = stack['data_obs']
     nBins = obs.GetNbinsX()
 
@@ -445,7 +316,85 @@ def printChi2(stack, plotConfig, precision = '.2f'):
 
         chi2 += res * res / err2s[iR]
 
-    print chi2 / (nBins - 1)
+    print 'Chi2 for plot ' + plotdef.name + ': ' + str(chi2 / (nBins - 1))
+
+
+def printCanvas(canvas, plotdef, plotConfig):
+    canvas.xtitle = plotdef.xtitle()
+    canvas.ytitle = plotdef.ytitle(binNorm = True)
+
+    canvas.selection = plotdef.formSelection(plotConfig)
+
+    if plotdef.logy is None:
+        logy = True
+        addLinear = True
+    else:
+        logy = plotdef.logy
+        addLinear = False
+
+    canvas.ylimits = (plotdef.ymin, plotdef.ymax)
+    canvas.Update(logy = logy, ymax = plotdef.ymax)
+
+    if plotdef.fullyBlinded():
+        # remove ratio pad. Hack to use SimpleCanvas interface
+        simple = SimpleCanvas(lumi = canvas.lumi)
+
+        garbage = []
+        cnv = ROOT.TCanvas('tmp', 'tmp', 600, 600)
+        cnv.cd()
+
+        plotPad = canvas.plotPad.DrawClone()
+        garbage.append(plotPad)
+        plotPad.SetTopMargin(simple.canvas.GetTopMargin())
+        plotPad.SetRightMargin(simple.canvas.GetRightMargin())
+        plotPad.SetBottomMargin(simple.canvas.GetBottomMargin())
+        plotPad.SetLeftMargin(simple.canvas.GetLeftMargin())
+
+        xaxis = canvas.xaxis.DrawClone()
+        garbage.append(xaxis)
+        xaxis.SetX1(simple.canvas.GetLeftMargin())
+        xaxis.SetX2(1. - simple.canvas.GetRightMargin())
+        xaxis.SetY1(simple.canvas.GetBottomMargin())
+        xaxis.SetY2(simple.canvas.GetBottomMargin())
+
+        yaxis = canvas.yaxis.DrawClone()
+        garbage.append(yaxis)
+        yaxis.SetX1(simple.canvas.GetLeftMargin())
+        yaxis.SetX2(simple.canvas.GetLeftMargin())
+        yaxis.SetY1(simple.canvas.GetBottomMargin())
+        yaxis.SetY2(1. - simple.canvas.GetTopMargin())
+
+        simple.canvas.IsA().Destructor(simple.canvas)
+        simple.canvas = cnv
+        simple._needUpdate = False
+        simple.printWeb(plotDir, plotdef.name)
+
+        if addLinear:
+            simple.ylimits = (0., -1.)
+            simple.minimum = -1.
+            plotdef.ymax = -1.
+            plotdef.ymin = 0.
+            simple._needUpdate = True
+            simple.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
+
+        # cleanup the mess
+        for obj in garbage:
+            obj.IsA().Destructor(obj)
+
+        cnv.IsA().Destructor(cnv)
+
+    else:
+        canvas.printWeb(plotDir, plotdef.name, drawLegend = False)
+
+        if addLinear:
+            canvas.ylimits = (0., -1.)
+            canvas.minimum = -1.
+            plotdef.ymax = -1.
+            plotdef.ymin = 0.
+            canvas._needUpdate = True
+            canvas.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
+
+
 
 if __name__ == '__main__':
 
@@ -453,20 +402,19 @@ if __name__ == '__main__':
     
     argParser = ArgumentParser(description = 'Plot and count')
     argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot config name.')
-    argParser.add_argument('--count-only', '-C', action = 'store_true', dest = 'countOnly', help = 'Just display the event counts.')
-    argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
+    argParser.add_argument('--all-signal', '-S', action = 'store_true', dest = 'allSignal', help = 'Write histogram for all signal points.')
     argParser.add_argument('--asimov', '-v', metavar = '(background|<signal>)', dest = 'asimov', default = '', help = 'Plot the total background or signal + background as the observed distribution. For signal + background, give the signal point name.')
+    argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
     argParser.add_argument('--blind', '-B', action = 'store_true', dest = 'blind', help = 'Do not plot the observed distribution.')
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
+    argParser.add_argument('--hist-file', '-o', metavar = 'PATH', dest = 'histFile', default = '', help = 'Histogram output file.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
-    argParser.add_argument('--out-file', '-o', metavar = 'PATH', dest = 'outFile', default = '', help = 'Histogram output file.')
-    argParser.add_argument('--all-signal', '-S', action = 'store_true', dest = 'allSignal', help = 'Write histogram for all signal points.')
-    argParser.add_argument('--plot-configs', '-c', metavar = 'PATH', dest = 'plotConfigFile', help = 'Plot config file that defines a getConfig function which returns a PlotConfig.')
-    argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
-    argParser.add_argument('--samples-list', '-s', metavar = 'PATH', dest = 'samplesList', help = 'Dataset list CSV file.')
+    argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', default = 0, help = 'Verbosity of the script.')
+    argParser.add_argument('--replot', '-P', action = 'store_true', dest = 'replot', default = '', help = 'Do not fill histograms. Need --hist-file.')
     argParser.add_argument('--save-trees', '-t', action = 'store_true', dest = 'saveTrees', help = 'Write trees to output file instead of histograms.')
+    argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -475,68 +423,141 @@ if __name__ == '__main__':
     ROOT.gROOT.SetBatch(True)
 
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
-    from datasets import SampleDefList, allsamples
+    from main.plotconfig import getConfig
+
+    ##################################
+    ## PARSE COMMAND-LINE ARGUMENTS ##
+    ##################################
 
     if not args.skimDir:
         from config import skimDir
         args.skimDir = skimDir
 
-    if args.plotConfigFile:
-        execfile(args.plotConfigFile)
-        plotConfig = getConfig(args.config)
-    else:
-        from main.plotconfig import getConfig
-        plotConfig = getConfig(args.config)
-
-    if args.samplesList:
-        allsamples = SampleDefList(listpath = args.samplesList)
-
-    if len(args.plots) == 0:
-        args.plots = [v.name for v in plotConfig.variables]
-
-    # backward compatibility
-    if args.countOnly:
-        args.plots = ['count']
+    plotConfig = getConfig(args.config)
 
     if args.bbb:
-        args.plots = [args.bbb]
-
-    if args.chi2:
-        args.plots = [args.chi2]
-
-    if args.outFile:
-        outFile = ROOT.TFile.Open(args.outFile, 'recreate')
+        plotdefs = [plotConfig.getPlot(args.bbb)]
+    elif args.chi2:
+        plotdefs = [plotConfig.getPlot(args.chi2)]
+    elif len(args.plots) != 0:
+        plotdefs = [p for p in plotConfig.plots if p.name in args.plots]
     else:
-        outFile = ROOT.gROOT
+        plotdefs = list(plotConfig.plots)
 
-    if args.saveTrees:
-        sampleDir = None
+    plotNames = [p.name for p in plotdefs]
+
+    if args.histFile:
+        if args.replot:
+            histFile = ROOT.TFile.Open(args.histFile)
+        else:
+            histFile = ROOT.TFile.Open(args.histFile, 'recreate')
+
     else:
-        sampleDir = outFile.mkdir('samples')
+        if args.allSignal:
+            print '--all-signal set but no output file is given.'
+            sys.exit(1)
 
-    if args.allSignal and not outFile.GetFile():
-        print '--all-signal set but no output file is given.'
-        sys.exit(1)
+        if args.replot:
+            print '--replot requires a --hist-file.'
+            sys.exit(1)
 
-    if args.asimov not in ['', 'background'] + [s.name for s in plotConfig.signalPoints]:
-        print 'Invalid value for option --asimov.'
-        sys.exit(1)
+        histFile = ROOT.gROOT
 
-    if args.asimov in [s.name for s in plotConfig.signalPoints]:
-        print 'Feature under construction.'
-        sys.exit(0)
+    if args.asimov:
+        if args.saveTrees:
+            print 'Cannot use --save-trees together with --asimov.'
+            sys.exit(1)
 
-    if args.asimov != '' and args.saveTrees:
-        print 'Cannot use --save-trees together with --asimov.'
-        sys.exit(1)
+        if args.asimov == 'background':
+            pass
+        elif args.asimov in [s.name for s in plotConfig.signalPoints]:
+            print 'Feature under construction.'
+            sys.exit(0)
+        else:
+            print 'Invalid value for option --asimov.'
+            sys.exit(1)
+
+    ############################
+    ## SET UP FROM PLOTCONFIG ##
+    ############################
 
     fullLumi = 0.
     effLumi = 0.
-    for sName in plotConfig.obs.samples:
-        fullLumi += allsamples[sName].lumi
-        effLumi += allsamples[sName].lumi / plotConfig.prescales[sName]
+    for sample in plotConfig.obs.samples:
+        fullLumi += sample.lumi
+        effLumi += sample.lumi / plotConfig.prescales[sample]
+
+    #####################################
+    ## FILL HISTOGRAMS FROM SKIM TREES ##
+    #####################################
+
+    if not args.replot:
+        ROOT.gROOT.LoadMacro('plot.cc+')
+    
+        print 'Filling plots for %s..' % plotConfig.name
+
+        # for data-driven background estimates under presence of prescales
+        # multiply the yields by postscale
+        postscale = effLumi / fullLumi
+    
+        groups = list(plotConfig.bkgGroups)
+        if args.allSignal:
+            groups += plotConfig.sigGroups
+        else:
+            for sspec in plotConfig.signalPoints:
+                if sspec.group not in groups:
+                    groups.append(sspec.group)
+                    sspec.group.samples = []
+    
+                sspec.group.samples.append(sspec.name)
+
+        if not args.asimov:
+            groups.append(plotConfig.obs)
+    
+        for group in groups:
+            print ' ', group.name
+    
+            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel)
+   
+        # Save a background total histogram (for display purpose) for each plotdef
+        for plotdef in plotdefs:
+            outDir = histFile.GetDirectory(plotdef.name)
+
+            bkghist = plotdef.makeHist('bkgtotal', outDir = outDir)
+            bkghistSyst = plotdef.makeHist('bkgtotal_syst', outDir = outDir)
+
+            for group in plotConfig.bkgGroups:
+                bkghist.Add(outDir.Get(group.name))
+                bkghistSyst.Add(outDir.Get(group.name + '_syst'))
+    
+            writeHist(bkghist)
+            writeHist(bkghistSyst)
+
+            if args.asimov == 'background':
+                # generate the "observed" distribution from background total
+                obshist = plotdef.makeHist('data_obs', outDir = outDir)
+                for iBin in xrange(1, bkghist.GetNbinsX() + 1):
+                    x = bkghist.GetXaxis().GetBinCenter(iBin)
+                    for _ in xrange(int(round(bkghist.GetBinContent(iBin)))):
+                        obshist.Fill(x)
+
+
+    ####################
+    ## DRAW / ANALYZE ##
+    ####################
+
+    if args.plotDir == '-' and not ('count' in plotNames or args.bbb or args.chi2):
+        # nothing to do
+        sys.exit(0)
+
+    print 'Drawing plots..'
 
     canvas = DataMCCanvas()
+
+    nentries = (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints))
+    ncolumns = math.ceil(float(nentries) / 5.) 
+    xmin = 0.35 if ncolumns > 2 else 0.55
+    canvas.legend.setPosition(xmin, SimpleCanvas.YMAX - 0.01 - 0.035 * 5, 0.92, SimpleCanvas.YMAX - 0.01)
 
     if args.plotDir:
         if args.plotDir == '-':
@@ -550,222 +571,85 @@ if __name__ == '__main__':
         for plot in os.listdir(WEBDIR + '/' + plotDir):
             os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
-    print "Starting plot making for %s." % plotConfig.name
-    
-    for vardef in plotConfig.variables + [plotConfig.countConfig()]:
-        if vardef.name not in args.plots:
-            continue
+    for plotdef in plotdefs:
+        print ' ', plotdef.name
 
-        print vardef.name
-
-        ndim = vardef.ndim()
-        if ndim == 1:
-            drawOpt = 'HIST'
-        elif ndim == 2:
-            drawOpt = 'LEGO4 F 0'
-
-        if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2 or args.saveTrees:
-            counters = {}
-            isSensitive = True
-
+        if plotDir:
+            if plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
+                graphic = True
+            else:
+                # nothing to do
+                continue
         else:
+            graphic = False
+
+        if graphic:
+            if plotdef.ndim() == 1:
+                drawOpt = 'HIST'
+            elif plotdef.ndim() == 2:
+                drawOpt = 'LEGO4 F 0'
+
             # set up canvas
             canvas.Clear(full = True)
 
-            nentries = (1 + len(plotConfig.bkgGroups) + len(plotConfig.signalPoints))
-            ncolumns = math.ceil(float(nentries) / 5.) 
-            
-            xmin = 0.35 if ncolumns > 2 else 0.55
+            isSensitive = plotdef.name in plotConfig.sensitiveVars
 
-            canvas.legend.setPosition(xmin, SimpleCanvas.YMAX - 0.01 - 0.035 * 5, 0.92, SimpleCanvas.YMAX - 0.01)
-            isSensitive = vardef.name in plotConfig.sensitiveVars
+        else:
+            counters = {}
+            isSensitive = True
     
         if isSensitive:
             canvas.lumi = effLumi
-            lumi = effLumi
             # for data-driven background estimates under presence of prescales
             # multiply the yields by 1/postscale
             postscale = fullLumi / effLumi
         else:
             canvas.lumi = fullLumi
-            lumi = fullLumi
             postscale = 1.
 
-        # make background histograms
-        # loop over groups with actual distributions
-        bkgTotal = vardef.makeHist('bkgtotal')
+        outDir = histFile.GetDirectory(plotdef.name)
 
-        for group in [g for g in plotConfig.bkgGroups if len(g.samples) != 0 or vardef.name in g.templates]:
-            hist = groupHist(group, vardef, plotConfig, outFile, skimDir = args.skimDir, lumi = lumi, postscale = postscale)
+        # fetch and format background groups
+        for group in plotConfig.bkgGroups:
+            ghist = outDir.Get(group.name + '_syst')
 
-            if not args.saveTrees:
-                bkgTotal.Add(hist)
+            if graphic:
+                formatHist(ghist, plotdef)
+                canvas.addStacked(ghist, title = group.title, color = group.color, drawOpt = drawOpt)
+            else:
+                counters[group.name] = ghist
 
-            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                counters[group.name] = hist
-            elif plotDir:
-                canvas.addStacked(hist, title = group.title, color = group.color, drawOpt = drawOpt)
+        # background total used for uncertainty display
+        bkgTotal = outDir.Get('bkgtotal_syst')
+        if graphic:
+            formatHist(bkgTotal, plotdef)
 
-        # formatted histograms added to bkgTotal
-        unformatHist(bkgTotal, vardef)
-
-        # then over groups without distributions (no samples but count set)
-        # probably doesn't work in trees
-        for group in [g for g in plotConfig.bkgGroups if len(g.samples) == 0 and vardef.name not in g.templates]:
-            # cannot use lumi because cross section is not set
-            hist = groupHist(group, vardef, plotConfig, outFile, template = bkgTotal, postscale = postscale)
-
-            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                counters[group.name] = hist
-
-        # plot signal distributions for sensitive variables
-        if isSensitive or outFile.GetFile():
-            usedPoints = []
-
+        # plot signal distributions for sensitive plots
+        if isSensitive:
             for sspec in plotConfig.signalPoints:
-                usedPoints.append(sspec.name)
-                hist = groupHist(sspec.group, vardef, plotConfig, outFile, skimDir = args.skimDir, samples = [sspec.name], name = sspec.name, lumi = lumi)
+                shist = outDir.Get('samples/' + sspec.name + '_' + plotConfig.region)
 
-                if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                    counters[sspec.name] = hist
-                elif plotDir:
-                    canvas.addSignal(hist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
-
-        # write out all signal distributions if asked for
-        if args.allSignal:
-            for group in plotConfig.sigGroups:
-                for sample in allsamples.getmany(group.samples):
-                    if sample.name not in usedPoints:
-                        usedPoints.append(sample.name)
-                        groupHist(group, vardef, plotConfig, outFile, skimDir = args.skimDir, samples = [sample.name], name = sample.name, lumi = lumi)
-
-        if not args.blind:
-            if args.asimov == '':
-                print 'data_obs'
-                if args.saveTrees:
-                    obshist = []
+                if graphic:
+                    formatHist(shist, plotdef)
+                    canvas.addSignal(shist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
                 else:
-                    obshist = vardef.makeHist('data_obs', outDir = outFile)
-        
-                for sname in plotConfig.obs.samples:
-                    if args.saveTrees:
-                        obshist += getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir)
-                    else:
-                        obshist.Add(getHist(sname, allsamples[sname], plotConfig, vardef, args.skimDir, prescale = plotConfig.prescales[sname], outDir = sampleDir))
-    
-            elif args.asimov == 'background':
-                print 'Asimov (background)'
-                obshist = vardef.makeHist('data_obs', outDir = outFile)
-                for iBin in range(1, bkgTotal.GetNbinsX() + 1):
-                    for n in range(int(round(bkgTotal.GetBinContent(iBin)))):
-                        obshist.Fill(bkgTotal.GetXaxis().GetBinCenter(iBin))
-    
-            else:
-                print 'Asimov (%s)' % args.asimov
-                # TODO!
-    
-            if args.saveTrees:
-                obstree = makeTree('data_obs', obshist, outDir = outFile)
-                writeHist(obstree)
-            else:
-                writeHist(obshist)
-                formatHist(obshist, vardef)
-    
-            # Take care of masking
-            if vardef.blind is not None:
-                for i in range(1, obshist.GetNbinsX()+1):
-                    binCenter = obshist.GetBinCenter(i)
-                    if vardef.fullyBlinded() or (binCenter > vardef.blind[0] and (vardef.blind[1] == 'inf' or binCenter < vardef.blind[1])):
-                        obshist.SetBinContent(i, 0.)
-                        obshist.SetBinError(i, 0.)
-    
-            if vardef.name == 'count' or vardef.name == args.bbb or vardef.name == args.chi2:
-                counters['data_obs'] = obshist
-            elif plotDir and not vardef.fullyBlinded():
+                    counters[sspec.name] = shist
+
+        # observed distributions (if not blinded)
+        if not args.blind:
+            obshist = outDir.Get('data_obs')
+
+            if graphic:
+                formatHist(obshist, plotdef)
                 canvas.addObs(obshist, title = plotConfig.obs.title)
+            else:    
+                counters['data_obs'] = obshist
 
-        if vardef.name == 'count':
+        if plotdef.name == 'count':
             printCounts(counters, plotConfig)
-
-        elif vardef.name == args.bbb:
-            print 'Bin-by-bin yield for variable', args.bbb
-            printBinByBin(counters, plotConfig)
-
-        elif vardef.name == args.chi2:
-            print 'Chi2 for variable', args.chi2
-            printChi2(counters, plotConfig)
-
-        if plotDir and vardef.name != 'count':
-            canvas.xtitle = vardef.xtitle()
-            canvas.ytitle = vardef.ytitle(binNorm = True)
-
-            canvas.selection = vardef.formSelection(plotConfig)
-
-            if vardef.logy is None:
-                logy = True
-                addLinear = True
-            else:
-                logy = vardef.logy
-                addLinear = False
-
-            canvas.ylimits = (vardef.ymin, vardef.ymax)
-            canvas.Update(logy = logy, ymax = vardef.ymax)
-
-            if vardef.fullyBlinded():
-                # remove ratio pad. Hack to use SimpleCanvas interface
-                simple = SimpleCanvas(lumi = canvas.lumi)
-
-                garbage = []
-                cnv = ROOT.TCanvas('tmp', 'tmp', 600, 600)
-                cnv.cd()
-
-                plotPad = canvas.plotPad.DrawClone()
-                garbage.append(plotPad)
-                plotPad.SetTopMargin(simple.canvas.GetTopMargin())
-                plotPad.SetRightMargin(simple.canvas.GetRightMargin())
-                plotPad.SetBottomMargin(simple.canvas.GetBottomMargin())
-                plotPad.SetLeftMargin(simple.canvas.GetLeftMargin())
-
-                xaxis = canvas.xaxis.DrawClone()
-                garbage.append(xaxis)
-                xaxis.SetX1(simple.canvas.GetLeftMargin())
-                xaxis.SetX2(1. - simple.canvas.GetRightMargin())
-                xaxis.SetY1(simple.canvas.GetBottomMargin())
-                xaxis.SetY2(simple.canvas.GetBottomMargin())
-
-                yaxis = canvas.yaxis.DrawClone()
-                garbage.append(yaxis)
-                yaxis.SetX1(simple.canvas.GetLeftMargin())
-                yaxis.SetX2(simple.canvas.GetLeftMargin())
-                yaxis.SetY1(simple.canvas.GetBottomMargin())
-                yaxis.SetY2(1. - simple.canvas.GetTopMargin())
-
-                simple.canvas.IsA().Destructor(simple.canvas)
-                simple.canvas = cnv
-                simple._needUpdate = False
-                simple.printWeb(plotDir, vardef.name)
-
-                if addLinear:
-                    simple.ylimits = (0., -1.)
-                    simple.minimum = -1.
-                    vardef.ymax = -1.
-                    vardef.ymin = 0.
-                    simple._needUpdate = True
-                    simple.printWeb(plotDir, vardef.name + 'Linear', logy = False)
-
-                # cleanup the mess
-                for obj in garbage:
-                    obj.IsA().Destructor(obj)
-
-                cnv.IsA().Destructor(cnv)
-
-            else:
-                canvas.printWeb(plotDir, vardef.name, drawLegend = False)
-
-                if addLinear:
-                    canvas.ylimits = (0., -1.)
-                    canvas.minimum = -1.
-                    vardef.ymax = -1.
-                    vardef.ymin = 0.
-                    canvas._needUpdate = True
-                    canvas.printWeb(plotDir, vardef.name + 'Linear', logy = False)
+        elif plotdef.name == args.bbb:
+            printBinByBin(counters, plotdef, plotConfig)
+        elif plotdef.name == args.chi2:
+            printChi2(counters, plotdef, plotConfig)
+        else:
+            printCanvas(canvas, plotdef, plotConfig)

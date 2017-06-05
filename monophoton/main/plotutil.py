@@ -9,6 +9,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
+from datasets import allsamples
+
 argv = list(sys.argv)
 sys.argv = []
 import ROOT
@@ -16,7 +18,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, scale = 1., norm = -1., templateDir = None):
+    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, cut = '', scale = 1., norm = -1.):
         self.name = name
         self.title = title
         self.samples = samples
@@ -24,34 +26,23 @@ class GroupSpec(object):
         self.count = count
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
+        self.cut = cut # additional cut (if samples are looser than the nominal region, e.g. to allow variations)
         self.norm = norm # use to normalize histograms post-facto
         self.variations = []
 
-        self.templates = {}
-        if templateDir:
-            for obj in templateDir.GetList():
-                if obj.InheritsFrom(ROOT.TH1.Class()):
-                    self.templates[obj.GetName()] = obj
-
-            # add a "counter" template
-            if 'count' not in self.templates:
-                gd = ROOT.gDirectory
-                templateDir.cd()
-                self.templates['count'] = ROOT.TH1D('count', '', 1, array.array('d', [0., 1.]))
-                self.templates['count'].SetBinContent(1, 1.)
-                gd.cd()
 
 class SampleSpec(object):
     # use for signal point spec
 
-    def __init__(self, name, title, group = None, color = ROOT.kBlack):
+    def __init__(self, name, title, group, color = ROOT.kBlack):
         self.name = name
+        self.sample = allsamples[self.name]
         self.title = title
         self.group = group
         self.color = color
 
 
-class VariableDef(object):
+class PlotDef(object):
     def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1., ymin = 0.):
         self.name = name
         self.title = title
@@ -72,7 +63,7 @@ class VariableDef(object):
             if vname not in keywords:
                 keywords[vname] = copy.copy(getattr(self, vname))
 
-        vardef = VariableDef(name, **keywords)
+        vardef = PlotDef(name, **keywords)
 
         return vardef
 
@@ -103,12 +94,6 @@ class VariableDef(object):
         xlow, xhigh = self.xlimits()
         return self.blind[0] <= xlow and self.blind[1] >= xhigh
 
-    def histName(self, hname, rname = ''):
-        if rname == '':
-            return self.name + '-' + hname
-        else:
-            return rname + '-' + self.name + '-' + hname
-
     def makeHist(self, hname, outDir = None):
         """
         Make an empty histogram from the specifications.
@@ -135,7 +120,7 @@ class VariableDef(object):
                 lastbinWidth = (arr[-1] - arr[0]) / 30.
                 arr += array.array('d', [self.binning[-1] + lastbinWidth])
     
-            hist = ROOT.TH1D(self.histName(hname), '', nbins, arr)
+            hist = ROOT.TH1D(hname, '', nbins, arr)
     
         else:
             args = []
@@ -152,10 +137,10 @@ class VariableDef(object):
                 args += [nbins, arr]
     
             if self.ndim() == 2:
-                hist = ROOT.TH2D(self.histName(hname), '', *tuple(args))
+                hist = ROOT.TH2D(hname, '', *tuple(args))
             elif self.ndim() == 3:
                 # who would do this??
-                hist = ROOT.TH3D(self.histName(hname), '', *tuple(args))
+                hist = ROOT.TH3D(hname, '', *tuple(args))
             else:
                 # I appreciate this error message
                 raise RuntimeError('What are you thinking')
@@ -164,6 +149,12 @@ class VariableDef(object):
 
         hist.Sumw2()
         return hist
+
+    def makeTree(self, tname, outDir = None):
+        outDir.cd()
+        tree = ROOT.TTree(tname, '')
+
+        return tree
 
     def binWidth(self, bin):
         if self.ndim() != 1:
@@ -223,7 +214,7 @@ class VariableDef(object):
             
         return selection
 
-    def formExpression(self, replacements = []):
+    def formExpression(self, replacements = None):
         if self.ndim() == 1:
             expr = self.expr
         elif self.ndim() == 2:
@@ -231,55 +222,69 @@ class VariableDef(object):
         else:
             expr = ':'.join(self.expr)
 
-        for repl in replacements:
-            # replace the variable names given in repl = ('original', 'new')
-            # enclose the original variable name with characters that would not be a part of the variable
-            expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
+        if replacements is not None:
+            for repl in replacements:
+                # replace the variable names given in repl = ('original', 'new')
+                # enclose the original variable name with characters that would not be a part of the variable
+                expr = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', expr)
 
         return expr
+
 
 class PlotConfig(object):
     def __init__(self, name, obsSamples = []):
         self.name = name # name serves as the default region selection (e.g. monoph)
         self.baseline = '1'
         self.fullSelection = ''
-        self.obs = GroupSpec('data_obs', 'Observed', samples = obsSamples)
-        self.prescales = dict([(s, 1) for s in obsSamples])
+        self.obs = GroupSpec('data_obs', 'Observed', samples = allsamples.getmany(obsSamples))
+        self.prescales = dict([(s, 1) for s in self.obs.samples])
         self.sigGroups = []
         self.signalPoints = []
         self.bkgGroups = []
-        self.variables = []
+        self.plots = [PlotDef('count', '', '0.5', (1, 0., 1.), cut = self.fullSelection)]
         self.sensitiveVars = []
         self.treeMaker = ''
         self.blind = False
 
-    def addObs(self, sample, prescale = 1):
+    def addObs(self, sname, prescale = 1):
+        sample = allsamples[sname]
         self.obs.samples.append(sample)
         self.prescales[sample] = prescale
 
-    def getVariable(self, name):
-        return next(variable for variable in self.variables if variable.name == name)
+    def addSig(self, *args, **kwd):
+        if len(args) > 2:
+            args = args[0:2] + (allsamples.getmany(args[2]),) + args[3:]
+        elif 'samples' in kwd:
+            kwd['samples'] = allsamples.getmany(kwd['samples'])
 
-    def countConfig(self):
-        return VariableDef('count', '', '0.5', (1, 0., 1.), cut = self.fullSelection)
+        self.sigGroups.append(GroupSpec(*args, **kwd))
+
+    def addSigPoint(self, *args, **kwd):
+        for sig in self.sigGroups:
+            for sample in sig.samples:
+                if sample.name == args[0]:
+                    kwd['group'] = sig
+                    self.signalPoints.append(SampleSpec(*args, **kwd))
+                    return
+
+        raise RuntimeError('Signal sample ' + args[0] + ' not found in any of the signal groups')
+
+    def addBkg(self, *args, **kwd):
+        if len(args) > 2:
+            args = args[0:2] + allsamples.getmany(args[2]) + args[3:]
+        elif 'samples' in kwd:
+            kwd['samples'] = allsamples.getmany(kwd['samples'])
+            
+        self.bkgGroups.append(GroupSpec(*args, **kwd))
+
+    def addPlot(self, *args, **kwd):
+        self.plots.append(PlotDef(*args, **kwd))
+
+    def getPlot(self, name):
+        return next(plot for plot in self.plots if plot.name == name)
 
     def findGroup(self, name):
         return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)
-
-    def samples(self):
-        snames = set(self.obs.samples)
-
-        for group in self.bkgGroups:
-            for s in group.samples:
-                if type(s) is tuple:
-                    snames.add(s[0])
-                else:
-                    snames.add(s)
-
-        for group in self.sigGroups:
-            snames |= set(group.samples)
-
-        return list(snames)
 
 
 class Variation(object):
@@ -289,12 +294,15 @@ class Variation(object):
     Alternatively reweight can be specified as a string or a value. See comments below.
     """
 
-    def __init__(self, name, region = None, replacements = None, reweight = None):
+    def __init__(self, name, cuts = None, replacements = None, reweight = None):
         self.name = name
-        self.region = region
+        # cuts:
+        #  a 2-tuple (Up & Down) of cuts to be applied
+        self.cuts = cuts
+        # replacements:
+        #  a 2-tuple (Up & Down) of list of 2-tuples (variable replacements (original, replaced))
         self.replacements = replacements
         # reweight:
-        #  single float -> scale uniformly. Output suffix _{name}Var
+        #  single float -> scale up and down uniformly.
         #  string -> use branches 'reweight_%sUp' & 'reweight_%sDown'. Output suffix _{name}Up & _{name}Down
         self.reweight = reweight
-
