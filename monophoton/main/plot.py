@@ -115,7 +115,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 hist.Scale(postscale)
 
             writeHist(hist)
-            hist.Delete()
 
     # aggregate group plots
 
@@ -174,8 +173,12 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             writeHist(ghistSyst)
 
 
+# python deletes histograms when variables are overwritten unless someone references the object
+objectstore = []
 def writeHist(hist):
     if not hist.GetDirectory() or not hist.GetDirectory().GetFile():
+        # we don't have a persistent storage
+        objectstore.append(hist)
         return
 
     gd = ROOT.gDirectory
@@ -320,6 +323,13 @@ def printChi2(stack, plotdef, plotConfig, precision = '.2f'):
 
 
 def printCanvas(canvas, plotdef, plotConfig):
+    """
+    Print the canvas content as pdf and png.
+    """
+
+    eil = ROOT.gErrorIgnoreLevel
+    ROOT.gErrorIgnoreLevel = ROOT.kWarning
+
     canvas.xtitle = plotdef.xtitle()
     canvas.ytitle = plotdef.ytitle(binNorm = True)
 
@@ -369,6 +379,12 @@ def printCanvas(canvas, plotdef, plotConfig):
         simple._needUpdate = False
         simple.printWeb(plotDir, plotdef.name)
 
+        sys.stdout.write('    main')
+        if logy:
+            sys.stdout.write(' (log)')
+        else:
+            sys.stdout.write(' (lin)')
+
         if addLinear:
             simple.ylimits = (0., -1.)
             simple.minimum = -1.
@@ -376,6 +392,11 @@ def printCanvas(canvas, plotdef, plotConfig):
             plotdef.ymin = 0.
             simple._needUpdate = True
             simple.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
+
+            sys.stdout.write(' (lin)')
+
+        sys.stdout.write('\n')
+        sys.stdout.flush()
 
         # cleanup the mess
         for obj in garbage:
@@ -386,6 +407,12 @@ def printCanvas(canvas, plotdef, plotConfig):
     else:
         canvas.printWeb(plotDir, plotdef.name, drawLegend = False)
 
+        sys.stdout.write('    main')
+        if logy:
+            sys.stdout.write(' (log)')
+        else:
+            sys.stdout.write(' (lin)')
+
         if addLinear:
             canvas.ylimits = (0., -1.)
             canvas.minimum = -1.
@@ -394,6 +421,12 @@ def printCanvas(canvas, plotdef, plotConfig):
             canvas._needUpdate = True
             canvas.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
 
+            sys.stdout.write(' (lin)')
+
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+
+    ROOT.gErrorIgnoreLevel = eil
 
 
 if __name__ == '__main__':
