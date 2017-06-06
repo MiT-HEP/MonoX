@@ -7,61 +7,109 @@ import time
 
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
-sys.path.append(basedir + '/purity')
 from plotstyle import SimpleCanvas, RatioCanvas
 from datasets import allsamples
-from selections import SigmaIetaIetaSels, chIsoMaxSels, sieieSels, pixelVetoCut, monophIdCut
+import purity.selections as selections
 import config
 
-lumi = sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
+###########################
+# Setup and configuration #
+###########################
+
+lumi = sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'])
 canvas = SimpleCanvas(lumi = lumi)
 rcanvas = RatioCanvas(lumi = lumi)
 
-# binning = array.array('d', [175., 180., 185., 190., 200., 210., 230., 250., 300., 350., 400.])
 binning = array.array('d', [175., 200., 250., 300., 350., 400., 450., 500.])
 pid = 'medium'
-era = 'Spring15'
+era = 'Ashim_ZG_CWIso'
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
-impurityGraph = inputFile.Get("barrel-" + pid + "-pixel-monoph-max-Met0to60")
+impurityGraph = inputFile.Get("barrel-" + pid + "-pixel-Met0to60")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor.root', 'recreate')
 
-isos = [ ('', '') ] # ('Worst', '') ] # , ('JetPt', 'JetPt') ] # [ ( '', 'pv'), ('Worst', '') ]
+baseSels = [
+    'jets.pt_[0] > 100.',
+    't1Met.pt < 60.',
+    'photons.size == 1',
+    'photons.isEB[0]',
+    selections.hOverESels[era]['barrel'][pid],
+    'photons.pixelVeto[0]',
+    selections.monophIdCut,
+    'photons.chIso[0] < 11.',
+    selections.sieieSels[era]['barrel'][pid]
+]
 
-baseSel = 'jets.pt[0] > 100. && t1Met.met < 60. && photons.size == 1 && photons.isEB[0]'
-nomSel = SigmaIetaIetaSels[era]['barrel'][pid] + ' && ' + pixelVetoCut + ' && ' + monophIdCut
-goodSel = chIsoMaxSels[era]['barrel'][pid] + ' && ' + sieieSels[era]['barrel'][pid]
+goodSels = [
+    selections.chIsoSels[era]['barrel'][pid],
+    selections.nhIsoSels[era]['barrel'][pid],
+    selections.phIsoSels[era]['barrel'][pid]
+]
 
-samples = [ # ('',  baseSel + ' && ' + nomSel + ' && (( photons.sieie[0] < 0.015 && photons.sieie[0] > 0.012) || ( photons.chIsoMax[0] < 11.0 && photons.chIsoMax[0] > 1.37))')
-            ('Nom', baseSel) #  + ' && ' + nomSel)
-            ,('Tight', baseSel)
-            ,('Loose', baseSel)
-            ,('VLoose', baseSel)
-            ]
+nomSels = [
+    '!' + selections.chIsoSels[era]['barrel'][pid],
+    selections.nhIsoSels[era]['barrel'][pid],
+    selections.phIsoSels[era]['barrel'][pid]
+]
+
+tightSels = [
+    '!' + selections.chIsoSels[era]['barrel'][pid],
+    selections.nhIsoSels['Spring16']['barrel']['loose'],
+    selections.phIsoSels['Spring16']['barrel']['loose']
+]
+
+looseSels = [
+    '!' + selections.chIsoSels[era]['barrel'][pid],
+    selections.nhIsoSels['Spring16']['barrel']['tight'],
+    selections.phIsoSels['Spring16']['barrel']['tight']
+]
+
+# selections concatenated with chVeto
+configurations = [
+    ('Nom', nomSels),
+    ('Tight', tightSels),
+    ('Loose', looseSels)
+]
+
+##############
+# Quick skim #
+##############
 
 gtree = ROOT.TChain('events')
-gtree.Add(config.skimDir + '/sph-16*_purity.root')
+gtree.Add(config.skimDir + '/sph-16*_emjet.root')
 gtree.SetBranchStatus("*", 0)
 gtree.SetBranchStatus("photons*", 1)
-gtree.SetBranchStatus("jets.pt", 1)
-gtree.SetBranchStatus("t1Met.met", 1)
+gtree.SetBranchStatus("jets.pt_", 1)
+gtree.SetBranchStatus("t1Met.pt", 1)
+
+baseSel = ' && '.join(baseSels)
+
+print 'Skimming gtree with base sel'
+print baseSel
+
+gtree.Draw('>>elist', baseSel, 'goff')
+elist = ROOT.gDirectory.Get('elist')
+gtree.SetEntryList(elist)
+
+####################################################################
+# Plot the good photon + jet distribution and scale it by impurity #
+####################################################################
 
 gname = 'gpt'
 gpt = ROOT.TH1D(gname, ';p_{T} (GeV)', len(binning) - 1, binning)
 gpt.Sumw2()
 
-gtreeSel = baseSel + ' && ' + nomSel + ' && ' + goodSel
+sel = ' && '.join(goodSel)
+
 print 'drawing gtree using selection: '
-print gtreeSel
+print sel
+
 start = time.time()
 gtree.Draw('photons.scRawPt[0]>>'+gname, gtreeSel, 'goff')
 gpt.Scale(1., 'width')
 elapsed = time.time() - start
 print 'done with gtree. took ' + str(elapsed) + ' seconds.'
-
-# inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
-# impurityHist = inputFile.Get("ChIso50to80imp")
 
 fname = 'fpt'
 fpt = gpt.Clone(fname)
@@ -70,17 +118,10 @@ fptDown = gpt.Clone(fname+'PurityDown')
 
 for iX in range(1, fpt.GetNbinsX() + 1):
     cent = fpt.GetXaxis().GetBinCenter(iX)        
-    # print cent
 
     xval = ROOT.Double(0)
     imp = ROOT.Double(0)
     err = 0
-
-    """
-    bin = impurityHist.FindBin(cent)
-    imp = impurityHist.GetBinContent(bin) / 100.
-    err = impurityHist.GetBinError(bin) / 100.
-    """
 
     for iP in range(0, impurityGraph.GetN()):
         impurityGraph.GetPoint(iP, xval, imp)
@@ -89,8 +130,6 @@ for iX in range(1, fpt.GetNbinsX() + 1):
         high = xval + impurityGraph.GetErrorXhigh(iP)
         print iP, low, high
         if cent > low and cent < high:
-            # print 'Center is in point', iP
-            # print 'Purity is ' + str(imp) + ' +/- ' + str(err)
             break
 
     imp = imp / 100.
@@ -125,23 +164,24 @@ fpt.Write()
 fptUp.Write()
 fptDown.Write()
 
-for samp, sel in samples:
-    htree = ROOT.TChain('events')
-    htree.Add(config.skimDir + '/sph-16*_purity' + samp + '.root')
+#########################################################
+# Comute the transfer factors for various proxy choices #
+#########################################################
 
-    hname = 'hpt'+samp
+for confName, sels in configurations:
+    hname = 'hpt'+confName
     hpt = ROOT.TH1D(hname, ';p_{T} (GeV)', len(binning) - 1, binning)
     hpt.Sumw2()
 
-    # if iso[0] == 'Worst':
-    # sel = sel.replace('chIso', 'chWorstIso')
-    print 'drawing htree using selection'
-    print sel
-    htree.Draw('photons.scRawPt[0]>>'+hname, sel, 'goff')
-    hpt.Scale(1., 'width')
-    print 'done with htree'
+    sel = ' && '.join(sels)
 
-    tname = 'tfact'+samp
+    print 'drawing gtree using selection'
+    print sel
+    gtree.Draw('photons.scRawPt[0]>>'+hname, sel, 'goff')
+    hpt.Scale(1., 'width')
+    print 'done with gtree'
+
+    tname = 'tfact'+confName
     tfact = fpt.Clone(tname)
     tfact.Divide(hpt)
 
@@ -190,7 +230,7 @@ for samp, sel in samples:
     canvas.ylimits = (1.0, 2500000.)
     canvas.SetLogy(True)
 
-    canvas.printWeb('monophoton/hadronTFactor', 'distributions'+samp)
+    canvas.printWeb('monophoton/hadronTFactor', 'distributions'+confName)
 
     rcanvas.Clear()
     rcanvas.legend.Clear()
@@ -213,4 +253,4 @@ for samp, sel in samples:
     iUp = rcanvas.addHistogram(tfactUp, drawOpt = 'HIST')
     iDown = rcanvas.addHistogram(tfactDown, drawOpt = 'HIST')
 
-    rcanvas.printWeb('monophoton/hadronTFactor', 'tfactor'+samp, hList = [iUp, iDown, iNom], rList = [iNom, iUp, iDown] )
+    rcanvas.printWeb('monophoton/hadronTFactor', 'tfactor'+confName, hList = [iUp, iDown, iNom], rList = [iNom, iUp, iDown] )
