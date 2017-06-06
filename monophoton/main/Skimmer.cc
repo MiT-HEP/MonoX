@@ -38,7 +38,7 @@ public:
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
   bool preskim(panda::Event const&) const;
-  void prepareEvent(panda::Event const&, panda::EventMonophoton&);
+  void prepareEvent(panda::Event const&, panda::GenParticleCollection const&, panda::EventMonophoton&);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
 private:
@@ -82,39 +82,32 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   // will get updated by individual operators
   panda::utils::BranchList branchList = {
-    "*",
-    "!pfCandidates",
-    "!tracks",
-    "!puppiAK4Jets",
-    "!chsAK8Jets",
-    "!chsAK8Subjets",
-    "!puppiAK8Jets",
-    "!puppiAK8Subjets",
-    "!chsCA15Jets",
-    "!chsCA15Subjets",
-    "!puppiCA15Jets",
-    "!puppiCA15Subjets",
-    "!ak8GenJets",
-    "!ca15GenJets",
-    "!puppiMet",
-    "!rawMet",
-    "!caloMet",
-    "!noMuMet",
-    "!noHFMet",
-    "!trkMet",
-    "!neutralMet",
-    "!photonMet",
-    "!hfMet",
-    "!genMet",
-    // "!metMuOnlyFix",
-    // "!metNoFix",
-    "!recoil"
+    "!*",
+    "runNumber",
+    "lumiNumber",
+    "eventNumber",
+    "isData",
+    "weight",
+    "npv",
+    "rho",
+    "rhoCentralCalo",
+    "triggers",
+    "vertices",
+    "superClusters",
+    "electrons",
+    "muons",
+    "taus",
+    "photons",
+    "chsAK4Jets",
+    "!chsAK4Jets.constituents_",
+    "pfMet",
+    "metFilters"
   };
 
-  // will take care of genParticles individually
-  branchList += {"!genParticles"};
+  if (!isData)
+    branchList += {"npvTrue", "genReweight", "genVertex", "partons"};
 
-  if (printLevel_ == INFO)
+  if (printLevel_ > 0 && printLevel_ <= DEBUG)
     branchList.setVerbosity(1);
 
   bool doPreskim(true);
@@ -198,8 +191,6 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw std::runtime_error("source");
     }
 
-    input->SetCacheSize(100000000);
-
     if (commonSelection.Length() != 0) {
       gROOT->cd();
       input->Draw(">>elist", commonSelection, "entrylist");
@@ -245,12 +236,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (doPreskim && !preskim(event))
         continue;
 
-      prepareEvent(event, skimmedEvent);
-
-      if (!event.isData) {
+      if (!event.isData)
         genParticles.getEntry(*genInput, entryNumber);
-        skimmedEvent.copyGenParticles(genParticles);
-      }
+
+      prepareEvent(event, genParticles, skimmedEvent);
 
       if (printLevel_ > 0 && printLevel_ <= INFO) {
 	debugFile << std::endl << ">>>>> Printing event " << iEntryGlobal <<" !!! <<<<<" << std::endl;
@@ -313,10 +302,12 @@ Skimmer::preskim(panda::Event const& _event) const
 }
 
 void
-Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent)
+Skimmer::prepareEvent(panda::Event const& _event, panda::GenParticleCollection const& _genParticles, panda::EventMonophoton& _outEvent)
 {
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
   _outEvent.copy(_event);
+
+  _outEvent.copyGenParticles(_genParticles);
 
   if (_outEvent.run.runNumber != _event.run.runNumber)
     _outEvent.run = _event.run;
