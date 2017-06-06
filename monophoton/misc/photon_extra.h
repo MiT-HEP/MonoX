@@ -26,12 +26,14 @@ namespace panda {
     double phIsoEAS16(0.);
     double nhIsoEAS15(0.);
     double phIsoEAS15(0.);
+    double chIsoMaxEA(0.);
     if (absEta < 1.) {
       nhIsoEAS15 = 0.0599;
       phIsoEAS15 = 0.1271;
       chIsoEAS16 = 0.0360;
       nhIsoEAS16 = 0.0597;
       phIsoEAS16 = 0.1210;
+      chIsoMaxEA = 0.1064;
     }
     else if (absEta < 1.479) {
       nhIsoEAS15 = 0.0819;
@@ -39,6 +41,7 @@ namespace panda {
       chIsoEAS16 = 0.0377;
       nhIsoEAS16 = 0.0807;
       phIsoEAS16 = 0.1107;
+      chIsoMaxEA = 0.1026;
     }
     else if (absEta < 2.) {
       nhIsoEAS15 = 0.0696;
@@ -117,30 +120,40 @@ namespace panda {
     double nhIsoCore(_src.nhIso + nhIsoEAS16 * rho + nhIsoE1S16 * pt + nhIsoE2S16 * pt2);
     double phIsoCore(_src.phIso + phIsoEAS16 * rho + phIsoE1S16 * pt);
 
+    // EA is for ZG series
+    _dest.chIsoMax -= chIsoMaxEA * rho;
+
     // _dest.chIso = chIsoCore - chIsoEAS16 * rho; // identity
     _dest.nhIso = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1S16 * scpt - nhIsoE2S16 * scpt2;
     _dest.phIso = phIsoCore - phIsoEAS16 * rho - phIsoE1S16 * scpt;
 
-    _dest.loose = _dest.passHOverE(0, 0) && _dest.passSieie(0, 0) &&
+    // Spring16 cuts
+    _dest.loose = _dest.passHOverE(0, 1) && _dest.passSieie(0, 1) &&
       _dest.passCHIso(0) && _dest.passNHIso(0) && _dest.passCHIso(0);
-    _dest.medium = _dest.passHOverE(1, 0) && _dest.passSieie(1, 0) &&
+    _dest.medium = _dest.passHOverE(1, 1) && _dest.passSieie(1, 1) &&
       _dest.passCHIso(1) && _dest.passNHIso(1) && _dest.passCHIso(1);
-    _dest.tight = _dest.passHOverE(2, 0) && _dest.passSieie(2, 0) &&
+    _dest.tight = _dest.passHOverE(2, 1) && _dest.passSieie(2, 1) &&
       _dest.passCHIso(2) && _dest.passNHIso(2) && _dest.passCHIso(2);
 
     _dest.chIsoS15 = chIsoCore;        
     _dest.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
     _dest.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
 
+    _dest.loose15 = _dest.passHOverE(0, 0) && _dest.passSieie(0, 0) &&
+      _dest.passCHIsoS15(0) && _dest.passNHIsoS15(0) && _dest.passCHIsoS15(0);
+    _dest.medium15 = _dest.passHOverE(1, 0) && _dest.passSieie(1, 0) &&
+      _dest.passCHIsoS15(1) && _dest.passNHIsoS15(1) && _dest.passCHIsoS15(1);
+    _dest.tight15 = _dest.passHOverE(2, 0) && _dest.passSieie(2, 0) &&
+      _dest.passCHIsoS15(2) && _dest.passNHIsoS15(2) && _dest.passCHIsoS15(2);
+
     // using the same rho correction as S16
     _dest.chIsoZG = _src.chIso;
     _dest.nhIsoZG = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1ZG * scpt - nhIsoE2ZG * scpt2;
     _dest.phIsoZG = phIsoCore - phIsoEAS16 * rho - phIsoE1ZG * scpt;
 
-    // EA computed with iso/worstIsoEA.py
-    _dest.chIsoMax -= 0.094 * rho;
-    if (_dest.chIsoMax < _dest.chIso)
-      _dest.chIsoMax = _dest.chIso;
+    _dest.mediumZG = _dest.hOverE < 0.0263 && _dest.sieie < 0.01002 &&
+      _dest.chIsoZG < 1.163 && _dest.nhIsoZG < 7.005 && _dest.phIsoZG < 3.271;
+    _dest.mediumZGMax = _dest.mediumZG && _dest.chIsoMax < 1.163;
 
     if (_src.matchedGen.isValid()) {
       _dest.matchedGenId = _src.matchedGen->pdgid;
