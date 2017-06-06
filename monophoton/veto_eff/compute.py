@@ -1,3 +1,12 @@
+"""
+This script does two things:
+ - Draw the distributions of variables given in configs.
+ - Draw the electron & muon veto efficiencies as functions of variables given in configs.
+Data and MC are compared in Z->mumug events. The "data efficiency" for monophoton events
+is computed by convoluting the data efficiency in Z->mumug with the HT distribution from
+MC monophoton events.
+"""
+
 import sys
 import os
 import math
@@ -12,19 +21,23 @@ from plotstyle import SimpleCanvas
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
+# data tree
 dataMumug = ROOT.TChain('skim')
-dataMumug.Add(config.histDir + '/veto_eff/mumug_smu*.root')
+dataMumug.Add(config.skimDir + '/smu-16*_tpmmg.root')
 
+# MC mumug tree
 mcMumug = ROOT.TChain('skim')
-mcMumug.Add(config.histDir + '/veto_eff/mumug_zllg-130.root')
-mcMumug.Add(config.histDir + '/veto_eff/mumug_tt.root')
-mcMumug.Add(config.histDir + '/veto_eff/mumug_ww.root')
-mcMumug.Add(config.histDir + '/veto_eff/mumug_wz.root')
-mcMumug.Add(config.histDir + '/veto_eff/mumug_zz.root')
+mcMumug.Add(config.skimDir + '/zllg_tpmmg.root')
+mcMumug.Add(config.skimDir + '/tt_tpmmg.root')
+mcMumug.Add(config.skimDir + '/ww_tpmmg.root')
+mcMumug.Add(config.skimDir + '/wz_tpmmg.root')
+mcMumug.Add(config.skimDir + '/zz_tpmmg.root')
 
+# MC znng tree
 mcMonoph = ROOT.TChain('skim')
-mcMonoph.Add(config.histDir + '/veto_eff/monoph_znng-130.root')
+mcMonoph.Add(config.skimDir + '/znng-130-o_monoph.root')
 
+# canvases
 distCanvas = SimpleCanvas('cdist')
 distCanvas.legend.add('data', title = '2#mu data', opt = 'L', color = ROOT.kBlack, fstyle = 0)
 distCanvas.legend.add('mumug', title = '2#mu MC', opt = 'L', color = ROOT.kRed, fstyle = 0)
@@ -40,10 +53,11 @@ effCanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
 effCanvas.ylimits = (0.9, 1.05)
 effCanvas.SetGrid(True)
 
+# plot configs
 configs = {
     'incl': ('0.5', '', (1, 0., 1.)),
-    'njet': ('njet', 'N_{jet}', (8, 0., 8.)),
-    'ht': ('ht', 'H_{T} (GeV)', [100. * x for x in range(5)] + [500., 700., 900., 1200., 2000.]),
+    'njet': ('jets.size', 'N_{jet}', (8, 0., 8.)),
+    'ht': ('Sum$(jets.pt_)', 'H_{T} (GeV)', [100. * x for x in range(5)] + [500., 700., 900., 1200., 2000.]),
     'npv': ('npv', 'N_{vtx}', (20, 0., 40.))
 }
 
@@ -52,6 +66,7 @@ outputFile = ROOT.TFile.Open(config.histDir + '/veto_eff/veto_eff.root', 'recrea
 for name, config in configs.items():
     expr, title, binning = config
 
+    # create the distribution and efficiency plot templates
     if type(binning) is tuple:
         dist = ROOT.TH1D('dist_' + name, ';' + title, *binning)
         eff = ROOT.TProfile('eff_' + name, ';' + title, *binning)
@@ -67,28 +82,34 @@ for name, config in configs.items():
 
     weight = 'weight'
 
+    # plot the data distribution
     dataDist = dist.Clone('data_' + dist.GetName())
     distCanvas.legend.apply('data', dataDist)
     dataMumug.Draw(expr + '>>' + dataDist.GetName(), weight, 'goff')
     dataDist.Scale(1. / dataDist.GetSumOfWeights(), scaleopt)
 
+    # plot the data efficiency
     dataEff = eff.Clone('data_' + eff.GetName())
     effCanvas.legend.apply('data', dataEff)
-    dataMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
+    dataMumug.Draw('1. - (electrons.size == 0 || muons.size == 0):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
     
+    # plot the MC distribution
     mumugDist = dist.Clone('mumug_' + dist.GetName())
     distCanvas.legend.apply('mumug', mumugDist)
     mcMumug.Draw(expr + '>>' + mumugDist.GetName(), weight, 'goff')
     mumugDist.Scale(1. / mumugDist.GetSumOfWeights(), scaleopt)
 
+    # plot the MC efficiency
     mumugEff = eff.Clone('mumug_' + eff.GetName())
     effCanvas.legend.apply('mumug', mumugEff)
-    mcMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + mumugEff.GetName(), weight, 'prof goff')
+    mcMumug.Draw('1. - (electrons.size == 0 || muons.size == 0):' + expr + '>>' + mumugEff.GetName(), weight, 'prof goff')
 
+    # we will use the efficiency-HT plots to derive the "data monophoton efficiency"
     if name == 'ht':
         dataEffHt = dataEff
         mumugEffHt = mumugEff
 
+    # efficiency scale factors
     for iX in range(1, dataEff.GetNbinsX() + 1):
         x = dataEff.GetXaxis().GetBinCenter(iX)
         data = dataEff.GetBinContent(iX)
@@ -107,6 +128,7 @@ for name, config in configs.items():
 
     effCanvas.legend.apply('sf', sf)
 
+    # additional measurement with a jet, just to demonstrate the robustness of the scale factor
     if name == 'incl':
         effCanvas.legend.add('datajet', title = '2#mu+jet data', opt = 'LP', color = ROOT.kBlack, mstyle = 25, lstyle = ROOT.kDashed)
         effCanvas.legend.add('mumugjet', title = '2#mu+jet MC', opt = 'LP', color = ROOT.kRed, mstyle = 25, lstyle = ROOT.kDashed)
@@ -124,18 +146,22 @@ for name, config in configs.items():
 
     weight = 'weight'
 
+    # znng (monophoton) distributions
     monophDist = dist.Clone('monoph_' + dist.GetName())
     distCanvas.legend.apply('monoph', monophDist)
     mcMonoph.Draw(expr + '>>' + monophDist.GetName(), weight, 'goff')
     monophDist.Scale(1. / monophDist.GetSumOfWeights(), scaleopt)
 
+    # this distribution will be convoluted with mumug efficiency
     if name == 'ht':
         monophHt = monophDist
 
+    # znng efficiency
     monophEff = eff.Clone('monoph_' + eff.GetName())
     effCanvas.legend.apply('monoph', monophEff)
     mcMonoph.Draw('1. - (eleveto || muveto):' + expr + '>>' + monophEff.GetName(), weight, 'prof goff')
 
+    # print plots
     distCanvas.addHistogram(dataDist, drawOpt = 'HIST')
     distCanvas.addHistogram(mumugDist, drawOpt = 'HIST')
     distCanvas.addHistogram(monophDist, drawOpt = 'HIST')
@@ -153,6 +179,7 @@ for name, config in configs.items():
     effCanvas.Clear()
     effCanvas.SetGrid(True)
 
+    # save histograms
     outputFile.cd()
 
     dataDist.Write()
@@ -170,6 +197,7 @@ for name, config in configs.items():
         effCanvas.legend.remove('mumugjet')
         effCanvas.legend.construct()
 
+# convolution with HT
 data = 0.
 mc = 0.
 for iX in range(1, monophHt.GetNbinsX() + 1):
