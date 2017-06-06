@@ -432,17 +432,28 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 //--------------------------------------------------------------------
 
 void
-TagAndProbeSelector::setupSkim_(panda::EventMonophoton&, bool)
+TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
+  // Branches to be directly copied from the input tree
+  // Add a prepareFill function when a collection branch is added
+  panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "isData", "npv", "rho", "t1Met"}};
+  if (_isMC)
+    blist += {"npvTrue"};
+
+  _inEvent.book(*skimOut_, blist);
+
   // looseTags will be added by the TPMuonPhoton operator
-  outEvent_.book(*skimOut_, {"*", "!triggers", "!looseTags"});
+  outEvent_.book(*skimOut_, {"sample", "tp", "tags", "probes", "jets"});
 }
 
 void
 TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 {
   outEvent_.init();
-  outEvent_.copy(_event);
+  outEvent_.copy(_event); // only copies "static" branches
+  
+  outEvent_.t1Met = _event.t1Met;
+
   inWeight_ = _event.weight;
 
   outEvent_.sample = sampleId_;

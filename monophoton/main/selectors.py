@@ -442,6 +442,18 @@ def monophNoE(sample, rname):
 
     return selector
 
+def monophNoLVeto(sample, rname):
+    """
+    Full monophoton selection without lepton veto (for lepton veto eff. scale factor measurement)
+    """
+
+    selector = monoph(sample, rname)
+
+    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
+    selector.findOperator('MuonVeto').setIgnoreDecision(True)
+
+    return selector
+
 def signalRaw(sample, rname):
     """
     Ignore decisions of all cuts to compare shapes for different simulations.
@@ -517,8 +529,7 @@ def emjet(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
     
-#    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto', '-MIP49', '-Time', '-SieieNonzero', '-SipipNonzero', '-NoisyRegion'])
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
         
     return selector
 
@@ -1129,6 +1140,8 @@ def tpeg(sample, rname):
     tp.setFlavor(ROOT.lElectron)
     selector.addOperator(tp)
 
+    selector.addOperator(ROOT.TPJetCleaning())
+
     return selector
 
 def tpmg(sample, rname):
@@ -1140,6 +1153,8 @@ def tpmg(sample, rname):
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lMuon)
     selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning())
 
     return selector
 
@@ -1156,6 +1171,8 @@ def tpegLowPt(sample, rname):
     tp.setTagTriggerMatch(True)
 
     selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning())
 
     selector.setCanPhotonSkim(False)
 
@@ -1175,6 +1192,8 @@ def tpmgLowPt(sample, rname):
 
     selector.addOperator(tp)
 
+    selector.addOperator(ROOT.TPJetCleaning())
+
     selector.setCanPhotonSkim(False)
 
     return selector
@@ -1191,8 +1210,14 @@ def tpmmg(sample, rname):
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
     tp.setMode(ROOT.TPLeptonPhoton.kDouble)
-
     selector.addOperator(tp)
+
+    # for lepton veto efficiency measurement; just write electron and muon sizes
+    veto = ROOT.TPLeptonVeto()
+    veto.setIgnoreDecision(True)
+    selector.addOperator(veto)
+
+    selector.addOperator(ROOT.TPJetCleaning())
 
     selector.setCanPhotonSkim(False)
 

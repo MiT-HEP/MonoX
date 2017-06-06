@@ -39,7 +39,7 @@ data_sel = [
     ('tpeg', s.tpegLowPt)
 ]
 
-mc_cand = ['monoph'] # , 'emjet']
+mc_cand = ['monoph', 'emjet']
 mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'emjet']
 mc_sig = ['monoph', 'emjet', 'signalRaw']
 mc_lep = ['monomu', 'monoel']

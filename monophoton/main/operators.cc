@@ -39,14 +39,27 @@ Modifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent
   return true;
 }
 
-bool
-TPOperator::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+TString
+TPCut::expr() const
 {
-  auto& tpevent(static_cast<panda::EventTPPhoton&>(_outEvent));
-  findCombos(_event, tpevent);
-  result_ = tpevent.tp.size() != 0;
+  if (ignoreDecision_)
+    return TString::Format("(%s)", name_.Data());
+  else
+    return TString::Format("[%s]", name_.Data());
+}
 
-  return result_;
+bool
+TPCut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  result_ = pass(_event, static_cast<panda::EventTPPhoton&>(_outEvent));
+  return ignoreDecision_ || result_;
+}
+
+bool
+TPModifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  apply(_event, static_cast<panda::EventTPPhoton&>(_outEvent));
+  return true;
 }
 
 //--------------------------------------------------------------------
@@ -499,7 +512,6 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
     &_outEvent.muons
   };
 
-  bool hasNonOverlapping(false);
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
     
@@ -519,13 +531,11 @@ ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
         break;
       }
     }
-    if (!overlap) {
+    if (!overlap)
       _outEvent.electrons.push_back(electron);
-      hasNonOverlapping = true;
-    }
   }
 
-  return !hasNonOverlapping;
+  return _outEvent.electrons.empty();
 }
 
 //--------------------------------------------------------------------
@@ -541,7 +551,6 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
     &_outEvent.photons,
   };
 
-  bool hasNonOverlapping(false);
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
     
@@ -561,13 +570,11 @@ MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _ou
         break;
       }
     }
-    if (!overlap) {
+    if (!overlap)
       _outEvent.muons.push_back(muon);
-      hasNonOverlapping = true;
-    }
   }
 
-  return !hasNonOverlapping;
+  return _outEvent.muons.empty();
 }
 
 //--------------------------------------------------------------------
@@ -1665,7 +1672,7 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     &_outEvent.taus
   };
 
-  auto& genJets(_event.genJets);
+  //  auto& genJets(_event.genJets);
 
   for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
     auto& jet(_event.jets[iJ]);
@@ -1719,7 +1726,7 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     //     maxPt = ptScaledDown_[iOJ];
     // }
 
-    if (maxPt < 30.)
+    if (maxPt < minPt_)
       continue;
 
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
@@ -2886,7 +2893,8 @@ PUWeight::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent
     iX = factors_->GetNbinsX();
 
   weight_ = factors_->GetBinContent(iX);
-  _outEvent.weight *= factors_->GetBinContent(iX);
+
+  _outEvent.weight *= weight_;
 
   return true;
 }
@@ -2903,8 +2911,8 @@ TPLeptonPhoton::addBranches(TTree& _skimTree)
     skimTree_ = &_skimTree;
 }
 
-void
-TPLeptonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+bool
+TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
 {
   if (skimTree_) {
     _outEvent.book(*skimTree_, {"looseTags"});
@@ -3030,5 +3038,144 @@ TPLeptonPhoton::findCombos(panda::EventMonophoton const& _inEvent, panda::EventT
         _outEvent.probes.push_back(photon);
       }
     }
+  }
+  
+  return _outEvent.tp.size() != 0;
+}
+
+//--------------------------------------------------------------------
+// TPLeptonVeto
+//--------------------------------------------------------------------
+
+void
+TPLeptonVeto::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("electrons.size", &nElectrons_, "size/i");
+  _skimTree.Branch("muons.size", &nMuons_, "size/i");
+}
+
+bool
+TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+{
+  // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
+
+  auto& tags(_outEvent.tags);
+  auto& looseTags(_outEvent.looseTags);
+  auto& probes(_outEvent.probes);
+  auto& muons(_inEvent.muons);
+  auto& electrons(_inEvent.electrons);
+
+  panda::ParticleCollection const* cols[] = {
+    &tags,
+    &looseTags,
+    &probes
+  };
+
+  nMuons_ = 0;
+  
+  std::vector<panda::Muon const*> goodMuons;
+
+  for (auto& muon : muons) {
+    if (!muon.loose || muon.pt() < 10.)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(muon) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was an overlappin particle
+        overlap = true;
+        break;
+      }
+    }
+
+    if (!overlap) {
+      goodMuons.push_back(&muon);
+      ++nMuons_;
+    }
+  }
+
+  nElectrons_ = 0;
+
+  for (auto& electron : electrons) {
+    if (!electron.loose || electron.pt() < 10.)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned iP(0);
+      for (; iP != col->size(); ++iP) {
+        if ((*col)[iP].dR2(electron) < 0.25)
+          break;
+      }
+      if (iP != col->size()) {
+        // there was an overlappin particle
+        overlap = true;
+        break;
+      }
+    }
+
+    if (overlap)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != goodMuons.size(); ++iP) {
+      if (goodMuons[iP]->dR2(electron) < 0.25)
+        break;
+    }
+    if (iP == goodMuons.size())
+      ++nElectrons_;
+  }
+
+  bool result(true);
+  if (vetoElectrons_ && nElectrons_ != 0)
+    result = false;
+  if (vetoMuons_ && nMuons_ != 0)
+    result = false;
+
+  return result;
+}
+
+//--------------------------------------------------------------------
+// TPJetCleaning
+//--------------------------------------------------------------------
+
+void
+TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTPPhoton& _outEvent)
+{
+  panda::ParticleCollection* cols[] = {
+    &_outEvent.tags,
+    &_outEvent.looseTags,
+    &_outEvent.probes
+  };
+
+  for (auto& jet : _event.jets) {
+    if (jet.pt() < minPt_ || std::abs(jet.eta()) > 5.)
+      continue;
+
+    bool overlap(false);
+    for (auto* col : cols) {
+      unsigned nP(col->size());
+      if (col == &_outEvent.probes && nP > 1)
+        nP = 1;
+
+      unsigned iP(0);
+      for (; iP != nP; ++iP) {
+        if (jet.dR2((*col)[iP]) < 0.16)
+          break;
+      }
+      if (iP != nP) {
+        overlap = true;
+        break;
+      }
+    }
+    if (overlap)
+      continue;
+
+    _outEvent.jets.push_back(jet);
   }
 }
