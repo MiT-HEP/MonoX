@@ -1,3 +1,7 @@
+"""
+Specify non-default skims in this configuration file.
+"""
+
 import os
 import sys
 
@@ -47,45 +51,45 @@ mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'diel
 
 mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
 
-allSelectors_byPattern = {
+allSelectors_byPattern = [
     # Data 2016
-    'sph-16*': data_sph,
-    'smu-16*': data_smu,
-    'sel-16*': data_sel,
+    ('sph-16*', data_sph),
+    ('smu-16*', data_smu),
+    ('sel-16*', data_sel),
     # MC
-    'znng': mc_sig,
-    'znng-130': applyMod(mc_sig, s.addKfactor),
-    'zllg': mc_sig + mc_lep + mc_dilep + ['tpmmg'],
-    'zllg-130': mc_sig + mc_lep + mc_dilep + ['tpmmg'],
-    'wnlg': mc_sig + mc_lep,
-    'wnlg-{130,500}': applyMod(mc_sig + mc_lep, s.addKfactor),
-    'wglo': mc_cand + mc_lep,
-    'wglo-{130,500}': applyMod(mc_cand + mc_lep, s.addKfactor),
-    'znng-40-o': mc_sig,
-    'znng-130-o': applyMod(mc_sig, s.addKfactor),
-    'zllg-*-o': applyMod(mc_sig + mc_lep + mc_dilep + ['tpmmg'], s.addKfactor),
-    'wnlg-40-o': mc_sig + mc_lep,
-    'wnlg-130-o': applyMod(mc_sig + mc_lep, s.addKfactor),
-    'gj{,04}-*': applyMod(mc_qcd + mc_cand, s.addKfactor),
-    'gg-*': mc_cand + mc_lep + mc_dilep,
-    'ttg': mc_cand + mc_lep + mc_dilep,
-    'tg': mc_cand + mc_lep,
-    'ww': mc_cand + mc_lep + mc_dilep,
-    'wz': mc_cand + mc_lep + mc_dilep,
-    'zz': mc_cand + mc_lep + mc_dilep,
-    'tt': mc_cand + mc_lep + mc_dilep,
-    'wlnu{,n}-*': mc_wlnu,
-    'znn{,n}-*': mc_cand,
-    'dy-50*': applyMod(mc_cand + mc_lep + mc_dilep + ['tpeg', 'tpegLowPt'], s.addGenPhotonVeto),
-    'dyn-50-*': applyMod(mc_cand + mc_lep + mc_dilep, s.addGenPhotonVeto),
-    'qcd-*': mc_cand + mc_qcd + mc_dilep + mc_lep,
-    'add-*': mc_sig,
-    'dm*': mc_sig,
-    'dph*': mc_sig
-}
+    ('znng', mc_sig),
+    ('znng-130', applyMod(mc_sig, s.addKfactor)),
+    ('zllg', mc_sig + mc_lep + mc_dilep + ['tpmmg']),
+    ('zllg-130', mc_sig + mc_lep + mc_dilep + ['tpmmg']),
+    ('wnlg', mc_sig + mc_lep),
+    ('wnlg-{130,500}', applyMod(mc_sig + mc_lep, s.addKfactor)),
+    ('wglo', mc_cand + mc_lep),
+    ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
+    ('znng-40-o', mc_sig),
+    ('znng-130-o', applyMod(mc_sig, s.addKfactor)),
+    ('zllg-*-o', applyMod(mc_sig + mc_lep + mc_dilep + ['tpmmg'], s.addKfactor)),
+    ('wnlg-40-o', mc_sig + mc_lep),
+    ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
+    ('gj{,04}-*', applyMod(mc_qcd + mc_cand, s.addKfactor)),
+    ('gg-*', mc_cand + mc_lep + mc_dilep),
+    ('ttg', mc_cand + mc_lep + mc_dilep),
+    ('tg', mc_cand + mc_lep),
+    ('ww', mc_cand + mc_lep + mc_dilep),
+    ('wz', mc_cand + mc_lep + mc_dilep),
+    ('zz', mc_cand + mc_lep + mc_dilep),
+    ('tt', mc_cand + mc_lep + mc_dilep),
+    ('wlnu{,n}-*', mc_wlnu),
+    ('znn{,n}-*', mc_cand),
+    ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + ['tpeg', 'tpegLowPt'], s.addGenPhotonVeto)),
+    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep, s.addGenPhotonVeto)),
+    ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
+    ('add-*', mc_sig),
+    ('dm*', mc_sig),
+    ('dph*', mc_sig)
+]
 
 allSelectors = {}
-for pat, sels in allSelectors_byPattern.items():
+for pat, sels in allSelectors_byPattern:
     samples = allsamples.getmany(pat)
     for sample in samples:
         if sample in allSelectors:
