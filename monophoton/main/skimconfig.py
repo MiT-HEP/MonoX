@@ -23,10 +23,7 @@ def applyMod(sels, *mods):
     return result
 
 data_sph = [
-    'monoph', 'efake', 'hfake',  'trivialShower',
-    'halo', 'haloLoose', 'haloMIPLoose', 'haloMETLoose', 'haloNoShowerCut',
-    'hfakeTight', 'hfakeLoose',
-    'emjet',
+    'monoph', 'efake', 'hfake',  'trivialShower', 'halo', 'emjet',
     'dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel',
     'dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake',
     'tpeg', 'tpmg',
@@ -44,10 +41,10 @@ data_sel = [
 ]
 
 mc_cand = ['monoph', 'emjet']
-mc_qcd = ['hfake', 'hfakeTight', 'hfakeLoose', 'emjet']
+mc_qcd = ['hfake']
 mc_sig = ['monoph', 'emjet', 'signalRaw']
 mc_lep = ['monomu', 'monoel']
-mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex']
+mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg']
 
 mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
 
@@ -59,15 +56,15 @@ allSelectors_byPattern = [
     # MC
     ('znng', mc_sig),
     ('znng-130', applyMod(mc_sig, s.addKfactor)),
-    ('zllg', mc_sig + mc_lep + mc_dilep + ['tpmmg']),
-    ('zllg-130', mc_sig + mc_lep + mc_dilep + ['tpmmg']),
+    ('zllg', mc_sig + mc_lep + mc_dilep),
+    ('zllg-130', mc_sig + mc_lep + mc_dilep),
     ('wnlg', mc_sig + mc_lep),
     ('wnlg-{130,500}', applyMod(mc_sig + mc_lep, s.addKfactor)),
     ('wglo', mc_cand + mc_lep),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
     ('znng-40-o', mc_sig),
     ('znng-130-o', applyMod(mc_sig, s.addKfactor)),
-    ('zllg-*-o', applyMod(mc_sig + mc_lep + mc_dilep + ['tpmmg'], s.addKfactor)),
+    ('zllg-*-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
     ('gj{,04}-*', applyMod(mc_qcd + mc_cand, s.addKfactor)),
