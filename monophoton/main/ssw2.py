@@ -86,7 +86,7 @@ class SkimSlimWeight(object):
             logger.info('Removing existing files.')
     
         # abort if any one of the selector output exists
-        for fileset in self.filesets:
+        for fileset in list(self.filesets):
             outNameBase = self.getOutNameBase(fileset)
 
             for rname in self.selectors:
@@ -97,7 +97,8 @@ class SkimSlimWeight(object):
                 if SkimSlimWeight.config['skipExisting']:
                     if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
                         logger.info('Output files for %s already exist. Skipping skim.', outNameBase)
-                        return False
+                        self.filesets.remove(fileset)
+
                 elif not SkimSlimWeight.config['testRun']:
                     try:
                         os.remove(outPath)
@@ -184,7 +185,7 @@ class SkimSlimWeight(object):
                 if not os.path.exists(self.mergeDir):
                     raise
 
-        for rname in self.selectors:
+        for rname in list(self.selectors):
             outNameBase = self.sample.name + '_' + rname
             outName = outNameBase + '.root'
             outPath = SkimSlimWeight.config['skimDir'] + '/' + outName
@@ -192,7 +193,8 @@ class SkimSlimWeight(object):
             if SkimSlimWeight.config['skipExisting']:
                 if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
                     logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
-                    return False
+                    self.selectors.remove(rname)
+
             elif not SkimSlimWeight.config['testRun']:
                 try:
                     os.remove(outPath)
@@ -357,7 +359,7 @@ if __name__ == '__main__':
     argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
     argParser.add_argument('--read-remote', '-R', action = 'store_true', dest = 'readRemote', help = 'Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
     argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
-    argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area.')
+    argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area. Sets --filesets to 0000 by default.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -452,11 +454,14 @@ if __name__ == '__main__':
     ssws = []
     for sample in samples:
         if len(args.files) != 0:
-            flist = args.files
             files = True
+            flist = args.files
         else:
-            flist = args.filesets
             files = False
+            if len(args.filesets) == 0 and args.testRun:
+                flist = ['0000']
+            else:
+                flist = args.filesets
 
         if len(flist) == 0:
             flist = sample.filesets()
