@@ -16,8 +16,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 photonDataICHEP = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m']
-#photonData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
-photonData = ['sph-16b-m']
+photonData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
 photonDataPrescaled = [
     ('sph-16b-m', 1),
     ('sph-16c-m', 1),
@@ -92,9 +91,9 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtime', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 30.5 * 12.9 / 36.4)
-        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.) # norm set here
+        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.sieie < 0.01002', norm = 15.)
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
-        config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = 'photons.nhIsoZG < 7.005 && photons.phIsoZG < 3.271')
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
 #        config.addBkg('wgnlo', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -177,10 +176,17 @@ def getConfig(confName):
 
 #        Specific systematic variations
 #        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 1.0))
-        # TODO use cuts
-#        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose')))
+        haloCuts = (
+            'metFilters.globalHalo16 && photons.sieie < 0.015',
+            'photons.sieie < 0.015'
+        )
+        config.findGroup('halo').variations.append(Variation('haloShape', cuts = haloCuts))
         config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
-#        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
+        proxyDefCuts = (
+            'photons.nhIso < 0.264 && photons.phIso < 2.362',
+            'photons.nhIso < 10.910 && photons.phIso < 3.630'
+        )
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
@@ -1131,26 +1137,31 @@ def getConfig(confName):
 
         config = PlotConfig('emjet', photonData)
 
-        baseSels['met170'] = 't1Met.pt < 60.'
-
-        config.baseline = ' && '.join(baseSels.values()) + ' && jets.pt_[0] > 100. && photons.hOverE[0] < 0.0102 && photons.nhIso[0] + (0.0148 - 0.0112) * photons.scRawPt[0] + (0.000017 - 0.000028) * photons.scRawPt[0] * photons.scRawPt[0] < 7.005 && photons.phIso[0] + (0.0047 - 0.0043) * photons.scRawPt[0] < 3.271 && photons.pixelVeto[0]'
+#        config.baseline = 't1Met.pt < 60. && jets.pt_[0] > 100. && photons.hOverE[0] < 0.0102 && photons.nhIso[0] + (0.0148 - 0.0112) * photons.scRawPt[0] + (0.000017 - 0.000028) * photons.scRawPt[0] * photons.scRawPt[0] < 7.005 && photons.phIso[0] + (0.0047 - 0.0043) * photons.scRawPt[0] < 3.271 && photons.chIso[0] < 1.163 && photons.pixelVeto[0]'
+        config.baseline = 't1Met.pt < 60. && jets.pt_[0] > 100. && photons.medium[0] && photons.pixelVeto[0]'
         config.fullSelection = ''
 
-        config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), cut = 'photons.matchedGenId[0] == -22')
+#        config.addBkg('jets', '#gamma + jets', samples = gj, color = ROOT.kBlue, cut = 'photons.matchedGenId[0] == -22 && genPhotonDR < 0.4')
+        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), cut = 'photons.matchedGenId[0] == -22')
+#        config.addBkg('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), cut = 'photons.matchedGenId[0] == -22')
+#        config.addBkg('top', '#gamma + t(t)', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff), cut = 'photons.matchedGenId[0] == -22')
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(16)], unit = 'GeV', overflow = True)
-        config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True)
         config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True)
-        config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_', (20, -1.5, 1.5))
-        config.addPlot('sieie', '#sigma_{i#etai#eta}', 'photons.sieie', (44, 0.004, 0.015))
+        config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5))
+        config.addPlot('chIso', 'I_{CH}', 'TMath::Max(0., photons.chIso[0])', (40, 0., 2.), unit = 'GeV')
+        config.addPlot('nhIso', 'I_{NH}', 'TMath::Max(0., photons.nhIso[0])', (40, 0., 10.), unit = 'GeV')
+        config.addPlot('phIso', 'I_{Ph}', 'TMath::Max(0., photons.phIso[0])', (40, 0., 5.), unit = 'GeV')
+        config.addPlot('sieie', '#sigma_{i#etai#eta}', 'photons.sieie[0]', (44, 0.004, 0.015))
         config.addPlot('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020))
         config.addPlot('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
-        config.addPlot('pho', '#sigma_{i#etai#eta}', 'photons.sieie', (44, 0.004, 0.015))
         config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
         config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (30, 0., math.pi), cut = 'jets.pt_ > 30.')
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (30, 0., math.pi), overflow = True)
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (10, 0., 10.))
+        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (10, 0., 10.))
+        config.addPlot('jet1Pt', 'p_T^{j1}', 'jets.pt_[0]', (40, 0., 1000.), cut = 'jets.size != 0')
+        config.addPlot('jet2Pt', 'p_T^{j2}', 'jets.pt_[1]', (40, 0., 1000.), cut = 'jets.size > 1')
         config.addPlot('jetEta', '#eta^{j}', 'jets.eta_', (20, -5., 5.), cut = 'jets.size != 0')
         config.addPlot('jetAbsEta', '#eta^{j}', 'TMath::Abs(jets.eta_)', (10, 0., 5.), cut = 'jets.size != 0')
         config.addPlot('njetsHightPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')

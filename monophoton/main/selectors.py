@@ -542,40 +542,24 @@ def hfake(sample, rname):
 
     modHfake(selector)
 
-    return selector
+    hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
+    hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
+    hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
+    hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
-def hfakeTight(sample, rname):
-    """
-    Candidate-like with tight NHIso and PhIso, with inverted CHIso.
-    """
+    weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
 
-    selector = monophotonBase(sample, rname)
+    weight.addVariation('proxyDefUp', hadproxyTightWeight)
+    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
 
-    weight = ROOT.PhotonPtWeight(hadproxyTightWeight)
-    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
-    selector.addOperator(weight)
-
+    # CHIso is already inverted in modHfake
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '-NHIso', '-PhIso', '+NHIsoTight', '+PhIsoTight', '+CHIso11'])
-    setupPhotonSelection(photonSel, veto = True)
-
-    return selector
-
-def hfakeLoose(sample, rname):
-    """
-    Candidate-like with Loose NHIso and PhIso, with inverted CHIso.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    weight = ROOT.PhotonPtWeight(hadproxyLooseWeight)
-    weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
-    selector.addOperator(weight)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '-NHIso', '-PhIso', '+NHIsoLoose', '+PhIsoLoose', '+CHIso11'])
+    # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
+    # Proper cut applied at plotconfig as variations
+    setupPhotonSelection(photonSel, changes = ['-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
     setupPhotonSelection(photonSel, veto = True)
 
     return selector
@@ -674,140 +658,12 @@ def halo(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!MIP49'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloMIP(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
+    # setting up loose to allow variations at plot level
+    
+    setupPhotonSelection(photonSel, changes = ['+MIP49', '-Sieie', '+Sieie15'])
     photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49'])
 
     selector.findOperator('MetFilters').setFilter(0, 0)
-
-    return selector
-
-def haloMET(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-MIP49'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloLoose(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut and halo tag.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie15'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloMIPLoose(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie15'])
-
-    selector.findOperator('MetFilters').setFilter(0, 0)
-
-    return selector
-
-def haloMETLoose(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie15'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloMedium(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut and halo tag.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie12'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloMIPMedium(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie', '+Sieie12'])
-
-    selector.findOperator('MetFilters').setFilter(0, 0)
-
-    return selector
-
-def haloMETMedium(sample, rname):
-    """
-    Candidate sample but with inverted MIP cut.
-    """
-
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie12'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
-
-    return selector
-
-def haloNoShowerCut(sample, rname):
-    selector = monophotonBase(sample, rname)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['!MIP49', '-Sieie'])
-
-    selector.findOperator('MetFilters').setFilter(0, -1)
 
     return selector
 
@@ -1350,16 +1206,9 @@ def modHfake(selector):
     """Append PhotonPtWeight with hadProxyWeights and set up the photon selections."""
 
     hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
-    hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
-    hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
-    hadproxyVLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactVLoose')
-    hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
-    hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
     weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
-    weight.addVariation('purityUp', hadproxyPurityUpWeight)
-    weight.addVariation('purityDown', hadproxyPurityDownWeight)
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
