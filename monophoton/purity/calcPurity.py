@@ -10,10 +10,18 @@ import plotiso
 from copy import deepcopy
 import shutil
 import time
+import ROOT
+
+ROOT.gErrorIgnoreLevel = ROOT.kWarning
+
 from ROOT import *
 gROOT.SetBatch(True)
+gStyle.SetOptStat(0)
+RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
-QUICKFIT = True # just run one main fit
+gROOT.LoadMacro('SignalSubtraction.cc+')
+
+QUICKFIT = False # just run one main fit
 FORCEHIST = True
 
 ### take inputs and make sure they match a selection
@@ -58,12 +66,15 @@ if not os.path.exists(histDir):
     os.makedirs(histDir)
 
 if not QUICKFIT:
+    print ''
+    print 'Generating chIso histograms for SR-CR extrapolation..'
+    print ''
+
     ### Get ChIso Curve for true photons
     plotiso.plotiso(loc, pid, pt, met, era)
     
     isoFile = TFile(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
     
-    labels = [ 'rawmc', 'scaledmc' ] 
     isoHists = {}
     
     for chkey in s.ChIsoSbSels:
@@ -72,7 +83,7 @@ if not QUICKFIT:
         minIso = float(splits[0])/10.0
         maxIso = float(splits[1])/10.0
     
-        for label in labels:
+        for label in ['rawmc', 'scaledmc']:
             isoHist = isoFile.Get(label)
     
             ### Get Sig and Sideband fractions
@@ -86,11 +97,12 @@ if not QUICKFIT:
                 if (binUpEdge == maxIso):
                     maxIsoBin = bin
             sbFrac = isoHist.Integral(minIsoBin,maxIsoBin)
-            print "Fraction in sideband:", sbFrac
-    
-            sigFrac = isoHist.Integral(1,3)
-            print "Fraction in signal:", sigFrac
+
+            # NOTE: Taking the first bin as the signal fraction
+            sigFrac = isoHist.GetBinContent(1)
+
             isoHists[chkey].append( (isoHist, sbFrac, sigFrac) )
+
 
 ### Get Purity (first time)
 varName = 'sieie'
@@ -139,14 +151,11 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     }
     
     start = time.time()
-    extractors['sphData'].setBaseSel(baseSel)
-    print 'Took', (time.time() - start), 'seconds'
+    extractors['sphData'].baseSel = baseSel
     
     start = time.time()
-    extractors['gjetsMc'].setBaseSel(baseSel + ' && ' + truthSel)
-    print 'Took', (time.time() - start), 'seconds'
+    extractors['gjetsMc'].baseSel = baseSel + ' && ' + truthSel
     
-    # why this ordering?
     extractors['sphData'].categories.append((skims[0][0], skims[0][2], sigSel))
     extractors['gjetsMc'].categories.append((skims[1][0], skims[1][2], sigSel))
     extractors['gjetsMc'].categories.append((skims[2][0], skims[2][2], sbSel))
@@ -163,13 +172,6 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     #    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
     #    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
 
-#    source = TFile.Open(s.config.workDir + '/data/sieie_ratio.root')
-#    mcReweight = source.Get('ratio')
-#    mcReweight.SetName('mcReweight')
-#    mcReweight.SetDirectory(gROOT)
-#    source.Close()
-#    extractors['gjetsMc'].reweight = mcReweight
-    
     histFile = TFile.Open(os.path.join(histDir, 'initialHists.root'), 'recreate')
     
     start = time.time()
@@ -215,7 +217,35 @@ for hist in initialHists:
     template = s.HistToTemplate(hist,roofitVar,"v0_"+inputKey,plotDir)
     initialTemplates.append(template)
 
-    
+canvas = TCanvas()
+
+ssfitter = SSFitter.singleton()
+# allowing the bin edge to be lower than the actual cut (makes the purity higher!)
+cutBin = initialHists[0].FindBin(var[1][era][loc][pid])
+
+def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir):
+    ssfitter.initialize(initialHists[0], initialHists[1], datasb, mcsb, sbRatio)
+    ssfitter.fit()
+
+    purity = ssfitter.getPurity(cutBin)
+    nReal = ssfitter.getNsig(cutBin)
+    nFake = ssfitter.getNbkg(cutBin)
+    aveSig = s.StatUncert(nReal, nFake)
+
+    if name:
+        ssfitter.plotOn(canvas)
+        text = TLatex()
+        text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
+
+        canvas.SetLogy(False)
+        canvas.Print(pdir + '/ssfit_' + name + '.png')
+        canvas.Print(pdir + '/ssfit_' + name + '.pdf')
+        canvas.SetLogy(True)
+        canvas.Print(pdir + '/ssfit_' + name + '_log.png')
+        canvas.Print(pdir + '/ssfit_' + name + '_log.pdf')
+
+    return (purity, aveSig, nReal, nFake)
+
 
 print '\n'
 print '##################################################'
@@ -224,23 +254,26 @@ print '##################################################'
 print '\n'
 
 ### Get nominal value
-nominalTemplates = deepcopy(initialTemplates[:4])
-nominalDir = os.path.join(plotDir,'nominal')
-if not os.path.exists(nominalDir):
-    os.makedirs(nominalDir)
+#nominalTemplates = deepcopy(initialTemplates[:4])
+#nominalDir = os.path.join(plotDir,'nominal')
+#if not os.path.exists(nominalDir):
+#    os.makedirs(nominalDir)
+
+#nominalHists = deepcopy(initialHists[:4])
+#nominalSkims = skims[:4]
+# nominal sideband, nominal (MC raw) iso distribution, SB bin / SR bin
 
 if QUICKFIT:
-    dataName = os.path.join(nominalDir, "purity_v0_" + inputKey)
-    dataPurity = s.FitTemplates(dataName, 'Photon Purity in SinglePhoton DataSet', roofitVar, var[1][era][loc][pid], nominalTemplates[0], nominalTemplates[1], nominalTemplates[3])
-    print "Purity:", dataPurity[0]
-
+    # no signal subtraction
+    nominalPurity = runSSFit(initialHists[3], initialHists[2], 0., 'nominal')
+    print "Purity: %f +- %f" % nominalPurity[0]
     sys.exit(0)
 
-nominalHists = deepcopy(initialHists[:4])
-nominalSkims = skims[:4]
 nominalRatio = float(isoHists[ChIsoNominal][0][1]) / float(isoHists[ChIsoNominal][0][2])
 
-nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,nominalDir)
+nominalPurity = runSSFit(initialHists[3], initialHists[2], nominalRatio, 'nominal')
+
+#nominalPurity = s.SignalSubtraction(nominalSkims,nominalHists,nominalTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,nominalDir)
 
 print '\n'
 print '###################################################'
@@ -249,28 +282,37 @@ print '###################################################'
 print '\n'
 
 ### Get chiso sideband near uncertainty
-nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
-nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
-nearSkims = skims[:4]
-nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
-nearDir = os.path.join(plotDir,'near')
-if not os.path.exists(nearDir):
-    os.makedirs(nearDir)
+#nearHists = deepcopy(initialHists[:2] + initialHists[4:6])
+#nearTemplates = deepcopy(initialTemplates[:2] + initialTemplates[4:6])
+#nearSkims = skims[:4]
+#nearDir = os.path.join(plotDir,'near')
+#if not os.path.exists(nearDir):
+#    os.makedirs(nearDir)
 
-nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,roofitVar,var[1][era][loc][pid],inputKey,nearDir)
+nearRatio = float(isoHists[ChIsoNear][0][1]) / float(isoHists[ChIsoNear][0][2])
+
+nearPurity = runSSFit(initialHists[5], initialHists[4], nearRatio, 'near')
+
+#nearPurity = s.SignalSubtraction(nearSkims,nearHists,nearTemplates,nearRatio,roofitVar,var[1][era][loc][pid],inputKey,nearDir)
 
 ### Get chiso sideband far uncertainty
-farHists = deepcopy(initialHists[:2] + initialHists[6:])
-farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
-farSkims = skims[:4]
-farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
-farDir = os.path.join(plotDir,'far')
-if not os.path.exists(farDir):
-    os.makedirs(farDir)
+#farHists = deepcopy(initialHists[:2] + initialHists[6:])
+#farTemplates = deepcopy(initialTemplates[:2] + initialTemplates[6:])
+#farSkims = skims[:4]
+#farDir = os.path.join(plotDir,'far')
+#if not os.path.exists(farDir):
+#    os.makedirs(farDir)
 
-farPurity = s.SignalSubtraction(farSkims,farHists,farTemplates,farRatio,roofitVar,var[1][era][loc][pid],inputKey,farDir)
+farRatio = float(isoHists[ChIsoFar][0][1]) / float(isoHists[ChIsoFar][0][2])
+
+farPurity = runSSFit(initialHists[7], initialHists[6], farRatio, 'far')
+
+#farPurity = s.SignalSubtraction(farSkims,farHists,farTemplates,farRatio,roofitVar,var[1][era][loc][pid],inputKey,farDir)
+
 sidebandUncertainty = max( abs( nominalPurity[0] - nearPurity[0] ), abs( nominalPurity[0] - farPurity[0] ) )
 sidebandUncYield = max( abs( nominalPurity[2] - nearPurity[2] ), abs( nominalPurity[2] - farPurity[2] ) )
+
+print sidebandUncertainty, sidebandUncYield
 
 print '\n'
 print '###############################################'
@@ -279,15 +321,17 @@ print '###############################################'
 print '\n'
 
 ### Get chiso dist uncertainty
-scaledHists = deepcopy(initialHists[:4])
-scaledTemplates = deepcopy(initialTemplates[:4])
-scaledSkims = skims[:4]
-scaledDir = os.path.join(plotDir,'scaled')
-if not os.path.exists(scaledDir):
-    os.makedirs(scaledDir)
+#scaledHists = deepcopy(initialHists[:4])
+#scaledTemplates = deepcopy(initialTemplates[:4])
+#scaledSkims = skims[:4]
+#scaledDir = os.path.join(plotDir,'scaled')
+#if not os.path.exists(scaledDir):
+#    os.makedirs(scaledDir)
+
 scaledRatio = float(isoHists[ChIsoNominal][1][1]) / float(isoHists[ChIsoNominal][1][2])
 
-scaledPurity = s.SignalSubtraction(scaledSkims,scaledHists,scaledTemplates,scaledRatio,roofitVar,var[1][era][loc][pid],inputKey,scaledDir)
+scaledPurity = runSSFit(initialHists[3], initialHists[2], scaledRatio, 'scaled')
+
 scaledUncertainty = abs( nominalPurity[0] - scaledPurity[0] )
 scaledUncYield = abs( nominalPurity[2] - scaledPurity[2] )
 
@@ -303,10 +347,11 @@ NTOYS = 10
 ### Get background stat uncertainty
 toyPlot = TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
 toyPlotYield = TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
-toySkims = skims[:4]
+#toySkims = skims[:4]
 toysDir = os.path.join(plotDir,'toys')
 if not os.path.exists(toysDir):
     os.makedirs(toysDir)
+
 eventsToGenerate = initialTemplates[3].sumEntries()
 toyGenerator = RooHistPdf('bkg', 'bkg', RooArgSet(roofitVar), initialTemplates[3])
 #print "Expect events to generate:", toyGenerator.expectedEvents(roofitVar)
@@ -323,31 +368,34 @@ tempCanvas.SaveAs(tempName+'.C')
  
 for iToy in range(1, NTOYS + 1):
     print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
-    toyHists = deepcopy(initialHists[:3])
-    toyTemplates = deepcopy(initialTemplates[:3])
+#    toyHists = deepcopy(initialHists[:3])
+#    toyTemplates = deepcopy(initialTemplates[:3])
     
-    toyDir = os.path.join(toysDir, 'toy'+str(iToy))
-    if not os.path.exists(toyDir):
-        os.makedirs(toyDir)
+#    toyDir = os.path.join(toysDir, 'toy'+str(iToy))
+#    if not os.path.exists(toyDir):
+#        os.makedirs(toyDir)
 
     tempTemplate = toyGenerator.generateBinned(RooArgSet(roofitVar),eventsToGenerate)
     tempCanvas = TCanvas()
     tempFrame = roofitVar.frame()
     tempTemplate.plotOn(tempFrame)
     tempFrame.Draw()
-    tempName = os.path.join(toyDir, 'toydist')
+    tempName = os.path.join(toysDir, 'toy%d' % iToy)
     tempCanvas.SaveAs(tempName+'.pdf')
     tempCanvas.SaveAs(tempName+'.png')
     tempCanvas.SaveAs(tempName+'.C')
 
     toyData = RooDataSet.Class().DynamicCast(RooAbsData.Class(), tempTemplate)
     toyHist = toyData.createHistogram("toyhist", roofitVar)
-    toyHists.append(toyHist)
+#    toyHists.append(toyHist)
 
-    toyTemplate = s.HistToTemplate(toyHist,roofitVar,"v0_"+inputKey,toyDir)
-    toyTemplates.append(toyTemplate)
+#    toyTemplate = s.HistToTemplate(toyHist,roofitVar,"v0_"+inputKey,toyDir)
+#    toyTemplates.append(toyTemplate)
 
-    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,toyDir)
+    toyPurity = runSSFit(toyHist, initialHists[2], nominalRatio, 'fit%d' % iToy, pdir = toysDir)
+
+#    toyPurity = s.SignalSubtraction(toySkims,toyHists,toyTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,toyDir)
+
     purityDiff = toyPurity[0] - nominalPurity[0]
     print "Purity diff is:", purityDiff
     toyPlot.Fill(purityDiff)

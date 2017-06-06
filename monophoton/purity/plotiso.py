@@ -1,7 +1,7 @@
 import os
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Samples, Measurement, SigmaIetaIetaSels,  sieieSels, PhotonPtSels, MetSels, HistExtractor, config, versionDir
+from selections import Variables, Version, Samples, Measurement, SigmaIetaIetaSels, chIsoCuts, sieieSels, PhotonPtSels, MetSels, HistExtractor, config, versionDir
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -45,14 +45,15 @@ def plotiso(loc, pid, pt, met, era):
     elif len(pids) == 1:
         pid = pids[0]
         extras = []
-    
+
+    # selection on H/E & INH & IPh
     baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
     
     outName = os.path.join(plotDir,'chiso_'+inputKey)
     print outName+'.root'
     outFile = TFile(outName+'.root','RECREATE')
     
-    histograms = [ [], [], [] ]
+    histograms = [ [], [], [], [] ]
     leg = TLegend(0.725,0.7,0.875,0.85 );
     leg.SetFillColor(kWhite);
     leg.SetTextSize(0.03);
@@ -60,35 +61,41 @@ def plotiso(loc, pid, pt, met, era):
     colors = [kBlue, kRed, kBlack]
     
     truthSel = '(photons.matchedGenId == -22)'
+
+    # don't use var[3][iloc] for binning
+    binning = [0., chIsoCuts[era][loc][pid]] + [0.1 * x for x in range(20, 111, 5)]
+
+    # make the data iso distribution for reference
+    extractor = HistExtractor('sphData', Samples['sphData'], var[0])
+    extractor.baseSel = baseSel
+    extractor.categories.append((skim[0], skim[2], '1'))
+    hist = extractor.extract(binning)[0]
+    hist.SetName("data")
+    histograms[3].append(hist)
     
     extractor = HistExtractor('gjetsMc', Samples[skim[1]], var[0])
-    extractor.setBaseSel(baseSel + ' && ' + truthSel)
+    extractor.baseSel = baseSel + ' && ' + truthSel
     extractor.categories.append((skim[0], skim[2], '1'))
-    raw = extractor.extract(var[3][iloc])[0]
+    raw = extractor.extract(binning)[0]
     raw.SetName("rawmc")
     histograms[0].append(raw)
 
     eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
     eSel = eSelScratch.replace("photons", "probes")
-    print eSel
     
-    # mcFile = TFile(os.path.join(skimDir, "mc_eg.root"))
-    # mcTree = mcFile.Get("skimmedEvents")
     mcTree = TChain('events')
     mcTree.Add(os.path.join(skimDir, 'dy-50_tpeg.root'))
     mcHist = raw.Clone("emc")
     mcHist.Reset()
-    mcTree.Draw("probes.chIso>>emc", eSel)
+    mcTree.Draw("TMath::Max(0., probes.chIso)>>emc", eSel, 'goff')
     outFile.WriteTObject(mcHist)
     histograms[1].append(mcHist)
     
-    # dataFile = TFile(os.path.join(skimDir, "data_eg.root"))
-    # dataTree = dataFile.Get("skimmedEvents")
     dataTree = TChain('events')
     dataTree.Add(os.path.join(skimDir, 'sph-16*_tpeg.root'))
     dataHist = raw.Clone("edata")
     dataHist.Reset()
-    dataTree.Draw("probes.chIso>>edata", eSel)
+    dataTree.Draw("TMath::Max(0., probes.chIso)>>edata", eSel, 'goff')
     outFile.WriteTObject(dataHist)
     histograms[1].append(dataHist)
     
@@ -118,7 +125,7 @@ def plotiso(loc, pid, pt, met, era):
     histograms[0].append(scaled)
     histograms[2].append(scaleHist)
     
-    suffix = [ ("photons", "Events"), ("electrons", "Events"), ("scale", "Scale Factor") ]
+    suffix = [ ("photons", "Events"), ("electrons", "Events"), ("scale", "Scale Factor"), ("data", "Events") ]
     
     for iList, hlist in enumerate(histograms):
         canvas = TCanvas()

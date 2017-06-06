@@ -9,25 +9,26 @@ basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if basedir not in sys.path:
     sys.path.append(basedir)
 import config
-from plotstyle import SimpleCanvas
+from plotstyle import WEBDIR, SimpleCanvas
 from datasets import allsamples
 import selections as s
 
 versDir = s.versionDir 
 # outDir = os.path.join(versDir, 'Fitting')
-outDir = os.environ['CMSPLOTS'] + '/purity/' + s.Version + '/Fitting'
+outDir = WEBDIR + '/purity/' + s.Version + '/Fitting'
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 outFile = r.TFile("../data/impurity.root", "RECREATE")
 
-bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
+#bases = ['loose', 'medium', 'tight', 'highpt']
+bases = ['medium']
+mods = ['-pixel']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring15'
+era = 'Ashim_ZG_CWIso'
 
 purities = {}
 for loc in s.Locations[:1]:
@@ -108,7 +109,7 @@ for loc in s.Locations[:1]:
                        
 pprint(purities)
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
+sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'])
 canvas = SimpleCanvas(lumi = sphLumi)
 
 for loc in s.Locations[:1]:
