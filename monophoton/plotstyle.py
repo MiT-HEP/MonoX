@@ -425,6 +425,10 @@ class SimpleCanvas(object):
         if logy is None:
             logy = self._logy
 
+        # list of histograms to draw
+        if hList is None:
+            hList = range(len(self._histograms))
+
         base = self._updateMainPad(self.canvas, hList, logx, logy, ymax, drawLegend = drawLegend)
 
         if base:
@@ -443,10 +447,6 @@ class SimpleCanvas(object):
         pad.cd()
         pad.SetLogx(logx)
         pad.SetLogy(logy)
-
-        # list of histograms to draw
-        if hList is None:
-            hList = range(len(self._histograms))
 
         base = None
 
