@@ -9,45 +9,48 @@
   misc/puweight.py dataPileup.root 2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU $PWD/data/pileup.root
 
 . Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
-  condor-run $PWD/trigger/skim.py -j "electron sel-X" "muon smu-X"
-  condor-run $PWD/trigger/skim.py -e photon -j sel-X jht-X
-  trigger/eff.py sel ptzoom hlt
-  trigger/eff.py jht pt l1
+  trigger/eff.py
+  (sph, sel, smu; tpeg, tpegLowPt, tpmgLowPt)
 
 . Run the photon ID and lepton veto efficiency measurements. Propagate the SF and uncertainty to selectors.py
-  condor-run $PWD/veto_eff/skim.py mumug -j smu-X zllg-130 tt ww wz zz
-  veto_eff/skim.py monoph znng-130
   veto_eff/compute.py
+  (smu, zllg, tt, ww, wz, zz; tpmmg)
 
 . At this point, all the weights for MC samples have been updated and you can reskim all the MC samples (but don't yet)
 
 . Run the e->photon fake rate study. Copy the output of compute to data/efake_data_pt.root
-  condor-run $PWD/tp/skim.py -j sel-X smu-X dy-50 gg-80 tt wlnu ww wz zz
-  tp/efake_fit.py mc highpt
   tp/efake_fit.py data highpt
-  condor-run $PWD/tp/efake_fit.py -e "(data|mc) highpt 1000 (ee|eg) pt_100_6500" -j $(seq 1 200)
-  tp/efake_compute.py (data|mc) highpt # make sure toyUncert is set to True
+  condor-run $PWD/tp/efake_fit.py -e "data pt 1000 (ee|eg) pt_X_Y" -j $(seq 1 200)
+  tp/efake_compute.py data highpt # make sure toyUncert is set to True
+  (sph; tpeg, tpmg)
 
-. Run the purity and hfake transfer factor measurements. Update data/hadronTFactor.root
+. Run the photon purity measurement.
+  purity/calcPurity.py barrel medium-pixel <pt> 0to60 Ashim_ZG_CWIso
+  purity/plotPurity.py
+  (sph, gj; emjet), (sph, dy-50-*; tpeg)
 
-. Reskim efake and hfake samples with updated fake rates and transfer factors.
+(.) Run the photon purity measurement for no-ICH case (medium-pixel-noICH). Generate the vertex scores templates.
+  chiso/scores.py
+  (sph; dimuAllPhoton, dielAllPhoton, monomuAllPhoton)
+
+(.) Measure the random-cone isolation probability
+
+. Run the hadron transfer factor measurement.
+  hadron_fake/hadronTFactor.py
+  (sph; emjet)
 
 . Run method 1 and 2 of the gamma + jets background estimation.
 
-. At this point we need to run the skim for data once - halo estimate fits on candidate events.
+. Run the sph skims
 
-. Run the halo phi fit and update ssw2.py (haloNorms) - TODO change this to transfer factor in selectors.py
+. Run the halo phi fit (for display)
   halo/phidistributions.py for plots
   halo/phifit.py for actual fits
-
-. Run the sph skim again
 
 . Run method 3 of gamma + jets background estimation.
   gjets/smearfit.py
 
-. Run gj-* skim again, after updating gjsmear parameters in selectors.py
-
-. Run all other MC skims (needed if PU reweighting changed)
+. Run all MC monoph skims (if PU reweighting changed)
 
 . Make plots and data card inputs
   main/plot.py monoph
