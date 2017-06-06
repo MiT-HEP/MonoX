@@ -403,32 +403,50 @@ if __name__ == '__main__':
 
     ## set up samples and selectors
     from datasets import allsamples
+    from main.skimconfig import allSelectors
+
+    # list of (sample, {rname: selgen})
+    sampleList = []
     
     ## get the list of sample objects according to args.snames
     if 'all' in args.snames:
         spatterns = selectors.keys()
+        samples = allsamples.getmany(spatterns)
+        sampleList = [(sample, dict()) for sample in samples]
     elif 'bkgd' in args.snames:
         spatterns = selectors.keys() + ['!add*', '!dm*']
+        samples = allsamples.getmany(spatterns)
+        sampleList = [(sample, dict()) for sample in samples]
     else:
-        spatterns = list(args.snames)
-    
-    samples = allsamples.getmany(spatterns)
+        for ss in args.snames:
+            # ss can be given in format sname=selector1,selector2,..
+            if '=' in ss:
+                spattern, rn = ss.split('=')
+                rnames = rn.split(',')
+            else:
+                spattern = ss
+                rnames = []
+
+            samples = allsamples.getmany(spattern)
+            for sample in samples:
+                selectors = {}
+                for rname in rnames:
+                    try:
+                        selectors[rname] = allSelectors[sample][rname]
+                    except KeyError:
+                        print 'Selector', sample.name, rname, 'not defined'
+                        raise
+
+                sampleList.append((sample, selectors))
     
     if args.list:
-        print ' '.join(sorted(s.name for s in samples))
+        print ' '.join(sorted(s.name for s, r in sampleList))
         sys.exit(0)
 
-    # filter out the selectors
-    from main.skimconfig import allSelectors
-
-    selectors = {}
-    for sample in samples:
-        for rname, selgen in allSelectors[sample].items():
-            if len(args.selnames) == 0 or rname in args.selnames:
-                try:
-                    selectors[sample][rname] = selgen
-                except KeyError:
-                    selectors[sample] = {rname: selgen}
+    # fill in the selectors for samples with no selector specification
+    for sample, selectors in sampleList:
+        if len(selectors) == 0:
+            selectors.update(allSelectors[sample])
 
     ## compile and load the Skimmer
     import ROOT
@@ -452,7 +470,7 @@ if __name__ == '__main__':
 
     ## construct and run SkimSlimWeight objects
     ssws = []
-    for sample in samples:
+    for sample, selectors in sampleList:
         if len(args.files) != 0:
             files = True
             flist = args.files
@@ -466,7 +484,7 @@ if __name__ == '__main__':
         if len(flist) == 0:
             flist = sample.filesets()
 
-        ssw = SkimSlimWeight(sample, selectors[sample], flist, files)
+        ssw = SkimSlimWeight(sample, selectors, flist, files)
 
         if args.merge:
             if not ssw.setupMerge():
