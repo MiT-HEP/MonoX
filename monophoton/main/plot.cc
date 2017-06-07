@@ -18,7 +18,11 @@ public:
 
   unsigned getNdim() const { return exprs_.size(); }
   TTreeFormula const* getExpr(unsigned iE = 0) const { return exprs_.at(iE); }
-  void fill(double weight);
+  TTreeFormula* getExpr(unsigned iE = 0) { return exprs_.at(iE); }
+  TTreeFormula const* getCuts() const { return cuts_; }
+  TTreeFormula* getCuts() { return cuts_; }
+  TTreeFormula const* getReweight() const { return reweight_; }
+  void fill(double weight, std::vector<bool> const* = 0);
 
   virtual TObject const* getObj() const = 0;
 
@@ -26,7 +30,7 @@ public:
   unsigned getCount() const { return counter_; }
 
 protected:
-  virtual void doFill_(int) = 0;
+  virtual void doFill_(unsigned) = 0;
 
   TTree* inTree_{0};
 
@@ -49,7 +53,7 @@ public:
   TH1 const* getHist() const { return hist_; }
 
 private:
-  void doFill_(int) override;
+  void doFill_(unsigned) override;
 
   TH1* hist_{0};
 };
@@ -69,7 +73,7 @@ public:
   static unsigned const NBRANCHMAX = 128;
 
 private:
-  void doFill_(int) override;
+  void doFill_(unsigned) override;
 
   TTree* tree_{0};
   std::vector<double> bvalues_{};
@@ -88,7 +92,7 @@ public:
   void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
   void addTree(TTree* tree, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
   void addTreeBranch(TTree* tree, char const* bname, char const* expr);
-  void fillPlots();
+  void fillPlots(long nEntries = -1);
 
   void setPrintLevel(int l) { printLevel_ = l; }
 
@@ -113,7 +117,7 @@ ExprFiller::ExprFiller(TTree& tree, char const* cuts, char const* reweight) :
 
   if (reweight && std::strlen(reweight) != 0) {
     reweight_ = new TTreeFormula("reweight", reweight, &tree);
-    if (reweight_->GetMultiplicity() == 0) { // this is a constant
+    if (!reweight_->GetLeaf(0)) { // this is a constant
       constReweight_ = reweight_->EvalInstance(0);
       delete reweight_;
       reweight_ = 0;
@@ -154,27 +158,42 @@ ExprFiller::addExpr(char const* name, char const* expr)
 }
 
 void
-ExprFiller::fill(double weight)
+ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
 {
   // using the first expr for the number of instances
-  int nD(exprs_.at(0)->GetNdata());
+  unsigned nD(exprs_.at(0)->GetNdata());
+  // need to call GetNdata before EvanInstance
+  if (cuts_)
+    cuts_->GetNdata();
+
+  if (_presel && _presel->size() < nD)
+    nD = _presel->size();
 
   bool loaded(false);
 
-  for (int iD(0); iD != nD; ++iD) {
+  for (unsigned iD(0); iD != nD; ++iD) {
+    if (_presel && !(*_presel)[iD])
+      continue;
+
     if (cuts_ && cuts_->EvalInstance(iD) == 0.)
       continue;
 
     ++counter_;
 
-    if (!loaded && iD != 0) {
-      for (unsigned iE(0); iE != exprs_.size(); ++iE)
-        exprs_[iE]->EvalInstance(0);
-      if (reweight_)
-        reweight_->EvalInstance(0);
+    if (!loaded) {
+      for (unsigned iE(0); iE != exprs_.size(); ++iE) {
+        exprs_[iE]->GetNdata();
+        if (iD != 0) // need to always call EvalInstance(0)
+          exprs_[iE]->EvalInstance(0);
+      }
+      if (reweight_) {
+        reweight_->GetNdata();
+        if (iD != 0)
+          reweight_->EvalInstance(0);
+      }
     }
 
-    entryWeight_ = weight * constReweight_;
+    entryWeight_ = _weight * constReweight_;
     if (reweight_)
       entryWeight_ *= reweight_->EvalInstance(iD);
 
@@ -199,7 +218,7 @@ Plot::Plot(Plot const& _orig) :
 }
 
 void
-Plot::doFill_(int iD)
+Plot::doFill_(unsigned iD)
 {
   hist_->Fill(exprs_[0]->EvalInstance(iD), entryWeight_);
 }
@@ -242,7 +261,7 @@ Tree::addBranch(char const* bname, char const* expr)
 }
 
 void
-Tree::doFill_(int iD)
+Tree::doFill_(unsigned iD)
 {
   for (unsigned iE(0); iE != exprs_.size(); ++iE)
     bvalues_[iE] = exprs_[iE]->EvalInstance(iD);
@@ -336,9 +355,9 @@ Plotter::addTreeBranch(TTree* tree, char const* bname, char const* expr)
 }
 
 void
-Plotter::fillPlots()
+Plotter::fillPlots(long _nEntries/* = -1*/)
 {
-  float weight;
+  float weight(1.);
   unsigned eventNumber;
 
   tree_->SetBranchStatus("*", false);
@@ -352,7 +371,7 @@ Plotter::fillPlots()
   for (auto* sel : {baseSelection_, fullSelection_}) {
     if (sel) {
       TLeaf* leaf(0);
-      int iL(0);
+      unsigned iL(0);
       while ((leaf = sel->GetLeaf(iL++)))
         tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
     }
@@ -364,17 +383,37 @@ Plotter::fillPlots()
 
       for (unsigned iD(0); iD != plot->getNdim(); ++iD) {
         TLeaf* leaf(0);
-        int iL(0);
+        unsigned iL(0);
         while ((leaf = plot->getExpr(iD)->GetLeaf(iL++)))
+          tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
+      }
+      if (plot->getCuts()) {
+        TLeaf* leaf(0);
+        unsigned iL(0);
+        while ((leaf = plot->getCuts()->GetLeaf(iL++)))
+          tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
+      }
+      if (plot->getReweight()) {
+        TLeaf* leaf(0);
+        unsigned iL(0);
+        while ((leaf = plot->getReweight()->GetLeaf(iL++)))
           tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
       }
     }
   }
 
+  std::vector<bool>* baseResults(0);
+  std::vector<bool>* fullResults(0);
+
+  if (baseSelection_ && baseSelection_->GetMultiplicity() != 0)
+    baseResults = new std::vector<bool>;
+  if (fullSelection_ && fullSelection_->GetMultiplicity() != 0)
+    fullResults = new std::vector<bool>;
+
   long iEntry(0);
   unsigned passBase(0);
   unsigned passFull(0);
-  while (tree_->GetEntry(iEntry++) > 0) {
+  while (iEntry != _nEntries && tree_->GetEntry(iEntry++) > 0) {
     if (printLevel_ >= 0 && iEntry % 10000 == 1)
       std::cout << "\r      " << iEntry;
 
@@ -387,36 +426,68 @@ Plotter::fillPlots()
       plot->fill(weight);
 
     if (baseSelection_) {
-      int iD(0);
-      int nD(baseSelection_->GetNdata());
-      for (; iD != nD; ++iD) {
-        if (baseSelection_->EvalInstance(iD) != 0.)
-          break;
+      unsigned nD(baseSelection_->GetNdata());
+
+      bool any(false);
+
+      if (baseResults)
+        baseResults->assign(nD, false);
+
+      for (unsigned iD(0); iD != nD; ++iD) {
+        if (baseSelection_->EvalInstance(iD) != 0.) {
+          any = true;
+
+          if (baseResults)
+            (*baseResults)[iD] = true;
+          else
+            break; // no need to evaluate more
+        }
       }
-      if (iD == nD)
+
+      if (!any)
         continue;
     }
 
     ++passBase;
 
     for (auto* plot : postBase_)
-      plot->fill(weight);
+      plot->fill(weight, baseResults);
 
     if (fullSelection_) {
-      int iD(0);
-      int nD(fullSelection_->GetNdata());
-      for (; iD != nD; ++iD) {
-        if (fullSelection_->EvalInstance(iD) != 0.)
-          break;
+      unsigned nD(fullSelection_->GetNdata());
+
+      bool any(false);
+
+      if (fullResults)
+        fullResults->assign(nD, false);
+
+      if (baseResults && baseResults->size() < nD) {
+        // fullResults for iD >= baseResults->size() will never be true
+        nD = baseResults->size();
       }
-      if (iD == nD)
+
+      for (unsigned iD(0); iD != nD; ++iD) {
+        if (baseResults && !(*baseResults)[iD])
+          continue;
+
+        if (fullSelection_->EvalInstance(iD) != 0.) {
+          any = true;
+
+          if (fullResults)
+            (*fullResults)[iD] = true;
+          else
+            break;
+        }
+      }
+
+      if (!any)
         continue;
     }
 
     ++passFull;
 
     for (auto* plot : postFull_)
-      plot->fill(weight);
+      plot->fill(weight, fullResults);
   }
 
   if (printLevel_ >= 0) {
