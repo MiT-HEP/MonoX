@@ -22,11 +22,11 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 # data tree
-dataMumug = ROOT.TChain('skim')
-dataMumug.Add(config.skimDir + '/smu-16*_tpmmg.root')
+dataMumug = ROOT.TChain('events')
+dataMumug.Add(config.skimDir + '/smu-16*-m_tpmmg.root')
 
 # MC mumug tree
-mcMumug = ROOT.TChain('skim')
+mcMumug = ROOT.TChain('events')
 mcMumug.Add(config.skimDir + '/zllg_tpmmg.root')
 mcMumug.Add(config.skimDir + '/tt_tpmmg.root')
 mcMumug.Add(config.skimDir + '/ww_tpmmg.root')
@@ -34,8 +34,8 @@ mcMumug.Add(config.skimDir + '/wz_tpmmg.root')
 mcMumug.Add(config.skimDir + '/zz_tpmmg.root')
 
 # MC znng tree
-mcMonoph = ROOT.TChain('skim')
-mcMonoph.Add(config.skimDir + '/znng-130-o_monoph.root')
+mcMonoph = ROOT.TChain('events')
+mcMonoph.Add(config.skimDir + '/znng-130-o_monophNoLVeto.root')
 
 # canvases
 distCanvas = SimpleCanvas('cdist')
@@ -48,7 +48,7 @@ effCanvas = SimpleCanvas('ceff')
 effCanvas.legend.add('data', title = '2#mu data', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 effCanvas.legend.add('mumug', title = '2#mu MC', opt = 'LP', color = ROOT.kRed, mstyle = 8)
 effCanvas.legend.add('monoph', title = 'Z#gamma MC', opt = 'LP', color = ROOT.kBlue, mstyle = 4)
-effCanvas.legend.add('sf', title = '2#mu data/MC', opt = 'LP', color = ROOT.kBlack, mstyle = 25, lwidth = 2)
+effCanvas.legend.add('sf', title = '2#mu data/MC', opt = 'LP', color = ROOT.kBlack, mstyle = 34, lwidth = 2)
 effCanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
 effCanvas.ylimits = (0.9, 1.05)
 effCanvas.SetGrid(True)
@@ -80,7 +80,7 @@ for name, config in configs.items():
 
     dist.Sumw2()
 
-    weight = 'weight'
+    weight = 'weight_Input'
 
     # plot the data distribution
     dataDist = dist.Clone('data_' + dist.GetName())
@@ -91,7 +91,7 @@ for name, config in configs.items():
     # plot the data efficiency
     dataEff = eff.Clone('data_' + eff.GetName())
     effCanvas.legend.apply('data', dataEff)
-    dataMumug.Draw('1. - (electrons.size == 0 || muons.size == 0):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
+    dataMumug.Draw('1. - (electrons.size != 0 || muons.size != 0):' + expr + '>>' + dataEff.GetName(), weight, 'prof goff')
     
     # plot the MC distribution
     mumugDist = dist.Clone('mumug_' + dist.GetName())
@@ -102,7 +102,7 @@ for name, config in configs.items():
     # plot the MC efficiency
     mumugEff = eff.Clone('mumug_' + eff.GetName())
     effCanvas.legend.apply('mumug', mumugEff)
-    mcMumug.Draw('1. - (electrons.size == 0 || muons.size == 0):' + expr + '>>' + mumugEff.GetName(), weight, 'prof goff')
+    mcMumug.Draw('1. - (electrons.size != 0 || muons.size != 0):' + expr + '>>' + mumugEff.GetName(), weight, 'prof goff')
 
     # we will use the efficiency-HT plots to derive the "data monophoton efficiency"
     if name == 'ht':
@@ -134,17 +134,17 @@ for name, config in configs.items():
         effCanvas.legend.add('mumugjet', title = '2#mu+jet MC', opt = 'LP', color = ROOT.kRed, mstyle = 25, lstyle = ROOT.kDashed)
         effCanvas.legend.construct()
 
-        weight = 'weight * (leadjetpt > 175.)'
+        weight = 'weight_Input * (jets.pt_[0] > 175.)'
     
         datajetEff = eff.Clone('datajet_' + eff.GetName())
         effCanvas.legend.apply('datajet', datajetEff)
-        dataMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + datajetEff.GetName(), weight, 'prof goff')
+        dataMumug.Draw('electrons.size == 0 && muons.size == 0:' + expr + '>>' + datajetEff.GetName(), weight, 'prof goff')
     
         mumugjetEff = eff.Clone('mumugjet_' + eff.GetName())
         effCanvas.legend.apply('mumugjet', mumugjetEff)
-        mcMumug.Draw('1. - (eleveto || muveto):' + expr + '>>' + mumugjetEff.GetName(), weight, 'prof goff')
+        mcMumug.Draw('electrons.size == 0 && muons.size == 0:' + expr + '>>' + mumugjetEff.GetName(), weight, 'prof goff')
 
-    weight = 'weight'
+    weight = 'weight_Input'
 
     # znng (monophoton) distributions
     monophDist = dist.Clone('monoph_' + dist.GetName())
@@ -159,7 +159,7 @@ for name, config in configs.items():
     # znng efficiency
     monophEff = eff.Clone('monoph_' + eff.GetName())
     effCanvas.legend.apply('monoph', monophEff)
-    mcMonoph.Draw('1. - (eleveto || muveto):' + expr + '>>' + monophEff.GetName(), weight, 'prof goff')
+    mcMonoph.Draw('electrons.size == 0 && muons.size == 0:' + expr + '>>' + monophEff.GetName(), weight, 'prof goff')
 
     # print plots
     distCanvas.addHistogram(dataDist, drawOpt = 'HIST')
@@ -197,14 +197,17 @@ for name, config in configs.items():
         effCanvas.legend.remove('mumugjet')
         effCanvas.legend.construct()
 
-# convolution with HT
-data = 0.
-mc = 0.
-for iX in range(1, monophHt.GetNbinsX() + 1):
-    data += dataEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
-    mc += mumugEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
+print 'Histograms saved to', outputFile.GetName()
 
-data /= monophHt.GetSumOfWeights()
-mc /= monophHt.GetSumOfWeights()
-
-print data, mc, data / mc
+if 'ht' in configs:
+    # convolution with HT
+    data = 0.
+    mc = 0.
+    for iX in range(1, monophHt.GetNbinsX() + 1):
+        data += dataEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
+        mc += mumugEffHt.GetBinContent(iX) * monophHt.GetBinContent(iX)
+    
+    data /= monophHt.GetSumOfWeights()
+    mc /= monophHt.GetSumOfWeights()
+    
+    print data, mc, data / mc
