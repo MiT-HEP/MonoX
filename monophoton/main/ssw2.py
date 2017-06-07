@@ -446,7 +446,11 @@ if __name__ == '__main__':
     # fill in the selectors for samples with no selector specification
     for sample, selectors in sampleList:
         if len(selectors) == 0:
-            selectors.update(allSelectors[sample])
+            if len(args.selnames) != 0:
+                for sel in args.selnames:
+                    selectors[sel] = allSelectors[sample][sel]
+            else:
+                selectors.update(allSelectors[sample])
 
     ## compile and load the Skimmer
     import ROOT
