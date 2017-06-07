@@ -455,9 +455,8 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
   cutres[NHIsoS16Tight] = _photon.passNHIso(2);
   cutres[PhIsoS16Tight] = _photon.passPhIso(2);
 
-  for (unsigned iC(0); iC != nSelections; ++iC) {
+  for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC] = cutres[iC];
-  }
 
   if (vetoes_.size() != 0) {
     unsigned iV(0);
@@ -2781,11 +2780,9 @@ LeptonVertex::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     score_ -= pt * pt;
   }
 
-  for (int iV(ivtx_ + 1); iV != int(_event.vertices.size()); ++iV) {
-    if (score_ > _event.vertices[iV].score) {
-      ivtxNoL_ = iV - 1;
+  for (ivtxNoL_ = ivtx_; ivtxNoL_ < int(_event.vertices.size()) - 1; ++ivtxNoL_) {
+    if (score_ > _event.vertices[ivtxNoL_ + 1].score)
       break;
-    }
   }
 }
 
