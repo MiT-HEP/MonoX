@@ -333,6 +333,10 @@ def zmumu(sample, rname):
     leptons.setRequireTight(False)
     selector.addOperator(leptons)
 
+    vtx = ROOT.LeptonVertex()
+    vtx.setSpecies(ROOT.lMuon)
+    selector.addOperator(vtx)
+
     mass = ROOT.Mass()
     mass.setPrefix('dimu')
     mass.setMin(60.)
@@ -547,7 +551,7 @@ def hfake(sample, rname):
     hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
     hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
-    weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
+    weight = selector.findOperator('hadProxyWeight')
 
     weight.addVariation('proxyDefUp', hadproxyTightWeight)
     weight.addVariation('proxyDefDown', hadproxyLooseWeight)
@@ -1111,7 +1115,7 @@ def addIDSFWeight(sample, selector):
     idsf.addFactor(getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', newname = 'photonSF'))
     idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
     selector.addOperator(idsf)
-    # selector.addOperator(ROOT.ConstantWeight(1.01, 'extraSF'))
+    selector.addOperator(ROOT.ConstantWeight(0.991, 'extraSF'))
 
 def addElectronIDSFWeight(sample, selector):
     electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
