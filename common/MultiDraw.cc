@@ -7,11 +7,12 @@
 Int_t
 TTreeFormulaCached::GetNdata()
 {
-  int n(TTreeFormula::GetNdata());
+  if (fNdataCache < 0) {
+    fNdataCache = TTreeFormula::GetNdata();
+    fCache.assign(fNdataCache, std::pair<Bool_t, Double_t>(false, 0.));
+  }
 
-  fCache.assign(n, std::pair<Bool_t, Double_t>(false, 0.));
-
-  return n;
+  return fNdataCache;
 }
 
 Double_t
@@ -86,7 +87,7 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
 {
   // using the first expr for the number of instances
   unsigned nD(exprs_.at(0)->GetNdata());
-  // need to call GetNdata before EvanInstance
+  // need to call GetNdata before EvalInstance
   if (cuts_)
     cuts_->GetNdata();
 
@@ -204,9 +205,6 @@ MultiDraw::MultiDraw(char const* _path/* = ""*/) :
 
 MultiDraw::~MultiDraw()
 {
-  delete baseSelection_;
-  delete fullSelection_;
-
   for (auto* plots : {&postFull_, &postBase_, &unconditional_}) {
     for (auto* plot : *plots)
       delete plot;
@@ -227,7 +225,8 @@ MultiDraw::setBaseSelection(char const* _cuts)
 
   delete baseSelection_;
 
-  baseSelection_ = new TTreeFormula("baseSelection", _cuts, &tree_);
+  baseSelection_ = new TTreeFormulaCached("baseSelection", _cuts, &tree_);
+  library_.emplace(_cuts, baseSelection_);
 }
 
 void
@@ -241,7 +240,8 @@ MultiDraw::setFullSelection(char const* _cuts)
 
   delete fullSelection_;
 
-  fullSelection_ = new TTreeFormula("fullSelection", _cuts, &tree_);
+  fullSelection_ = new TTreeFormulaCached("fullSelection", _cuts, &tree_);
+  library_.emplace(_cuts, baseSelection_);
 }
 
 void
@@ -379,6 +379,10 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/)
       for (auto* plot : postFull_)
         plot->updateTree();
     }
+
+    // Reset formula cache
+    for (auto& ff : library_)
+      ff.second->ResetCache();
 
     double eventWeight(weight * lumi_);
 

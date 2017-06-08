@@ -14,6 +14,11 @@
  * Buys little speedup though. The main reason for implementing such a class is to have the
  * number of leaves exposed - TTreeFormula only provides GetLeaf(Int_t) which calls
  * fLeaves.UncheckedAt(), and at least in one instance it returned an invalid pointer.
+ *
+ * User of this class must first call ResetCache() and GetNdata() in the order to properly
+ * access the instance value. Value of fNdataCache is returned for the second and subsequent
+ * calls to GetNdata(). Instances are evaluated and cached at the first call of EvalInstance()
+ * for the respective indices.
  */
 class TTreeFormulaCached : public TTreeFormula {
 public:
@@ -23,9 +28,11 @@ public:
   Int_t GetNdata() override;
   Double_t EvalInstance(Int_t, char const* [] = 0) override;
 
+  void ResetCache() { fNdataCache = -1; }
   TObjArray const* GetLeaves() const { return &fLeaves; }
 
 private:
+  Int_t fNdataCache{-1};
   std::vector<std::pair<Bool_t, Double_t>> fCache{};
 };
 
@@ -133,8 +140,8 @@ private:
 
   TChain tree_;
   TString weightBranchName_;
-  TTreeFormula* baseSelection_{0};
-  TTreeFormula* fullSelection_{0};
+  TTreeFormulaCached* baseSelection_{0};
+  TTreeFormulaCached* fullSelection_{0};
   double lumi_{1.};
   unsigned prescale_{1};
   std::vector<ExprFiller*> unconditional_{};
