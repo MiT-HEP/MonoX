@@ -1,160 +1,84 @@
-#include "TTree.h"
-#include "TFile.h"
-#include "TTreeFormula.h"
-#include "TH1.h"
+#include "plot.h"
 
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
 
-class ExprFiller {
-public:
-  ExprFiller() {}
-  ExprFiller(TTree& tree, char const* cuts, char const* reweight);
-  ExprFiller(ExprFiller const&);
-  virtual ~ExprFiller();
-
-  void addExpr(char const* name, char const* expr);
-
-  unsigned getNdim() const { return exprs_.size(); }
-  TTreeFormula const* getExpr(unsigned iE = 0) const { return exprs_.at(iE); }
-  TTreeFormula* getExpr(unsigned iE = 0) { return exprs_.at(iE); }
-  TTreeFormula const* getCuts() const { return cuts_; }
-  TTreeFormula* getCuts() { return cuts_; }
-  TTreeFormula const* getReweight() const { return reweight_; }
-  void fill(double weight, std::vector<bool> const* = 0);
-
-  virtual TObject const* getObj() const = 0;
-
-  void resetCount() { counter_ = 0; }
-  unsigned getCount() const { return counter_; }
-
-protected:
-  virtual void doFill_(unsigned) = 0;
-
-  TTree* inTree_{0};
-
-  std::vector<TTreeFormula*> exprs_{};
-  TTreeFormula* cuts_{0};
-  TTreeFormula* reweight_{0};
-  double constReweight_{1.};
-  double entryWeight_{1.};
-  unsigned counter_{0};
-};
-
-class Plot : public ExprFiller {
-public:
-  Plot() {}
-  Plot(TH1& hist, TTree& tree, char const* expr, char const* cuts, char const* reweight);
-  Plot(Plot const&);
-  ~Plot() {}
-
-  TObject const* getObj() const override { return hist_; }
-  TH1 const* getHist() const { return hist_; }
-
-private:
-  void doFill_(unsigned) override;
-
-  TH1* hist_{0};
-};
-
-class Tree : public ExprFiller {
-public:
-  Tree() {}
-  Tree(TTree& outTree, TTree& tree, char const* cuts, char const* reweight);
-  Tree(Tree const&);
-  ~Tree() {}
-
-  void addBranch(char const* bname, char const* expr);
-
-  TObject const* getObj() const override { return tree_; }
-  TTree const* getTree() const { return tree_; }
-
-  static unsigned const NBRANCHMAX = 128;
-
-private:
-  void doFill_(unsigned) override;
-
-  TTree* tree_{0};
-  std::vector<double> bvalues_{};
-};
-
-class Plotter {
-public:
-  Plotter() {}
-  Plotter(char const* path);
-  ~Plotter();
-
-  void setBaseSelection(char const* cuts);
-  void setFullSelection(char const* cuts);
-  void setLuminosity(double l) { lumi_ = l; }
-  void setPrescale(unsigned p) { prescale_ = p; }
-  void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
-  void addTree(TTree* tree, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
-  void addTreeBranch(TTree* tree, char const* bname, char const* expr);
-  void fillPlots(long nEntries = -1);
-
-  void setPrintLevel(int l) { printLevel_ = l; }
-
-private:
-  TTree* tree_{0};
-  TTreeFormula* baseSelection_{0};
-  TTreeFormula* fullSelection_{0};
-  double lumi_{1.};
-  unsigned prescale_{1};
-  std::vector<ExprFiller*> unconditional_{};
-  std::vector<ExprFiller*> postBase_{};
-  std::vector<ExprFiller*> postFull_{};
-
-  int printLevel_{0};
-};
-
-ExprFiller::ExprFiller(TTree& tree, char const* cuts, char const* reweight) :
-  inTree_(&tree)
+Int_t
+TTreeFormulaCached::GetNdata()
 {
-  if (cuts && std::strlen(cuts) != 0)
-    cuts_ = new TTreeFormula("additionalCuts", cuts, &tree);
+  int n(TTreeFormula::GetNdata());
 
-  if (reweight && std::strlen(reweight) != 0) {
-    reweight_ = new TTreeFormula("reweight", reweight, &tree);
-    if (!reweight_->GetLeaf(0)) { // this is a constant
-      constReweight_ = reweight_->EvalInstance(0);
-      delete reweight_;
-      reweight_ = 0;
-    }
+  fCache.assign(n, std::pair<Bool_t, Double_t>(false, 0.));
+
+  return n;
+}
+
+Double_t
+TTreeFormulaCached::EvalInstance(Int_t _i, char const* _stringStack[]/* = 0*/)
+{
+  if (_i >= int(fCache.size()))
+    return 0.;
+
+  if (!fCache[_i].first) {
+    fCache[_i].first = true;
+    fCache[_i].second = TTreeFormula::EvalInstance(_i, _stringStack);
   }
+
+  return fCache[_i].second;
+}
+
+
+ExprFiller::ExprFiller(TTreeFormula* _cuts, TTreeFormula* _reweight) :
+  cuts_(_cuts),
+  reweight_(_reweight)
+{
 }
 
 ExprFiller::ExprFiller(ExprFiller const& _orig) :
-  inTree_(_orig.inTree_)
+  ownFormulas_(_orig.ownFormulas_)
 {
-  if (_orig.cuts_)
-    cuts_ = new TTreeFormula("additionalCuts", _orig.cuts_->GetTitle(), inTree_);
+  if (ownFormulas_) {
+    for (unsigned iD(0); iD != _orig.getNdim(); ++iD) {
+      auto& oexpr(*_orig.getExpr(iD));
+      exprs_.push_back(new TTreeFormula(oexpr.GetName(), oexpr.GetTitle(), oexpr.GetTree()));
+    }
 
-  if (_orig.reweight_)
-    reweight_ = new TTreeFormula("reweight", _orig.reweight_->GetTitle(), inTree_);
+    if (_orig.cuts_)
+      cuts_ = new TTreeFormula(_orig.cuts_->GetName(), _orig.cuts_->GetTitle(), _orig.cuts_->GetTree());
 
-  constReweight_ = _orig.constReweight_;
-
-  for (unsigned iD(0); iD != _orig.getNdim(); ++iD) {
-    auto& oexpr(*_orig.getExpr(iD));
-    exprs_.push_back(new TTreeFormula(oexpr.GetName(), oexpr.GetTitle(), inTree_));
+    if (_orig.reweight_)
+      reweight_ = new TTreeFormula(_orig.reweight_->GetName(), _orig.reweight_->GetTitle(), _orig.reweight_->GetTree());
+  }
+  else {
+    exprs_ = _orig.exprs_;
+    cuts_ = _orig.cuts_;
+    reweight_ = _orig.reweight_;
   }
 }
 
 ExprFiller::~ExprFiller()
 {
-  delete cuts_;
-  delete reweight_;
+  if (ownFormulas_) {
+    delete cuts_;
+    delete reweight_;
 
-  for (auto* expr : exprs_)
-    delete expr;
+    for (auto* expr : exprs_)
+      delete expr;
+  }
 }
 
 void
-ExprFiller::addExpr(char const* name, char const* expr)
+ExprFiller::updateTree()
 {
-  exprs_.push_back(new TTreeFormula(name, expr, inTree_));
+  for (auto* expr : exprs_)
+    expr->UpdateFormulaLeaves();
+
+  if (cuts_)
+    cuts_->UpdateFormulaLeaves();
+
+  if (reweight_)
+    reweight_->UpdateFormulaLeaves();
 }
 
 void
@@ -193,7 +117,7 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
       }
     }
 
-    entryWeight_ = _weight * constReweight_;
+    entryWeight_ = _weight;
     if (reweight_)
       entryWeight_ *= reweight_->EvalInstance(iD);
 
@@ -204,11 +128,11 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
 }
 
 
-Plot::Plot(TH1& hist, TTree& tree, char const* expr, char const* cuts, char const* reweight) :
-  ExprFiller(tree, cuts, reweight),
-  hist_(&hist)
+Plot::Plot(TH1& _hist, TTreeFormula* _expr, TTreeFormula* _cuts, TTreeFormula* _reweight) :
+  ExprFiller(_cuts, _reweight),
+  hist_(&_hist)
 {
-  addExpr(hist.GetName(), expr);
+  addExpr(_expr);
 }
 
 Plot::Plot(Plot const& _orig) :
@@ -218,15 +142,15 @@ Plot::Plot(Plot const& _orig) :
 }
 
 void
-Plot::doFill_(unsigned iD)
+Plot::doFill_(unsigned _iD)
 {
-  hist_->Fill(exprs_[0]->EvalInstance(iD), entryWeight_);
+  hist_->Fill(exprs_[0]->EvalInstance(_iD), entryWeight_);
 }
 
 
-Tree::Tree(TTree& outTree, TTree& tree, char const* cuts, char const* reweight) :
-  ExprFiller(tree, cuts, reweight),
-  tree_(&outTree)
+Tree::Tree(TTree& _outTree, TTreeFormula* _cuts, TTreeFormula* _reweight) :
+  ExprFiller(_cuts, _reweight),
+  tree_(&_outTree)
 {
   tree_->Branch("weight", &entryWeight_, "weight/D");
 
@@ -249,39 +173,36 @@ Tree::Tree(Tree const& _orig) :
 }
 
 void
-Tree::addBranch(char const* bname, char const* expr)
+Tree::addBranch(char const* _bname, TTreeFormula* _expr)
 {
   if (bvalues_.size() == NBRANCHMAX)
     throw std::runtime_error("Cannot add any more branches");
 
   bvalues_.resize(bvalues_.size() + 1);
-  tree_->Branch(bname, &bvalues_.back(), TString::Format("%s/D", bname));
+  tree_->Branch(_bname, &bvalues_.back(), TString::Format("%s/D", _bname));
 
-  addExpr(bname, expr);
+  addExpr(_expr);
 }
 
 void
-Tree::doFill_(unsigned iD)
+Tree::doFill_(unsigned _iD)
 {
   for (unsigned iE(0); iE != exprs_.size(); ++iE)
-    bvalues_[iE] = exprs_[iE]->EvalInstance(iD);
+    bvalues_[iE] = exprs_[iE]->EvalInstance(_iD);
 
   tree_->Fill();
 }
 
 
-Plotter::Plotter(char const* _path)
+MultiDraw::MultiDraw(char const* _path/* = ""*/) :
+  tree_("events"),
+  weightBranchName_("weight")
 {
-  auto* source(TFile::Open(_path));
-  if (!source || source->IsZombie())
-    throw std::runtime_error(TString::Format("Cannot open %s", _path).Data());
-
-  tree_ = static_cast<TTree*>(source->Get("events"));
-  if (!tree_)
-    throw std::runtime_error(TString::Format("Cannot find events tree in %s", _path).Data());    
+  if (_path && std::strlen(_path) != 0)
+    tree_.Add(_path);
 }
 
-Plotter::~Plotter()
+MultiDraw::~MultiDraw()
 {
   delete baseSelection_;
   delete fullSelection_;
@@ -291,115 +212,138 @@ Plotter::~Plotter()
       delete plot;
   }
 
-  delete tree_->GetCurrentFile();
+  for (auto& ff : library_)
+    delete ff.second;
 }
 
 void
-Plotter::setBaseSelection(char const* cuts)
+MultiDraw::setBaseSelection(char const* _cuts)
 {
-  if (!cuts || std::strlen(cuts) == 0)
+  if (!_cuts || std::strlen(_cuts) == 0) {
+    delete baseSelection_;
+    baseSelection_ = 0;
     return;
+  }
 
   delete baseSelection_;
 
-  baseSelection_ = new TTreeFormula("baseSelection", cuts, tree_);
+  baseSelection_ = new TTreeFormula("baseSelection", _cuts, &tree_);
 }
 
 void
-Plotter::setFullSelection(char const* cuts)
+MultiDraw::setFullSelection(char const* _cuts)
 {
-  if (!cuts || std::strlen(cuts) == 0)
+  if (!_cuts || std::strlen(_cuts) == 0) {
+    delete fullSelection_;
+    fullSelection_ = 0;
     return;
+  }
 
   delete fullSelection_;
 
-  fullSelection_ = new TTreeFormula("fullSelection", cuts, tree_);
+  fullSelection_ = new TTreeFormula("fullSelection", _cuts, &tree_);
 }
 
 void
-Plotter::addPlot(TH1* hist, char const* expr, char const* cuts/* = ""*/, bool applyBaseline/* = true*/, bool applyFullSelection/* = false*/, char const* reweight/* = ""*/)
+MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/)
 {
-  if (applyBaseline) {
-    if (applyFullSelection)
-      postFull_.push_back(new Plot(*hist, *tree_, expr, cuts, reweight));
-    else
-      postBase_.push_back(new Plot(*hist, *tree_, expr, cuts, reweight));
-  }
-  else
-    unconditional_.push_back(new Plot(*hist, *tree_, expr, cuts, reweight));
+  TTreeFormulaCached* exprFormula(getFormula_(_expr));
+
+  auto newPlot([_hist, exprFormula](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
+      return new Plot(*_hist, exprFormula, _cutsFormula, _reweightFormula);
+    });
+
+  addObj_(_cuts, _applyBaseline, _applyFullSelection, _reweight, newPlot);
 }
 
 void
-Plotter::addTree(TTree* tree, char const* cuts/* = ""*/, bool applyBaseline/* = true*/, bool applyFullSelection/* = false*/, char const* reweight/* = ""*/)
+MultiDraw::addTree(TTree* tree, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/)
 {
-  if (applyBaseline) {
-    if (applyFullSelection)
-      postFull_.push_back(new Tree(*tree, *tree_, cuts, reweight));
-    else
-      postBase_.push_back(new Tree(*tree, *tree_, cuts, reweight));
-  }
-  else
-    unconditional_.push_back(new Tree(*tree, *tree_, cuts, reweight));
+  auto newTree([tree](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
+      return new Tree(*tree, _cutsFormula, _reweightFormula);
+    });
+
+  addObj_(_cuts, _applyBaseline, _applyFullSelection, _reweight, newTree);
 }
 
 void
-Plotter::addTreeBranch(TTree* tree, char const* bname, char const* expr)
+MultiDraw::addTreeBranch(TTree* _tree, char const* _bname, char const* _expr)
 {
+  auto* exprFormula(getFormula_(_expr));
+
   for (auto* plots : {&postFull_, &postBase_, &unconditional_}) {
     for (auto* plot : *plots) {
-      if (plot->getObj() == tree) {
-        static_cast<Tree*>(plot)->addBranch(bname, expr);
+      if (plot->getObj() == _tree) {
+        static_cast<Tree*>(plot)->addBranch(_bname, exprFormula);
       }
     }
   }
 }
 
 void
-Plotter::fillPlots(long _nEntries/* = -1*/)
+MultiDraw::addObj_(char const* _cuts, bool _applyBaseline, bool _applyFullSelection, char const* _reweight, ObjGen const& _gen)
+{
+  TTreeFormulaCached* cutsFormula(0);
+  if (_cuts && std::strlen(_cuts) != 0)
+    cutsFormula = getFormula_(_cuts);
+
+  TTreeFormulaCached* reweightFormula(0);
+  if (_reweight && std::strlen(_reweight) != 0)
+    reweightFormula = getFormula_(_reweight);
+
+  std::vector<ExprFiller*>* stack(0);
+  if (_applyBaseline) {
+    if (_applyFullSelection)
+      stack = &postFull_;
+    else
+      stack = &postBase_;
+  }
+  else
+    stack = &unconditional_;
+
+  stack->push_back(_gen(cutsFormula, reweightFormula));
+}
+
+TTreeFormulaCached*
+MultiDraw::getFormula_(char const* _expr)
+{
+  auto fItr(library_.find(_expr));
+  if (fItr != library_.end())
+    return fItr->second;
+
+  auto* f(new TTreeFormulaCached("formula", _expr, &tree_));
+  library_.emplace(_expr, f);
+
+  return f;
+}
+
+void
+MultiDraw::fillPlots(long _nEntries/* = -1*/)
 {
   float weight(1.);
   unsigned eventNumber;
 
-  tree_->SetBranchStatus("*", false);
-  tree_->SetBranchStatus("weight", true);
-  tree_->SetBranchAddress("weight", &weight);
-  if (prescale_ != 1) {
-    tree_->SetBranchStatus("eventNumber", true);
-    tree_->SetBranchAddress("eventNumber", &eventNumber);
-  }
+  // Turn off all branches first
+  tree_.SetBranchStatus("*", false);
 
-  for (auto* sel : {baseSelection_, fullSelection_}) {
-    if (sel) {
-      TLeaf* leaf(0);
-      unsigned iL(0);
-      while ((leaf = sel->GetLeaf(iL++)))
-        tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
-    }
+  // Turn on the necessary branches
+  if (weightBranchName_.Length() != 0) {
+    tree_.SetBranchStatus(weightBranchName_, true);
+    tree_.SetBranchAddress(weightBranchName_, &weight);
+  }
+  if (prescale_ != 1) {
+    tree_.SetBranchStatus("eventNumber", true);
+    tree_.SetBranchAddress("eventNumber", &eventNumber);
+  }
+  // Branches used by the formulas
+  for (auto& ff : library_) {
+    for (auto* l : *ff.second->GetLeaves())
+      tree_.SetBranchStatus(static_cast<TLeaf*>(l)->GetBranch()->GetName(), true);
   }
 
   for (auto* plots : {&postFull_, &postBase_, &unconditional_}) {
-    for (auto* plot : *plots) {
+    for (auto* plot : *plots)
       plot->resetCount();
-
-      for (unsigned iD(0); iD != plot->getNdim(); ++iD) {
-        TLeaf* leaf(0);
-        unsigned iL(0);
-        while ((leaf = plot->getExpr(iD)->GetLeaf(iL++)))
-          tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
-      }
-      if (plot->getCuts()) {
-        TLeaf* leaf(0);
-        unsigned iL(0);
-        while ((leaf = plot->getCuts()->GetLeaf(iL++)))
-          tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
-      }
-      if (plot->getReweight()) {
-        TLeaf* leaf(0);
-        unsigned iL(0);
-        while ((leaf = plot->getReweight()->GetLeaf(iL++)))
-          tree_->SetBranchStatus(leaf->GetBranch()->GetName(), true);
-      }
-    }
   }
 
   std::vector<bool>* baseResults(0);
@@ -411,20 +355,38 @@ Plotter::fillPlots(long _nEntries/* = -1*/)
     fullResults = new std::vector<bool>;
 
   long iEntry(0);
+  int treeNumber(-1);
   unsigned passBase(0);
   unsigned passFull(0);
-  while (iEntry != _nEntries && tree_->GetEntry(iEntry++) > 0) {
+  while (iEntry != _nEntries && tree_.GetEntry(iEntry++) > 0) {
     if (printLevel_ >= 0 && iEntry % 10000 == 1)
       std::cout << "\r      " << iEntry;
 
     if (prescale_ != 1 && eventNumber % prescale_ != 0)
       continue;
 
-    weight *= lumi_;
+    if (treeNumber != tree_.GetTreeNumber()) {
+      treeNumber = tree_.GetTreeNumber();
 
+      if (baseSelection_)
+        baseSelection_->UpdateFormulaLeaves();
+      if (fullSelection_)
+        fullSelection_->UpdateFormulaLeaves();
+      for (auto* plot : unconditional_)
+        plot->updateTree();
+      for (auto* plot : postBase_)
+        plot->updateTree();
+      for (auto* plot : postFull_)
+        plot->updateTree();
+    }
+
+    double eventWeight(weight * lumi_);
+
+    // Plots that do not require passing the baseline cut
     for (auto* plot : unconditional_)
-      plot->fill(weight);
+      plot->fill(eventWeight);
 
+    // Baseline cut
     if (baseSelection_) {
       unsigned nD(baseSelection_->GetNdata());
 
@@ -450,9 +412,11 @@ Plotter::fillPlots(long _nEntries/* = -1*/)
 
     ++passBase;
 
+    // Plots that require passing the baseline cut but not the full cut
     for (auto* plot : postBase_)
-      plot->fill(weight, baseResults);
+      plot->fill(eventWeight, baseResults);
 
+    // Full cut
     if (fullSelection_) {
       unsigned nD(fullSelection_->GetNdata());
 
@@ -486,8 +450,9 @@ Plotter::fillPlots(long _nEntries/* = -1*/)
 
     ++passFull;
 
+    // Plots that require all cuts
     for (auto* plot : postFull_)
-      plot->fill(weight, fullResults);
+      plot->fill(eventWeight, fullResults);
   }
 
   if (printLevel_ >= 0) {
@@ -501,7 +466,7 @@ Plotter::fillPlots(long _nEntries/* = -1*/)
 
     for (auto* plots : {&postFull_, &postBase_, &unconditional_}) {
       for (auto* plot : *plots)
-        std::cout << "        " << plot->getExpr()->GetName() << ": " << plot->getCount() << std::endl;
+        std::cout << "        " << plot->getObj()->GetName() << ": " << plot->getCount() << std::endl;
     }
   }
 }
