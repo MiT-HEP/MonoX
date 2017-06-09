@@ -31,7 +31,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     
         histograms = []
    
-        plotter = ROOT.Plotter(sourceName)
+        plotter = ROOT.MultiDraw(sourceName)
         plotter.setPrintLevel(printLevel)
 
         cuts = []
@@ -525,7 +525,7 @@ if __name__ == '__main__':
     #####################################
 
     if not args.replot:
-        ROOT.gROOT.LoadMacro('plot.cc+')
+        ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
     
         print 'Filling plots for %s..' % plotConfig.name
 
