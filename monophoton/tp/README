@@ -37,8 +37,8 @@
  This mode should be used in a batch system varying the seeds.
   ~/bin/condor-run efake_fit.py -a toys_args.txt
 
- The output of toy generation should be combined with hadd into a file
- named toys_(data|mc)_(binning).root.
+ The output of toy generation should be combined:
+  hadd toys_(data|mc)_(binning).root toys_(data|mc)_{ee,eg}_[binNames]_*.root
 
  efake_tpsyst.py computes the systematic uncertainties from fits to the
  altsig and altbkg models. Since it involves toy data generation, the
@@ -46,8 +46,8 @@
   efake_tpsyst.py (binning) (bin name) (sig|bkg) (N) (random seed)
   ~/bin/condor-run efake_tpsyst.py -a syst_args.txt
 
- The output should be combined with hadd into a file named
- tpsyst_data_(sig|bkg)_(binning).root.
+ The output should be combined:
+  hadd tpsyst_data_(binning).root tpsyst_data_{sig,bkg}_(binning)_[binNames].root
 
  efake_compute.py takes this ROOT file as an input and makes the fake
  rate graph.

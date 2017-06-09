@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+Fit with alternative models to evaluate fit-related uncertainties.
+"""
+
 import os
 import sys
 import array
@@ -12,9 +16,7 @@ import config
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
-ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
+ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
 binningName = sys.argv[1] # see efake_conf
 binName = sys.argv[2]

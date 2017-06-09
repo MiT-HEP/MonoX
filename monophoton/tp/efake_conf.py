@@ -8,7 +8,8 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 # Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
 skimConfig = {
     'phdata': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
-#    'mudata': (['smu-16b2', 'smu-16c2'], ['kMG', 'kMMG']),
+    'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
+    'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
     'mc': (['dy-50', 'wlnu', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
@@ -56,6 +57,17 @@ def getBinning(binningName):
     elif binningName == 'highptH':
         binningTitle = 'p_{T}^{probe} (GeV)'
         binning = [175., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+    if binningName == 'lowpt':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        binning = [40., 50., 60., 80., 100., 120., 140., 160.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

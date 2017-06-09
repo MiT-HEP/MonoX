@@ -1,3 +1,7 @@
+"""
+Likely an attempt to plot background events using MC. Incomplete.
+"""
+
 import sys
 import os
 import array
@@ -12,12 +16,6 @@ from plotstyle import SimpleCanvas
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-ROOT.gSystem.Load(config.libsimpletree)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
-ROOT.gROOT.LoadMacro(thisdir + '/TemplateGenerator.cc+')
-
-inputDir = '/scratch5/yiiyama/studies/egfake_skim'
-
 groups = {
     'dy': (['dy-50'], ROOT.TColor.GetColor(0xff, 0x88, 0x44)),
     'top': (['tt'], ROOT.TColor.GetColor(0x66, 0xff, 0xdd))
@@ -31,5 +29,5 @@ for gname in ['vv', 'top', 'w', 'dy']:
     egTree = ROOT.TChain('events')
     mgTree = ROOT.TChain('events')
     for sname in samples:
-        egTree.Add(inputDir + '/' + )
+        egTree.Add(config.skimDir + '/' + )
     

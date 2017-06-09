@@ -50,7 +50,12 @@ iEntry = 0
 while inputTree.GetEntry(iEntry) > 0:
     iEntry += 1
 
-    conf = 'ee' if vTPconf[0] == 0 else 'eg'
+    if vTPconf[0] == 0:
+        conf = 'ee'
+    elif vTPconf[0] == 1:
+        conf = 'eg'
+    else:
+        continue
 
     for binName, cut in fitBins:
         if vBinName.tostring().startswith(binName):
