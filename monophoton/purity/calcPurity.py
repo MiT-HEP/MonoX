@@ -19,7 +19,7 @@ gROOT.SetBatch(True)
 gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
-gROOT.LoadMacro('SignalSubtraction.cc+')
+gROOT.LoadMacro(s.basedir + '/purity/SignalSubtraction.cc+')
 
 QUICKFIT = False # just run one main fit
 FORCEHIST = True
@@ -128,10 +128,21 @@ ChIsoNear = 'ChIso35to50'
 ChIsoNominal = 'ChIso50to75'
 ChIsoFar = 'ChIso75to90'
 
-sigSel = s.chIsoSels[era][loc][pid]
+if 'noICH' in extras:
+    sigSel = ''
+else:
+    sigSel = s.chIsoSels[era][loc][pid]
+
 sbSel = s.ChIsoSbSels[ChIsoNominal]
 sbSelNear = s.ChIsoSbSels[ChIsoNear]
 sbSelFar  = s.ChIsoSbSels[ChIsoFar]
+
+if 'max' in extras:
+    sigSel = sigSel.replace('chIso', 'chIsoMax')
+    sbSel = sbSel.replace('chIso', 'chIsoMax')
+    sbSelNear = sbSelNear.replace('chIso', 'chIsoMax')
+    sbSelFar = sbSelFar.replace('chIso', 'chIsoMax')
+
 truthSel =  '(photons.matchedGenId[0] == -22)'
 
 # fit, signal, contamination, background, contamination scaled, background
@@ -151,10 +162,10 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     }
     
     start = time.time()
-    extractors['sphData'].baseSel = baseSel
+    extractors['sphData'].plotter.setBaseSelection(baseSel)
     
     start = time.time()
-    extractors['gjetsMc'].baseSel = baseSel + ' && ' + truthSel
+    extractors['gjetsMc'].plotter.setBaseSelection(baseSel + ' && ' + truthSel)
     
     extractors['sphData'].categories.append((skims[0][0], skims[0][2], sigSel))
     extractors['gjetsMc'].categories.append((skims[1][0], skims[1][2], sigSel))
@@ -164,22 +175,19 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     extractors['sphData'].categories.append((skims[5][0], skims[5][2], sbSelNear))
     extractors['gjetsMc'].categories.append((skims[6][0], skims[6][2], sbSelFar))
     extractors['sphData'].categories.append((skims[7][0], skims[7][2], sbSelFar))
-    
-    #if 'worst' in extras:
-    #    sels[0] = sels[0] + ' && ' + s.chWorstIsoSels[era][loc][pid]
-    #    sels[1] = sels[1] + ' && ' + s.chWorstIsoSels[era][loc][pid]
-    #elif 'max' in extras:
-    #    sels[0] = sels[0] + ' && ' + s.chIsoMaxSels[era][loc][pid]
-    #    sels[1] = sels[1] + ' && ' + s.chIsoMaxSels[era][loc][pid]
 
     histFile = TFile.Open(os.path.join(histDir, 'initialHists.root'), 'recreate')
     
     start = time.time()
-    dataTemplates = extractors['sphData'].extract(var[3][iloc], histFile)
+    dataTemplates = extractors['sphData'].extract(var[3][iloc], histFile, mcsf = False)
     print 'Took', (time.time() - start), 'seconds to extract data templates'
     
     start = time.time()
-    mcTemplates = extractors['gjetsMc'].extract(var[3][iloc], histFile)
+    mcTemplates = extractors['gjetsMc'].extract(var[3][iloc], histFile, mcsf = True)
+    print 'Took', (time.time() - start), 'seconds to extract MC templates'
+
+    start = time.time()
+    mcRawTemplates = extractors['gjetsMc'].extract(var[3][iloc], histFile, mcsf = False)
     print 'Took', (time.time() - start), 'seconds to extract MC templates'
     
     initialHists = [
@@ -193,7 +201,7 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
         dataTemplates[3]
     ]
     
-    for hist in initialHists:
+    for hist in initialHists + mcRawTemplates:
         hist.SetDirectory(histFile)
         
     histFile.Write()
@@ -212,6 +220,12 @@ else:
         histFile.Get(skims[7][0])
     ]
 
+    mcRawTemplates = [
+        histFile.Get(skims[1][0] + '_raw'),
+        histFile.Get(skims[2][0] + '_raw')
+    ]
+
+
 initialTemplates = []
 for hist in initialHists:
     template = s.HistToTemplate(hist,roofitVar,"v0_"+inputKey,plotDir)
@@ -223,8 +237,8 @@ ssfitter = SSFitter.singleton()
 # allowing the bin edge to be lower than the actual cut (makes the purity higher!)
 cutBin = initialHists[0].FindBin(var[1][era][loc][pid])
 
-def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir):
-    ssfitter.initialize(initialHists[0], initialHists[1], datasb, mcsb, sbRatio)
+def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir, mcsig = initialHists[1]):
+    ssfitter.initialize(initialHists[0], mcsig, datasb, mcsb, sbRatio)
     ssfitter.fit()
 
     purity = ssfitter.getPurity(cutBin)
@@ -430,7 +444,7 @@ print '######## Doing signal shape uncertainty ########'
 print '################################################'
 print '\n'
 
-### Get signal shape uncertainty
+### Get signal shape uncertainty (turn off data/MC scale factor)
 #twobinDir = os.path.join(plotDir,'twobin')
 #if not os.path.exists(twobinDir):
 #    os.makedirs(twobinDir)
@@ -445,11 +459,14 @@ print '\n'
 #    template = s.HistToTemplate(twobinHist,var[2][loc],twobinSkims[iH],"v0_"+inputKey,twobinDir)
 #    twobinTemplates.append(template)
 #
-#twobinPurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,twobinDir)
-#twobinUncertainty = abs( nominalPurity[0] - twobinPurity[0])
-#twobinUncYield = abs( nominalPurity[2] - twobinPurity[2])
-twobinUncertainty = 0.
-twobinUncYield = 0.
+#shapePurity = s.SignalSubtraction(twobinSkims,twobinHists,twobinTemplates,nominalRatio,roofitVar,var[1][era][loc][pid],inputKey,twobinDir)
+#shapeUncertainty = abs( nominalPurity[0] - shapePurity[0])
+#shapeUncYield = abs( nominalPurity[2] - shapePurity[2])
+
+shapePurity = runSSFit(initialHists[3], mcRawTemplates[1], nominalRatio, 'shape', mcsig = mcRawTemplates[0])
+
+shapeUncertainty = abs(nominalPurity[0] - shapePurity[0])
+shapeUncYield = abs(nominalPurity[2] - shapePurity[2])
 
 print '\n'
 print '#################################'
@@ -460,10 +477,10 @@ print '\n'
 print "Nominal purity is:", nominalPurity[0]
 print "Sideband uncertainty is:", sidebandUncertainty
 print "Method uncertainty is:", scaledUncertainty
-print "Signal shape uncertainty is:", twobinUncertainty
+print "Signal shape uncertainty is:", shapeUncertainty
 print "Background stat uncertainty is:", bkgdUncertainty
-totalUncertainty = ( (sidebandUncertainty**2) + (scaledUncertainty)**2 + (twobinUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
-totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (twobinUncYield)**2 + (bkgdUncYield)**2 )**(0.5)
+totalUncertainty = ( (sidebandUncertainty**2) + (scaledUncertainty)**2 + (shapeUncertainty)**2 + (bkgdUncertainty)**2 )**(0.5)
+totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (shapeUncYield)**2 + (bkgdUncYield)**2 )**(0.5)
 
 print "Total uncertainty is:", totalUncertainty
 
@@ -475,14 +492,14 @@ for hist in initialHists[:]:
 outFile.write( "\n\n# of real photons is: "+str(nominalPurity[2])+'\n' )
 outFile.write( "Sideband unc yield is: "+str(sidebandUncYield)+'\n' )
 outFile.write( "Method unc yield is: "+str(scaledUncYield)+'\n' ) 
-outFile.write( "Signal shape unc yield is: "+str(twobinUncYield)+'\n' ) 
+outFile.write( "Signal shape unc yield is: "+str(shapeUncYield)+'\n' ) 
 outFile.write( "Background stat unc yield is: "+str(bkgdUncYield)+'\n' )
 outFile.write( "Total unc yield is: "+str(totalUncYield)+'\n\n\n' )
 
 outFile.write( "Nominal purity is: "+str(nominalPurity[0])+'\n' )
 outFile.write( "Sideband uncertainty is: "+str(sidebandUncertainty)+'\n' )
 outFile.write( "Method uncertainty is: "+str(scaledUncertainty)+'\n' ) 
-outFile.write( "Signal shape uncertainty is: "+str(twobinUncertainty)+'\n' ) 
+outFile.write( "Signal shape uncertainty is: "+str(shapeUncertainty)+'\n' ) 
 outFile.write( "Background stat uncertainty is: "+str(bkgdUncertainty)+'\n' )
 outFile.write( "Total uncertainty is: "+str(totalUncertainty)+'\n' )
 
