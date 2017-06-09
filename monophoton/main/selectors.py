@@ -65,8 +65,12 @@ photonFullSelection = [
 ]
 
 def setupPhotonSelection(operator, veto = False, changes = []):
-    operator.resetSelection()
-    operator.resetVeto()
+    ##### !!!!! IMPORTANT - NOTE THE RESETS #####
+    if veto:
+        operator.resetVeto()
+    else:
+        operator.resetSelection()
+
 
     sels = list(photonFullSelection)
 
@@ -477,7 +481,6 @@ def signalRaw(sample, rname):
     ]
 
     for cut in cuts:
-        # print cut
         selector.findOperator(cut).setIgnoreDecision(True)
 
     selector.findOperator('PhotonSelection').setMinPt(30.)
@@ -509,13 +512,13 @@ def efake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    weight = ROOT.PhotonPtWeight(getFromFile(datadir + '/efake_data_pt.root', 'frate'), 'egfakerate')
+    weight = ROOT.PhotonPtWeight(getFromFile(datadir + '/efake_data_ptalt.root', 'frate'), 'egfakerate')
     weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
     selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!EVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
     return selector
@@ -544,26 +547,42 @@ def hfake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    modHfake(selector)
-
     hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
     hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
     hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
     hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
 
-    weight = selector.findOperator('hadProxyWeight')
+#    modHfake(selector)
 
-    weight.addVariation('proxyDefUp', hadproxyTightWeight)
-    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
-    weight.addVariation('purityUp', hadproxyPurityUpWeight)
-    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+#    weight = selector.findOperator('hadProxyWeight')
+#
+#    weight.addVariation('proxyDefUp', hadproxyTightWeight)
+#    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
+#    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+#    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+
+    isoTFactor = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
+    noIsoTFactor = getFromFile(datadir + '/hadronTFactorNoICH.root', 'tfactNom')
+    isoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'iso')
+    noIsoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'noIso')
+    rcProb = getFromFile(datadir + '/randomcone.root', 'chIso')
+
+    vtxWeight = ROOT.VtxAdjustedJetProxyWeight(isoTFactor, isoVertexScore, noIsoTFactor, noIsoVertexScore)
+
+    vtxWeight.setRCProb(rcProb, 1.163)
+
+    selector.addOperator(vtxWeight)
 
     # CHIso is already inverted in modHfake
     photonSel = selector.findOperator('PhotonSelection')
 
+#   modHfake
+#    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11'])
+#    setupPhotonSelection(photonSel, veto = True)
+
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
-    setupPhotonSelection(photonSel, changes = ['-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
     setupPhotonSelection(photonSel, veto = True)
 
     return selector

@@ -369,7 +369,6 @@ void
 NormalizingSelector::addOutput_(TFile*& _outputFile)
 {
   auto* hSumW(new TH1D("sumW", "", 1, 0., 1.));
-  hSumW->Sumw2();
   skimOut_->Draw("0.5>>sumW", "weight * (" + normCut_ + ")", "goff");
   double sumW(hSumW->GetBinContent(1));
   delete hSumW;
