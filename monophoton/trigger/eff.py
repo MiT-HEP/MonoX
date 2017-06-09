@@ -7,6 +7,7 @@ import array
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
+ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -16,14 +17,16 @@ from plotstyle import SimpleCanvas
 import config
 
 ROOT.gStyle.SetNdivisions(510, 'X')
+ROOT.gSystem.Load('libPandaTreeObjects.so')
+ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
 FITEFFICIENCY = False
 
 measurements = [
-    ('photon', 'sph', 'sph-16*', 'tpeg', 'probes.medium'),
-    ('photon', 'sel', 'sel-16*', 'tpeg', 'probes.medium && !probes.pixelVeto'),
-    ('electron', 'sel', 'sel-16*', 'tpegLowPt', 'probes.tight'),
-    ('muon', 'smu', 'smu-16*', 'tpmgLowPt', 'probes.tight')
+#    ('photon', 'sph', 'sph-16*', 'tpeg', 'probes.medium'),
+    ('photon', 'sel', 'sel-16*-m', 'tpeg', 'probes.medium && !probes.pixelVeto'),
+#    ('electron', 'sel', 'sel-16*', 'tpeg', 'probes.tight'),
+#    ('muon', 'smu', 'smu-16*', 'tpmg', 'probes.tight')
 ]
 
 ## SETUP
@@ -40,14 +43,14 @@ vconfs['photon'] = {
     'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
     'hOverE': ('H/E', 'probes.hOverE', 'probes.pt_ > 175.', (25, 0., 0.05)),
     'hcalE': ('E^{HCAL} (GeV)', 'probes.pt_ * TMath::CosH(probes.eta_) * probes.hOverE', 'probes.pt_ > 175.', (25, 0., 5)),
-    'run': ('Run', 'run', 'probes.pt_ > 175.', (26, 271050., 284050.))
+    'run': ('Run', 'runNumber', 'probes.pt_ > 175.', (26, 271050., 284050.))
 }
 vconfs['electron'] = {
     'pt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', (50, 0., 50.)),
     'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
     'hOverE': ('H/E', 'probes.hOverE', 'probes.pt_ > 200.', (25, 0., 0.05)),
     'hcalE': ('E^{HCAL} (GeV)', 'probes.pt_ * TMath::CosH(probes.eta_) * probes.hOverE', 'probes.pt_ > 200.', (25, 0., 5)),
-    'run': ('Run', 'run', 'probes.pt_ > 200.', (350, 271000., 274500.)),
+    'run': ('Run', 'runNumber', 'probes.pt_ > 200.', (350, 271000., 274500.)),
     'leppt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)]),
 }
 vconfs['muon'] = {
@@ -55,28 +58,24 @@ vconfs['muon'] = {
     'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
     'hOverE': ('H/E', 'probes.hOverE', 'probes.pt_ > 200.', (25, 0., 0.05)),
     'hcalE': ('E^{HCAL} (GeV)', 'probes.pt_ * TMath::CosH(probes.eta_) * probes.hOverE', 'probes.pt_ > 200.', (25, 0., 5)),
-    'run': ('Run', 'run', 'probes.pt_ > 200.', (350, 271000., 274500.)),
+    'run': ('Run', 'runNumber', 'probes.pt_ > 200.', (350, 271000., 274500.)),
     'leppt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)]),
 }
 
-# matchL1[2] -> SEG34IorSEG40IorSJet200
-# matchHLT[2] -> Ph165HE10
-
-Photon = ROOT.panda.Photon
-Electron = ROOT.panda.Electron
-Muon = ROOT.panda.Muon
+ROOT.gROOT.ProcessLine('int val;')
+def getEnum(cls, name):
+    ROOT.gROOT.ProcessLine('val = panda::' + cls + '::TriggerObject::' + name + ';')
+    return ROOT.val
 
 tconfs['photon'] = {
-    'sph165': ('probes.triggerMatch[%d]' % Photon.fPh165HE10, 'probes.triggerMatch[%d]' % Photon.fSEG34IorSEG40IorSJet200, 'HLT/L1'),
-    'l1all': ('probes.matchL1[%d]' % Photon.fSEG34IorSEG40IorSJet200, '', 'L1 seed'),
-    'l1eg40': ('probes.matchL1[%d]' % Photon.fSEG34IorSEG40, '', 'L1 seed'),
-    'sph165abs': ('probes.triggerMatch[%d]' % Photon.fPh165HE10, '', 'L1&HLT')
+    'l1eg40': ('probes.triggerMatch[][%d]' % getEnum('Photon', 'fSEG34IorSEG40'), '', 'L1 seed'),
+    'sph165abs': ('probes.triggerMatch[][%d]' % getEnum('Photon', 'fPh165HE10'), '', 'L1&HLT')
 }
 tconfs['electron'] = {
-    'el27': ('probes.triggerMatch[%d]' % Electron.fEl27Tight, '', 'HLT'),
+    'el27': ('probes.triggerMatch[][%d]' % getEnum('Electron', 'fEl27Tight'), '', 'HLT'),
 }
 tconfs['muon'] = {
-    'mu24ortrk24': ('probes.triggerMatch[%d] || probes.triggerMatch[%d]' % (Muon.fIsoMu24, Muon.fIsoTkMu24), '', 'HLT'),
+    'mu24ortrk24': ('probes.triggerMatch[][%d] || probes.triggerMatch[][%d]' % (getEnum('Muon', 'fIsoMu24'), getEnum('Muon', 'fIsoTkMu24')), '', 'HLT'),
 }
 
 # TTree output for fitting
@@ -95,6 +94,15 @@ for oname, mname, snames, region, probeSel in measurements:
 
     baseSelection = 'tp.mass > 60. && tp.mass < 120. && ' + probeSel
 
+    for vname, (vtitle, vexpr, baseline, binning) in vconfs[oname].items():
+
+    # fill the histograms
+    plotter = ROOT.MultiDraw()
+    plotter.setBaseSelection(baseSelection)
+
+    for sample in allsamples.getmany(snames):
+        plotter.addInputPath(config.skimDir + '/' + sample.name + '_' + region + '.root')
+
     # make empty histograms for all (variable, trigger) combination
     histograms = []
 
@@ -112,39 +120,25 @@ for oname, mname, snames, region, probeSel in measurements:
             hbase = template.Clone(tname + '_base')
             histograms.extend([hpass, hbase])
 
-    # fill the histograms sample by sample
-    for sample in allsamples.getmany(snames):
-        sourceName = config.skimDir + '/' + sample.name + '_' + region + '.root'
+            sels = [passdef]
+            if baseline:
+                sels.append(baseline)
+            if denomdef:
+                sels.append(denomdef)
 
-        plotter = ROOT.Plotter(sourceName)
-        plotter.setBaseSelection(baseSelection)
+            plotter.addPlot(hpass, vexpr, ' && '.join(sels), True)
 
-        for vname, (vtitle, vexpr, baseline, binning) in vconfs[oname].items():
-            outDir = measDir.GetDirectory(vname)
+            sels = []
+            if baseline:
+                sels.append(baseline)
+            if denomdef:
+                sels.append(denomdef)
 
-            for tname, (passdef, denomdef, title) in tconfs[oname].items():
-                hpass = outDir.Get(tname + '_pass')
-                hbase = outDir.Get(tname + '_base')
+            plotter.addPlot(hbase, vexpr, ' && '.join(sels), True)
 
-                sel = passdef
-                if baseline:
-                    sel += ' && ' + baseline
-                if denomdef:
-                    sel += ' && ' + denomdef
+        template.Delete()
 
-                plotter.addPlot(hpass, vexpr, sel, True)
-
-                sel = ''
-                if baseline:
-                    sel += ' && ' + baseline
-                if denomdef:
-                    sel += ' && ' + denomdef
-
-                plotter.addPlot(hbase, vexpr, sel, True)
-
-            template.Delete()
-
-        plotter.fillPlots()
+    plotter.fillPlots()
 
     # make efficiency graphs and save
     for vname in vconfs[oname]:
@@ -170,11 +164,13 @@ if FITEFFICIENCY:
     ROOT.gSystem.Load('/home/yiiyama/cms/studies/fittools/libFitTools.so')
     fitter = ROOT.EfficiencyFitter.singleton()
 
-canvas = SimpleCanvas(lumi = lumi)
+canvas = SimpleCanvas()
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
 for oname, mname, snames, region, probeSel in measurements:
     measDir = outputFile.GetDirectory(oname + '_' + mname)
+
+    canvas.lumi = sum(sample.lumi for sample in allsamples.getmany(snames))
 
     for vname, (vtitle, vexpr, baseline, binning) in vconfs[oname].items():
         outDir = measDir.GetDirectory(vname)
