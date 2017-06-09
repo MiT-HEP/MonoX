@@ -456,7 +456,8 @@ if __name__ == '__main__':
     import ROOT
     logger.debug('dataformats: %s', config.dataformats)
     
-    ROOT.gSystem.AddIncludePath('-I' + os.path.dirname(basedir) + '/common')
+    ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
+    ROOT.gROOT.LoadMacro(monoxdir + '/common/MultiDraw.cc+')
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
     
     try:
@@ -512,7 +513,7 @@ if __name__ == '__main__':
         submitter = CondorRun(os.path.realpath(__file__))
         submitter.logdir = '/local/' + os.environ['USER']
         submitter.hold_on_fail = True
-        submitter.group = 'group_t3mit.urgent'
+#        submitter.group = 'group_t3mit.urgent'
         submitter.min_memory = 1
         
         batchManager = BatchManager(submitter, args.skipMissing, args.readRemote)
