@@ -70,9 +70,12 @@ for iEra, era in enumerate(Eras):
                 ROOT.gROOT.ProcessLine("cut = panda::XPhoton::phIsoCuts["+str(iEra)+"]["+str(iLoc)+"]["+str(iId)+"];")
                 phIsoCuts[era][loc][pid] = ROOT.cut
 
+# plotter for template extraction
+ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
+
 ### Now start actual parameters that need to be changed ###
 
-Version = 'Jun05_gjscale'
+Version = 'Ashim'
 # Version = 'MonojetSync'
 # versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + Version
 versionDir =  '/scratch5/' + os.environ['USER'] + '/studies/purity/' + Version
@@ -259,74 +262,56 @@ ChIsoSbSels = { 'ChIso50to80'  : '(photons.chIso[0] > 5.0 && photons.chIso[0] < 
 class HistExtractor(object):
     def __init__(self, name, snames, variable):
         self.name = name
-        self.tree = TChain('events')
-        self.tree.SetCacheSize(100000000)
+        self.plotter = ROOT.MultiDraw()
         for sname in snames:
-            inName = os.path.join('/local/yiiyama/monophoton/skim', sname+'_emjet.root')
-#            print 'Adding', inName, "to", self.name
-            self.tree.Add(inName)
+            inName = os.path.join(config.skimDir, sname+'_emjet.root')
+            self.plotter.addInputPath(inName)
 
         self.variable = variable
-        self.reweight = None
 
-        self.baseSel = ''
         self.categories = [] # [(name, title, sel)]
 
-    def extract(self, binning, outFile = None):
+    def extract(self, binning, outFile = None, mcsf = False):
         print 'Extracting ' + self.name + ' distributions'
 
         if type(binning) is tuple:
-            hall = TH2D('hall_' + self.name, '', *(binning + (len(self.categories), 1., len(self.categories) + 1.)))
+            template = ROOT.TH1D('template', '', *binning)
         else:
-            hall = TH2D('hall_' + self.name, '', len(binning) - 1, array.array('d', binning), len(self.categories), 1., len(self.categories) + 1.)
+            template = ROOT.TH1D('template', '', len(binning) - 1, array.array('d', binning))
 
-        hall.Sumw2()
-
-        exprs = []
-        for ic, (name, title, sel) in enumerate(self.categories):
-            exprs.append('%d * (%s)' % (ic + 1, sel))
-
-        expr = ' + '.join(exprs)
-#        if self.name == 'gjetsMc' and 'sieie' in self.variable:
-#            expr += ':(0.000308 * TMath::Exp(-0.5 * ({v} - 0.0109) * ({v} - 0.0109) / 0.000487 / 0.000487))'.format(v = self.variable)'
-#            expr += ':(0.891832 * photons.sieie[0] + 0.0009133)'
-#        else:
-#            expr += ':' + self.variable
-        expr += ':' + self.variable
-
-#        print 'Expression for template generation:', expr
-#        print 'Base selection for template generation:', self.baseSel
-
-        self.tree.Draw(expr + '>>hall_' + self.name, 'weight * (%s)' % self.baseSel, 'goff')
-
-        print hall.GetEntries(), 'entries in the full histogram'
-
-        if self.reweight:
-            for iX in range(1, hall.GetNbinsX() + 1):
-                w = self.reweight.GetBinContent(iX)
-                for iY in range(1, hall.GetNbinsY() + 1):
-                    iBin = hall.GetBin(iX, iY)
-                    hall.SetBinContent(iBin, hall.GetBinContent(iBin) * w)
+        template.Sumw2()
 
         if outFile is not None:
-            hall.SetDirectory(outFile)
             outFile.cd()
-            hall.Write()
 
         histograms = []
-
         for ic, (name, title, sel) in enumerate(self.categories):
-            h = hall.ProjectionX(name, ic + 1, ic + 1, 'e')
-            h.SetTitle(title)
+            if not mcsf:
+                name += '_raw'
 
-            if 'Fit' not in name:
-                for iBin in range(1, h.GetNbinsX() + 1):
-                    if h.GetBinContent(iBin) <= 0.:
-                        h.SetBinContent(iBin, 0.0000001)
+            hist = template.Clone(name)
+            hist.SetTitle(title)
+            histograms.append(hist)
 
-            print 'Integral of ' + name + ' is', h.Integral()
+            self.plotter.addPlot(hist, self.variable, sel, True)
 
-            histograms.append(h)
+        self.plotter.fillPlots()
+
+        if mcsf and 'sieie' in self.variable:
+            print 'Applying data/MC scale factor to the templates'
+
+            source = ROOT.TFile(basedir + '/data/sieie_ratio.root')
+            line = source.Get('fit')
+
+            for hist in histograms:
+                for iX in range(1, hist.GetNbinsX() + 1):
+                    hist.SetBinContent(iX, hist.GetBinContent(iX) * line.Eval(hist.GetXaxis().GetBinCenter(iX)))
+
+            source.Close()
+
+        if outFile is not None:
+            outFile.cd()
+            outFile.Write()
 
         return histograms
 

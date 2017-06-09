@@ -1,9 +1,19 @@
 import os
+import sys
 from array import array
 from pprint import pprint
 from selections import Variables, Version, Samples, Measurement, SigmaIetaIetaSels, chIsoCuts, sieieSels, PhotonPtSels, MetSels, HistExtractor, config, versionDir
 from ROOT import *
 gROOT.SetBatch(True)
+
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
+
+if basedir not in sys.path:
+    sys.path.append(basedir)
+
+from datasets import allsamples
+import config
 
 def plotiso(loc, pid, pt, met, era):
     inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
@@ -50,7 +60,7 @@ def plotiso(loc, pid, pt, met, era):
     baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
     
     outName = os.path.join(plotDir,'chiso_'+inputKey)
-    print outName+'.root'
+    print 'plotiso writing to', outName+'.root'
     outFile = TFile(outName+'.root','RECREATE')
     
     histograms = [ [], [], [], [] ]
@@ -67,29 +77,42 @@ def plotiso(loc, pid, pt, met, era):
 
     # make the data iso distribution for reference
     extractor = HistExtractor('sphData', Samples['sphData'], var[0])
-    extractor.baseSel = baseSel
-    extractor.categories.append((skim[0], skim[2], '1'))
+    extractor.plotter.setBaseSelection(baseSel)
+    extractor.categories.append((skim[0], skim[2], ''))
     hist = extractor.extract(binning)[0]
     hist.SetName("data")
     histograms[3].append(hist)
-    
+
     extractor = HistExtractor('gjetsMc', Samples[skim[1]], var[0])
-    extractor.baseSel = baseSel + ' && ' + truthSel
-    extractor.categories.append((skim[0], skim[2], '1'))
+    extractor.plotter.setBaseSelection(baseSel + ' && ' + truthSel)
+    extractor.categories.append((skim[0], skim[2], ''))
     raw = extractor.extract(binning)[0]
     raw.SetName("rawmc")
     histograms[0].append(raw)
 
-    eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
+#    eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
+    eSelScratch = "(tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]
     eSel = eSelScratch.replace("photons", "probes")
-    
-    mcTree = TChain('events')
-    mcTree.Add(os.path.join(skimDir, 'dy-50_tpeg.root'))
+
+    print 'Extracting electron MC distributions'
+
+# tpeg trees lack the weight branch as of now (Jun 07) - looping over samples.
+#    mcTree = TChain('events')
+#    mcTree.Add(os.path.join(skimDir, 'dy-50-*_tpeg.root'))
     mcHist = raw.Clone("emc")
     mcHist.Reset()
-    mcTree.Draw("TMath::Max(0., probes.chIso)>>emc", eSel, 'goff')
+#    mcTree.Draw("TMath::Max(0., probes.chIso)>>emc", eSel, 'goff')
+    for sample in allsamples.getmany('dy-50-*'):
+        source = TFile.Open(config.skimDir + '/' + sample.name + '_tpeg.root')
+        tree = source.Get('events')
+        outFile.cd()
+        tree.Draw("TMath::Max(0., probes.chIso)>>+emc", '%f * (%s)' % (sample.crosssection / sample.sumw, eSel), 'goff')
+        source.Close()
+
     outFile.WriteTObject(mcHist)
     histograms[1].append(mcHist)
+
+    print 'Extracting electron data distributions'
     
     dataTree = TChain('events')
     dataTree.Add(os.path.join(skimDir, 'sph-16*_tpeg.root'))
@@ -98,7 +121,7 @@ def plotiso(loc, pid, pt, met, era):
     dataTree.Draw("TMath::Max(0., probes.chIso)>>edata", eSel, 'goff')
     outFile.WriteTObject(dataHist)
     histograms[1].append(dataHist)
-    
+
     scaled = raw.Clone("scaledmc")
     scaleHist = raw.Clone("escale")
     scaleHist.SetTitle("Data/MC Scale Factors from Electrons")
