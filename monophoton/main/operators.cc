@@ -2521,6 +2521,116 @@ NPVWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 }
 
 //--------------------------------------------------------------------
+// VtxAdjustedJetProxyWeight
+//--------------------------------------------------------------------
+
+VtxAdjustedJetProxyWeight::VtxAdjustedJetProxyWeight(TH1* isoTFactor, TH2* isoVScore, TH1* noIsoTFactor, TH2* noIsoVScore, char const* name/* = "VtxAdjustedJetProxyWeight"*/) :
+  Modifier(name),
+  isoTFactor_(isoTFactor),
+  isoVScore_(isoVScore),
+  noIsoTFactor_(noIsoTFactor),
+  noIsoVScore_(noIsoVScore)
+{
+}
+
+void
+VtxAdjustedJetProxyWeight::setRCProb(TH2* distribution, double chIsoCut)
+{
+  delete rcProb_;
+
+  rcProb_ = new TH1D("rcprob", "", distribution->GetNbinsX(), distribution->GetXaxis()->GetXmin(), distribution->GetXaxis()->GetXmax());
+
+  int iYMax(distribution->GetYaxis()->FindBin(chIsoCut));
+
+  for (int iX(1); iX <= distribution->GetNbinsX(); ++iX) {
+    double p(0.);
+    for (int iY(1); iY <= iYMax; ++iY)
+      p += distribution->GetBinContent(iX, iY);
+
+    rcProb_->SetBinContent(iX, p);
+  }
+}
+
+void
+VtxAdjustedJetProxyWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("isoTFactor", &isoT_, "isoTFactor/F");
+  _skimTree.Branch("isoPVProb", &isoPVProb_, "isoPVProb/F");
+  _skimTree.Branch("noIsoTFactor", &noIsoT_, "noIsoTFactor/F");
+  _skimTree.Branch("noIsoPVProb", &noIsoPVProb_, "noIsoPVProb/F");
+  _skimTree.Branch("randomcone", &rc_, "randomcone/F");
+}
+
+void
+VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (_outEvent.photons.empty())
+    return;
+
+  double pt(_outEvent.photons[0].scRawPt);
+  double eta(_outEvent.photons[0].eta());
+
+  int iX;
+
+  iX = isoTFactor_->FindBin(pt);
+  if (iX == 0)
+    iX = 1;
+  else if (iX == isoTFactor_->GetNbinsX() + 1)
+    iX = isoTFactor_->GetNbinsX();
+
+  isoT_ = isoTFactor_->GetBinContent(iX);
+
+  iX = noIsoTFactor_->FindBin(pt);
+  if (iX == 0)
+    iX = 1;
+  else if (iX == noIsoTFactor_->GetNbinsX() + 1)
+    iX = noIsoTFactor_->GetNbinsX();
+
+  noIsoT_ = noIsoTFactor_->GetBinContent(iX);
+
+  if (_event.vertices.size() <= 1) {
+    isoPVProb_ = 1.;
+    noIsoPVProb_ = 1.;
+  }
+  else {
+    int iYMin(isoVScore_->GetYaxis()->FindBin(std::log(_event.vertices[1].score)));
+      
+    iX = isoVScore_->GetXaxis()->FindBin(pt);
+    if (iX == 0)
+      iX = 1;
+    else if (iX == isoVScore_->GetNbinsX() + 1)
+      iX = isoVScore_->GetNbinsX();
+    
+    isoPVProb_ = 0.;
+    for (int iY(iYMin); iY <= isoVScore_->GetNbinsY(); ++iY)
+      isoPVProb_ += isoVScore_->GetBinContent(iX, iY);
+
+    iX = noIsoVScore_->GetXaxis()->FindBin(pt);
+    if (iX == 0)
+      iX = 1;
+    else if (iX == noIsoVScore_->GetNbinsX() + 1)
+      iX = noIsoVScore_->GetNbinsX();
+    
+    noIsoPVProb_ = 0.;
+    for (int iY(iYMin); iY <= noIsoVScore_->GetNbinsY(); ++iY)
+      noIsoPVProb_ += noIsoVScore_->GetBinContent(iX, iY);
+  }
+
+  rc_ = 0.;
+  if (rcProb_) {
+    iX = rcProb_->FindBin(eta);
+    if (iX == 0)
+      iX = 1;
+    else if (iX == rcProb_->GetNbinsX() + 1)
+      iX = rcProb_->GetNbinsX();
+
+    rc_ = rcProb_->GetBinContent(iX);
+  }
+
+  _outEvent.weight *= isoPVProb_ * isoT_ + (1. - noIsoPVProb_) * noIsoT_ * rc_;
+}
+
+//--------------------------------------------------------------------
 // NNPDFVariation
 //--------------------------------------------------------------------
 
