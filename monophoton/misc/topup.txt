@@ -14,14 +14,10 @@
 
 . Run the photon ID and lepton veto efficiency measurements. Propagate the SF and uncertainty to selectors.py
   veto_eff/compute.py
-  (smu, zllg, tt, ww, wz, zz; tpmmg)
+  (smu, zllg, tt, ww, wz, zz; tpmmg) (znng-130; monophNoLVeto)
 
-. At this point, all the weights for MC samples have been updated and you can reskim all the MC samples (but don't yet)
-
-. Run the e->photon fake rate study. Copy the output of compute to data/efake_data_pt.root
-  tp/efake_fit.py data highpt
-  condor-run $PWD/tp/efake_fit.py -e "data pt 1000 (ee|eg) pt_X_Y" -j $(seq 1 200)
-  tp/efake_compute.py data highpt # make sure toyUncert is set to True
+. Run the e->photon fake rate study. Copy the output of compute to data/efake_data_ptalt.root
+  (see tp/README)
   (sph; tpeg, tpmg)
 
 . Run the photon purity measurement.
