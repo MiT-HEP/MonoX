@@ -63,7 +63,7 @@ allSelectors_byPattern = [
     ('wglo', mc_cand + mc_lep),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
     ('znng-40-o', mc_sig),
-    ('znng-130-o', applyMod(mc_sig, s.addKfactor)),
+    ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto'], s.addKfactor)),
     ('zllg-*-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
