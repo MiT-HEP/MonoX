@@ -210,7 +210,7 @@ SSFitter::fcn(double* _xval)
 
   double p(_xval[0]);
   double nsigRB(nTarg_ * p * ROverB_);
-  double bkgnorm(1. / (1. - nsigRB))
+  double bkgnorm(1. / (1. - nsigRB));
 
   double chi2(0.);
 
