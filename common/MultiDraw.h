@@ -43,12 +43,10 @@ private:
  */
 class ExprFiller {
 public:
-  ExprFiller() {}
-  ExprFiller(TTreeFormula* cuts, TTreeFormula* reweight);
+  ExprFiller(TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
   ExprFiller(ExprFiller const&);
   virtual ~ExprFiller();
 
-  void addExpr(TTreeFormula* expr) { exprs_.push_back(expr); }
   void ownFormulas(bool b) { ownFormulas_ = b; }
 
   unsigned getNdim() const { return exprs_.size(); }
@@ -65,6 +63,8 @@ public:
   void resetCount() { counter_ = 0; }
   unsigned getCount() const { return counter_; }
 
+  void setPrintLevel(int l) { printLevel_ = l; }
+
 protected:
   virtual void doFill_(unsigned) = 0;
 
@@ -74,12 +74,14 @@ protected:
   bool ownFormulas_{false};
   double entryWeight_{1.};
   unsigned counter_{0};
+
+  int printLevel_{0};
 };
 
 class Plot : public ExprFiller {
 public:
   Plot() {}
-  Plot(TH1& hist, TTreeFormula* expr, TTreeFormula* cuts, TTreeFormula* reweight);
+  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
   Plot(Plot const&);
   ~Plot() {}
 
@@ -95,11 +97,11 @@ private:
 class Tree : public ExprFiller {
 public:
   Tree() {}
-  Tree(TTree& outTree, TTreeFormula* cuts, TTreeFormula* reweight);
+  Tree(TTree& tree, TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
   Tree(Tree const&);
   ~Tree() {}
 
-  void addBranch(char const* bname, TTreeFormula* expr);
+  void addBranch(char const* bname, TTreeFormula& expr);
 
   TObject const* getObj() const override { return tree_; }
   TTree const* getTree() const { return tree_; }
