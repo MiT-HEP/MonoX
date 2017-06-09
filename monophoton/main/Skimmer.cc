@@ -1,12 +1,12 @@
 #include "selectors.h"
 #include "logging.h"
 #include "../misc/photon_extra.h"
+#include "../../common/MultiDraw.h"
 
 #include "TString.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TKey.h"
-#include "TEntryList.h"
 #include "TError.h"
 #include "TSystem.h"
 #include "TROOT.h"
@@ -128,7 +128,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   TString commonSelection;
   if (doPreskim) {
     // skimming with TTree::Draw on superClusters reduces the I/O if the main loop has to read e.g. pfCandidates
-    commonSelection = "superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442";
+    commonSelection = "superClusters.size != 0 && superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442";
     if (commonSelection_.Length() != 0)
       commonSelection = "(" + commonSelection + ") && (" + commonSelection_ + ")";
   }
@@ -191,17 +191,15 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw std::runtime_error("source");
     }
 
-    if (commonSelection.Length() != 0) {
-      gROOT->cd();
-      input->Draw(">>elist", commonSelection, "entrylist");
-      auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
-      elist->SetDirectory(0);
-      elist->SetBit(kCanDelete);
-      input->SetEntryList(elist);
-    }
-
     event.setStatus(*input, branchList);
     event.setAddress(*input, {"*"}, false);
+
+    TTreeFormulaCached* preselection(0);
+    if (commonSelection.Length() != 0) {
+      preselection = new TTreeFormulaCached("preselection", commonSelection, input);
+      for (auto* l : *preselection->GetLeaves())
+        input->SetBranchStatus(static_cast<TLeaf*>(l)->GetBranch()->GetName(), true);
+    }
 
     auto* genInput(static_cast<TTree*>(inputKey->ReadObj()));
     genInput->SetBranchStatus("*", false);
@@ -214,21 +212,30 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
     long iEntry(0);
     while (iEntryGlobal != _nEntries) {
-      int entryNumber(input->GetEntryNumber(iEntry++));
-
-      if (entryNumber < 0) // no more entries in this tree
-        break;
-
       ++iEntryGlobal;
-
-      if (event.getEntry(*input, entryNumber) <= 0) // I/O error
-        break;
-
       if (iEntryGlobal % printEvery_ == 1 && printLevel_ > 0) {
         auto past = now;
         now = SClock::now();
         *stream << " " << iEntryGlobal << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
       }
+
+      if (input->LoadTree(iEntry++) < 0)
+        break;
+
+      if (preselection) {
+        preselection->ResetCache();
+        int nD(preselection->GetNdata());
+        int iD(0);
+        for (; iD != nD; ++iD) {
+          if (preselection->EvalInstance(iD) != 0.)
+            break;
+        }
+        if (iD == nD)
+          continue;
+      }
+
+      if (event.getEntry(*input, iEntry - 1) <= 0) // I/O error
+        break;
 
       if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
         continue;
@@ -237,7 +244,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
 
       if (!event.isData)
-        genParticles.getEntry(*genInput, entryNumber);
+        genParticles.getEntry(*genInput, iEntry - 1);
 
       prepareEvent(event, genParticles, skimmedEvent);
 
