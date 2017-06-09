@@ -43,17 +43,18 @@ class SampleSpec(object):
 
 
 class PlotDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, overflow = False, logy = None, ymax = -1., ymin = 0.):
+    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, sensitive = False, overflow = False, logy = None, ymax = -1., ymin = 0.):
         self.name = name
         self.title = title
         self.unit = unit
-        self.expr = expr
-        self.cut = cut
-        self.applyBaseline = applyBaseline
-        self.applyFullSel = applyFullSel
+        self.expr = expr # expression to plot
+        self.cut = cut # additional cuts if any (applied to all samples)
+        self.applyBaseline = applyBaseline # True -> fill only when PlotConfig baseline cut is satisfied
+        self.applyFullSel = applyFullSel # True -> fill only when PlotConfig full cut is satisfied
         self.binning = binning
-        self.blind = blind
-        self.overflow = overflow
+        self.blind = blind # 'full' or a range in 2-tuple. Always takes effect if set.
+        self.sensitive = sensitive # whether to add signal distributions + prescale observed
+        self.overflow = overflow # add overflow bin
         self.logy = logy
         self.ymax = ymax
         self.ymin = ymin
@@ -242,9 +243,7 @@ class PlotConfig(object):
         self.signalPoints = []
         self.bkgGroups = []
         self.plots = [PlotDef('count', '', '0.5', (1, 0., 1.), cut = self.fullSelection)]
-        self.sensitiveVars = []
         self.treeMaker = ''
-        self.blind = False
 
     def addObs(self, sname, prescale = 1):
         sample = allsamples[sname]
