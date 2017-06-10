@@ -58,6 +58,13 @@ def plotiso(loc, pid, pt, met, era):
 
     # selection on H/E & INH & IPh
     baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
+    if 'pixel' in extras:
+        baseSel = baseSel+' && '+s.pixelVetoCut
+    if 'monoph' in extras:
+        baseSel = baseSel+' && '+s.monophIdCut
+    if 'max' in extras:
+        baseSel = baseSel.replace('chIso', 'chIsoMax')
+        var = ('TMath::Max(0., photons.chIsoMax)',) + var[1:]
     
     outName = os.path.join(plotDir,'chiso_'+inputKey)
     print 'plotiso writing to', outName+'.root'
@@ -77,6 +84,7 @@ def plotiso(loc, pid, pt, met, era):
 
     # make the data iso distribution for reference
     extractor = HistExtractor('sphData', Samples['sphData'], var[0])
+    print 'setBaseSelection(' + baseSel + ')'
     extractor.plotter.setBaseSelection(baseSel)
     extractor.categories.append((skim[0], skim[2], ''))
     hist = extractor.extract(binning)[0]
@@ -84,6 +92,7 @@ def plotiso(loc, pid, pt, met, era):
     histograms[3].append(hist)
 
     extractor = HistExtractor('gjetsMc', Samples[skim[1]], var[0])
+    print 'setBaseSelection(' + baseSel + ' && ' + truthSel + ')'
     extractor.plotter.setBaseSelection(baseSel + ' && ' + truthSel)
     extractor.categories.append((skim[0], skim[2], ''))
     raw = extractor.extract(binning)[0]
@@ -93,12 +102,16 @@ def plotiso(loc, pid, pt, met, era):
 #    eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
     eSelScratch = "(tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]
     eSel = eSelScratch.replace("photons", "probes")
+    eExpr = var[0].replace('photons', 'probes')
 
     print 'Extracting electron MC distributions'
 
 # tpeg trees lack the weight branch as of now (Jun 07) - looping over samples.
 #    mcTree = TChain('events')
 #    mcTree.Add(os.path.join(skimDir, 'dy-50-*_tpeg.root'))
+
+    print 'Draw(' + eExpr + ', ' + eSel + ')'
+    
     mcHist = raw.Clone("emc")
     mcHist.Reset()
 #    mcTree.Draw("TMath::Max(0., probes.chIso)>>emc", eSel, 'goff')
@@ -106,7 +119,7 @@ def plotiso(loc, pid, pt, met, era):
         source = TFile.Open(config.skimDir + '/' + sample.name + '_tpeg.root')
         tree = source.Get('events')
         outFile.cd()
-        tree.Draw("TMath::Max(0., probes.chIso)>>+emc", '%f * (%s)' % (sample.crosssection / sample.sumw, eSel), 'goff')
+        tree.Draw(eExpr + ">>+emc", '%f * (%s)' % (sample.crosssection / sample.sumw, eSel), 'goff')
         source.Close()
 
     outFile.WriteTObject(mcHist)
@@ -118,7 +131,8 @@ def plotiso(loc, pid, pt, met, era):
     dataTree.Add(os.path.join(skimDir, 'sph-16*_tpeg.root'))
     dataHist = raw.Clone("edata")
     dataHist.Reset()
-    dataTree.Draw("TMath::Max(0., probes.chIso)>>edata", eSel, 'goff')
+    print 'Draw(' + eExpr + ', ' + eSel + ')'
+    dataTree.Draw(eExpr + ">>edata", eSel, 'goff')
     outFile.WriteTObject(dataHist)
     histograms[1].append(dataHist)
 

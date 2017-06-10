@@ -14,12 +14,13 @@ import ROOT
 
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
+ROOT.gROOT.LoadMacro(s.thisdir + '/SignalSubtraction.cc+')
+ssfitter = ROOT.SSFitter.singleton()
+
 from ROOT import *
 gROOT.SetBatch(True)
 gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
-
-gROOT.LoadMacro(s.basedir + '/purity/SignalSubtraction.cc+')
 
 QUICKFIT = False # just run one main fit
 FORCEHIST = True
@@ -161,10 +162,10 @@ if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
         'gjetsMc': s.HistExtractor('gjetsMc', s.gjetsMc, var[0])
     }
     
-    start = time.time()
+    print 'setBaseSelection(' + baseSel + ')'
     extractors['sphData'].plotter.setBaseSelection(baseSel)
     
-    start = time.time()
+    print 'setBaseSelection(' + baseSel + ' && ' + truthSel + ')'
     extractors['gjetsMc'].plotter.setBaseSelection(baseSel + ' && ' + truthSel)
     
     extractors['sphData'].categories.append((skims[0][0], skims[0][2], sigSel))
@@ -225,7 +226,6 @@ else:
         histFile.Get(skims[2][0] + '_raw')
     ]
 
-
 initialTemplates = []
 for hist in initialHists:
     template = s.HistToTemplate(hist,roofitVar,"v0_"+inputKey,plotDir)
@@ -233,7 +233,6 @@ for hist in initialHists:
 
 canvas = TCanvas()
 
-ssfitter = SSFitter.singleton()
 # allowing the bin edge to be lower than the actual cut (makes the purity higher!)
 cutBin = initialHists[0].FindBin(var[1][era][loc][pid])
 
