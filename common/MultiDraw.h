@@ -121,7 +121,7 @@ public:
   ~MultiDraw();
 
   void addInputPath(char const* path) { tree_.Add(path); }
-  void setWeightBranch(char const* bname) { weightBranchName_ = bname; }
+  void setWeightBranch(char const* bname, char type = 'F') { weightBranchName_ = bname; weightBranchType_ = type; }
   void setBaseSelection(char const* cuts);
   void setFullSelection(char const* cuts);
   void setLuminosity(double l) { lumi_ = l; }
@@ -129,7 +129,7 @@ public:
   void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
   void addTree(TTree* tree, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
   void addTreeBranch(TTree* tree, char const* bname, char const* expr);
-  void fillPlots(long nEntries = -1);
+  void fillPlots(long nEntries = -1, long firstEntry = 0);
 
   void setPrintLevel(int l) { printLevel_ = l; }
 
@@ -141,7 +141,8 @@ private:
   TTreeFormulaCached* getFormula_(char const*);
 
   TChain tree_;
-  TString weightBranchName_;
+  TString weightBranchName_{"weight"};
+  char weightBranchType_{'F'};
   TTreeFormulaCached* baseSelection_{0};
   TTreeFormulaCached* fullSelection_{0};
   double lumi_{1.};

@@ -1,6 +1,7 @@
 #include "MultiDraw.h"
 
 #include "TFile.h"
+#include "TBranch.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -99,14 +100,22 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
   if (_presel && _presel->size() < nD)
     nD = _presel->size();
 
+  bool cutsLoaded(false);
   bool loaded(false);
 
   for (unsigned iD(0); iD != nD; ++iD) {
     if (_presel && !(*_presel)[iD])
       continue;
 
-    if (cuts_ && cuts_->EvalInstance(iD) == 0.)
-      continue;
+    if (cuts_) {
+      if (!cutsLoaded && iD != 0)
+        cuts_->EvalInstance(0);
+
+      cutsLoaded = true;
+
+      if (cuts_->EvalInstance(iD) == 0.)
+        continue;
+    }
 
     ++counter_;
 
@@ -123,13 +132,13 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
       }
     }
 
+    loaded = true;
+
     entryWeight_ = _weight;
     if (reweight_)
       entryWeight_ *= reweight_->EvalInstance(iD);
 
     doFill_(iD);
-
-    loaded = true;
   }
 }
 
@@ -217,8 +226,7 @@ Tree::doFill_(unsigned _iD)
 
 
 MultiDraw::MultiDraw(char const* _path/* = ""*/) :
-  tree_("events"),
-  weightBranchName_("weight")
+  tree_("events")
 {
   if (_path && std::strlen(_path) != 0)
     tree_.Add(_path);
@@ -358,32 +366,13 @@ MultiDraw::getFormula_(char const* _expr)
 }
 
 void
-MultiDraw::fillPlots(long _nEntries/* = -1*/)
+MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 {
-  float weight(1.);
+  float weightF(1.);
+  double weight(1.);
   unsigned eventNumber;
-
-  // Turn off all branches first
-  tree_.SetBranchStatus("*", false);
-
-  // Turn on the necessary branches
-  if (weightBranchName_.Length() != 0) {
-    tree_.SetBranchStatus(weightBranchName_, true);
-    tree_.SetBranchAddress(weightBranchName_, &weight);
-  }
-  if (prescale_ != 1) {
-    tree_.SetBranchStatus("eventNumber", true);
-    tree_.SetBranchAddress("eventNumber", &eventNumber);
-  }
-  // Branches used by the formulas
-  for (auto& ff : library_) {
-    for (auto* l : *ff.second->GetLeaves()) {
-      if (printLevel_ > 1)
-        std::cout << "Turning on branch " << static_cast<TLeaf*>(l)->GetBranch()->GetName() << std::endl;
-
-      tree_.SetBranchStatus(static_cast<TLeaf*>(l)->GetBranch()->GetName(), true);
-    }
-  }
+  TBranch* weightBranch(0);
+  TBranch* eventNumberBranch(0);
 
   for (auto* plots : {&postFull_, &postBase_, &unconditional_}) {
     for (auto* plot : *plots) {
@@ -408,33 +397,48 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/)
     fullResults = new std::vector<bool>;
   }
 
-  long printEvery(0);
-  if (printLevel_ == 1)
-    printEvery = 10000;
-  else if (printLevel_ == 2)
+  long printEvery(10000);
+  if (printLevel_ == 2)
     printEvery = 100;
   else if (printLevel_ >= 3)
     printEvery = 1;
 
-  long iEntry(0);
+  long iEntry(_firstEntry);
+  long iEntryMax(_firstEntry + _nEntries);
   int treeNumber(-1);
   unsigned passBase(0);
   unsigned passFull(0);
-  while (iEntry != _nEntries && tree_.GetEntry(iEntry++) > 0) {
+  while (iEntry != iEntryMax && tree_.LoadTree(iEntry++) >= 0) {
     if (printLevel_ >= 0 && iEntry % printEvery == 1) {
       std::cout << "\r      " << iEntry << " events";
       if (printLevel_ > 1)
         std::cout << std::endl;
     }
 
-    if (prescale_ != 1 && eventNumber % prescale_ != 0)
-      continue;
-
     if (treeNumber != tree_.GetTreeNumber()) {
       if (printLevel_ > 1)
         std::cout << "      Opened a new file: " << tree_.GetCurrentFile()->GetName() << std::endl;
 
       treeNumber = tree_.GetTreeNumber();
+
+      if (weightBranchName_.Length() != 0) {
+        weightBranch = tree_.GetBranch(weightBranchName_);
+        if (!weightBranch)
+          throw std::runtime_error(("Could not find branch " + weightBranchName_).Data());
+
+        if (weightBranchType_ == 'F')
+          weightBranch->SetAddress(&weightF);
+        else
+          weightBranch->SetAddress(&weight);
+      }
+
+      if (prescale_ > 1) {
+        eventNumberBranch = tree_.GetBranch("eventNumber");
+        if (!eventNumberBranch)
+          throw std::runtime_error("Event number not available");
+
+        eventNumberBranch->SetAddress(&eventNumber);
+      }
 
       if (baseSelection_)
         baseSelection_->UpdateFormulaLeaves();
@@ -448,9 +452,22 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/)
         plot->updateTree();
     }
 
+    if (prescale_ > 1) {
+      eventNumberBranch->GetEntry(iEntry - 1);
+
+      if (eventNumber % prescale_ != 0)
+        continue;
+    }
+
     // Reset formula cache
     for (auto& ff : library_)
       ff.second->ResetCache();
+
+    if (weightBranch) {
+      weightBranch->GetEntry(iEntry - 1);
+      if (weightBranchType_ == 'F')
+        weight = weightF;
+    }
 
     double eventWeight(weight * lumi_);
 
@@ -514,14 +531,20 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/)
       if (fullResults)
         fullResults->assign(nD, false);
 
-      if (baseResults && baseResults->size() < nD) {
-        // fullResults for iD >= baseResults->size() will never be true
+      // fullResults for iD >= baseResults->size() will never be true
+      if (baseResults && baseResults->size() < nD)
         nD = baseResults->size();
-      }
+
+      bool loaded(false);
 
       for (unsigned iD(0); iD != nD; ++iD) {
         if (baseResults && !(*baseResults)[iD])
           continue;
+
+        if (!loaded && iD != 0)
+          fullSelection_->EvalInstance(0);
+
+        loaded = true;
 
         if (fullSelection_->EvalInstance(iD) != 0.) {
           any = true;
