@@ -24,7 +24,6 @@ import ROOT
 
 ROOT.gSystem.Load(config.libobjs)
 ROOT.gSystem.Load('libfastjet.so')
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
 
 # if the objects library is compiled with CLING dictionaries, ROOT must load the
 # full library first before compiling the macros.
@@ -570,6 +569,10 @@ def hfake(sample, rname):
     vtxWeight = ROOT.VtxAdjustedJetProxyWeight(isoTFactor, isoVertexScore, noIsoTFactor, noIsoVertexScore)
 
     vtxWeight.setRCProb(rcProb, 1.163)
+    vtxWeight.addVariation('proxyDefUp', hadproxyTightWeight)
+    vtxWeight.addVariation('proxyDefDown', hadproxyLooseWeight)
+    vtxWeight.addVariation('purityUp', hadproxyPurityUpWeight)
+    vtxWeight.addVariation('purityDown', hadproxyPurityDownWeight)
 
     selector.addOperator(vtxWeight)
 

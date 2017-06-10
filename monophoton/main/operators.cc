@@ -2335,51 +2335,53 @@ PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophot
     return;
   }
 
-  auto calcWeight([maxPt](TObject* source, int var = 0)->double {
-      if (source->InheritsFrom(TH1::Class())) {
-        TH1* hist(static_cast<TH1*>(source));
-
-        int iX(hist->FindFixBin(maxPt));
-        if (iX == 0)
-          iX = 1;
-        if (iX > hist->GetNbinsX())
-          iX = hist->GetNbinsX();
-
-        if (var == 0)
-          return hist->GetBinContent(iX);
-        else if (var == 1)
-          return hist->GetBinContent(iX) + hist->GetBinError(iX);
-        else
-          return hist->GetBinContent(iX) - hist->GetBinError(iX);
-      }
-      else if (source->InheritsFrom(TF1::Class())) {
-        TF1* func(static_cast<TF1*>(source));
-
-        double x(maxPt);
-        if (x < func->GetXmin())
-          x = func->GetXmin();
-        if (x > func->GetXmax())
-          x = func->GetXmax();
-
-        return func->Eval(x);
-      }
-      else
-        return 0.;
-    });
-
-  double weight(calcWeight(nominal_));
+  double weight(_calcWeight(nominal_, maxPt));
   weight_ = weight;
   _outEvent.weight *= weight;
 
   for (auto& var : varWeights_) {
     if (var.first == name_ + "Up")
-      *var.second = calcWeight(nominal_, 1) / weight;
+      *var.second = _calcWeight(nominal_, maxPt, 1) / weight;
     else if (var.first == name_ + "Down")
-      *var.second = calcWeight(nominal_, -1) / weight;
+      *var.second = _calcWeight(nominal_, maxPt, -1) / weight;
     else
-      *var.second = calcWeight(variations_[var.first]) / weight;
+      *var.second = _calcWeight(variations_[var.first], maxPt) / weight;
   }
 }
+
+double
+PhotonPtWeight::_calcWeight(TObject* source, double pt, int var/* = 0*/)
+{
+  if (source->InheritsFrom(TH1::Class())) {
+    TH1* hist(static_cast<TH1*>(source));
+
+    int iX(hist->FindFixBin(pt));
+    if (iX == 0)
+      iX = 1;
+    if (iX > hist->GetNbinsX())
+      iX = hist->GetNbinsX();
+
+    if (var == 0)
+      return hist->GetBinContent(iX);
+    else if (var == 1)
+      return hist->GetBinContent(iX) + hist->GetBinError(iX);
+    else
+      return hist->GetBinContent(iX) - hist->GetBinError(iX);
+  }
+  else if (source->InheritsFrom(TF1::Class())) {
+    TF1* func(static_cast<TF1*>(source));
+
+    if (pt < func->GetXmin())
+      pt = func->GetXmin();
+    if (pt > func->GetXmax())
+      pt = func->GetXmax();
+
+    return func->Eval(pt);
+  }
+  else
+    return 0.;
+}
+
 
 //--------------------------------------------------------------------
 // IDSFWeight
@@ -2525,8 +2527,7 @@ NPVWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 //--------------------------------------------------------------------
 
 VtxAdjustedJetProxyWeight::VtxAdjustedJetProxyWeight(TH1* isoTFactor, TH2* isoVScore, TH1* noIsoTFactor, TH2* noIsoVScore, char const* name/* = "VtxAdjustedJetProxyWeight"*/) :
-  Modifier(name),
-  isoTFactor_(isoTFactor),
+  PhotonPtWeight(isoTFactor, name),
   isoVScore_(isoVScore),
   noIsoTFactor_(noIsoTFactor),
   noIsoVScore_(noIsoVScore)
@@ -2554,11 +2555,14 @@ VtxAdjustedJetProxyWeight::setRCProb(TH2* distribution, double chIsoCut)
 void
 VtxAdjustedJetProxyWeight::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("isoTFactor", &isoT_, "isoTFactor/F");
+  _skimTree.Branch("isoTFactor", &weight_, "isoTFactor/F");
   _skimTree.Branch("isoPVProb", &isoPVProb_, "isoPVProb/F");
   _skimTree.Branch("noIsoTFactor", &noIsoT_, "noIsoTFactor/F");
   _skimTree.Branch("noIsoPVProb", &noIsoPVProb_, "noIsoPVProb/F");
   _skimTree.Branch("randomcone", &rc_, "randomcone/F");
+  
+  for (auto& var : varWeights_)
+    _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
 }
 
 void
@@ -2570,23 +2574,8 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
   double pt(_outEvent.photons[0].scRawPt);
   double eta(_outEvent.photons[0].eta());
 
-  int iX;
-
-  iX = isoTFactor_->FindBin(pt);
-  if (iX == 0)
-    iX = 1;
-  else if (iX == isoTFactor_->GetNbinsX() + 1)
-    iX = isoTFactor_->GetNbinsX();
-
-  isoT_ = isoTFactor_->GetBinContent(iX);
-
-  iX = noIsoTFactor_->FindBin(pt);
-  if (iX == 0)
-    iX = 1;
-  else if (iX == noIsoTFactor_->GetNbinsX() + 1)
-    iX = noIsoTFactor_->GetNbinsX();
-
-  noIsoT_ = noIsoTFactor_->GetBinContent(iX);
+  weight_ = _calcWeight(nominal_, pt);
+  noIsoT_ = _calcWeight(noIsoTFactor_, pt);
 
   if (_event.vertices.size() <= 1) {
     isoPVProb_ = 1.;
@@ -2595,7 +2584,7 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
   else {
     int iYMin(isoVScore_->GetYaxis()->FindBin(std::log(_event.vertices[1].score)));
       
-    iX = isoVScore_->GetXaxis()->FindBin(pt);
+    int iX(isoVScore_->GetXaxis()->FindBin(pt));
     if (iX == 0)
       iX = 1;
     else if (iX == isoVScore_->GetNbinsX() + 1)
@@ -2617,17 +2606,24 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
   }
 
   rc_ = 0.;
-  if (rcProb_) {
-    iX = rcProb_->FindBin(eta);
-    if (iX == 0)
-      iX = 1;
-    else if (iX == rcProb_->GetNbinsX() + 1)
-      iX = rcProb_->GetNbinsX();
+  if (rcProb_)
+    rc_ = _calcWeight(rcProb_, eta);
 
-    rc_ = rcProb_->GetBinContent(iX);
+  double t(isoPVProb_ * weight_ + (1. - noIsoPVProb_) * noIsoT_ * rc_);
+
+  _outEvent.weight *= t;
+
+  for (auto& var : varWeights_) {
+    double isoT(0.);
+    if (var.first == name_ + "Up")
+      isoT = _calcWeight(nominal_, pt, 1);
+    else if (var.first == name_ + "Down")
+      isoT = _calcWeight(nominal_, pt, -1);
+    else
+      isoT = _calcWeight(variations_[var.first], pt);
+
+    *var.second = (isoPVProb_ * isoT + (1. - noIsoPVProb_) * noIsoT_ * rc_) / t;
   }
-
-  _outEvent.weight *= isoPVProb_ * isoT_ + (1. - noIsoPVProb_) * noIsoT_ * rc_;
 }
 
 //--------------------------------------------------------------------

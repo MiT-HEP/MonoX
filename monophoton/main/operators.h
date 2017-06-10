@@ -1,8 +1,8 @@
 #ifndef operators_h
 #define operators_h
 
-#include "Objects/interface/EventMonophoton.h"
-#include "Objects/interface/EventTPPhoton.h"
+#include "PandaTree/Objects/interface/EventMonophoton.h"
+#include "PandaTree/Objects/interface/EventTPPhoton.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -865,6 +865,8 @@ class PhotonPtWeight : public Modifier {
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
+  double _calcWeight(TObject* source, double pt, int var = 0);
+
   TObject* nominal_;
   double weight_;
   std::map<TString, TObject*> variations_;
@@ -912,29 +914,24 @@ class NPVWeight : public Modifier {
   TH1* factors_;
 };
 
-class VtxAdjustedJetProxyWeight : public Modifier {
+class VtxAdjustedJetProxyWeight : public PhotonPtWeight {
  public:
   VtxAdjustedJetProxyWeight(TH1* isoTFactor, TH2* isoVScore, TH1* noIsoTFactor, TH2* noIsoVScore, char const* name = "VtxAdjustedJetProxyWeight");
   
   void setRCProb(TH2* distribution, double chIsoCut);
-  void addVariation(char const* suffix, TObject* corr);
 
   void addBranches(TTree& skimTree) override;
 
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
-  TH1* isoTFactor_; // N(fake jets) / N(jet proxies)
+  //  TH1* isoTFactor_; // N(fake jets) / N(jet proxies) - use nominal_ of PhotonPtWeight
   TH2* isoVScore_; // Score distribution of vertices with an isolated fake photon (score:pt)
   TH1* noIsoTFactor_; // N(noICH fake jets) / N(jet proxies)
   TH2* noIsoVScore_; // Score distribution of vertices with noICH fake photon (score:pt)
   TH1* rcProb_{0}; // Probability of a random 0.3 cone to have CH sumPT higher than the cut (:eta)
 
-  // variations to isoTFactor
-  std::map<TString, TObject*> variations_;
-  std::map<TString, double*> varWeights_;
-
-  float isoT_;
+  //  float isoT_; - use weight_ of PhotonPtWeight
   float isoPVProb_;
   float noIsoT_;
   float noIsoPVProb_;
