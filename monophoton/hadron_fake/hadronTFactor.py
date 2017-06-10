@@ -27,8 +27,8 @@ rcanvas = RatioCanvas(lumi = lumi)
 binning = array.array('d', [175., 200., 250., 300., 350., 400., 450., 500.])
 pid = 'medium'
 era = 'Ashim_ZG_CWIso'
-extras = 'pixel-noICH'
-suffix = 'NoICH'
+extras = 'pixel-max'
+suffix = 'chIsoMax'
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityGraph = inputFile.Get("barrel-" + pid + "-" + extras + "-Met0to60")
@@ -76,6 +76,13 @@ if 'pixel' in extras:
 if 'noICH' in extras:
     goodSels.pop('chIso')
 
+if 'max' in extras:
+    baseSels['chIso'] = baseSels['chIso'].replace('chIso', 'chIsoMax')
+    goodSels['chIso'] = goodSels['chIso'].replace('chIso', 'chIsoMax')
+    nomSels['chIso'] = nomSels['chIso'].replace('chIso', 'chIsoMax')
+    tightSels['chIso'] = tightSels['chIso'].replace('chIso', 'chIsoMax')
+    looseSels['chIso'] = looseSels['chIso'].replace('chIso', 'chIsoMax')
+
 # selections concatenated with chVeto
 configurations = [
     ('Nom', nomSels),
@@ -91,7 +98,12 @@ configurations = [
 plotter = ROOT.MultiDraw()
 plotter.setPrintLevel(1)
 for sample in allsamples.getmany(snames):
-    plotter.addInputPath(config.skimDir + '/' + sample.name + '_emjet.root')
+    inName = os.path.join(config.skimDir, sample.name + '_emjet.root')
+    localName = os.path.join(config.localSkimDir, sample.name + '_emjet.root')
+    if os.path.exists(localName) and os.stat(localName).st_mtime > os.stat(inName).st_mtime:
+        plotter.addInputPath(localName)
+    else:
+        plotter.addInputPath(inName)
 
 plotter.setBaseSelection(' && '.join(baseSels.values()))
 
