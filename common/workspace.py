@@ -176,8 +176,6 @@ def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
     sources = {}
 
     for region in _config.regions:
-        print ' ', region
-
         _sourcePlots[region] = collections.defaultdict(dict)
 
         histnames = []
@@ -262,8 +260,6 @@ def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
 
             # name does not have _*Up or _*Down suffix -> is a nominal histogram
             _sourcePlots[region][process]['nominal'] = obj
-
-        print '  '.join(histnames)
 
     for source in sources.values():
         source.Close()
