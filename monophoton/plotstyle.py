@@ -505,7 +505,7 @@ class SimpleCanvas(object):
                 if self.ylimits[0] == 0. and not logy:
                     base.SetMinimum(0.)
                 elif self.ylimits[0] > 0.:
-                    base.SetMinimum(ylimits[0])
+                    base.SetMinimum(self.ylimits[0])
 
                 base.SetMaximum(self.ylimits[1])
 
