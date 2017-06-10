@@ -25,7 +25,7 @@ def applyMod(sels, *mods):
 data_sph = [
     'monoph', 'efake', 'hfake',  'trivialShower', 'halo', 'emjet',
     'dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel',
-    'dimuHfake', 'dielHfake', 'monomuHfake', 'monoelHfake',
+    'dimuHfake', 'dielHfake', 'monomuHfake', 'monomuEfake', 'monoelHfake', 'monoelEfake',
     'tpeg', 'tpmg',
     'dijet'
 ]

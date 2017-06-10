@@ -511,14 +511,7 @@ def efake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    weight = ROOT.PhotonPtWeight(getFromFile(datadir + '/efake_data_ptalt.root', 'frate'), 'egfakerate')
-    weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
-    selector.addOperator(weight)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
-    setupPhotonSelection(photonSel, veto = True)
+    modEfake(selector)
 
     return selector
 
@@ -790,6 +783,13 @@ def monoelHfake(sample, rname):
 
     return selector
 
+def monoelEfake(sample, rname):
+    selector = monoel(sample, rname)
+
+    modEfake(selector)
+
+    return selector
+
 def dimu(sample, rname):
     selector = leptonBase(sample, rname, ROOT.lMuon)
     selector.findOperator('LeptonSelection').setN(0, 2)
@@ -883,6 +883,13 @@ def monomuHfake(sample, rname):
     selector = monomu(sample, rname)
 
     modHfake(selector)
+
+    return selector
+
+def monomuEfake(sample, rname):
+    selector = monomu(sample, rname)
+
+    modEfake(selector)
 
     return selector
 
@@ -1229,7 +1236,7 @@ def addPhotonRecoil(sample, selector):
     selector.addOperator(ROOT.PhotonRecoil())
 
 def modHfake(selector):
-    """Append PhotonPtWeight with hadProxyWeights and set up the photon selections."""
+    """Append PhotonPtWeight with hadProxyWeight and set up the photon selections."""
 
     hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
 
@@ -1240,6 +1247,20 @@ def modHfake(selector):
     photonSel = selector.findOperator('PhotonSelection')
 
     setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11'])
+    setupPhotonSelection(photonSel, veto = True)
+
+def modEfake(selector):
+    """Append PhotonPtWeight with eproxyWeight and set up the photon selections."""
+
+    eproxyWeight = getFromFile(datadir + '/efake_data_ptalt.root', 'frate')
+
+    weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
+    weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
 
