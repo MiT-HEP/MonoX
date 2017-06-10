@@ -124,6 +124,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             for iX in range(1, hist.GetNbinsX() + 1):
                 if hist.GetBinContent(iX) < 0.:
                     if horig is None:
+                        print '      Adjusting bin contents of', hist.GetDirectory().GetMotherDir().GetName(), hist.GetName(), 'to be non-negative'
                         horig = hist.Clone(hist.GetName() + '_original')
 
                     hist.SetBinContent(iX, 0.)
@@ -131,6 +132,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
                 elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
                     if horig is None:
+                        print '      Adjusting bin errors of', hist.GetDirectory().GetMotherDir().GetName(), hist.GetName(), 'to be non-negative'
                         horig = hist.Clone(hist.GetName() + '_original')
 
                     hist.SetBinError(iX, hist.GetBinContent(iX))
@@ -138,7 +140,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             writeHist(hist)
 
             if horig is not None:
-                horig.SetDirectory(outDir)
+                horig.SetDirectory(hist.GetDirectory())
                 writeHist(horig)
 
     # aggregate group plots
@@ -169,7 +171,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         obshist.SetBinError(iBin, 0.)
 
         else:
-            # write a group total histogram with systematic uncertainties added in quadrature (for display)
+            # write a group total histogram with systematic uncertainties added in quadrature (for display purpose only)
             outDir.cd()
             ghistSyst = ghist.Clone(group.name + '_syst')
     
@@ -193,6 +195,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     
                 for iX in range(1, hist.GetNbinsX() + 1):
                     err = math.sqrt(math.pow(ghistSyst.GetBinError(iX), 2.) + math.pow(uphist.GetBinContent(iX), 2.))
+                    if err > ghistSyst.GetBinContent(iX):
+                        err = ghistSyst.GetBinContent(iX)
+
                     ghistSyst.SetBinError(iX, err)
     
             writeHist(ghistSyst)
