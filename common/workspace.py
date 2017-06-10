@@ -19,8 +19,8 @@ The script is driven by a parameter card, which is itself a python script defini
 If parameters_path is not given, the parameters are taken from the file named parameters.py in the current directory.
 
 [Parameter card instructions]
-Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region}, {process}, and {distribution} should be used in the
-naming patterns. The wildcards will be replaced by the list of regions and processes and the name of the distribution, also specified in the parameters section.
+Specify the input file name format and the histogram naming schema as filename and histname parameters. Wildcards {region} and {process} should be used in the
+naming patterns. The wildcards will be replaced by the list of regions and processes, also specified in the parameters section.
 . Histogram naming conventions:
  Histograms for systematic variations must be named with a suffix _(nuisance name)(Up|Down) (e.g. z_signal_pdfUp for process z in the region signal with upward variation of pdf
  uncertainty).
@@ -30,6 +30,30 @@ All nuisances where histograms are defined will be included in the workspace, re
 the nuisance-process matrix and instead will list all the nuisances as "param"s.
 If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
 If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
+
+ Variables to be defined:
+ <input>
+  sourcedir - Where to find the ROOT files containing histograms.
+  filename - Source file name format. Wildcards {region} and {process} can be used.
+  histname - Format of histogram names to be found in the source files. Wildcards {region} and {process} can be used.
+  signalHistname - Format of signal histogram names.
+  binWidthNormalized - boolean specifying whether the input histograms are already bin-width normalized.
+ <physics>
+  regions - List of signal and control region names. Replaces the {region} wildcard in the input definitions.
+  processes - Full list of process names. Not all processes have to appear in every region.
+  signals - List of signal point names.
+  links - List of links between samples. [(target process, target region), (source process, source region)].
+ <nuisances>
+  ignoredNuisances - For each (process, region), list the nuisances that can be found in the input files as histograms but should be ignored. {(process, region): [nuisance]}.
+  scaleNuisances - List of nuisances that affect the normalization only. All of them must have corresponding histograms.
+  ratioCorrelations - Nuisances are fully correlated between samples in a link by default. Use this to specify partial correlations. {((target sample), (source sample), nuisance): correlation}.
+  deshapedNuisances - List of nuisances to be artificially bin-decorrelated. Systematic variations in this list will have nuisance a parameter for each bin.
+  floats - List of samples with floating normalization but does not participate in any links.
+ <optional>
+  (customize) - A function that takes a RooWorkspace as the sole argument. Called at the end of workspace preparation to edit the workspace content.
+  (carddir) - When given, data card files are produced and saved in this directory.
+  (plotsOutname) - When given, a ROOT file with histograms visualizing the workspace content is created.
+    (xtitle) - X axis title of the histograms.
 """
 
 import os
@@ -148,30 +172,38 @@ def isLinkSource(source):
 
     return False
 
-def fetchHistograms(_config, _sources, _sourcePlots, _totals, _hstore):
+def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
+    sources = {}
+
     for region in _config.regions:
+        print ' ', region
+
         _sourcePlots[region] = collections.defaultdict(dict)
 
-        for process in _config.processes + _config.signals:
-            # rename 'data' to 'data_obs' (historical)
-            if process == 'data':
-                pname = 'data'
-                process = 'data_obs'
-            else:
-                pname = process
+        histnames = []
 
-            fname = _config.sourcedir + '/' + _config.filename.format(process = process, region = region, distribution = _config.distribution)
+        for process in _config.processes:
+            fname = _config.sourcedir + '/' + _config.filename.format(process = process, region = region)
             try:
-                source = _sources[fname]
+                source = sources[fname]
             except KeyError:
                 source = ROOT.TFile.Open(fname)
-                _sources[fname] = source
+                sources[fname] = source
+
+            sourceDir = source
+
+            histname = _config.histname.format(process = process, region = region)
+            if '/' in histname:
+                sourceDir = source.GetDirectory(os.path.dirname(histname))
+                histname = os.path.basename(histname)
 
             # find all histograms matching the specified histogram name pattern + (_variation)
-            for key in source.GetListOfKeys():
-                matches = re.match(_config.histname.format(process = pname, region = region, distribution = _config.distribution) + '(_.+(?:Up|Down)|)', key.GetName())
+            for key in sourceDir.GetListOfKeys():
+                matches = re.match(histname + '(_.+(?:Up|Down)|)', key.GetName())
                 if matches is None:
                     continue
+
+                histnames.append(key.GetName())
 
                 variation = matches.group(1)
 
@@ -194,10 +226,55 @@ def fetchHistograms(_config, _sources, _sourcePlots, _totals, _hstore):
                         # background process
                         if region not in _totals:
                             _totals[region] = obj.Clone('total_' + region)
+                            _totals[region].SetDirectory(_hstore)
                         else:
                             _totals[region].Add(obj)
                 else:
                     _sourcePlots[region][process][variation[1:]] = obj
+
+        for process in _config.signals:
+            fname = _config.sourcedir + '/' + _config.filename.format(process = process, region = region)
+            try:
+                source = sources[fname]
+            except KeyError:
+                source = ROOT.TFile.Open(fname)
+                sources[fname] = source
+
+            sourceDir = source
+
+            histname = _config.signalHistname.format(process = process, region = region)
+
+            obj = sourceDir.Get(histname)
+            if not obj:
+                continue
+
+            histnames.append(histname)
+
+            obj.SetDirectory(_hstore)
+
+            if _config.binWidthNormalized:
+                for iX in range(1, obj.GetNbinsX() + 1):
+                    cont = obj.GetBinContent(iX) * obj.GetXaxis().GetBinWidth(iX)
+                    if process == 'data_obs':
+                        cont = round(cont)
+
+                    obj.SetBinContent(iX, cont) 
+
+            # name does not have _*Up or _*Down suffix -> is a nominal histogram
+            _sourcePlots[region][process]['nominal'] = obj
+
+        print '  '.join(histnames)
+
+    for source in sources.values():
+        source.Close()
+
+    # make sure all signal processes appear at least in one region
+    for process in _config.signals:
+        for region in _config.regions:
+            if process in _sourcePlots[region]:
+                break
+        else:
+            raise RuntimeError('Signal process ' + process + ' was not found in any of the regions.')
 
 
 if __name__ == '__main__':
@@ -205,21 +282,26 @@ if __name__ == '__main__':
     ## INPUT
     # fetch all source histograms first    
 
-    sources = {}
     sourcePlots = {}
     totals = {}
 
     hstore = ROOT.gROOT.mkdir('hstore')
 
-    fetchHistograms(config, sources, sourcePlots, totals, hstore)
+    print 'Retrieving all histograms from', config.sourcedir
+
+    fetchHistograms(config, sourcePlots, totals, hstore)
 
     ## WORKSPACE
+
+    ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
     x = fct('x[-1.e+10,1.e+10]')
 
     # binning
     h = sourcePlots[config.regions[0]]['data_obs']['nominal']
     x.setBinning(ROOT.RooBinning(h.GetNbinsX(), h.GetXaxis().GetXbins().GetArray()), 'default')
+
+    print 'Constructing the workspace'
 
     # will construct the workspace iteratively to resolve links
     iteration = 0
@@ -228,7 +310,7 @@ if __name__ == '__main__':
 
         done = True
 
-        print 'Iteration {0}'.format(iteration)
+        print '<Iteration {0}>'.format(iteration)
         iteration += 1
 
         for region in config.regions:
@@ -258,7 +340,7 @@ if __name__ == '__main__':
 
                 nominal = plots['nominal']
 
-                print 'Constructing pdf for', sampleName
+                print '  Constructing pdf for', sampleName
 
                 # there are three different types of samples
                 # 1. link target: mu is TF x someone else's mu
@@ -267,7 +349,7 @@ if __name__ == '__main__':
 
                 sbase = linkSource(sample)
                 if sbase is not None:
-                    print 'this sample is a function of the yields in', sbase
+                    print '    this sample is a function of the yields in', sbase
 
                     try:
                         # check for source recursively
@@ -280,7 +362,7 @@ if __name__ == '__main__':
                             source = linkSource(source)
 
                     except ReferenceError:
-                        print 'but source', source, 'is not constructed yet.'
+                        print '    but source', source, 'is not constructed yet.'
                         # try again in a later iteration
                         regionDone = False
                         continue
@@ -299,7 +381,7 @@ if __name__ == '__main__':
                         rbin = ratio.GetBinContent(ibin)
 
                         if rbin == 0.:
-                            print 'WARNING: {region} {process} bin{ibin} has tf = 0'.format(region = region, process = process, ibin = ibin)
+                            print '    WARNING: {region} {process} bin{ibin} has tf = 0'.format(region = region, process = process, ibin = ibin)
                             bin = fct('mu_{bin}[0.]')
                             bins.add(bin)
                             continue
@@ -405,7 +487,7 @@ if __name__ == '__main__':
                     ratio.Delete()
 
                 elif isLinkSource(sample):
-                    print 'this sample is a base of some other sample'
+                    print '    this sample is a base of some other sample'
                     # each bin must be described by a free-floating RooRealVar
                     # uncertainties are all casted on tfactors
 
@@ -414,7 +496,7 @@ if __name__ == '__main__':
                         bins.add(bin)
 
                 else:
-                    print 'this sample does not participate in constraints'
+                    print '    this sample does not participate in constraints'
 
                     if sample in config.floats:
                         normName = '{0}_{1}_freenorm'.format(*sample)
@@ -514,14 +596,15 @@ if __name__ == '__main__':
         for n in sorted(nuisances):
             print n, 'param 0 1'
 
-    if hasattr(config, 'outdir'):
-        if not os.path.isdir(config.outdir):
-            os.makedirs(config.outdir)
     workspace.writeToFile(config.outname)
+
+    print 'Workspace written to', config.outname
 
     signalRegion = ''
     ## DATACARDS
     if hasattr(config, 'carddir'):
+        print 'Writing data cards'
+
         if not os.path.isdir(config.carddir):
             os.makedirs(config.carddir)
 
@@ -616,16 +699,21 @@ if __name__ == '__main__':
                     # no other signal name matched -> nuisance either not related to signal or related to this signal model
                     cardlines.append(nuisance + ' param 0 1')
 
-            with open(config.carddir + '/' + signal.replace('signal-', '') + '.dat', 'w') as datacard:
+            with open(config.carddir + '/' + signal + '.dat', 'w') as datacard:
                 for line in cardlines:
                     if '{signal}' in line:
                         line = line.format(signal = signal)
 
                     datacard.write(line + '\n')
+            
+            print ' ', signal
 
+        print 'Cards saved to', config.carddir
 
     ## PLOTS
     if hasattr(config, 'plotsOutname'):
+        print 'Visualizing workspace'
+
         def modRelUncert2(mod):
             # stat uncertainty of TFs have two parameters
             # allow for general case of N parameters
@@ -795,3 +883,5 @@ if __name__ == '__main__':
             hData.Write()
 
         plotsFile.Close()
+
+        print 'Histograms saved to', config.plotsOutname
