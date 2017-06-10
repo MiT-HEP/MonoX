@@ -1,7 +1,7 @@
 #ifndef photon_extra_h
 #define photon_extra_h
 
-#include "Objects/interface/XPhoton.h"
+#include "PandaTree/Objects/interface/XPhoton.h"
 
 namespace panda {
 
