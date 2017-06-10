@@ -502,8 +502,11 @@ class SimpleCanvas(object):
                 else:
                     base.SetMinimum(0.)
             else:
-                if self.ylimits[0] >= 0.:
-                    base.SetMinimum(self.ylimits[0])
+                if self.ylimits[0] == 0. and not logy:
+                    base.SetMinimum(0.)
+                elif self.ylimits[0] > 0.:
+                    base.SetMinimum(ylimits[0])
+
                 base.SetMaximum(self.ylimits[1])
 
             if len(self.legend.entries) != 0 and drawLegend:
