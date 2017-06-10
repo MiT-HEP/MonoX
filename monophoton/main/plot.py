@@ -3,17 +3,10 @@
 import sys
 sys.dont_write_bytecode = True
 import os
-import array
 import math
 import re
-import itertools
-from pprint import pprint
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-sys.path.append(basedir)
-
-def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0):
+def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0, altSourceDir = ''):
     if group.region:
         region = group.region
     else:
@@ -24,9 +17,15 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         dname = sample.name + '_' + region
 
         print '   ', dname
-    
+
         sourceName = sourceDir + '/' + dname + '.root'
-        if not os.path.exists(sourceName):
+        
+        if altSourceDir:
+            altName = altSourceDir + '/' + dname + '.root'
+            if not os.path.exists(altName) and os.stat(altName).st_mtime > os.stat(sourceName).st_mtime:
+                sourceName = altName
+
+        elif not os.path.exists(sourceName):
             raise RuntimeError('Cannot open file ' + sourceName)
     
         histograms = []
@@ -94,9 +93,15 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     else:
                         cut = plotdef.cut.strip()
 
+                    if variation.replacements is not None:
+                        expr = plotdef.formExpression(variation.replacements[iv])
+                    else:
+                        expr = plotdef.formExpression()
+                    
+
                     plotter.addPlot(
                         hist,
-                        plotdef.formExpression(variation.replacements[iv]),
+                        expr,
                         cut,
                         plotdef.applyBaseline,
                         plotdef.applyFullSel,
@@ -114,7 +119,27 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 # this is a data-driven background sample
                 hist.Scale(postscale)
 
+            # zero out negative bins (save the original as _orig)
+            horig = None
+            for iX in range(1, hist.GetNbinsX() + 1):
+                if hist.GetBinContent(iX) < 0.:
+                    if horig is None:
+                        horig = hist.Clone(hist.GetName() + '_original')
+
+                    hist.SetBinContent(iX, 0.)
+                    hist.SetBinError(iX, 0.)
+
+                elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+                    if horig is None:
+                        horig = hist.Clone(hist.GetName() + '_original')
+
+                    hist.SetBinError(iX, hist.GetBinContent(iX))
+
             writeHist(hist)
+
+            if horig is not None:
+                horig.SetDirectory(outDir)
+                writeHist(horig)
 
     # aggregate group plots
 
@@ -455,8 +480,13 @@ if __name__ == '__main__':
     import ROOT
     ROOT.gROOT.SetBatch(True)
 
+    thisdir = os.path.dirname(os.path.realpath(__file__))
+    basedir = os.path.dirname(thisdir)
+    sys.path.append(basedir)
+
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
     from main.plotconfig import getConfig
+    import config
 
     ##################################
     ## PARSE COMMAND-LINE ARGUMENTS ##
@@ -542,7 +572,7 @@ if __name__ == '__main__':
                     groups.append(sspec.group)
                     sspec.group.samples = []
     
-                sspec.group.samples.append(sspec.name)
+                sspec.group.samples.append(sspec.sample)
 
         if not args.asimov:
             groups.append(plotConfig.obs)
@@ -550,7 +580,7 @@ if __name__ == '__main__':
         for group in groups:
             print ' ', group.name
     
-            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel)
+            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = config.localSkimDir)
    
         # Save a background total histogram (for display purpose) for each plotdef
         for plotdef in plotdefs:
@@ -573,6 +603,15 @@ if __name__ == '__main__':
                     x = bkghist.GetXaxis().GetBinCenter(iBin)
                     for _ in xrange(int(round(bkghist.GetBinContent(iBin)))):
                         obshist.Fill(x)
+
+                writeHist(obshist)
+
+        if args.histFile:
+            # close and reopen the output file
+            histFile.Close()
+            histFile = ROOT.TFile.Open(args.histFile)
+
+    # closes if not args.replot
 
 
     ####################
@@ -598,7 +637,7 @@ if __name__ == '__main__':
         else:
             plotDir = args.plotDir
     else:
-        plotDir = 'monophoton/' + args.config
+        plotDir = 'monophoton/' + plotConfig.name
 
     if plotDir and args.clearDir:
         for plot in os.listdir(WEBDIR + '/' + plotDir):
@@ -625,7 +664,7 @@ if __name__ == '__main__':
             # set up canvas
             canvas.Clear(full = True)
 
-            isSensitive = plotdef.name in plotConfig.sensitiveVars
+            isSensitive = plotdef.sensitive
 
         else:
             counters = {}
@@ -640,11 +679,11 @@ if __name__ == '__main__':
             canvas.lumi = fullLumi
             postscale = 1.
 
-        outDir = histFile.GetDirectory(plotdef.name)
+        inDir = histFile.GetDirectory(plotdef.name)
 
         # fetch and format background groups
         for group in plotConfig.bkgGroups:
-            ghist = outDir.Get(group.name + '_syst')
+            ghist = inDir.Get(group.name + '_syst')
 
             if graphic:
                 formatHist(ghist, plotdef)
@@ -653,14 +692,14 @@ if __name__ == '__main__':
                 counters[group.name] = ghist
 
         # background total used for uncertainty display
-        bkgTotal = outDir.Get('bkgtotal_syst')
+        bkgTotal = inDir.Get('bkgtotal_syst')
         if graphic:
             formatHist(bkgTotal, plotdef)
 
         # plot signal distributions for sensitive plots
         if isSensitive:
             for sspec in plotConfig.signalPoints:
-                shist = outDir.Get('samples/' + sspec.name + '_' + plotConfig.region)
+                shist = inDir.Get('samples/' + sspec.name + '_' + plotConfig.name)
 
                 if graphic:
                     formatHist(shist, plotdef)
@@ -670,7 +709,7 @@ if __name__ == '__main__':
 
         # observed distributions (if not blinded)
         if not args.blind:
-            obshist = outDir.Get('data_obs')
+            obshist = inDir.Get('data_obs')
 
             if graphic:
                 formatHist(obshist, plotdef)
