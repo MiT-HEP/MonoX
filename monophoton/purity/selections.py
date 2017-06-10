@@ -15,7 +15,7 @@ import config
 ### Getting cut values from simple tree ###
 
 ROOT.gSystem.Load(config.libobjs)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
+e = ROOT.panda.Event
 
 print 'bloop'
 
@@ -77,7 +77,6 @@ ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
 Version = 'Ashim'
 # Version = 'MonojetSync'
-# versionDir =  '/data/t3home000/' + os.environ['USER'] + '/studies/purity/' + Version
 versionDir =  '/scratch5/' + os.environ['USER'] + '/studies/purity/' + Version
 if not os.path.isdir(versionDir):
     os.makedirs(versionDir)
@@ -265,7 +264,11 @@ class HistExtractor(object):
         self.plotter = ROOT.MultiDraw()
         for sname in snames:
             inName = os.path.join(config.skimDir, sname+'_emjet.root')
-            self.plotter.addInputPath(inName)
+            localName = os.path.join(config.localSkimDir, sname+'_emjet.root')
+            if os.path.exists(localName) and os.stat(localName).st_mtime > os.stat(inName).st_mtime:
+                self.plotter.addInputPath(localName)
+            else:
+                self.plotter.addInputPath(inName)
 
         self.variable = variable
 
@@ -292,6 +295,8 @@ class HistExtractor(object):
             hist = template.Clone(name)
             hist.SetTitle(title)
             histograms.append(hist)
+
+            print 'addPlot', self.variable, sel
 
             self.plotter.addPlot(hist, self.variable, sel, True)
 

@@ -1,3 +1,7 @@
+"""
+Fill a histogram of triggers (passes per path).
+"""
+
 import os
 import sys
 import ROOT
@@ -11,8 +15,8 @@ import config
 sname = sys.argv[1]
 sample = allsamples[sname]
 
-ROOT.gSystem.Load(config.libsimpletree)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
+ROOT.gSystem.Load(config.libobjs)
+e = ROOT.panda.Event
 
 ROOT.gROOT.LoadMacro('Dumper.cc+')
 

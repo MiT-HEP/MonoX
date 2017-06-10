@@ -22,7 +22,7 @@ binningName = sys.argv[2] # see efake_conf
 dataSource = 'sph' # sph or sel
 #varType = 'kSCRawMass'
 varType = 'kMass'
-plotDir = 'efake/fit_' + binningName
+plotDir = config.histDir + '/efake/fit_' + binningName
 
 # gets overwritten if len(sys.argv) == 7
 tpconfs = {
@@ -83,9 +83,6 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gSystem.Load(config.libobjs)
-e = ROOT.panda.Event
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats + '/interface')
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
