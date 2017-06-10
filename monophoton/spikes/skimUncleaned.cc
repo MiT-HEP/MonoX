@@ -1,5 +1,5 @@
-#include "Objects/interface/Event.h"
-#include "Objects/interface/EventMonophoton.h"
+#include "PandaTree/Objects/interface/Event.h"
+#include "PandaTree/Objects/interface/EventMonophoton.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -12,10 +12,9 @@
 void
 skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 {
-  // Skim the input tree for off-time (-15 < t < -10 ns) super clusters + high met and write an EventMonophoton output
+  // Skim the input tree for off-time (-15 < t < -10 ns) super clusters and write an EventMonophoton output
 
   panda::Event event;
-  panda::RecoMet met("pfMet");
   unsigned const NMAX(256);
   //mkbranch
   unsigned size;
@@ -41,7 +40,6 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
   event.setStatus(*_input, {"*"});
   event.setAddress(*_input, {"*"});
-  met.setAddress(*_input);
 
   auto hltToken(event.registerTrigger("HLT_Photon165_HE10"));
 

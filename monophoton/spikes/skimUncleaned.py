@@ -14,8 +14,6 @@ import ROOT
 sname = sys.argv[1]
 
 ROOT.gSystem.Load(config.libobjs)
-ROOT.gSystem.AddIncludePath('-I' + config.dataformats)
-
 try:
     e = ROOT.panda.Event
 except AttributeError:
@@ -46,7 +44,7 @@ elif sname == 'sph-16h-m':
     tree.Add(datadir + '/SinglePhoton+Run2016H-PromptReco-v2+AOD/*.root')
 
 fname = sname + '_offtime.root'
-tmpname = '/local/yiiyama/' + sname + '/' + fname
+tmpname = '/local/' + os.environ['USER'] + '/' + sname + '/' + fname
 finalname = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim/' + fname
 
 outputFile = ROOT.TFile.Open(tmpname, 'recreate')

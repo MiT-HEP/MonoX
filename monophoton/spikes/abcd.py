@@ -1,25 +1,26 @@
+import os
+import sys
+
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
+sys.path.append(basedir)
+import config
+
 import ROOT
 
-highmet = ROOT.TChain('events')
-highmet.Add('/data/t3home000/yiiyama/simpletree/uncleanedSkimmed/sph*_highmet.root')
-
-# Low MET has 0 contribution to < -10 ns
-#lowmet = ROOT.TChain('events')
-#lowmet.Add('/data/t3home000/yiiyama/simpletree/uncleanedSkimmed/sph*_lowmet.root')
-#
-#tLowmet = ROOT.TH1D('tLowmet', '', 100, -25., 25.)
-#lowmet.Draw('cluster.time>>tLowmet', 'cluster.rawPt > 175 && cluster.trackIso < 10. && cluster.mipEnergy < 4.9 && cluster.sieie < 0.0102')
+offtime = ROOT.TChain('events')
+offtime.Add(config.skimDir + '/sph*_offtime.root')
 
 target = ROOT.TChain('events')
-target.Add('/data/t3home000/yiiyama/studies/monophoton/skim/sph-16*_trivialShower.root')
+target.Add(config.skimDir + '/sph-16*_trivialShower.root')
 
-#offtime = 'cluster.isEB && cluster.rawPt > 175 && cluster.trackIso < 10. && cluster.mipEnergy < 4.9 && TMath::Abs(cluster.eta) > 0.05 && cluster.time > -15. && cluster.time < -10. && cluster.sieie < 0.0102 && met.met > 170.'
-offtime = 'cluster.isEB && cluster.rawPt > 175 && cluster.mipEnergy < 4.9 && TMath::Abs(cluster.eta) > 0.05 && cluster.time > -15. && cluster.time < -10. && cluster.sieie < 0.0102 && met.met > 170.'
-offtime_narrow = highmet.GetEntries(offtime + ' && (cluster.sieie < 0.001 || cluster.sipip < 0.001)')
-offtime_wide = highmet.GetEntries(offtime + ' && cluster.sieie > 0.001 && cluster.sipip > 0.001')
+#offsel = 'cluster.isEB && cluster.rawPt > 175 && cluster.trackIso < 10. && cluster.mipEnergy < 4.9 && TMath::Abs(cluster.eta) > 0.05 && cluster.time > -15. && cluster.time < -10. && cluster.sieie < 0.0102 && met.met > 170.'
+offsel = 'photons.isEB && photons.scRawPt > 175 && photons.mipEnergy < 4.9 && TMath::Abs(photons.eta_) > 0.05 && photons.time > -15. && photons.time < -10. && photons.sieie < 0.0102 && t1Met.pt > 170.'
+nOffTrivial = offtime.GetEntries(offsel + ' && (photons.sieie < 0.001 || photons.sipip < 0.001)')
+nOffPhysical = offtime.GetEntries(offsel + ' && photons.sieie > 0.001 && photons.sipip > 0.001')
 
-print offtime_wide, offtime_narrow
+print nOffTrivial, nOffPhysical
 
-intime_narrow = target.GetEntries('photons.scRawPt[0] > 175. && t1Met.met > 170 && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+nInNarrow = target.GetEntries('photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
 
-print intime_narrow, float(intime_narrow) * float(offtime_wide) / float(offtime_narrow)
+print nInNarrow, float(nInNarrow) * float(nOffPhysical) / float(nOffTrivial)
