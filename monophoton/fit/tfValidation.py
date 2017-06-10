@@ -8,10 +8,10 @@ from pprint import pprint
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
-sys.path.append(basedir.replace('monoph', 'common'))
+
 from workspace import fetchHistograms
 from plotstyle import SimpleCanvas, RatioCanvas
-import parameters
+import fit.parameters as parameters
 
 import ROOT as r
 
@@ -26,7 +26,7 @@ subtractBackground = True
 rlimits = (0.001, 0.5)
 systList = [('EWK', 1.0), ('vgPDF', 1.0), ('vgQCDscale', 0.8)]
 
-fetchHistograms(parameters, sources, sourcePlots, totals, hstore)
+fetchHistograms(parameters, sourcePlots, totals, hstore)
 
 rcanvas = RatioCanvas(name = 'datamc', lumi = 36400)
 rcanvas.legend.setPosition(0.5, 0.7, 0.7, 0.9)

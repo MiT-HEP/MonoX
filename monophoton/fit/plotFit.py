@@ -83,8 +83,8 @@ for key in prefitDir.GetListOfKeys():
     plotConfig = getConfig(region)
     
     lumi = 0.
-    for sName in plotConfig.obs.samples:
-        lumi += allsamples[sName].lumi / plotConfig.prescales[sName]
+    for sample in plotConfig.obs.samples:
+        lumi += sample.lumi / plotConfig.prescales[sample]
     
     canvas = RatioCanvas(lumi = lumi, name = region)
     canvas.legend.setPosition(0.6, 0.6, 0.9, 0.9)

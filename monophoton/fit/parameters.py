@@ -1,26 +1,24 @@
 import os
 
-histDir = '/data/t3home000/' + os.environ['USER'] + '/studies/monophoton'
+workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton_noichmax'
+distribution = 'phoPtHighMet'
 
-distribution = 'mtPhoMet'
+sourcedir = workdir + '/plots'
+outname = workdir + '/fit/ws_' + distribution + '.root'
+plotsOutname = workdir + '/fit/ws_' + distribution + '_plots.root'
+carddir = workdir + '/fit/datacards'
 
-version = 'dphMt100'
-
-outdir = histDir + '/fit/' + version
-outname = outdir + '/ws_' + distribution + '.root'
-plotsOutname = outdir + '/ws_' + distribution + '_plots.root'
-sourcedir = histDir + '/distributions/' + version
-carddir = histDir + '/datacards/' + version
-
-filename = '{region}_{distribution}.root'
-histname = '{distribution}-{process}'
+filename = '{region}.root'
+histname = distribution + '/{process}'
+signalHistname = distribution + '/samples/{process}_monoph'
 
 # sr = 'bmonoph' # blinded version
 sr = 'monoph'
 
 regions = [sr, 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowdphi'] # , 'lowmt']
-processes = ['data', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
-signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-1000', 'dph-125']
+processes = ['data_obs', 'efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
+#signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-1000', 'dph-125']
+signals = ['dmvlo-1000-1']
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 

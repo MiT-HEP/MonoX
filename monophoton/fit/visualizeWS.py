@@ -5,14 +5,14 @@ import array
 import math
 from argparse import ArgumentParser
 
-import parameters
-
 plotDir = 'monophoton/workspace'
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from plotstyle import SimpleCanvas, RatioCanvas
+
+import fit.parameters as parameters
 
 import ROOT
 
