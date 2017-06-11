@@ -197,7 +197,7 @@ def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
 
             # find all histograms matching the specified histogram name pattern + (_variation)
             for key in sourceDir.GetListOfKeys():
-                matches = re.match(histname + '(_.+(?:Up|Down)|)', key.GetName())
+                matches = re.match(histname + '(_.+(?:Up|Down)|)$', key.GetName())
                 if matches is None:
                     continue
 
@@ -741,8 +741,8 @@ if __name__ == '__main__':
             if not pdf:
                 break
 
-            hnominal = None
-            huncert = None
+            hnominal = None # nominal value +- stat uncertainty
+            huncert = None # nominal value +- stat + syst uncertainty
             isTF = False
 
             hmods = {}
@@ -808,7 +808,9 @@ if __name__ == '__main__':
                 totalUncert2 = 0.
 
                 for uncertName, mod in normMods.items():
-                    uncert2 = modRelUncert2(mod) * val
+                    # modRelUncert2 is used for convenience - all mods here should have a single parameter.
+                    # also, TF-based pdf should not have norm mods - OK to not consider "if isTF".
+                    uncert2 = modRelUncert2(mod) * val * val
                     hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
 
                     totalUncert2 += uncert2
@@ -823,13 +825,13 @@ if __name__ == '__main__':
                         if not mod:
                             break
 
-                        uncert2 = modRelUncert2(mod) * val
+                        uncert2 = modRelUncert2(mod) * val * val
 
                         if uncert2 > 1000.:
                             print modRelUncert2(mod), val, pdf.GetName(), mod.GetName()
 
                         if mod.GetName().endswith('_stat'):
-                            if isTF: # nominal is 1/value
+                            if isTF: # nominal is 1/value - d(1/f) = -df/f^2.
                                 hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
                             else:
                                 hnominal.SetBinError(ibin, math.sqrt(uncert2))
@@ -838,7 +840,10 @@ if __name__ == '__main__':
                             if uncertName not in hmods:
                                 hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
 
-                            hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                            if isTF:
+                                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2) / val / val)
+                            else:
+                                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
 
                         # total uncertainty includes stat
                         totalUncert2 += uncert2
