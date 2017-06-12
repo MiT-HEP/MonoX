@@ -36,6 +36,7 @@ If the parameter card defines a variable plotOutname, a ROOT file is created und
   sourcedir - Where to find the ROOT files containing histograms.
   filename - Source file name format. Wildcards {region} and {process} can be used.
   histname - Format of histogram names to be found in the source files. Wildcards {region} and {process} can be used.
+  (data) - Process name of the observed data. If not set, default value of 'data_obs' will be used.
   signalHistname - Format of signal histogram names.
   binWidthNormalized - boolean specifying whether the input histograms are already bin-width normalized.
  <physics>
@@ -172,27 +173,74 @@ def isLinkSource(source):
 
     return False
 
-def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
+def openHistSource(config, process, region, sources):
+    fname = config.sourcedir + '/' + config.filename.format(process = process, region = region)
+    try:
+        source = sources[fname]
+    except KeyError:
+        source = ROOT.TFile.Open(fname)
+        sources[fname] = source
+
+    return source
+
+def denormalize(hist, makeInt = False):
+    for iX in range(1, hist.GetNbinsX() + 1):
+        cont = hist.GetBinContent(iX) * hist.GetXaxis().GetBinWidth(iX)
+        if makeInt:
+            cont = round(cont)
+
+        hist.SetBinContent(iX, cont)
+
+def fetchHistograms(config, sourcePlots, totals, hstore):
     sources = {}
 
-    for region in _config.regions:
-        _sourcePlots[region] = collections.defaultdict(dict)
+    for region in config.regions:
+        sourcePlots[region] = collections.defaultdict(dict)
 
-        histnames = []
+        try:
+            dataName = config.data
+        except AttributeError:
+            dataName = 'data_obs'
 
-        for process in _config.processes:
-            fname = _config.sourcedir + '/' + _config.filename.format(process = process, region = region)
-            try:
-                source = sources[fname]
-            except KeyError:
-                source = ROOT.TFile.Open(fname)
-                sources[fname] = source
+        # data histogram
+        sourceDir = openHistSource(config, dataName, region, sources)
 
-            sourceDir = source
+        histname = config.histname.format(process = dataName, region = region)
 
-            histname = _config.histname.format(process = process, region = region)
+        hist = sourceDir.Get(histname)
+        hist.SetDirectory(hstore)
+
+        if config.binWidthNormalized:
+            denormalize(hist, makeInt = True)
+
+        # name does not have _*Up or _*Down suffix -> is a nominal histogram
+        sourcePlots[region]['data_obs']['nominal'] = hist
+        
+        # signal histograms
+        for process in config.signals:
+            sourceDir = openHistSource(config, process, region, sources)
+
+            histname = config.signalHistname.format(process = process, region = region)
+
+            hist = sourceDir.Get(histname)
+            if not hist: # signal can be absent in some regions
+                continue
+            hist.SetDirectory(hstore)
+
+            if config.binWidthNormalized:
+                denormalize(hist)
+
+            # name does not have _*Up or _*Down suffix -> is a nominal histogram
+            sourcePlots[region][process]['nominal'] = hist
+
+        # background histograms
+        for process in config.processes:
+            sourceDir = openHistSource(config, process, region, sources)
+
+            histname = config.histname.format(process = process, region = region)
             if '/' in histname:
-                sourceDir = source.GetDirectory(os.path.dirname(histname))
+                # to automatically find all the variations, we need to do an "ls" of the directory
+                sourceDir = sourceDir.GetDirectory(os.path.dirname(histname))
                 histname = os.path.basename(histname)
 
             # find all histograms matching the specified histogram name pattern + (_variation)
@@ -201,73 +249,33 @@ def fetchHistograms(_config, _sourcePlots, _totals, _hstore):
                 if matches is None:
                     continue
 
-                histnames.append(key.GetName())
-
                 variation = matches.group(1)
 
-                obj = key.ReadObj()
-                obj.SetDirectory(_hstore)
+                hist = key.ReadObj()
+                hist.SetDirectory(hstore)
 
-                if _config.binWidthNormalized:
-                    for iX in range(1, obj.GetNbinsX() + 1):
-                        cont = obj.GetBinContent(iX) * obj.GetXaxis().GetBinWidth(iX)
-                        if process == 'data_obs':
-                            cont = round(cont)
-
-                        obj.SetBinContent(iX, cont) 
+                if config.binWidthNormalized:
+                    denormalize(hist)
 
                 if not variation:
                     # name does not have _*Up or _*Down suffix -> is a nominal histogram
-                    _sourcePlots[region][process]['nominal'] = obj
+                    sourcePlots[region][process]['nominal'] = hist
 
-                    if process != 'data_obs':
-                        # background process
-                        if region not in _totals:
-                            _totals[region] = obj.Clone('total_' + region)
-                            _totals[region].SetDirectory(_hstore)
-                        else:
-                            _totals[region].Add(obj)
+                    if region not in totals:
+                        totals[region] = hist.Clone('total_' + region)
+                        totals[region].SetDirectory(hstore)
+                    else:
+                        totals[region].Add(hist)
                 else:
-                    _sourcePlots[region][process][variation[1:]] = obj
-
-        for process in _config.signals:
-            fname = _config.sourcedir + '/' + _config.filename.format(process = process, region = region)
-            try:
-                source = sources[fname]
-            except KeyError:
-                source = ROOT.TFile.Open(fname)
-                sources[fname] = source
-
-            sourceDir = source
-
-            histname = _config.signalHistname.format(process = process, region = region)
-
-            obj = sourceDir.Get(histname)
-            if not obj:
-                continue
-
-            histnames.append(histname)
-
-            obj.SetDirectory(_hstore)
-
-            if _config.binWidthNormalized:
-                for iX in range(1, obj.GetNbinsX() + 1):
-                    cont = obj.GetBinContent(iX) * obj.GetXaxis().GetBinWidth(iX)
-                    if process == 'data_obs':
-                        cont = round(cont)
-
-                    obj.SetBinContent(iX, cont) 
-
-            # name does not have _*Up or _*Down suffix -> is a nominal histogram
-            _sourcePlots[region][process]['nominal'] = obj
+                    sourcePlots[region][process][variation[1:]] = hist
 
     for source in sources.values():
         source.Close()
 
     # make sure all signal processes appear at least in one region
-    for process in _config.signals:
-        for region in _config.regions:
-            if process in _sourcePlots[region]:
+    for process in config.signals:
+        for region in config.regions:
+            if process in sourcePlots[region]:
                 break
         else:
             raise RuntimeError('Signal process ' + process + ' was not found in any of the regions.')
@@ -576,6 +584,8 @@ if __name__ == '__main__':
                 if len(normModifiers) > 0:
                     fct('prod::unc_{sample}_norm({mod})'.format(sample = sampleName, mod = ','.join(m.GetName() for m in normModifiers.values())))
                     fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, unc_{sample}_norm}})'.format(sample = sampleName))
+            
+            # / for process, plots in sourcePlots[region].items():
 
             if regionDone:
                 # All processes in the region are constructed. Add the observed RooDataHist.
@@ -592,11 +602,13 @@ if __name__ == '__main__':
         for n in sorted(nuisances):
             print n, 'param 0 1'
 
+    if not os.path.isdir(os.path.dirname(config.outname)):
+        os.makedirs(os.path.dirname(config.outname))
+
     workspace.writeToFile(config.outname)
 
     print 'Workspace written to', config.outname
 
-    signalRegion = ''
     ## DATACARDS
     if hasattr(config, 'carddir'):
         print 'Writing data cards'
@@ -606,11 +618,12 @@ if __name__ == '__main__':
 
         # sort samples
 
-        samples = {}
+        samplesByRegion = {} # names of background samples by region
         procIds = {}
+        signalRegions = []
 
         for region, procPlots in sourcePlots.items():
-            samples[region] = []
+            samplesByRegion[region] = []
 
             # sort processes by expectation
             def compProc(p, q):
@@ -622,10 +635,12 @@ if __name__ == '__main__':
             procs = sorted(procPlots.keys(), compProc)
 
             for p in procs:
-                if p in config.signals:
-                    signalRegion = region
+                if p == 'data_obs':
+                    continue
+                elif p in config.signals:
+                    signalRegions.append(region)
                 else:
-                    samples[region].append(p)
+                    samplesByRegion[region].append(p)
                     if p not in procIds:
                         procIds[p] = len(procIds) + 1
 
@@ -642,10 +657,12 @@ if __name__ == '__main__':
             hrule,
         ]
 
-        line = 'bin          ' + ('%9s' % signalRegion) + ''.join(sorted(['%9s' % r for r in samples if r != signalRegion]))
+        # list of regions, signal regions first
+        line = 'bin          ' + ''.join(sorted(['%9s' % r for r in signalRegions])) + ''.join(sorted(['%9s' % r for r in samplesByRegion if r not in signalRegions]))
         lines.append(line)
 
-        line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samples))
+        # number of observed events in each region (set to -1 - combine will read it from workspace)
+        line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samplesByRegion))
         lines.append(line)
 
         lines.append(hrule)
@@ -653,14 +670,16 @@ if __name__ == '__main__':
         # columns for all background processes and yields
         columns = []
 
-        for proc in samples[signalRegion]:
-            columns.append((signalRegion, proc, str(procIds[proc])))
+        # signal region first
+        for region in signalRegions:
+            for proc in samplesByRegion[region]:
+                columns.append((region, proc, str(procIds[proc])))
 
-        for region in sorted(samples.keys()):
-            if region == signalRegion:
+        for region in sorted(samplesByRegion):
+            if region in signalRegions:
                 continue
 
-            for proc in samples[region]:
+            for proc in samplesByRegion[region]:
                 columns.append((region, proc, str(procIds[proc])))
 
         # now loop over signal models and write a card per model
@@ -669,7 +688,13 @@ if __name__ == '__main__':
             cardlines = list(lines)
 
             # insert the signal expectation as the first column
-            cardcolumns.insert(0, (signalRegion, signal, str(-1)))
+            ic = 0
+            for region in signalRegions:
+                # skip to the first column of the region
+                while columns[ic][0] != region:
+                    ic += 1
+                
+                cardcolumns.insert(ic, (region, signal, str(-1)))
 
             for ih, heading in enumerate(['bin', 'process', 'process']):
                 line = '%13s' % heading
@@ -875,9 +900,6 @@ if __name__ == '__main__':
         """
         for data in allData:
             hnominal = None
-
-            if signalRegion in data.GetName():
-                continue
 
             hData = data.createHistogram(data.GetName(), x, ROOT.RooFit.Binning('default'))
             hData.SetDirectory(plotsFile)
