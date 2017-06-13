@@ -77,7 +77,7 @@ allSelectors_byPattern = [
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_cand + mc_lep + mc_dilep),
+    ('tt', mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)]),
     ('wlnu{,n}-*', mc_wlnu),
     ('znn{,n}-*', mc_cand),
     ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)], s.addGenPhotonVeto)),
