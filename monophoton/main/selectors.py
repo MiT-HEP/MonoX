@@ -54,7 +54,8 @@ photonFullSelection = [
     'Sieie',
     'NHIso',
     'PhIso',
-    'CHIso',
+#    'CHIso',
+    'CHIsoMax',
     'EVeto',
     'MIP49',
     'Time',
@@ -62,6 +63,9 @@ photonFullSelection = [
     'SipipNonzero',
     'NoisyRegion'
 ]
+
+#hadronTFactorFile = datadir + '/hadronTFactor.root'
+hadronTFactorFile = datadir + '/hadronTFactorchIsoMax.root'
 
 def setupPhotonSelection(operator, veto = False, changes = []):
     ##### !!!!! IMPORTANT - NOTE THE RESETS #####
@@ -405,14 +409,10 @@ def tagprobeBase(sample, rname):
 
     selector = ROOT.TagAndProbeSelector(rname)
 
-    if sample.name.startswith('sph'):
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
-    elif sample.name.startswith('sel'):
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
-    elif sample.name.startswith('smu'):
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    setSampleId(sample, selector)
 
     if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
         addPUWeight(sample, selector)
 
     return selector
@@ -539,21 +539,42 @@ def hfake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    hadproxyTightWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactTight')
-    hadproxyLooseWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactLoose')
-    hadproxyPurityUpWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityUp')
-    hadproxyPurityDownWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNomPurityDown')
+    hadproxyTightWeight = getFromFile(hadronTFactorFile, 'tfactTight')
+    hadproxyLooseWeight = getFromFile(hadronTFactorFile, 'tfactLoose')
+    hadproxyPurityUpWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityUp')
+    hadproxyPurityDownWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityDown')
 
-#    modHfake(selector)
+    modHfake(selector)
 
-#    weight = selector.findOperator('hadProxyWeight')
-#
-#    weight.addVariation('proxyDefUp', hadproxyTightWeight)
-#    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
-#    weight.addVariation('purityUp', hadproxyPurityUpWeight)
-#    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+    weight = selector.findOperator('hadProxyWeight')
 
-    isoTFactor = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
+    weight.addVariation('proxyDefUp', hadproxyTightWeight)
+    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
+    # Proper cut applied at plotconfig as variations
+    setupPhotonSelection(photonSel, changes = ['!CHIsoMax', '+CHIsoMax11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    setupPhotonSelection(photonSel, veto = True)
+
+    return selector
+
+def hfakeVtx(sample, rname):
+    """
+    Candidate-like but with inverted CHIso and vertex-adjusted proxy weighting.
+    """
+
+    selector = monophotonBase(sample, rname)
+
+    hadproxyTightWeight = getFromFile(hadronTFactorFile, 'tfactTight')
+    hadproxyLooseWeight = getFromFile(hadronTFactorFile, 'tfactLoose')
+    hadproxyPurityUpWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityUp')
+    hadproxyPurityDownWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityDown')
+
+    isoTFactor = getFromFile(hadronTFactorFile, 'tfactNom')
     noIsoTFactor = getFromFile(datadir + '/hadronTFactorNoICH.root', 'tfactNom')
     isoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'iso')
     noIsoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'noIso')
@@ -569,12 +590,7 @@ def hfake(sample, rname):
 
     selector.addOperator(vtxWeight)
 
-    # CHIso is already inverted in modHfake
     photonSel = selector.findOperator('PhotonSelection')
-
-#   modHfake
-#    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11'])
-#    setupPhotonSelection(photonSel, veto = True)
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
@@ -679,7 +695,9 @@ def halo(sample, rname):
 
     # setting up loose to allow variations at plot level
     
-    setupPhotonSelection(photonSel, changes = ['+MIP49', '-Sieie', '+Sieie15'])
+#    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie15'])
+    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie'])
+    setupPhotonSelection(photonSel, veto = True)
     photonSel = selector.findOperator('PhotonSelection')
 
     selector.findOperator('MetFilters').setFilter(0, 0)
@@ -695,7 +713,7 @@ def trivialShower(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!SieieNonzero'])
+    setupPhotonSelection(photonSel, changes = ['!SieieNonzero', '!SipipNonzero'])
 
     return selector
 
@@ -1021,12 +1039,19 @@ def zmmJets(sample, rname):
 
 def tpeg(sample, rname):
     """
-    Electron + photon tag & probe.
+    Electron + photon tag & probe run on SinglePhoton dataset.
     """
 
     selector = tagprobeBase(sample, rname)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lElectron)
+    if sample.data:
+        tp.setProbeTriggerMatch(True)
+
     selector.addOperator(tp)
 
     selector.addOperator(ROOT.TPJetCleaning())
@@ -1035,12 +1060,19 @@ def tpeg(sample, rname):
 
 def tpmg(sample, rname):
     """
-    Muon + photon tag & probe.
+    Muon + photon tag & probe run on SinglePhoton dataset.
     """
 
     selector = tagprobeBase(sample, rname)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lMuon)
+    if sample.data:
+        tp.setProbeTriggerMatch(True)
+
     selector.addOperator(tp)
 
     selector.addOperator(ROOT.TPJetCleaning())
@@ -1049,15 +1081,20 @@ def tpmg(sample, rname):
 
 def tpegLowPt(sample, rname):
     """
-    Electron + photon tag & probe.
+    Electron + photon tag & probe run on SingleElectron dataset or MC.
     """
 
     selector = tagprobeBase(sample, rname)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lElectron)
     tp.setMinProbePt(25.)
-    tp.setMinTagPt(30.)
-    tp.setTagTriggerMatch(True)
+    if sample.data:
+        tp.setMinTagPt(30.)
+        tp.setTagTriggerMatch(True)
 
     selector.addOperator(tp)
 
@@ -1069,15 +1106,20 @@ def tpegLowPt(sample, rname):
 
 def tpmgLowPt(sample, rname):
     """
-    Muon + photon tag & probe.
+    Muon + photon tag & probe run on SingleMuon dataset or MC.
     """
 
     selector = tagprobeBase(sample, rname)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lMuon)
     tp.setMinProbePt(25.)
-    tp.setMinTagPt(30.)
-    tp.setTagTriggerMatch(True)
+    if sample.data:
+        tp.setMinTagPt(30.)
+        tp.setTagTriggerMatch(True)
 
     selector.addOperator(tp)
 
@@ -1093,6 +1135,10 @@ def tpmmg(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
     tp = ROOT.TPLeptonPhoton()
     tp.setFlavor(ROOT.lMuon)
     tp.setMinProbePt(25.)
@@ -1230,15 +1276,30 @@ def addGenPhotonPtCut(sample, selector):
     selector.addOperator(truncator, 0)
 
 def addPhotonRecoil(sample, selector):
-    """
-    Wrapper for diphoton samples to turn them into photon+dark photon samples by 'removing' one of the photons and adding it to the MET.
-    """
+    """Wrapper for diphoton samples to turn them into photon+dark photon
+    samples by 'removing' one of the photons and adding it to the MET."""
     selector.addOperator(ROOT.PhotonRecoil())
+
+def setSampleId(sample, selector):
+    """Set the sample ID on TagAndProbeSelector."""
+
+    if sample.data:
+        selector.setSampleId(0)
+    elif sample.name.startswith('dy'):
+        selector.setSampleId(1)
+    elif sample.name.startswith('tt'):
+        selector.setSampleId(2)
+    elif sample.name.startswith('wlnu'):
+        selector.setSampleId(3)
+    elif sample.name.startswith('gg'):
+        selector.setSampleId(4)
+    else:
+        selector.setSampleId(-1)
 
 def modHfake(selector):
     """Append PhotonPtWeight with hadProxyWeight and set up the photon selections."""
 
-    hadproxyWeight = getFromFile(datadir + '/hadronTFactor.root', 'tfactNom')
+    hadproxyWeight = getFromFile(hadronTFactorFile, 'tfactNom')
 
     weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
@@ -1246,7 +1307,7 @@ def modHfake(selector):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11'])
+    setupPhotonSelection(photonSel, changes = ['!CHIsoMax', '+CHIsoMax11'])
     setupPhotonSelection(photonSel, veto = True)
 
 def modEfake(selector):
