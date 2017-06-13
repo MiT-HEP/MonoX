@@ -384,14 +384,14 @@ if __name__ == '__main__':
                     for ibin in range(1, nominal.GetNbinsX() + 1):
                         rbin = ratio.GetBinContent(ibin)
 
-                        if rbin == 0.:
-                            print '    WARNING: {region} {process} bin{ibin} has tf = 0'.format(region = region, process = process, ibin = ibin)
-                            bin = fct('mu_{bin}[0.]')
-                            bins.add(bin)
-                            continue
-
                         binName = sampleName + '_bin{0}'.format(ibin)
                         baseBinName = sbaseName + '_bin{0}'.format(ibin)
+
+                        if rbin == 0.:
+                            print '    WARNING: {region} {process} bin{ibin} has tf = 0'.format(region = region, process = process, ibin = ibin)
+                            bin = fct('mu_{bin}[0.]'.format(bin = binName))
+                            bins.add(bin)
+                            continue
 
                         # tfName = binName + '_tf'
                         tfName = sampleName + '_' + sbaseName + '_bin{0}'.format(ibin) + '_tf'
@@ -622,6 +622,8 @@ if __name__ == '__main__':
         procIds = {}
         signalRegions = []
 
+        maxRegionNameLength = 0
+
         for region, procPlots in sourcePlots.items():
             samplesByRegion[region] = []
 
@@ -644,6 +646,9 @@ if __name__ == '__main__':
                     if p not in procIds:
                         procIds[p] = len(procIds) + 1
 
+            if len(region) > maxRegionNameLength:
+                maxRegionNameLength = len(region)
+
         # define datacard template
 
         hrule = '-' * 140
@@ -657,12 +662,14 @@ if __name__ == '__main__':
             hrule,
         ]
 
+        colw = max(maxRegionNameLength + 1, 9)
+
         # list of regions, signal regions first
-        line = 'bin          ' + ''.join(sorted(['%9s' % r for r in signalRegions])) + ''.join(sorted(['%9s' % r for r in samplesByRegion if r not in signalRegions]))
+        line = 'bin          ' + ''.join(sorted(['%{w}s'.format(w = colw) % r for r in signalRegions])) + ''.join(sorted(['%{w}s'.format(w = colw) % r for r in samplesByRegion if r not in signalRegions]))
         lines.append(line)
 
         # number of observed events in each region (set to -1 - combine will read it from workspace)
-        line = 'observation  ' + ''.join('%9.1f' % o for o in [-1.] * len(samplesByRegion))
+        line = 'observation  ' + ''.join('%{w}.1f'.format(w = colw) % o for o in [-1.] * len(samplesByRegion))
         lines.append(line)
 
         lines.append(hrule)
@@ -857,7 +864,10 @@ if __name__ == '__main__':
 
                         if mod.GetName().endswith('_stat'):
                             if isTF: # nominal is 1/value - d(1/f) = -df/f^2.
-                                hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
+                                if val > 0.:
+                                    hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
+                                else:
+                                    hnominal.SetBinError(ibin, 0.)
                             else:
                                 hnominal.SetBinError(ibin, math.sqrt(uncert2))
                         else:
@@ -874,7 +884,10 @@ if __name__ == '__main__':
                         totalUncert2 += uncert2
 
                 if isTF:
-                    huncert.SetBinError(ibin, math.sqrt(totalUncert2) / val / val)
+                    if val > 0.:
+                        huncert.SetBinError(ibin, math.sqrt(totalUncert2) / val / val)
+                    else:
+                        huncert.SetBinError(ibin, 0.)
                 else:
                     huncert.SetBinError(ibin, math.sqrt(totalUncert2))
 
