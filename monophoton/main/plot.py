@@ -22,7 +22,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         
         if altSourceDir:
             altName = altSourceDir + '/' + dname + '.root'
-            if not os.path.exists(altName) and os.stat(altName).st_mtime > os.stat(sourceName).st_mtime:
+            if os.path.exists(altName) and os.stat(altName).st_mtime > os.stat(sourceName).st_mtime:
                 sourceName = altName
 
         elif not os.path.exists(sourceName):
@@ -158,6 +158,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         for sample in group.samples:
             shist = outDir.Get('samples/' + sample.name + '_' + region)
             ghist.Add(shist)
+
+        if group.norm >= 0.:
+            # TODO not quite correct - need to divide by the total number of events in the group
+            ghist.Scale(group.norm / ghist.GetSumOfWeights())
 
         writeHist(ghist)
 
@@ -472,6 +476,7 @@ if __name__ == '__main__':
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--hist-file', '-o', metavar = 'PATH', dest = 'histFile', default = '', help = 'Histogram output file.')
+    argParser.add_argument('--list-samples', '-L', action = 'store_true', dest = 'listSamples', help = 'List the samples in the given plot config and exit.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
     argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', default = 0, help = 'Verbosity of the script.')
@@ -502,6 +507,29 @@ if __name__ == '__main__':
         args.skimDir = skimDir
 
     plotConfig = getConfig(args.config)
+
+    if args.listSamples:
+        print 'Obs:', ' '.join('%s_%s' % (s.name, plotConfig.name) for s in plotConfig.obs.samples)
+        bkg = []
+        for group in plotConfig.bkgGroups:
+            if group.region:
+                bkg += ['%s_%s' % (s.name, group.region) for s in group.samples]
+            else:
+                bkg += ['%s_%s' % (s.name, plotConfig.name) for s in group.samples]
+        print 'Bkg:', ' '.join(bkg)
+
+        if args.allSignal:
+            sig = []
+            for group in plotConfig.sigGroups:
+                if group.region:
+                    sig += ['%s_%s' % (s.name, group.region) for s in group.samples]
+                else:
+                    sig += ['%s_%s' % (s.name, plotConfig.name) for s in group.samples]
+        else:
+            sig = ['%s_%s' % (sdef.sample.name, plotConfig.name) for sdef in plotConfig.signalPoints]
+        print 'Sig:', ' '.join(sig)
+
+        sys.exit(0)
 
     if args.bbb:
         plotdefs = [plotConfig.getPlot(args.bbb)]
@@ -649,16 +677,16 @@ if __name__ == '__main__':
             os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
     for plotdef in plotdefs:
-        print ' ', plotdef.name
-
-        if plotDir:
-            if plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
-                graphic = True
-            else:
-                # nothing to do
-                continue
+        if plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
+            graphic = True
         else:
             graphic = False
+
+        if not plotDir and graphic:
+            # nothing to do
+            continue
+
+        print ' ', plotdef.name
 
         if graphic:
             if plotdef.ndim() == 1:

@@ -342,6 +342,11 @@ class BatchManager(object):
                     sample = jobName[:jobName.rfind('_')]
 
                     if jobType == 'skim':
+                        try:
+                            os.makedirs(localCopyDir + '/' + sample)
+                        except OSError:
+                            pass
+
                         fileset = jobName[jobName.rfind('_') + 1:]
                         outName = sample + '/' + sample + '_' + fileset + '.root'
                     elif jobType == 'merge':
@@ -351,6 +356,7 @@ class BatchManager(object):
                     try:
                         shutil.copy(SkimSlimWeight.config['skimDir'] + '/' + outName, localCopyDir + '/' + outName)
                     except: # output may not be ready
+                        print 'Failed to copy ' + outName + '. Will try again in the next cycle.'
                         continue
 
                     # success -> remove from the list of clusters to query
@@ -456,10 +462,13 @@ if __name__ == '__main__':
         sampleList = [(sample, dict()) for sample in samples]
     else:
         for ss in args.snames:
-            # ss can be given in format sname=selector1,selector2,..
+            # ss can be given in format sname=selector1,selector2,.. or sname_region
             if '=' in ss:
                 spattern, rn = ss.split('=')
                 rnames = rn.split(',')
+            elif '_' in ss:
+                spattern = ss.split('_')[0]
+                rnames = [ss.split('_')[1]]
             else:
                 spattern = ss
                 rnames = []
