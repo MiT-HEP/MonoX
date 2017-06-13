@@ -4,54 +4,87 @@ import os
 import sys
 import shutil
 
+if sys.argv[1] == 'skim':
+    task = 'skim'
+    sname = sys.argv[2]
+    fileset = sys.argv[3]
+else:
+    task = 'submit'
+    snames = sys.argv[1:]
+
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 
-import ROOT
+if task == 'submit':
+    sys.path.append('/home/yiiyama/lib')
+    from condor_run import CondorRun
+    
+    submitter = CondorRun(os.path.realpath(__file__))
+    submitter.logdir = '/local/' + os.environ['USER']
+    submitter.hold_on_fail = True
+    submitter.min_memory = 1
 
-sname = sys.argv[1]
+    for sname in snames:
+        submitter.pre_args = 'skim ' + sname
+    
+        filesets = set()
+        with open(thisdir + '/catalog/' + sname + '.txt') as catalog:
+            for line in catalog:
+                filesets.add(line.split()[0])
+    
+        filesets = sorted(list(filesets))
+    
+        submitter.job_args = filesets
+        submitter.job_names = ['%s_%s' % (sname, fileset) for fileset in filesets]
+            
+        submitter.submit(name = 'skimUncleaned')
 
-ROOT.gSystem.Load(config.libobjs)
-try:
-    e = ROOT.panda.Event
-except AttributeError:
-    pass
+elif task == 'skim':
+    import ROOT
+    
+    ROOT.gSystem.Load(config.libobjs)
+    try:
+        e = ROOT.panda.Event
+    except AttributeError:
+        pass
+    
+    ROOT.gROOT.LoadMacro(thisdir + '/skimUncleaned.cc+')
+    
+    datadir = '/mnt/hadoop/scratch/yiiyama/ftpanda'
 
-ROOT.gROOT.LoadMacro(thisdir + '/skimUncleaned.cc+')
+    tree = ROOT.TChain('events')
 
-tree = ROOT.TChain('events')
-
-datadir = '/mnt/hadoop/scratch/yiiyama/ftpanda'
-
-# Good lumi JSON already applied at source
-if sname == 'sph-16b-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016B-23Sep2016-v3+AOD/*.root')
-elif sname == 'sph-16c-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016C-23Sep2016-v1+AOD/*.root')
-elif sname == 'sph-16d-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016D-23Sep2016-v1+AOD/*.root')
-elif sname == 'sph-16e-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016E-23Sep2016-v1+AOD/*.root')
-elif sname == 'sph-16f-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016F-23Sep2016-v1+AOD/*.root')
-elif sname == 'sph-16g-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016G-23Sep2016-v1+AOD/*.root')
-elif sname == 'sph-16h-m':
-    tree.Add(datadir + '/SinglePhoton+Run2016H-23Sep2016-v2+AOD/*.root')
-    tree.Add(datadir + '/SinglePhoton+Run2016H-PromptReco-v3+AOD/*.root')
-    tree.Add(datadir + '/SinglePhoton+Run2016H-PromptReco-v2+AOD/*.root')
-
-fname = sname + '_offtime.root'
-tmpname = '/local/' + os.environ['USER'] + '/' + sname + '/' + fname
-finalname = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim/' + fname
-
-outputFile = ROOT.TFile.Open(tmpname, 'recreate')
-
-ROOT.skimUncleaned(tree, outputFile)
-
-outputFile.Close()
-
-shutil.copy(tmpname, finalname)
-os.remove(tmpname)
+    with open(thisdir + '/catalog/' + sname + '.txt') as catalog:
+        for line in catalog:
+            if line.split()[0] == fileset:
+                print line.split()[1]
+                tree.Add(line.split()[1])
+    
+    fname = sname + '_' + fileset + '_offtime.root'
+    tmpdir = '/local/' + os.environ['USER']
+    if not os.path.exists(tmpdir):
+        tmpdir = '/tmp/' + os.environ['USER']
+    
+    tmpname = tmpdir + '/skimUncleaned/' + sname + '/' + fname
+    finalname = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim/' + sname + '/' + fname
+    
+    try:
+        os.makedirs(os.path.dirname(tmpname))
+    except:
+        pass
+    
+    try:
+        os.makedirs(os.path.dirname(finalname))
+    except:
+        pass
+    
+    outputFile = ROOT.TFile.Open(tmpname, 'recreate')
+    
+    ROOT.skimUncleaned(tree, outputFile)
+    
+    outputFile.Close()
+ 
+    shutil.copy(tmpname, finalname)
+    os.remove(tmpname)

@@ -111,11 +111,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
     outEvent.muons = event.muons;
     outEvent.taus = event.taus;
     outEvent.jets = event.chsAK4Jets;
-    outEvent.t1Met = event.pfMet;
-    outEvent.rawMet = event.rawMet;
-    outEvent.caloMet = event.caloMet;
-    outEvent.metMuOnlyFix = event.metMuOnlyFix;
-    outEvent.metNoFix = event.metNoFix;
+
     outEvent.metFilters = event.metFilters;
 
     for (iC = 0; iC != size; ++iC) {
@@ -184,11 +180,27 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
         photonType[iP] = 1;
     }
 
+    // now make up a photon for each unused FT SC and compute the MET correction at the same time
+
+    TVector2 metCorr;
+
     for (iC = 0; iC != size; ++iC) {
+      unsigned iIn(0);
+      for (; iIn != event.superClusters.size(); ++iIn) {
+        auto& in(event.superClusters[iIn]);
+        double dEta(in.eta - eta[iC]);
+        double dPhi(TVector2::Phi_mpi_pi(in.phi - phi[iC]));
+        if (dEta * dEta + dPhi * dPhi < 0.0025) {
+          metCorr += TVector2(in.rawPt * std::cos(in.phi), in.rawPt * std::sin(in.phi));
+          metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
+          break;
+        }
+      }
+      if (iIn == event.superClusters.size())
+        metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
+
       if (used[iC])
         continue;
-
-      // now make up a photon for each unused FT SC
 
       photonType[outEvent.photons.size()] = 2;
 
@@ -210,6 +222,10 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
       photon.mipEnergy = mipEnergy[iC];
     }
+
+    // correct the MET with FT - default SC differences
+    auto metV(event.pfMet.v() + metCorr);
+    outEvent.t1Met.setXY(metV.X(), metV.Y());
 
     output->Fill();
   }
