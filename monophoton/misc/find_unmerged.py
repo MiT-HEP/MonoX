@@ -36,3 +36,13 @@ for ss in sorted(skimmed.keys()):
 
     elif skimmed[ss] > merged[ss]:
         print ss, 'have new skims'
+
+    elif sys.argv[1] == 'clean':
+        dname = config.skimDir + '/' + ss[0]
+        for fname in os.listdir(dname):
+            if fname[fname.rfind('_') + 1:fname.rfind('.root')] == ss[1]:
+                os.remove(dname + '/' + fname)
+
+        if len(os.listdir(dname)) == 0:
+            os.rmdir(dname)
+        
