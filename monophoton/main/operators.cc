@@ -3038,6 +3038,9 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
     if (!photon.isEB || photon.scRawPt < minProbePt_)
       continue;
 
+    if (probeTriggerMatch_ && !photon.triggerMatch[panda::Photon::fPh165HE10])
+      continue;
+
     auto&& pg(photon.p4());
 
     for (auto& lepton : *leptons) {

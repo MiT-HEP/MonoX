@@ -1067,6 +1067,7 @@ class TPLeptonPhoton : public TPCut {
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
   void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
+  void setProbeTriggerMatch(bool b) { probeTriggerMatch_ = b; }
   
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
@@ -1076,6 +1077,7 @@ class TPLeptonPhoton : public TPCut {
   double minProbePt_{175.};
   double minTagPt_{15.};
   bool tagTriggerMatch_{false};
+  bool probeTriggerMatch_{false};
 
   TTree* skimTree_{0}; // need to hold the skim tree because we book looseTags at the first event
 };
