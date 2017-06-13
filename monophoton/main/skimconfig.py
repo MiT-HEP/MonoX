@@ -23,10 +23,13 @@ def applyMod(sels, *mods):
     return result
 
 data_sph = [
-    'monoph', 'efake', 'hfake',  'trivialShower', 'halo', 'emjet',
-    'dimu', 'dimuAllPhoton', 'diel', 'dielAllPhoton', 'monomu', 'monomuAllPhoton', 'monoel',
+    'monoph', 
+    'efake', 'hfake', 'trivialShower', 'halo',
+    'dimu', 'diel', 'monomu', 'monoel',
     'dimuHfake', 'dielHfake', 'monomuHfake', 'monomuEfake', 'monoelHfake', 'monoelEfake',
     'tpeg', 'tpmg',
+    'emjet',
+    'dimuAllPhoton', 'dielAllPhoton', 'monomuAllPhoton', 
     'dijet'
 ]
 
@@ -77,8 +80,8 @@ allSelectors_byPattern = [
     ('tt', mc_cand + mc_lep + mc_dilep),
     ('wlnu{,n}-*', mc_wlnu),
     ('znn{,n}-*', mc_cand),
-    ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + ['tpeg', 'tpegLowPt'], s.addGenPhotonVeto)),
-    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep, s.addGenPhotonVeto)),
+    ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)], s.addGenPhotonVeto)),
+    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)], s.addGenPhotonVeto)),
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),
     ('dm*', mc_sig),
