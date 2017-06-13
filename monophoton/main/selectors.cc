@@ -442,7 +442,7 @@ TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   _inEvent.book(*skimOut_, blist);
 
   // looseTags will be added by the TPMuonPhoton operator
-  outEvent_.book(*skimOut_, {"sample", "tp", "tags", "probes", "jets"});
+  outEvent_.book(*skimOut_, {"weight", "sample", "tp", "tags", "probes", "jets"});
 }
 
 void
