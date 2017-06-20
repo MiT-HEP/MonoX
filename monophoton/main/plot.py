@@ -30,7 +30,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     
         histograms = []
    
-        plotter = ROOT.MultiDraw(sourceName)
+        plotter = ROOT.MultiDraw()
+        plotter.addInputPath(sourceName)
         plotter.setPrintLevel(printLevel)
 
         cuts = []
@@ -49,7 +50,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         plotter.setFullSelection(plotConfig.fullSelection.strip())
 
         if not sample.data:
-            plotter.setLuminosity(lumi)
+            plotter.setConstantWeight(lumi)
 
         if group == plotConfig.obs:
             plotter.setPrescale(plotConfig.prescales[sample])
@@ -502,9 +503,11 @@ if __name__ == '__main__':
     ## PARSE COMMAND-LINE ARGUMENTS ##
     ##################################
 
-    if not args.skimDir:
-        from config import skimDir
-        args.skimDir = skimDir
+    if args.skimDir:
+        localSkimDir = ''
+    else:
+        args.skimDir = config.skimDir
+        localSkimDir = config.localSkimDir
 
     plotConfig = getConfig(args.config)
 
@@ -613,7 +616,7 @@ if __name__ == '__main__':
         for group in groups:
             print ' ', group.name
     
-            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = config.localSkimDir)
+            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir)
    
         # Save a background total histogram (for display purpose) for each plotdef
         for plotdef in plotdefs:
