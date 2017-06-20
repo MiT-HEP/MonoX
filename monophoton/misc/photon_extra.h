@@ -2,11 +2,12 @@
 #define photon_extra_h
 
 #include "PandaTree/Objects/interface/XPhoton.h"
+#include "PandaTree/Objects/interface/UnpackedGenParticle.h"
 
 namespace panda {
 
   void
-  photon_extra(panda::XPhoton& _dest, panda::Photon const& _src, double rho)
+  photon_extra(panda::XPhoton& _dest, panda::Photon const& _src, panda::UnpackedGenParticleCollection const& _genParticles, double _rho)
   {
     auto& superCluster(*_src.superCluster);
 
@@ -21,94 +22,118 @@ namespace panda {
 
     double absEta(std::abs(_dest.scEta));
 
-    double chIsoEAS16(0.);
-    double nhIsoEAS16(0.);
-    double phIsoEAS16(0.);
-    double nhIsoEAS15(0.);
-    double phIsoEAS15(0.);
-    double chIsoMaxEA(0.);
+    panda::XPhoton::IDTune const nID(panda::XPhoton::nIDTunes);
+    panda::XPhoton::IDTune const s15(panda::XPhoton::kSpring15);
+    panda::XPhoton::IDTune const s16(panda::XPhoton::kSpring16);
+    panda::XPhoton::IDTune const gj(panda::XPhoton::kGJetsCWIso);
+    panda::XPhoton::IDTune const zg(panda::XPhoton::kZGCWIso);
+
+    double chIsoEA[nID]{};
+    double nhIsoEA[nID]{};
+    double phIsoEA[nID]{};
+    double chIsoMaxEA[nID]{};
     if (absEta < 1.) {
-      nhIsoEAS15 = 0.0599;
-      phIsoEAS15 = 0.1271;
-      chIsoEAS16 = 0.0360;
-      nhIsoEAS16 = 0.0597;
-      phIsoEAS16 = 0.1210;
-      chIsoMaxEA = 0.1064;
+      nhIsoEA[s15] = 0.0599;
+      phIsoEA[s15] = 0.1271;
+
+      chIsoEA[s16] = 0.0360;
+      nhIsoEA[s16] = 0.0597;
+      phIsoEA[s16] = 0.1210;
+
+      chIsoMaxEA[gj] = 0.1064;
+
+      chIsoMaxEA[zg] = chIsoMaxEA[gj];
     }
     else if (absEta < 1.479) {
-      nhIsoEAS15 = 0.0819;
-      phIsoEAS15 = 0.1101;
-      chIsoEAS16 = 0.0377;
-      nhIsoEAS16 = 0.0807;
-      phIsoEAS16 = 0.1107;
-      chIsoMaxEA = 0.1026;
+      nhIsoEA[s15] = 0.0819;
+      phIsoEA[s15] = 0.1101;
+
+      chIsoEA[s16] = 0.0377;
+      nhIsoEA[s16] = 0.0807;
+      phIsoEA[s16] = 0.1107;
+
+      chIsoMaxEA[gj] = 0.1026;
+
+      chIsoMaxEA[zg] = chIsoMaxEA[gj];
     }
     else if (absEta < 2.) {
-      nhIsoEAS15 = 0.0696;
-      phIsoEAS15 = 0.0756;
-      chIsoEAS16 = 0.0306;
-      nhIsoEAS16 = 0.0629;
-      phIsoEAS16 = 0.0699;
+      nhIsoEA[s15] = 0.0696;
+      phIsoEA[s15] = 0.0756;
+
+      chIsoEA[s16] = 0.0306;
+      nhIsoEA[s16] = 0.0629;
+      phIsoEA[s16] = 0.0699;
     }
     else if (absEta < 2.2) {
-      nhIsoEAS15 = 0.0360;
-      phIsoEAS15 = 0.1175;
-      chIsoEAS16 = 0.0283;
-      nhIsoEAS16 = 0.0197;
-      phIsoEAS16 = 0.1056;
+      nhIsoEA[s15] = 0.0360;
+      phIsoEA[s15] = 0.1175;
+
+      chIsoEA[s16] = 0.0283;
+      nhIsoEA[s16] = 0.0197;
+      phIsoEA[s16] = 0.1056;
     }
     else if (absEta < 2.3) {
-      nhIsoEAS15 = 0.0360;
-      phIsoEAS15 = 0.1498;
-      chIsoEAS16 = 0.0254;
-      nhIsoEAS16 = 0.0184;
-      phIsoEAS16 = 0.1457;
+      nhIsoEA[s15] = 0.0360;
+      phIsoEA[s15] = 0.1498;
+
+      chIsoEA[s16] = 0.0254;
+      nhIsoEA[s16] = 0.0184;
+      phIsoEA[s16] = 0.1457;
     }
     else if (absEta < 2.4) {
-      nhIsoEAS15 = 0.0462;
-      phIsoEAS15 = 0.1857;
-      chIsoEAS16 = 0.0217;
-      nhIsoEAS16 = 0.0284;
-      phIsoEAS16 = 0.1719;
+      nhIsoEA[s15] = 0.0462;
+      phIsoEA[s15] = 0.1857;
+
+      chIsoEA[s16] = 0.0217;
+      nhIsoEA[s16] = 0.0284;
+      phIsoEA[s16] = 0.1719;
     }
     else {
-      nhIsoEAS15 = 0.0656;
-      phIsoEAS15 = 0.2183;
-      chIsoEAS16 = 0.0167;
-      nhIsoEAS16 = 0.0591;
-      phIsoEAS16 = 0.1998;
+      nhIsoEA[s15] = 0.0656;
+      phIsoEA[s15] = 0.2183;
+
+      chIsoEA[s16] = 0.0167;
+      nhIsoEA[s16] = 0.0591;
+      phIsoEA[s16] = 0.1998;
     }
 
-    double nhIsoE1S15, nhIsoE2S15, phIsoE1S15;
-    double nhIsoE1S16, nhIsoE2S16, phIsoE1S16;
-    double nhIsoE1ZG, nhIsoE2ZG, phIsoE1ZG;
+    chIsoEA[gj] = chIsoEA[s16];
+    nhIsoEA[gj] = nhIsoEA[s16];
+    phIsoEA[gj] = phIsoEA[s16];
+
+    chIsoEA[zg] = chIsoEA[s16];
+    nhIsoEA[zg] = nhIsoEA[s16];
+    phIsoEA[zg] = phIsoEA[s16];
+
+    double nhIsoE1[nID]{};
+    double nhIsoE2[nID]{};
+    double phIsoE1[nID]{};
 
     if (_dest.isEB) {
-      nhIsoE1S15 = 0.014;
-      nhIsoE2S15 = 0.000019;
-      phIsoE1S15 = 0.0053;
+      nhIsoE1[s15] = 0.014;
+      nhIsoE2[s15] = 0.000019;
+      phIsoE1[s15] = 0.0053;
 
-      nhIsoE1S16 = 0.0148;
-      nhIsoE2S16 = 0.000017;
-      phIsoE1S16 = 0.0047;
+      nhIsoE1[s16] = 0.0148;
+      nhIsoE2[s16] = 0.000017;
+      phIsoE1[s16] = 0.0047;
 
-      nhIsoE1ZG = 0.0112;
-      nhIsoE2ZG = 0.000028;
-      phIsoE1ZG = 0.0043;
+      nhIsoE1[gj] = 0.0112;
+      nhIsoE2[gj] = 0.000028;
+      phIsoE1[gj] = 0.0043;
+
+      nhIsoE1[zg] = nhIsoE1[gj];
+      nhIsoE2[zg] = nhIsoE2[gj];
+      phIsoE1[zg] = phIsoE1[gj];
     }
     else {
-      nhIsoE1S15 = 0.0139;
-      nhIsoE2S15 = 0.000025;
-      phIsoE1S15 = 0.0034;
+      nhIsoE1[s15] = 0.0139;
+      nhIsoE2[s15] = 0.000025;
+      phIsoE1[s15] = 0.0034;
 
-      nhIsoE1S16 = 0.0163;
-      nhIsoE2S16 = 0.000014;
-      phIsoE1S16 = 0.0034;
-
-      // undefined - just using S16
-      nhIsoE1ZG = 0.0163;
-      nhIsoE2ZG = 0.000014;
-      phIsoE1ZG = 0.0034;
+      nhIsoE1[s16] = 0.0163;
+      nhIsoE2[s16] = 0.000014;
+      phIsoE1[s16] = 0.0034;
     }
 
     double pt(_src.pt());
@@ -116,52 +141,50 @@ namespace panda {
     double scpt(_dest.scRawPt);
     double scpt2(scpt * scpt);
 
-    double chIsoCore(_src.chIso + chIsoEAS16 * rho);
-    double nhIsoCore(_src.nhIso + nhIsoEAS16 * rho + nhIsoE1S16 * pt + nhIsoE2S16 * pt2);
-    double phIsoCore(_src.phIso + phIsoEAS16 * rho + phIsoE1S16 * pt);
+    double chIsoCore(_src.chIso + chIsoEA[s16] * _rho);
+    double nhIsoCore(_src.nhIso + nhIsoEA[s16] * _rho + nhIsoE1[s16] * pt + nhIsoE2[s16] * pt2);
+    double phIsoCore(_src.phIso + phIsoEA[s16] * _rho + phIsoE1[s16] * pt);
 
-    // EA is for ZG series
-    _dest.chIsoMax -= chIsoMaxEA * rho;
+    for (unsigned iD(0); iD != nID; ++iD) {
+      _dest.chIsoX[iD] = chIsoCore - chIsoEA[iD] * _rho;
+      _dest.nhIsoX[iD] = nhIsoCore - nhIsoEA[iD] * _rho - nhIsoE1[iD] * scpt - nhIsoE2[iD] * scpt2;
+      _dest.phIsoX[iD] = phIsoCore - phIsoEA[iD] * _rho - phIsoE1[iD] * scpt;
+      _dest.chIsoMaxX[iD] = _src.chIsoMax - chIsoMaxEA[iD] * _rho;
 
-    // _dest.chIso = chIsoCore - chIsoEAS16 * rho; // identity
-    _dest.nhIso = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1S16 * scpt - nhIsoE2S16 * scpt2;
-    _dest.phIso = phIsoCore - phIsoEAS16 * rho - phIsoE1S16 * scpt;
+      _dest.looseX[iD] = _dest.passHOverE(0, iD) && _dest.passSieie(0, iD) &&
+        _dest.passCHIso(0, iD) && _dest.passNHIso(0, iD) && _dest.passCHIso(0, iD);
+      _dest.mediumX[iD] = _dest.passHOverE(1, iD) && _dest.passSieie(1, iD) &&
+        _dest.passCHIso(1, iD) && _dest.passNHIso(1, iD) && _dest.passCHIso(1, iD);
+      _dest.tightX[iD] = _dest.passHOverE(2, iD) && _dest.passSieie(2, iD) &&
+        _dest.passCHIso(2, iD) && _dest.passNHIso(2, iD) && _dest.passCHIso(2, iD);
+    }
 
-    // Spring16 cuts
-    _dest.loose = _dest.passHOverE(0, 1) && _dest.passSieie(0, 1) &&
-      _dest.passCHIso(0) && _dest.passNHIso(0) && _dest.passCHIso(0);
-    _dest.medium = _dest.passHOverE(1, 1) && _dest.passSieie(1, 1) &&
-      _dest.passCHIso(1) && _dest.passNHIso(1) && _dest.passCHIso(1);
-    _dest.tight = _dest.passHOverE(2, 1) && _dest.passSieie(2, 1) &&
-      _dest.passCHIso(2) && _dest.passNHIso(2) && _dest.passCHIso(2);
+    if (!_genParticles.empty()) {
+      _dest.matchedGenId = 0;
+      if (_src.matchedGen.isValid()) {
+        _dest.matchedGenId = _src.matchedGen->pdgid;
+        if (_dest.matchedGenId == 22) {
+          auto& gen(*_src.matchedGen);
+          if (gen.testFlag(panda::GenParticle::kIsPrompt) ||
+              (gen.parent.isValid() && gen.parent->pdgid == 22 && gen.parent->testFlag(panda::GenParticle::kIsPrompt)))
+            _dest.matchedGenId = -22;
+        }
+      }
 
-    _dest.chIsoS15 = chIsoCore;        
-    _dest.nhIsoS15 = nhIsoCore - nhIsoEAS15 * rho - nhIsoE1S15 * scpt - nhIsoE2S15 * scpt2;
-    _dest.phIsoS15 = phIsoCore - nhIsoEAS15 * rho - phIsoE1S15 * scpt;
+      if (_dest.matchedGenId == 0) {
+        // passed genParticles is the post-copy collection where only prompt photons / leptons are saved
+        double dR2Min(-1.);
+        for (auto& gen : _genParticles) {
+          double dR2(gen.dR2(_dest));
+          if (dR2Min < 0. || dR2 < dR2Min) {
+            _dest.matchedGenId = gen.pdgid;
+            unsigned absId(_dest.matchedGenId);
+            if (dR2 < 0.01 && (absId == 11 || absId == 13))
+              break;
 
-    _dest.loose15 = _dest.passHOverE(0, 0) && _dest.passSieie(0, 0) &&
-      _dest.passCHIsoS15(0) && _dest.passNHIsoS15(0) && _dest.passCHIsoS15(0);
-    _dest.medium15 = _dest.passHOverE(1, 0) && _dest.passSieie(1, 0) &&
-      _dest.passCHIsoS15(1) && _dest.passNHIsoS15(1) && _dest.passCHIsoS15(1);
-    _dest.tight15 = _dest.passHOverE(2, 0) && _dest.passSieie(2, 0) &&
-      _dest.passCHIsoS15(2) && _dest.passNHIsoS15(2) && _dest.passCHIsoS15(2);
-
-    // using the same rho correction as S16
-    _dest.chIsoZG = _src.chIso;
-    _dest.nhIsoZG = nhIsoCore - nhIsoEAS16 * rho - nhIsoE1ZG * scpt - nhIsoE2ZG * scpt2;
-    _dest.phIsoZG = phIsoCore - phIsoEAS16 * rho - phIsoE1ZG * scpt;
-
-    _dest.mediumZG = _dest.hOverE < 0.0263 && _dest.sieie < 0.01002 &&
-      _dest.chIsoZG < 1.163 && _dest.nhIsoZG < 7.005 && _dest.phIsoZG < 3.271;
-    _dest.mediumZGMax = _dest.mediumZG && _dest.chIsoMax < 1.163;
-
-    if (_src.matchedGen.isValid()) {
-      _dest.matchedGenId = _src.matchedGen->pdgid;
-      if (_dest.matchedGenId == 22) {
-        auto& gen(*_src.matchedGen);
-        if (gen.testFlag(panda::GenParticle::kIsPrompt) ||
-            (gen.parent.isValid() && gen.parent->pdgid == 22 && gen.parent->testFlag(panda::GenParticle::kIsPrompt)))
-          _dest.matchedGenId = -22;
+            dR2Min = dR2;
+          }
+        }
       }
     }
   }

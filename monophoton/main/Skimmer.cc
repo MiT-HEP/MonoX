@@ -301,5 +301,5 @@ Skimmer::prepareEvent(panda::Event const& _event, panda::GenParticleCollection c
     _outEvent.run = _event.run;
 
   for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh)
-    panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho);
+    panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _outEvent.genParticles, _event.rho);
 }
