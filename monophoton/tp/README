@@ -35,6 +35,8 @@
   efake_fit.py (data|mc) (binning) (N) (ee|eg) (bin name) (random seed)
  runs N toy fits for (ee|eg)_(bin name) with the specified random seed.
  This mode should be used in a batch system varying the seeds.
+ With condor-run
+  seed=1001; for bin in $(python efake_conf.py ptalt); do for type in ee eg; do while [ $(($seed%20)) -ne 0 ]; do echo data ptalt 500 $type $bin $seed > toys_args.txt; seed=$(($seed+1)); done; seed=$(($seed+1)); done; done
   ~/bin/condor-run efake_fit.py -a toys_args.txt
 
  The output of toy generation should be combined:
@@ -43,7 +45,10 @@
  efake_tpsyst.py computes the systematic uncertainties from fits to the
  altsig and altbkg models. Since it involves toy data generation, the
  script should be run in batch varying the seed.
+ Usage is
   efake_tpsyst.py (binning) (bin name) (sig|bkg) (N) (random seed)
+ with condor-run,
+  seed=1001; for bin in $(python efake_conf.py ptalt); do for type in sig bkg; do while [ $(($seed%20)) -ne 0 ]; do echo ptalt $bin $type 50 $seed > syst_args.txt; seed=$(($seed+1)); done; seed=$(($seed+1)); done; done
   ~/bin/condor-run efake_tpsyst.py -a syst_args.txt
 
  The output should be combined:

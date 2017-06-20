@@ -9,6 +9,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
+import utils
 from datasets import allsamples
 from plotstyle import RatioCanvas
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
@@ -19,25 +20,20 @@ nToys = 0
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-dataSource = 'sph' # sph or sel
+dataSource = 'sel' # sph or sel
 #varType = 'kSCRawMass'
 varType = 'kMass'
-plotDir = config.histDir + '/efake/fit_' + binningName
+plotDir = 'efake/fit_' + binningName
 
 # gets overwritten if len(sys.argv) == 7
 tpconfs = {
     'ee': 0,
     'eg': 1,
-    'pass': 2,
-    'fail': 3
+#    'pass': 2,
+#    'fail': 3
 }
 
-monophSel = 'probes.mediumZG && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' 
-
-try:
-    os.makedirs(plotDir)
-except OSError:
-    pass
+monophSel = 'probes.medium && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' 
 
 fitBins = getBinning(binningName)[2]
 
@@ -96,9 +92,17 @@ else:
     elif pdf == 'altsig':
         outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altsig.root'
 
+tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + os.path.basename(outputName)
+try:
+    os.makedirs(os.path.dirname(tmpOutName))
+except OSError:
+    pass
+
 
 fitBinningT = (120, 60., 120.)
 fitBinning = ROOT.RooUniformBinning(fitBinningT[1], fitBinningT[2], fitBinningT[0])
+plotBinningT = (60, 60., 120.)
+plotBinningT2 = (30, 60., 120.)
 compBinning = ROOT.RooUniformBinning(81., 101., 20)
 
 ### Common setup ###
@@ -129,7 +133,7 @@ if os.path.exists(outputName):
     # make a backup
     shutil.copy(outputName, outputName.replace('.root', '_old.root'))
 
-outputFile = ROOT.TFile.Open(outputName, 'recreate')
+outputFile = ROOT.TFile.Open(tmpOutName, 'recreate')
 
 yields = ROOT.TTree('yields', 'yields')
 
@@ -174,8 +178,8 @@ elif runMode == 'single':
     mass = work.factory('mass[60., 120.]')
     mass.setUnit('GeV')
     weight = work.factory('weight[-1000000000., 1000000000.]')
-    nbkg = work.factory('nbkg[0., 1000000.]')
-    nsignal = work.factory('nsignal[0., 1000000.]')
+    nbkg = work.factory('nbkg[0., 100000000.]')
+    nsignal = work.factory('nsignal[0., 100000000.]')
     if pdf == 'altsig':
         mZ = work.factory('mZ[91.2, 86., 96.]')
         gammaZ = work.factory('gammaZ[2.5, 1., 5.]')
@@ -203,6 +207,9 @@ elif runMode == 'single':
     mgPlotter = ROOT.MultiDraw()
 
     if dataType == 'data':
+        egPlotter.setWeightBranch('')
+        mgPlotter.setWeightBranch('')
+
         # target samples
         if dataSource == 'sph':
             samp = 'phdata'
@@ -210,7 +217,10 @@ elif runMode == 'single':
             samp = 'eldata'
 
         for sname in skimConfig[samp][0]:
-            egPlotter.addInputPath(config.skimDir + '/' + sname + '_tpeg.root')
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+
+        if dataSource == 'sel':
+            egPlotter.setBaseSelection('tags.pt_ > 40.')
     
         # background samples
         if dataSource == 'sph':
@@ -219,18 +229,38 @@ elif runMode == 'single':
             samp = 'mudata'
 
         for sname in skimConfig[samp][0]:
-            mgPlotter.addInputPath(config.skimDir + '/' + sname + '_tpmg.root')
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-        # will need MC signal template
-#        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '_altbkg.root')
-#        mcWork = mcSource.Get('work')
+        if dataSource == 'sel':
+            mgPlotter.setBaseSelection('tags.pt_ > 40.')
+
+        if dataSource == 'sel':
+            # low-pT fits -> will need MC signal template
+            mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
+            mcWork = mcSource.Get('work')
 
     else:
+        trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
+        eleTrigEff = trigsource.Get('electron_sel/leppt/el27_eff')
+        muTrigEff = trigsource.Get('muon_smu/leppt/mu24ortrk24_eff')
+        if not eleTrigEff or not muTrigEff:
+            raise RuntimeError('Trigger efficiency source not found')
+
+        egPlotter.setConstantWeight(lumi)
+        mgPlotter.setConstantWeight(lumi)
+        
         for sname in skimConfig['mc'][0]:
-            egPlotter.addInputPath(config.skimDir + '/' + sname + '/*_tpeg.root')
-            mgPlotter.addInputPath(config.skimDir + '/' + sname + '/*_tpmg.root')
-        for sname in skimConfig['mcgg'][0]:
-            egPlotter.addInputPath(config.skimDir + '/' + sname + '/*_tpeg.root')
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
+
+        egPlotter.setReweight('tags.pt_', eleTrigEff)
+        mgPlotter.setReweight('tags.pt_', muTrigEff)
+
+        egPlotter.setBaseSelection('tags.pt_ > 40.')
+        mgPlotter.setBaseSelection('tags.pt_ > 40.')
+
+#        for sname in skimConfig['mcgg'][0]:
+#            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
 
     objects = []
     
@@ -239,7 +269,8 @@ elif runMode == 'single':
     for binName, fitCut in fitBins:
         if dataType == 'mc':
             hsig = template.Clone('sig_%s' % binName)
-            egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11')
+            objects.append(hsig)
+            egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
 
         for conf in tpconfs:
             htarg = template.Clone('target_%s_%s' % (conf, binName))
@@ -254,7 +285,7 @@ elif runMode == 'single':
                 cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
             elif conf == 'eg':
                 # target is a tree with pixelVeto
-                # perform unbinned max L fit
+                # also perform binned max L fit
                 cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
             elif conf == 'pass':
                 cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
@@ -264,6 +295,7 @@ elif runMode == 'single':
                 cut = '({fitCut})'.format(fitCut = fitCut)
     
             egPlotter.addPlot(htarg, 'tp.mass', cut)
+            # if doing unbinned fits, make a tree
             # egPlotter.addTree(ttarg, cut)
             # egPlotter.addTreeBranch(ttarg, 'mass', 'tp.mass')
 
@@ -273,15 +305,15 @@ elif runMode == 'single':
                 tbkg = ROOT.TTree('bkgtree_%s_%s' % (conf, binName), 'background')
                 objects.append(tbkg)
 
-                mgPlotter.addPlot(hbkg, 'tp.mass', cut)
-                mgPlotter.addTree(tbkg, cut)
+                mgPlotter.addPlot(hbkg, 'tp.mass', cut + ' && !probes.hasCollinearL')
+                mgPlotter.addTree(tbkg, cut + ' && !probes.hasCollinearL')
                 mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
 
             if dataType == 'mc':
-                hmc = template.Clone('mcbkg_%s_%s' % (conf, binName))
-                objects.append(hmc)
+                hmcbkg = template.Clone('mcbkg_%s_%s' % (conf, binName))
+                objects.append(hmcbkg)
 
-                egPlotter.addPlot(hmc, 'tp.mass', cut + ' && TMath::Abs(probes.matchedGenId) != 11')
+                egPlotter.addPlot(hmcbkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
 
     egPlotter.fillPlots()
     mgPlotter.fillPlots()
@@ -344,35 +376,39 @@ for binName, fitCut in fitBins:
         sigModel = work.pdf(sigModelName)
 
     elif runMode == 'single':
-#        sigdataName = 'sigdata_' + binName
-#
-#        if dataType == 'mc':
-#            # get signal template
-#            hsig = outputFile.Get('sig_%s' + binName)
-#    
-#            sigdata = ROOT.RooDataHist(sigdataName, 'sig', masslist, hsig)
-#            addToWS(sigdata)
-#    
-#            # no smearing
-#            sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
-#
-#        else:
-#            sigdata = mcWork.data(sigdataName)
-#            if not sigdata:
-#                print 'No dataset ' + sigdataName + ' found in ' + mcSource.GetName() + '.'
-#                sys.exit(1)
-#
-#            addToWS(sigdata)
-#
-#            sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
-#            res = work.factory('Gaussian::res(mass, m0, sigma)')
+        sigdataName = 'sigdata_' + binName
 
-        if pdf == 'altsig':
-            sigModel = work.factory('BreitWigner::%s(mass, mZ, gammaZ)' % sigModelName)
+        if dataType == 'mc':
+            # get signal template
+            hsig = outputFile.Get('sig_%s' % binName)
+    
+            sigdata = ROOT.RooDataHist(sigdataName, 'sig', masslist, hsig)
+            addToWS(sigdata)
+    
+            # no smearing
+            sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
+
         else:
-            sigCore = work.factory('BreitWigner::sigCore_%s(mass, mZ, gammaZ)' % binName)
-            res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-            sigModel = work.factory('FCONV::%s(mass, sigCore_%s, res)' % (sigModelName, binName))
+            if dataSource == 'sph':
+                sigCore = work.factory('BreitWigner::sigCore_%s(mass, mZ, gammaZ)' % binName)
+
+            elif dataSource == 'sel':
+                sigdata = mcWork.data(sigdataName)
+                if not sigdata:
+                    print 'No dataset ' + sigdataName + ' found in ' + mcSource.GetName() + '.'
+                    sys.exit(1)
+    
+                addToWS(sigdata)
+    
+                sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
+
+            if pdf == 'altsig':
+                # no smearing
+                sigModel = sigCore
+                sigModel.SetName(sigModelName)
+            else:
+                res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+                sigModel = work.factory('FCONV::%s(mass, sigCore_%s, res)' % (sigModelName, binName))
 
     print 'Made signal template.'
 
@@ -461,8 +497,13 @@ for binName, fitCut in fitBins:
             yields.Fill()
 
             # plot fit
-            frame = mass.frame(ROOT.RooFit.Range('fitWindow'), ROOT.RooFit.Bins(mass.getBins('fitWindow')))
-            targHist.plotOn(frame)
+            if htarg.GetSumOfWeights() > 500.:
+                plotBinning = plotBinningT
+            else:
+                plotBinning = plotBinningT2
+
+            frame = mass.frame()
+            targHist.plotOn(frame, ROOT.RooFit.Binning(*plotBinning))
             model.plotOn(frame)
             model.plotOn(frame, ROOT.RooFit.Components(bkgModelName), ROOT.RooFit.LineStyle(ROOT.kDashed), ROOT.RooFit.LineColor(ROOT.kGreen))
             frame.SetTitle('')
@@ -472,6 +513,7 @@ for binName, fitCut in fitBins:
             canvas.addHistogram(frame, clone = True, drawOpt = '')
             if dataType == 'mc':
                 hmcbkg = outputFile.Get('mcbkg_%s_%s' % (conf, binName))
+                hmcbkg.Rebin(fitBinningT[0] / plotBinning[0])
                 canvas.legend.apply('mcbkg', hmcbkg)
                 canvas.addHistogram(hmcbkg)
 
@@ -482,12 +524,14 @@ for binName, fitCut in fitBins:
             # adding ratio pad
             fitcurve = frame.findObject(modelName + '_Norm[mass]')
 
-            rdata = ROOT.TGraphErrors(htarg.GetNbinsX())
+            hresid = htarg.Rebin(fitBinningT[0] / plotBinning[0], 'residual')
+
+            rdata = ROOT.TGraphErrors(hresid.GetNbinsX())
 
             for iP in range(rdata.GetN()):
-                x = htarg.GetXaxis().GetBinCenter(iP + 1)
-                nData = htarg.GetBinContent(iP + 1)
-                statErr = htarg.GetBinError(iP + 1)
+                x = hresid.GetXaxis().GetBinCenter(iP + 1)
+                nData = hresid.GetBinContent(iP + 1)
+                statErr = hresid.GetBinError(iP + 1)
                 nFit = fitcurve.interpolate(x)
                 if statErr > 0.:
                     rdata.SetPoint(iP, x, (nData - nFit) / statErr)
@@ -575,3 +619,5 @@ if runMode == 'single':
 
 work = None
 outputFile.Close()
+
+shutil.copy(tmpOutName, outputName)

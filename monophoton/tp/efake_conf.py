@@ -1,6 +1,6 @@
 import os
 
-outputDir = '/data/t3home000/' + os.environ['USER'] + '/studies/efake'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/efake'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # Grouping of samples for convenience.
@@ -10,7 +10,7 @@ skimConfig = {
     'phdata': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
     'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
     'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
-    'mc': (['dy-50', 'wlnu', 'tt'], ['kEG', 'kMG', 'kMMG']),
+    'mc': (['dy-50', 'wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
 
@@ -26,7 +26,7 @@ def getBinning(binningName):
         for iBin in range(len(binning) - 1):
             repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
-            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            cut = 'probes.pt_ > {low:.0f} && probes.pt_ < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
 
     elif binningName == 'ptalt':
@@ -67,7 +67,7 @@ def getBinning(binningName):
 
     if binningName == 'lowpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [40., 50., 60., 80., 100., 120., 140., 160.]
+        binning = [40., 42., 44., 46., 48., 50., 54., 58., 62., 66., 70., 75., 80., 85., 90., 100., 120., 140., 160.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

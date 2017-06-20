@@ -7,7 +7,7 @@ Fit with alternative models to evaluate fit-related uncertainties.
 import os
 import sys
 import array
-import ROOT
+import shutil
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -15,8 +15,11 @@ sys.path.append(basedir)
 import config
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 
+import ROOT
+
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
+ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
 binningName = sys.argv[1] # see efake_conf
 binName = sys.argv[2]
@@ -24,7 +27,15 @@ alt = sys.argv[3]
 nToys = int(sys.argv[4])
 seed = int(sys.argv[5])
 
-output = ROOT.TFile.Open(outputDir + '/tpsyst_data_' + alt + '_' + binningName + '_' + binName + '_' + str(seed) + '.root', 'recreate')
+outputName = outputDir + '/tpsyst_data_' + alt + '_' + binningName + '_' + binName + '_' + str(seed) + '.root'
+
+tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + os.path.basename(outputName)
+try:
+    os.makedirs(os.path.dirname(tmpOutName))
+except OSError:
+    pass
+
+output = ROOT.TFile.Open(tmpOutName, 'recreate')
 
 nomSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
 altSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '_alt' + alt + '.root')
@@ -81,10 +92,22 @@ for conf, iconf in [('ee', 0), ('eg', 1)]:
 
     for iToy in range(nToys):
         altData = altModel.generate(ROOT.RooArgSet(altMass), vRaw[0])
-        data = ROOT.RooDataSet('data', 'data', massSet)
-        for iEntry in range(altData.numEntries()):
-            mass.setVal(altData.get(iEntry)['mass'].getVal())
-            data.add(massSet)
+
+        # perform binned fit
+
+        #upcast to call TH1 version of createHistogram()
+        altAbsData = ROOT.RooDataSet.Class().DynamicCast(ROOT.RooAbsData.Class(), altData)
+
+        altHist = altAbsData.createHistogram('altData', altMass, ROOT.RooFit.Binning('fitWindow'))
+        print altHist.GetNbinsX(), altHist.GetXaxis().GetXmin(), altHist.GetXaxis().GetXmax()
+        data = ROOT.RooDataHist('altDataHist', 'altDataHist', ROOT.RooArgList(altMass), altHist)
+        altHist.Delete()
+
+        # unbinned fit - need to translate from RooDataSet on "mass" from alt workspace to "mass" in nom workspace
+#        data = ROOT.RooDataSet('data', 'data', massSet)
+#        for iEntry in range(altData.numEntries()):
+#            mass.setVal(altData.get(iEntry)['mass'].getVal())
+#            data.add(massSet)
         
         model.fitTo(data)
 
@@ -95,3 +118,5 @@ for conf, iconf in [('ee', 0), ('eg', 1)]:
     outhist.Write()
 
 output.Close()
+
+shutil.copy(tmpOutName, outputName)
