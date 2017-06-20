@@ -37,7 +37,7 @@ for ss in sorted(skimmed.keys()):
     elif skimmed[ss] > merged[ss]:
         print ss, 'have new skims'
 
-    elif sys.argv[1] == 'clean':
+    elif len(sys.argv) > 1 and sys.argv[1] == 'clean':
         dname = config.skimDir + '/' + ss[0]
         for fname in os.listdir(dname):
             if fname[fname.rfind('_') + 1:fname.rfind('.root')] == ss[1]:
