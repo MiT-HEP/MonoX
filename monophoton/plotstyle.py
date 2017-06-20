@@ -982,7 +982,7 @@ class RatioCanvas(SimpleCanvas):
             rframe.SetTitle('')
             rframe.GetXaxis().SetTitle('')
             rframe.GetXaxis().SetLabelSize(0.)
-            rframe.GetXaxis().SetNdivisions(205)
+            rframe.GetXaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
             rframe.GetYaxis().SetTitle('')
             rframe.GetYaxis().SetLabelSize(0.)
             rframe.GetYaxis().SetNdivisions(302)
@@ -990,6 +990,8 @@ class RatioCanvas(SimpleCanvas):
 
             # will be overridden by self.xtitle
             self.xaxis.SetTitle(rbase.GetXaxis().GetTitle())
+            self.xaxis.SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
+            self.yaxis.SetNdivisions(ROOT.gStyle.GetNdivisions('Y'))
 
             self.canvas.Update()
 
