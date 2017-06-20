@@ -2,6 +2,8 @@
 
 #include "TFile.h"
 #include "TBranch.h"
+#include "TGraph.h"
+#include "TF1.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -45,14 +47,24 @@ ExprFiller::ExprFiller(ExprFiller const& _orig) :
   if (ownFormulas_) {
     for (unsigned iD(0); iD != _orig.getNdim(); ++iD) {
       auto& oexpr(*_orig.getExpr(iD));
-      exprs_.push_back(new TTreeFormula(oexpr.GetName(), oexpr.GetTitle(), oexpr.GetTree()));
+      auto* formula(new TTreeFormula(oexpr.GetName(), oexpr.GetTitle(), oexpr.GetTree()));
+      if (!formula->GetTree()) // compilation failed
+        throw std::runtime_error("Failed to compile formula.");
+
+      exprs_.push_back(formula);
     }
 
-    if (_orig.cuts_)
+    if (_orig.cuts_) {
       cuts_ = new TTreeFormula(_orig.cuts_->GetName(), _orig.cuts_->GetTitle(), _orig.cuts_->GetTree());
+      if (!cuts_->GetTree())
+        throw std::runtime_error("Failed to compile cuts.");
+    }
 
-    if (_orig.reweight_)
+    if (_orig.reweight_) {
       reweight_ = new TTreeFormula(_orig.reweight_->GetName(), _orig.reweight_->GetTitle(), _orig.reweight_->GetTree());
+      if (!reweight_->GetTree())
+        throw std::runtime_error("Failed to compile reweight.");
+    }
   }
   else {
     exprs_ = _orig.exprs_;
@@ -86,7 +98,7 @@ ExprFiller::updateTree()
 }
 
 void
-ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
+ExprFiller::fill(std::vector<double> const& _eventWeights, std::vector<bool> const* _presel/* = 0*/)
 {
   // using the first expr for the number of instances
   unsigned nD(exprs_.at(0)->GetNdata());
@@ -95,7 +107,7 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
     cuts_->GetNdata();
 
   if (printLevel_ > 3)
-    std::cout << "          " << getObj()->GetName() << "::fill(" << _weight << ") => " << nD << " iterations" << std::endl;
+    std::cout << "          " << getObj()->GetName() << "::fill() => " << nD << " iterations" << std::endl;
 
   if (_presel && _presel->size() < nD)
     nD = _presel->size();
@@ -134,7 +146,11 @@ ExprFiller::fill(double _weight, std::vector<bool> const* _presel/* = 0*/)
 
     loaded = true;
 
-    entryWeight_ = _weight;
+    if (iD < _eventWeights.size())
+      entryWeight_ = _eventWeights[iD];
+    else
+      entryWeight_ = _eventWeights.back();
+
     if (reweight_)
       entryWeight_ *= reweight_->EvalInstance(iD);
 
@@ -225,11 +241,9 @@ Tree::doFill_(unsigned _iD)
 }
 
 
-MultiDraw::MultiDraw(char const* _path/* = ""*/) :
-  tree_("events")
+MultiDraw::MultiDraw(char const* _treeName/* = "events"*/) :
+  tree_(_treeName)
 {
-  if (_path && std::strlen(_path) != 0)
-    tree_.Add(_path);
 }
 
 MultiDraw::~MultiDraw()
@@ -246,31 +260,133 @@ MultiDraw::~MultiDraw()
 void
 MultiDraw::setBaseSelection(char const* _cuts)
 {
-  if (!_cuts || std::strlen(_cuts) == 0) {
-    delete baseSelection_;
+  if (baseSelection_) {
+    deleteFormula_(baseSelection_);
     baseSelection_ = 0;
-    return;
   }
 
-  delete baseSelection_;
+  if (!_cuts || std::strlen(_cuts) == 0)
+    return;
 
-  baseSelection_ = new TTreeFormulaCached("baseSelection", _cuts, &tree_);
-  library_.emplace(_cuts, baseSelection_);
+  baseSelection_ = getFormula_(_cuts);
 }
 
 void
 MultiDraw::setFullSelection(char const* _cuts)
 {
-  if (!_cuts || std::strlen(_cuts) == 0) {
-    delete fullSelection_;
+  if (fullSelection_) {
+    deleteFormula_(fullSelection_);
     fullSelection_ = 0;
-    return;
   }
 
-  delete fullSelection_;
+  if (!_cuts || std::strlen(_cuts) == 0)
+    return;
 
-  fullSelection_ = new TTreeFormulaCached("fullSelection", _cuts, &tree_);
-  library_.emplace(_cuts, fullSelection_);
+  fullSelection_ = getFormula_(_cuts);
+}
+
+void
+MultiDraw::setReweight(char const* _expr, TObject const* _source/* = 0*/)
+{
+  if (reweightExpr_) {
+    deleteFormula_(reweightExpr_);
+    reweightExpr_ = 0;
+  }
+
+  reweight_ = nullptr;
+
+  if (!_expr || std::strlen(_expr) == 0)
+    return;
+
+  reweightExpr_ = getFormula_(_expr);
+
+  if (_source) {
+    if (_source->InheritsFrom(TH1::Class())) {
+      auto* source(static_cast<TH1 const*>(_source));
+
+      reweight_ = [this, source](std::vector<double>& _values) {
+        _values.clear();
+
+        unsigned nD(this->reweightExpr_->GetNdata());
+
+        for (unsigned iD(0); iD != nD; ++iD) {
+          double x(this->reweightExpr_->EvalInstance(iD));
+
+          int iX(source->FindFixBin(x));
+          if (iX == 0)
+            iX = 1;
+          else if (iX > source->GetNbinsX())
+            iX = source->GetNbinsX();
+
+          _values.push_back(source->GetBinContent(iX));
+        }
+      };
+    }
+    else if (_source->InheritsFrom(TGraph::Class())) {
+      auto* source(static_cast<TGraph const*>(_source));
+
+      int n(source->GetN());
+      double* xvals(source->GetX());
+      for (int i(0); i != n - 1; ++i) {
+        if (xvals[i] >= xvals[i + 1])
+          throw std::runtime_error("Reweight TGraph source must have xvalues in increasing order");
+      }
+
+      reweight_ = [this, source](std::vector<double>& _values) {
+        _values.clear();
+
+        unsigned nD(this->reweightExpr_->GetNdata());
+
+        for (unsigned iD(0); iD != nD; ++iD) {
+          double x(this->reweightExpr_->EvalInstance(iD));
+
+          int n(source->GetN());
+          double* xvals(source->GetX());
+
+          double* b(std::upper_bound(xvals, xvals + n, x));
+          if (b == xvals + n)
+            _values.push_back(source->GetY()[n - 1]);
+          else if (b == xvals)
+            _values.push_back(source->GetY()[0]);
+          else {
+            // interpolate
+            int low(b - xvals - 1);
+            double dlow(x - xvals[low]);
+            double dhigh(xvals[low + 1] - x);
+
+            _values.push_back((source->GetY()[low] * dhigh + source->GetY()[low + 1] * dlow) / (xvals[low + 1] - xvals[low]));
+          }
+        }
+      };
+    }
+    else if (_source->InheritsFrom(TF1::Class())) {
+      auto* source(static_cast<TF1 const*>(_source));
+
+      reweight_ = [this, source](std::vector<double>& _values) {
+        _values.clear();
+
+        unsigned nD(this->reweightExpr_->GetNdata());
+
+        for (unsigned iD(0); iD != nD; ++iD) {
+          double x(this->reweightExpr_->EvalInstance(iD));
+
+          _values.push_back(source->Eval(x));
+        }
+      };
+    }
+    else
+      throw std::runtime_error("Incompatible object passed as reweight source");
+  }
+  else {
+    reweight_ = [this](std::vector<double>& _values) {
+      _values.clear();
+
+      unsigned nD(this->reweightExpr_->GetNdata());
+
+      for (unsigned iD(0); iD != nD; ++iD)
+        _values.push_back(this->reweightExpr_->EvalInstance(iD));
+    };
+  }
 }
 
 void
@@ -356,13 +472,24 @@ TTreeFormulaCached*
 MultiDraw::getFormula_(char const* _expr)
 {
   auto fItr(library_.find(_expr));
-  if (fItr != library_.end())
+  if (fItr != library_.end()) {
+    fItr->second->SetNRef(fItr->second->GetNRef() + 1);
     return fItr->second;
+  }
 
   auto* f(new TTreeFormulaCached("formula", _expr, &tree_));
   library_.emplace(_expr, f);
 
   return f;
+}
+
+void
+MultiDraw::deleteFormula_(TTreeFormulaCached* _formula)
+{
+  if (_formula->GetNRef() == 1) {
+    library_.erase(_formula->GetTitle());
+    delete _formula;
+  }
 }
 
 void
@@ -381,6 +508,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
     }
   }
 
+  std::vector<double> eventWeights;
   std::vector<bool>* baseResults(0);
   std::vector<bool>* fullResults(0);
 
@@ -440,16 +568,8 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
         eventNumberBranch->SetAddress(&eventNumber);
       }
 
-      if (baseSelection_)
-        baseSelection_->UpdateFormulaLeaves();
-      if (fullSelection_)
-        fullSelection_->UpdateFormulaLeaves();
-      for (auto* plot : unconditional_)
-        plot->updateTree();
-      for (auto* plot : postBase_)
-        plot->updateTree();
-      for (auto* plot : postFull_)
-        plot->updateTree();
+      for (auto& ff : library_)
+        ff.second->UpdateFormulaLeaves();
     }
 
     if (prescale_ > 1) {
@@ -469,14 +589,23 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
         weight = weightF;
     }
 
-    double eventWeight(weight * lumi_);
+    if (reweight_) {
+      reweight_(eventWeights);
+      if (eventWeights.empty())
+        continue;
+
+      for (double& w : eventWeights)
+        w *= weight * constWeight_;
+    }
+    else
+      eventWeights.assign(1, weight * constWeight_);
 
     // Plots that do not require passing the baseline cut
     for (auto* plot : unconditional_) {
       if (printLevel_ > 3)
         std::cout << "        Filling " << plot->getObj()->GetName() << std::endl;
 
-      plot->fill(eventWeight);
+      plot->fill(eventWeights);
     }
 
     // Baseline cut
@@ -516,7 +645,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
       if (printLevel_ > 3)
         std::cout << "        Filling " << plot->getObj()->GetName() << std::endl;
 
-      plot->fill(eventWeight, baseResults);
+      plot->fill(eventWeights, baseResults);
     }
 
     // Full cut
@@ -570,7 +699,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
       if (printLevel_ > 3)
         std::cout << "        Filling " << plot->getObj()->GetName() << std::endl;
 
-      plot->fill(eventWeight, fullResults);
+      plot->fill(eventWeights, fullResults);
     }
   }
 
