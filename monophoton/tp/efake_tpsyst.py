@@ -21,7 +21,6 @@ import tp.efake_plot as efake_plot
 import ROOT
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
 binningName = sys.argv[1] # see efake_conf

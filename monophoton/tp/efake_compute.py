@@ -11,80 +11,14 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import lumiSamples, outputDir, getBinning
+from tp.efake_conf import lumiSamples, outputDir, roofitDictsDir, getBinning
 
 dataType = sys.argv[1]
 binningName = sys.argv[2]
 
+ADDFIT = True
+
 binningTitle, binning, fitBins = getBinning(binningName)
-
-sys.argv = []
-
-import ROOT
-ROOT.gROOT.SetBatch(True)
-
-inputTree = ROOT.TChain('yields')
-inputTree.Add(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
-if os.path.exists(outputDir + '/toys_' + dataType + '_' + binningName + '.root'):
-    inputTree.Add(outputDir + '/toys_' + dataType + '_' + binningName + '.root')
-    toyUncert = True
-else:
-    toyUncert = False
-
-vTPconf = array.array('i', [0])
-vBinName = array.array('c', '\0' * 128)
-vNz = array.array('d', [0.])
-vToyNumber = array.array('i', [0])
-
-inputTree.SetBranchAddress('tpconf', vTPconf)
-inputTree.SetBranchAddress('binName', vBinName)
-inputTree.SetBranchAddress('nz', vNz)
-inputTree.SetBranchAddress('toyNumber', vToyNumber)
-
-# 0 -> ee, 1 -> eg
-nominal = {'ee': {}, 'eg': {}}
-sysshift = {}
-toys = {'ee': collections.defaultdict(list), 'eg': collections.defaultdict(list)}
-
-iEntry = 0
-while inputTree.GetEntry(iEntry) > 0:
-    iEntry += 1
-
-    if vTPconf[0] == 0:
-        conf = 'ee'
-    elif vTPconf[0] == 1:
-        conf = 'eg'
-    else:
-        continue
-
-    for binName, cut in fitBins:
-        if vBinName.tostring().startswith(binName):
-            break
-    else:
-        continue
-
-    if vToyNumber[0] == -1:
-        nominal[conf][binName] = vNz[0]
-    else:
-        toys[conf][binName].append(vNz[0])
-
-if os.path.exists(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root'):
-    source = ROOT.TFile.Open(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root')
-    for altname in ['bkg', 'sig']:
-        sysshift[altname] = {}
-        for conf in ['ee', 'eg']:
-            sysshift[altname][conf] = {}
-            for binName, cut in fitBins:
-                h = source.Get('pull_' + conf + '_' + altname + '_' + binName)
-                if h:
-                    print 'Alternative fit', altname, conf, binName, 'found'
-                    sysshift[altname][conf][binName] = h.GetMean()
-
-if dataType == 'mc':
-    # for mc truth background
-    histSource = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
-
-outputFile = ROOT.TFile.Open(outputDir + '/results_' + dataType + '_' + binningName + '.root', 'recreate')
 
 if binningName == 'pt':
     binning[-1] = binning[-2] + 20.
@@ -93,6 +27,27 @@ binLabels = False
 if len(binning) == 0:
     binLabels = True
     binning = range(len(fitBins) + 1)
+
+sys.argv = []
+
+import ROOT
+ROOT.gROOT.SetBatch(True)
+ROOT.gSystem.Load('libRooFit.so')
+ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
+
+ROOT.gStyle.SetNdivisions(510, 'X')
+
+source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
+work = source.Get('work')
+nomparams = work.data('params_nominal')
+
+uncSource = None
+if os.path.exists(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root'):
+    uncSource = ROOT.TFile.Open(outputDir + '/tpsyst_' + dataType + '_' + binningName + '.root')
+
+### Set up output
+
+outputFile = ROOT.TFile.Open(outputDir + '/results_' + dataType + '_' + binningName + '.root', 'recreate')
 
 yields = {
     'ee': ROOT.TH1D('ee', '', len(binning) - 1, array.array('d', binning)),
@@ -106,80 +61,76 @@ if binLabels:
         for ibin in range(1, len(fitBins) + 1):
             h.GetXaxis().SetBinLabel(ibin, fitBins[ibin - 1][0])
 
+### Compute
+
 toydists = {}
 
-contents = []
+centrals = []
 staterrs = []
 systerrs = []
 mctruth = []
 
-for iBin, (binName, cut) in enumerate(fitBins):
+for iBin, (bin, _) in enumerate(fitBins):
     stat2 = 0.
 
-    toydists[binName] = {}
+    toydists[bin] = {}
+
+    sigshift = {}
+    bkgshift = {}
 
     for conf in ['ee', 'eg']:
-        nom = nominal[conf][binName]
+        suffix = conf + '_' + bin
 
-        yields[conf].SetBinContent(iBin + 1, nom)
+        for ip in range(nomparams.numEntries()):
+            nompset = nomparams.get(ip)
+            if nompset.find('tpconf').getLabel() == conf and nompset.find('binName').getLabel() == bin:
+                break
+        else:
+            raise RuntimeError('Nom pset for ' + suffix + ' not found')
+
+        nZ = nompset.find('nZ').getVal()
+        
+        yields[conf].SetBinContent(iBin + 1, nZ)
 
         err2 = 0.
-        if toyUncert:
-            tvals = toys[conf][binName]
+        if uncSource:
+            # compute uncertainties from distributions of nZ-normalized difference of toy yields
 
-            tvals.sort()
+            toydist = uncSource.Get('pull_nominal_' + suffix)
+            toydists[bin][conf] = toydist
 
-            outputFile.cd()
-            toydist = ROOT.TH1D('toys_' + conf + '_' + binName, '', 100, tvals[0] - (tvals[-1] - tvals[0]) * 0.05, tvals[-1] + (tvals[-1] - tvals[0]) * 0.05)
-            for tval in tvals:
-                toydist.Fill(tval)
+            err2 += math.pow(toydist.GetRMS() * nZ, 2.)
+            stat2 += math.pow(toydist.GetRMS(), 2.)
 
-            toydists[binName][conf] = toydist
+            altsig = uncSource.Get('pull_altsig_' + suffix)
+            altbkg = uncSource.Get('pull_altbkg_' + suffix)
 
-            outputFile.cd()
-            toydist.Write()
+            sigshift[conf] = altsig.GetMean()
+            bkgshift[conf] = altbkg.GetMean()
 
-            quant = 0
-            while quant != len(tvals):
-                if tvals[quant] > nom:
-                    break
-        
-                quant += 1
-
-            errLow = nom - tvals[int(0.32 * quant)]
-            errHigh = tvals[int((len(tvals) - quant) * 0.32) + quant] - nom
-
-            err2 += math.pow((errLow + errHigh) * 0.5, 2.)
-            stat2 += math.pow((errLow + errHigh) * 0.5 / nom, 2.)
-
-        try:
-            err2 += math.pow(max(sysshift['sig'][conf][binName], sysshift['bkg'][conf][binName]) * nom, 2.)
-        except:
-            pass
+            err2 += math.pow(max(abs(sigshift[conf]), abs(bkgshift[conf])) * nZ, 2.)
 
         yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
     ratio = yields['eg'].GetBinContent(iBin + 1) / yields['ee'].GetBinContent(iBin + 1)
     frate.SetBinContent(iBin + 1, ratio)
-    syst2 = 0.
-    try:
-        sigshift = (1. + sysshift['sig']['eg'][binName]) / (1. + sysshift['sig']['ee'][binName])
-        bkgshift = (1. + sysshift['bkg']['eg'][binName]) / (1. + sysshift['bkg']['ee'][binName])
-        syst2 = math.pow(max(abs(sigshift - 1.), abs(bkgshift - 1.)), 2.)
-    except:
-        pass
+
+    # re-evaluate shift uncertainties for ratios (cancels uncertainty if shape is correlated)
+    sig = (1. + sigshift['eg']) / (1. + sigshift['ee'])
+    bkg = (1. + bkgshift['eg']) / (1. + sigshift['ee'])
+    syst2 = math.pow(max(abs(sig - 1.), abs(bkg - 1.)), 2.)
 
     frate.SetBinError(iBin + 1, ratio * math.sqrt(stat2 + syst2))
 
-    contents.append(ratio)
+    centrals.append(ratio)
     staterrs.append(ratio * math.sqrt(stat2))
     systerrs.append(ratio * math.sqrt(syst2))
 
     if dataType == 'mc':
-        eehist = histSource.Get('target_ee_' + binName)
-        eghist = histSource.Get('target_eg_' + binName)
-        eehist.Add(histSource.Get('mcbkg_ee_' + binName), -1.)
-        eghist.Add(histSource.Get('mcbkg_eg_' + binName), -1.)
+        eehist = source.Get('target_ee_' + bin)
+        eghist = source.Get('target_eg_' + bin)
+        eehist.Add(source.Get('mcbkg_ee_' + bin), -1.)
+        eghist.Add(source.Get('mcbkg_eg_' + bin), -1.)
 
         ratio = eghist.Integral(61, 120) / eehist.Integral(61, 120)
         mctruth.append(ratio)
@@ -188,6 +139,8 @@ outputFile.cd()
 frate.Write()
 yields['ee'].Write()
 yields['eg'].Write()
+
+### Visualize
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
@@ -201,41 +154,61 @@ canvas.ylimits = (0., 0.05)
 canvas.SetGrid(False, True)
 canvas.addHistogram(frate, drawOpt = 'EP')
 
+if ADDFIT:
+    power = ROOT.TF1('power', '[0] + [1] / (x - [2])', frate.GetXaxis().GetXmin(), frate.GetXaxis().GetXmax())
+    power.SetParameters(0.02, 1., 0.)
+    frate.Fit(power)
+    canvas.addObject(power)
+
+    text = 'f = %.4f + #frac{%.3f}{p_{T}' % (power.GetParameter(0), power.GetParameter(1))
+    if power.GetParameter(2) >= 0.:
+        text += ' - %.2f}' % power.GetParameter(2)
+    else:
+        text += ' + %.2f}' % (-power.GetParameter(2))
+
+    canvas.addText(text, 0.3, 0.3, 0.5, 0.2)
+
 canvas.xtitle = binningTitle
 canvas.printWeb('efake', 'frate_' + dataType + '_' + binningName, logy = False)
 
-for iBin, (binName, cut) in enumerate(fitBins):
+for iBin, (bin, _) in enumerate(fitBins):
     if dataType == 'mc':
-        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2} (mc %.3f)' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100., mctruth[iBin] * 100.)
+        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2} (mc %.3f)' % (bin, centrals[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100., mctruth[iBin] * 100.)
     else:
-        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (binName, contents[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
+        print '%15s [%.3f +- %.3f (stat.) +- %.3f (syst.)] x 10^{-2}' % (bin, centrals[iBin] * 100., staterrs[iBin] * 100., systerrs[iBin] * 100.)
 
-if toyUncert and binningName == 'highpt':
-    binName = 'pt_175_6500'
+if uncSource:
     for conf in ['ee', 'eg']:
-        canvas.Clear(full = True)
-        canvas.ylimits = (0., 0.05)
-        canvas.xtitle = 'N_{Z}'
+        for bin, _ in fitBins:
+            canvas.Clear(full = True)
+            canvas.ylimits = (0., 0.05)
+            canvas.xtitle = 'N_{Z}'
+    
+            canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+            canvas.legend.add('toys', title = 'Toys', opt = 'LF', color = ROOT.kBlue - 7, lwidth = 2, fstyle = 3003)
+            canvas.legend.add('nominal', title = 'Nominal', opt = 'L', color = ROOT.kBlack, lwidth = 2)
 
-        toydist = toydists[binName][conf]
-        toydist.Scale(1. / toydist.GetSumOfWeights())
+            for ip in range(nomparams.numEntries()):
+                nompset = nomparams.get(ip)
+                if nompset.find('tpconf').getLabel() == conf and nompset.find('binName').getLabel() == bin:
+                    break
+            else:
+                raise RuntimeError('Nom pset for ' + suffix + ' not found')
 
-        canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
-        canvas.legend.add('toys', title = 'Toys', opt = 'LF', color = ROOT.kBlue - 7, lwidth = 2, fstyle = 3003)
-        canvas.legend.add('nominal', title = 'Nominal', opt = 'L', color = ROOT.kBlack, lwidth = 2)
+            nZ = nompset.find('nZ').getVal()
 
-        canvas.legend.apply('toys', toydist)
-
-        canvas.addHistogram(toydist, drawOpt = 'HIST')
-        canvas.Update(logy = False)
-        arrow = canvas.addLine(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0., width = 2, cls = ROOT.TArrow)
-        arrow.SetArrowSize(0.1)
-
-        arrow = ROOT.TArrow(nominal[conf][binName], toydist.GetMaximum() * 0.2, nominal[conf][binName], 0.)
-        arrow.Draw()
-
-        canvas.legend.apply('nominal', arrow)
-
-        canvas.printWeb('efake', 'toys_' + dataType + '_' + conf + '_' + binName, logy = False)
+            toydist = toydists[bin][conf]
+            toydist.Scale(1. / toydist.GetSumOfWeights())
+    
+            canvas.legend.apply('toys', toydist)
+    
+            canvas.addHistogram(toydist, drawOpt = 'HIST')
+            canvas.Update(logy = False)
+            arrow = canvas.addLine(nZ, toydist.GetMaximum() * 0.2, nZ, 0., width = 2, cls = ROOT.TArrow)
+            arrow.SetArrowSize(0.1)
+    
+            canvas.legend.apply('nominal', arrow)
+    
+            canvas.printWeb('efake/toys_' + binningName, dataType + '_' + conf + '_' + bin, logy = False)
 
 outputFile.Close()

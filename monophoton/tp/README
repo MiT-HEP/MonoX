@@ -63,7 +63,7 @@
       done
     done
   done
-  ~/bin/condor-run efake_tpsyst.py -a toys_args.txt
+  ~/bin/condor-run efake_tpsyst.py -a syst_args.txt
 
  The output of toy generation should be combined:
   hadd tpsyst_data_(binning).root tpsyst_data_*_{nominal,altsig,altbkg}_${binning}_*.root
