@@ -16,7 +16,7 @@ from tp.efake_conf import lumiSamples, outputDir, roofitDictsDir, getBinning
 dataType = sys.argv[1]
 binningName = sys.argv[2]
 
-ADDFIT = True
+ADDFIT = False
 
 binningTitle, binning, fitBins = getBinning(binningName)
 

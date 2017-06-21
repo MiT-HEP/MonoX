@@ -17,13 +17,14 @@ import tp.efake_plot as efake_plot
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-dataSource = 'sel' # sph or sel
+dataSource = 'sph' # sph or sel
+# panda::XPhoton::IDTune
+itune = 2
 
 #tpconfs = ['ee', 'eg', 'pass', 'fail']
 tpconfs = ['ee', 'eg']
 
-# mediumX[2] = GJetsCWIso from panda::XPhoton::IDTune
-monophSel = 'probes.mediumX[2] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001'
+monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
 
 fitBins = getBinning(binningName)[2]
 
@@ -163,9 +164,8 @@ if dataType == 'data':
         egPlotter.setBaseSelection('tags.pt_ > 40.')
         mgPlotter.setBaseSelection('tags.pt_ > 40.')
 
-        # low-pT fits -> will need MC signal template
-        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
-        mcWork = mcSource.Get('work')
+    mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
+    mcWork = mcSource.Get('work')
 
 else:
     trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
@@ -213,11 +213,11 @@ for bin, fitCut in fitBins:
         if conf == 'ee':
             # target is a histogram with !csafeVeto
             # perform binned max L fit
-            cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
+            cut = 'probes.mediumX[][{itune}] && !probes.csafeVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
         elif conf == 'eg':
             # target is a tree with pixelVeto
             # also perform binned max L fit
-            cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
+            cut = 'probes.mediumX[][{itune}] && probes.pixelVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
         elif conf == 'pass':
             cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
         elif conf == 'fail':
