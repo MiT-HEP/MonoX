@@ -2,9 +2,8 @@ import os
 import sys
 from array import array
 from pprint import pprint
-from selections import Variables, Version, Samples, Measurement, SigmaIetaIetaSels, chIsoCuts, sieieSels, PhotonPtSels, MetSels, HistExtractor, config, versionDir
-from ROOT import *
-gROOT.SetBatch(True)
+import ROOT
+ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -14,129 +13,184 @@ if basedir not in sys.path:
 
 from datasets import allsamples
 import config
+import utils
+import purity.selections as s
 
-def plotiso(loc, pid, pt, met, era):
-    inputKey = era+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
+def formatHist(hist, ytitle, lstyle = ROOT.kDashed):
+    hist.SetLineWidth(3)
+    hist.SetLineStyle(lstyle)
+    hist.SetStats(False)
+
+    hist.GetXaxis().SetTitle("CH Iso (GeV)")
+    hist.GetYaxis().SetTitle(ytitle)
     
-    if loc == 'barrel':
-        iloc = 0
-    elif loc == 'endcap':
-        iloc = 1
+    hist.GetXaxis().SetLabelSize(0.045)
+    hist.GetXaxis().SetTitleSize(0.045)
+    hist.GetYaxis().SetLabelSize(0.045)
+    hist.GetYaxis().SetTitleSize(0.045)
+
+    hist.GetDirectory().cd()
+    hist.Write()
+
+def printHist(histograms, drawOpt, name):
+    canvas = ROOT.TCanvas()
+    leg = ROOT.TLegend(0.725, 0.7, 0.875, 0.85);
+    leg.SetFillColor(ROOT.kWhite);
+    leg.SetTextSize(0.03);
+
+    dopt = drawOpt
+    icolor = 2
+    for hist in histograms:
+        hist.SetLineColor(icolor)
+        icolor += 1
+        hist.Draw(dopt)
+        if 'same' not in dopt:
+            dopt += ' same'
+
+        leg.AddEntry(hist, hist.GetName(), 'L')
+
+    leg.Draw()
+
+    canvas.SaveAs(name+'.pdf')
+    canvas.SaveAs(name+'.png')
+    canvas.SaveAs(name+'.C')
+    
+    canvas.SetLogy()
+    canvas.SaveAs(name+'_Logy.pdf')
+    canvas.SaveAs(name+'_Logy.png')
+    canvas.SaveAs(name+'_Logy.C')
+
+
+def plotiso(loc, pid, pt, met, tune):
+    inputKey = tune+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
     
     try:
-        ptSel = PhotonPtSels['PhotonPt'+pt]
+        ptSel = s.PhotonPtSels['PhotonPt'+pt]
     except KeyError:
         print 'Inputted pt range', pt, 'not found!'
         print 'Not applying any pt selection!'
         ptSel = '(1)'
     
     try:
-        metSel = MetSels['Met'+met]
+        metSel = s.MetSels['Met'+met]
     except KeyError:
         print 'Inputted met range', met, 'not found!'
         print 'Not applying any met selection!'
         metSel = '(1)'
     
-    varName = 'chiso'
-    var = Variables[varName]
+    var = s.getVariable('chiso', tune, loc)
     
-    versDir = versionDir
-    skimDir = config.skimDir
-    plotDir = os.path.join(versDir,inputKey)
+    versDir = s.versionDir
+    plotDir = os.path.join(versDir, inputKey)
     if not os.path.exists(plotDir):
         os.makedirs(plotDir)
-    
-    skim = Measurement['bambu'][1]
-    
+   
     pids = pid.split('-')
-    if len(pids) > 1:
-        pid = pids[0]
-        extras = pids[2:]
-    elif len(pids) == 1:
-        pid = pids[0]
-        extras = []
+    pid = pids[0]
+    extras = pids[1:]
+
+    selections = s.getSelections(tune, loc, pid)
+
+    itune = s.Tunes.index(tune)
+
+    ### Plot I_{CH} from sph data and gjets MC
 
     # selection on H/E & INH & IPh
-    baseSel = SigmaIetaIetaSels[era][loc][pid]+' && '+ptSel+' && '+metSel
+    baseSel = ' && '.join([
+        ptSel,
+        metSel,
+        selections['fiducial'],
+        selections['hovere'],
+        selections['nhiso'],
+        selections['phiso']
+    ])
     if 'pixel' in extras:
-        baseSel = baseSel+' && '+s.pixelVetoCut
+        baseSel = baseSel + ' && ' + s.Cuts['pixelVeto']
     if 'monoph' in extras:
-        baseSel = baseSel+' && '+s.monophIdCut
+        baseSel = baseSel + ' && ' + s.Cuts['monophId']
     if 'max' in extras:
         baseSel = baseSel.replace('chIso', 'chIsoMax')
-        var = ('TMath::Max(0., photons.chIsoMax)',) + var[1:]
-    
-    outName = os.path.join(plotDir,'chiso_'+inputKey)
-    print 'plotiso writing to', outName+'.root'
-    outFile = TFile(outName+'.root','RECREATE')
-    
-    histograms = [ [], [], [], [] ]
-    leg = TLegend(0.725,0.7,0.875,0.85 );
-    leg.SetFillColor(kWhite);
-    leg.SetTextSize(0.03);
-    
-    colors = [kBlue, kRed, kBlack]
-    
+        var = s.Variable('TMath::Max(0., photons.chIsoMaxX[0][%d])' % itune, *var[1:])
+
     truthSel = '(photons.matchedGenId == -22)'
 
-    # don't use var[3][iloc] for binning
-    binning = [0., chIsoCuts[era][loc][pid]] + [0.1 * x for x in range(20, 111, 5)]
+    # output file
+    outName = os.path.join(plotDir, 'chiso_' + inputKey)
+    print 'plotiso writing to', outName + '.root'
+    outFile = ROOT.TFile(outName + '.root', 'RECREATE')
+
+    # don't use var.binning for binning
+    binning = [0., var.cuts[pid]] + [0.1 * x for x in range(20, 111, 5)]
 
     # make the data iso distribution for reference
-    extractor = HistExtractor('sphData', Samples['sphData'], var[0])
+    extractor = s.HistExtractor('sphData', s.Samples['sphData'], var)
     print 'setBaseSelection(' + baseSel + ')'
     extractor.plotter.setBaseSelection(baseSel)
-    extractor.categories.append((skim[0], skim[2], ''))
+    extractor.categories.append(('data', 'I_{CH} Distribution from SinglePhoton Data', ''))
     hist = extractor.extract(binning)[0]
-    hist.SetName("data")
-    histograms[3].append(hist)
+    hist.Scale(1. / hist.GetSumOfWeights())
 
-    extractor = HistExtractor('gjetsMc', Samples[skim[1]], var[0])
+    formatHist(hist, 'Events')
+    printHist([hist], 'HIST', outName + '_data')
+
+    extractor = s.HistExtractor('gjetsMc', s.Samples['gjetsMc'], var)
     print 'setBaseSelection(' + baseSel + ' && ' + truthSel + ')'
     extractor.plotter.setBaseSelection(baseSel + ' && ' + truthSel)
-    extractor.categories.append((skim[0], skim[2], ''))
+    extractor.categories.append(('rawmc', 'I_{CH} Distribution from #gamma+jets MC', ''))
     raw = extractor.extract(binning)[0]
-    raw.SetName("rawmc")
-    histograms[0].append(raw)
+    raw.Scale(1. / raw.GetSumOfWeights())
 
-#    eSelScratch = "weight * ( (tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]+")"
-    eSelScratch = "(tp.mass > 81 && tp.mass < 101) && "+SigmaIetaIetaSels[era][loc][pid]+' && '+metSel+" && "+sieieSels[era][loc][pid]
-    eSel = eSelScratch.replace("photons", "probes")
-    eExpr = var[0].replace('photons', 'probes')
+    formatHist(raw, 'Events')
+
+    ### Plot I_{CH} from sph data and dy MC Zee samples
+
+    eSelScratch = ' && '.join([
+        'tp.mass > 81 && tp.mass < 101',
+        metSel,
+        selections['fiducial'],
+        selections['hovere'],
+        selections['nhiso'],
+        selections['phiso'],
+        selections['sieie']
+    ])
+
+    eSel = 'weight * (' + eSelScratch.replace("photons", "probes") + ')'
+    eExpr = var.expression.replace('photons', 'probes')
 
     print 'Extracting electron MC distributions'
 
-# tpeg trees lack the weight branch as of now (Jun 07) - looping over samples.
-#    mcTree = TChain('events')
-#    mcTree.Add(os.path.join(skimDir, 'dy-50-*_tpeg.root'))
+    mcTree = ROOT.TChain('events')
+    for sample in allsamples.getmany('dy-50-*'):
+        mcTree.Add(utils.getSkimPath(sample.name, 'tpeg'))
 
     print 'Draw(' + eExpr + ', ' + eSel + ')'
     
     mcHist = raw.Clone("emc")
     mcHist.Reset()
-#    mcTree.Draw("TMath::Max(0., probes.chIso)>>emc", eSel, 'goff')
-    for sample in allsamples.getmany('dy-50-*'):
-        source = TFile.Open(config.skimDir + '/' + sample.name + '_tpeg.root')
-        tree = source.Get('events')
-        outFile.cd()
-        tree.Draw(eExpr + ">>+emc", '%f * (%s)' % (sample.crosssection / sample.sumw, eSel), 'goff')
-        source.Close()
+    mcTree.Draw(eExpr + ">>emc", eSel, 'goff')
+    mcHist.Scale(1. / mcHist.GetSumOfWeights())
 
-    outFile.WriteTObject(mcHist)
-    histograms[1].append(mcHist)
+    formatHist(mcHist, 'Events')
 
     print 'Extracting electron data distributions'
     
-    dataTree = TChain('events')
-    dataTree.Add(os.path.join(skimDir, 'sph-16*_tpeg.root'))
+    dataTree = ROOT.TChain('events')
+    for sample in allsamples.getmany('sph-16*'):
+        dataTree.Add(utils.getSkimPath(sample.name, 'tpeg'))
+
+    print 'Draw(' + eExpr + ', ' + eSel + ')'
+
     dataHist = raw.Clone("edata")
     dataHist.Reset()
-    print 'Draw(' + eExpr + ', ' + eSel + ')'
     dataTree.Draw(eExpr + ">>edata", eSel, 'goff')
-    outFile.WriteTObject(dataHist)
-    histograms[1].append(dataHist)
+    dataHist.Scale(1. / dataHist.GetSumOfWeights())
+
+    formatHist(dataHist, 'Events')
+
+    printHist([mcHist, dataHist], 'HIST', outName + '_electrons')
 
     scaled = raw.Clone("scaledmc")
+
     scaleHist = raw.Clone("escale")
     scaleHist.SetTitle("Data/MC Scale Factors from Electrons")
     scaleHist.Reset()
@@ -157,63 +211,15 @@ def plotiso(loc, pid, pt, met, era):
         scaleHist.SetBinContent(iBin, ratio)
         scaled.SetBinContent(iBin, ratio * scaled.GetBinContent(iBin))
         scaleHist.SetBinError(iBin, error)
-    
-    outFile.WriteTObject(scaleHist)
-    histograms[0].append(scaled)
-    histograms[2].append(scaleHist)
-    
-    suffix = [ ("photons", "Events"), ("electrons", "Events"), ("scale", "Scale Factor"), ("data", "Events") ]
-    
-    for iList, hlist in enumerate(histograms):
-        canvas = TCanvas()
-        for iHist, hist in enumerate(hlist):
-            if (iList < 2): 
-                hist.Scale( 1. / hist.GetSumOfWeights())
-    
-            hist.SetLineColor(iHist+1)
-            hist.SetLineWidth(3)
-            if (iList < 2): 
-                hist.SetLineStyle(kDashed)
-            hist.SetStats(False)
-        
-            hist.GetXaxis().SetTitle("CH Iso (GeV)")
-            hist.GetYaxis().SetTitle(suffix[iList][1])
-            
-            hist.GetXaxis().SetLabelSize(0.045)
-            hist.GetXaxis().SetTitleSize(0.045)
-            hist.GetYaxis().SetLabelSize(0.045)
-            hist.GetYaxis().SetTitleSize(0.045)
-    
-            outFile.cd()
-            hist.Write()
-            
-            canvas.cd()
-            if (iHist == 0):
-                if (iList < 2): 
-                    hist.Draw("hist")
-                else:
-                    hist.Draw("")
-            else:
-                hist.Draw("samehist")
-            leg.AddEntry(hist, hist.GetName(), 'L')
-    
-        canvas.cd()
-        if (iList < 2): 
-            leg.Draw()
-    
-        newName = outName+'_'+suffix[iList][0]
-    
-        canvas.SaveAs(newName+'.pdf')
-        canvas.SaveAs(newName+'.png')
-        canvas.SaveAs(newName+'.C')
-        
-        canvas.SetLogy()
-        canvas.SaveAs(newName+'_Logy.pdf')
-        canvas.SaveAs(newName+'_Logy.png')
-        canvas.SaveAs(newName+'_Logy.C')
-        
-        
-        leg.Clear()
+
+    scaled.Scale(1. / scaled.GetSumOfWeights())
+
+    formatHist(scaled, 'Events')
+    formatHist(scaleHist, 'Scale Factor', lstyle = ROOT.kSolid)
+
+    printHist([scaleHist], '', outName + '_scale')
+    printHist([raw, scaled], 'HIST', outName + '_photons')
+
     outFile.Close()
 
 
@@ -226,8 +232,8 @@ if __name__ == '__main__':
     met = sys.argv[4]
     
     try:
-        era = sys.argv[5]
+        tune = sys.argv[5]
     except:
-        era = 'Spring15'
+        tune = 'Spring15'
 
-    plotiso(loc, pid, pt, met, era)
+    plotiso(loc, pid, pt, met, tune)

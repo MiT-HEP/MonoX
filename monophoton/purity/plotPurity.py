@@ -14,8 +14,7 @@ from datasets import allsamples
 import selections as s
 
 versDir = s.versionDir 
-# outDir = os.path.join(versDir, 'Fitting')
-outDir = WEBDIR + '/purity/' + s.Version + '/Fitting'
+outDir = os.path.join(versDir, 'Fitting')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
@@ -23,12 +22,12 @@ outFile = r.TFile("../data/impurity.root", "RECREATE")
 
 #bases = ['loose', 'medium', 'tight', 'highpt']
 bases = ['medium']
-mods = ['-pixel', '-pixel-noICH', '-pixel-max']
+mods = ['-pixel-max']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Ashim_ZG_CWIso'
+tune = 'GJetsCWIso'
 
 purities = {}
 for loc in s.Locations[:1]:
@@ -40,7 +39,7 @@ for loc in s.Locations[:1]:
             for metCut in MetSels:
                 purities[loc][pid][ptCut][metCut] = {}
                 
-                dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
+                dirName = tune + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
                 condorFileName = os.path.join(versDir,dirName,"results.out")
                 print condorFileName
                 try:
@@ -109,7 +108,7 @@ for loc in s.Locations[:1]:
                        
 pprint(purities)
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'])
+sphLumi = sum(allsamples[s].lumi for s in s.sphData)
 canvas = SimpleCanvas(lumi = sphLumi)
 
 for loc in s.Locations[:1]:
@@ -158,7 +157,7 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = 'Plot_' + era + '_impurity_' + str(loc) + '_' + str(base)
+            plotName = 'Plot_' + tune + '_impurity_' + str(loc) + '_' + str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
 
 outFile.Close()
@@ -169,7 +168,7 @@ for loc in s.Locations[:1]:
             for iMod, mod in enumerate(mods):
                 
                 # start new table
-                purityFileName = 'table_' + era + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFileName = 'table_' + tune + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
                 purityFilePath = outDir + '/' + purityFileName
                 purityFile = open(purityFilePath, 'w')
 
