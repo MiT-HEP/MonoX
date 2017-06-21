@@ -11,6 +11,7 @@ from plotstyle import SimpleCanvas, RatioCanvas
 from datasets import allsamples
 import purity.selections as selections
 import config
+import utils
 
 ROOT.gROOT.SetBatch(True)
 
@@ -24,50 +25,55 @@ lumi = sum(s.lumi for s in allsamples.getmany(snames))
 canvas = SimpleCanvas(lumi = lumi)
 rcanvas = RatioCanvas(lumi = lumi)
 
-binning = array.array('d', [175., 200., 250., 300., 350., 400., 450., 500.])
+binning = array.array('d', map(float, selections.photonPtBinning))
 pid = 'medium'
-era = 'Ashim_ZG_CWIso'
+tune = 'GJetsCWIso'
 extras = 'pixel-max'
-suffix = 'chIsoMax'
+suffix = ''
+
+itune = selections.Tunes.index(tune)
 
 inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
 impurityGraph = inputFile.Get("barrel-" + pid + "-" + extras + "-Met0to60")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor' + suffix + '.root', 'recreate')
 
+selExprs = selections.getSelections(tune, 'barrel', 'medium')
+selExprsS16 = selections.getSelections('Spring16', 'barrel', 'medium')
+
 baseSels = {
     'jet': 'jets.pt_[0] > 100.',
     'met': 't1Met.pt < 60.',
     'nph': 'photons.size == 1',
     'eb': 'photons.isEB[0]',
-    'hOverE': selections.hOverESels[era]['barrel'][pid],
-    'monoph': selections.monophIdCut,
-    'chIso': 'photons.chIso[0] < 11.',
-    'sieie': selections.sieieSels[era]['barrel'][pid]
+    'hOverE': selExprs['hovere'],
+    'monoph': selections.Cuts['monophId'],
+    'chIso': 'photons.chIsoX[0][%d] < 11.' % itune,
+    'sieie': selExprs['sieie']
 }
 
 goodSels = {
-    'chIso': selections.chIsoSels[era]['barrel'][pid],
-    'nhIso': selections.nhIsoSels[era]['barrel'][pid],
-    'phIso': selections.phIsoSels[era]['barrel'][pid]
+    'chIso': selExprs['chiso'],
+    'nhIso': selExprs['nhiso'],
+    'phIso': selExprs['phiso']
 }
 
 nomSels = {
-    'chIso': '!' + selections.chIsoSels[era]['barrel'][pid],
-    'nhIso': selections.nhIsoSels[era]['barrel'][pid],
-    'phIso': selections.phIsoSels[era]['barrel'][pid]
+    'chIso': '!(%s)' % selExprs['chiso'],
+    'nhIso': selExprs['nhiso'],
+    'phIso': selExprs['phiso']
 }
 
 tightSels = {
-    'chIso': '!' + selections.chIsoSels[era]['barrel'][pid],
-    'nhIso': selections.nhIsoSels['Spring16']['barrel']['loose'],
-    'phIso': selections.phIsoSels['Spring16']['barrel']['loose']
+    'chIso': '!(%s)' % selExprs['chiso'],
+    'nhIso': selExprsS16['nhiso'],
+    'phIso': selExprsS16['phiso']
 }
 
 looseSels = {
-    'chIso': '!' + selections.chIsoSels[era]['barrel'][pid],
-    'nhIso': selections.nhIsoSels['Spring16']['barrel']['tight'],
-    'phIso': selections.phIsoSels['Spring16']['barrel']['tight']
+    'chIso': '!(%s)' % selExprs['chiso'],
+    'nhIso': selExprsS16['nhiso'],
+    'phIso': selExprsS16['phiso']
 }
 
 if 'pixel' in extras:
@@ -98,12 +104,7 @@ configurations = [
 plotter = ROOT.MultiDraw()
 plotter.setPrintLevel(1)
 for sample in allsamples.getmany(snames):
-    inName = os.path.join(config.skimDir, sample.name + '_emjet.root')
-    localName = os.path.join(config.localSkimDir, sample.name + '_emjet.root')
-    if os.path.exists(localName) and os.stat(localName).st_mtime > os.stat(inName).st_mtime:
-        plotter.addInputPath(localName)
-    else:
-        plotter.addInputPath(inName)
+    plotter.addInputPath(utils.getSkimPath(sample.name, 'emjet'))
 
 plotter.setBaseSelection(' && '.join(baseSels.values()))
 
