@@ -2,7 +2,7 @@
 #define operators_h
 
 #include "PandaTree/Objects/interface/EventMonophoton.h"
-#include "PandaTree/Objects/interface/EventTPPhoton.h"
+#include "PandaTree/Objects/interface/EventTP.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -89,6 +89,15 @@ enum MetSource {
   kOutMet
 };
 
+enum TPEventType {
+  kTPEG,
+  kTPEEG,
+  kTPMG,
+  kTPMMG,
+  kTP2E,
+  kTP2M,
+  nOutTypes
+};
 
 const UInt_t NMAX_PARTICLES = 64;
 
@@ -152,7 +161,7 @@ class Modifier : public Operator {
 };
 
 class TPCut : public Operator {
-  // Cut with EventTPPhoton
+  // Cut with EventTP
  public:
   TPCut(char const* name) : Operator(name), result_(false), ignoreDecision_(false) {}
   virtual ~TPCut() {}
@@ -165,7 +174,7 @@ class TPCut : public Operator {
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &result_, name_ + "/O"); }
 
  protected:
-  virtual bool pass(panda::EventMonophoton const&, panda::EventTPPhoton&) = 0;
+  virtual bool pass(panda::EventMonophoton const&, panda::EventTP&) = 0;
 
  private:
   bool result_;
@@ -173,7 +182,7 @@ class TPCut : public Operator {
 };
 
 class TPModifier : public Operator {
-  // Modifier with EventTPPhoton
+  // Modifier with EventTP
  public:
   TPModifier(char const* name) : Operator(name) {}
   virtual ~TPModifier() {}
@@ -181,7 +190,7 @@ class TPModifier : public Operator {
   bool exec(panda::EventMonophoton const&, panda::EventBase&) override;
 
  protected:
-  virtual void apply(panda::EventMonophoton const&, panda::EventTPPhoton&) = 0;
+  virtual void apply(panda::EventMonophoton const&, panda::EventTP&) = 0;
 };
 
 //--------------------------------------------------------------------
@@ -259,15 +268,6 @@ class PhotonSelection : public Cut {
     PhIsoTight,
     Sieie05,
     Sipip05,
-    NHIsoS16,             // 25
-    PhIsoS16,
-    CHIsoS16,
-    CHIsoMaxS16,
-    NHIsoS16Loose,
-    PhIsoS16Loose,        // 30
-    CHIsoS16Loose,
-    NHIsoS16Tight,
-    PhIsoS16Tight,
     nSelections           // 34
   };
 
@@ -297,6 +297,7 @@ class PhotonSelection : public Cut {
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
+  void setIDTune(panda::XPhoton::IDTune t) { idTune_ = t; }
   void setWP(unsigned wp) { wp_ = wp; }
 
   double ptVariation(panda::XPhoton const&, bool up);
@@ -307,6 +308,7 @@ class PhotonSelection : public Cut {
 
   double minPt_{175.};
   double maxPt_{6500.};
+  panda::XPhoton::IDTune idTune_{panda::XPhoton::kGJetsCWIso};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
   float ptVarUp_[NMAX_PARTICLES];
   float ptVarDown_[NMAX_PARTICLES];
@@ -1053,38 +1055,47 @@ class PUWeight : public Operator {
 
 class TPLeptonPhoton : public TPCut {
  public:
-  TPLeptonPhoton(char const* name = "TPLeptonPhoton") : TPCut(name) {}
+  TPLeptonPhoton(TPEventType t, char const* name = "TPLeptonPhoton") : TPCut(name), eventType_(t) {}
 
   void addBranches(TTree& skimTree) override;
 
-  enum Mode {
-    kSingle,
-    kDouble
-  };
-
-  void setFlavor(LeptonFlavor flavor) { flavor_ = flavor; }
-  void setMode(Mode m) { mode_ = m; }
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
   void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
   void setProbeTriggerMatch(bool b) { probeTriggerMatch_ = b; }
   
  protected:
-  bool pass(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
 
-  LeptonFlavor flavor_{nLeptonFlavors};
-  Mode mode_{kSingle};
+  TPEventType eventType_;
   double minProbePt_{175.};
   double minTagPt_{15.};
   bool tagTriggerMatch_{false};
   bool probeTriggerMatch_{false};
 
-  TTree* skimTree_{0}; // need to hold the skim tree because we book looseTags at the first event
+  bool hasCollinearL_[NMAX_PARTICLES];
+};
+
+class TPDilepton : public TPCut {
+ public:
+  TPDilepton(TPEventType t, char const* name = "TPLeptonPhoton") : TPCut(name), eventType_(t) {}
+
+  void setMinProbePt(double d) { minProbePt_ = d; }
+  void setMinTagPt(double d) { minTagPt_ = d; }
+  void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
+  
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
+
+  TPEventType eventType_;
+  double minProbePt_{15.};
+  double minTagPt_{30.};
+  bool tagTriggerMatch_{false};
 };
 
 class TPLeptonVeto : public TPCut {
  public:
-  TPLeptonVeto(char const* name = "TPLeptonVeto") : TPCut(name) {}
+  TPLeptonVeto(TPEventType t, char const* name = "TPLeptonVeto") : TPCut(name), eventType_(t) {}
   
   void addBranches(TTree& skimTree) override;
 
@@ -1092,8 +1103,9 @@ class TPLeptonVeto : public TPCut {
   void setVetoMuons(bool b) { vetoMuons_ = b; }
 
  protected:
-  bool pass(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
 
+  TPEventType eventType_;
   bool vetoElectrons_{true};
   bool vetoMuons_{true};
   unsigned nElectrons_;
@@ -1104,14 +1116,15 @@ class TPJetCleaning : public TPModifier {
   // JetCleaning for TP
   // For photons, only clean overlap with the leading
  public:
-  TPJetCleaning(char const* name = "TPJetCleaning") : TPModifier(name) {}
+  TPJetCleaning(TPEventType t, char const* name = "TPJetCleaning") : TPModifier(name), eventType_(t) {}
   ~TPJetCleaning() {}
 
   void setMinPt(double min) { minPt_ = min; }
   
  protected:
-  void apply(panda::EventMonophoton const&, panda::EventTPPhoton&) override;
+  void apply(panda::EventMonophoton const&, panda::EventTP&) override;
 
+  TPEventType eventType_;
   double minPt_{0.};
 };
 

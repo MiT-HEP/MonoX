@@ -528,7 +528,7 @@ def emjet(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
     
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIsoMax', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
         
     return selector
 
@@ -594,7 +594,7 @@ def hfakeVtx(sample, rname):
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    setupPhotonSelection(photonSel, changes = ['!CHIsoMax', '+CHIsoMax11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
     setupPhotonSelection(photonSel, veto = True)
 
     return selector
@@ -611,7 +611,7 @@ def gjets(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIsoMax', '+Sieie15', '+CHIsoMax11'])
     photonSel.addSelection(False, ROOT.PhotonSelection.Sieie12, ROOT.PhotonSelection.CHIso)
     setupPhotonSelection(photonSel, veto = True)
     
@@ -1043,18 +1043,18 @@ def tpeg(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTPEG)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
-    tp = ROOT.TPLeptonPhoton()
-    tp.setFlavor(ROOT.lElectron)
+    tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     if sample.data:
         tp.setProbeTriggerMatch(True)
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning())
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
 
     return selector
 
@@ -1064,18 +1064,18 @@ def tpmg(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTPMG)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
-    tp = ROOT.TPLeptonPhoton()
-    tp.setFlavor(ROOT.lMuon)
+    tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     if sample.data:
         tp.setProbeTriggerMatch(True)
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning())
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
 
     return selector
 
@@ -1085,12 +1085,12 @@ def tpegLowPt(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTPEG)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
 
-    tp = ROOT.TPLeptonPhoton()
-    tp.setFlavor(ROOT.lElectron)
+    tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     tp.setMinProbePt(25.)
     if sample.data:
         tp.setMinTagPt(30.)
@@ -1098,7 +1098,7 @@ def tpegLowPt(sample, rname):
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning())
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
 
     selector.setCanPhotonSkim(False)
 
@@ -1110,12 +1110,12 @@ def tpmgLowPt(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTPMG)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
 
-    tp = ROOT.TPLeptonPhoton()
-    tp.setFlavor(ROOT.lMuon)
+    tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     tp.setMinProbePt(25.)
     if sample.data:
         tp.setMinTagPt(30.)
@@ -1123,7 +1123,7 @@ def tpmgLowPt(sample, rname):
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning())
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMG))
 
     selector.setCanPhotonSkim(False)
 
@@ -1135,24 +1135,69 @@ def tpmmg(sample, rname):
     """
 
     selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTPMMG)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
 
-    tp = ROOT.TPLeptonPhoton()
-    tp.setFlavor(ROOT.lMuon)
+    tp = ROOT.TPLeptonPhoton(ROOT.kTPMMG)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
-    tp.setMode(ROOT.TPLeptonPhoton.kDouble)
     selector.addOperator(tp)
 
     # for lepton veto efficiency measurement; just write electron and muon sizes
-    veto = ROOT.TPLeptonVeto()
+    veto = ROOT.TPLeptonVeto(ROOT.kTPMMG)
     veto.setIgnoreDecision(True)
     selector.addOperator(veto)
 
-    selector.addOperator(ROOT.TPJetCleaning())
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMMG))
+
+    selector.setCanPhotonSkim(False)
+
+    return selector
+
+def tp2e(sample, rname):
+    """
+    Dielectron T&P.
+    """
+
+    selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTP2E)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+
+    tp = ROOT.TPDilepton(ROOT.kTP2E)
+    tp.setMinProbePt(25.)
+    tp.setMinTagPt(35.)
+    tp.setTagTriggerMatch(True)
+    selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2E))
+
+    selector.setCanPhotonSkim(False)
+
+    return selector
+
+def tp2m(sample, rname):
+    """
+    Dimuon T&P.
+    """
+
+    selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(ROOT.kTP2M)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
+    tp = ROOT.TPDilepton(ROOT.kTP2M)
+    tp.setMinProbePt(25.)
+    tp.setMinTagPt(30.)
+    tp.setTagTriggerMatch(True)
+    selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2M))
 
     selector.setCanPhotonSkim(False)
 
@@ -1289,12 +1334,12 @@ def setSampleId(sample, selector):
         selector.setSampleId(1)
     elif sample.name.startswith('tt'):
         selector.setSampleId(2)
-    elif sample.name.startswith('wlnu'):
+    elif sample.name.startswith('wg'):
         selector.setSampleId(3)
     elif sample.name.startswith('gg'):
         selector.setSampleId(4)
     else:
-        selector.setSampleId(-1)
+        selector.setSampleId(99)
 
 def modHfake(selector):
     """Append PhotonPtWeight with hadProxyWeight and set up the photon selections."""

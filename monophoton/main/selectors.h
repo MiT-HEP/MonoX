@@ -168,6 +168,7 @@ public:
   TagAndProbeSelector(char const* name) : EventSelectorBase(name) {}
   ~TagAndProbeSelector() {}
 
+  void setOutEventType(TPEventType t) { outType_ = t; }
   void selectEvent(panda::EventMonophoton&) override;
 
   char const* className() const override { return "TagAndProbeSelector"; }
@@ -177,7 +178,8 @@ public:
  protected:
   void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) override;
 
-  panda::EventTPPhoton outEvent_;
+  TPEventType outType_{nOutTypes};
+  panda::EventTP* outEvent_{0};
   unsigned sampleId_; // outEvent_.sample gets reset at the beginning of each event
 };
 

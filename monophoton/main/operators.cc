@@ -1,5 +1,12 @@
 #include "operators.h"
 
+#include "PandaTree/Objects/interface/EventTPEG.h"
+#include "PandaTree/Objects/interface/EventTPEEG.h"
+#include "PandaTree/Objects/interface/EventTPMG.h"
+#include "PandaTree/Objects/interface/EventTPMMG.h"
+#include "PandaTree/Objects/interface/EventTP2E.h"
+#include "PandaTree/Objects/interface/EventTP2M.h"
+
 #include "TH1.h"
 #include "TF1.h"
 
@@ -51,14 +58,14 @@ TPCut::expr() const
 bool
 TPCut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  result_ = pass(_event, static_cast<panda::EventTPPhoton&>(_outEvent));
+  result_ = pass(_event, static_cast<panda::EventTP&>(_outEvent));
   return ignoreDecision_ || result_;
 }
 
 bool
 TPModifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
 {
-  apply(_event, static_cast<panda::EventTPPhoton&>(_outEvent));
+  apply(_event, static_cast<panda::EventTP&>(_outEvent));
   return true;
 }
 
@@ -225,16 +232,7 @@ PhotonSelection::selectionName[PhotonSelection::nSelections] = {
   "NHIsoTight",
   "PhIsoTight",
   "Sieie05",
-  "Sipip05",
-  "NHIsoS16",             // 25
-  "PhIsoS16",
-  "CHIsoS16",
-  "CHIsoMaxS16",
-  "NHIsoS16Loose",
-  "PhIsoS16Loose",        // 30
-  "CHIsoS16Loose",
-  "NHIsoS16Tight",
-  "PhIsoS16Tight"
+  "Sipip05"
 };
 
 TString
@@ -420,12 +418,13 @@ int
 PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
 {
   BitMask cutres;
-  cutres[HOverE] = _photon.hOverE < 0.0263;
-  cutres[Sieie] = _photon.sieie < 0.01002;
-  cutres[CHIso] = _photon.chIsoZG < 1.163;
-  cutres[NHIso] = _photon.nhIsoZG < 7.005;
-  cutres[PhIso] = _photon.phIsoZG < 3.271;
-  cutres[CHIsoMax] = (_photon.chIsoMax < panda::XPhoton::chIsoCuts[0][0][wp_]);
+  // Ashim's retuned ID GJets_CWIso (https://indico.cern.ch/event/629088/contributions/2603837/attachments/1464422/2279061/80X_PhotonID_EfficiencyStudy_23-05-2017.pdf)
+  cutres[HOverE] = _photon.passHOverE(wp_, idTune_);
+  cutres[Sieie] = _photon.passSieie(wp_, idTune_);
+  cutres[CHIso] = _photon.passCHIso(wp_, idTune_);
+  cutres[NHIso] = _photon.passNHIso(wp_, idTune_);
+  cutres[PhIso] = _photon.passPhIso(wp_, idTune_);
+  cutres[CHIsoMax] = _photon.passCHIsoMax(wp_, idTune_);
   cutres[EVeto] = _photon.pixelVeto;
   cutres[CSafeVeto] = _photon.csafeVeto;
   cutres[MIP49] = (_photon.mipEnergy < 4.9);
@@ -437,23 +436,14 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
   cutres[Sieie20] = (_photon.sieie < 0.020);
-  cutres[CHIso11] = (_photon.chIsoZG < 11.);
+  cutres[CHIso11] = (_photon.chIsoX[idTune_] < 11.);
   cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
-  cutres[NHIsoLoose] = _photon.passNHIsoS15(0) || _photon.passNHIso(0) || _photon.nhIsoZG < 7.005;
-  cutres[PhIsoLoose] = _photon.passPhIsoS15(0) || _photon.passPhIso(0) || _photon.phIsoZG < 3.271;
-  cutres[NHIsoTight] = _photon.passNHIsoS15(2);
-  cutres[PhIsoTight] = _photon.passPhIsoS15(2);
+  cutres[NHIsoLoose] = _photon.passNHIso(0, idTune_);
+  cutres[PhIsoLoose] = _photon.passPhIso(0, idTune_);
+  cutres[NHIsoTight] = _photon.passNHIso(2, idTune_);
+  cutres[PhIsoTight] = _photon.passPhIso(2, idTune_);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
-  cutres[NHIsoS16] = _photon.passNHIso(wp_);
-  cutres[PhIsoS16] = _photon.passPhIso(wp_);
-  cutres[CHIsoS16] = _photon.passCHIso(wp_);
-  cutres[CHIsoMaxS16] = (_photon.chIsoMax < panda::XPhoton::chIsoCuts[1][0][wp_]);
-  cutres[NHIsoS16Loose] = _photon.passNHIso(0); 
-  cutres[PhIsoS16Loose] = _photon.passPhIso(0); 
-  cutres[CHIsoS16Loose] = _photon.chIso < 11.; 
-  cutres[NHIsoS16Tight] = _photon.passNHIso(2);
-  cutres[PhIsoS16Tight] = _photon.passPhIso(2);
 
   for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC] = cutres[iC];
@@ -2977,6 +2967,7 @@ PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   } 
 }
 
+//--------------------------------------------------------------------
 // PUWeight
 //--------------------------------------------------------------------
 
@@ -3009,29 +3000,27 @@ PUWeight::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent
 void
 TPLeptonPhoton::addBranches(TTree& _skimTree)
 {
-  // remember the address of the output tree
-  if (mode_ == kDouble)
-    skimTree_ = &_skimTree;
+  _skimTree.Branch("probes.hasCollinearL", hasCollinearL_, "hasCollinearL[probes.size]/O");
 }
 
 bool
-TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEvent)
 {
-  if (skimTree_) {
-    _outEvent.book(*skimTree_, {"looseTags"});
-    skimTree_ = 0;
-  }
-
   panda::LeptonCollection const* leptons(0);
-  switch (flavor_) {
-  case lElectron:
+  double tagMaxEta(0.);
+  switch (eventType_) {
+  case kTPEG:
+  case kTPEEG:
     leptons = &_inEvent.electrons;
+    tagMaxEta = 2.5;
     break;
-  case lMuon:
+  case kTPMG:
+  case kTPMMG:
     leptons = &_inEvent.muons;
+    tagMaxEta = 2.1;
     break;
   default:
-    throw runtime_error("lepton flavor not set in TPLeptonPhoton");
+    throw runtime_error("Incompatible event type in TPLeptonPhoton");
   }
 
   for (auto& photon : _inEvent.photons) {
@@ -3047,10 +3036,14 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
       if (!lepton.tight)
         continue;
 
-      if (lepton.pt() < minTagPt_ || std::abs(lepton.eta()) > 2.1)
+      if (lepton.pt() < minTagPt_ || std::abs(lepton.eta()) > tagMaxEta)
         continue;
 
-      if (flavor_ == lElectron) {
+      // see discussion on lepton veto below for the choice of the cone size
+      if (photon.dR2(lepton) < 0.09)
+        continue;
+
+      if (eventType_ == kTPEG || eventType_ == kTPEEG) {
         auto& electron(static_cast<panda::Electron const&>(lepton));
         if (tagTriggerMatch_ && !electron.triggerMatch[panda::Electron::fEl27Tight])
           continue;
@@ -3064,10 +3057,9 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
           continue;
       }
 
-      if (photon.dR2(lepton) < 0.01)
-        continue;
+      bool hasCollinearL(false);
 
-      if (mode_ == kDouble) {
+      if (eventType_ == kTPEEG || eventType_ == kTPMMG) {
         for (auto& looseLepton : *leptons) {
           if (&looseLepton == &lepton)
             continue;
@@ -3075,8 +3067,12 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
           if (!looseLepton.loose)
             continue;
 
-          if (photon.dR2(looseLepton) < 0.01)
+          // we do need to allow loose leptons pretty close to the photon
+          // since the bulk of FSR events exist in that phase space
+          if (photon.dR2(looseLepton) < 0.01) {
+            hasCollinearL = true;
             continue;
+          }
 
           TLorentzVector pll(lepton.p4() + looseLepton.p4());
           double mllg((pg + pll).M());
@@ -3088,13 +3084,27 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
           tp.mass = mllg;
           tp.mass2 = pll.M();
 
-          _outEvent.tags.push_back(lepton);
-          _outEvent.looseTags.push_back(looseLepton);
-          _outEvent.probes.push_back(photon);
+          if (eventType_ == kTPEEG) {
+            auto& outEvent(static_cast<panda::EventTPEEG&>(_outEvent));
+            outEvent.looseTags.push_back(static_cast<panda::Electron const&>(looseLepton));
+            outEvent.tags.push_back(static_cast<panda::Electron const&>(lepton));
+            outEvent.probes.push_back(photon);
+          }
+          else {
+            auto& outEvent(static_cast<panda::EventTPMMG&>(_outEvent));
+            outEvent.looseTags.push_back(static_cast<panda::Muon const&>(looseLepton));
+            outEvent.tags.push_back(static_cast<panda::Muon const&>(lepton));
+            outEvent.probes.push_back(photon);
+          }
         }
       }
       else {
-        // veto additional loose lepton
+        double mlg((pg + lepton.p4()).M());
+
+        if (mlg < 20. || mlg > 160.)
+          continue;
+
+        // veto additional loose leptons
         unsigned iVeto(0);
         for (; iVeto != leptons->size(); ++iVeto) {
           auto& veto((*leptons)[iVeto]);
@@ -3102,7 +3112,7 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
           if (&veto == &lepton)
             continue;
 
-          if (flavor_ == lElectron) {
+          if (eventType_ == kTPEG) {
             if (!static_cast<panda::Electron const&>(veto).veto)
               continue;
           }
@@ -3117,31 +3127,108 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoto
           // Our electron veto does not reject photons overlapping with e/mu
           // Cases:
           // 1. One electron radiates hard, gets deflected by a large angle
-          //   -> The radiation is a photon. Do not consider it in the set of probes for
-          //      e->g fake rate measurement.
+          //   -> The radiation is a photon, and the deflected electron is an additional
+          //   lepton. Veto the event.
           // 2. One electron radiates hard but stays collinear with the radiation
-          //   -> This is a fake photon.
-          // Large angle is defined by the isolation cone of the electron; if the photon is
-          // within the cone, the electron will fail the veto identification and therefore
-          // the event will stay in the candidate sample.
-          if (photon.dR2(veto) < 0.09)
+          //   -> This is an electron faking a photon. The event should be included
+          //   in the "eg" sample of the tag & probe fit.
+          //
+          // Large angle is defined by the isolation cone of the electron, which defines
+          // what object can be considered an independent electron.
+          if (photon.dR2(veto) < 0.09) {
+            hasCollinearL = true;
             continue;
+          }
 
           break;
         }
         if (iVeto != leptons->size())
           continue;
 
-        double mlg((pg + lepton.p4()).M());
+        auto& tp(_outEvent.tp.create_back());
+        tp.mass = mlg;
 
-        if (mlg < 20. || mlg > 160.)
+        if (eventType_ == kTPEG) {
+          auto& outEvent(static_cast<panda::EventTPEG&>(_outEvent));
+          outEvent.tags.push_back(static_cast<panda::Electron const&>(lepton));
+          outEvent.probes.push_back(photon);
+        }
+        else {
+          auto& outEvent(static_cast<panda::EventTPMG&>(_outEvent));
+          outEvent.tags.push_back(static_cast<panda::Muon const&>(lepton));
+          outEvent.probes.push_back(photon);
+        }
+
+        hasCollinearL_[_outEvent.tp.size() - 1] = hasCollinearL;
+      }
+    }
+  }
+  
+  return _outEvent.tp.size() != 0;
+}
+
+//--------------------------------------------------------------------
+// TPDilepton
+//--------------------------------------------------------------------
+
+bool
+TPDilepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEvent)
+{
+  panda::LeptonCollection const* leptons(0);
+  double maxEta(0.);
+  switch (eventType_) {
+  case kTP2E:
+    leptons = &_inEvent.electrons;
+    maxEta = 2.5;
+    break;
+  case kTP2M:
+    leptons = &_inEvent.muons;
+    maxEta = 2.1;
+    break;
+  default:
+    throw runtime_error("Incompatible event type in TPLeptonPhoton");
+  }
+
+  for (auto& tag : *leptons) {
+    if (!tag.tight || tag.pt() < minTagPt_ || std::abs(tag.eta()) > maxEta)
+      continue;
+
+    if (eventType_ == kTP2M && tag.combIso() / tag.pt() > 0.15)
+      continue;
+
+    if (tagTriggerMatch_) {
+      if (eventType_ == kTP2E) {
+        if (!static_cast<panda::Electron const&>(tag).triggerMatch[panda::Electron::fEl27Tight])
+          continue;
+      }
+      else {
+        auto& muon(static_cast<panda::Muon const&>(tag));
+        if (!(muon.triggerMatch[panda::Muon::fIsoMu24] || muon.triggerMatch[panda::Muon::fIsoTkMu24]))
+          continue;
+      }
+
+      for (auto& probe : *leptons) {
+        if (&probe == &tag)
+          continue;
+
+        double mll((tag.p4() + probe.p4()).M());
+
+        if (mll < 20. || mll > 160.)
           continue;
 
         auto& tp(_outEvent.tp.create_back());
-        tp.mass = mlg;
-            
-        _outEvent.tags.push_back(lepton);
-        _outEvent.probes.push_back(photon);
+        tp.mass = mll;
+
+        if (eventType_ == kTP2E) {
+          auto& outEvent(static_cast<panda::EventTP2E&>(_outEvent));
+          outEvent.tags.push_back(static_cast<panda::Electron const&>(tag));
+          outEvent.probes.push_back(static_cast<panda::Electron const&>(probe));
+        }
+        else {
+          auto& outEvent(static_cast<panda::EventTP2M&>(_outEvent));
+          outEvent.tags.push_back(static_cast<panda::Muon const&>(tag));
+          outEvent.probes.push_back(static_cast<panda::Muon const&>(probe));
+        }
       }
     }
   }
@@ -3161,27 +3248,43 @@ TPLeptonVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton& _outEvent)
+TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
-  auto& tags(_outEvent.tags);
-  auto& looseTags(_outEvent.looseTags);
-  auto& probes(_outEvent.probes);
-  auto& muons(_inEvent.muons);
-  auto& electrons(_inEvent.electrons);
-
-  panda::ParticleCollection const* cols[] = {
-    &tags,
-    &looseTags,
-    &probes
+  std::vector<panda::ParticleCollection const*> cols;
+  switch (eventType_) {
+  case kTPEEG:
+    cols.push_back(&static_cast<panda::EventTPEEG&>(_outEvent).looseTags);
+    //fallthrough
+  case kTPEG:
+    cols.push_back(&static_cast<panda::EventTPEG&>(_outEvent).tags);
+    cols.push_back(&static_cast<panda::EventTPEG&>(_outEvent).probes);
+    break;
+  case kTPMMG:
+    cols.push_back(&static_cast<panda::EventTPMMG&>(_outEvent).looseTags);
+    //fallthrough
+  case kTPMG:
+    cols.push_back(&static_cast<panda::EventTPMG&>(_outEvent).tags);
+    cols.push_back(&static_cast<panda::EventTPMG&>(_outEvent).probes);
+    break;
+  case kTP2E:
+    cols.push_back(&static_cast<panda::EventTP2E&>(_outEvent).tags);
+    cols.push_back(&static_cast<panda::EventTP2E&>(_outEvent).probes);
+    break;
+  case kTP2M:
+    cols.push_back(&static_cast<panda::EventTP2M&>(_outEvent).tags);
+    cols.push_back(&static_cast<panda::EventTP2M&>(_outEvent).probes);
+    break;
+  default:
+    throw std::runtime_error("Incompatible event type in TPLeptonVeto");
   };
-
+    
   nMuons_ = 0;
   
   std::vector<panda::Muon const*> goodMuons;
 
-  for (auto& muon : muons) {
+  for (auto& muon : _inEvent.muons) {
     if (!muon.loose || muon.pt() < 10.)
       continue;
 
@@ -3207,7 +3310,7 @@ TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton&
 
   nElectrons_ = 0;
 
-  for (auto& electron : electrons) {
+  for (auto& electron : _inEvent.electrons) {
     if (!electron.loose || electron.pt() < 10.)
       continue;
 
@@ -3251,12 +3354,34 @@ TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTPPhoton&
 //--------------------------------------------------------------------
 
 void
-TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTPPhoton& _outEvent)
+TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTP& _outEvent)
 {
-  panda::ParticleCollection* cols[] = {
-    &_outEvent.tags,
-    &_outEvent.looseTags,
-    &_outEvent.probes
+  std::vector<std::pair<panda::ParticleCollection const*, unsigned>> cols;
+  switch (eventType_) {
+  case kTPEEG:
+    cols.emplace_back(&static_cast<panda::EventTPEEG&>(_outEvent).looseTags, -1);
+    //fallthrough
+  case kTPEG:
+    cols.emplace_back(&static_cast<panda::EventTPEG&>(_outEvent).tags, -1);
+    cols.emplace_back(&static_cast<panda::EventTPEG&>(_outEvent).probes, 1);
+    break;
+  case kTPMMG:
+    cols.emplace_back(&static_cast<panda::EventTPMMG&>(_outEvent).looseTags, -1);
+    //fallthrough
+  case kTPMG:
+    cols.emplace_back(&static_cast<panda::EventTPMG&>(_outEvent).tags, -1);
+    cols.emplace_back(&static_cast<panda::EventTPMG&>(_outEvent).probes, 1);
+    break;
+  case kTP2E:
+    cols.emplace_back(&static_cast<panda::EventTP2E&>(_outEvent).tags, -1);
+    cols.emplace_back(&static_cast<panda::EventTP2E&>(_outEvent).probes, -1);
+    break;
+  case kTP2M:
+    cols.emplace_back(&static_cast<panda::EventTP2M&>(_outEvent).tags, -1);
+    cols.emplace_back(&static_cast<panda::EventTP2M&>(_outEvent).probes, -1);
+    break;
+  default:
+    throw std::runtime_error("Incompatible event type in TPJetCleaning");
   };
 
   for (auto& jet : _event.jets) {
@@ -3264,14 +3389,13 @@ TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTPPhoton&
       continue;
 
     bool overlap(false);
-    for (auto* col : cols) {
-      unsigned nP(col->size());
-      if (col == &_outEvent.probes && nP > 1)
-        nP = 1;
+    for (auto& col : cols) {
+      // For TPXG probes, we only want to clean overlaps wrt the leading candidate
+      unsigned nP(std::min(col.first->size(), col.second));
 
       unsigned iP(0);
       for (; iP != nP; ++iP) {
-        if (jet.dR2((*col)[iP]) < 0.16)
+        if (jet.dR2((*col.first)[iP]) < 0.16)
           break;
       }
       if (iP != nP) {

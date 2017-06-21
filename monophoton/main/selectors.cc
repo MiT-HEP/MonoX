@@ -430,9 +430,39 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 // TagAndProbeSelector
 //--------------------------------------------------------------------
 
+#include "PandaTree/Objects/interface/EventTPEG.h"
+#include "PandaTree/Objects/interface/EventTPEEG.h"
+#include "PandaTree/Objects/interface/EventTPMG.h"
+#include "PandaTree/Objects/interface/EventTPMMG.h"
+#include "PandaTree/Objects/interface/EventTP2E.h"
+#include "PandaTree/Objects/interface/EventTP2M.h"
+
 void
 TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
+  switch (outType_) {
+  case kTPEG:
+    outEvent_ = new panda::EventTPEG;
+    break;
+  case kTPEEG:
+    outEvent_ = new panda::EventTPEEG;
+    break;
+  case kTPMG:
+    outEvent_ = new panda::EventTPMG;
+    break;
+  case kTPMMG:
+    outEvent_ = new panda::EventTPMMG;
+    break;
+  case kTP2E:
+    outEvent_ = new panda::EventTP2E;
+    break;
+  case kTP2M:
+    outEvent_ = new panda::EventTP2M;
+    break;
+  default:
+    throw std::runtime_error("Out event type not set");
+  }
+
   // Branches to be directly copied from the input tree
   // Add a prepareFill function when a collection branch is added
   panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "isData", "npv", "rho", "t1Met"}};
@@ -442,20 +472,29 @@ TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   _inEvent.book(*skimOut_, blist);
 
   // looseTags will be added by the TPMuonPhoton operator
-  outEvent_.book(*skimOut_, {"weight", "sample", "tp", "tags", "probes", "jets"});
+  blist = {"weight", "sample", "tp", "tags", "probes", "jets"};
+  if (outType_ == kTPEEG || outType_ == kTPMMG)
+    blist += {"looseTags"};
+
+  outEvent_->book(*skimOut_, blist);
 }
 
 void
 TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
 {
-  outEvent_.init();
-  outEvent_.copy(_event); // only copies "static" branches
-  
-  outEvent_.t1Met = _event.t1Met;
+  outEvent_->init();
+
+  // copy EventBase members
+  static_cast<panda::EventBase&>(*outEvent_) = _event;
+
+  outEvent_->npv = _event.npv;
+  outEvent_->npvTrue = _event.npvTrue;
+  outEvent_->rho = _event.rho;
+  outEvent_->t1Met = _event.t1Met;
 
   inWeight_ = _event.weight;
 
-  outEvent_.sample = sampleId_;
+  outEvent_->sample = sampleId_;
 
   Clock::time_point start;
 
@@ -466,7 +505,7 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, outEvent_))
+    if (!op.exec(_event, *outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -474,7 +513,7 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
   }
 
   if (pass)
-    outEvent_.fill(*skimOut_);
+    outEvent_->fill(*skimOut_);
 
   cutsOut_->Fill();
 }
