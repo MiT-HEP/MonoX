@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 """
-Fit with alternative models to evaluate fit-related uncertainties.
+Throw toys with nominal and alternative models to evaluate uncertainties.
 """
+
+DEBUG = False
 
 import os
 import sys
@@ -13,7 +15,8 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import outputDir, roofitDictsDir
+import tp.efake_plot as efake_plot
 
 import ROOT
 
@@ -22,100 +25,138 @@ ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
 binningName = sys.argv[1] # see efake_conf
-binName = sys.argv[2]
-alt = sys.argv[3]
-nToys = int(sys.argv[4])
-seed = int(sys.argv[5])
+bin = sys.argv[2]
+conf = sys.argv[3] # ee or eg
+alt = sys.argv[4] # nominal, altsig, or altbkg
+nToys = int(sys.argv[5])
+seed = int(sys.argv[6])
 
-outputName = outputDir + '/tpsyst_data_' + alt + '_' + binningName + '_' + binName + '_' + str(seed) + '.root'
+outBaseName = '_'.join([
+    'tpsyst',
+    'data',
+    conf,
+    alt,
+    binningName,
+    bin,
+    str(seed)
+]) + '.root'
 
-tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + os.path.basename(outputName)
+suffix = conf + '_' + bin
+
+outputName = outputDir + '/' + outBaseName
+
+tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + outBaseName
 try:
     os.makedirs(os.path.dirname(tmpOutName))
 except OSError:
     pass
 
+efake_plot.plotDir = 'efake/debug_' + binningName
+
 output = ROOT.TFile.Open(tmpOutName, 'recreate')
 
-nomSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
-altSource = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '_alt' + alt + '.root')
+source = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
 
-nomWork = nomSource.Get('work')
-altWork = altSource.Get('work')
+work = source.Get('work')
 
-paramList = ['nbkg', 'nsignal']
-if alt == 'sig':
-    paramList += ['mZ', 'gammaZ']
-elif alt == 'bkg':
-    paramList.append('slope')
+nomparams = work.data('params_nominal')
 
-mass = nomWork.arg('mass')
-massSet = ROOT.RooArgSet(mass)
-nsig = nomWork.arg('nsignal')
+for ip in range(nomparams.numEntries()):
+    nompset = nomparams.get(ip)
+    if nompset.find('tpconf').getLabel() == conf and nompset.find('binName').getLabel() == bin:
+        break
+else:
+    raise RuntimeError('Nom pset for ' + suffix + ' not found')
 
-altMass = altWork.arg('mass')
-params = dict([(n, altWork.arg(n)) for n in paramList])
+if alt == 'nominal':
+    altpset = nompset
+else:
+    altparams = work.data('params_' + alt)
+    
+    for ip in range(altparams.numEntries()):
+        altpset = altparams.get(ip)
+        if altpset.find('tpconf').getLabel() == conf and altpset.find('binName').getLabel() == bin:
+            break
+    else:
+        raise RuntimeError('Alt pset for ' + suffix + ' not found')
 
-tree = altSource.Get('yields')
-vTPconf = array.array('i', [0])
-vBinName = array.array('c', '\0' * 128)
-vRaw = array.array('d', [0.])
-vParams = dict([(name, array.array('d', [0.])) for name in paramList])
-
-tree.SetBranchAddress('tpconf', vTPconf)
-tree.SetBranchAddress('binName', vBinName)
-tree.SetBranchAddress('raw', vRaw)
-for name in paramList:
-    tree.SetBranchAddress(name, vParams[name])
+mass = work.arg('mass')
 
 ROOT.RooRandom.randomGenerator().SetSeed(seed)
 
-for conf, iconf in [('ee', 0), ('eg', 1)]:
-    output.cd()
-    outhist = ROOT.TH1D('pull_' + conf + '_' + alt + '_' + binName, '', 100, -0.5, 0.5)
+output.cd()
+outhist = ROOT.TH1D('pull_' + alt + '_' + suffix, '', 100, -0.5, 0.5)
 
-    model = nomWork.pdf('model_' + conf + '_' + binName)
-    altModel = altWork.pdf('model_' + conf + '_' + binName)
+model = work.pdf('model_' + suffix)
 
-    iEntry = 0
+if alt == 'nominal':
+    altModel = model
+elif alt == 'altsig':
+    altModel = work.pdf('model_altsig_' + suffix)
+elif alt == 'altbkg':
+    altModel = work.pdf('model_altbkg_' + suffix)
+
+for _ in range(nToys):
+    # initialize
+    itr = altpset.fwdIterator()
     while True:
-        if tree.GetEntry(iEntry) < 0:
-            raise RuntimeError('entry not found')
-
-        if vTPconf[0] == iconf and vBinName.tostring().startswith(binName):
+        param = itr.next()
+        if not param:
             break
 
-        iEntry += 1
+        if param.IsA() == ROOT.RooRealVar.Class():
+            print 'Setting', param.GetName(), 'value to', param.getVal()
+            work.var(param.GetName()).setVal(param.getVal())
 
-    for name, p in vParams.items():
-        params[name].setVal(p[0])
+    if DEBUG:
+        print 'Alt model'
+        altModel.Print()
 
-    for iToy in range(nToys):
-        altData = altModel.generate(ROOT.RooArgSet(altMass), vRaw[0])
+    print 'Generating', nompset.find('ntarg').getVal(), 'events'
+    altData = altModel.generate(ROOT.RooArgSet(mass), nompset.find('ntarg').getVal())
 
-        # perform binned fit
+    # perform binned fit
 
-        #upcast to call TH1 version of createHistogram()
-        altAbsData = ROOT.RooDataSet.Class().DynamicCast(ROOT.RooAbsData.Class(), altData)
+    #upcast to call TH1 version of createHistogram()
+    altAbsData = ROOT.RooDataSet.Class().DynamicCast(ROOT.RooAbsData.Class(), altData)
 
-        altHist = altAbsData.createHistogram('altData', altMass, ROOT.RooFit.Binning('fitWindow'))
-        print altHist.GetNbinsX(), altHist.GetXaxis().GetXmin(), altHist.GetXaxis().GetXmax()
-        data = ROOT.RooDataHist('altDataHist', 'altDataHist', ROOT.RooArgList(altMass), altHist)
-        altHist.Delete()
+    altHist = altAbsData.createHistogram('altData', mass, ROOT.RooFit.Binning('fitWindow'))
+    data = ROOT.RooDataHist('altDataHist', 'altDataHist', ROOT.RooArgList(mass), altHist)
 
-        # unbinned fit - need to translate from RooDataSet on "mass" from alt workspace to "mass" in nom workspace
-#        data = ROOT.RooDataSet('data', 'data', massSet)
-#        for iEntry in range(altData.numEntries()):
-#            mass.setVal(altData.get(iEntry)['mass'].getVal())
-#            data.add(massSet)
-        
-        model.fitTo(data)
+    # unbinned fit - need to translate from RooDataSet on "mass" from alt workspace to "mass" in nom workspace
+#    data = ROOT.RooDataSet('data', 'data', massSet)
+#    for iEntry in range(altData.numEntries()):
+#        mass.setVal(altData.get(iEntry)['mass'].getVal())
+#        data.add(massSet)
 
-        diff = nsig.getVal() - params['nsignal'].getVal()
-        outhist.Fill(diff / params['nsignal'].getVal())
+    itr = nompset.fwdIterator()
+    while True:
+        param = itr.next()
+        if not param:
+            break
 
-    output.cd()
-    outhist.Write()
+        if param.IsA() == ROOT.RooRealVar.Class():
+            print 'Initializing', param.GetName(), 'value to', param.getVal()
+            work.var(param.GetName()).setVal(param.getVal())
+
+    if DEBUG:
+        print 'Nominal model'
+        model.Print()
+        work.pdf('sigModel_' + bin).Print()
+        work.pdf('bkgModel_' + suffix).Print()
+
+    model.fitTo(data)
+
+    if DEBUG:
+        efake_plot.plotFit(mass, data, model, 'data', suffix, plotName = 'debug_tpsyst')
+
+    diff = work.var('nsignal').getVal() - nompset.find('nsignal').getVal()
+    outhist.Fill(diff / nompset.find('nsignal').getVal())
+
+    altHist.Delete()
+
+output.cd()
+outhist.Write()
 
 output.Close()
 

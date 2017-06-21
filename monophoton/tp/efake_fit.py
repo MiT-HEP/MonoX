@@ -11,67 +11,26 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from plotstyle import RatioCanvas
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
-
-# set to nonzero if you want to run toys in runMode single too
-nToys = 0
+import tp.efake_plot as efake_plot
 
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
 dataSource = 'sel' # sph or sel
-#varType = 'kSCRawMass'
-varType = 'kMass'
-plotDir = 'efake/fit_' + binningName
 
-# gets overwritten if len(sys.argv) == 7
-tpconfs = {
-    'ee': 0,
-    'eg': 1,
-#    'pass': 2,
-#    'fail': 3
-}
+#tpconfs = ['ee', 'eg', 'pass', 'fail']
+tpconfs = ['ee', 'eg']
 
-monophSel = 'probes.medium && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' 
+# mediumX[2] = GJetsCWIso from panda::XPhoton::IDTune
+monophSel = 'probes.mediumX[2] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001'
 
 fitBins = getBinning(binningName)[2]
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
-if len(sys.argv) == 7:
-    # batch toy generation
-    # args = <data/mc> <binningName> <nToys> <ee/eg> <bin> <seed>
-    nToys = int(sys.argv[3])
-    conf = sys.argv[4]
-    binName = sys.argv[5]
-    seed = int(sys.argv[6])
-
-    if conf not in ['ee', 'eg']:
-        raise RuntimeError('Unknown conf ' + conf)
-
-    if binName not in [name for (name, cut) in fitBins]:
-        raise RuntimeError('Unknown fit bin ' + binName)
-
-    tpconfs = {conf: tpconfs[conf]}
-    fitBins = [(name, cut) for (name, cut) in fitBins if name == binName]
-    
-    runMode = 'batchtoy'
-    pdf = 'default'
-
-else:
-    runMode = 'single'
-    pdf = 'default'
-
-    if len(sys.argv) > 3:
-        if sys.argv[3] == 'altsig':
-            pdf = 'altsig'
-        elif sys.argv[3] == 'altbkg':
-            # runMode single, bkgPdf alt
-            pdf = 'altbkg'
-
-    seed = 12345
-
+efake_plot.lumi = lumi
+efake_plot.plotDir = 'efake/fit_' + binningName
 
 sys.argv = []
 
@@ -82,15 +41,9 @@ ROOT.gSystem.Load('libRooFit.so')
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
-if runMode == 'batchtoy':
-    outputName = outputDir + '/toys_' + dataType + '_' + conf + '_' + binName + '_' + str(seed) + '.root'
-else:
-    if pdf == 'default':
-        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '.root'
-    elif pdf == 'altbkg':
-        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altbkg.root'
-    elif pdf == 'altsig':
-        outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '_altsig.root'
+### Files ###
+
+outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '.root'
 
 tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + os.path.basename(outputName)
 try:
@@ -98,14 +51,19 @@ try:
 except OSError:
     pass
 
+if os.path.exists(outputName):
+    # make a backup
+    shutil.copy(outputName, outputName.replace('.root', '_old.root'))
+
+outputFile = ROOT.TFile.Open(tmpOutName, 'recreate')
+
+### Setup ###
+
+print 'Starting common setup.'
 
 fitBinningT = (120, 60., 120.)
 fitBinning = ROOT.RooUniformBinning(fitBinningT[1], fitBinningT[2], fitBinningT[0])
-plotBinningT = (60, 60., 120.)
-plotBinningT2 = (30, 60., 120.)
 compBinning = ROOT.RooUniformBinning(81., 101., 20)
-
-### Common setup ###
 
 initVals = {
     'nbkg': 100.,
@@ -121,238 +79,13 @@ if dataType == 'data':
         'n': 1.5
     })
 
-vTPconf = array.array('i', [0])
-vBinName = array.array('c', '\0' * 128)
-vRaw = array.array('d', [0.])
-vParams = dict([(name, array.array('d', [0.])) for name in initVals])
-vNz = array.array('d', [0.])
-vToyNumber = array.array('i', [0])
-vSeed = array.array('i', [seed])
-
-if os.path.exists(outputName):
-    # make a backup
-    shutil.copy(outputName, outputName.replace('.root', '_old.root'))
-
-outputFile = ROOT.TFile.Open(tmpOutName, 'recreate')
-
-yields = ROOT.TTree('yields', 'yields')
-
-yields.Branch('tpconf', vTPconf, 'tpconf/I')
-yields.Branch('binName', vBinName, 'binName/C')
-yields.Branch('raw', vRaw, 'raw/D')
-yields.Branch('nz', vNz, 'nz/D')
-yields.Branch('toyNumber', vToyNumber, 'toyNumber/I') # -1 for nominal fit
-yields.Branch('seed', vSeed, 'seed/I')
-for name, vParam in vParams.items():
-    yields.Branch(name, vParam, name + '/D')
-
 # template of templates. used in both runModes
 template = ROOT.TH1D('template', '', *fitBinningT)
 
-if runMode == 'batchtoy':
-    source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
+# workspace
+work = ROOT.RooWorkspace('work', 'work')
 
-    sourceYields = source.Get('yields')
-    sourceYields.SetBranchAddress('tpconf', vTPconf)
-    sourceYields.SetBranchAddress('binName', vBinName)
-    sourceYields.SetBranchAddress('raw', vRaw)
-    sourceYields.SetBranchAddress('nz', vNz)
-    for name, vParam in vParams.items():
-        sourceYields.SetBranchAddress(name, vParam)
-
-    work = source.Get('work')
-
-    mass = work.arg('mass')
-    nbkg = work.arg('nbkg')
-    nsignal = work.arg('nsignal')
-    if dataType == 'data':
-        m0 = work.arg('m0')
-        sigma = work.arg('sigma')
-        alpha = work.arg('alpha')
-        n = work.arg('n')
-
-elif runMode == 'single':
-    # workspace
-    work = ROOT.RooWorkspace('work', 'work')
-    
-    mass = work.factory('mass[60., 120.]')
-    mass.setUnit('GeV')
-    weight = work.factory('weight[-1000000000., 1000000000.]')
-    nbkg = work.factory('nbkg[0., 100000000.]')
-    nsignal = work.factory('nsignal[0., 100000000.]')
-    if pdf == 'altsig':
-        mZ = work.factory('mZ[91.2, 86., 96.]')
-        gammaZ = work.factory('gammaZ[2.5, 1., 5.]')
-    else:
-        mZ = work.factory('mZ[91.2]')
-        gammaZ = work.factory('gammaZ[2.5]')
-
-    m0 = work.factory('m0[-10., 10.]')
-    sigma = work.factory('sigma[0.001, 5.]')
-    alpha = work.factory('alpha[0.01, 5.]')
-    n = work.factory('n[1.01, 5.]')
-
-    # visualization
-    canvas = RatioCanvas(lumi = lumi, sim = (dataType == 'mc'))
-    canvas.titlePave.SetX2NDC(0.5)
-    canvas.legend.setPosition(0.6, 0.7, 0.9, 0.9)
-    canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-    canvas.legend.add('fit', title = 'Fit', opt = 'L', lcolor = ROOT.kBlue, lwidth = 2, lstyle = ROOT.kSolid)
-    canvas.legend.add('bkg', title = 'Bkg component', opt = 'L', lcolor = ROOT.kGreen, lwidth = 2, lstyle = ROOT.kDashed)
-    if dataType == 'mc':
-        canvas.legend.add('mcbkg', title = 'Bkg (MC truth)', opt = 'LF', lcolor = ROOT.kRed, lwidth = 1, fcolor = ROOT.kRed, fstyle = 3003)
-
-    # templates setup
-    egPlotter = ROOT.MultiDraw()
-    mgPlotter = ROOT.MultiDraw()
-
-    if dataType == 'data':
-        egPlotter.setWeightBranch('')
-        mgPlotter.setWeightBranch('')
-
-        # target samples
-        if dataSource == 'sph':
-            samp = 'phdata'
-        else:
-            samp = 'eldata'
-
-        for sname in skimConfig[samp][0]:
-            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
-
-        if dataSource == 'sel':
-            egPlotter.setBaseSelection('tags.pt_ > 40.')
-    
-        # background samples
-        if dataSource == 'sph':
-            samp = 'phdata'
-        else:
-            samp = 'mudata'
-
-        for sname in skimConfig[samp][0]:
-            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
-
-        if dataSource == 'sel':
-            mgPlotter.setBaseSelection('tags.pt_ > 40.')
-
-        if dataSource == 'sel':
-            # low-pT fits -> will need MC signal template
-            mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
-            mcWork = mcSource.Get('work')
-
-    else:
-        trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
-        eleTrigEff = trigsource.Get('electron_sel/leppt/el27_eff')
-        muTrigEff = trigsource.Get('muon_smu/leppt/mu24ortrk24_eff')
-        if not eleTrigEff or not muTrigEff:
-            raise RuntimeError('Trigger efficiency source not found')
-
-        egPlotter.setConstantWeight(lumi)
-        mgPlotter.setConstantWeight(lumi)
-        
-        for sname in skimConfig['mc'][0]:
-            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
-            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
-
-        egPlotter.setReweight('tags.pt_', eleTrigEff)
-        mgPlotter.setReweight('tags.pt_', muTrigEff)
-
-        egPlotter.setBaseSelection('tags.pt_ > 40.')
-        mgPlotter.setBaseSelection('tags.pt_ > 40.')
-
-#        for sname in skimConfig['mcgg'][0]:
-#            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
-
-    objects = []
-    
-    # fill templates
-    outputFile.cd()
-    for binName, fitCut in fitBins:
-        if dataType == 'mc':
-            hsig = template.Clone('sig_%s' % binName)
-            objects.append(hsig)
-            egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
-
-        for conf in tpconfs:
-            htarg = template.Clone('target_%s_%s' % (conf, binName))
-            objects.append(htarg)
-            # unbinned fit
-            # ttarg = ROOT.TTree('target_%s_%s' % (conf, binName), 'target')
-            # objects.append(ttarg)
-    
-            if conf == 'ee':
-                # target is a histogram with !csafeVeto
-                # perform binned max L fit
-                cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
-            elif conf == 'eg':
-                # target is a tree with pixelVeto
-                # also perform binned max L fit
-                cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
-            elif conf == 'pass':
-                cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
-            elif conf == 'fail':
-                cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
-            else:
-                cut = '({fitCut})'.format(fitCut = fitCut)
-    
-            egPlotter.addPlot(htarg, 'tp.mass', cut)
-            # if doing unbinned fits, make a tree
-            # egPlotter.addTree(ttarg, cut)
-            # egPlotter.addTreeBranch(ttarg, 'mass', 'tp.mass')
-
-            if pdf != 'altbkg':
-                hbkg = template.Clone('bkg_%s_%s' % (conf, binName))
-                objects.append(hbkg)
-                tbkg = ROOT.TTree('bkgtree_%s_%s' % (conf, binName), 'background')
-                objects.append(tbkg)
-
-                mgPlotter.addPlot(hbkg, 'tp.mass', cut + ' && !probes.hasCollinearL')
-                mgPlotter.addTree(tbkg, cut + ' && !probes.hasCollinearL')
-                mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
-
-            if dataType == 'mc':
-                hmcbkg = template.Clone('mcbkg_%s_%s' % (conf, binName))
-                objects.append(hmcbkg)
-
-                egPlotter.addPlot(hmcbkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
-
-    egPlotter.fillPlots()
-    mgPlotter.fillPlots()
-
-    outputFile.cd()
-    outputFile.Write()
-
-    # closes elif runMode == 'single'
-
-# fit variables
-mass.setBinning(fitBinning, 'fitWindow')
-mass.setBinning(compBinning, 'compWindow')
-massset = ROOT.RooArgSet(mass) # for convenience
-masslist = ROOT.RooArgList(mass) # for convenience
-
-random = ROOT.TRandom3(seed)
-
-### Common setup done ###
-print 'Finished common setup.'
-
-### Fitting routine ###
-def runFit(targ, model, printLevel = 1, vals = None):
-    for param, val in initVals.items():
-        work.arg(param).setVal(val)
-
-    work.arg('nsignal').setVal(targ.sumEntries() * 0.9)
-
-    fitres = model.fitTo(targ, ROOT.RooFit.PrintLevel(printLevel), ROOT.RooFit.SumW2Error(True), ROOT.RooFit.Save(True))
-
-    if vals is not None: 
-        for name in vals:
-            vals[name] = work.arg(name).getVal()
-
-    for name, vParam in vParams.items():
-        vParam[0] = work.arg(name).getVal()
-
-    return fitres.status()
-
-### Convenience
+# convenience
 def addToWS(obj):
     fcn = getattr(work, 'import')
     if obj.InheritsFrom(ROOT.RooAbsData.Class()):
@@ -361,261 +94,351 @@ def addToWS(obj):
     else:
         fcn(obj, ROOT.RooFit.Silence())
 
+mass = work.factory('mass[60., 120.]')
+mass.setUnit('GeV')
+mass.setBinning(fitBinning, 'fitWindow')
+mass.setBinning(compBinning, 'compWindow')
+
+weight = work.factory('weight[-1000000000., 1000000000.]')
+ntarg = work.factory('ntarg[0., 100000000.]')
+nbkg = work.factory('nbkg[0., 100000000.]')
+nsignal = work.factory('nsignal[0., 100000000.]')
+nZ = work.factory('nZ[0., 100000000.]')
+mZ = work.factory('mZ[91.2, 86., 96.]')
+gammaZ = work.factory('gammaZ[2.5, 1., 5.]')
+m0 = work.factory('m0[-10., 10.]')
+sigma = work.factory('sigma[0.001, 5.]')
+alpha = work.factory('alpha[0.01, 5.]')
+n = work.factory('n[1.01, 5.]')
+
+tpconf = work.factory('tpconf[ee=0, eg=1, pass=2, fail=3]')
+binName = work.factory('binName[]')
+for ibin, (bin, _) in enumerate(fitBins):
+    binName.defineType(bin, ibin)
+
+# smearing parameters are unused in dataType == mc but we'll just leave them here
+nompset = ROOT.RooArgSet(tpconf, binName, ntarg, nbkg, nsignal, nZ, mZ, gammaZ, m0)
+nompset.add(sigma)
+nompset.add(alpha)
+nompset.add(n)
+altsigpset = ROOT.RooArgSet(tpconf, binName, nbkg, nsignal, mZ, gammaZ)
+altbkgpset = ROOT.RooArgSet(tpconf, binName, nbkg, nsignal, mZ, gammaZ, m0)
+altbkgpset.add(sigma)
+altbkgpset.add(alpha)
+altbkgpset.add(n)
+
+nomparams = ROOT.RooDataSet('params_nominal', 'Nominal params', nompset)
+altsigparams = ROOT.RooDataSet('params_altsig', 'Altsig params', altsigpset)
+altbkgparams = ROOT.RooDataSet('params_altbkg', 'Altbkg params', altbkgpset)
+
+print 'Finished common setup.'
+
+### Fill template histograms ###
+
+print 'Starting template preparation.'
+
+# templates setup
+egPlotter = ROOT.MultiDraw()
+mgPlotter = ROOT.MultiDraw()
+
+if dataType == 'data':
+    egPlotter.setWeightBranch('')
+    mgPlotter.setWeightBranch('')
+
+    # target samples
+    if dataSource == 'sph':
+        egSamp = 'phdata'
+        mgSamp = 'phdata'
+    else:
+        egSamp = 'eldata'
+        mgSamp = 'mudata'
+
+    for sname in skimConfig[egSamp][0]:
+        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+
+    for sname in skimConfig[mgSamp][0]:
+        mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
+
+    if dataSource == 'sel':
+        egPlotter.setBaseSelection('tags.pt_ > 40.')
+        mgPlotter.setBaseSelection('tags.pt_ > 40.')
+
+        # low-pT fits -> will need MC signal template
+        mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
+        mcWork = mcSource.Get('work')
+
+else:
+    trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
+    eleTrigEff = trigsource.Get('electron_sel/leppt/el27_eff')
+    muTrigEff = trigsource.Get('muon_smu/leppt/mu24ortrk24_eff')
+    if not eleTrigEff or not muTrigEff:
+        raise RuntimeError('Trigger efficiency source not found')
+
+    egPlotter.setConstantWeight(lumi)
+    mgPlotter.setConstantWeight(lumi)
+    
+    for sname in skimConfig['mc'][0]:
+        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+        mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
+
+    egPlotter.setReweight('tags.pt_', eleTrigEff)
+    mgPlotter.setReweight('tags.pt_', muTrigEff)
+
+    if dataSource == 'sel':
+        egPlotter.setBaseSelection('tags.pt_ > 40.')
+        mgPlotter.setBaseSelection('tags.pt_ > 40.')
+
+#    for sname in skimConfig['mcgg'][0]:
+#        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+
+objects = []
+
+# fill templates
+outputFile.cd()
+for bin, fitCut in fitBins:
+    if dataType == 'mc':
+        hsig = template.Clone('sig_' + bin)
+        objects.append(hsig)
+        egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
+
+    for conf in tpconfs:
+        suffix = conf + '_' + bin
+
+        htarg = template.Clone('target_' + suffix)
+        objects.append(htarg)
+        # unbinned fit
+        # ttarg = ROOT.TTree('target_' + suffix, 'target')
+        # objects.append(ttarg)
+
+        if conf == 'ee':
+            # target is a histogram with !csafeVeto
+            # perform binned max L fit
+            cut = 'probes.medium && !probes.csafeVeto && ({fitCut})'.format(fitCut = fitCut)
+        elif conf == 'eg':
+            # target is a tree with pixelVeto
+            # also perform binned max L fit
+            cut = 'probes.medium && probes.pixelVeto && ({fitCut})'.format(fitCut = fitCut)
+        elif conf == 'pass':
+            cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+        elif conf == 'fail':
+            cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+        else:
+            cut = '({fitCut})'.format(fitCut = fitCut)
+
+        egPlotter.addPlot(htarg, 'tp.mass', cut)
+        # if doing unbinned fits, make a tree
+        # egPlotter.addTree(ttarg, cut)
+        # egPlotter.addTreeBranch(ttarg, 'mass', 'tp.mass')
+
+        if conf == 'eg' or conf == 'ee':
+            # background is approximately lepton flavor symmetric - will use muon templates
+            hbkg = template.Clone('bkg_' + suffix)
+            objects.append(hbkg)
+            tbkg = ROOT.TTree('bkgtree_' + suffix, 'background')
+            objects.append(tbkg)
+    
+            mgPlotter.addPlot(hbkg, 'tp.mass', cut + ' && !probes.hasCollinearL')
+            mgPlotter.addTree(tbkg, cut + ' && !probes.hasCollinearL')
+            mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
+
+        if dataType == 'mc':
+            hmcbkg = template.Clone('mcbkg_' + suffix)
+            objects.append(hmcbkg)
+            tmcbkg = ROOT.TTree('mcbkgtree_' + suffix, 'truth background')
+            objects.append(tmcbkg)
+
+            egPlotter.addPlot(hmcbkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTree(tmcbkg, cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTreeBranch(tmcbkg, 'mass', 'tp.mass')
+
+egPlotter.fillPlots()
+mgPlotter.fillPlots()
+
+outputFile.cd()
+outputFile.Write()
+
+print 'Finished template preparation.'
 
 ### Run fits ###
 
-for binName, fitCut in fitBins:
-    print 'Run fits for', binName
+# fit variables
+massset = ROOT.RooArgSet(mass) # for convenience
+masslist = ROOT.RooArgList(mass) # for convenience
 
-    for iC, c in enumerate(binName):
-        vBinName[iC] = c
+for bin, fitCut in fitBins:
+    print 'Run fits for', bin
 
-    sigModelName = 'sigModel_' + binName
+    binName.setLabel(bin)
 
-    if runMode == 'batchtoy':
-        sigModel = work.pdf(sigModelName)
+    sigModelName = 'sigModel_' + bin
+    sigDataName = 'sigData_' + bin
 
-    elif runMode == 'single':
-        sigdataName = 'sigdata_' + binName
+    if dataType == 'mc':
+        # get signal template
+        hsig = outputFile.Get('sig_' + bin)
 
-        if dataType == 'mc':
-            # get signal template
-            hsig = outputFile.Get('sig_%s' % binName)
-    
-            sigdata = ROOT.RooDataHist(sigdataName, 'sig', masslist, hsig)
-            addToWS(sigdata)
-    
-            # no smearing
-            sigModel = work.factory('HistPdf::' + sigModelName + '({mass}, ' + sigdataName + ', 2)')
+        sigData = ROOT.RooDataHist('sigData_' + bin, 'sig', masslist, hsig)
+        addToWS(sigData)
 
-        else:
-            if dataSource == 'sph':
-                sigCore = work.factory('BreitWigner::sigCore_%s(mass, mZ, gammaZ)' % binName)
+        # no smearing
+        sigModel = work.factory('HistPdf::sigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
-            elif dataSource == 'sel':
-                sigdata = mcWork.data(sigdataName)
-                if not sigdata:
-                    print 'No dataset ' + sigdataName + ' found in ' + mcSource.GetName() + '.'
-                    sys.exit(1)
-    
-                addToWS(sigdata)
-    
-                sigCore = work.factory('HistPdf::sigCore_' + binName + '({mass}, ' + sigdataName + ', 2)')
+    else:
+        if dataSource == 'sph':
+            altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
 
-            if pdf == 'altsig':
-                # no smearing
-                sigModel = sigCore
-                sigModel.SetName(sigModelName)
-            else:
-                res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-                sigModel = work.factory('FCONV::%s(mass, sigCore_%s, res)' % (sigModelName, binName))
+        elif dataSource == 'sel':
+            sigData = mcWork.data(sigDataName)
+            if not sigData:
+                print 'No dataset ' + sigDataName + ' found in ' + mcSource.GetName() + '.'
+                sys.exit(1)
 
-    print 'Made signal template.'
+            addToWS(sigData)
+
+            altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
+
+        addToWS(altsigModel)
+
+        res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+        sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
+
+    print 'Made sigModel_' + bin
 
     intComp = sigModel.createIntegral(massset, 'compWindow')
     intFit = sigModel.createIntegral(massset, 'fitWindow')
 
-    for conf, iconf in tpconfs.items():
-        targName = 'target_%s_%s' % (conf, binName)
-        modelName = 'model_%s_%s' % (conf, binName)
+    for conf in tpconfs:
+        tpconf.setLabel(conf)
 
-        if runMode == 'batchtoy':
-            targ = work.data(targName)
-            model = work.pdf(modelName)
+        suffix = conf + '_' + bin
 
-            vals = {}
-            iEntry = 0
-            while iEntry != sourceYields.GetEntries():
-                sourceYields.GetEntry(iEntry)
-                iEntry += 1
+        htarg = outputFile.Get('target_' + suffix)
+        print 'htarg limits:', htarg.GetXaxis().GetXmin(), htarg.GetXaxis().GetXmax(), htarg.GetSumOfWeights()
 
-                if vTPconf[0] == iconf and vBinName.tostring().startswith(binName):
-                    for name, vParam in vParams.items():
-                        vals[name] = vParam[0]
-
-                    break
-
-            else:
-                raise RuntimeError('conf = %d and binName = %s not found in input tree' % (conf, binName))
-
-        elif runMode == 'single':
-            targName = 'target_%s_%s' % (conf, binName)
-            htarg = outputFile.Get(targName)
-            print 'htarg limits:', htarg.GetXaxis().GetXmin(), htarg.GetXaxis().GetXmax(), htarg.GetSumOfWeights()
-            
-            targHist = ROOT.RooDataHist(targName, 'target', masslist, htarg)
-            targ = targHist
+        ntarg.setVal(htarg.GetSumOfWeights())
+        
+        targHist = ROOT.RooDataHist('target_' + suffix, 'target', masslist, htarg)
+        targ = targHist
 
 # unbinned fit
-#            ttarg = outputFile.Get(targName)
-#            if dataType == 'mc':
-#                targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass, weight), '', 'weight')
-#            else:
-#                targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass))
+#        ttarg = outputFile.Get(targName)
+#        if dataType == 'mc':
+#            targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass, weight), '', 'weight')
+#        else:
+#            targ = ROOT.RooDataSet(targName, 'target', ttarg, ROOT.RooArgSet(mass))
 
-            addToWS(targ)
+        addToWS(targ)
 
-            vRaw[0] = targ.sumEntries()
+        print 'Made target_' + suffix
 
-            print 'Made target.'
+        tbkg = outputFile.Get('bkgtree_' + suffix)
 
-            bkgModelName = 'bkgModel_%s_%s' % (conf, binName)
+        if dataType == 'mc':
+            altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, 'weight', 0.3, 8)
+            addToWS(altbkgModel)
 
-            if pdf == 'altbkg':
-                slope = ROOT.RooRealVar('slope', 'slope', 0., -100., 100.)
-                bkgModel = ROOT.RooPolynomial(bkgModelName, 'bkgModel', mass, ROOT.RooArgList(slope))
-
-            else:
-                tbkg = outputFile.Get('bkgtree_%s_%s' % (conf, binName))
-
-                if dataType == 'mc':
-                    bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, 'weight', 0.5, 8)
-                else:
-                    bkgModel = ROOT.KeysShape(bkgModelName, 'bkgModel', mass, tbkg, '', 0.5, 8)
-
+            tmcbkg = outputFile.Get('mcbkgtree_' + suffix)
+            bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tmcbkg, 'weight', 0.3, 8)
             addToWS(bkgModel)
-   
-            print 'Made background template.'
 
-            # full fit PDF
-            model = work.factory('SUM::' + modelName + '(nbkg * ' + bkgModelName + ', nsignal * ' + sigModelName + ')')
+            hmubkg = altbkgModel.createHistogram('hmubkg', mass, ROOT.RooFit.Binning(fitBinning))
+            hmubkg.SetName('hmubkg_' + suffix)
+            hmubkg.Scale(1. / hmubkg.GetSumOfWeights())
+            helbkg = bkgModel.createHistogram('helbkg', mass, ROOT.RooFit.Binning(fitBinning))
+            helbkg.SetName('helbkg_' + suffix)
+            helbkg.Scale(1. / helbkg.GetSumOfWeights())
+
+            elmuscale = helbkg.Clone('elmuscale_' + suffix)
+            elmuscale.Divide(hmubkg)
+
+            outputFile.cd()
+            hmubkg.SetDirectory(outputFile)
+            hmubkg.Write()
+            helbkg.SetDirectory(outputFile)
+            helbkg.Write()
+            elmuscale.SetDirectory(outputFile)
+            elmuscale.Write()
+
+            scaleHist = ROOT.RooDataHist('elmuscaleData_' + suffix, 'elmuscale', masslist, elmuscale)
+            scalePdf = ROOT.RooHistPdf('elmuscale_' + suffix, 'elmuscale', massset, scaleHist, 2)
+            addToWS(scaleHist)
+            addToWS(scalePdf)
+
+        else:
+            altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, '', 0.3, 8)
+            addToWS(altbkgModel)
+
+            scalePdf = mcWork.pdf('elmuscale_' + suffix)
+            addToWS(scalePdf)
+
+            bkgModel = work.factory('PROD::bkgModel_{suffix}(altbkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
+            addToWS(bkgModel)
+
+        print 'Made bkgModel_' + suffix
+
+        # full fit PDF
+        model = work.factory('SUM::model_{suffix}(nbkg * bkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
+        addToWS(model)
+
+        print 'Made model_' + suffix
+
+        if dataType == 'mc':
+            hmcbkg = outputFile.Get('mcbkg_' + suffix)
+        else:
+            hmcbkg = None
+
+        # nominal fit
+        mZ.setConstant()
+        gammaZ.setConstant()
+
+        for vname, val in initVals.items():
+            work.var(vname).setVal(val)
+        nsignal.setVal(targ.sumEntries() * 0.9)
     
-            print 'Made fit model.'
+        model.fitTo(targ, ROOT.RooFit.SumW2Error(True), ROOT.RooFit.Save(True))
 
-            # nominal fit
-            vals = dict(initVals)
-            runFit(targ, model, vals = vals)
+        nZ.setVal(nsignal.getVal() * (intComp.getVal() / intFit.getVal()))
 
-            print 'Finished fit.'
+        nomparams.add(nompset)
 
-            # save result
-            vNz[0] = vals['nsignal'] * (intComp.getVal() / intFit.getVal())
-            vToyNumber[0] = -1
+        efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hmcbkg, alt = '')
 
-            vTPconf[0] = iconf
+        # altbkg fit
+        model = work.factory('SUM::model_altbkg_{suffix}(nbkg * altbkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
+
+        for vname, val in initVals.items():
+            work.var(vname).setVal(val)
+        nsignal.setVal(targ.sumEntries() * 0.9)
+    
+        model.fitTo(targ, ROOT.RooFit.SumW2Error(True), ROOT.RooFit.Save(True))
+
+        altbkgparams.add(altbkgpset)
+
+        efake_plot.plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'altbkgModel', hmcbkg = hmcbkg, alt = 'altbkg')
+
+        if dataType == 'data':
+            # altsig fit
+            mZ.setConstant(False)
+            gammaZ.setConstant(False)
+    
+            model = work.factory('SUM::model_altsig_{suffix}(nbkg * bkgModel_{suffix}, nsignal * altsigModel_{bin})'.format(suffix = suffix, bin = bin))
+    
+            for vname, val in initVals.items():
+                work.var(vname).setVal(val)
+            nsignal.setVal(targ.sumEntries() * 0.9)
         
-            yields.Fill()
-
-            # plot fit
-            if htarg.GetSumOfWeights() > 500.:
-                plotBinning = plotBinningT
-            else:
-                plotBinning = plotBinningT2
-
-            frame = mass.frame()
-            targHist.plotOn(frame, ROOT.RooFit.Binning(*plotBinning))
-            model.plotOn(frame)
-            model.plotOn(frame, ROOT.RooFit.Components(bkgModelName), ROOT.RooFit.LineStyle(ROOT.kDashed), ROOT.RooFit.LineColor(ROOT.kGreen))
-            frame.SetTitle('')
-            frame.SetMinimum(0.)
+            model.fitTo(targ, ROOT.RooFit.SumW2Error(True), ROOT.RooFit.Save(True))
     
-            canvas.Clear()
-            canvas.addHistogram(frame, clone = True, drawOpt = '')
-            if dataType == 'mc':
-                hmcbkg = outputFile.Get('mcbkg_%s_%s' % (conf, binName))
-                hmcbkg.Rebin(fitBinningT[0] / plotBinning[0])
-                canvas.legend.apply('mcbkg', hmcbkg)
-                canvas.addHistogram(hmcbkg)
-
-            canvas.Update(rList = [], logy = False)
-
-            frame.Print()
-
-            # adding ratio pad
-            fitcurve = frame.findObject(modelName + '_Norm[mass]')
-
-            hresid = htarg.Rebin(fitBinningT[0] / plotBinning[0], 'residual')
-
-            rdata = ROOT.TGraphErrors(hresid.GetNbinsX())
-
-            for iP in range(rdata.GetN()):
-                x = hresid.GetXaxis().GetBinCenter(iP + 1)
-                nData = hresid.GetBinContent(iP + 1)
-                statErr = hresid.GetBinError(iP + 1)
-                nFit = fitcurve.interpolate(x)
-                if statErr > 0.:
-                    rdata.SetPoint(iP, x, (nData - nFit) / statErr)
-                else:
-                    rdata.SetPoint(iP, x, (nData - nFit))
-                # rdata.SetPointError(iP, 0., dmet.GetBinError(iP + 1) / norm)
-
-            rdata.SetMarkerStyle(8)
-            rdata.SetMarkerColor(ROOT.kBlack)
-            rdata.SetLineColor(ROOT.kBlack)
-
-            canvas.ratioPad.cd()
-            canvas.rtitle = '(data - fit) / #sigma_{data}'
-
-            rframe = ROOT.TH1F('rframe', '', 1, fitBinning.lowBound(), fitBinning.highBound())
-            rframe.GetYaxis().SetRangeUser(-2., 2.)
-            rframe.Draw()
-
-            line = ROOT.TLine(fitBinning.lowBound(), 0., fitBinning.highBound(), 0.)
-            line.SetLineWidth(2)
-            line.SetLineColor(ROOT.kBlue)
-            line.Draw()
-
-            rdata.Draw('EP')
-
-            canvas._needUpdate = False
-
-            if pdf == 'altbkg':
-                canvas.printWeb(plotDir, 'fit_' + dataType + '_altbkg_' + conf + '_' + binName, logy = False)
-            elif pdf == 'altsig':
-                canvas.printWeb(plotDir, 'fit_' + dataType + '_altsig_' + conf + '_' + binName, logy = False)
-            else:
-                canvas.printWeb(plotDir, 'fit_' + dataType + '_' + conf + '_' + binName, logy = False)
-
-            rframe.Delete()
-
-        # closes elif runMode == 'single'
-
-        # run toys
-        nNominal = vals['nsignal'] + vals['nbkg']
-
-        ROOT.RooMsgService.instance().setStreamStatus(1, False)
-
-        iToy = 0
-        while iToy < nToys:
-            iToy += 1
-
-            for param, val in vals.items():
-                work.arg(param).setVal(val)
-
-            toydata = model.generate(massset, random.Poisson(nNominal))
-
-            if conf == 'ee':
-                htarg = template.Clone('htarg')
-                toydata.fillHistogram(htarg, masslist)
-                targ = ROOT.RooDataHist('target', 'target', masslist, htarg)
-                htarg.Delete()
-            else:
-                targ = toydata
-
-            status = runFit(targ, model, printLevel = -1)
-
-            vRaw[0] = targ.sumEntries()
-            
-            toydata.IsA().Destructor(toydata)
-
-            if status != 0:
-                continue
-            
-            vNz[0] = nsignal.getVal() * (intComp.getVal() / intFit.getVal())
+            altsigparams.add(altsigpset)
     
-            vToyNumber[0] = iToy
+            efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hmcbkg, alt = 'altsig')
 
-            vTPconf[0] = iconf
+addToWS(nomparams)
+addToWS(altsigparams)
+addToWS(altbkgparams)
 
-            yields.Fill()
-
-        ROOT.RooMsgService.instance().setStreamStatus(1, True)
-        
-    
 outputFile.cd()
-yields.Write()
-if runMode == 'single':
-    work.Write()
+work.Write()
 
 work = None
 outputFile.Close()
