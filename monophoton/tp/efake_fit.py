@@ -3,6 +3,7 @@
 import sys
 import os
 import array
+import math
 import shutil
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -17,12 +18,14 @@ import tp.efake_plot as efake_plot
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-dataSource = 'sph' # sph or sel
+dataSource = 'sel' # sph or sel
 # panda::XPhoton::IDTune
-itune = 2
+itune = 1
 
-#tpconfs = ['ee', 'eg', 'pass', 'fail']
-tpconfs = ['ee', 'eg']
+if dataSource == 'sph':
+    tpconfs = ['ee', 'eg', 'pass', 'fail']
+else:
+    tpconfs = ['ee', 'eg']
 
 monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
 
@@ -101,7 +104,7 @@ mass.setBinning(fitBinning, 'fitWindow')
 mass.setBinning(compBinning, 'compWindow')
 
 weight = work.factory('weight[-1000000000., 1000000000.]')
-ntarg = work.factory('ntarg[0., 100000000.]')
+ntarg = work.factory('ntarg[0., 100000000.]') # effective number of entries (differs from htarg integral in MC)
 nbkg = work.factory('nbkg[0., 100000000.]')
 nsignal = work.factory('nsignal[0., 100000000.]')
 nZ = work.factory('nZ[0., 100000000.]')
@@ -118,7 +121,8 @@ for ibin, (bin, _) in enumerate(fitBins):
     binName.defineType(bin, ibin)
 
 # smearing parameters are unused in dataType == mc but we'll just leave them here
-nompset = ROOT.RooArgSet(tpconf, binName, ntarg, nbkg, nsignal, nZ, mZ, gammaZ, m0)
+nompset = ROOT.RooArgSet(tpconf, binName, ntarg, nbkg, nsignal, nZ, mZ, gammaZ)
+nompset.add(m0)
 nompset.add(sigma)
 nompset.add(alpha)
 nompset.add(n)
@@ -214,32 +218,33 @@ for bin, fitCut in fitBins:
             # target is a histogram with !csafeVeto
             # perform binned max L fit
             cut = 'probes.mediumX[][{itune}] && !probes.csafeVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
+            bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'eg':
             # target is a tree with pixelVeto
             # also perform binned max L fit
             cut = 'probes.mediumX[][{itune}] && probes.pixelVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
+            bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'pass':
             cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            bkgcut = 'probes.sieie > 0.012 && probes.chIsoX[][{itune}] > 3. && {fitCut}'.format(itune = itune, fitCut = fitCut)
         elif conf == 'fail':
             cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
-        else:
-            cut = '({fitCut})'.format(fitCut = fitCut)
+            bkgcut = 'probes.sieie > 0.012 && probes.chIsoX[][{itune}] > 3. && {fitCut}'.format(itune = itune, fitCut = fitCut)
 
         egPlotter.addPlot(htarg, 'tp.mass', cut)
         # if doing unbinned fits, make a tree
         # egPlotter.addTree(ttarg, cut)
         # egPlotter.addTreeBranch(ttarg, 'mass', 'tp.mass')
 
-        if conf == 'eg' or conf == 'ee':
-            # background is approximately lepton flavor symmetric - will use muon templates
-            hbkg = template.Clone('bkg_' + suffix)
-            objects.append(hbkg)
-            tbkg = ROOT.TTree('bkgtree_' + suffix, 'background')
-            objects.append(tbkg)
-    
-            mgPlotter.addPlot(hbkg, 'tp.mass', cut + ' && !probes.hasCollinearL')
-            mgPlotter.addTree(tbkg, cut + ' && !probes.hasCollinearL')
-            mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
+        # background is approximately lepton flavor symmetric - will use muon templates
+        hbkg = template.Clone('bkg_' + suffix)
+        objects.append(hbkg)
+        tbkg = ROOT.TTree('bkgtree_' + suffix, 'background')
+        objects.append(tbkg)
+
+        mgPlotter.addPlot(hbkg, 'tp.mass', bkgcut)
+        mgPlotter.addTree(tbkg, bkgcut)
+        mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
 
         if dataType == 'mc':
             hmcbkg = template.Clone('mcbkg_' + suffix)
@@ -315,7 +320,10 @@ for bin, fitCut in fitBins:
         htarg = outputFile.Get('target_' + suffix)
         print 'htarg limits:', htarg.GetXaxis().GetXmin(), htarg.GetXaxis().GetXmax(), htarg.GetSumOfWeights()
 
-        ntarg.setVal(htarg.GetSumOfWeights())
+        if dataType == 'mc':
+            ntarg.setVal(math.pow(htarg.GetSumOfWeights(), 2.) / sum(htarg.GetSumw2()[iBin] for iBin in range(1, htarg.GetNbinsX() + 1)))
+        else:
+            ntarg.setVal(htarg.GetSumOfWeights())
         
         targHist = ROOT.RooDataHist('target_' + suffix, 'target', masslist, htarg)
         targ = targHist

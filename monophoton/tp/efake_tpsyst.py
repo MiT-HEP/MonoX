@@ -23,16 +23,17 @@ import ROOT
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
-binningName = sys.argv[1] # see efake_conf
-bin = sys.argv[2]
-conf = sys.argv[3] # ee or eg
-alt = sys.argv[4] # nominal, altsig, or altbkg
-nToys = int(sys.argv[5])
-seed = int(sys.argv[6])
+dataType = sys.argv[1]
+binningName = sys.argv[2] # see efake_conf
+bin = sys.argv[3]
+conf = sys.argv[4] # ee or eg
+alt = sys.argv[5] # nominal, altsig, or altbkg
+nToys = int(sys.argv[6])
+seed = int(sys.argv[7])
 
 outBaseName = '_'.join([
     'tpsyst',
-    'data',
+    dataType,
     conf,
     alt,
     binningName,
@@ -54,9 +55,10 @@ efake_plot.plotDir = 'efake/debug_' + binningName
 
 output = ROOT.TFile.Open(tmpOutName, 'recreate')
 
-source = ROOT.TFile.Open(outputDir + '/fityields_data_' + binningName + '.root')
+source = ROOT.TFile.Open(outputDir + '/fityields_' + dataType + '_' + binningName + '.root')
 
 work = source.Get('work')
+htarg = source.Get('target_' + suffix)
 
 nomparams = work.data('params_nominal')
 
@@ -112,6 +114,7 @@ for _ in range(nToys):
         altModel.Print()
 
     print 'Generating', nompset.find('ntarg').getVal(), 'events'
+    # for MC, ntarg is the effective number of entries != htarg integral
     altData = altModel.generate(ROOT.RooArgSet(mass), nompset.find('ntarg').getVal())
 
     # perform binned fit
@@ -149,8 +152,10 @@ for _ in range(nToys):
     if DEBUG:
         efake_plot.plotFit(mass, data, model, 'data', suffix, plotName = 'debug_tpsyst')
 
-    diff = work.var('nsignal').getVal() - nompset.find('nsignal').getVal()
-    outhist.Fill(diff / nompset.find('nsignal').getVal())
+    normYield = work.var('nsignal').getVal() / nompset.find('ntarg').getVal()
+    normOriginal = nompset.find('nsignal').getVal() / htarg.GetSumOfWeights()
+
+    outhist.Fill((normYield - normOriginal) / normOriginal)
 
     altHist.Delete()
 

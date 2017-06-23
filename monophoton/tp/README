@@ -37,7 +37,7 @@
  3. Uncertainty
  Then efake_tpsyst.py throws toys to evaluate statistical and systematic uncertainties.
 
-  efake_tpsyst.py (binning) (bin name) (ee|eg) (nominal|altsig|altbkg) (N) (random seed)
+  efake_tpsyst.py (data|mc) (binning) (bin name) (ee|eg) (nominal|altsig|altbkg) (N) (random seed)
 
  runs N toy fits for (ee|eg)_(bin name) with the specified random seed. If the 4th argument
  is "nominal", toy data generated from the nominal model is refit with the same model,
@@ -56,14 +56,14 @@
       do
         while [ $(($seed%10)) -ne 0 ]
         do
-          echo $binning $bin $conf $type 100 $seed >> syst_args.txt
+          echo $bin $conf $type 100 $seed >> syst_args.txt
           seed=$(($seed+1))
         done
         seed=$(($seed+1))
       done
     done
   done
-  ~/bin/condor-run efake_tpsyst.py -a syst_args.txt
+  ~/bin/condor-run efake_tpsyst.py -e "data $binning" -a syst_args.txt
 
  The output of toy generation should be combined:
   hadd tpsyst_data_(binning).root tpsyst_data_*_{nominal,altsig,altbkg}_${binning}_*.root

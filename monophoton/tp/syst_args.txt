@@ -1,162 +1,414 @@
-ptalt pt_175_200 ee nominal 100 1001
-ptalt pt_175_200 ee nominal 100 1002
-ptalt pt_175_200 ee nominal 100 1003
-ptalt pt_175_200 ee nominal 100 1004
-ptalt pt_175_200 ee nominal 100 1005
-ptalt pt_175_200 ee nominal 100 1006
-ptalt pt_175_200 ee nominal 100 1007
-ptalt pt_175_200 ee nominal 100 1008
-ptalt pt_175_200 ee nominal 100 1009
-ptalt pt_175_200 ee altsig 100 1011
-ptalt pt_175_200 ee altsig 100 1012
-ptalt pt_175_200 ee altsig 100 1013
-ptalt pt_175_200 ee altsig 100 1014
-ptalt pt_175_200 ee altsig 100 1015
-ptalt pt_175_200 ee altsig 100 1016
-ptalt pt_175_200 ee altsig 100 1017
-ptalt pt_175_200 ee altsig 100 1018
-ptalt pt_175_200 ee altsig 100 1019
-ptalt pt_175_200 ee altbkg 100 1021
-ptalt pt_175_200 ee altbkg 100 1022
-ptalt pt_175_200 ee altbkg 100 1023
-ptalt pt_175_200 ee altbkg 100 1024
-ptalt pt_175_200 ee altbkg 100 1025
-ptalt pt_175_200 ee altbkg 100 1026
-ptalt pt_175_200 ee altbkg 100 1027
-ptalt pt_175_200 ee altbkg 100 1028
-ptalt pt_175_200 ee altbkg 100 1029
-ptalt pt_175_200 eg nominal 100 1031
-ptalt pt_175_200 eg nominal 100 1032
-ptalt pt_175_200 eg nominal 100 1033
-ptalt pt_175_200 eg nominal 100 1034
-ptalt pt_175_200 eg nominal 100 1035
-ptalt pt_175_200 eg nominal 100 1036
-ptalt pt_175_200 eg nominal 100 1037
-ptalt pt_175_200 eg nominal 100 1038
-ptalt pt_175_200 eg nominal 100 1039
-ptalt pt_175_200 eg altsig 100 1041
-ptalt pt_175_200 eg altsig 100 1042
-ptalt pt_175_200 eg altsig 100 1043
-ptalt pt_175_200 eg altsig 100 1044
-ptalt pt_175_200 eg altsig 100 1045
-ptalt pt_175_200 eg altsig 100 1046
-ptalt pt_175_200 eg altsig 100 1047
-ptalt pt_175_200 eg altsig 100 1048
-ptalt pt_175_200 eg altsig 100 1049
-ptalt pt_175_200 eg altbkg 100 1051
-ptalt pt_175_200 eg altbkg 100 1052
-ptalt pt_175_200 eg altbkg 100 1053
-ptalt pt_175_200 eg altbkg 100 1054
-ptalt pt_175_200 eg altbkg 100 1055
-ptalt pt_175_200 eg altbkg 100 1056
-ptalt pt_175_200 eg altbkg 100 1057
-ptalt pt_175_200 eg altbkg 100 1058
-ptalt pt_175_200 eg altbkg 100 1059
-ptalt pt_200_250 ee nominal 100 1061
-ptalt pt_200_250 ee nominal 100 1062
-ptalt pt_200_250 ee nominal 100 1063
-ptalt pt_200_250 ee nominal 100 1064
-ptalt pt_200_250 ee nominal 100 1065
-ptalt pt_200_250 ee nominal 100 1066
-ptalt pt_200_250 ee nominal 100 1067
-ptalt pt_200_250 ee nominal 100 1068
-ptalt pt_200_250 ee nominal 100 1069
-ptalt pt_200_250 ee altsig 100 1071
-ptalt pt_200_250 ee altsig 100 1072
-ptalt pt_200_250 ee altsig 100 1073
-ptalt pt_200_250 ee altsig 100 1074
-ptalt pt_200_250 ee altsig 100 1075
-ptalt pt_200_250 ee altsig 100 1076
-ptalt pt_200_250 ee altsig 100 1077
-ptalt pt_200_250 ee altsig 100 1078
-ptalt pt_200_250 ee altsig 100 1079
-ptalt pt_200_250 ee altbkg 100 1081
-ptalt pt_200_250 ee altbkg 100 1082
-ptalt pt_200_250 ee altbkg 100 1083
-ptalt pt_200_250 ee altbkg 100 1084
-ptalt pt_200_250 ee altbkg 100 1085
-ptalt pt_200_250 ee altbkg 100 1086
-ptalt pt_200_250 ee altbkg 100 1087
-ptalt pt_200_250 ee altbkg 100 1088
-ptalt pt_200_250 ee altbkg 100 1089
-ptalt pt_200_250 eg nominal 100 1091
-ptalt pt_200_250 eg nominal 100 1092
-ptalt pt_200_250 eg nominal 100 1093
-ptalt pt_200_250 eg nominal 100 1094
-ptalt pt_200_250 eg nominal 100 1095
-ptalt pt_200_250 eg nominal 100 1096
-ptalt pt_200_250 eg nominal 100 1097
-ptalt pt_200_250 eg nominal 100 1098
-ptalt pt_200_250 eg nominal 100 1099
-ptalt pt_200_250 eg altsig 100 1101
-ptalt pt_200_250 eg altsig 100 1102
-ptalt pt_200_250 eg altsig 100 1103
-ptalt pt_200_250 eg altsig 100 1104
-ptalt pt_200_250 eg altsig 100 1105
-ptalt pt_200_250 eg altsig 100 1106
-ptalt pt_200_250 eg altsig 100 1107
-ptalt pt_200_250 eg altsig 100 1108
-ptalt pt_200_250 eg altsig 100 1109
-ptalt pt_200_250 eg altbkg 100 1111
-ptalt pt_200_250 eg altbkg 100 1112
-ptalt pt_200_250 eg altbkg 100 1113
-ptalt pt_200_250 eg altbkg 100 1114
-ptalt pt_200_250 eg altbkg 100 1115
-ptalt pt_200_250 eg altbkg 100 1116
-ptalt pt_200_250 eg altbkg 100 1117
-ptalt pt_200_250 eg altbkg 100 1118
-ptalt pt_200_250 eg altbkg 100 1119
-ptalt pt_250_6500 ee nominal 100 1121
-ptalt pt_250_6500 ee nominal 100 1122
-ptalt pt_250_6500 ee nominal 100 1123
-ptalt pt_250_6500 ee nominal 100 1124
-ptalt pt_250_6500 ee nominal 100 1125
-ptalt pt_250_6500 ee nominal 100 1126
-ptalt pt_250_6500 ee nominal 100 1127
-ptalt pt_250_6500 ee nominal 100 1128
-ptalt pt_250_6500 ee nominal 100 1129
-ptalt pt_250_6500 ee altsig 100 1131
-ptalt pt_250_6500 ee altsig 100 1132
-ptalt pt_250_6500 ee altsig 100 1133
-ptalt pt_250_6500 ee altsig 100 1134
-ptalt pt_250_6500 ee altsig 100 1135
-ptalt pt_250_6500 ee altsig 100 1136
-ptalt pt_250_6500 ee altsig 100 1137
-ptalt pt_250_6500 ee altsig 100 1138
-ptalt pt_250_6500 ee altsig 100 1139
-ptalt pt_250_6500 ee altbkg 100 1141
-ptalt pt_250_6500 ee altbkg 100 1142
-ptalt pt_250_6500 ee altbkg 100 1143
-ptalt pt_250_6500 ee altbkg 100 1144
-ptalt pt_250_6500 ee altbkg 100 1145
-ptalt pt_250_6500 ee altbkg 100 1146
-ptalt pt_250_6500 ee altbkg 100 1147
-ptalt pt_250_6500 ee altbkg 100 1148
-ptalt pt_250_6500 ee altbkg 100 1149
-ptalt pt_250_6500 eg nominal 100 1151
-ptalt pt_250_6500 eg nominal 100 1152
-ptalt pt_250_6500 eg nominal 100 1153
-ptalt pt_250_6500 eg nominal 100 1154
-ptalt pt_250_6500 eg nominal 100 1155
-ptalt pt_250_6500 eg nominal 100 1156
-ptalt pt_250_6500 eg nominal 100 1157
-ptalt pt_250_6500 eg nominal 100 1158
-ptalt pt_250_6500 eg nominal 100 1159
-ptalt pt_250_6500 eg altsig 100 1161
-ptalt pt_250_6500 eg altsig 100 1162
-ptalt pt_250_6500 eg altsig 100 1163
-ptalt pt_250_6500 eg altsig 100 1164
-ptalt pt_250_6500 eg altsig 100 1165
-ptalt pt_250_6500 eg altsig 100 1166
-ptalt pt_250_6500 eg altsig 100 1167
-ptalt pt_250_6500 eg altsig 100 1168
-ptalt pt_250_6500 eg altsig 100 1169
-ptalt pt_250_6500 eg altbkg 100 1171
-ptalt pt_250_6500 eg altbkg 100 1172
-ptalt pt_250_6500 eg altbkg 100 1173
-ptalt pt_250_6500 eg altbkg 100 1174
-ptalt pt_250_6500 eg altbkg 100 1175
-ptalt pt_250_6500 eg altbkg 100 1176
-ptalt pt_250_6500 eg altbkg 100 1177
-ptalt pt_250_6500 eg altbkg 100 1178
-ptalt pt_250_6500 eg altbkg 100 1179
+pt_24_28 ee nominal 100 1001
+pt_24_28 ee nominal 100 1002
+pt_24_28 ee nominal 100 1003
+pt_24_28 ee nominal 100 1004
+pt_24_28 ee nominal 100 1005
+pt_24_28 ee nominal 100 1006
+pt_24_28 ee nominal 100 1007
+pt_24_28 ee nominal 100 1008
+pt_24_28 ee nominal 100 1009
+pt_24_28 eg nominal 100 1011
+pt_24_28 eg nominal 100 1012
+pt_24_28 eg nominal 100 1013
+pt_24_28 eg nominal 100 1014
+pt_24_28 eg nominal 100 1015
+pt_24_28 eg nominal 100 1016
+pt_24_28 eg nominal 100 1017
+pt_24_28 eg nominal 100 1018
+pt_24_28 eg nominal 100 1019
+pt_28_32 ee nominal 100 1021
+pt_28_32 ee nominal 100 1022
+pt_28_32 ee nominal 100 1023
+pt_28_32 ee nominal 100 1024
+pt_28_32 ee nominal 100 1025
+pt_28_32 ee nominal 100 1026
+pt_28_32 ee nominal 100 1027
+pt_28_32 ee nominal 100 1028
+pt_28_32 ee nominal 100 1029
+pt_28_32 eg nominal 100 1031
+pt_28_32 eg nominal 100 1032
+pt_28_32 eg nominal 100 1033
+pt_28_32 eg nominal 100 1034
+pt_28_32 eg nominal 100 1035
+pt_28_32 eg nominal 100 1036
+pt_28_32 eg nominal 100 1037
+pt_28_32 eg nominal 100 1038
+pt_28_32 eg nominal 100 1039
+pt_32_35 ee nominal 100 1041
+pt_32_35 ee nominal 100 1042
+pt_32_35 ee nominal 100 1043
+pt_32_35 ee nominal 100 1044
+pt_32_35 ee nominal 100 1045
+pt_32_35 ee nominal 100 1046
+pt_32_35 ee nominal 100 1047
+pt_32_35 ee nominal 100 1048
+pt_32_35 ee nominal 100 1049
+pt_32_35 eg nominal 100 1051
+pt_32_35 eg nominal 100 1052
+pt_32_35 eg nominal 100 1053
+pt_32_35 eg nominal 100 1054
+pt_32_35 eg nominal 100 1055
+pt_32_35 eg nominal 100 1056
+pt_32_35 eg nominal 100 1057
+pt_32_35 eg nominal 100 1058
+pt_32_35 eg nominal 100 1059
+pt_35_38 ee nominal 100 1061
+pt_35_38 ee nominal 100 1062
+pt_35_38 ee nominal 100 1063
+pt_35_38 ee nominal 100 1064
+pt_35_38 ee nominal 100 1065
+pt_35_38 ee nominal 100 1066
+pt_35_38 ee nominal 100 1067
+pt_35_38 ee nominal 100 1068
+pt_35_38 ee nominal 100 1069
+pt_35_38 eg nominal 100 1071
+pt_35_38 eg nominal 100 1072
+pt_35_38 eg nominal 100 1073
+pt_35_38 eg nominal 100 1074
+pt_35_38 eg nominal 100 1075
+pt_35_38 eg nominal 100 1076
+pt_35_38 eg nominal 100 1077
+pt_35_38 eg nominal 100 1078
+pt_35_38 eg nominal 100 1079
+pt_38_40 ee nominal 100 1081
+pt_38_40 ee nominal 100 1082
+pt_38_40 ee nominal 100 1083
+pt_38_40 ee nominal 100 1084
+pt_38_40 ee nominal 100 1085
+pt_38_40 ee nominal 100 1086
+pt_38_40 ee nominal 100 1087
+pt_38_40 ee nominal 100 1088
+pt_38_40 ee nominal 100 1089
+pt_38_40 eg nominal 100 1091
+pt_38_40 eg nominal 100 1092
+pt_38_40 eg nominal 100 1093
+pt_38_40 eg nominal 100 1094
+pt_38_40 eg nominal 100 1095
+pt_38_40 eg nominal 100 1096
+pt_38_40 eg nominal 100 1097
+pt_38_40 eg nominal 100 1098
+pt_38_40 eg nominal 100 1099
+pt_40_42 ee nominal 100 1101
+pt_40_42 ee nominal 100 1102
+pt_40_42 ee nominal 100 1103
+pt_40_42 ee nominal 100 1104
+pt_40_42 ee nominal 100 1105
+pt_40_42 ee nominal 100 1106
+pt_40_42 ee nominal 100 1107
+pt_40_42 ee nominal 100 1108
+pt_40_42 ee nominal 100 1109
+pt_40_42 eg nominal 100 1111
+pt_40_42 eg nominal 100 1112
+pt_40_42 eg nominal 100 1113
+pt_40_42 eg nominal 100 1114
+pt_40_42 eg nominal 100 1115
+pt_40_42 eg nominal 100 1116
+pt_40_42 eg nominal 100 1117
+pt_40_42 eg nominal 100 1118
+pt_40_42 eg nominal 100 1119
+pt_42_44 ee nominal 100 1121
+pt_42_44 ee nominal 100 1122
+pt_42_44 ee nominal 100 1123
+pt_42_44 ee nominal 100 1124
+pt_42_44 ee nominal 100 1125
+pt_42_44 ee nominal 100 1126
+pt_42_44 ee nominal 100 1127
+pt_42_44 ee nominal 100 1128
+pt_42_44 ee nominal 100 1129
+pt_42_44 eg nominal 100 1131
+pt_42_44 eg nominal 100 1132
+pt_42_44 eg nominal 100 1133
+pt_42_44 eg nominal 100 1134
+pt_42_44 eg nominal 100 1135
+pt_42_44 eg nominal 100 1136
+pt_42_44 eg nominal 100 1137
+pt_42_44 eg nominal 100 1138
+pt_42_44 eg nominal 100 1139
+pt_44_46 ee nominal 100 1141
+pt_44_46 ee nominal 100 1142
+pt_44_46 ee nominal 100 1143
+pt_44_46 ee nominal 100 1144
+pt_44_46 ee nominal 100 1145
+pt_44_46 ee nominal 100 1146
+pt_44_46 ee nominal 100 1147
+pt_44_46 ee nominal 100 1148
+pt_44_46 ee nominal 100 1149
+pt_44_46 eg nominal 100 1151
+pt_44_46 eg nominal 100 1152
+pt_44_46 eg nominal 100 1153
+pt_44_46 eg nominal 100 1154
+pt_44_46 eg nominal 100 1155
+pt_44_46 eg nominal 100 1156
+pt_44_46 eg nominal 100 1157
+pt_44_46 eg nominal 100 1158
+pt_44_46 eg nominal 100 1159
+pt_46_48 ee nominal 100 1161
+pt_46_48 ee nominal 100 1162
+pt_46_48 ee nominal 100 1163
+pt_46_48 ee nominal 100 1164
+pt_46_48 ee nominal 100 1165
+pt_46_48 ee nominal 100 1166
+pt_46_48 ee nominal 100 1167
+pt_46_48 ee nominal 100 1168
+pt_46_48 ee nominal 100 1169
+pt_46_48 eg nominal 100 1171
+pt_46_48 eg nominal 100 1172
+pt_46_48 eg nominal 100 1173
+pt_46_48 eg nominal 100 1174
+pt_46_48 eg nominal 100 1175
+pt_46_48 eg nominal 100 1176
+pt_46_48 eg nominal 100 1177
+pt_46_48 eg nominal 100 1178
+pt_46_48 eg nominal 100 1179
+pt_48_50 ee nominal 100 1181
+pt_48_50 ee nominal 100 1182
+pt_48_50 ee nominal 100 1183
+pt_48_50 ee nominal 100 1184
+pt_48_50 ee nominal 100 1185
+pt_48_50 ee nominal 100 1186
+pt_48_50 ee nominal 100 1187
+pt_48_50 ee nominal 100 1188
+pt_48_50 ee nominal 100 1189
+pt_48_50 eg nominal 100 1191
+pt_48_50 eg nominal 100 1192
+pt_48_50 eg nominal 100 1193
+pt_48_50 eg nominal 100 1194
+pt_48_50 eg nominal 100 1195
+pt_48_50 eg nominal 100 1196
+pt_48_50 eg nominal 100 1197
+pt_48_50 eg nominal 100 1198
+pt_48_50 eg nominal 100 1199
+pt_50_54 ee nominal 100 1201
+pt_50_54 ee nominal 100 1202
+pt_50_54 ee nominal 100 1203
+pt_50_54 ee nominal 100 1204
+pt_50_54 ee nominal 100 1205
+pt_50_54 ee nominal 100 1206
+pt_50_54 ee nominal 100 1207
+pt_50_54 ee nominal 100 1208
+pt_50_54 ee nominal 100 1209
+pt_50_54 eg nominal 100 1211
+pt_50_54 eg nominal 100 1212
+pt_50_54 eg nominal 100 1213
+pt_50_54 eg nominal 100 1214
+pt_50_54 eg nominal 100 1215
+pt_50_54 eg nominal 100 1216
+pt_50_54 eg nominal 100 1217
+pt_50_54 eg nominal 100 1218
+pt_50_54 eg nominal 100 1219
+pt_54_58 ee nominal 100 1221
+pt_54_58 ee nominal 100 1222
+pt_54_58 ee nominal 100 1223
+pt_54_58 ee nominal 100 1224
+pt_54_58 ee nominal 100 1225
+pt_54_58 ee nominal 100 1226
+pt_54_58 ee nominal 100 1227
+pt_54_58 ee nominal 100 1228
+pt_54_58 ee nominal 100 1229
+pt_54_58 eg nominal 100 1231
+pt_54_58 eg nominal 100 1232
+pt_54_58 eg nominal 100 1233
+pt_54_58 eg nominal 100 1234
+pt_54_58 eg nominal 100 1235
+pt_54_58 eg nominal 100 1236
+pt_54_58 eg nominal 100 1237
+pt_54_58 eg nominal 100 1238
+pt_54_58 eg nominal 100 1239
+pt_58_62 ee nominal 100 1241
+pt_58_62 ee nominal 100 1242
+pt_58_62 ee nominal 100 1243
+pt_58_62 ee nominal 100 1244
+pt_58_62 ee nominal 100 1245
+pt_58_62 ee nominal 100 1246
+pt_58_62 ee nominal 100 1247
+pt_58_62 ee nominal 100 1248
+pt_58_62 ee nominal 100 1249
+pt_58_62 eg nominal 100 1251
+pt_58_62 eg nominal 100 1252
+pt_58_62 eg nominal 100 1253
+pt_58_62 eg nominal 100 1254
+pt_58_62 eg nominal 100 1255
+pt_58_62 eg nominal 100 1256
+pt_58_62 eg nominal 100 1257
+pt_58_62 eg nominal 100 1258
+pt_58_62 eg nominal 100 1259
+pt_62_66 ee nominal 100 1261
+pt_62_66 ee nominal 100 1262
+pt_62_66 ee nominal 100 1263
+pt_62_66 ee nominal 100 1264
+pt_62_66 ee nominal 100 1265
+pt_62_66 ee nominal 100 1266
+pt_62_66 ee nominal 100 1267
+pt_62_66 ee nominal 100 1268
+pt_62_66 ee nominal 100 1269
+pt_62_66 eg nominal 100 1271
+pt_62_66 eg nominal 100 1272
+pt_62_66 eg nominal 100 1273
+pt_62_66 eg nominal 100 1274
+pt_62_66 eg nominal 100 1275
+pt_62_66 eg nominal 100 1276
+pt_62_66 eg nominal 100 1277
+pt_62_66 eg nominal 100 1278
+pt_62_66 eg nominal 100 1279
+pt_66_70 ee nominal 100 1281
+pt_66_70 ee nominal 100 1282
+pt_66_70 ee nominal 100 1283
+pt_66_70 ee nominal 100 1284
+pt_66_70 ee nominal 100 1285
+pt_66_70 ee nominal 100 1286
+pt_66_70 ee nominal 100 1287
+pt_66_70 ee nominal 100 1288
+pt_66_70 ee nominal 100 1289
+pt_66_70 eg nominal 100 1291
+pt_66_70 eg nominal 100 1292
+pt_66_70 eg nominal 100 1293
+pt_66_70 eg nominal 100 1294
+pt_66_70 eg nominal 100 1295
+pt_66_70 eg nominal 100 1296
+pt_66_70 eg nominal 100 1297
+pt_66_70 eg nominal 100 1298
+pt_66_70 eg nominal 100 1299
+pt_70_75 ee nominal 100 1301
+pt_70_75 ee nominal 100 1302
+pt_70_75 ee nominal 100 1303
+pt_70_75 ee nominal 100 1304
+pt_70_75 ee nominal 100 1305
+pt_70_75 ee nominal 100 1306
+pt_70_75 ee nominal 100 1307
+pt_70_75 ee nominal 100 1308
+pt_70_75 ee nominal 100 1309
+pt_70_75 eg nominal 100 1311
+pt_70_75 eg nominal 100 1312
+pt_70_75 eg nominal 100 1313
+pt_70_75 eg nominal 100 1314
+pt_70_75 eg nominal 100 1315
+pt_70_75 eg nominal 100 1316
+pt_70_75 eg nominal 100 1317
+pt_70_75 eg nominal 100 1318
+pt_70_75 eg nominal 100 1319
+pt_75_80 ee nominal 100 1321
+pt_75_80 ee nominal 100 1322
+pt_75_80 ee nominal 100 1323
+pt_75_80 ee nominal 100 1324
+pt_75_80 ee nominal 100 1325
+pt_75_80 ee nominal 100 1326
+pt_75_80 ee nominal 100 1327
+pt_75_80 ee nominal 100 1328
+pt_75_80 ee nominal 100 1329
+pt_75_80 eg nominal 100 1331
+pt_75_80 eg nominal 100 1332
+pt_75_80 eg nominal 100 1333
+pt_75_80 eg nominal 100 1334
+pt_75_80 eg nominal 100 1335
+pt_75_80 eg nominal 100 1336
+pt_75_80 eg nominal 100 1337
+pt_75_80 eg nominal 100 1338
+pt_75_80 eg nominal 100 1339
+pt_80_85 ee nominal 100 1341
+pt_80_85 ee nominal 100 1342
+pt_80_85 ee nominal 100 1343
+pt_80_85 ee nominal 100 1344
+pt_80_85 ee nominal 100 1345
+pt_80_85 ee nominal 100 1346
+pt_80_85 ee nominal 100 1347
+pt_80_85 ee nominal 100 1348
+pt_80_85 ee nominal 100 1349
+pt_80_85 eg nominal 100 1351
+pt_80_85 eg nominal 100 1352
+pt_80_85 eg nominal 100 1353
+pt_80_85 eg nominal 100 1354
+pt_80_85 eg nominal 100 1355
+pt_80_85 eg nominal 100 1356
+pt_80_85 eg nominal 100 1357
+pt_80_85 eg nominal 100 1358
+pt_80_85 eg nominal 100 1359
+pt_85_90 ee nominal 100 1361
+pt_85_90 ee nominal 100 1362
+pt_85_90 ee nominal 100 1363
+pt_85_90 ee nominal 100 1364
+pt_85_90 ee nominal 100 1365
+pt_85_90 ee nominal 100 1366
+pt_85_90 ee nominal 100 1367
+pt_85_90 ee nominal 100 1368
+pt_85_90 ee nominal 100 1369
+pt_85_90 eg nominal 100 1371
+pt_85_90 eg nominal 100 1372
+pt_85_90 eg nominal 100 1373
+pt_85_90 eg nominal 100 1374
+pt_85_90 eg nominal 100 1375
+pt_85_90 eg nominal 100 1376
+pt_85_90 eg nominal 100 1377
+pt_85_90 eg nominal 100 1378
+pt_85_90 eg nominal 100 1379
+pt_90_100 ee nominal 100 1381
+pt_90_100 ee nominal 100 1382
+pt_90_100 ee nominal 100 1383
+pt_90_100 ee nominal 100 1384
+pt_90_100 ee nominal 100 1385
+pt_90_100 ee nominal 100 1386
+pt_90_100 ee nominal 100 1387
+pt_90_100 ee nominal 100 1388
+pt_90_100 ee nominal 100 1389
+pt_90_100 eg nominal 100 1391
+pt_90_100 eg nominal 100 1392
+pt_90_100 eg nominal 100 1393
+pt_90_100 eg nominal 100 1394
+pt_90_100 eg nominal 100 1395
+pt_90_100 eg nominal 100 1396
+pt_90_100 eg nominal 100 1397
+pt_90_100 eg nominal 100 1398
+pt_90_100 eg nominal 100 1399
+pt_100_120 ee nominal 100 1401
+pt_100_120 ee nominal 100 1402
+pt_100_120 ee nominal 100 1403
+pt_100_120 ee nominal 100 1404
+pt_100_120 ee nominal 100 1405
+pt_100_120 ee nominal 100 1406
+pt_100_120 ee nominal 100 1407
+pt_100_120 ee nominal 100 1408
+pt_100_120 ee nominal 100 1409
+pt_100_120 eg nominal 100 1411
+pt_100_120 eg nominal 100 1412
+pt_100_120 eg nominal 100 1413
+pt_100_120 eg nominal 100 1414
+pt_100_120 eg nominal 100 1415
+pt_100_120 eg nominal 100 1416
+pt_100_120 eg nominal 100 1417
+pt_100_120 eg nominal 100 1418
+pt_100_120 eg nominal 100 1419
+pt_120_140 ee nominal 100 1421
+pt_120_140 ee nominal 100 1422
+pt_120_140 ee nominal 100 1423
+pt_120_140 ee nominal 100 1424
+pt_120_140 ee nominal 100 1425
+pt_120_140 ee nominal 100 1426
+pt_120_140 ee nominal 100 1427
+pt_120_140 ee nominal 100 1428
+pt_120_140 ee nominal 100 1429
+pt_120_140 eg nominal 100 1431
+pt_120_140 eg nominal 100 1432
+pt_120_140 eg nominal 100 1433
+pt_120_140 eg nominal 100 1434
+pt_120_140 eg nominal 100 1435
+pt_120_140 eg nominal 100 1436
+pt_120_140 eg nominal 100 1437
+pt_120_140 eg nominal 100 1438
+pt_120_140 eg nominal 100 1439
+pt_140_160 ee nominal 100 1441
+pt_140_160 ee nominal 100 1442
+pt_140_160 ee nominal 100 1443
+pt_140_160 ee nominal 100 1444
+pt_140_160 ee nominal 100 1445
+pt_140_160 ee nominal 100 1446
+pt_140_160 ee nominal 100 1447
+pt_140_160 ee nominal 100 1448
+pt_140_160 ee nominal 100 1449
+pt_140_160 eg nominal 100 1451
+pt_140_160 eg nominal 100 1452
+pt_140_160 eg nominal 100 1453
+pt_140_160 eg nominal 100 1454
+pt_140_160 eg nominal 100 1455
+pt_140_160 eg nominal 100 1456
+pt_140_160 eg nominal 100 1457
+pt_140_160 eg nominal 100 1458
+pt_140_160 eg nominal 100 1459
