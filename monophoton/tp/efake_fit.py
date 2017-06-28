@@ -18,14 +18,16 @@ import tp.efake_plot as efake_plot
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-dataSource = 'sel' # sph or sel
+dataSource = 'smu' # sph or sel
 # panda::XPhoton::IDTune
 itune = 1
 
 if dataSource == 'sph':
     tpconfs = ['ee', 'eg', 'pass', 'fail']
-else:
+elif dataSource == 'sel':
     tpconfs = ['ee', 'eg']
+elif dataSource == 'smu':
+    tpconfs = ['passiso', 'failiso']
 
 monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
 
@@ -115,7 +117,7 @@ sigma = work.factory('sigma[0.001, 5.]')
 alpha = work.factory('alpha[0.01, 5.]')
 n = work.factory('n[1.01, 5.]')
 
-tpconf = work.factory('tpconf[ee=0, eg=1, pass=2, fail=3]')
+tpconf = work.factory('tpconf[ee=0, eg=1, pass=2, fail=3, passiso=4, failiso=5]')
 binName = work.factory('binName[]')
 for ibin, (bin, _) in enumerate(fitBins):
     binName.defineType(bin, ibin)
@@ -151,22 +153,31 @@ if dataType == 'data':
     mgPlotter.setWeightBranch('')
 
     # target samples
-    if dataSource == 'sph':
-        egSamp = 'phdata'
-        mgSamp = 'phdata'
+    if dataSource == 'smu':
+        for sname in skimConfig['mudata'][0]:
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
+
+        egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
+        mgPlotter.setBaseSelection('tags.pt_ > 50.')
+
     else:
-        egSamp = 'eldata'
-        mgSamp = 'mudata'
-
-    for sname in skimConfig[egSamp][0]:
-        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
-
-    for sname in skimConfig[mgSamp][0]:
-        mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
-
-    if dataSource == 'sel':
-        egPlotter.setBaseSelection('tags.pt_ > 40.')
-        mgPlotter.setBaseSelection('tags.pt_ > 40.')
+        if dataSource == 'sph':
+            egSamp = 'phdata'
+            mgSamp = 'phdata'
+        elif dataSource == 'sel':
+            egSamp = 'eldata'
+            mgSamp = 'mudata'
+    
+        for sname in skimConfig[egSamp][0]:
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+    
+        for sname in skimConfig[mgSamp][0]:
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
+    
+        if dataSource == 'sel':
+            egPlotter.setBaseSelection('tags.pt_ > 40.')
+            mgPlotter.setBaseSelection('tags.pt_ > 40.')
 
     mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
     mcWork = mcSource.Get('work')
@@ -180,17 +191,29 @@ else:
 
     egPlotter.setConstantWeight(lumi)
     mgPlotter.setConstantWeight(lumi)
-    
-    for sname in skimConfig['mc'][0]:
-        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
-        mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-    egPlotter.setReweight('tags.pt_', eleTrigEff)
-    mgPlotter.setReweight('tags.pt_', muTrigEff)
+    if dataSource == 'smu':
+        for sname in skimConfig['mcmu'][0]:
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
+
+        egPlotter.setReweight('tags.pt_', muTrigEff)
+        mgPlotter.setReweight('tags.pt_', muTrigEff)
+
+    else:
+        for sname in skimConfig['mc'][0]:
+            egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
+            mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
+
+        egPlotter.setReweight('tags.pt_', eleTrigEff)
+        mgPlotter.setReweight('tags.pt_', muTrigEff)
 
     if dataSource == 'sel':
         egPlotter.setBaseSelection('tags.pt_ > 40.')
         mgPlotter.setBaseSelection('tags.pt_ > 40.')
+    elif dataSource == 'smu':
+        egPlotter.setBaseSelection('tags.pt_ > 50.')
+        mgPlotter.setBaseSelection('tags.pt_ > 50.')
 
 #    for sname in skimConfig['mcgg'][0]:
 #        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
@@ -203,7 +226,10 @@ for bin, fitCut in fitBins:
     if dataType == 'mc':
         hsig = template.Clone('sig_' + bin)
         objects.append(hsig)
-        egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
+        if dataSource == 'sel':
+            egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
+        else:
+            egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && sample == 1')
 
     for conf in tpconfs:
         suffix = conf + '_' + bin
@@ -230,6 +256,14 @@ for bin, fitCut in fitBins:
         elif conf == 'fail':
             cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
             bkgcut = 'probes.sieie > 0.012 && probes.chIsoX[][{itune}] > 3. && {fitCut}'.format(itune = itune, fitCut = fitCut)
+        elif conf == 'passiso':
+            cut = '({iso}) && ({fitCut})'.format(iso = '(probes.chIso + TMath::Max(probes.nhIso + probes.phIso - 0.5 * probes.puIso, 0.)) / probes.pt_ < 0.25', fitCut = fitCut)
+#            bkgcut = '{fitCut} && !probes.loose && (probes.chIso + TMath::Max(probes.nhIso + probes.phIso - 0.5 * probes.puIso, 0.)) / probes.pt_ > 0.25'.format(fitCut = fitCut)
+            bkgcut = '{fitCut} && !probes.loose'.format(fitCut = fitCut)
+        elif conf == 'failiso':
+            cut = '({iso}) && ({fitCut})'.format(iso = '(probes.chIso + TMath::Max(probes.nhIso + probes.phIso - 0.5 * probes.puIso, 0.)) / probes.pt_ > 0.25', fitCut = fitCut)
+#            bkgcut = '{fitCut} && !probes.loose && (probes.chIso + TMath::Max(probes.nhIso + probes.phIso - 0.5 * probes.puIso, 0.)) / probes.pt_ > 0.25'.format(fitCut = fitCut)
+            bkgcut = '{fitCut} && !probes.loose'.format(fitCut = fitCut)
 
         egPlotter.addPlot(htarg, 'tp.mass', cut)
         # if doing unbinned fits, make a tree
@@ -246,7 +280,7 @@ for bin, fitCut in fitBins:
         mgPlotter.addTree(tbkg, bkgcut)
         mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
 
-        if dataType == 'mc':
+        if dataType == 'mc' and dataSource != 'smu':
             hmcbkg = template.Clone('mcbkg_' + suffix)
             objects.append(hmcbkg)
             tmcbkg = ROOT.TTree('mcbkgtree_' + suffix, 'truth background')
@@ -285,6 +319,8 @@ for bin, fitCut in fitBins:
         sigData = ROOT.RooDataHist('sigData_' + bin, 'sig', masslist, hsig)
         addToWS(sigData)
 
+        continue
+
         # no smearing
         sigModel = work.factory('HistPdf::sigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
@@ -292,7 +328,7 @@ for bin, fitCut in fitBins:
         if dataSource == 'sph':
             altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
 
-        elif dataSource == 'sel':
+        elif dataSource == 'sel' or dataSource == 'smu':
             sigData = mcWork.data(sigDataName)
             if not sigData:
                 print 'No dataset ' + sigDataName + ' found in ' + mcSource.GetName() + '.'
@@ -373,14 +409,19 @@ for bin, fitCut in fitBins:
             addToWS(scalePdf)
 
         else:
-            altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, '', 0.3, 8)
-            addToWS(altbkgModel)
+            if dataSource == 'smu':
+                bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
+                addToWS(bkgModel)
 
-            scalePdf = mcWork.pdf('elmuscale_' + suffix)
-            addToWS(scalePdf)
-
-            bkgModel = work.factory('PROD::bkgModel_{suffix}(altbkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
-            addToWS(bkgModel)
+            else:
+                altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, '', 0.3, 8)
+                addToWS(altbkgModel)
+    
+                scalePdf = mcWork.pdf('elmuscale_' + suffix)
+                addToWS(scalePdf)
+    
+                bkgModel = work.factory('PROD::bkgModel_{suffix}(altbkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
+                addToWS(bkgModel)
 
         print 'Made bkgModel_' + suffix
 
@@ -407,9 +448,14 @@ for bin, fitCut in fitBins:
 
         nZ.setVal(nsignal.getVal() * (intComp.getVal() / intFit.getVal()))
 
+        print '################ nZ =', nZ.getVal(), '###################'
+
         nomparams.add(nompset)
 
         efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hmcbkg, alt = '')
+
+        if dataSource == 'smu':
+            continue
 
         # altbkg fit
         model = work.factory('SUM::model_altbkg_{suffix}(nbkg * altbkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
