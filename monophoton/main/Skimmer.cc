@@ -36,7 +36,7 @@ public:
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
-  void prepareEvent(panda::Event const&, panda::GenParticleCollection const&, panda::EventMonophoton&);
+  void prepareEvent(panda::Event const&, panda::EventMonophoton&, panda::GenParticleCollection const* = 0);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
 
 private:
@@ -239,10 +239,12 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
       continue;
 
-    if (!event.isData)
+    if (!event.isData) {
       genParticles.getEntry(genInput, iEntry - 1);
-
-    prepareEvent(event, genParticles, skimmedEvent);
+      prepareEvent(event, skimmedEvent, &genParticles);
+    }
+    else
+      prepareEvent(event, skimmedEvent);
 
     if (printLevel_ > 0 && printLevel_ <= INFO) {
       debugFile << std::endl << ">>>>> Printing event " << iEntry <<" !!! <<<<<" << std::endl;
@@ -290,16 +292,21 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 }
 
 void
-Skimmer::prepareEvent(panda::Event const& _event, panda::GenParticleCollection const& _genParticles, panda::EventMonophoton& _outEvent)
+Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent, panda::GenParticleCollection const* _genParticles/* = 0*/)
 {
   // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
   _outEvent.copy(_event);
 
-  _outEvent.copyGenParticles(_genParticles);
+  if (_genParticles)
+    _outEvent.copyGenParticles(*_genParticles);
 
   if (_outEvent.run.runNumber != _event.run.runNumber)
     _outEvent.run = _event.run;
 
-  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh)
-    panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _outEvent.genParticles, _event.rho);
+  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
+    if (_genParticles)
+      panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho, &_outEvent.genParticles);
+    else
+      panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho);
+  }
 }

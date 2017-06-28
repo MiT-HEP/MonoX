@@ -7,7 +7,7 @@
 namespace panda {
 
   void
-  photon_extra(panda::XPhoton& _dest, panda::Photon const& _src, panda::UnpackedGenParticleCollection const& _genParticles, double _rho)
+  photon_extra(panda::XPhoton& _dest, panda::Photon const& _src, double _rho, panda::UnpackedGenParticleCollection const* _genParticles = 0)
   {
     auto& superCluster(*_src.superCluster);
 
@@ -159,7 +159,7 @@ namespace panda {
         _dest.passCHIso(2, iD) && _dest.passNHIso(2, iD) && _dest.passCHIso(2, iD);
     }
 
-    if (!_genParticles.empty()) {
+    if (_genParticles) {
       _dest.matchedGenId = 0;
       if (_src.matchedGen.isValid()) {
         _dest.matchedGenId = _src.matchedGen->pdgid;
@@ -174,7 +174,7 @@ namespace panda {
       if (_dest.matchedGenId == 0) {
         // passed genParticles is the post-copy collection where only prompt photons / leptons are saved
         double dR2Min(-1.);
-        for (auto& gen : _genParticles) {
+        for (auto& gen : *_genParticles) {
           double dR2(gen.dR2(_dest));
           if (dR2Min < 0. || dR2 < dR2Min) {
             _dest.matchedGenId = gen.pdgid;
