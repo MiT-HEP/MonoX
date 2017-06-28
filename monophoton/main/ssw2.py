@@ -29,7 +29,7 @@ class SkimSlimWeight(object):
         else:
             self.tmpDir = '/tmp/' + os.environ['USER'] + '/ssw2'
 
-        if self.manual or sample.filesets() == 1:
+        if self.manual or len(sample.filesets()) == 1:
             self.outDir = SkimSlimWeight.config['skimDir']
         else:
             self.outDir = SkimSlimWeight.config['skimDir'] + '/' + sample.name
@@ -238,7 +238,7 @@ class BatchManager(object):
         self.readRemote = readRemote
         self.argTemplate = ''
 
-    def submitMerge(self, noWait, autoResubmit = False, localCopyDir = ''):
+    def submitMerge(self, noWait, autoResubmit = False):
         arguments = []
 
         for ssw in self.ssws:
@@ -261,9 +261,9 @@ class BatchManager(object):
         self.submitter.submit(name = 'ssw2')
 
         if not noWait:
-            self._waitForCompletion('merge', dict(self.submitter.last_submit), autoResubmit, localCopyDir)
+            self._waitForCompletion('merge', dict(self.submitter.last_submit), autoResubmit)
 
-    def submitSkim(self, noWait, autoResubmit = False, localCopyDir = ''):
+    def submitSkim(self, noWait, autoResubmit = False):
         self.argTemplate = '%s -f %s'
     
         if self.skipMissing:
@@ -291,9 +291,9 @@ class BatchManager(object):
         submitter.submit(name = 'ssw2')
 
         if not noWait:
-            self._waitForCompletion('skim', dict(self.submitter.last_submit), autoResubmit, localCopyDir)
+            self._waitForCompletion('skim', dict(self.submitter.last_submit), autoResubmit)
 
-    def _waitForCompletion(self, jobType, clusterToJob, autoResubmit, localCopyDir):
+    def _waitForCompletion(self, jobType, clusterToJob, autoResubmit):
         print 'Waiting for all jobs to complete.'
 
         # indices of arguments to pick up from condor_q output lines
@@ -336,31 +336,6 @@ class BatchManager(object):
                     jobsInQueue.append(clusterId)
 
             for clusterId in (set(clusters) - set(jobsInQueue)):
-                if localCopyDir:
-                    # copy output of completed jobs
-                    jobName = clusterToJob[clusterId]
-                    sample = jobName[:jobName.rfind('_')]
-
-                    if jobType == 'skim':
-                        try:
-                            os.makedirs(localCopyDir + '/' + sample)
-                        except OSError:
-                            pass
-
-                        fileset = jobName[jobName.rfind('_') + 1:]
-                        outName = sample + '/' + sample + '_' + fileset + '.root'
-                    elif jobType == 'merge':
-                        rname = jobName[jobName.rfind('_') + 1:]
-                        outName = sample + '_' + rname + '.root'
-
-                    try:
-                        shutil.copy(SkimSlimWeight.config['skimDir'] + '/' + outName, localCopyDir + '/' + outName)
-                    except: # output may not be ready
-                        print 'Failed to copy ' + outName + '. Will try again in the next cycle.'
-                        continue
-
-                    # success -> remove from the list of clusters to query
-
                 clusters.remove(clusterId)
 
             if len(clusters) == 0:
@@ -387,7 +362,6 @@ if __name__ == '__main__':
     argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
     argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
     argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
-    argParser.add_argument('--copy-local', '-Y', action = 'store_true', dest = 'copyLocal', help = '(Without no-wait option) Copy the output skim files to localSkimDir.')
     argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
     argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
@@ -562,15 +536,10 @@ if __name__ == '__main__':
         
         batchManager = BatchManager(submitter, ssws, args.skipMissing, args.readRemote)
 
-        if args.copyLocal:
-            localCopyDir = config.localSkimDir
-        else:
-            localCopyDir = ''
-
         if args.merge:
-            batchManager.submitMerge(args.noWait, args.autoResubmit, localCopyDir = localCopyDir)
+            batchManager.submitMerge(args.noWait, args.autoResubmit)
         else:
-            batchManager.submitSkim(args.noWait, args.autoResubmit, localCopyDir = localCopyDir)
+            batchManager.submitSkim(args.noWait, args.autoResubmit)
 
         if args.noWait:
             print 'Jobs have been submitted.'
