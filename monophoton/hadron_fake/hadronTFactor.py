@@ -39,7 +39,8 @@ impurityGraph = inputFile.Get("barrel-" + pid + "-" + extras + "-Met0to60")
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor' + suffix + '.root', 'recreate')
 
 selExprs = selections.getSelections(tune, 'barrel', 'medium')
-selExprsS16 = selections.getSelections('Spring16', 'barrel', 'medium')
+selExprsLoose = selections.getSelections(tune, 'barrel', 'loose')
+selExprsTight = selections.getSelections(tune, 'barrel', 'tight')
 
 baseSels = {
     'jet': 'jets.pt_[0] > 100.',
@@ -66,14 +67,14 @@ nomSels = {
 
 tightSels = {
     'chIso': '!(%s)' % selExprs['chiso'],
-    'nhIso': selExprsS16['nhiso'],
-    'phIso': selExprsS16['phiso']
+    'nhIso': selExprsTight['nhiso'],
+    'phIso': selExprsTight['phiso']
 }
 
 looseSels = {
     'chIso': '!(%s)' % selExprs['chiso'],
-    'nhIso': selExprsS16['nhiso'],
-    'phIso': selExprsS16['phiso']
+    'nhIso': selExprsLoose['nhiso'],
+    'phIso': selExprsLoose['phiso']
 }
 
 if 'pixel' in extras:
