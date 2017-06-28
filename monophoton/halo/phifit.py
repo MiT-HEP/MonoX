@@ -8,81 +8,126 @@ import array
 import shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)
-ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-TEMPLATEONLY = True
+TEMPLATEONLY = False
 FITPSEUDODATA = True
 
 from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
+import utils
 
-# targnames: sample names for target trees (monoph skim)
-# halonames: sample names for halo templates (can be a photon skim)
-targnames = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
-targs = [allsamples[sname] for sname in targnames]
+ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
+ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
-# TTree expression
-foldedPhi = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - 1.570796)) - 1.570796'
-
-candSelection = 'photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.'
-
+targs = allsamples.getmany('sph-16*')
 dataLumi = sum(s.lumi for s in targs)
 
-# Canvas
+### Canvas
 from plotstyle import SimpleCanvas
 canvas = SimpleCanvas()
-plotName = 'fit'
+canvas.lumi = dataLumi
 
+### Make templates
+# Visualization
+def plotHist(hist):
+    canvas.addHistogram(hist)
+    canvas.xtitle = '#phi\''
+    canvas.printWeb('monophoton/halo', hist.GetName(), logy = False)
+    canvas.Clear()
+
+outputFile = ROOT.TFile.Open(config.histDir + '/halo/phifit.root', 'recreate')
+
+templates = {}
+trees = {}
+
+haloPlotter = ROOT.MultiDraw()
+mcPlotter = ROOT.MultiDraw()
+for sample in targs:
+    haloPlotter.addInputPath(utils.getSkimPath(sample.name, 'halo'))
+
+mcPlotter.addInputPath(utils.getSkimPath('znng-130-o', 'monoph'))
+mcPlotter.setConstantWeight(dataLumi)
+
+haloPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
+mcPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
+
+foldedPhi = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}'.format(halfpi = math.pi * 0.5)
+
+empty = ROOT.TH1D('empty', ';#phi\'', 40, -math.pi, math.pi)
+empty.SetLineColor(ROOT.kBlack)
+empty.SetLineWidth(2)
+
+outputFile.cd()
+
+plot = empty.Clone('mcTemp')
+mcPlotter.addPlot(plot, foldedPhi)
+templates['mcTemp'] = plot
+
+mcPlotter.fillPlots()
+
+plot = empty.Clone('haloTemp')
+haloPlotter.addPlot(plot, foldedPhi, 'photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+templates['haloTemp'] = plot
+
+tree = ROOT.TTree('haloTempTree', 'halo')
+haloPlotter.addTree(tree, 'photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+haloPlotter.addTreeBranch(tree, 'phi', foldedPhi)
+trees['haloTemp'] = tree
+
+plot = empty.Clone('haloTempVar1')
+haloPlotter.addPlot(plot, foldedPhi, 'photons.sieie[0] < 0.015 && photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+templates['haloTempVar1'] = plot
+
+tree = ROOT.TTree('haloTempVar1Tree', 'halo')
+haloPlotter.addTree(tree, 'photons.sieie[0] < 0.015 && photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+haloPlotter.addTreeBranch(tree, 'phi', foldedPhi)
+trees['haloTempVar1'] = tree
+
+plot = empty.Clone('haloTempVar2')
+haloPlotter.addPlot(plot, foldedPhi, 'photons.sieie[0] > 0.015 && photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+templates['haloTempVar2'] = plot
+
+tree = ROOT.TTree('haloTempVar2Tree', 'halo')
+haloPlotter.addTree(tree, 'photons.sieie[0] > 0.015 && photons.mipEnergy[0] > 4.9 && metFilters.globalHalo16')
+haloPlotter.addTreeBranch(tree, 'phi', foldedPhi)
+trees['haloTempVar2'] = tree
+
+haloPlotter.fillPlots()
+
+if not TEMPLATEONLY and not FITPSEUDODATA:
+    candPlotter = ROOT.MultiDraw()
+    for sample in targs:
+        candPlotter.addInputPath(utils.getSkimPath(sample.name, 'monoph'))
+
+    candPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
+
+    plot = empty.Clone('cand')
+    candPlotter.addPlot(plot, foldedPhi)
+    templates['cand'] = plot
+
+    tree = ROOT.TTree('candTree', 'halo')
+    haloPlotter.addTree(tree)
+    haloPlotter.addTreeBranch(tree, 'phi', foldedPhi)
+    trees['cand'] = tree
+
+    candPlotter.fillPlots()
+
+for hist in templates.values():
+    outputFile.cd()
+    hist.Write()
+
+    plotHist(hist)
+
+### Halo template parametrization
 # workspace and the main variable
 work = ROOT.RooWorkspace('work', 'work')
 phi = work.factory('phi[%f,%f]' % (-math.pi * 0.5, math.pi * 0.5))
 phiset = ROOT.RooArgSet(phi)
-
-# trees for templates
-haloTree = ROOT.TChain('events')
-for sample in targs:
-    haloTree.Add(config.skimDir + '/' + sample.name + '_haloNoShowerCut.root')
-haloTree.SetEstimate(haloTree.GetEntries() + 1)
-
-mcTree = ROOT.TChain('events')
-mcTree.Add(config.skimDir + '/znng-130-o_monoph.root')
-
-def makeTemplate(name, tree, selection, folded = False, plot = False):
-    tree.Draw('photons.phi_[0]>>' + name + '(40,-{pi},{pi})'.format(pi = math.pi), selection, 'goff')
-    temp = ROOT.gDirectory.Get(name)
-
-    if plot:
-        temp.SetLineColor(ROOT.kBlack)
-        temp.SetLineWidth(2)
-        temp.SetTitle(';#phi\'')
-        
-        canvas.addHistogram(temp)
-        canvas.xtitle = '#phi\''
-        canvas.printWeb('monophoton/halo', name, logy = False)
-        canvas.Clear()
-
-    return temp
-
-### Raw phi distributions
-
-# MC
-canvas.lumi = -1.
-canvas.sim = True
-
-makeTemplate('mcTemp', mcTree, candSelection, plot = True)
-
-# Halo
-canvas.lumi = dataLumi
-canvas.sim = False
-
-makeTemplate('haloTemp', haloTree, candSelection, plot = True)
-
-### Fit to halo distribution and parametrize
 
 # we use gaus + gaus + uniform
 base = work.factory('Uniform::base({phi})')
@@ -96,61 +141,54 @@ phi.setRange('high', 0.5, math.pi * 0.5)
 outint = haloModel.createIntegral(phiset, ROOT.RooFit.Range('low'), ROOT.RooFit.Range('high'))
 inint = haloModel.createIntegral(phiset, ROOT.RooFit.Range('mid'))
 
-def haloTemplateFit(name, selection, plot = False):
-    print 'haloTemplateFit(' + name + ')'
+# Visualization
+def plotFit(data, name):
+    frame = phi.frame()
+    frame.SetTitle('')
+    frame.GetXaxis().SetTitle('#phi\'')
+    data.plotOn(frame)
+    haloModel.plotOn(frame)
+    canvas.addHistogram(frame)
+    canvas.printWeb('monophoton/halo', 'tempfit_' + name, logy = False)
+    canvas.Clear()
 
-    # first get the halo phi values
-    haloTemp = makeTemplate(name, haloTree, selection, folded = True, plot = plot)
-    nHalo = int(haloTemp.GetEntries())
-    print nHalo, 'halo events'
-    
-    # dump them into a RooDataSet
-    haloData = ROOT.RooDataSet('halo', 'halo', phiset)
-    haloPhi = haloTree.GetV1()
-    for iHalo in range(nHalo):
-        phi.setVal(haloPhi[iHalo])
-        haloData.add(phiset)
-    
-    haloModel.fitTo(haloData)
+haloData = ROOT.RooDataSet('haloData', 'haloData', trees['haloTemp'], phiset)
+haloModel.fitTo(haloData)
+plotFit(haloData, 'nominal')
 
-    if plot:
-        # draw
-        frame = phi.frame()
-        frame.SetTitle('')
-        frame.GetXaxis().SetTitle('#phi\'')
-        haloData.plotOn(frame)
-        haloModel.plotOn(frame)
-        canvas.addHistogram(frame)
-        canvas.printWeb('monophoton/halo', name + 'Fit', logy = False)
-        canvas.Clear()
-
-
-haloTemplateFit('phiHaloFolded', candSelection, plot = True)
 tf = outint.getVal() / inint.getVal()
 print 'Out / In (|phi| <> 0.5) transfer factor:', tf
 
 tfMin = tf
 tfMax = tf
 
-# now repeat changing the halo template selection cuts to evaluate the systematics on the transfer factor
-for name, sieieCut in [('SieieLow', 'photons.sieie[0] < 0.015'), ('SieieHigh', 'photons.sieie[0] > 0.015')]:
-    haloTemplateFit('phiHaloFolded' + name, '(%s) && (%s)' % (candSelection, sieieCut), plot = True)
-    tf = outint.getVal() / inint.getVal()
-    print 'Transfer factor variation:', tf
+haloDataVar1 = ROOT.RooDataSet('haloDataVar1', 'haloData', trees['haloTempVar1'], phiset)
+haloModel.fitTo(haloDataVar1)
+plotFit(haloDataVar1, 'var1')
 
-    if tf < tfMin:
-        tfMin = tf
-    if tf > tfMax:
-        tfMax = tf
+tf = outint.getVal() / inint.getVal()
+if tf < tfMin:
+    tfMin = tf
+if tf > tfMax:
+    tfMax = tf
+
+haloDataVar2 = ROOT.RooDataSet('haloDataVar2', 'haloData', trees['haloTempVar2'], phiset)
+haloModel.fitTo(haloDataVar2)
+plotFit(haloDataVar2, 'var2')
+
+tf = outint.getVal() / inint.getVal()
+if tf < tfMin:
+    tfMin = tf
+if tf > tfMax:
+    tfMax = tf
 
 print 'Transfer factor uncertainty:', (tfMax - tfMin) * 0.5
+
 
 if TEMPLATEONLY:
     sys.exit(0)
 
-# NOW WE DO THE HALO EXTRACTION FIT
-
-canvas.lumi = dataLumi
+### Halo extraction fits
 
 # fix the halo template parameters
 leaves = ROOT.RooArgSet()
@@ -176,24 +214,12 @@ if FITPSEUDODATA:
 
     targData = model.generate(phiset, nTarg)
 
-else:
-    candTree = ROOT.TChain('events')
-    for sample in targs:
-        candTree.Add(config.skimDir + '/' + sample.name + '_monoph.root')
-    candTree.SetEstimate(candTree.GetEntries() + 1)
+    fitName = 'toy'
 
-    ### Fit to candidates
-    
-    # candidate phi values
-    nTarg = candTree.Draw(foldedPhi, candSelection, 'goff')
-    print nTarg, 'target events'
-    
-    # dump into a RooDataSet
-    targData = ROOT.RooDataSet('targ', 'targ', phiset)
-    targPhi = candTree.GetV1()
-    for iTarg in range(nTarg):
-        phi.setVal(targPhi[iTarg])
-        targData.add(phiset)
+else:
+    targData = ROOT.RooDataSet('candData', 'candData', trees['cand'], phiset)
+
+    fitName = 'data'
 
 work.arg('nhalo').setMax(nTarg * 1.1)
 work.arg('nuniform').setMax(nTarg * 1.1)
@@ -221,11 +247,11 @@ canvas.legend.add('obs', title = 'Data', mcolor = ROOT.kBlack, mstyle = 8, msize
 canvas.ytitle = 'Events / (#pi/%d)' % nbins
 
 canvas.addHistogram(frame)
-canvas.printWeb('monophoton/halo', plotName, logy = False)
+canvas.printWeb('monophoton/halo', 'fit_' + fitName, logy = False)
 
 if not FITPSEUDODATA:
     # generate 10 toy distributions - does your target distribution look "normal"?
-    
+
     for iT in range(10):
         toyData = model.generate(phiset, nTarg)
         
