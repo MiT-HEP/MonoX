@@ -42,7 +42,7 @@
 //     PhotonMetDPhi *
 //     JetMetDPhi *
 //     LeptonSelection
-//     HighMet
+//     Met
 //     MtRange
 //     HighPtJetSelection
 //     PhotonPtTruncator
@@ -243,32 +243,34 @@ class GenPhotonVeto : public Cut {
 class PhotonSelection : public Cut {
  public:
   enum Selection {
-    HOverE,               // 0
+    HOverE,
     Sieie,
     NHIso,
     PhIso,
     CHIso,
-    CHIsoMax,             // 5
+    CHIsoMax,
     EVeto,
     CSafeVeto,
     MIP49,
     Time,
-    SieieNonzero,         // 10
+    SieieNonzero,
     SipipNonzero,
     NoisyRegion,
     E2E995,
+    Sieie08,
     Sieie12,
-    Sieie15,              // 15
+    Sieie15,
     Sieie20,
+    Sipip08,
     CHIso11,
     CHIsoMax11,
     NHIsoLoose,
-    PhIsoLoose,           // 20
+    PhIsoLoose,
     NHIsoTight,
     PhIsoTight,
     Sieie05,
     Sipip05,
-    nSelections           // 34
+    nSelections
   };
 
   // Will select photons based on the AND of the elements.
@@ -510,9 +512,9 @@ class LeptonSelection : public Cut {
   unsigned nMu_{0};
 };
 
-class HighMet : public Cut {
+class Met : public Cut {
  public:
-  HighMet(char const* name = "HighMet") : Cut(name) {}
+  Met(char const* name = "Met") : Cut(name) {}
 
   void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
@@ -1078,7 +1080,9 @@ class TPLeptonPhoton : public TPCut {
 
 class TPDilepton : public TPCut {
  public:
-  TPDilepton(TPEventType t, char const* name = "TPLeptonPhoton") : TPCut(name), eventType_(t) {}
+  TPDilepton(TPEventType t, char const* name = "TPDilepton") : TPCut(name), eventType_(t) {}
+
+  void addBranches(TTree& skimTree) override;
 
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
@@ -1091,6 +1095,8 @@ class TPDilepton : public TPCut {
   double minProbePt_{15.};
   double minTagPt_{30.};
   bool tagTriggerMatch_{false};
+
+  int probeGenId_[NMAX_PARTICLES];
 };
 
 class TPLeptonVeto : public TPCut {

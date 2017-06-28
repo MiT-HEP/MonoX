@@ -222,9 +222,11 @@ PhotonSelection::selectionName[PhotonSelection::nSelections] = {
   "SipipNonzero",
   "NoisyRegion",
   "E2E995",
+  "Sieie08",
   "Sieie12",
   "Sieie15",              // 15
   "Sieie20",
+  "Sipip08",
   "CHIso11",
   "CHIsoMax11",
   "NHIsoLoose",
@@ -433,9 +435,11 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
   cutres[SipipNonzero] = (_photon.sipip > 0.001);
   cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795);
   cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * _photon.scRawPt) < 0.95;
+  cutres[Sieie08] = (_photon.sieie < 0.008);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
   cutres[Sieie20] = (_photon.sieie < 0.020);
+  cutres[Sipip08] = (_photon.sieie < 0.008);
   cutres[CHIso11] = (_photon.chIsoX[idTune_] < 11.);
   cutres[CHIsoMax11] = (_photon.chIsoMax < 11.);
   cutres[NHIsoLoose] = _photon.passNHIso(0, idTune_);
@@ -1194,11 +1198,11 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 }
 
 //--------------------------------------------------------------------
-// HighMet
+// Met
 //--------------------------------------------------------------------
 
 bool
-HighMet::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+Met::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (metSource_ == kInMet)
     return _event.t1Met.pt > min_;
@@ -3171,6 +3175,12 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
 // TPDilepton
 //--------------------------------------------------------------------
 
+void
+TPDilepton::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("probes.matchedGenId", probeGenId_, "matchedGenId[probes.size]/I");
+}
+
 bool
 TPDilepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEvent)
 {
@@ -3186,7 +3196,7 @@ TPDilepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEve
     maxEta = 2.1;
     break;
   default:
-    throw runtime_error("Incompatible event type in TPLeptonPhoton");
+    throw runtime_error("Incompatible event type in TPDilepton");
   }
 
   for (auto& tag : *leptons) {
@@ -3229,6 +3239,11 @@ TPDilepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEve
           outEvent.tags.push_back(static_cast<panda::Muon const&>(tag));
           outEvent.probes.push_back(static_cast<panda::Muon const&>(probe));
         }
+
+        if(probe.matchedGen.isValid())
+          probeGenId_[_outEvent.tp.size() - 1] = probe.matchedGen->pdgid;
+        else
+          probeGenId_[_outEvent.tp.size() - 1] = 0;
       }
     }
   }
