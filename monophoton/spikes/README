@@ -1,0 +1,35 @@
+[Spike studies]
+
+<AOD re-reconstruction removing timing cleaning>
+The CMSSW setup to run AOD re-reconstruction is not included in this package (It's in Yutaro's submit work directory).
+The catalog of special panda files from the re-reconstruction is located in data/spikes/catalog.
+
+<Minimal operations>
+
+. skimUncleaned.py
+  Runs skimUncleaned.cc on the special panda files and produces "offtime" skim files containing at least one
+  barrel supercluster with pT > 170 GeV and -15 ns < time < -10 ns. Since the input MET is the default PFMET from
+  AOD, which uses PF candidates with timing cleaning cut, contribution from off-time clusters are included
+  here. The MET adjustment algorithm is not completely accurate, and may double count some contributions if
+  clusters with pT > 15 GeV is not linked to neither a photon nor an electron.
+  Superclusters that have no matching photon or electron are made into a photon object with whatever available
+  parameters.
+  The resulting skim files can be merged with a simple hadd.
+
+. offtimeIso.py
+  Takes the offtime skim and produce the plot-ready signal region skims.
+
+. abcd.py
+  Computes the estimate of the spike contribution in the signal region through a simple abcd method, using
+  offtime and trivialShower skims.
+
+<Additional studies>
+
+. findSpikes.py
+  Picks out AOD files and events that contain spike-like clusters.
+
+. spike_digi.py
+  Make a tree with ADC time samples of seeds of spike-like clusters. Takes a merged AOD file as an input.
+
+. plot_digi.py
+  Overlay many pulse shapes to identify spike- and photon-like pulses.

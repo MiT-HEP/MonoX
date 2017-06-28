@@ -4,10 +4,14 @@ import os
 import sys
 import shutil
 
+test = False
+
 if sys.argv[1] == 'skim':
     task = 'skim'
     sname = sys.argv[2]
     fileset = sys.argv[3]
+    if len(sys.argv) > 4:
+        test = True
 else:
     task = 'submit'
     snames = sys.argv[1:]
@@ -85,6 +89,7 @@ elif task == 'skim':
     ROOT.skimUncleaned(tree, outputFile)
     
     outputFile.Close()
- 
-    shutil.copy(tmpname, finalname)
-    os.remove(tmpname)
+
+    if not test:
+        shutil.copy(tmpname, finalname)
+        os.remove(tmpname)

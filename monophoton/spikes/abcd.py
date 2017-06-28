@@ -5,22 +5,35 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
+import utils
+from datasets import allsamples
 
 import ROOT
 
 offtime = ROOT.TChain('events')
-offtime.Add(config.skimDir + '/sph*_offtime.root')
+for sample in allsamples.getmany('sph-16*'):
+    offtime.Add(utils.getSkimPath(sample.name, 'offtime'))
 
 target = ROOT.TChain('events')
-target.Add(config.skimDir + '/sph-16*_trivialShower.root')
+for sample in allsamples.getmany('sph-16*'):
+    target.Add(utils.getSkimPath(sample.name, 'trivialShower'))
 
-#offsel = 'cluster.isEB && cluster.rawPt > 175 && cluster.trackIso < 10. && cluster.mipEnergy < 4.9 && TMath::Abs(cluster.eta) > 0.05 && cluster.time > -15. && cluster.time < -10. && cluster.sieie < 0.0102 && met.met > 170.'
-offsel = 'photons.isEB && photons.scRawPt > 175 && photons.mipEnergy < 4.9 && photons.time > -15. && photons.time < -10. && photons.sieie < 0.01002 && t1Met.pt > 170.'
+offsel = 'TMath::Abs(photons.scEta) < 1.4442 && photons.scRawPt > 175 && photons.mipEnergy < 4.9 && photons.time > -15. && photons.time < -10. && (photons.mediumX[][2] || (photons.type == 2 && photons.trackIso < 5.)) && photons.sieie < 0.0104 && photons.hOverE < 0.026 && t1Met.pt > 170. && t1Met.photonDPhi > 0.5 && t1Met.minJetDPhi > 0.5'
 nOffTrivial = offtime.GetEntries(offsel + ' && (photons.sieie < 0.001 || photons.sipip < 0.001)')
-nOffPhysical = offtime.GetEntries(offsel + ' && photons.sieie > 0.001 && photons.sipip > 0.001')
+nOffIntermediate = offtime.GetEntries(offsel + ' && photons.sieie > 0.001 && photons.sipip > 0.001 && photons.sieie < 0.008 && photons.sipip < 0.008')
+nOffPhysical = offtime.GetEntries(offsel + ' && photons.sieie > 0.001 && photons.sipip > 0.001 && (photons.sieie > 0.008 || photons.sipip > 0.008)')
 
-print nOffTrivial, nOffPhysical
+print '[-15 ns < t < -10 ns]'
+print ' (A) sieie < 0.001 || sipip < 0.001 =>', nOffTrivial
+print ' (A\') 0.001 < sieie < 0.008 && 0.001 < sipip < 0.008 =>', nOffIntermediate
+print ' (B) sieie > 0.001 && sipip > 0.001 && (sieie > 0.008 || sipip > 0.008) =>', nOffPhysical
 
-nInTrivial = target.GetEntries('photons.scRawPt[0] > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 2. && t1Met.minJetDPhi > 0.5')
+insel = 'photons.scRawPt > 175. && t1Met.pt > 170 && t1Met.photonDPhi > 0.5 && t1Met.minJetDPhi > 0.5'
+nInTrivial = target.GetEntries(insel + ' && (photons.sieie < 0.001 || photons.sipip < 0.001)')
+nInIntermediate = target.GetEntries(insel + ' && photons.sieie > 0.001 && photons.sipip > 0.001 && photons.sieie < 0.008 && photons.sipip < 0.008')
 
-print nInTrivial, float(nInTrivial) * float(nOffPhysical) / float(nOffTrivial)
+print '[-3 ns < t < 3 ns]'
+print ' (C) sieie < 0.001 || sipip < 0.001 =>', nInTrivial
+print ' (C\') 0.001 < sieie < 0.008 && 0.001 < sipip < 0.008 =>', nInIntermediate
+
+print 'D = C x B/A =', float(nInTrivial + nInIntermediate) * float(nOffPhysical) / float(nOffTrivial + nOffIntermediate)

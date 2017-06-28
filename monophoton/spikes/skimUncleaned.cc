@@ -4,10 +4,12 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TLeaf.h"
+#include "TBranch.h"
 
 #include "../misc/photon_extra.h"
 
 #include <iostream>
+#include <vector>
 
 void
 skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
@@ -16,6 +18,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
   panda::Event event;
   unsigned const NMAX(256);
+
   //mkbranch
   unsigned size;
   float rawPt[NMAX];
@@ -29,36 +32,90 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
   float time[NMAX];
   float timeSpan[NMAX];
   float mipEnergy[NMAX];
-  unsigned short photonType[NMAX]; // 0 -> SC replaced, 1 -> SC unchanged, 2 -> created
+  float trackIso[NMAX];
+  float photonDPhi;
+  float minJetDPhi;
   //mkbranch
+
+  float outTrackIso[NMAX];
+  unsigned short photonType[NMAX]; // 0 -> SC replaced, 1 -> SC unchanged, 2 -> created
   panda::EventMonophoton outEvent;
+  panda::RecoMet origMet("origMet");
 
   _outputFile->cd();
   auto* output(new TTree("events", "Events"));
   outEvent.book(*output, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"});
+  origMet.book(*output);
+  output->Branch("photons.trackIso", outTrackIso, "trackIso[photons.size]/F");
   output->Branch("photons.type", photonType, "type[photons.size]/s");
+  output->Branch("t1Met.photonDPhi", &photonDPhi, "photonDPhi/F");
+  output->Branch("t1Met.minJetDPhi", &minJetDPhi, "minJetDPhi/F");
 
-  event.setStatus(*_input, {"*"});
-  event.setAddress(*_input, {"*"});
+  panda::utils::BranchList branchList = {
+    "!*",
+    "runNumber",
+    "lumiNumber",
+    "eventNumber",
+    "isData",
+    "weight",
+    "npv",
+    "rho",
+    "rhoCentralCalo",
+    "triggers",
+    "vertices",
+    "superClusters",
+    "electrons",
+    "muons",
+    "taus",
+    "photons",
+    "chsAK4Jets",
+    "!chsAK4Jets.constituents_",
+    "pfMet",
+    "metFilters"
+  };
+
+  event.setAddress(*_input, branchList);
 
   auto hltToken(event.registerTrigger("HLT_Photon165_HE10"));
 
-  _input->SetBranchAddress("superClustersFT.size", &size);
-  _input->SetBranchAddress("superClustersFT.rawPt", rawPt);
-  _input->SetBranchAddress("superClustersFT.eta", eta);
-  _input->SetBranchAddress("superClustersFT.phi", phi);
-  _input->SetBranchAddress("superClustersFT.sieie", sieie);
-  _input->SetBranchAddress("superClustersFT.sipip", sipip);
-  _input->SetBranchAddress("superClustersFT.emax", emax);
-  _input->SetBranchAddress("superClustersFT.e2nd", e2nd);
-  _input->SetBranchAddress("superClustersFT.e4", e4);
-  _input->SetBranchAddress("superClustersFT.time", time);
-  _input->SetBranchAddress("superClustersFT.timeSpan", timeSpan);
-  _input->SetBranchAddress("superClustersFT.mipEnergy", mipEnergy);
+  struct MyBranch {
+    MyBranch(char const* _n, void* _a) : name(_n), addr(_a) {}
+    TString name;
+    void* addr;
+    TBranch* branch{0};
+  };
 
-  TBranch* sizeBranch(0);
-  TBranch* rawPtBranch(0);
-  TBranch* timeBranch(0);
+  enum BranchIndex {
+    bSize,
+    bRawPt,
+    bTime,
+    bEta,
+    nBranchIndices
+  };
+
+  std::vector<MyBranch> extraBranches;
+  // order in BranchIndices
+  extraBranches.emplace_back("superClustersFT.size", &size);
+  extraBranches.emplace_back("superClustersFT.rawPt", rawPt);
+  extraBranches.emplace_back("superClustersFT.time", time);
+  extraBranches.emplace_back("superClustersFT.eta", eta);
+
+  extraBranches.emplace_back("superClustersFT.phi", phi);
+  extraBranches.emplace_back("superClustersFT.sieie", sieie);
+  extraBranches.emplace_back("superClustersFT.sipip", sipip);
+  extraBranches.emplace_back("superClustersFT.emax", emax);
+  extraBranches.emplace_back("superClustersFT.e2nd", e2nd);
+  extraBranches.emplace_back("superClustersFT.e4", e4);
+  extraBranches.emplace_back("superClustersFT.timeSpan", timeSpan);
+  extraBranches.emplace_back("superClustersFT.mipEnergy", mipEnergy);
+  extraBranches.emplace_back("superClustersFT.trackIso", trackIso);
+
+  for (auto& b : extraBranches)
+    _input->SetBranchAddress(b.name, b.addr);
+
+  auto RawPtGreater([](panda::Element const& _p1, panda::Element const& _p2)->bool {
+      return static_cast<panda::XPhoton const&>(_p1).scRawPt > static_cast<panda::XPhoton const&>(_p2).scRawPt;
+    });
 
   long iEntry(0);
   int iTree(-1);
@@ -72,31 +129,34 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
     if (_input->GetTreeNumber() != iTree) {
       iTree = _input->GetTreeNumber();
-      sizeBranch = _input->GetBranch("superClustersFT.size");
-      rawPtBranch = _input->GetBranch("superClustersFT.rawPt");
-      timeBranch = _input->GetBranch("superClustersFT.time");
+
+      for (auto& b : extraBranches)
+        b.branch = _input->GetBranch(b.name);
     }
 
-    sizeBranch->GetEntry(localEntry);
+    extraBranches[bSize].branch->GetEntry(localEntry);
     if (size == 0)
       continue;
 
-    rawPtBranch->GetEntry(localEntry);
-    timeBranch->GetEntry(localEntry);
+    for (unsigned b : {bRawPt, bTime, bEta})
+      extraBranches[b].branch->GetEntry(localEntry);
 
     unsigned iC(0);
     for (; iC != size; ++iC) {
-      if (rawPt[iC] > 170. && time[iC] > -15. && time[iC] < -10.)
+      if (rawPt[iC] > 170. && std::abs(eta[iC]) < 1.4442 && time[iC] > -15. && time[iC] < -10.)
         break;
     }
 
     if (iC == size)
       continue;
 
-    event.getEntry(*_input, iEntry - 1);
+    event.getEntry(*_input, localEntry, true);
 
     if (!event.triggerFired(hltToken))
       continue;
+
+    for (unsigned iB(nBranchIndices); iB != extraBranches.size(); ++iB)
+      extraBranches[iB].branch->GetEntry(localEntry);
 
     outEvent.runNumber = event.runNumber;
     outEvent.lumiNumber = event.lumiNumber;
@@ -114,6 +174,8 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
     outEvent.metFilters = event.metFilters;
 
+    origMet = event.pfMet;
+
     for (iC = 0; iC != size; ++iC) {
       auto& sc(outEvent.superClusters.create_back());
       sc.rawPt = rawPt[iC];
@@ -121,7 +183,10 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
       sc.phi = phi[iC];
     }
 
+    TVector2 metCorr;
+
     std::vector<bool> used(size, false);
+    std::vector<bool> removed(event.superClusters.size(), false);
 
     outEvent.electrons.resize(event.electrons.size());
     for (unsigned iE(0); iE != event.electrons.size(); ++iE) {
@@ -137,10 +202,20 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
         if (dEta * dEta + dPhi * dPhi < 0.04) {
           lhs.superCluster.idx() = iC;
           used[iC] = true;
+
+          if (!removed[rhs.superCluster.idx()]) {
+            metCorr += TVector2(ec.rawPt * std::cos(ec.phi), ec.rawPt * std::sin(ec.phi));
+            metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
+            removed[rhs.superCluster.idx()] = true;
+          }
+
           break;
         }
       }
     }
+
+    float outTrackIsoTmp[NMAX];
+    unsigned short photonTypeTmp[NMAX];
 
     outEvent.photons.resize(event.photons.size());
     for (unsigned iP(0); iP != event.photons.size(); ++iP) {
@@ -161,6 +236,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
           lhs.scRawPt = rawPt[iC];
           lhs.scEta = eta[iC];
 
+          lhs.hOverE = rhs.hOverE * ec.rawPt * std::cosh(ec.eta) / rawPt[iC] / std::cosh(eta[iC]);
           lhs.sieie = sieie[iC];
           lhs.sipip = sipip[iC];
           lhs.emax = emax[iC];
@@ -168,47 +244,38 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
           lhs.e4 = e4[iC];
           lhs.time = time[iC];
           lhs.timeSpan = timeSpan[iC];
+          outTrackIsoTmp[iP] = trackIso[iC];
 
-          photonType[iP] = 0;
+          photonTypeTmp[iP] = 0;
 
           used[iC] = true;
+
+          if (!removed[rhs.superCluster.idx()]) {
+            metCorr += TVector2(ec.rawPt * std::cos(ec.phi), ec.rawPt * std::sin(ec.phi));
+            metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
+            removed[rhs.superCluster.idx()] = true;
+          }
+
           break;
         }
       }
 
       if (iC == size)
-        photonType[iP] = 1;
+        photonTypeTmp[iP] = 1;
     }
 
-    // now make up a photon for each unused FT SC and compute the MET correction at the same time
-
-    TVector2 metCorr;
+    // now make up a photon for each unused out-of-time FT SC
 
     for (iC = 0; iC != size; ++iC) {
-      unsigned iIn(0);
-      for (; iIn != event.superClusters.size(); ++iIn) {
-        auto& in(event.superClusters[iIn]);
-        double dEta(in.eta - eta[iC]);
-        double dPhi(TVector2::Phi_mpi_pi(in.phi - phi[iC]));
-        if (dEta * dEta + dPhi * dPhi < 0.0025) {
-          metCorr += TVector2(in.rawPt * std::cos(in.phi), in.rawPt * std::sin(in.phi));
-          metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
-          break;
-        }
-      }
-      if (iIn == event.superClusters.size())
-        metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
-
-      if (used[iC])
+      if (used[iC] || rawPt[iC] < 15.)
         continue;
-
-      photonType[outEvent.photons.size()] = 2;
 
       auto& photon(outEvent.photons.create_back());
 
       photon.setPtEtaPhiM(rawPt[iC], eta[iC], phi[iC], 0.);
 
       photon.superCluster.idx() = iC;
+      photon.isEB = std::abs(eta[iC]) < 1.4442;
       photon.scRawPt = rawPt[iC];
       photon.scEta = eta[iC];
 
@@ -219,13 +286,52 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
       photon.e4 = e4[iC];
       photon.time = time[iC];
       photon.timeSpan = timeSpan[iC];
-
       photon.mipEnergy = mipEnergy[iC];
+      outTrackIsoTmp[outEvent.photons.size() - 1] = trackIso[iC];
+
+      // all original superclusters must be removed by now but just to make sure
+      unsigned iO(0);
+      for (; iO != event.superClusters.size(); ++iO) {
+        if (removed[iO])
+          continue;
+
+        auto& oc(event.superClusters[iO]);
+        double dEta(oc.eta - eta[iC]);
+        double dPhi(TVector2::Phi_mpi_pi(oc.phi - phi[iC]));
+        if (dEta * dEta + dPhi * dPhi < 0.04) {
+          metCorr += TVector2(oc.rawPt * std::cos(oc.phi), oc.rawPt * std::sin(oc.phi));
+          break;
+        }
+      }
+
+      metCorr -= TVector2(rawPt[iC] * std::cos(phi[iC]), rawPt[iC] * std::sin(phi[iC]));
+
+      photonTypeTmp[outEvent.photons.size() - 1] = 2;
     }
 
     // correct the MET with FT - default SC differences
     auto metV(event.pfMet.v() + metCorr);
     outEvent.t1Met.setXY(metV.X(), metV.Y());
+
+    std::vector<unsigned> originalIndices(outEvent.photons.sort(RawPtGreater));
+    for (unsigned iOut(0); iOut != outEvent.photons.size(); ++iOut) {
+      unsigned iOrig(originalIndices[iOut]);
+      outTrackIso[iOut] = outTrackIsoTmp[iOrig];
+      photonType[iOut] = photonTypeTmp[iOrig];
+    }
+
+    if (outEvent.photons.size() != 0)
+      photonDPhi = std::abs(TVector2::Phi_mpi_pi(outEvent.t1Met.phi - outEvent.photons[0].phi()));
+    else
+      photonDPhi = 0.;
+    
+    minJetDPhi = 4.;
+    for (unsigned iJ(0); iJ != 4 && iJ != outEvent.jets.size(); ++iJ) {
+      auto& jet(outEvent.jets[iJ]);
+      double dPhi(std::abs(TVector2::Phi_mpi_pi(outEvent.t1Met.phi - jet.phi())));
+      if (dPhi < minJetDPhi)
+        minJetDPhi = dPhi;
+    }
 
     output->Fill();
   }
