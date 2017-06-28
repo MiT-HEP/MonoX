@@ -47,6 +47,8 @@ except:
     sys.exit(1)
 
 # MEDIUM ID
+ROOT.gROOT.ProcessLine("int idtune = panda::XPhoton::kGJetsCWIso;")
+photonIDTune = ROOT.idtune
 photonWP = 1
 
 photonFullSelection = [
@@ -64,8 +66,7 @@ photonFullSelection = [
     'NoisyRegion'
 ]
 
-#hadronTFactorFile = datadir + '/hadronTFactor.root'
-hadronTFactorFile = datadir + '/hadronTFactorchIsoMax.root'
+hadronTFactorFile = datadir + '/hadronTFactor.root'
 
 def setupPhotonSelection(operator, veto = False, changes = []):
     ##### !!!!! IMPORTANT - NOTE THE RESETS #####
@@ -73,7 +74,6 @@ def setupPhotonSelection(operator, veto = False, changes = []):
         operator.resetVeto()
     else:
         operator.resetSelection()
-
 
     sels = list(photonFullSelection)
 
@@ -169,7 +169,7 @@ def monophotonBase(sample, rname, selcls = None):
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'HighMet',
+        'Met',
         'PhotonMt'
     ]
 
@@ -178,6 +178,7 @@ def monophotonBase(sample, rname, selcls = None):
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(175.)
+    photonSel.setIDTune(photonIDTune)
     photonSel.setWP(photonWP)
 
     if not sample.data:
@@ -202,7 +203,7 @@ def monophotonBase(sample, rname, selcls = None):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('HighMet').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
 
@@ -213,8 +214,13 @@ def emjetBase(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    selector.removeOperator('HighMet')
     selector.removeOperator('PhotonMt')
+
+    selector.findOperator('Met').setThreshold(0.)
+    selector.findOperator('Met').setCeiling(170.)
+    selector.findOperator('Met').setIgnoreDecision(False)
+
+    photonSel = selector.findOperator('PhotonSelection')
 
     jets = ROOT.HighPtJetSelection()
     jets.setJetPtCut(100.)
@@ -263,7 +269,7 @@ def leptonBase(sample, rname, flavor):
     operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
-        'HighMet'
+        'Met'
     ]
 
     for op in operators:
@@ -273,6 +279,7 @@ def leptonBase(sample, rname, flavor):
     jetDPhi.setMetSource(ROOT.kInMet)
 
     photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setIDTune(photonIDTune)
     photonSel.setWP(photonWP)
 
     setupPhotonSelection(photonSel)
@@ -307,7 +314,7 @@ def leptonBase(sample, rname, flavor):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('HighMet').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
 
@@ -380,7 +387,7 @@ def TagAndProbeBase(sample, rname):
         'CopyMet',
         'CopySuperClusters',
         'JetMetDPhi',
-        'HighMet'
+        'Met'
     ]
     
     for op in operators:
@@ -397,8 +404,8 @@ def TagAndProbeBase(sample, rname):
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     # selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cElectrons, False)
-    selector.findOperator('HighMet').setThreshold(50.)
-    selector.findOperator('HighMet').setIgnoreDecision(True)
+    selector.findOperator('Met').setThreshold(50.)
+    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
 
@@ -476,7 +483,7 @@ def signalRaw(sample, rname):
         'TauVeto',
         'PhotonMetDPhi',
         'JetMetDPhi',
-        'HighMet'
+        'Met'
     ]
 
     for cut in cuts:
@@ -694,11 +701,8 @@ def halo(sample, rname):
     photonSel = selector.findOperator('PhotonSelection')
 
     # setting up loose to allow variations at plot level
-    
-#    setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie', '+Sieie15'])
     setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie'])
     setupPhotonSelection(photonSel, veto = True)
-    photonSel = selector.findOperator('PhotonSelection')
 
     selector.findOperator('MetFilters').setFilter(0, 0)
 
@@ -713,7 +717,8 @@ def trivialShower(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!SieieNonzero', '!SipipNonzero'])
+    setupPhotonSelection(photonSel, changes = ['-SieieNonzero', '-SipipNonzero'])
+    photonSel.addSelection(True, ROOT.PhotonSelection.Sieie08, ROOT.PhotonSelection.Sipip08)
 
     return selector
 
@@ -786,7 +791,7 @@ def monoel(sample, rname):
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
 
-    metCut = ROOT.HighMet('RealMetCut')
+    metCut = ROOT.Met('RealMetCut')
     metCut.setMetSource(ROOT.kInMet)
     metCut.setThreshold(50.)
     metCut.setIgnoreDecision(True)
