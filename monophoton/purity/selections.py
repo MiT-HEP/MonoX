@@ -100,9 +100,6 @@ def getCuts(tune):
         for cutdict in cuts.values():
             cutdict[loc] = {}
 
-#        for cuts in [sieieCuts]:
-#            cuts[loc]['none'] = 1.
-
         for iId, pid in enumerate(PhotonIds[1:]):
             ROOT.gROOT.ProcessLine("cutvalue = panda::XPhoton::hOverECuts[%s][%d][%d];" % (tname, iLoc, iId))
             cuts['hovere'][loc][pid] = ROOT.cutvalue
