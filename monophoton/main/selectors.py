@@ -1279,24 +1279,26 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gj04', 'gj').replace('zllg', 'znng').replace('wglo', 'wnlg').replace('-o', '')
+    sname = sample.name.replace('gj04', 'gj')
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
-    if sample.name not in ['znng', 'znng-130', 'zllg', 'zllg-130', 'wnlg', 'wnlg-130', 'wnlg-500']:
-        corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
-        if not corr:
-            raise RuntimeError('kfactor not found for ' + sample.name)
-    
-        qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
-        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower) # if possible
-    
-        for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
-            vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
-            if vcorr:
-                logger.debug('applying qcd var %s %s', variation, sample.name)
-                qcd.addVariation('qcd' + variation, vcorr)
+    corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
+    if not corr:
+        raise RuntimeError('kfactor not found for ' + sample.name)
 
-        selector.addOperator(qcd)
+    qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
+    if 'gj-' in sname:
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kPostShower)
+    else:
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kParton)
+
+    for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
+        vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
+        if vcorr:
+            logger.debug('applying qcd var %s %s', variation, sample.name)
+            qcd.addVariation('qcd' + variation, vcorr)
+
+    selector.addOperator(qcd)
 
     corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
     if corr:
