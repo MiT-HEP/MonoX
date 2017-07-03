@@ -64,4 +64,8 @@ zghist.Write()
 zguphist.Write()
 zgdownhist.Write()
 
+zghist.Clone('zllg-300-o').Write()
+zguphist.Clone('zllg-300-o').Write()
+zgdownhist.Clone('zllg-300-o').Write()
+
 outFile.Close()
