@@ -14,7 +14,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
 TEMPLATEONLY = False
-FITPSEUDODATA = True
+FITPSEUDODATA = False
 
 from datasets import allsamples
 from plotstyle import SimpleCanvas
@@ -24,7 +24,7 @@ import utils
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
-targs = allsamples.getmany('sph-16*')
+targs = allsamples.getmany(['sph-16b-m', 'sph-16c-m', 'sph-16d-m'])
 dataLumi = sum(s.lumi for s in targs)
 
 ### Canvas
@@ -53,8 +53,8 @@ for sample in targs:
 mcPlotter.addInputPath(utils.getSkimPath('znng-130-o', 'monoph'))
 mcPlotter.setConstantWeight(dataLumi)
 
-haloPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
-mcPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
+haloPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 0.5')
+mcPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 0.5')
 
 foldedPhi = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}'.format(halfpi = math.pi * 0.5)
 
@@ -104,15 +104,15 @@ if not TEMPLATEONLY and not FITPSEUDODATA:
     for sample in targs:
         candPlotter.addInputPath(utils.getSkimPath(sample.name, 'monoph'))
 
-    candPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 2.')
+    candPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Met.minJetDPhi > 0.5 && t1Met.photonDPhi > 0.5')
 
     plot = empty.Clone('cand')
     candPlotter.addPlot(plot, foldedPhi)
     templates['cand'] = plot
 
     tree = ROOT.TTree('candTree', 'halo')
-    haloPlotter.addTree(tree)
-    haloPlotter.addTreeBranch(tree, 'phi', foldedPhi)
+    candPlotter.addTree(tree)
+    candPlotter.addTreeBranch(tree, 'phi', foldedPhi)
     trees['cand'] = tree
 
     candPlotter.fillPlots()
@@ -218,6 +218,7 @@ if FITPSEUDODATA:
 
 else:
     targData = ROOT.RooDataSet('candData', 'candData', trees['cand'], phiset)
+    nTarg = targData.numEntries()
 
     fitName = 'data'
 
