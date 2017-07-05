@@ -10,7 +10,7 @@
 
 . Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
   trigger/eff.py
-  (sph, sel, smu; tpeg, tpegLowPt, tpmgLowPt)
+  (sph, sel, smu; tpeg, tpmg)
 
 . Run the photon ID and lepton veto efficiency measurements. Propagate the SF and uncertainty to selectors.py
   veto_eff/compute.py
@@ -49,8 +49,11 @@
 . Run all MC monoph skims (if PU reweighting changed)
 
 . Make plots and data card inputs
-  main/plot.py monoph
-  main/plot.py -p met -o monoph_met.root --allsignal
+  for conf in monoel monomu diel dimu
+  do
+    main/plot.py $conf -o $HISTDIR/plots/$conf.root
+  done
+  main/plot.py monoph -o $HISTDIR/plots/monoph.root --allsignal
 
 . Make data cards
   main/datacard.py {model} monoph_met.root
