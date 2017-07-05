@@ -27,7 +27,7 @@ class GroupSpec(object):
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
         self.cut = cut # additional cut (if samples are looser than the nominal region, e.g. to allow variations)
-        self.norm = norm # use to normalize histograms post-facto
+        self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after baseline selection
         self.variations = []
 
 
@@ -242,7 +242,7 @@ class PlotConfig(object):
         self.sigGroups = []
         self.signalPoints = []
         self.bkgGroups = []
-        self.plots = [PlotDef('count', '', '0.5', (1, 0., 1.), cut = self.fullSelection)]
+        self.plots = []
         self.treeMaker = ''
 
     def addObs(self, sname, prescale = 1):
@@ -281,6 +281,24 @@ class PlotConfig(object):
 
     def getPlot(self, name):
         return next(plot for plot in self.plots if plot.name == name)
+
+    def getPlots(self, names = []):
+        if len(names) != 0:
+            plots = []
+            for plot in self.plots:
+                if plot.name in names:
+                    plots.append(plot)
+
+            if 'count' in names:
+                plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
+
+        else:
+            plots = list(self.plots)
+            plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
+
+        plots.append(PlotDef('base', '', '0.5', (1, 0., 1.)))
+
+        return plots
 
     def findGroup(self, name):
         return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)

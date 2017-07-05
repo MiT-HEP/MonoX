@@ -12,6 +12,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     else:
         region = plotConfig.name
 
+    baseTotal = 0.
+
     # run the Plotter for each sample
     for sample in group.samples:
         dname = sample.name + '_' + region
@@ -111,7 +113,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
         # setup complete. Fill all plots in one go
         plotter.fillPlots()
-    
+
         for hist in histograms:
             # ad-hoc scaling
             hist.Scale(group.scale)
@@ -144,6 +146,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 horig.SetDirectory(hist.GetDirectory())
                 writeHist(horig)
 
+            if hist.GetName() == dname and hist.GetDirectory().GetMotherDir().GetName() == 'base':
+                baseTotal += hist.GetSumOfWeights()
+
     # aggregate group plots
 
     # not for signal
@@ -161,8 +166,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             ghist.Add(shist)
 
         if group.norm >= 0.:
-            # TODO not quite correct - need to divide by the total number of events in the group
-            ghist.Scale(group.norm / ghist.GetSumOfWeights())
+            ghist.Scale(group.norm / baseTotal)
 
         writeHist(ghist)
 
@@ -539,9 +543,9 @@ if __name__ == '__main__':
     elif args.chi2:
         plotdefs = [plotConfig.getPlot(args.chi2)]
     elif len(args.plots) != 0:
-        plotdefs = [p for p in plotConfig.plots if p.name in args.plots]
+        plotdefs = plotConfig.getPlots(args.plots)
     else:
-        plotdefs = list(plotConfig.plots)
+        plotdefs = plotConfig.getPlots()
 
     plotNames = [p.name for p in plotdefs]
 
@@ -680,7 +684,9 @@ if __name__ == '__main__':
             os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
     for plotdef in plotdefs:
-        if plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
+        if plotdef.name == 'base':
+            continue
+        elif plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
             graphic = True
         else:
             graphic = False
