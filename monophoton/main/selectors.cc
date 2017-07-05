@@ -38,6 +38,18 @@ EventSelectorBase::findOperator(char const* _name) const
   return 0;
 }
 
+unsigned
+EventSelectorBase::index(char const* _name) const
+{
+  unsigned idx(0);
+  for (; idx != operators_.size(); ++idx) {
+    if (std::strcmp(operators_[idx]->name(), _name) == 0)
+      break;
+  }
+
+  return idx;
+}
+
 void
 EventSelectorBase::removeOperator(char const* _name)
 {
@@ -191,136 +203,113 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
 // ZeeEventSelector
 //--------------------------------------------------------------------
 
-ZeeEventSelector::ZeeEventSelector(char const* name) :
-  EventSelector(name)
+void
+ZeeEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
-  operators_.push_back(new HLTFilter("HLT_Ele27_WPTight_Gsf"));
-  operators_.push_back(new MetFilters());
-  operators_.push_back(new EEPairSelection());
-  operators_.push_back(new MuonVeto());
-  operators_.push_back(new TauVeto());
-  operators_.push_back(new JetCleaning());
-  operators_.push_back(new LeptonRecoil());
+  EventSelector::setupSkim_(_inEvent, _isMC);
 
-  eePairSel_ = operators_.begin();
-  while (!dynamic_cast<EEPairSelection*>(*eePairSel_))
-    ++eePairSel_;
-}
+  for (oneAfterLeptonSelection_ = operators_.begin(); oneAfterLeptonSelection_ != operators_.end(); ++oneAfterLeptonSelection_) {
+    if (dynamic_cast<LeptonSelection*>(*oneAfterLeptonSelection_))
+      break;
+  }
+  if (oneAfterLeptonSelection_ == operators_.end())
+    return;
 
-ZeeEventSelector::~ZeeEventSelector()
-{
-  for (auto* op : operators_)
-    delete op;
+  // this is LeptonSelection
+  static_cast<LeptonSelection*>(*oneAfterLeptonSelection_)->setAllowPhotonOverlap(true);
+
+  // now it's one after
+  ++oneAfterLeptonSelection_;
 }
 
 void
 ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 {
   outEvent_.init();
+  inWeight_ = _event.weight;
   outEvent_.weight = _event.weight;
 
-  bool passUpToEE(true);
+  Clock::time_point start;
 
-  auto opItr(operators_.begin());
-  while (true) {
-    passUpToEE = passUpToEE && (*opItr)->exec(_event, outEvent_);
-    if (opItr == eePairSel_)
-      break;
+  bool passUpToLS(true);
+  unsigned iO(0);
+  for (auto itr(operators_.begin()); itr != oneAfterLeptonSelection_; ++itr) {
+    auto& op(**itr);
+    
+    if (useTimers_)
+      start = Clock::now();
 
-    ++opItr;
+    if (!op.exec(_event, outEvent_))
+      passUpToLS = false;
+
+    if (useTimers_)
+      timers_[iO] += Clock::now() - start;
+
+    ++iO;
   }
 
-  if (passUpToEE) {
-    for (auto& eePair : static_cast<EEPairSelection*>(*eePairSel_)->getEEPairs()) {
-      opItr = eePairSel_;
-      outEvent_.photons[0] = _event.photons[eePair.first];
-      outEvent_.electrons[0] = _event.electrons[eePair.second];
+  if (passUpToLS) {
+    // Assumption: both Photon and Lepton selectors are run
+    panda::XPhotonCollection photonsTmp(outEvent_.photons);
+    panda::ElectronCollection electronsTmp(outEvent_.electrons);
 
-      bool pass(true);
-      for (; opItr != operators_.end(); ++opItr)
-        pass = pass && (*opItr)->exec(_event, outEvent_);
+    for (auto& photon : photonsTmp) {
+      for (auto& electron : electronsTmp) {
+        if (electron.dR2(photon) < 0.01)
+          continue;
 
-      if (pass) {
-        // IMPORTATNT
-        // We link some of the skimOut branches to the input event. Need to refresh the addresses in case
-        // collections are resized.
-        prepareFill_(_event);
-        
-        outEvent_.fill(*skimOut_);
+        outEvent_.photons.clear();
+        outEvent_.electrons.clear();
+        outEvent_.photons.push_back(photon);
+        outEvent_.electrons.push_back(electron);
+
+        bool pass(true);
+
+        unsigned iOPair(iO);
+        for (auto itr(oneAfterLeptonSelection_); itr != operators_.end(); ++itr) {
+          auto& op(**itr);
+
+          if (useTimers_)
+            start = Clock::now();
+
+          if (!op.exec(_event, outEvent_))
+            pass = false;
+
+          if (useTimers_)
+            timers_[iOPair] += Clock::now() - start;
+
+          ++iOPair;
+        }
+
+        if (pass) {
+          prepareFill_(_event);
+          
+          outEvent_.fill(*skimOut_);
+        }
+
+        cutsOut_->Fill();
       }
-
-      cutsOut_->Fill();
     }
   }
   else {
-    for (; opItr != operators_.end(); ++opItr)
-      (*opItr)->exec(_event, outEvent_);
+    // just run the remaining operators
+
+    for (auto itr(oneAfterLeptonSelection_); itr != operators_.end(); ++itr) {
+      auto& op(**itr);
+
+      if (useTimers_)
+        start = Clock::now();
+
+      op.exec(_event, outEvent_);
+
+      if (useTimers_)
+        timers_[iO] += Clock::now() - start;
+
+      ++iO;
+    }
 
     cutsOut_->Fill();
   }
-}
-
-ZeeEventSelector::EEPairSelection::EEPairSelection(char const* name) :
-  PhotonSelection(name)
-{
-  unsigned sels[] = {HOverE, Sieie, CHIsoMax, NHIso, PhIso, MIP49, Time, SieieNonzero, NoisyRegion};
-  for (unsigned sel : sels) {
-    addSelection(true, sel);
-    addVeto(true, sel);
-  }
-  
-  addSelection(false, EVeto);
-  addVeto(true, EVeto);
-}
-
-bool
-ZeeEventSelector::EEPairSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
-{
-  eePairs_.clear();
-
-  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
-    auto& photon(_event.photons[iP]);
-    if (!photon.isEB || photon.scRawPt < minPt_)
-      continue;
-
-    int selection(selectPhoton(photon));
-
-    if (selection < 0) // vetoed
-      break;
-    else if (selection == 0)
-      continue;
-
-    // A good photon with pixel seed is found. Now we need to find the partner electron.
-    // There can be one and only one loose electron that is not matched to the photon in the event,
-    // and this has to be the tight electron.
-
-    unsigned iElectron(-1);
-
-    unsigned iE(0);
-    for (; iE != _event.electrons.size(); ++iE) {
-      auto& electron(_event.electrons[iE]);
-
-      if (!electron.loose || electron.pt() < 10.)
-        continue;
-
-      if (electron.dR2(photon) < 0.01)
-        continue;
-
-      if (iElectron < _event.electrons.size())
-        break;
-
-      if (electron.tight && electron.pt() > 30. && (_event.runNumber == 1 || electron.triggerMatch[panda::Electron::fEl27Tight]))
-        iElectron = iE;
-      else
-        break;
-    }
-    if (iElectron >= _event.electrons.size() || iE == _event.electrons.size())
-      continue;
-
-    eePairs_.emplace_back(iP, iElectron);
-  }
-
-  return eePairs_.size() != 0;
 }
 
 //--------------------------------------------------------------------

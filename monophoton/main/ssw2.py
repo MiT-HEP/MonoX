@@ -189,7 +189,7 @@ class SkimSlimWeight(object):
             if SkimSlimWeight.config['skipExisting']:
                 if os.path.exists(outPath) and os.stat(outPath).st_size != 0:
                     logger.info('Output files for %s already exist. Skipping merge.', outNameBase)
-                    self.selectors.remove(rname)
+                    self.selectors.pop(rname)
 
             elif not SkimSlimWeight.config['testRun']:
                 try:

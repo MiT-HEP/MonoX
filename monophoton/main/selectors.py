@@ -153,8 +153,7 @@ def monophotonBase(sample, rname, selcls = None):
     operators = [
         'MetFilters',
         'PhotonSelection',
-        'MuonVeto',
-        'ElectronVeto',
+        'LeptonSelection',
         'TauVeto',
         'JetCleaning',
         'BjetVeto',
@@ -180,6 +179,8 @@ def monophotonBase(sample, rname, selcls = None):
     photonSel.setMinPt(175.)
     photonSel.setIDTune(photonIDTune)
     photonSel.setWP(photonWP)
+
+    selector.findOperator('LeptonSelection').setN(0, 0)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -236,16 +237,24 @@ def emjetBase(sample, rname):
 
     return selector
 
-def leptonBase(sample, rname, flavor):
+def leptonBase(sample, rname, flavor, selcls = None):
     """
     Base for n-lepton + photon selection
     """
 
     if sample.data:
-        selector = ROOT.EventSelector(rname)
+        if selcls is None:
+            selector = ROOT.EventSelector(rname)
+        else:
+            selector = selcls(rname)
+
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
     else:
-        selector = ROOT.PartonSelector(rname)
+        if selcls is None:
+            selector = ROOT.PartonSelector(rname)
+        else:
+            selector = selcls(rname)
+
         if flavor == ROOT.lElectron:
             selector.setAcceptedPdgId(11)
         elif flavor == ROOT.lMuon:
@@ -318,19 +327,6 @@ def leptonBase(sample, rname, flavor):
 
     return selector
 
-def eefake(sample, rname):
-    selector = ROOT.ZeeEventSelector(rname)
-
-    eeSel = selector.findOperator('EEPairSelection')
-    eeSel.setMinPt(140.)
-
-    setupPhotonSelection(eeSel, changes = ['!EVeto'])
-
-    selector.findOperator('TauVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
-
-    return selector
-
 def zmumu(sample, rname):
     """
     Just dimuon. 
@@ -378,8 +374,7 @@ def TagAndProbeBase(sample, rname):
 
     operators = [
         'MetFilters',
-        'MuonVeto',
-        'ElectronVeto',
+        'LeptonSelection',
         'TauVeto',
         'TagAndProbePairZ',
         'JetCleaning',
@@ -398,8 +393,9 @@ def TagAndProbeBase(sample, rname):
 
         addPUWeight(sample, selector)
 
-    selector.findOperator('MuonVeto').setIgnoreDecision(True)
-    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
+    selector.findOperator('LeptonSelection').setN(0, 0)
+
+    selector.findOperator('LeptonSelection').setIgnoreDecision(True)
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
@@ -463,8 +459,7 @@ def monophNoLVeto(sample, rname):
 
     selector = monoph(sample, rname)
 
-    selector.findOperator('ElectronVeto').setIgnoreDecision(True)
-    selector.findOperator('MuonVeto').setIgnoreDecision(True)
+    selector.findOperator('LeptonSelection').setIgnoreDecision(True)
 
     return selector
 
@@ -478,8 +473,7 @@ def signalRaw(sample, rname):
     cuts = [
         'MetFilters',
         'PhotonSelection',
-        'ElectronVeto',
-        'MuonVeto',
+        'LeptonSelection',
         'TauVeto',
         'PhotonMetDPhi',
         'JetMetDPhi',
@@ -490,6 +484,7 @@ def signalRaw(sample, rname):
         selector.findOperator(cut).setIgnoreDecision(True)
 
     selector.findOperator('PhotonSelection').setMinPt(30.)
+    selector.findOperator('LeptonSelection').setN(0, 0)
     
     dimuMass = ROOT.Mass()
     dimuMass.setPrefix('dimu')
@@ -725,7 +720,6 @@ def trivialShower(sample, rname):
 def diel(sample, rname):
     selector = leptonBase(sample, rname, ROOT.lElectron)
     selector.findOperator('LeptonSelection').setN(2, 0)
-    # selector.findOperator('LeptonSelection').setStrictEl(False)
 
     dielMass = ROOT.Mass()
     dielMass.setPrefix('diel')
@@ -765,7 +759,6 @@ def dielAllPhoton(sample, rname):
     selector.addOperator(vtx)
 
     electrons = selector.findOperator('LeptonSelection')
-    electrons.setStrictEl(True)
     electrons.setRequireTight(True)
 
     photons = selector.findOperator('PhotonSelection')
@@ -781,8 +774,8 @@ def dielHfake(sample, rname):
 
     return selector
 
-def monoel(sample, rname):
-    selector = leptonBase(sample, rname, ROOT.lElectron)
+def monoel(sample, rname, selcls = None):
+    selector = leptonBase(sample, rname, ROOT.lElectron, selcls = selcls)
     selector.findOperator('LeptonSelection').setN(1, 0)
 
     mtCut = ROOT.LeptonMt()
@@ -807,16 +800,31 @@ def monoelHfake(sample, rname):
     return selector
 
 def monoelEfake(sample, rname):
-    selector = monoel(sample, rname)
+    selector = monoel(sample, rname, selcls = ROOT.ZeeEventSelector)
+    selector.findOperator('LeptonSelection').setStrictEl(False)
 
     modEfake(selector)
+
+    return selector
+
+def monoelQCD(sample, rname):
+    selector = monoel(sample, rname)
+
+    # by inserting FakeElectron before LeptonSelection, electron collection size
+    # is already bumped up by the number of fake electrons. LeptonSelection will
+    # count the number of output electron collection.
+    idx = selector.index('LeptonSelection')
+    selector.addOperator(ROOT.FakeElectron(), idx)
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setRequireMedium(False)
+    leptonSel.setRequireTight(False)
 
     return selector
 
 def dimu(sample, rname):
     selector = leptonBase(sample, rname, ROOT.lMuon)
     selector.findOperator('LeptonSelection').setN(0, 2)
-    # selector.findOperator('LeptonSelection').setStrictMu(False)
 
     dimuMass = ROOT.Mass()
     dimuMass.setPrefix('dimu')
@@ -856,7 +864,6 @@ def dimuAllPhoton(sample, rname):
     selector.addOperator(vtx)
 
     muons = selector.findOperator('LeptonSelection')
-    muons.setStrictMu(True)
     muons.setRequireTight(False)
     muons.setRequireMedium(True)
 
@@ -873,8 +880,8 @@ def dimuHfake(sample, rname):
 
     return selector
 
-def monomu(sample, rname):
-    selector = leptonBase(sample, rname, ROOT.lMuon)
+def monomu(sample, rname, selcls = None):
+    selector = leptonBase(sample, rname, ROOT.lMuon, selcls = selcls)
     selector.findOperator('LeptonSelection').setN(0, 1)
 
     mtCut = ROOT.LeptonMt()
@@ -893,7 +900,6 @@ def monomuAllPhoton(sample, rname):
     selector.addOperator(vtx)
 
     muons = selector.findOperator('LeptonSelection')
-    muons.setStrictMu(True)
     muons.setRequireMedium(True)
 
     photons = selector.findOperator('PhotonSelection')
@@ -1375,6 +1381,21 @@ def modEfake(selector):
 
     setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
+
+#######################
+# MODIFIER GENERATORS #
+#######################
+
+def ptTruncator(minimum = 0., maximum = -1.):
+    def addPtCut(sample, selector):
+        truncator = ROOT.PhotonPtTruncator()
+        truncator.setPtMin(minimum)
+        if maximum > 0.:
+            truncator.setPtMax(maximum)
+
+        selector.addOperator(truncator, 0)
+
+    return addPtCut
 
 
 if needHelp:

@@ -12,6 +12,8 @@ import config
 from datasets import allsamples
 import selectors as s
 
+import ROOT
+
 def applyMod(sels, *mods):
     result = []
     for sel in sels:
@@ -22,11 +24,14 @@ def applyMod(sels, *mods):
 
     return result
 
+tpegLowPt = ('tpeg', s.tpegLowPt)
+tpmgLowPt = ('tpmg', s.tpmgLowPt)
+
 data_sph = [
     'monoph', 
     'efake', 'hfake', 'trivialShower', 'halo',
     'dimu', 'diel', 'monomu', 'monoel',
-    'dimuHfake', 'dielHfake', 'monomuHfake', 'monomuEfake', 'monoelHfake', 'monoelEfake',
+    'dimuHfake', 'dielHfake', 'monomuHfake', 'monomuEfake', 'monoelHfake', 'monoelEfake', 'monoelQCD',
     'tpeg', 'tpmg',
     'emjet',
     'dimuAllPhoton', 'dielAllPhoton', 'monomuAllPhoton', 
@@ -35,12 +40,12 @@ data_sph = [
 
 data_smu = [
     'dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets', 'zmumu', 'tpmmg',
-    ('tpmg', s.tpmgLowPt)
+    tpmgLowPt, 'tp2m'
 ]
 
 data_sel = [
-    'diel', 'monoel', 'monoelHfake', 'eefake', 'zeeJets',
-    ('tpeg', s.tpegLowPt)
+    'diel', 'monoel', 'monoelHfake', 'zeeJets',
+    tpegLowPt, 'tp2e'
 ]
 
 mc_cand = ['monoph', 'emjet']
@@ -63,25 +68,26 @@ allSelectors_byPattern = [
     ('zllg-130', mc_sig + mc_lep + mc_dilep),
     ('wnlg', mc_sig + mc_lep),
     ('wnlg-{130,500}', applyMod(mc_sig + mc_lep, s.addKfactor)),
-    ('wglo', mc_cand + mc_lep),
+    ('wglo', mc_cand + mc_lep + [tpegLowPt, tpmgLowPt]),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
-    ('znng-40-o', mc_sig),
+    ('znng-40-o', applyMod(mc_sig, s.ptTruncator(maximum = 130.))),
     ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto'], s.addKfactor)),
-    ('zllg-*-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
+    ('zllg-130-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor, s.ptTruncator(maximum = 300.))),
+    ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
-    ('gj{,04}-*', applyMod(mc_qcd + mc_cand, s.addKfactor)),
+    ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['monoel'], s.addKfactor)),
     ('gg-*', mc_cand + mc_lep + mc_dilep),
     ('ttg', mc_cand + mc_lep + mc_dilep),
     ('tg', mc_cand + mc_lep),
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)]),
+    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt]),
     ('wlnu{,n}-*', mc_wlnu),
     ('znn{,n}-*', mc_cand),
-    ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)], s.addGenPhotonVeto)),
-    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [('tpeg', s.tpegLowPt), ('tpmg', s.tpmgLowPt)], s.addGenPhotonVeto)),
+    ('dy-50*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt], s.addGenPhotonVeto)),
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),
     ('dm*', mc_sig),

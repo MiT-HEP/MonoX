@@ -492,85 +492,6 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
 }
 
 //--------------------------------------------------------------------
-// ElectronVeto
-//--------------------------------------------------------------------
-
-bool
-ElectronVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
-{
-  // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
-
-  panda::ParticleCollection* cols[] = {
-    &_outEvent.photons,
-    &_outEvent.muons
-  };
-
-  for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
-    auto& electron(_event.electrons[iE]);
-    
-    if (!electron.loose || electron.pt() < 10.)
-      continue;
-
-    bool overlap(false);
-    for (auto* col : cols) {
-      unsigned iP(0);
-      for (; iP != col->size(); ++iP) {
-        if ((*col)[iP].dR2(electron) < 0.25)
-          break;
-      }
-      if (iP != col->size()) {
-        // there was a matching candidate
-        overlap = true;
-        break;
-      }
-    }
-    if (!overlap)
-      _outEvent.electrons.push_back(electron);
-  }
-
-  return _outEvent.electrons.empty();
-}
-
-//--------------------------------------------------------------------
-// MuonVeto
-//--------------------------------------------------------------------
-
-bool
-MuonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
-{
-  // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
-
-  panda::ParticleCollection* cols[] = {
-    &_outEvent.photons,
-  };
-
-  for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
-    auto& muon(_event.muons[iM]);
-    
-    if (!muon.loose || muon.pt() < 10.)
-      continue;
-
-    bool overlap(false);
-    for (auto* col : cols) {
-      unsigned iP(0);
-      for (; iP != col->size(); ++iP) {
-        if ((*col)[iP].dR2(muon) < 0.25)
-          break;
-      }
-      if (iP != col->size()) {
-        // there was a matching candidate
-        overlap = true;
-        break;
-      }
-    }
-    if (!overlap)
-      _outEvent.muons.push_back(muon);
-  }
-
-  return _outEvent.muons.empty();
-}
-
-//--------------------------------------------------------------------
 // TauVeto
 //--------------------------------------------------------------------
 
@@ -1110,9 +1031,9 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   bool foundTight(false);
   unsigned nLooseIsoMuons(0);
 
-  std::vector<panda::ParticleCollection*> cols = {
-    &_outEvent.photons
-  };
+  std::vector<panda::ParticleCollection*> cols;
+  if (!allowPhotonOverlap_)
+    cols.push_back(&_outEvent.photons);
 
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
@@ -1198,6 +1119,35 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 }
 
 //--------------------------------------------------------------------
+// FakeElectron
+//--------------------------------------------------------------------
+
+bool
+FakeElectron::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  auto& photons(_outEvent.photons);
+
+  for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
+    auto& electron(_event.electrons[iE]);
+
+    if (!electron.veto || electron.loose || electron.pt() < 30.)
+      continue;
+
+    unsigned iP(0);
+    for (; iP != photons.size(); ++iP) {
+      if (photons[iP].dR2(electron) < 0.25)
+        break;
+    }
+    if (iP != photons.size()) // overlap with photon
+      continue;
+    
+    _outEvent.electrons.push_back(electron);
+  }
+
+  return _outEvent.electrons.size() != 0;
+}
+
+//--------------------------------------------------------------------
 // Met
 //--------------------------------------------------------------------
 
@@ -1254,7 +1204,7 @@ PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonoph
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
 
-    if (parton.pdgid == 22 && parton.pt() > max_)
+    if (parton.pdgid == 22 && (parton.pt() < min_ || parton.pt() > max_))
       return false;
   }
 
@@ -1962,7 +1912,7 @@ LeptonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     lpy += lep.pt() * std::sin(lep.phi());
   }
 
-  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+  for (unsigned iM(0); iM != sizeof(outRecoils) / sizeof(float*); ++iM) {
     double mex(lpx + inMets[iM] * std::cos(inPhis[iM]));
     double mey(lpy + inMets[iM] * std::sin(inPhis[iM]));
     *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);

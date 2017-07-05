@@ -25,6 +25,7 @@ public:
   unsigned size() const { return operators_.size(); }
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
+  unsigned index(char const* name) const;
   void removeOperator(char const* name);
 
   void initialize(char const* outputPath, panda::EventMonophoton& inEvent, panda::utils::BranchList& blist, bool isMC);
@@ -87,26 +88,17 @@ public:
 class ZeeEventSelector : public EventSelector {
   // Special event selector for Zee events where one input event can yield multiple output events
  public:
-  ZeeEventSelector(char const* name);
-  ~ZeeEventSelector();
+  ZeeEventSelector(char const* name) : EventSelector(name) {}
+  ~ZeeEventSelector() {}
 
   void selectEvent(panda::EventMonophoton&) override;
 
   char const* className() const override { return "ZeeEventSelector"; }
 
-  class EEPairSelection : public PhotonSelection {
-  public:
-    EEPairSelection(char const* name = "EEPairSelection");
-    std::vector<std::pair<unsigned, unsigned>> const& getEEPairs() const { return eePairs_; }
-
-  protected:
-    bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
-    
-    std::vector<std::pair<unsigned, unsigned>> eePairs_;
-  };
-
  protected:
-  std::vector<Operator*>::iterator eePairSel_;
+  void setupSkim_(panda::EventMonophoton& event, bool isMC) override;
+
+  std::vector<Operator*>::iterator oneAfterLeptonSelection_;
 };
 
 class PartonSelector : public EventSelector {

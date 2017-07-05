@@ -322,20 +322,6 @@ class PhotonSelection : public Cut {
   bool nominalResult_{false};
 };
 
-class ElectronVeto : public Cut {
- public:
-  ElectronVeto(char const* name = "ElectronVeto") : Cut(name) {}
- protected:
-  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
-};
-
-class MuonVeto : public Cut {
- public:
-  MuonVeto(char const* name = "MuonVeto") : Cut(name) {}
- protected:
-  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
-};
-
 class TauVeto : public Cut {
  public:
   TauVeto(char const* name = "TauVeto") : Cut(name) {}
@@ -492,13 +478,14 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
- LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
+  LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
 
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
   void setRequireMedium(bool require, unsigned btof = false) { requireMedium_ = require; mediumBtoF_ = btof; }
   void setRequireTight(bool require) { requireTight_ = require; }
+  void setAllowPhotonOverlap(bool allow) { allowPhotonOverlap_ = allow; }
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -508,8 +495,19 @@ class LeptonSelection : public Cut {
   bool requireMedium_{true};
   bool mediumBtoF_{false};
   bool requireTight_{true};
+  bool allowPhotonOverlap_{false};
   unsigned nEl_{0};
   unsigned nMu_{0};
+};
+
+class FakeElectron : public Cut {
+  // Select electrons passing veto but failing loose with pt > 30
+  // Overlaps with photons are skipped
+ public:
+  FakeElectron(char const* name = "FakeElectron") : Cut(name) {}
+
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
 
 class Met : public Cut {
@@ -562,10 +560,12 @@ class PhotonPtTruncator : public Cut {
  public:
   PhotonPtTruncator(char const* name = "PhotonPtTruncator") : Cut(name) {}
 
+  void setPtMin(double min) { min_ = min; }
   void setPtMax(double max) { max_ = max; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
+  double min_{0.};
   double max_{500.};
 };
 
