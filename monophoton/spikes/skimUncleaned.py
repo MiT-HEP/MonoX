@@ -34,7 +34,7 @@ if task == 'submit':
         submitter.pre_args = 'skim ' + sname
     
         filesets = set()
-        with open(thisdir + '/catalog/' + sname + '.txt') as catalog:
+        with open(basedir + '/data/spikes/catalog/' + sname + '.txt') as catalog:
             for line in catalog:
                 filesets.add(line.split()[0])
     
@@ -60,13 +60,13 @@ elif task == 'skim':
 
     tree = ROOT.TChain('events')
 
-    with open(thisdir + '/catalog/' + sname + '.txt') as catalog:
+    with open(basedir + '/data/spikes/catalog/' + sname + '.txt') as catalog:
         for line in catalog:
             if line.split()[0] == fileset:
                 print line.split()[1]
                 tree.Add(line.split()[1])
     
-    fname = sname + '_' + fileset + '_offtime.root'
+    fname = sname + '_' + fileset
     tmpdir = '/local/' + os.environ['USER']
     if not os.path.exists(tmpdir):
         tmpdir = '/tmp/' + os.environ['USER']
@@ -84,12 +84,10 @@ elif task == 'skim':
     except:
         pass
     
-    outputFile = ROOT.TFile.Open(tmpname, 'recreate')
-    
-    ROOT.skimUncleaned(tree, outputFile)
-    
-    outputFile.Close()
+    ROOT.skimUncleaned(tree, tmpname)
 
     if not test:
-        shutil.copy(tmpname, finalname)
-        os.remove(tmpname)
+        for suffix in ['offtime', 'narrow']:
+            shutil.copy(tmpname + '_' + suffix + '.root', finalname + '_' + suffix + '.root')
+            os.remove(tmpname + '_' + suffix + '.root')
+ 

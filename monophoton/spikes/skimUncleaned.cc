@@ -5,16 +5,18 @@
 #include "TTree.h"
 #include "TLeaf.h"
 #include "TBranch.h"
+#include "TString.h"
 
 #include "../misc/photon_extra.h"
 
 #include <iostream>
 #include <vector>
+#include <bitset>
 
 void
-skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
+skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
 {
-  // Skim the input tree for off-time (-15 < t < -10 ns) super clusters and write an EventMonophoton output
+  // Skim the input tree for off-time (-15 < t < -10 ns) or narrow (sieie < 0.001 || sipip < 0.001 || (sieie < 0.008 && sipip < 0.008)) super clusters and write an EventMonophoton output
 
   panda::Event event;
   unsigned const NMAX(256);
@@ -42,14 +44,31 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
   panda::EventMonophoton outEvent;
   panda::RecoMet origMet("origMet");
 
-  _outputFile->cd();
-  auto* output(new TTree("events", "Events"));
-  outEvent.book(*output, {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"});
-  origMet.book(*output);
-  output->Branch("photons.trackIso", outTrackIso, "trackIso[photons.size]/F");
-  output->Branch("photons.type", photonType, "type[photons.size]/s");
-  output->Branch("t1Met.photonDPhi", &photonDPhi, "photonDPhi/F");
-  output->Branch("t1Met.minJetDPhi", &minJetDPhi, "minJetDPhi/F");
+  enum OutputClass {
+    kOfftime,
+    kNarrow,
+    nOutputClasses
+  };
+
+  TString outputSuffix[nOutputClasses] = {
+    "offtime",
+    "narrow"
+  };
+
+  TString outputNameBase(_outputNameBase);
+  TTree* output[nOutputClasses];
+
+  for (unsigned iO(0); iO != nOutputClasses; ++iO) {
+    auto* outputFile(TFile::Open(outputNameBase + "_" + outputSuffix[iO] + ".root", "recreate"));
+
+    output[iO] = new TTree("events", "Events");
+    outEvent.book(*output[iO], {"runNumber", "lumiNumber", "eventNumber", "npv", "vertices", "weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"});
+    origMet.book(*output[iO]);
+    output[iO]->Branch("photons.trackIso", outTrackIso, "trackIso[photons.size]/F");
+    output[iO]->Branch("photons.type", photonType, "type[photons.size]/s");
+    output[iO]->Branch("t1Met.photonDPhi", &photonDPhi, "photonDPhi/F");
+    output[iO]->Branch("t1Met.minJetDPhi", &minJetDPhi, "minJetDPhi/F");
+  }
 
   panda::utils::BranchList branchList = {
     "!*",
@@ -90,6 +109,8 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
     bRawPt,
     bTime,
     bEta,
+    bSieie,
+    bSipip,
     nBranchIndices
   };
 
@@ -99,10 +120,10 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
   extraBranches.emplace_back("superClustersFT.rawPt", rawPt);
   extraBranches.emplace_back("superClustersFT.time", time);
   extraBranches.emplace_back("superClustersFT.eta", eta);
-
-  extraBranches.emplace_back("superClustersFT.phi", phi);
   extraBranches.emplace_back("superClustersFT.sieie", sieie);
   extraBranches.emplace_back("superClustersFT.sipip", sipip);
+
+  extraBranches.emplace_back("superClustersFT.phi", phi);
   extraBranches.emplace_back("superClustersFT.emax", emax);
   extraBranches.emplace_back("superClustersFT.e2nd", e2nd);
   extraBranches.emplace_back("superClustersFT.e4", e4);
@@ -116,6 +137,8 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
   auto RawPtGreater([](panda::Element const& _p1, panda::Element const& _p2)->bool {
       return static_cast<panda::XPhoton const&>(_p1).scRawPt > static_cast<panda::XPhoton const&>(_p2).scRawPt;
     });
+
+  std::bitset<nOutputClasses> matchClass;
 
   long iEntry(0);
   int iTree(-1);
@@ -138,16 +161,21 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
     if (size == 0)
       continue;
 
-    for (unsigned b : {bRawPt, bTime, bEta})
+    for (unsigned b : {bRawPt, bTime, bEta, bSieie, bSipip})
       extraBranches[b].branch->GetEntry(localEntry);
 
-    unsigned iC(0);
-    for (; iC != size; ++iC) {
-      if (rawPt[iC] > 170. && std::abs(eta[iC]) < 1.4442 && time[iC] > -15. && time[iC] < -10.)
-        break;
+    matchClass.reset();
+
+    for (unsigned iC(0); iC != size; ++iC) {
+      if (rawPt[iC] > 170. && std::abs(eta[iC]) < 1.4442) {
+        if (time[iC] > -15. && time[iC] < -10.)
+          matchClass.set(kOfftime);
+        if (sieie[iC] < 0.001 || sipip[iC] < 0.001 || (sieie[iC] < 0.008 && sipip[iC] < 0.008))
+          matchClass.set(kNarrow);
+      }
     }
 
-    if (iC == size)
+    if (matchClass.none())
       continue;
 
     event.getEntry(*_input, localEntry, true);
@@ -176,7 +204,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
     origMet = event.pfMet;
 
-    for (iC = 0; iC != size; ++iC) {
+    for (unsigned iC(0); iC != size; ++iC) {
       auto& sc(outEvent.superClusters.create_back());
       sc.rawPt = rawPt[iC];
       sc.eta = eta[iC];
@@ -196,7 +224,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
       lhs = rhs;
 
       auto& ec(*rhs.superCluster);
-      for (iC = 0; iC != size; ++iC) {
+      for (unsigned iC(0); iC != size; ++iC) {
         double dEta(ec.eta - eta[iC]);
         double dPhi(TVector2::Phi_mpi_pi(ec.phi - phi[iC]));
         if (dEta * dEta + dPhi * dPhi < 0.04) {
@@ -227,7 +255,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
       panda::photon_extra(lhs, rhs, event.rho);
 
       auto& ec(*rhs.superCluster);
-      iC = 0;
+      unsigned iC(0);
       for (; iC != size; ++iC) {
         double dEta(ec.eta - eta[iC]);
         double dPhi(TVector2::Phi_mpi_pi(ec.phi - phi[iC]));
@@ -266,7 +294,7 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
 
     // now make up a photon for each unused out-of-time FT SC
 
-    for (iC = 0; iC != size; ++iC) {
+    for (unsigned iC(0); iC != size; ++iC) {
       if (used[iC] || rawPt[iC] < 15.)
         continue;
 
@@ -333,11 +361,18 @@ skimUncleaned(TTree* _input, TFile* _outputFile, long _nEntries = -1)
         minJetDPhi = dPhi;
     }
 
-    output->Fill();
+    for (unsigned iO(0); iO != nOutputClasses; ++iO) {
+      if (matchClass[iO])
+        output[iO]->Fill();
+    }
   }
 
   std::cout << "Processed " << iEntry << " events" << std::endl;
 
-  _outputFile->cd();
-  output->Write();
+  for (unsigned iO(0); iO != nOutputClasses; ++iO) {
+    auto* outputFile(output[iO]->GetCurrentFile());
+    outputFile->cd();
+    output[iO]->Write();
+    delete outputFile;
+  }
 }
