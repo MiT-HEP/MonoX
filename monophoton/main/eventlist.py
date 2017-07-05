@@ -9,17 +9,18 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 import config
+import utils
 
 region = sys.argv[1] 
 snames = sys.argv[2:]
 data = False
 
-tree = ROOT.TChain('cutflow')
-for sr in snames:
-    tree.Add(config.skimDir + '/' + sr + '_' + region + '.root')
-    sname = sr 
-    sample = allsamples[sname]
+sampleNames = []
 
+tree = ROOT.TChain('cutflow')
+for sample in allsamples.getmany(snames):
+    sampleNames.append(sample.name)
+    tree.Add(utils.getSkimPath(sample.name, region))
     data = sample.data
 
 run = array.array('I', [0])
@@ -36,27 +37,20 @@ if data:
     cuts += ['HLT_Photon165_HE10', 'MetFilters']
 
 cuts += [
-    'PhotonSelection',
+    'PhotonSelection_nominal',
     'HighMet',
+    'LeptonSelection',
     'PhotonMetDPhi',
     'JetMetDPhi',
 ]
 
-if region == 'monoph':
-    cuts += [ 
-        'MuonVeto',
-        'ElectronVeto',
-    ]
-elif region in ['dimu', 'diel', 'monomu', 'monoel']:
-    cuts += ['LeptonSelection']
-
 if region == 'monomu':
     cuts += ['LeptonMt']
 
-if region == 'monoel':
+elif region == 'monoel':
     cuts += ['RealMetCut', 'LeptonMt']
 
-if region in ['dimu', 'diel']:
+elif region in ['dimu', 'diel']:
     cuts += ['Mass', 'OppositeSign']
 
 tree.Draw('>>elist', ' && '.join(cuts), 'entrylist')
@@ -81,6 +75,6 @@ evlist.sort()
 
 print len(evlist)
 
-with open('events_' + region + '_' + '+'.join(snames) + '.list', 'w') as output:
+with open('events_' + region + '_' + '+'.join(sampleNames) + '.list', 'w') as output:
     for tup in evlist:
         output.write('%d:%d:%d\n' % tup)
