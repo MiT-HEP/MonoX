@@ -543,7 +543,16 @@ if __name__ == '__main__':
     elif args.chi2:
         plotdefs = [plotConfig.getPlot(args.chi2)]
     elif len(args.plots) != 0:
-        plotdefs = plotConfig.getPlots(args.plots)
+        plotdefs = []
+        if 'sensitive' in args.plots:
+            plotdefs += [ plot for plot in plotConfig.getPlots() if plot.sensitive == True]
+            plotdefs += plotConfig.getPlots('base')
+            args.plots.remove('sensitive')
+        if 'insensitive' in args.plots:
+            plotdefs += [ plot for plot in plotConfig.getPlots() if not plot.sensitive and plot.name != 'count' ]
+            args.plots.remove('insensitive')
+        if len(args.plots) != 0:
+            plotdefs += plotConfig.getPlots(args.plots)
     else:
         plotdefs = plotConfig.getPlots()
 
