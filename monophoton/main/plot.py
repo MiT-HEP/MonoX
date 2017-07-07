@@ -775,4 +775,6 @@ if __name__ == '__main__':
         elif plotdef.name == args.chi2:
             printChi2(counters, plotdef, plotConfig)
         else:
+            if args.asimov:
+                plotdef.name += args.asimov.capitalize()
             printCanvas(canvas, plotdef, plotConfig)
