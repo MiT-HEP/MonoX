@@ -32,6 +32,7 @@
 //     HLTIsoMu27
 //     MetFilters
 //     GenPhotonVeto
+//     PartonFlavor
 //     PhotonSelection *
 //     ElectronVeto
 //     MuonVeto
@@ -240,9 +241,29 @@ class GenPhotonVeto : public Cut {
   double minPartonDR2_{0.5 * 0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
 };
 
+class PartonFlavor : public Cut {
+  /* Select events with specified parton ids */
+ public:
+  PartonFlavor(char const* name = "PartonFlavor") : Cut(name) {}
+
+  void setRejectedPdgId(unsigned id) { rejectedId_ = id; }
+  void setRequiredPdgId(unsigned id) { requiredId_ = id; }
+
+  unsigned getRejectedPdgId() const { return rejectedId_; }
+  unsigned getRequiredPdgId() const { return requiredId_; }
+
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  unsigned rejectedId_{0};
+  unsigned requiredId_{0};
+};
+
 class PhotonSelection : public Cut {
  public:
   enum Selection {
+    Pt,
+    IsBarrel,
     HOverE,
     Sieie,
     NHIso,
@@ -306,7 +327,7 @@ class PhotonSelection : public Cut {
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
-  int selectPhoton(panda::XPhoton const&);
+  int selectPhoton(panda::XPhoton const&, unsigned idx);
 
   double minPt_{175.};
   double maxPt_{6500.};
@@ -317,8 +338,9 @@ class PhotonSelection : public Cut {
 
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
-  bool cutRes_[nSelections];
+  bool cutRes_[nSelections][NMAX_PARTICLES];
 
+  unsigned size_{0};
   bool nominalResult_{false};
 };
 
