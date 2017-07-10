@@ -181,6 +181,8 @@ def monophotonBase(sample, rname, selcls = None):
     photonSel.setWP(photonWP)
 
     selector.findOperator('LeptonSelection').setN(0, 0)
+    selector.findOperator('LeptonSelection').setRequireMedium(False)
+    selector.findOperator('LeptonSelection').setRequireTight(False)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
