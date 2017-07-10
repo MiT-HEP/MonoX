@@ -419,7 +419,8 @@ if __name__ == '__main__':
             SkimSlimWeight.config[key] = getattr(config, key)
 
     ## set up samples and selectors
-    from datasets import allsamples
+    import datasets
+    datasets.catalogDir = args.catalog
     from main.skimconfig import allSelectors
 
     # list of (sample, {rname: selgen})
@@ -428,11 +429,11 @@ if __name__ == '__main__':
     ## get the list of sample objects according to args.snames
     if 'all' in args.snames:
         spatterns = selectors.keys()
-        samples = allsamples.getmany(spatterns)
+        samples = datasets.allsamples.getmany(spatterns)
         sampleList = [(sample, dict()) for sample in samples]
     elif 'bkgd' in args.snames:
         spatterns = selectors.keys() + ['!add*', '!dm*']
-        samples = allsamples.getmany(spatterns)
+        samples = datasets.allsamples.getmany(spatterns)
         sampleList = [(sample, dict()) for sample in samples]
     else:
         for ss in args.snames:
@@ -447,7 +448,7 @@ if __name__ == '__main__':
                 spattern = ss
                 rnames = []
 
-            samples = allsamples.getmany(spattern)
+            samples = datasets.allsamples.getmany(spattern)
             for sample in samples:
                 selectors = {}
                 for rname in rnames:
