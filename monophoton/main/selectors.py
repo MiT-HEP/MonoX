@@ -241,26 +241,26 @@ def emjetBase(sample, rname):
 
 def leptonBase(sample, rname, flavor, selcls = None):
     """
-    Base for n-lepton + photon selection
+    Base for n-lepton + photon selection.
+    For MC, we could use PartonSelector, but for interest of clarity and comparing cut flow
+    with the other groups, we let events with all flavors pass.
     """
 
-    if sample.data:
-        if selcls is None:
-            selector = ROOT.EventSelector(rname)
-        else:
-            selector = selcls(rname)
+    if selcls is None:
+        selector = ROOT.EventSelector(rname)
+    else:
+        selector = selcls(rname)
 
+    if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
     else:
-        if selcls is None:
-            selector = ROOT.PartonSelector(rname)
-        else:
-            selector = selcls(rname)
-
+        partons = ROOT.PartonFlavor()
         if flavor == ROOT.lElectron:
-            selector.setAcceptedPdgId(11)
+            partons.setRequiredPdgId(11)
         elif flavor == ROOT.lMuon:
-            selector.setAcceptedPdgId(13)
+            partons.setRequiredPdgId(13)
+
+        selector.addOperator(partons)
 
     operators = [
         'MetFilters',
@@ -319,6 +319,9 @@ def leptonBase(sample, rname, flavor, selcls = None):
             addElectronIDSFWeight(sample, selector)
         else:
             addMuonIDSFWeight(sample, selector)
+
+    if not sample.data:
+        selector.findOperator('PartonFlavor').setIgnoreDecision(True)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -939,7 +942,7 @@ def wenu(sample, rname):
     """
 
     selector = monophotonBase(sample, rname, selcls = ROOT.PartonSelector)
-    selector.setAcceptedPdgId(11)
+    selector.setRequiredPdgId(11)
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(15.)

@@ -103,22 +103,25 @@ class ZeeEventSelector : public EventSelector {
 
 class PartonSelector : public EventSelector {
   // Special event selector that considers events with specified lepton flavors in LHE
+  // Will internally use PartonFlavor operator. This selector exists purely for speed optimization.
  public:
-  PartonSelector(char const* name) : EventSelector(name) {}
+  PartonSelector(char const* name);
+  ~PartonSelector();
 
   void selectEvent(panda::EventMonophoton&) override;
 
   char const* className() const override { return "PartonSelector"; }
 
-  void setRejectedPdgId(unsigned id) { rejectedId_ = id; }
-  void setAcceptedPdgId(unsigned id) { acceptedId_ = id; }
+  void setRejectedPdgId(unsigned id) { flavor_->setRejectedPdgId(id); }
+  void setRequiredPdgId(unsigned id) { flavor_->setRequiredPdgId(id); }
 
-  unsigned getRejectedPdgId() const { return rejectedId_; }
-  unsigned getAcceptedPdgId() const { return acceptedId_; }
+  unsigned getRejectedPdgId() const { return flavor_->getRejectedPdgId(); }
+  unsigned getRequiredPdgId() const { return flavor_->getRequiredPdgId(); }
 
  private:
+  PartonFlavor* flavor_{0};
   unsigned rejectedId_{0};
-  unsigned acceptedId_{0};
+  unsigned requiredId_{0};
 };
 
 class NormalizingSelector : public EventSelector {

@@ -1,6 +1,7 @@
 import os
 import sys
 sys.dont_write_bytecode = True
+import array
 from argparse import ArgumentParser
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -8,13 +9,17 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 import config
+import utils
 
 argParser = ArgumentParser(description = 'Print cut flow')
 argParser.add_argument('region', metavar = 'REGION', help = 'Control/signal region name.')
 argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
+argParser.add_argument('--events', '-E', action = 'store_true', dest = 'eventList', help = 'Print list of events instead of cutflow.')
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
 argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
 argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
+argParser.add_argument('--out', '-o', metavar = 'PATH', dest = 'outName', default = '', help = 'Output file name. Use "-" for stdout.')
+argParser.add_argument('--uw-format', '-W', action = 'store_true', dest = 'uwFormat', help = 'Print event list in run:event:lumi format.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -26,19 +31,20 @@ data = False
 
 ntotal = 0
 
-tree = ROOT.TChain('cutflow')
-for sname in args.snames:
-    filePath = args.skimDir + '/' + sname + '_' + args.region + '.root'
-    print filePath
-    tree.Add(filePath)
+sampleNames = []
 
-    sample = allsamples[sname]
+tree = ROOT.TChain('cutflow')
+for sample in allsamples.getmany(args.snames):
+    sampleNames.append(sample.name)
+
     if sample.data:
         data = True
 
     if args.skimDir == config.skimDir:
         # default skim directory -> assume nevents in DB is accurate
         ntotal += sample.nevents
+
+        filePath = utils.getSkimPath(sample.name, args.region)
 
     else:
         # otherwise open the original files
@@ -53,89 +59,139 @@ for sname in args.snames:
             ntotal += counter.GetBinContent(1)
             source.Close()
 
-cutflow = []
+        filePath = args.skimDir + '/' + sample.name + '_' + args.region + '.root'
+
+    print filePath
+    tree.Add(filePath)
+
 if args.cutflow is None:
+    if data:
+        cutflow = [('HLT_Photon165_HE10',)]
+    else:
+        cutflow = []
+    
+    cutflow += [
+        ('MetFilters',),
+        ('PhotonSelection',),
+        ('LeptonSelection',),
+    ]
+
     if args.region == 'monoph':
-        if data:
-            cutflow.append(('MetFilters',))
-            cutflow.append(('HLT_Photon165_HE10',))
-        
         cutflow += [
-            ('PhotonSelection',),
-            ('MuonVeto',), 
-            ('ElectronVeto',),
-            ('HighMet',),
+            ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
             # ('TauVeto',)
         ]
 
     elif args.region == 'monoel':
-        if data:
-            cutflow.append(('MetFilters',))
-            cutflow.append(('HLT_Photon165_HE10',))
-
         cutflow += [
-            ('PhotonSelection',),
-            ('LeptonSelection',),
             ('RealMetCut',),
             ('LeptonMt',),
-            ('HighMet',),
+            ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
         ]
 
     elif args.region == 'monomu':
-        if data:
-            cutflow.append(('MetFilters',))
-            cutflow.append(('HLT_Photon165_HE10',))
-
         cutflow += [
-            ('PhotonSelection',),
-            ('LeptonSelection',),
             ('LeptonMt',),
-            ('HighMet',),
+            ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
         ]
 
     elif args.region in ['dimu', 'diel']:
-        if data:
-            cutflow.append(('MetFilters',))
-            cutflow.append(('HLT_Photon165_HE10',))
-
         cutflow += [
-            ('PhotonSelection',),
-            ('LeptonSelection',),
             ('OppositeSign',),
-            ('Mass',),
-            ('HighMet',),
+            ('Met',),
             ('PhotonMetDPhi',),
+            ('Mass',),
             ('JetMetDPhi',),
         ]
 
 else:
+    cutflow = []
     for cutstr in args.cutflow:
         cuts = tuple(cutstr.split(','))
         cutflow.append(cuts)
 
-# print ntotal, 1
+if args.eventList:
+    run = array.array('I', [0])
+    lumi = array.array('I', [0])
+    event = array.array('I', [0])
+    
+    tree.SetBranchAddress('runNumber', run)
+    tree.SetBranchAddress('lumiNumber', lumi)
+    tree.SetBranchAddress('eventNumber', event)
 
-print "%40s %15d %15.4f %15.4e %15.1e" % ("total", ntotal, (float(ntotal) / ntotal), (float(ntotal) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, ntotal, 0.6826895, True) - float(ntotal) / ntotal))
+    for ic, cut in enumerate(list(cutflow)):
+        if type(cut) is tuple:
+            cutflow[ic] = cut[0]
+            cutflow.extend(list(cut[1:]))
 
-nevt = tree.GetEntries()
-print "%40s %15d %15.4f %15.4e %15.1e" % ('PhotonSkim', nevt, (float(nevt) / ntotal), (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
+    tree.Draw('>>elist', ' && '.join(cutflow), 'entrylist')
+    elist = ROOT.gDirectory.Get('elist')
+    tree.SetEntryList(elist)
+    
+    evlist = []
+    
+    iListEntry = 0
+    while True:
+        iEntry = tree.GetEntryNumber(iListEntry)
+        if iEntry < 0:
+            break
+    
+        iListEntry += 1
+    
+        tree.GetEntry(iEntry)
 
-expr = ''
-for cuts in cutflow:
-    if expr == '':
-        name = ' && '.join(cuts)
-        expr = name
-    else:
-        name = ' && ' + ' && '.join(cuts)
-        expr += name
+        if args.uwFormat:
+            evlist.append((run[0], event[0], lumi[0]))
+        else:
+            evlist.append((run[0], lumi[0], event[0]))
 
-    prev = float(nevt)
-    nevt = tree.GetEntries(expr)
-    # print nevt, '%.4e' % (float(nevt) / ntotal), '%.1e' % (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal), name
-    print "%40s %15d %15.4f %15.4e %15.1e" % (name, nevt, (float(nevt) / prev), (float(nevt) / ntotal), (ROOT.TEfficiency.ClopperPearson(ntotal, nevt, 0.6826895, True) - float(nevt) / ntotal))
+    evlist.sort()
+
+    outputLines = ['%d:%d:%d' % ev for ev in evlist]
+
+    if args.outName == '':
+        args.outName = 'events_' + region + '_' + '+'.join(sampleNames) + '.list'
+
+else:
+    def formLine(title, ncut, nprev):
+        return "%40s %15d %15.4f %15.4e %15.1e" % (title, ncut, float(ncut) / nprev, float(ncut) / ntotal, ROOT.TEfficiency.ClopperPearson(ntotal, ncut, 0.6826895, True) - float(ncut) / ntotal)
+
+    outputLines = []
+
+    outputLines.append('%40s %15s %15s %15s %15s %15s' % ('Cut', 'Events', 'Events/Prev.', 'Events/Total', 'Stat.'))
+
+    outputLines.append(formLine('Total', ntotal, ntotal))
+
+    nevt = tree.GetEntries()
+    outputLines.append(formLine('PhotonSkim', nevt, ntotal))
+
+    expr = ''
+    for cuts in cutflow:
+        if expr == '':
+            name = ' && '.join(cuts)
+            expr = name
+        else:
+            name = ' && ' + ' && '.join(cuts)
+            expr += name
+    
+        prev = nevt
+        nevt = tree.GetEntries(expr)
+        outputLines.append(formLine(name, nevt, prev))
+
+    if args.outName == '':
+        args.outName = 'cutflow_' + region + '_' + '+'.join(sampleNames) + '.list'
+
+if args.outName == '-':
+    for line in outputLines:
+        print line
+
+else:
+    with open(args.outName, 'w') as output:
+        for line in outputLines:
+            output.write(line + '\n')

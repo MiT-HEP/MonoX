@@ -316,35 +316,26 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 // PartonSelector
 //--------------------------------------------------------------------
 
+PartonSelector::PartonSelector(char const* _name) :
+  EventSelector(_name),
+  flavor_(new PartonFlavor())
+{
+  operators_.push_back(flavor_);
+}
+
+PartonSelector::~PartonSelector()
+{
+  if (!ownOperators_) {
+    // we need to take care of the first operator which we created
+    delete flavor_;
+    operators_.erase(operators_.begin());
+  }
+}
+
 void
 PartonSelector::selectEvent(panda::EventMonophoton& _event)
 {
-  bool accepted(acceptedId_ == 0);
-  
-  if (_event.partons.size() != 0) {
-    for (auto& parton : _event.partons) {
-      unsigned absId(std::abs(parton.pdgid));
-      if (absId == rejectedId_)
-        return;
-      if (absId == acceptedId_) {
-        accepted = true;
-        break;
-      }
-    }
-  }
-  else {
-    for (auto& part : _event.genParticles) {
-      unsigned absId(std::abs(part.pdgid));
-      if (absId == rejectedId_)
-        return;
-      if (absId == acceptedId_) {
-        accepted = true;
-        break;
-      }
-    }
-  }
-
-  if (!accepted)
+  if (!flavor_->exec(_event, outEvent_))
     return;
 
   EventSelector::selectEvent(_event);

@@ -203,34 +203,59 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
 }
 
 //--------------------------------------------------------------------
+// PartonFlavor
+//--------------------------------------------------------------------
+
+bool
+PartonFlavor::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+{
+  if (_event.partons.size() == 0)
+    return false;
+
+  for (auto& parton : _event.partons) {
+    unsigned absId(std::abs(parton.pdgid));
+    if (absId == rejectedId_)
+      return false;
+    if (absId == requiredId_)
+      return true;
+  }
+
+  // if requiredId is set, reaching here means the event does not have the target parton -> false
+  // if requiredId is not set, we return true.
+  return requiredId_ == 0;
+}
+
+//--------------------------------------------------------------------
 // PhotonSelection
 //--------------------------------------------------------------------
 
 TString const
 PhotonSelection::selectionName[PhotonSelection::nSelections] = {
-  "HOverE",               // 0
+  "Pt",
+  "IsBarrel",
+  "HOverE",
   "Sieie",
   "NHIso",
   "PhIso",
   "CHIso",
-  "CHIsoMax",             // 5
+  "CHIsoMax",
   "EVeto",
   "CSafeVeto",
   "MIP49",
   "Time",
-  "SieieNonzero",         // 10
+  "SieieNonzero",
   "SipipNonzero",
   "NoisyRegion",
   "E2E995",
   "Sieie08",
   "Sieie12",
-  "Sieie15",              // 15
+  "Sieie15",
   "Sieie20",
   "Sipip08",
   "CHIso11",
   "CHIsoMax11",
   "NHIsoLoose",
-  "PhIsoLoose",           // 20
+  "PhIsoLoose",
   "NHIsoTight",
   "PhIsoTight",
   "Sieie05",
@@ -285,10 +310,14 @@ PhotonSelection::initialize(panda::EventMonophoton&)
 void
 PhotonSelection::registerCut(TTree& cutsTree)
 {
-  cutsTree.Branch(name_ + "_nominal", &nominalResult_, name_ + "_nominal/O");
+  cutsTree.Branch(name_, &nominalResult_, name_ + "/O");
+  auto sname(name_ + "_size");
+  cutsTree.Branch(sname, &size_, sname + "/i");
 
-  for (unsigned iS(0); iS != nSelections; ++iS)
-    cutsTree.Branch(name_ + "_" + selectionName[iS], cutRes_ + iS, name_ + "_" + selectionName[iS] + "/O");
+  for (unsigned iS(0); iS != nSelections; ++iS) {
+    auto bname(name_ + "_" + selectionName[iS]);
+    cutsTree.Branch(bname, cutRes_[iS], bname + "[" + sname + "]/O");
+  }
 }
 
 void
@@ -376,6 +405,11 @@ PhotonSelection::ptVariation(panda::XPhoton const& _photon, bool up)
 bool
 PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
+  for (unsigned iC(0); iC != nSelections; ++iC)
+    std::fill_n(cutRes_[iC], NMAX_PARTICLES, false);
+
+  size_ = 0;
+
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
 
@@ -392,7 +426,9 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
         continue;
     }
 
-    int selection(selectPhoton(photon));
+    int selection(selectPhoton(photon, size_));
+
+    ++size_;
 
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "Photon " << iP << " returned selection " << selection << std::endl;
@@ -417,10 +453,12 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 }
 
 int
-PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
+PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
 {
   BitMask cutres;
   // Ashim's retuned ID GJets_CWIso (https://indico.cern.ch/event/629088/contributions/2603837/attachments/1464422/2279061/80X_PhotonID_EfficiencyStudy_23-05-2017.pdf)
+  cutres[Pt] = _photon.scRawPt > minPt_;
+  cutres[IsBarrel] = _photon.isEB;
   cutres[HOverE] = _photon.passHOverE(wp_, idTune_);
   cutres[Sieie] = _photon.passSieie(wp_, idTune_);
   cutres[CHIso] = _photon.passCHIso(wp_, idTune_);
@@ -450,7 +488,7 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
   cutres[Sipip05] = (_photon.sipip < 0.005);
 
   for (unsigned iC(0); iC != nSelections; ++iC)
-    cutRes_[iC] = cutres[iC];
+    cutRes_[iC][_idx] = cutres[iC];
 
   if (vetoes_.size() != 0) {
     unsigned iV(0);
@@ -475,12 +513,12 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon)
     for (; iS != selections_.size(); ++iS) {
       BitMask& mask(selections_[iS].second);
 
-      if (selections_[iS].first) {
-        if ((mask & cutres).none())
+      if (selections_[iS].first) { // passing at least one of OR'ed cuts required
+        if ((mask & cutres).none()) // but it failed all
           break;
       }
-      else {
-        if ((mask & cutres) == mask)
+      else { // failing at least one of OR'ed cuts required
+        if ((mask & cutres) == mask) // but it passed all
           break;
       }
     }
