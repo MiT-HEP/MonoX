@@ -8,6 +8,7 @@ import subprocess
 
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
 catalogDir = '/home/cmsprod/catalog/t2mit'
+ntuplesDir = '/mnt/hadoop/cms/store/user/paus'
 
 def expandBrace(pattern):
     """Expand a string with a brace-enclosed substitution pattern."""
@@ -227,7 +228,7 @@ class SampleDef(object):
                     fileset, xrdpath = line.split()[:2]
                     fileset += dsuffix
     
-                    directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+                    directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu//store/user/paus', ntuplesDir)
                     self._fullpaths[dataset][fileset] = []
     
             with open(catalogDir + '/' + self.book + '/' + dataset + '/Files') as fileList:
@@ -415,11 +416,16 @@ dump DATASETS: Dump information of DATASETS in CSV form.
 recalculate DATASETS: Recalculate nentries and sumw for DATASETS.
 add INFO: Add a new dataset.'''
     argParser.add_argument('command', nargs = '+', help = commandHelp)
+    argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = catalogDir, help = 'Source file catalog.')
     argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', default = defaultList, help = 'CSV file to load data from.')
+    argParser.add_argument('--ntuples-dir', '-d', metavar = 'PATH', dest = 'ntuplesDir', default = ntuplesDir, help = 'Root directory of ntuples files.')
     argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'outPath', nargs = '?', const = '', help = 'Save updated content to CSV file (no argument: save to original CSV).')
 
     args = argParser.parse_args()
     sys.argv = []
+
+    catalogDir = args.catalog
+    ntuplesDir = args.ntuplesDir
 
     import ROOT
 
