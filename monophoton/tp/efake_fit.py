@@ -18,7 +18,7 @@ import tp.efake_plot as efake_plot
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-dataSource = 'smu' # sph or sel
+dataSource = 'sph' # sph or sel or smu
 # panda::XPhoton::IDTune
 itune = 1
 
@@ -318,8 +318,6 @@ for bin, fitCut in fitBins:
 
         sigData = ROOT.RooDataHist('sigData_' + bin, 'sig', masslist, hsig)
         addToWS(sigData)
-
-        continue
 
         # no smearing
         sigModel = work.factory('HistPdf::sigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))

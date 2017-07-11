@@ -16,7 +16,8 @@ from tp.efake_conf import lumiSamples, outputDir, roofitDictsDir, getBinning
 dataType = sys.argv[1]
 binningName = sys.argv[2]
 
-PRODUCT = 'frate'
+# PRODUCT = 'frate'
+PRODUCT = 'eff'
 ADDFIT = True
 
 binningTitle, binning, fitBins = getBinning(binningName)
@@ -187,6 +188,7 @@ result.Write()
 yields[meas[0]].Write()
 yields[meas[1]].Write()
 if dataType == 'mc':
+    trueResult.Write()
     trueYields[meas[0]].Write()
     trueYields[meas[1]].Write()
 

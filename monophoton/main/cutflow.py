@@ -73,7 +73,7 @@ if args.cutflow is None:
     
     cutflow += [
         ('MetFilters',),
-        ('PhotonSelection',),
+        ('PhotonSelection_nominal',),
         ('LeptonSelection',),
     ]
 
@@ -157,7 +157,7 @@ if args.eventList:
     outputLines = ['%d:%d:%d' % ev for ev in evlist]
 
     if args.outName == '':
-        args.outName = 'events_' + region + '_' + '+'.join(sampleNames) + '.list'
+        args.outName = 'events_' + args.region + '_' + '+'.join(sampleNames) + '.list'
 
 elif args.eventId:
     run, lumi, event = map(int, args.eventId.split(':'))
@@ -198,7 +198,7 @@ else:
 
     outputLines = []
 
-    outputLines.append('%40s %15s %15s %15s %15s %15s' % ('Cut', 'Events', 'Events/Prev.', 'Events/Total', 'Stat.'))
+    outputLines.append('%40s %15s %15s %15s %15s' % ('Cut', 'Events', 'Events/Prev.', 'Events/Total', 'Stat.'))
 
     outputLines.append(formLine('Total', ntotal, ntotal))
 
@@ -219,7 +219,7 @@ else:
         outputLines.append(formLine(name, nevt, prev))
 
     if args.outName == '':
-        args.outName = 'cutflow_' + region + '_' + '+'.join(sampleNames) + '.list'
+        args.outName = 'cutflow_' + args.region + '_' + '+'.join(sampleNames) + '.list'
 
 if args.outName == '-':
     for line in outputLines:
