@@ -18,6 +18,7 @@ argParser.add_argument('--events', '-E', action = 'store_true', dest = 'eventLis
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
 argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
 argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
+argParser.add_argument('--cut-results', '-r', metavar = 'EVENTID', dest = 'eventId', help = 'Show results of the cuts on a specific event.')
 argParser.add_argument('--out', '-o', metavar = 'PATH', dest = 'outName', default = '', help = 'Output file name. Use "-" for stdout.')
 argParser.add_argument('--uw-format', '-W', action = 'store_true', dest = 'uwFormat', help = 'Print event list in run:event:lumi format.')
 
@@ -157,6 +158,39 @@ if args.eventList:
 
     if args.outName == '':
         args.outName = 'events_' + region + '_' + '+'.join(sampleNames) + '.list'
+
+elif args.eventId:
+    run, lumi, event = map(int, args.eventId.split(':'))
+
+    results = {}
+    for cuts in cutflow:
+        for cut in cuts:
+            bit = array.array('B', [0])
+            tree.SetBranchAddress(cut, bit)
+            results[cut] = bit
+
+    tree.Draw('>>elist', 'runNumber == %d && lumiNumber == %d && eventNumber == %d' % (run, lumi, event), 'entrylist')
+    elist = ROOT.gDirectory.Get('elist')
+
+    if elist.GetN() == 0:
+        print 'No event %d:%d:%d found' % (run, lumi, event)
+        sys.exit(1)
+
+    tree.SetEntryList(elist)
+    iEntry = tree.GetEntryNumber(0)
+    tree.GetEntry(iEntry)
+
+    outputLines = []
+   
+    for cuts in cutflow:
+        result = 1
+        for cut in cuts:
+            result *= results[cut][0]
+
+        outputLines.append('%s: %d' % (' && '.join(cuts), result))
+
+    if not args.outName:
+        args.outName = '-'
 
 else:
     def formLine(title, ncut, nprev):
