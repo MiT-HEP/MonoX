@@ -471,7 +471,9 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
   cutres[Time] = (std::abs(_photon.time) < 3.);
   cutres[SieieNonzero] = (_photon.sieie > 0.001);
   cutres[SipipNonzero] = (_photon.sipip > 0.001);
-  cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795);
+  //  cutres[NoisyRegion] = !(sub_ieta==-24 && sub_iphi==141) && !(sub_ieta==4 && sub_iphi==41) && !(sub_ieta==5 && sub_iphi==41) && !(sub_ieta==1 && sub_iphi==81) && !(sub_ieta==4 && sub_iphi==21); // by crystal index
+  cutres[NoisyRegion] = ( !(_photon.scEta > -0.42 && _photon.scEta < -0.4025 && _photon.phi() > 2.45 && _photon.phi() < 2.4675) && !(_photon.scEta > 0.0525 && _photon.scEta < 0.07 && _photon.phi() > 0.7 && _photon.phi() < 0.7175) && !(_photon.scEta > 0.07 && _photon.scEta < 0.0875 && _photon.phi() > 0.7 && _photon.phi() < 0.7175) && !(_photon.scEta > 0. && _photon.scEta < 0.0175 && _photon.phi() > 1.4 && _photon.phi() < 1.4175) && !(_photon.scEta > 0.0525 && _photon.scEta < 0.07 && _photon.phi() > 0.35 && _photon.phi() < 0.3675) )
+  // cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795); // ICHEP region
   cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * _photon.scRawPt) < 0.95;
   cutres[Sieie08] = (_photon.sieie < 0.008);
   cutres[Sieie12] = (_photon.sieie < 0.012);
