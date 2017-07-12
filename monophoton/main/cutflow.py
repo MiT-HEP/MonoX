@@ -73,7 +73,7 @@ if args.cutflow is None:
     
     cutflow += [
         ('MetFilters',),
-        ('PhotonSelection_nominal',),
+        ('PhotonSelection',),
         ('LeptonSelection',),
     ]
 
@@ -160,7 +160,10 @@ if args.eventList:
         args.outName = 'events_' + args.region + '_' + '+'.join(sampleNames) + '.list'
 
 elif args.eventId:
-    run, lumi, event = map(int, args.eventId.split(':'))
+    if args.uwFormat:
+        run, event, lumi = map(int, args.eventId.split(':'))
+    else:
+        run, lumi, event = map(int, args.eventId.split(':'))
 
     results = {}
     for cuts in cutflow:
