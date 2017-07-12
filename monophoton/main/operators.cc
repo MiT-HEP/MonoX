@@ -472,7 +472,20 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
   cutres[SieieNonzero] = (_photon.sieie > 0.001);
   cutres[SipipNonzero] = (_photon.sipip > 0.001);
   //  cutres[NoisyRegion] = !(sub_ieta==-24 && sub_iphi==141) && !(sub_ieta==4 && sub_iphi==41) && !(sub_ieta==5 && sub_iphi==41) && !(sub_ieta==1 && sub_iphi==81) && !(sub_ieta==4 && sub_iphi==21); // by crystal index
-  cutres[NoisyRegion] = ( !(_photon.scEta > -0.42 && _photon.scEta < -0.4025 && _photon.phi() > 2.45 && _photon.phi() < 2.4675) && !(_photon.scEta > 0.0525 && _photon.scEta < 0.07 && _photon.phi() > 0.7 && _photon.phi() < 0.7175) && !(_photon.scEta > 0.07 && _photon.scEta < 0.0875 && _photon.phi() > 0.7 && _photon.phi() < 0.7175) && !(_photon.scEta > 0. && _photon.scEta < 0.0175 && _photon.phi() > 1.4 && _photon.phi() < 1.4175) && !(_photon.scEta > 0.0525 && _photon.scEta < 0.07 && _photon.phi() > 0.35 && _photon.phi() < 0.3675) )
+  double noisyRegions[][4] = { // etaMin, etaMax, phiMin, phiMax // ieta, iphi // D=pi/360, {D*(ieta-1), D*(ieta+1), D*(iphi-11), D*(iphi-10)}
+    {-0.419, -0.401, 2.269, 2.286}, // -24, 141
+    {0.052, 0.070, 0.524, 0.541}, // 4, 41
+    {0.070, 0.087, 0.524, 0.541}, // 5, 41
+    {0.000, 0.017, 1.222, 1.239}, // 1, 81
+    {0.052, 0.070, 0.175, 0.192}  // 4, 21
+  };
+  cutres[NoisyRegion] = true;
+  for (auto& range : noisyRegions) {
+    if (_photon.scEta > range[0] && _photon.scEta < range[1] && _photon.phi() > range[2] && _photon.phi() < range[3]) {
+      cutres[NoisyRegion] = false;
+      break;
+    }
+  }
   // cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795); // ICHEP region
   cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * _photon.scRawPt) < 0.95;
   cutres[Sieie08] = (_photon.sieie < 0.008);
