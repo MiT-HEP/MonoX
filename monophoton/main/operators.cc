@@ -1262,7 +1262,7 @@ HtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& 
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
 
-    if ( !(parton.pdgid == 21 || std::sqrt(parton.pdgid) < 6))
+    if ( !(parton.pdgid == 21 || std::abs(parton.pdgid) < 6))
       continue;
 
     ht += parton.pt();
