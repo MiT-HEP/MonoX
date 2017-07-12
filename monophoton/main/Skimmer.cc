@@ -177,6 +177,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   TChain preInput("events");
   TChain mainInput("events");
   TChain genInput("events");
+  int mainTreeNumber(-1);
 
   for (auto& path : paths_) {
     preInput.Add(path);
@@ -185,7 +186,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   }
 
   TTreeFormula* preselection(0);
-  int treeNumber(-1);
+  int preTreeNumber(-1);
   if (doPreskim) {
     *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
 
@@ -218,8 +219,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (preInput.LoadTree(iEntry - 1) < 0)
         break;
 
-      if (treeNumber != preInput.GetTreeNumber()) {
-        treeNumber = preInput.GetTreeNumber();
+      if (preTreeNumber != preInput.GetTreeNumber()) {
+        preTreeNumber = preInput.GetTreeNumber();
         preselection->UpdateFormulaLeaves();
       }
 
@@ -238,6 +239,12 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
     if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
       continue;
+
+    if (mainTreeNumber != mainInput.GetTreeNumber()) {
+      mainTreeNumber = mainInput.GetTreeNumber();
+      // invalidate output event run number so it gets updated in prepareEvent
+      skimmedEvent.run.runNumber = 0;
+    }
 
     if (!event.isData) {
       genParticles.getEntry(genInput, iEntry - 1);
@@ -294,7 +301,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 void
 Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent, panda::GenParticleCollection const* _genParticles/* = 0*/)
 {
-  // copy most of the event content (special operator= of EventMonophoton that takes Event as RHS)
+  // copy most of the event content
   _outEvent.copy(_event);
 
   if (_genParticles)
