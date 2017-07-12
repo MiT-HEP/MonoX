@@ -15,10 +15,9 @@ from tp.efake_conf import lumiSamples, outputDir, roofitDictsDir, getBinning
 
 binningName = sys.argv[1]
 
-binningTitle, binning, fitBins = getBinning(binningName)
+ADDFIT = True
 
-if binningName == 'pt':
-    binning[-1] = binning[-2] + 20.
+binningTitle, binning, fitBins = getBinning(binningName)
 
 binLabels = False
 if len(binning) == 0:
@@ -75,6 +74,30 @@ canvas.addHistogram(scaleFactor, drawOpt = 'EP')
 
 canvas.legend.apply('sf_truth', sfTruth)
 canvas.addHistogram(sfTruth, drawOpt = 'EP')
+
+if ADDFIT:
+    power = ROOT.TF1('power', '[0] + [1] / (x - [2])', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
+    power.SetParameters(0.02, 1., 0.)
+    power.SetParLimits(2, -175., 10000.)
+
+    quad = ROOT.TF1('quad', '[0] + [1] * x + [2] * x**2', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
+    quad.SetParameters(1., 0.001, 0.00001)
+
+    function = quad
+
+    scaleFactor.Fit(function)
+    canvas.addObject(function)
+
+    """
+    text = 'f = %.4f + #frac{%.3f}{p_{T}' % (function.GetParameter(0), function.GetParameter(1))
+    if function.GetParameter(2) >= 0.:
+        text += ' - %.2f}' % function.GetParameter(2)
+    else:
+        text += ' + %.2f}' % (-function.GetParameter(2))
+    """
+    text = 'f = %.4f + %.4f * p_{T} + %.4f * p_{T}^{2}' % (function.GetParameter(0), function.GetParameter(1), function.GetParameter(2))
+
+    canvas.addText(text, 0.3, 0.3, 0.5, 0.2)
 
 canvas.xtitle = binningTitle
 canvas.printWeb('efake', 'scaleFactor_' + binningName, logy = False)

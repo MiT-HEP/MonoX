@@ -12,7 +12,7 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, addToWS
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
 import tp.efake_plot as efake_plot
 
 
@@ -91,6 +91,10 @@ template = ROOT.TH1D('template', '', *fitBinningT)
 
 # workspace
 work = outputFile.Get('work')
+
+if dataType == 'data':
+    mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
+    mcWork = mcSource.Get('work')
 
 # convenience
 def addToWS(obj):

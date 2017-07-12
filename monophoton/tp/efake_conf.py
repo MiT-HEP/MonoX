@@ -22,7 +22,7 @@ def getBinning(binningName):
     if binningName == 'pt':
         binningTitle = 'p_{T}^{probe} (GeV)'
 #        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
-        binning = [175., 200., 225., 250., 275., 300., 350., 400., 450., 500., 6500.]
+        binning = [175., 200., 225., 250., 275., 300., 350., 400., 6500.] # 450., 500., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -30,6 +30,9 @@ def getBinning(binningName):
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
             cut = 'probes.pt_ > {low:.0f} && probes.pt_ < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
+
+        binning.pop()
+        binning.append(500.)
 
     elif binningName == 'ptalt':
         binningTitle = 'p_{T}^{probe} (GeV)'
@@ -47,7 +50,7 @@ def getBinning(binningName):
 
     elif binningName == 'highpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [175., 6500.]
+        binning = [175., 200., 250., 300., 350., 400., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -55,6 +58,9 @@ def getBinning(binningName):
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
             cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
+
+        binning.pop()
+        binning.append(500.)
 
     elif binningName == 'highptH':
         binningTitle = 'p_{T}^{probe} (GeV)'
