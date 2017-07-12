@@ -591,6 +591,19 @@ class PhotonPtTruncator : public Cut {
   double max_{500.};
 };
 
+class HtTruncator : public Cut {
+ public:
+  HtTruncator(char const* name = "HtTruncator") : Cut(name) {}
+
+  void setHtMin(double min) { min_ = min; }
+  void setHtMax(double max) { max_ = max; }
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  double min_{0.};
+  double max_{100.};
+};
+
 class GenParticleSelection : public Cut {
  public:
   GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}

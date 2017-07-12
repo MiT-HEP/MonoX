@@ -1332,12 +1332,6 @@ def addGenPhotonVeto(sample, selector):
 
     selector.addOperator(veto, 0)
 
-def addGenPhotonPtCut(sample, selector):
-    truncator = ROOT.PhotonPtTruncator()
-    truncator.setPtMax(500.)
-
-    selector.addOperator(truncator, 0)
-
 def addPhotonRecoil(sample, selector):
     """Wrapper for diphoton samples to turn them into photon+dark photon
     samples by 'removing' one of the photons and adding it to the MET."""
@@ -1401,6 +1395,17 @@ def ptTruncator(minimum = 0., maximum = -1.):
         selector.addOperator(truncator, 0)
 
     return addPtCut
+
+def htTruncator(minimum = 0., maximum = -1.):
+    def addHtCut(sample, selector):
+        truncator = ROOT.HtTruncator()
+        truncator.setHtMin(minimum)
+        if maximum > 0.:
+            truncator.setHtMax(maximum)
+
+        selector.addOperator(truncator, 0)
+
+    return addHtCut
 
 
 if needHelp:
