@@ -6,13 +6,14 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
 # Samples in the same data are skimmed for skimTypes (second parameters of the tuples) in the group.
+dy50 = ['dy-50', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500']
 skimConfig = {
     'phdata': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
     'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
 #    'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
     'mudata': (['smu-16c-m'], ['kME']),
-    'mc': (['dy-50', 'wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
-    'mcmu': (['dy-50'], ['kEG', 'kMG', 'kMMG']),
+    'mc': (dy50 + ['wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
+    'mcmu': (dy50, ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
 

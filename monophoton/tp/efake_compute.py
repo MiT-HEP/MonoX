@@ -22,9 +22,6 @@ ADDFIT = True
 
 binningTitle, binning, fitBins = getBinning(binningName)
 
-if binningName == 'pt':
-    binning[-1] = binning[-2] + 20.
-
 binLabels = False
 if len(binning) == 0:
     binLabels = True
