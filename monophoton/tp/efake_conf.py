@@ -29,7 +29,7 @@ def getBinning(binningName):
         for iBin in range(len(binning) - 1):
             repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
-            cut = 'probes.pt_ > {low:.0f} && probes.pt_ < {high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
 
         binning.pop()
