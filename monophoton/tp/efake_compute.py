@@ -223,15 +223,17 @@ if ADDFIT:
         result.SetBinError(ibin, 1.e+6)
         ibin += 1
 
-    power = ROOT.TF1('power', '[0] + [1] / (x - [2])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
-    power.SetParameters(0.02, 1., 0.)
+    power = ROOT.TF1('power', '[0] + [1] / ((x - [3])- [2])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
+    power.SetParameters(0.02, 1., 0., binning[0])
+    power.FixParameter(3, binning[0])
+    power.SetParLimits(2, -100000., 0.)
     result.Fit(power)
     canvas.addObject(power)
 
     for ibin, err in errors.items():
         result.SetBinError(ibin, err)
 
-    text = 'f = %.4f + #frac{%.3f}{p_{T}' % (power.GetParameter(0), power.GetParameter(1))
+    text = 'f = %.4f + #frac{%.3f}{(p_{T} - %.0f)' % (power.GetParameter(0), power.GetParameter(1), binning[0])
     if power.GetParameter(2) >= 0.:
         text += ' - %.2f}' % power.GetParameter(2)
     else:
