@@ -3,6 +3,8 @@
 import os
 import subprocess
 
+from batch import BatchManager
+
 logger = None
 
 DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
@@ -229,16 +231,17 @@ class SkimSlimWeight(object):
                 os.remove(mergePath)
 
 
-class BatchManager(object):
+class SSWBatchManager(BatchManager):
+    def __init__(self, ssws, skipMissing, readRemote):
+        BatchManager.__init__(self, 'ssw2')
 
-    def __init__(self, submitter, ssws, skipMissing, readRemote):
-        self.submitter = submitter
         self.ssws = ssws # list of SlimSkimWeight objects to manage
         self.skipMissing = skipMissing
         self.readRemote = readRemote
-        self.argTemplate = ''
 
     def submitMerge(self, noWait, autoResubmit = False):
+        submitter = CondorRun(os.path.realpath(__file__))
+
         arguments = []
 
         for ssw in self.ssws:
@@ -254,31 +257,27 @@ class BatchManager(object):
                 except:
                     pass
     
-        self.argTemplate = '-M %s -s %s'
-        self.submitter.job_args = [self.argTemplate % arg for arg in arguments]
-        self.submitter.job_names = ['%s_%s' % arg for arg in arguments]
-    
-        self.submitter.submit(name = 'ssw2')
+        argTemplate = '-M %s -s %s'
+        submitter.job_args = [argTemplate % arg for arg in arguments]
+        submitter.job_names = ['%s_%s' % arg for arg in arguments]
 
-        if not noWait:
-            self._waitForCompletion('merge', dict(self.submitter.last_submit), autoResubmit)
+        self._submit(submitter, 'merge', argTemplate, noWait, autoResubmit)
 
     def submitSkim(self, noWait, autoResubmit = False):
-        self.argTemplate = '%s -f %s'
+        submitter = CondorRun(os.path.realpath(__file__))
+
+        argTemplate = '%s -f %s'
     
         if self.skipMissing:
-            self.argTemplate += ' -K'
+            argTemplate += ' -K'
 
         if self.readRemote:
-            self.argTemplate += ' -R'
-
-        self.submitter.job_args = []
-        self.submitter.job_names = []
+            argTemplate += ' -R'
 
         for ssw in self.ssws:
             for fileset in ssw.filesets:
-                self.submitter.job_args.append(self.argTemplate % (ssw.sample.name, fileset) + ' -s ' + ' '.join(ssw.selectors.keys()))
-                self.submitter.job_names.append('%s_%s' % (ssw.sample.name, fileset))
+                submitter.job_args.append(argTemplate % (ssw.sample.name, fileset) + ' -s ' + ' '.join(ssw.selectors.keys()))
+                submitter.job_names.append('%s_%s' % (ssw.sample.name, fileset))
     
                 # clean up old .log files
                 logpath = '/local/' + os.environ['USER'] + '/ssw2/' + ssw.sample.name + '_' + fileset + '.0.log'
@@ -287,62 +286,9 @@ class BatchManager(object):
                     os.remove(logpath)
                 except:
                     pass
+
+        self._submit(submitter, 'skim', argTemplate, noWait, autoResubmit)
     
-        submitter.submit(name = 'ssw2')
-
-        if not noWait:
-            self._waitForCompletion('skim', dict(self.submitter.last_submit), autoResubmit)
-
-    def _waitForCompletion(self, jobType, clusterToJob, autoResubmit):
-        print 'Waiting for all jobs to complete.'
-
-        # indices of arguments to pick up from condor_q output lines
-        argsToExtract = []
-        for ia, a in enumerate(self.argTemplate.split()):
-            if a == '%s':
-                argsToExtract.append(ia)
-
-        clusters = clusterToJob.keys()
-    
-        while True:
-            proc = subprocess.Popen(['condor_q'] + clusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            out, err = proc.communicate()
-            lines = out.split('\n')
-
-            jobsInQueue = []
-            for line in lines:
-                if line.strip() == '':
-                    continue
-    
-                words = line.split()
-    
-                clusterId, jobStatus = words[:2]
-                if jobStatus == '5':
-                    args = tuple(words[3 + i] for i in argsToExtract)
-                    print 'Job %s is held' % str(args)
-
-                    if autoResubmit:
-                        print ' Resubmitting.'
-                        proc = subprocess.Popen(['condor_release', clusterId], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                        out, err = proc.communicate()
-                        print out.strip()
-                        print err.strip()
-                        jobsInQueue.append(clusterId)
-
-                    else:
-                        clusters.remove(clusterId)
-
-                else:
-                    jobsInQueue.append(clusterId)
-
-            for clusterId in (set(clusters) - set(jobsInQueue)):
-                clusters.remove(clusterId)
-
-            if len(clusters) == 0:
-                break
-    
-            time.sleep(10)
-
 
 if __name__ == '__main__':
 
@@ -402,7 +348,7 @@ if __name__ == '__main__':
 
     ## set up logger
     printLevel = getattr(logging, args.printLevel.upper())
-    args.printLevel = printLevel
+    args.printLevel = printLevel # gets passed to SkimSlimWeight.config
 
     logging.basicConfig(level = printLevel)
     logger = logging.getLogger(__name__)
@@ -524,18 +470,8 @@ if __name__ == '__main__':
     if args.batch:
         ## job submission only
         print 'Submitting jobs.'
-
-        ## load condor-run
-        sys.path.append('/home/yiiyama/lib')
-        from condor_run import CondorRun
-
-        submitter = CondorRun(os.path.realpath(__file__))
-        submitter.logdir = '/local/' + os.environ['USER']
-        submitter.hold_on_fail = True
-#        submitter.group = 'group_t3mit.urgent'
-        submitter.min_memory = 1
-        
-        batchManager = BatchManager(submitter, ssws, args.skipMissing, args.readRemote)
+       
+        batchManager = SSWBatchManager(ssws, args.skipMissing, args.readRemote)
 
         if args.merge:
             batchManager.submitMerge(args.noWait, args.autoResubmit)

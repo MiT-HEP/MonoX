@@ -12,8 +12,10 @@ public:
   ~EventPicker() {}
   void addPath(char const* _path) { paths_.emplace_back(_path); }
   void addEvent(unsigned r, unsigned l, unsigned e) { eventIds_.emplace_back(r, l, e); }
+  void setPrintEvery(unsigned i) { printEvery_ = i; }
+  void setPrintLevel(unsigned l) { printLevel_ = l; }
 
-  void run(char const* outputDir);
+  void run(char const* outputDir, long nEntries = -1);
 
   struct EventId {
     EventId() {}
@@ -27,10 +29,12 @@ public:
 private:
   std::vector<TString> paths_{};
   std::vector<EventId> eventIds_{};
+  unsigned printEvery_{10000};
+  unsigned printLevel_{0};
 };
 
 void
-EventPicker::run(char const* _outputDir)
+EventPicker::run(char const* _outputDir, long _nEntries/* = -1*/)
 {
   panda::Event event;
   panda::Run run;
@@ -43,6 +47,7 @@ EventPicker::run(char const* _outputDir)
     fullInput.Add(path);
   }
 
+  event.setStatus(idInput, {"!*"});
   event.setAddress(idInput, {"runNumber", "lumiNumber", "eventNumber"});
   event.setAddress(fullInput);
 
@@ -50,11 +55,17 @@ EventPicker::run(char const* _outputDir)
   TTree* runTree(0);
 
   long iEntry(0);
-  while (event.getEntry(idInput, iEntry++) > 0) {
+  while (iEntry != _nEntries && event.getEntry(idInput, iEntry++) > 0) {
+    if (iEntry % printEvery_ == 1 && printLevel_ > 0)
+      std::cout << " " << iEntry << std::endl;
+
     // not the most efficient implementation, but we don't need ultimate speed here.
     for (auto idItr(eventIds_.begin()); idItr != eventIds_.end(); ++idItr) {
       auto& id(*idItr);
       if (id.runNumber == event.runNumber && id.lumiNumber == event.lumiNumber && id.eventNumber == event.eventNumber) {
+        if (printLevel_ > 0)
+          std::cout << "Found event " << id.runNumber << ":" << id.lumiNumber << ":" << id.eventNumber << std::endl;
+
         event.getEntry(fullInput, iEntry - 1);
 
         if (treeNumber != fullInput.GetTreeNumber()) {
