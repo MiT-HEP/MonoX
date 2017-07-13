@@ -46,7 +46,7 @@ ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
 
 ### Files ###
 
-outputName = outputDir + '/fityields_' + dataType + '_' + binningName + '.root'
+outputName = outputDir + '/fittemplates_' + dataType + '_' + binningName + '.root'
 
 tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + os.path.basename(outputName)
 try:
