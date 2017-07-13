@@ -43,7 +43,11 @@ outBaseName = '_'.join([
 
 suffix = conf + '_' + bin
 
-outputName = outputDir + '/' + outBaseName
+outputName = outputDir + '/' + binningName + '/' + outBaseName
+try:
+    os.makedirs(os.path.dirname(outputName))
+except OSError:
+    pass
 
 tmpOutName = '/tmp/' + os.environ['USER'] + '/efake/' + outBaseName
 try:

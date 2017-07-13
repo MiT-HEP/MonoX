@@ -122,22 +122,7 @@ tpconf = work.arg('tpconf')
 binName = work.arg('binName')
 
 # smearing parameters are unused in dataType == mc but we'll just leave them here
-print tpconf
-print binName
-print ntarg
-print nbkg
-print nsignal
-print nZ
-print mZ
-print gammaZ
-
 nompset = ROOT.RooArgSet(tpconf, binName, ntarg, nbkg, nsignal, nZ, mZ, gammaZ)
-
-print m0
-print sigma
-print alpha
-print n
-
 nompset.add(m0)
 nompset.add(sigma)
 nompset.add(alpha)
