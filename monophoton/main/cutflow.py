@@ -147,12 +147,14 @@ if args.eventList:
     
         tree.GetEntry(iEntry)
 
-        # ad-hoc fix
-        # L1A comes at ~100kHz * one lumi section is 23 seconds.
-        # giving a huge safety factor of allowing 10kHz rate.
         eventNumber = int(event[0])
-        if eventNumber < lumi[0] * 23 * 10000:
-            eventNumber += 0x100000000
+
+        if data:
+            # ad-hoc fix
+            # L1A comes at ~100kHz * one lumi section is 23 seconds.
+            # giving a huge safety factor of allowing 10kHz rate.
+            if eventNumber < lumi[0] * 23 * 10000:
+                eventNumber += 0x100000000
 
         if args.uwFormat:
             evlist.append((run[0], eventNumber, lumi[0]))
