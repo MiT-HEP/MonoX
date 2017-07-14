@@ -43,6 +43,27 @@ import config
 
 import ROOT
 
+def listOfRanges(lumis):
+    ranges = []
+
+    begin = -1
+    end = -1
+    for lumi in sorted(lumis):
+        if lumi == end + 1:
+            end = lumi
+
+        else:
+            if begin > 0:
+                ranges.append((begin, end))
+
+            begin = lumi
+            end = begin
+
+    if begin > 0:
+        ranges.append((begin, end))
+
+    return ranges
+
 mask = collections.defaultdict(set)
 if args.mask:
     with open(args.mask) as source:
@@ -56,80 +77,56 @@ sampleRuns = collections.defaultdict(set)
 if not args.list:
     print 'Calculating integrated luminosity for', args.snames, 'from', config.ntuplesDir
 
+    arun = array.array('I', [0])
+    alumi = array.array('I', [0])
+
     for sample in allsamples.getmany(args.snames):
-        dname = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
-    
-        for fname in os.listdir(dname):
-            if not fname.endswith('.root'):
-                continue
-
-            path = dname + '/' + fname
-
+        for path in sample.files():
             source = ROOT.TFile.Open(path)
+
             if not source:
+                print 'Cannot open', path
                 continue
         
-            gr = source.Get('ProcessedRunsLumis')
-            if gr:
-                for iP in range(gr.GetN()):
-                    run = int(gr.GetX()[iP])
-                    lumi = int(gr.GetY()[iP])
-    
-                    if args.mask and (run not in mask or lumi not in mask[run]):
-                        continue
-    
-                    allLumis[run].add(lumi)
-                    sampleRuns[sample.name].add(run)
-            else:
-                print path, 'does not have ProcessedRunsLumis. Extracting the lumi list from the events tree.'
+            tree = source.Get('lumiSummary')
+            if not tree:
+                print path, 'does not have lumiSummary. Extracting the lumi list from the events tree.'
                 tree = source.Get('events')
-                arun = array.array('I', [0])
-                alumi = array.array('I', [0])
-                tree.SetBranchStatus('*', False)
-                tree.SetBranchStatus('runNumber', True)
-                tree.SetBranchStatus('lumiNumber', True)
-                tree.SetBranchAddress('runNumber', arun)
-                tree.SetBranchAddress('lumiNumber', alumi)
-                run = 0
-                lumi = 0
-                entry = 0
-                while tree.GetEntry(entry) > 0:
-                    entry += 1
-                    if arun[0] == run and alumi[0] == lumi:
-                        continue
-    
-                    run = arun[0]
-                    lumi = alumi[0]
-    
-                    if run not in mask or lumi not in mask[run]:
-                        continue
-    
-                    allLumis[run].add(lumi)
-                    sampleRuns[sample.name].add(run)
+
+            tree.SetBranchStatus('*', False)
+            tree.SetBranchStatus('runNumber', True)
+            tree.SetBranchStatus('lumiNumber', True)
+            tree.SetBranchAddress('runNumber', arun)
+            tree.SetBranchAddress('lumiNumber', alumi)
+
+            entry = 0
+            while tree.GetEntry(entry) > 0:
+                entry += 1
+
+                run = arun[0]
+                lumi = alumi[0]
+
+                if len(mask) != 0 and run not in mask or lumi not in mask[run]:
+                    continue
+
+                allLumis[run].add(lumi)
+                sampleRuns[sample.name].add(run)
     
             source.Close()
-    
-    text = ''
+
+    blocks = []
     for run in sorted(allLumis.keys()):
-        text += '\n  "%d": [\n' % run
-    
-        current = -1
-        for lumi in sorted(allLumis[run]):
-            if lumi == current + 1:
-                current = lumi
-                continue
-    
-            if current > 0:
-                text += '%d],\n' % current
-    
-            current = lumi
-            text += '    [%d, ' % current
-    
-        text += '%d]\n' % current
-        text += '  ],'
+        text = '  "%d": [\n' % run
+
+        ranges = listOfRanges(allLumis[run])
+
+        text += ',\n'.join('    [%d, %d]' % r for r in ranges) + '\n'
+        text += '  ]'
+
+        blocks.append(text)
     
     with open('_lumis_tmp.txt', 'w') as out:
-        out.write('{' + text[:-1] + '\n}')
+        out.write('{\n' + ',\n'.join(blocks) + '\n}')
 
 else:
     with open(args.list) as source:
@@ -184,30 +181,22 @@ for sname in sorted(sampleRuns.keys()):
     print '%s: %.1f' % (sname, total)
 
 if args.save:
-    text = ''
+    blocks = []
     for run in sorted(allLumis.keys()):
         if run not in integrated:
             continue
 
-        text += '\n  "%d": {\n' % run
+        text = '  "%d": {\n' % run
         text += '    "integrated": %f,\n' % integrated[run]
         text += '    "lumisections": [\n' 
-    
-        current = -1
-        for lumi in sorted(allLumis[run]):
-            if lumi == current + 1:
-                current = lumi
-                continue
-    
-            if current > 0:
-                text += '%d],\n' % current
-    
-            current = lumi
-            text += '      [%d, ' % current
-    
-        text += '%d]\n' % current
+
+        ranges = listOfRanges(allLumis[run])
+
+        text += ',\n'.join('      [%d, %d]' % r for r in ranges) + '\n'
         text += '    ]\n'
-        text += '  },'
+        text += '  }'
+
+        blocks.append(text)
     
     with open(basedir + '/data/lumis.txt', 'w') as out:
-        out.write('{' + text[:-1] + '\n}\n')
+        out.write('{\n' + ',\n'.join(blocks) + '\n}\n')
