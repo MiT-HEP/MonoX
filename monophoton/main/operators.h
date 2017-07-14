@@ -439,6 +439,7 @@ class PhotonMetDPhi : public Cut {
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
+  void setCutValue(double v) { cutValue_ = v; }
   void setMetSource(MetSource s) { metSource_ = s; }
   void setMetVariations(MetVariations* v) { metVar_ = v; }
   void invert(bool i) { invert_ = i; }
@@ -459,6 +460,7 @@ class PhotonMetDPhi : public Cut {
   /* float dPhiJERDown_{0.}; */
   MetVariations* metVar_{0};
 
+  double cutValue_{0.5};
   bool nominalResult_{false};
   bool invert_{false};
 };

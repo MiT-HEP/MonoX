@@ -901,18 +901,18 @@ PhotonMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
   }
 
   if (invert_)
-    nominalResult_ = dPhi_ < 2.;
+    nominalResult_ = dPhi_ < cutValue_;
   else
-    nominalResult_ = dPhi_ > 2.;
+    nominalResult_ = dPhi_ > cutValue_;
 
   // for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_, dPhiJER_, dPhiJERUp_, dPhiJERDown_}) {
   for (double dPhi : {dPhi_, dPhiJECUp_, dPhiJECDown_, dPhiGECUp_, dPhiGECDown_, dPhiUnclUp_, dPhiUnclDown_}) {
     if (invert_) {
-      if (dPhi > 2.)
+      if (dPhi > cutValue_)
         return true;
     }
     else {
-      if (dPhi < 2.)
+      if (dPhi < cutValue_)
         return true;
     }
   }
