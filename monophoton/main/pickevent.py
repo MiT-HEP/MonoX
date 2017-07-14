@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 
+import sys
 import os
 import re
 import tempfile
 
 from batch import BatchManager
+
+## load condor-run
+sys.path.append('/home/yiiyama/lib')
+from condor_run import CondorRun
 
 logger = None
 DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'

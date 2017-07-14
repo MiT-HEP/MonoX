@@ -3,10 +3,6 @@ import sys
 import time
 import subprocess
 
-## load condor-run
-sys.path.append('/home/yiiyama/lib')
-from condor_run import CondorRun
-
 class BatchManager(object):
     def __init__(self, name):
         self.name = name

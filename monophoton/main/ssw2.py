@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
+import sys
 import os
 import subprocess
 
 from batch import BatchManager
+
+## load condor-run
+sys.path.append('/home/yiiyama/lib')
+from condor_run import CondorRun
 
 logger = None
 
