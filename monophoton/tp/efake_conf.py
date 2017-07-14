@@ -1,7 +1,18 @@
 import os
 
-outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/efake'
+outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/efake_pog'
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
+
+# panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
+itune = 1
+
+dataSource = 'sph' # sph or sel or smu
+if dataSource == 'sph':
+    tpconfs = ['ee', 'eg', 'pass', 'fail']
+elif dataSource == 'sel':
+    tpconfs = ['ee', 'eg', 'pass', 'fail']
+elif dataSource == 'smu':
+    tpconfs = ['passiso', 'failiso']
 
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
@@ -20,10 +31,23 @@ skimConfig = {
 lumiSamples = skimConfig['phdata'][0]
 
 def getBinning(binningName):
-    if binningName == 'pt':
+    if binningName == 'inclusive':
         binningTitle = 'p_{T}^{probe} (GeV)'
-#        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
-        binning = [175., 200., 225., 250., 275., 300., 350., 400., 6500.] # 450., 500., 6500.]
+        binning = [175., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+        binning.pop()
+        binning.append(500.)
+
+    elif binningName == 'pt':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        binning = [175., 200., 250., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -37,8 +61,7 @@ def getBinning(binningName):
 
     elif binningName == 'ptalt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-#        binning = [40., 50., 60., 80., 100., 120., 140., 160., 6500.]
-        binning = [175., 200., 250., 6500.]
+        binning = [175., 200., 250., 300., 350., 400., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -47,11 +70,12 @@ def getBinning(binningName):
             cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
 
-        binning = [175., 200., 250., 300.]
+        binning.pop()
+        binning.append(500.)
 
     elif binningName == 'highpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [175., 200., 250., 300., 350., 400., 6500.]
+        binning = [175., 200., 225., 250., 275., 300., 350., 400., 6500.] 
         
         fitBins = []
         for iBin in range(len(binning) - 1):

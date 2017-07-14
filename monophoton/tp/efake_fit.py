@@ -12,23 +12,11 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, dataSource, tpconfs
 import tp.efake_plot as efake_plot
-
 
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
-
-dataSource = 'sph' # sph or sel or smu
-# panda::XPhoton::IDTune
-itune = 1
-
-if dataSource == 'sph':
-    tpconfs = ['ee', 'eg', 'pass', 'fail']
-elif dataSource == 'sel':
-    tpconfs = ['ee', 'eg']
-elif dataSource == 'smu':
-    tpconfs = ['passiso', 'failiso']
 
 monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
 
