@@ -229,26 +229,48 @@ for bin, fitCut in fitBins:
         tbkg = inputFile.Get('bkgtree_' + suffix)
 
         if dataType == 'mc':
-            if conf in ['pass', 'fail']:                
-                bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
-                addToWS(bkgModel)
+            if conf in ['pass', 'fail']:
+                if tbkg.GetEntries() > 5000:
+                    hbkg = template.Clone('hbkg_' + suffix)
+                    tbkg.Draw('mass>>hbkg_' + suffix, 'weight')
+                    bkgData = ROOT.RooDataHist('bkgData_' + suffix, 'bkg', masslist, hbkg)
+                    addToWS(bkgData)
+            
+                    bkgModel = work.factory('HistPdf::bkgModel_{suffix}({{mass}}, bkgData_{suffix}, 2)'.format(suffix = suffix))
+                else:
+                    bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
+                    addToWS(bkgModel)
 
                 altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
                 addToWS(altbkgModel)
             
             else:
-                altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, 'weight', 0.3, 8)
-                addToWS(altbkgModel)
-
                 tmcbkg = inputFile.Get('mcbkgtree_' + suffix)
-                bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tmcbkg, 'weight', 0.3, 8)
-                addToWS(bkgModel)
 
-                hmubkg = altbkgModel.createHistogram('hmubkg', mass, ROOT.RooFit.Binning(fitBinning))
-                hmubkg.SetName('hmubkg_' + suffix)
+                if tbkg.GetEntries() > 5000:
+                    hmubkg = template.Clone('hmubkg_' + suffix)
+                    tbkg.Draw('mass>>hmubkg_' + suffix, 'weight')
+                    mubkgData = ROOT.RooDataHist('mubkgData_' + suffix, 'bkg', masslist, hmubkg)
+                    addToWS(mubkgData)
+            
+                    altbkgModel = work.factory('HistPdf::altbkgModel_{suffix}({{mass}}, mubkgData_{suffix}, 2)'.format(suffix = suffix))
+
+                    helbkg = template.Clone('helbkg_' + suffix)
+                    tmcbkg.Draw('mass>>helbkg_' + suffix, 'weight')
+
+                else:
+                    altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, 'weight', 0.3, 8)
+                    addToWS(altbkgModel)
+
+                    bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tmcbkg, 'weight', 0.3, 8)
+                    addToWS(bkgModel)
+    
+                    hmubkg = altbkgModel.createHistogram('hmubkg', mass, ROOT.RooFit.Binning(fitBinning))
+                    hmubkg.SetName('hmubkg_' + suffix)
+                    helbkg = bkgModel.createHistogram('helbkg', mass, ROOT.RooFit.Binning(fitBinning))
+                    helbkg.SetName('helbkg_' + suffix)
+
                 hmubkg.Scale(1. / hmubkg.GetSumOfWeights())
-                helbkg = bkgModel.createHistogram('helbkg', mass, ROOT.RooFit.Binning(fitBinning))
-                helbkg.SetName('helbkg_' + suffix)
                 helbkg.Scale(1. / helbkg.GetSumOfWeights())
 
                 elmuscale = helbkg.Clone('elmuscale_' + suffix)
