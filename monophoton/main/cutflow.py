@@ -18,8 +18,9 @@ argParser.add_argument('--events', '-E', action = 'store_true', dest = 'eventLis
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
 argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
 argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
+argParser.add_argument('--cut-results', '-r', metavar = 'EVENTID', dest = 'eventId', help = 'Show results of the cuts on a specific event.')
 argParser.add_argument('--out', '-o', metavar = 'PATH', dest = 'outName', default = '', help = 'Output file name. Use "-" for stdout.')
-argParser.add_argument('--uw-format', '-W', action = 'store_true', dest = 'uwFormat', help = 'Print event list in run:event:lumi format.')
+argParser.add_argument('--uw-format', '-U', action = 'store_true', dest = 'uwFormat', help = 'Print event list in run:event:lumi format.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -72,7 +73,7 @@ if args.cutflow is None:
     
     cutflow += [
         ('MetFilters',),
-        ('PhotonSelection_nominal',),
+        ('PhotonSelection',),
         ('LeptonSelection',),
     ]
 
@@ -146,17 +147,66 @@ if args.eventList:
     
         tree.GetEntry(iEntry)
 
+        # ad-hoc fix
+        # L1A comes at ~100kHz * one lumi section is 23 seconds.
+        # giving a huge safety factor of allowing 10kHz rate.
+        eventNumber = int(event[0])
+        if eventNumber < lumi[0] * 23 * 10000:
+            eventNumber += 0x100000000
+
         if args.uwFormat:
-            evlist.append((run[0], event[0], lumi[0]))
+            evlist.append((run[0], eventNumber, lumi[0]))
         else:
-            evlist.append((run[0], lumi[0], event[0]))
+            evlist.append((run[0], lumi[0], eventNumber))
 
     evlist.sort()
 
     outputLines = ['%d:%d:%d' % ev for ev in evlist]
 
+    if args.uwFormat:
+        outputLines.sort() # sorted as string
+
     if args.outName == '':
         args.outName = 'events_' + args.region + '_' + '+'.join(sampleNames) + '.list'
+
+elif args.eventId:
+    if args.uwFormat:
+        run, event, lumi = map(int, args.eventId.split(':'))
+    else:
+        run, lumi, event = map(int, args.eventId.split(':'))
+
+    # panda 004 has 32-bit event numbers
+    event = event % 0x100000000
+
+    results = {}
+    for cuts in cutflow:
+        for cut in cuts:
+            bit = array.array('B', [0])
+            tree.SetBranchAddress(cut, bit)
+            results[cut] = bit
+
+    tree.Draw('>>elist', 'runNumber == %d && lumiNumber == %d && eventNumber == %d' % (run, lumi, event), 'entrylist')
+    elist = ROOT.gDirectory.Get('elist')
+
+    if elist.GetN() == 0:
+        print 'No event %d:%d:%d found' % (run, lumi, event)
+        sys.exit(1)
+
+    tree.SetEntryList(elist)
+    iEntry = tree.GetEntryNumber(0)
+    tree.GetEntry(iEntry)
+
+    outputLines = []
+   
+    for cuts in cutflow:
+        result = 1
+        for cut in cuts:
+            result *= results[cut][0]
+
+        outputLines.append('%s: %d' % (' && '.join(cuts), result))
+
+    if not args.outName:
+        args.outName = '-'
 
 else:
     def formLine(title, ncut, nprev):
