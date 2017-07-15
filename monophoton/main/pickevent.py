@@ -12,7 +12,6 @@ sys.path.append('/home/yiiyama/lib')
 from condor_run import CondorRun
 
 logger = None
-DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
 
 class PickEvent(object):
 
@@ -48,7 +47,7 @@ class PickEvent(object):
     
         logger.debug('getting all input files')
 
-        if not PickEvent.config['readRemote'] and not self.manual and PickEvent.config['ntuplesDir'] == DEFAULT_NTUPLES_DIR:
+        if not PickEvent.config['readRemote'] and not self.manual:
             # check for missing local copies and issue a smartcache download request
             self.sample.download()
 
@@ -84,9 +83,7 @@ class PickEvent(object):
         else:
             for fileset in self.filesets:
                 for path in self.sample.files([fileset]):
-                    if PickEvent.config['ntuplesDir'] != DEFAULT_NTUPLES_DIR:
-                        path = path.replace(DEFAULT_NTUPLES_DIR, PickEvent.config['ntuplesDir'])
-                    elif PickEvent.config['readRemote']:
+                    if PickEvent.config['readRemote']:
                         if not os.path.exists(path) or os.stat(path).st_size == 0:
                             path = path.replace('/mnt/hadoop/cms', 'root://xrootd.cmsaf.mit.edu/')
         

@@ -13,8 +13,8 @@ def makeZGWGHistograms(sname, binning):
     sample = allsamples[sname]
 
     tree = ROOT.TChain('events')
-    for fullname in sample.datasetNames:
-        tree.Add(config.ntuplesDir + '/' + sample.book + '/' + fullname + '/*.root')
+    for fname in sample.files():
+        tree.Add(fname)
 
     lo = ROOT.TH1D('lo', '', len(binning) - 1, binning)
 

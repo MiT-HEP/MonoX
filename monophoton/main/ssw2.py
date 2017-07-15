@@ -12,7 +12,6 @@ from condor_run import CondorRun
 
 logger = None
 
-DEFAULT_NTUPLES_DIR = '/mnt/hadoop/cms/store/user/paus'
 padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
 
 class SkimSlimWeight(object):
@@ -75,7 +74,7 @@ class SkimSlimWeight(object):
     
         logger.debug('getting all input files')
 
-        if not SkimSlimWeight.config['readRemote'] and not self.manual and SkimSlimWeight.config['ntuplesDir'] == DEFAULT_NTUPLES_DIR:
+        if not SkimSlimWeight.config['readRemote'] and not self.manual:
             # check for missing local copies and issue a smartcache download request
             self.sample.download()
 
@@ -146,9 +145,7 @@ class SkimSlimWeight(object):
             for fileset in self.filesets:
                 paths[fileset] = []
                 for path in self.sample.files([fileset]):
-                    if SkimSlimWeight.config['ntuplesDir'] != DEFAULT_NTUPLES_DIR:
-                        path = path.replace(DEFAULT_NTUPLES_DIR, SkimSlimWeight.config['ntuplesDir'])
-                    elif SkimSlimWeight.config['readRemote']:
+                    if SkimSlimWeight.config['readRemote']:
                         if not os.path.exists(path) or os.stat(path).st_size == 0:
                             path = path.replace('/mnt/hadoop/cms', 'root://xrootd.cmsaf.mit.edu/')
         

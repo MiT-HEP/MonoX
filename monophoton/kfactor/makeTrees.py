@@ -11,7 +11,7 @@ from datasets import allsamples
 import config as config
 
 ROOT.gSystem.Load('libPandaTreeObjects.so')
-ROOT.gSystem.AddIncludePath('-I' + os.environ['CMSSW_BASE'] + '/src/PandaTree')
+e = ROOT.panda.Event
 
 ROOT.gROOT.LoadMacro('GenKinematics.cc+')
 
@@ -26,10 +26,8 @@ for sname in snames:
 
     maker = ROOT.GenKinematics()
 
-    sdir = config.ntuplesDir + '/' + sample.book + '/' + sample.fullname
-    for fname in os.listdir(sdir):
-        if fname.endswith('.root'):
-            maker.addPath(sdir + '/' + fname)
+    for fname in sample.files():
+        maker.addPath(fname)
 
     outdir = outputFile.mkdir(sname)
 

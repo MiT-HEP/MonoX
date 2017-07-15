@@ -1,9 +1,5 @@
 import os
 
-# location of source panda files
-ntuplesDir = '/mnt/hadoop/cms/store/user/paus'
-# ntuplesDir = '/mnt/hadoop/scratch/yiiyama/pandaf' # for dph only
-
 # location of skim output from ssw2
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton/skim'
 # optionally copy to a local disk to speed up

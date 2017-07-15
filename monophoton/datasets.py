@@ -8,7 +8,6 @@ import subprocess
 
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
 catalogDir = '/home/cmsprod/catalog/t2mit'
-ntuplesDir = '/mnt/hadoop/cms/store/user/paus'
 
 def expandBrace(pattern):
     """Expand a string with a brace-enclosed substitution pattern."""
@@ -112,7 +111,11 @@ class SampleDef(object):
             self.addDataset(name)
 
         self._sumw2 = 0. # will be > 0 at the first call to _updateSumw
-        self._fullpaths = {} # {dataset: {fileset: [path]}}; loaded from catalog only on demand
+
+        # loaded from catalog only on demand
+        self._directories = {} # {dataset: directory}
+        self._basenames = {} # {dataset: {fileset: [basename]}}
+        self._downloadable = {}
 
     def clone(self):
         return SampleDef(self.name, title = self.title, book = self.book, fullname = self.fullname,
@@ -129,8 +132,8 @@ class SampleDef(object):
         self.datasetNames.append(name)
         self.datasetSuffices.append(suffix)
 
+        # invalidate cached information
         self._sumw2 = 0.
-        self._fullpaths = {}
 
     def dump(self, effectiveLumi = False):
         print 'name =', self.name
@@ -193,8 +196,9 @@ class SampleDef(object):
         self.sumw = 0.
 
         for dataset in self.datasetNames:
-            for fileset, paths in self._fullpaths[dataset].items():
-                for path in paths:
+            for fileset, basenames in self._basenames[dataset].items():
+                for basename in basenames:
+                    path = self._directories[dataset] + '/' + basename
                     source = ROOT.TFile.Open(path)
                     if not source:
                         raise IOError('Could not open', path)
@@ -214,29 +218,30 @@ class SampleDef(object):
                     source.Close()
 
     def _readCatalogs(self):
-        if len(self._fullpaths) != 0:
-            return
-
         # Loop over dataset names of the sample
         for dsuffix, dataset in zip(self.datasetSuffices, self.datasetNames):
-            self._fullpaths[dataset] = {}
+            if dataset in self._basenames:
+                continue
 
-            directories = {} # fileset -> directory of source files
+            self._basenames[dataset] = {}
 
             with open(catalogDir + '/' + self.book + '/' + dataset + '/Filesets') as filesetList:
                 for line in filesetList:
                     fileset, xrdpath = line.split()[:2]
                     fileset += dsuffix
-    
-                    directories[fileset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu//store/user/paus', ntuplesDir)
-                    self._fullpaths[dataset][fileset] = []
+
+                    self._basenames[dataset][fileset] = []
+
+                    if dataset not in self._directories:
+                        self._directories[dataset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+                        self._downloadable[dataset] = self._directories[dataset].startswith('/mnt/hadoop/cms/store/user/paus')
     
             with open(catalogDir + '/' + self.book + '/' + dataset + '/Files') as fileList:
                 for line in fileList:
                     fileset, fname = line.split()[:2]
                     fileset += dsuffix
     
-                    self._fullpaths[dataset][fileset].append(directories[fileset] + '/' + fname)
+                    self._basenames[dataset][fileset].append(fname)
     
     def recomputeWeight(self):
         self._sumw2 = 0.
@@ -262,11 +267,13 @@ class SampleDef(object):
     def download(self, filesets = []):
         self._readCatalogs()
 
-        for path in [p for p in self.files(filesets) if not os.path.exists(p)]:
-            fname = os.path.basename(path)
-            dataset = os.path.basename(os.path.dirname(path))
-            proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', fname, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            print proc.communicate()[0].strip()
+        for dataset in self.datasetNames:
+            if not self._downloadable[dataset]:
+                continue
+
+            for basenames in sum(self._basenames[dataset].values(), []):
+                proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
@@ -274,7 +281,7 @@ class SampleDef(object):
         if len(datasetNames) == 0:
             datasetNames = self.datasetNames
 
-        return sum([sorted(self._fullpaths[d].keys()) for d in datasetNames], [])
+        return sum([sorted(self._basenames[d].keys()) for d in datasetNames], [])
 
     def files(self, filesets = []):
         self._readCatalogs()
@@ -282,10 +289,9 @@ class SampleDef(object):
         paths = []
 
         for dataset in self.datasetNames:
-            if len(filesets) != 0:
-                paths += sum([l for f, l in self._fullpaths[dataset].items() if f in filesets], [])
-            else:
-                paths += sum(self._fullpaths[dataset].values(), [])
+            for fileset, basename in self._basenames[dataset].items():
+                if len(filesets) == 0 or fileset in filesets:
+                    paths.append(self._directories[dataset] + '/' + basename)
 
         return paths
 
@@ -418,14 +424,12 @@ add INFO: Add a new dataset.'''
     argParser.add_argument('command', nargs = '+', help = commandHelp)
     argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = catalogDir, help = 'Source file catalog.')
     argParser.add_argument('--list-path', '-s', metavar = 'PATH', dest = 'listPath', default = defaultList, help = 'CSV file to load data from.')
-    argParser.add_argument('--ntuples-dir', '-d', metavar = 'PATH', dest = 'ntuplesDir', default = ntuplesDir, help = 'Root directory of ntuples files.')
     argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'outPath', nargs = '?', const = '', help = 'Save updated content to CSV file (no argument: save to original CSV).')
 
     args = argParser.parse_args()
     sys.argv = []
 
     catalogDir = args.catalog
-    ntuplesDir = args.ntuplesDir
 
     import ROOT
 

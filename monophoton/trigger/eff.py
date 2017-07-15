@@ -27,7 +27,8 @@ FITEFFICIENCY = False
 measurements = [
     ('photon', 'sel', 'sel-16c-m', 'tpeg', 'probes.medium && !probes.pixelVeto'),
     ('electron', 'sel', 'sel-16*-m', 'tp2e', 'probes.tight'),
-    ('muon', 'smu', 'smu-16*', 'tp2m', 'probes.tight')
+    ('muon', 'smu', 'smu-16*', 'tp2m', 'probes.tight'),
+    ('vbf', 'sph', 'sph-16*')
 ]
 
 ## SETUP

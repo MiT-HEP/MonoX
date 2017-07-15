@@ -75,7 +75,7 @@ allLumis = collections.defaultdict(set)
 sampleRuns = collections.defaultdict(set)
 
 if not args.list:
-    print 'Calculating integrated luminosity for', args.snames, 'from', config.ntuplesDir
+    print 'Calculating integrated luminosity for', args.snames
 
     arun = array.array('I', [0])
     alumi = array.array('I', [0])

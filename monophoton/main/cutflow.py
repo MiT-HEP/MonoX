@@ -16,7 +16,6 @@ argParser.add_argument('region', metavar = 'REGION', help = 'Control/signal regi
 argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
 argParser.add_argument('--events', '-E', action = 'store_true', dest = 'eventList', help = 'Print list of events instead of cutflow.')
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
-argParser.add_argument('--ntuples-dir', '-n', metavar = 'PATH', dest = 'ntuplesDir', default = config.ntuplesDir, help = 'Directory of source ntuples.')
 argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
 argParser.add_argument('--cut-results', '-r', metavar = 'EVENTID', dest = 'eventId', help = 'Show results of the cuts on a specific event.')
 argParser.add_argument('--out', '-o', metavar = 'PATH', dest = 'outName', default = '', help = 'Output file name. Use "-" for stdout.')
@@ -49,9 +48,8 @@ for sample in allsamples.getmany(args.snames):
 
     else:
         # otherwise open the original files
-        sdir = args.ntuplesDir + '/' + sample.book + '/' + sample.fullname
-        for fname in os.listdir(sdir):
-            source = ROOT.TFile.Open(sdir + '/' + fname)
+        for fname in sample.files():
+            source = ROOT.TFile.Open(fname)
             counter = source.Get('counter')
             if not counter:
                 source.Close()

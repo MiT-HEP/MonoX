@@ -21,6 +21,7 @@ e = ROOT.panda.Event
 ROOT.gROOT.LoadMacro('Dumper.cc+')
 
 tree = ROOT.TChain('events')
-tree.Add(config.ntuplesDir + '/' + sample.book + '/' + sample.fullname + '/*.root')
+for fname in sample.files():
+    tree.Add(fname)
 
 ROOT.triggerRates(tree, 'test.root', 10000)
