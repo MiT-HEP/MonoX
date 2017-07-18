@@ -18,7 +18,7 @@ binningName = sys.argv[2]
 
 # PRODUCT = 'frate'
 PRODUCT = 'eff'
-ADDFIT = True
+ADDFIT = False
 
 binningTitle, binning, fitBins = getBinning(binningName)
 

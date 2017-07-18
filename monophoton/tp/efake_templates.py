@@ -12,7 +12,7 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, dataSource, tpconfs
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
 import tp.efake_plot as efake_plot
 
 dataType = sys.argv[1] # "data" or "mc"
@@ -57,9 +57,7 @@ outputFile = ROOT.TFile.Open(tmpOutName, 'recreate')
 
 print 'Starting common setup.'
 
-fitBinningT = (120, 60., 120.)
 fitBinning = ROOT.RooUniformBinning(fitBinningT[1], fitBinningT[2], fitBinningT[0])
-compBinning = ROOT.RooUniformBinning(81., 101., 20)
 
 initVals = {
     'nbkg': 100.,
@@ -84,7 +82,6 @@ work = ROOT.RooWorkspace('work', 'work')
 mass = work.factory('mass[60., 120.]')
 mass.setUnit('GeV')
 mass.setBinning(fitBinning, 'fitWindow')
-mass.setBinning(compBinning, 'compWindow')
 
 weight = work.factory('weight[-1000000000., 1000000000.]')
 ntarg = work.factory('ntarg[0., 100000000.]') # effective number of entries (differs from htarg integral in MC)

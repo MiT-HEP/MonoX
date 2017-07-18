@@ -6,7 +6,9 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
 itune = 1
 
-dataSource = 'sph' # sph or sel or smu
+fitBinningT = (120, 60., 120.)
+
+dataSource = 'sel' # sph or sel or smu
 if dataSource == 'sph':
     tpconfs = ['ee', 'eg', 'pass', 'fail']
 elif dataSource == 'sel':
@@ -108,6 +110,20 @@ def getBinning(binningName):
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
             cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
+
+    elif binningName == 'pogpt':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        binning = [20., 35., 50., 90., 150., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+        binning.pop()
+        binning.append(500.)
 
     elif binningName == 'test':
         binningTitle = 'p_{T}^{probe} (GeV)'
