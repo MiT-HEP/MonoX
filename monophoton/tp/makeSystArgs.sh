@@ -1,6 +1,6 @@
 #!/bin/bash
 
-binning=ptalt
+binning=$1
 seed=1001
 for bin in $(python efake_conf.py $binning)
 do

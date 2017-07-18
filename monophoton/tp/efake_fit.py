@@ -12,7 +12,7 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, dataSource, tpconfs
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
 import tp.efake_plot as efake_plot
 
 dataType = sys.argv[1] # "data" or "mc"
@@ -70,9 +70,8 @@ outputFile = ROOT.TFile.Open(tmpOutName, 'RECREATE')
 
 print 'Starting common setup.'
 
-fitBinningT = (120, 60., 120.)
 fitBinning = ROOT.RooUniformBinning(fitBinningT[1], fitBinningT[2], fitBinningT[0])
-compBinning = ROOT.RooUniformBinning(81., 101., 20)
+compBinning = ROOT.RooUniformBinning(60., 120., 60)
 
 initVals = {
     'nbkg': 100.,
@@ -108,6 +107,8 @@ def addToWS(obj):
         fcn(obj, ROOT.RooFit.Silence())
 
 mass = work.var('mass')
+mass.setBinning(compBinning, 'compWindow')
+
 weight = work.var('weight')
 ntarg = work.var('ntarg') # effective number of entries (differs from htarg integral in MC)
 nbkg = work.var('nbkg')
@@ -248,13 +249,27 @@ for bin, fitCut in fitBins:
                 tmcbkg = inputFile.Get('mcbkgtree_' + suffix)
 
                 if tbkg.GetEntries() > 5000:
+                    ## alt bkg model with hmu from tbkg tree
                     hmubkg = template.Clone('hmubkg_' + suffix)
                     tbkg.Draw('mass>>hmubkg_' + suffix, 'weight')
-                    mubkgData = ROOT.RooDataHist('mubkgData_' + suffix, 'bkg', masslist, hmubkg)
+                    
+                    mubkgData = ROOT.RooDataHist('mubkgData_' + suffix, 'mubkg', masslist, hmubkg)
                     addToWS(mubkgData)
-            
+                    
                     altbkgModel = work.factory('HistPdf::altbkgModel_{suffix}({{mass}}, mubkgData_{suffix}, 2)'.format(suffix = suffix))
+                    addToWS(altbkgModel)
+                    
+                    ## bkg model with hbkg from tmcbkg tree
+                    hmcbkg = template.Clone('hmcbkg_' + suffix)
+                    tmcbkg.Draw('mass>>hmcbkg_' + suffix, 'weight')
 
+                    mcbkgData = ROOT.RooDataHist('mcbkgData_' + suffix, 'mcbkg', masslist, hmcbkg)
+                    addToWS(mcbkgData)
+
+                    bkgModel = work.factory('HistPdf::bkgModel_{suffix}({{mass}}, mcbkgData_{suffix}, 2)'.format(suffix = suffix))
+                    addToWS(bkgModel)
+
+                    ## make helblg for scale plots
                     helbkg = template.Clone('helbkg_' + suffix)
                     tmcbkg.Draw('mass>>helbkg_' + suffix, 'weight')
 
