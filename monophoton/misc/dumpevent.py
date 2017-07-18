@@ -1,3 +1,4 @@
+import os
 import sys
 
 import ROOT
@@ -10,6 +11,6 @@ if len(sys.argv) > 2:
 else:
     run, lumi, event = 0, 0, 0
 
-ROOT.gROOT.LoadMacro('dumpevent.C')
+ROOT.gROOT.LoadMacro(os.path.dirname(os.path.realpath(__file__)) + '/dumpevent.C')
 
 ROOT.dumpevent(sys.argv[1], run, lumi, event)
