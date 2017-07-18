@@ -486,7 +486,6 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
     argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', default = 0, help = 'Verbosity of the script.')
     argParser.add_argument('--replot', '-P', action = 'store_true', dest = 'replot', default = '', help = 'Do not fill histograms. Need --hist-file.')
-    argParser.add_argument('--save-trees', '-t', action = 'store_true', dest = 'saveTrees', help = 'Write trees to output file instead of histograms.')
     argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
     
     args = argParser.parse_args()
@@ -576,10 +575,6 @@ if __name__ == '__main__':
         histFile = ROOT.gROOT
 
     if args.asimov:
-        if args.saveTrees:
-            print 'Cannot use --save-trees together with --asimov.'
-            sys.exit(1)
-
         if args.asimov == 'background':
             pass
         elif args.asimov in [s.name for s in plotConfig.signalPoints]:
@@ -623,7 +618,7 @@ if __name__ == '__main__':
     
                 sspec.group.samples.append(sspec.sample)
 
-        if not args.asimov:
+        if not args.asimov and not args.blind:
             groups.append(plotConfig.obs)
     
         for group in groups:
@@ -758,15 +753,14 @@ if __name__ == '__main__':
                 else:
                     counters[sspec.name] = shist
 
-        # observed distributions (if not blinded)
-        if not args.blind:
-            obshist = inDir.Get('data_obs')
+        # observed distributions
+        obshist = inDir.Get('data_obs')
 
-            if graphic:
-                formatHist(obshist, plotdef)
-                canvas.addObs(obshist, title = plotConfig.obs.title)
-            else:    
-                counters['data_obs'] = obshist
+        if graphic:
+            formatHist(obshist, plotdef)
+            canvas.addObs(obshist, title = plotConfig.obs.title)
+        else:    
+            counters['data_obs'] = obshist
 
         if plotdef.name == 'count':
             printCounts(counters, plotConfig)
@@ -777,4 +771,5 @@ if __name__ == '__main__':
         else:
             if args.asimov:
                 plotdef.name += args.asimov.capitalize()
+
             printCanvas(canvas, plotdef, plotConfig)
