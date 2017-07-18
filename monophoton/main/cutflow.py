@@ -16,8 +16,8 @@ argParser.add_argument('region', metavar = 'REGION', help = 'Control/signal regi
 argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '+', help = 'Sample names.')
 argParser.add_argument('--events', '-E', action = 'store_true', dest = 'eventList', help = 'Print list of events instead of cutflow.')
 argParser.add_argument('--skim-dir', '-s', metavar = 'PATH', dest = 'skimDir', default = config.skimDir, help = 'Directory of skim files to read from.')
-argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow')
-argParser.add_argument('--cut-results', '-r', metavar = 'EVENTID', dest = 'eventId', help = 'Show results of the cuts on a specific event.')
+argParser.add_argument('--flow', '-f', metavar = 'CUTS', nargs = '+', dest = 'cutflow', help = 'Cutflow. Can be "all" for --cut-results')
+argParser.add_argument('--cut-results', '-r', metavar = 'EVENTID', nargs = '+', dest = 'eventIds', help = 'Show results of the cuts on a specific event.')
 argParser.add_argument('--out', '-o', metavar = 'PATH', dest = 'outName', default = '', help = 'Output file name. Use "-" for stdout.')
 argParser.add_argument('--uw-format', '-U', action = 'store_true', dest = 'uwFormat', help = 'Print event list in run:event:lumi format.')
 
@@ -169,14 +169,33 @@ if args.eventList:
     if args.outName == '':
         args.outName = 'events_' + args.region + '_' + '+'.join(sampleNames) + '.list'
 
-elif args.eventId:
-    if args.uwFormat:
-        run, event, lumi = map(int, args.eventId.split(':'))
-    else:
-        run, lumi, event = map(int, args.eventId.split(':'))
+elif len(args.eventIds) != 0:
+    run = array.array('I', [0])
+    lumi = array.array('I', [0])
+    event = array.array('I', [0])
+    
+    tree.SetBranchAddress('runNumber', run)
+    tree.SetBranchAddress('lumiNumber', lumi)
+    tree.SetBranchAddress('eventNumber', event)
 
-    # panda 004 has 32-bit event numbers
-    event = event % 0x100000000
+    eventIds = []
+    for sid in args.eventIds:
+        if args.uwFormat:
+            r, e, l = map(int, sid.split(':'))
+        else:
+            r, l, e = map(int, sid.split(':'))
+
+        # panda 004 has 32-bit event numbers
+        e = e % 0x100000000
+
+        eventIds.append((r, l, e))
+
+    if cutflow[0][0] == 'all':
+        cutflow = []
+        tree.LoadTree(0)
+        for branch in tree.GetListOfBranches():
+            if branch.GetName() != 'runNumber' and branch.GetName() != 'lumiNumber' and branch.GetName() != 'eventNumber':
+                cutflow.append((branch.GetName(),))
 
     results = {}
     for cuts in cutflow:
@@ -185,25 +204,32 @@ elif args.eventId:
             tree.SetBranchAddress(cut, bit)
             results[cut] = bit
 
-    tree.Draw('>>elist', 'runNumber == %d && lumiNumber == %d && eventNumber == %d' % (run, lumi, event), 'entrylist')
+    sels = []
+    for eventId in eventIds:
+        sels.append('(runNumber == %d && lumiNumber == %d && eventNumber == %d)' % eventId)
+
+    tree.Draw('>>elist', ' || '.join(sels), 'entrylist')
     elist = ROOT.gDirectory.Get('elist')
 
     if elist.GetN() == 0:
-        print 'No event %d:%d:%d found' % (run, lumi, event)
+        print 'No event found:', eventIds
         sys.exit(1)
 
-    tree.SetEntryList(elist)
-    iEntry = tree.GetEntryNumber(0)
-    tree.GetEntry(iEntry)
-
     outputLines = []
-   
-    for cuts in cutflow:
-        result = 1
-        for cut in cuts:
-            result *= results[cut][0]
 
-        outputLines.append('%s: %d' % (' && '.join(cuts), result))
+    tree.SetEntryList(elist)
+    for iL in range(elist.GetN()):
+        iEntry = tree.GetEntryNumber(iL)
+        tree.GetEntry(iEntry)
+
+        outputLines.append('=== %d:%d:%d ===' % (run[0], lumi[0], event[0]))
+       
+        for cuts in cutflow:
+            result = 1
+            for cut in cuts:
+                result *= results[cut][0]
+    
+            outputLines.append('%s: %d' % (' && '.join(cuts), result))
 
     if not args.outName:
         args.outName = '-'
