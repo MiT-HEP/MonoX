@@ -11,7 +11,6 @@
 
 #include "TDirectory.h"
 
-#include "eventlist.h"
 #include "logging.h"
 
 #include "fastjet/JetDefinition.hh"
@@ -100,7 +99,7 @@ enum TPEventType {
   nOutTypes
 };
 
-const UInt_t NMAX_PARTICLES = 64;
+const UInt_t NMAX_PARTICLES = 128;
 
 //--------------------------------------------------------------------
 // Base classes
@@ -204,12 +203,32 @@ class HLTFilter : public Cut {
   ~HLTFilter();
 
   void initialize(panda::EventMonophoton& _event) override;
+  void addBranches(TTree& skimTree) override;
     
  protected:
   bool pass(panda::EventMonophoton const& _event, panda::EventMonophoton&) override;
 
   TString pathNames_{""};
   std::vector<UInt_t> tokens_;
+
+  bool pass_{false};
+};
+
+class EventVeto : public Cut {
+ public:
+  EventVeto(char const* name = "EventVeto") : Cut(name) {}
+
+  void addSource(char const* path);
+  void addEvent(unsigned run, unsigned lumi, unsigned event);
+
+  protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  typedef std::set<unsigned> EventContainer;
+  typedef std::map<unsigned, EventContainer> LumiContainer;
+  typedef std::map<unsigned, LumiContainer> RunContainer;
+
+  RunContainer list_{};
 };
 
 class MetFilters : public Cut {
@@ -218,12 +237,10 @@ class MetFilters : public Cut {
 
   // 1->require pass, -1->require fail, 0->ignore
   void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
-  void setEventList(char const* path, int decision);
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   int filterConfig_[6]{1, 1, 1, 1, 1, 1};
-  std::vector<std::pair<EventList, int>> eventLists_;
 };
 
 class GenPhotonVeto : public Cut {
@@ -578,6 +595,31 @@ class HighPtJetSelection : public Cut {
   double min_{100.};
   unsigned nMin_{1};
   unsigned nMax_{100};
+};
+
+class DijetSelection : public Cut {
+  // select events with two opposite-hemisphere jets with pT thresholds
+ public:
+  DijetSelection(char const* name = "DijetSelection") : Cut(name) {}
+
+  void setMinPt1(double min) { minPt1_ = min; }
+  void setMinPt2(double min) { minPt2_ = min; }
+  void setMinDEta(double min) { minDEta_ = min; }
+  void setMinMjj(double min) { minMjj_ = min; }
+
+  void addBranches(TTree& skimTree) override;
+  
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  double minPt1_{50.};
+  double minPt2_{50.};
+  double minDEta_{3.};
+  double minMjj_{800.};
+
+  unsigned nDijet_{0};
+  float dEtajj_[NMAX_PARTICLES]{};
+  float mjj_[NMAX_PARTICLES]{};
 };
 
 class PhotonPtTruncator : public Cut {
