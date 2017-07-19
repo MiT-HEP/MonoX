@@ -160,9 +160,6 @@ for bin, fitCut in fitBins:
         if dataSource == 'sph':
             altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
 
-            res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-            sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
-
         elif dataSource == 'sel' or dataSource == 'smu':
             # get signal template
             hsig = inputFile.Get('sig_' + bin)
@@ -171,7 +168,12 @@ for bin, fitCut in fitBins:
             addToWS(sigData)
             
             # no smearing
-            sigModel = work.factory('HistPdf::sigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
+            altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
+
+        addToWS(altsigModel)
+            
+        res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+        sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
 
     else:
         if dataSource == 'sph':
