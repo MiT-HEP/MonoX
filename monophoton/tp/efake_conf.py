@@ -123,7 +123,7 @@ def getBinning(binningName):
             fitBins.append((name, cut))
 
         binning.pop()
-        binning.append(500.)
+        binning.append(200.)
 
     elif binningName == 'test':
         binningTitle = 'p_{T}^{probe} (GeV)'
