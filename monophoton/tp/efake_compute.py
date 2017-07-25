@@ -227,7 +227,7 @@ if PRODUCT == 'frate':
     canvas.ylimits = (0., 0.05)
 else:
     canvas.legend.add(PRODUCT, '#epsilon_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-    canvas.ylimits = (0., 1.05)
+    canvas.ylimits = (0.5, 1.05)
 
 if dataType == 'mc':
     canvas.legend.add(PRODUCT + '_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)

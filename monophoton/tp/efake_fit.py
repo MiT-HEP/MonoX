@@ -156,43 +156,30 @@ for bin, fitCut in fitBins:
     sigModelName = 'sigModel_' + bin
     sigDataName = 'sigData_' + bin
 
-    if dataType == 'mc':
-        if dataSource == 'sph':
-            altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
+    if dataSource == 'sph':
+        altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
 
-        elif dataSource == 'sel' or dataSource == 'smu':
-            # get signal template
+    elif dataSource == 'sel' or dataSource == 'smu':
+        # get signal template
+        if dataType == 'mc':
             hsig = inputFile.Get('sig_' + bin)
-            
+
             sigData = ROOT.RooDataHist('sigData_' + bin, 'sig', masslist, hsig)
-            addToWS(sigData)
-            
-            # no smearing
-            altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
-        addToWS(altsigModel)
-            
-        res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-        sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
-
-    else:
-        if dataSource == 'sph':
-            altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
-
-        elif dataSource == 'sel' or dataSource == 'smu':
+        elif dataType == 'data':
             sigData = mcWork.data(sigDataName)
             if not sigData:
                 print 'No dataset ' + sigDataName + ' found in ' + mcSource.GetName() + '.'
                 sys.exit(1)
 
-            addToWS(sigData)
+        # no smearing
+        addToWS(sigData)
+        altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
-            altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
+    addToWS(altsigModel)
 
-        addToWS(altsigModel)
-
-        res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-        sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
+    res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+    sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
 
     print 'Made sigModel_' + bin
 
@@ -252,23 +239,24 @@ for bin, fitCut in fitBins:
         ### Make electron+probe background template
         elbkgModel = None
         hElBkg = None
-        tElBkg = inputFile.Get('truebkgtree_' + suffix)
-        if tElBkg.GetEntries < 5000.:
-            elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tbkg, '', 0.3, 8)
+        if dataType == 'mc':
+            tElBkg = inputFile.Get('truebkgtree_' + suffix)
+            if tElBkg.GetEntries < 5000.:
+                elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tbkg, '', 0.3, 8)
 
-            hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
-            hElBkg.SetName('elbkg_' + suffix)
-        else:
-            hElBkg = inputFile.Get('truebkg_' + suffix).Clone('elbkg_' + suffix)
-            dElBkg = ROOT.RooDataHist('delbkg_' + suffix, 'elbkg', masslist, hElBkg)
-            addToWS(dElBkg)
-            
-            elbkgModel = work.factory('HistPdf::elbkgModel_{suffix}({{mass}}, delbkg_{suffix}, 2)'.format(suffix = suffix))
-        addToWS(elbkgModel)
-        outputFile.cd()
-        hElBkg.SetDirectory(outputFile)
-        hElBkg.Write()
-        
+                hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
+                hElBkg.SetName('elbkg_' + suffix)
+            else:
+                hElBkg = inputFile.Get('truebkg_' + suffix).Clone('elbkg_' + suffix)
+                dElBkg = ROOT.RooDataHist('delbkg_' + suffix, 'elbkg', masslist, hElBkg)
+                addToWS(dElBkg)
+
+                elbkgModel = work.factory('HistPdf::elbkgModel_{suffix}({{mass}}, delbkg_{suffix}, 2)'.format(suffix = suffix))
+            addToWS(elbkgModel)
+            outputFile.cd()
+            hElBkg.SetDirectory(outputFile)
+            hElBkg.Write()
+
         ### set up bkg templates
         altbkgModel = None
         nombkgModel = None
@@ -361,7 +349,7 @@ for bin, fitCut in fitBins:
             mZ.setConstant(False)
             gammaZ.setConstant(False)
     
-            model = work.factory('SUM::model_altsig_{suffix}(nbkg * bkgModel_{suffix}, nsignal * altsigModel_{bin})'.format(suffix = suffix, bin = bin))
+            model = work.factory('SUM::model_altsig_{suffix}(nbkg * nombkgModel_{suffix}, nsignal * altsigModel_{bin})'.format(suffix = suffix, bin = bin))
     
             for vname, val in initVals.items():
                 work.var(vname).setVal(val)
