@@ -127,10 +127,11 @@ for iBin, (bin, _) in enumerate(fitBins):
         yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
         if dataType == 'mc':
+            print suffix
             htarg = source.Get('target_' + suffix)
-            hbkg = source.Get('mcbkg_' + suffix)
+            hmcbkg = source.Get('mcbkg_' + suffix)
             hsig = htarg.Clone('hsig')
-            hsig.Add(hbkg, -1.)
+            hsig.Add(hmcbkg, -1.)
 
             compBinning = work.var('mass').getBinning('compWindow')
 
@@ -138,6 +139,9 @@ for iBin, (bin, _) in enumerate(fitBins):
             ihigh = htarg.FindFixBin(compBinning.highBound())
             if compBinning.highBound() == htarg.GetXaxis().GetBinLowEdge(ihigh):
                 ihigh -= 1
+
+            print ilow, compBinning.lowBound()
+            print ihigh, compBinning.highBound()
 
             integral = 0.
             err2 = 0.
@@ -152,20 +156,20 @@ for iBin, (bin, _) in enumerate(fitBins):
             trueYields[conf].SetBinContent(iBin + 1, integral)
             trueYields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
-    print "Fail:  ", yields[meas[1]].GetBinContent(iBin + 1)
-    print "Pass:  ", yields[meas[0]].GetBinContent(iBin + 1)
+    # print "Fail:  ", yields[meas[1]].GetBinContent(iBin + 1)
+    # print "Pass:  ", yields[meas[0]].GetBinContent(iBin + 1)
 
     ratio = yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
-    print "Ratio: ", yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
-    print "Ratio: ", ratio
+    # print "Ratio: ", yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
+    # print "Ratio: ", ratio
 
     if PRODUCT == 'frate':
         central = ratio
     else:
         central = 1. / (1. + ratio)
 
-    print "Central:",  1. / (1. + ratio)
-    print "Central:", central
+    # print "Central:",  1. / (1. + ratio)
+    # print "Central:", central
 
     result.SetBinContent(iBin + 1, central)
 
@@ -185,10 +189,17 @@ for iBin, (bin, _) in enumerate(fitBins):
         elarger = trueYields[meas[0]].GetBinError(iBin + 1)
         esmaller = trueYields[meas[1]].GetBinError(iBin + 1)
 
+        print "Truth Fail:  ", smaller
+        print "Truth Pass:  ", larger
+
+        print "Truth Ratio: ", smaller / larger 
+
         if PRODUCT == 'frate':
             central = smaller / larger
         else:
             central = larger / (smaller + larger)
+
+        print "Truth Central:", central
 
         trueResult.SetBinContent(iBin + 1, central)
         trueResult.SetBinError(iBin + 1, central * math.sqrt(math.pow(elarger / larger, 2.) + math.pow(esmaller / smaller, 2.)))

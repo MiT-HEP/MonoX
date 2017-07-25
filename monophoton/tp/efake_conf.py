@@ -12,7 +12,7 @@ dataSource = 'sel' # sph or sel or smu
 if dataSource == 'sph':
     tpconfs = ['ee', 'eg', 'pass', 'fail']
 elif dataSource == 'sel':
-    tpconfs = ['ee', 'eg', 'pass', 'fail']
+    tpconfs = ['pass', 'fail']
 elif dataSource == 'smu':
     tpconfs = ['passiso', 'failiso']
 
@@ -113,7 +113,7 @@ def getBinning(binningName):
 
     elif binningName == 'pogpt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [20., 35., 50., 90., 150., 6500.]
+        binning = [20., 50., 6500.] # [20., 35., 50., 90., 150., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

@@ -13,7 +13,6 @@ import config
 import utils
 from datasets import allsamples
 from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
-import tp.efake_plot as efake_plot
 
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
@@ -110,6 +109,9 @@ print 'Starting template preparation.'
 egPlotter = ROOT.MultiDraw()
 mgPlotter = ROOT.MultiDraw()
 
+# egPlotter.setPrintLevel(2)
+# mgPlotter.setPrintLevel(2)
+
 if dataType == 'data':
     egPlotter.setWeightBranch('')
     mgPlotter.setWeightBranch('')
@@ -167,14 +169,14 @@ else:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-        egPlotter.setReweight('tags.pt_', eleTrigEff)
-        mgPlotter.setReweight('tags.pt_', muTrigEff)
+        # egPlotter.setReweight('tags.pt_', eleTrigEff)
+        # mgPlotter.setReweight('tags.pt_', muTrigEff)
 
     if dataSource == 'sel':
         egPlotter.setBaseSelection('tags.pt_ > 40.')
         mgPlotter.setBaseSelection('tags.pt_ > 40.')
     elif dataSource == 'smu':
-        egPlotter.setBaseSelection('tags.pt_ > 50.')
+        egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
         mgPlotter.setBaseSelection('tags.pt_ > 50.')
 
 #    for sname in skimConfig['mcgg'][0]:
