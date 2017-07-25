@@ -235,24 +235,24 @@ for bin, fitCut in fitBins:
         # egPlotter.addTreeBranch(ttarg, 'mass', 'tp.mass')
 
         # background is approximately lepton flavor symmetric - will use muon templates
-        hbkg = template.Clone('bkg_' + suffix)
-        objects.append(hbkg)
-        tbkg = ROOT.TTree('bkgtree_' + suffix, 'background')
-        objects.append(tbkg)
+        hMuBkg = template.Clone('mubkg_' + suffix)
+        objects.append(hMuBkg)
+        tMuBkg = ROOT.TTree('mubkgtree_' + suffix, 'background')
+        objects.append(tMuBkg)
 
-        mgPlotter.addPlot(hbkg, 'tp.mass', bkgcut)
-        mgPlotter.addTree(tbkg, bkgcut)
-        mgPlotter.addTreeBranch(tbkg, 'mass', 'tp.mass')
+        mgPlotter.addPlot(hMuBkg, 'tp.mass', bkgcut)
+        mgPlotter.addTree(tMuBkg, bkgcut)
+        mgPlotter.addTreeBranch(tMuBkg, 'mass', 'tp.mass')
 
         if dataType == 'mc' and dataSource != 'smu':
-            hmcbkg = template.Clone('mcbkg_' + suffix)
-            objects.append(hmcbkg)
-            tmcbkg = ROOT.TTree('mcbkgtree_' + suffix, 'truth background')
-            objects.append(tmcbkg)
+            hTrueBkg = template.Clone('truebkg_' + suffix)
+            objects.append(hTrueBkg)
+            tTrueBkg = ROOT.TTree('truebkgtree_' + suffix, 'truth background')
+            objects.append(tTrueBkg)
 
-            egPlotter.addPlot(hmcbkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
-            egPlotter.addTree(tmcbkg, cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
-            egPlotter.addTreeBranch(tmcbkg, 'mass', 'tp.mass')
+            egPlotter.addPlot(hTrueBkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTree(tTrueBkg, cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTreeBranch(tTrueBkg, 'mass', 'tp.mass')
 
 egPlotter.fillPlots()
 mgPlotter.fillPlots()

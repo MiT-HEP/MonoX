@@ -129,7 +129,7 @@ for iBin, (bin, _) in enumerate(fitBins):
         if dataType == 'mc':
             print suffix
             htarg = source.Get('target_' + suffix)
-            hmcbkg = source.Get('mcbkg_' + suffix)
+            hmcbkg = source.Get('truebkg_' + suffix)
             hsig = htarg.Clone('hsig')
             hsig.Add(hmcbkg, -1.)
 
