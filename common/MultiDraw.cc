@@ -587,6 +587,9 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
       weightBranch->GetEntry(iEntry - 1);
       if (weightBranchType_ == 'F')
         weight = weightF;
+
+      if (printLevel_ > 3)
+        std::cout << "        Input weight " << weight << std::endl;
     }
 
     if (reweight_) {
@@ -599,6 +602,13 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
     }
     else
       eventWeights.assign(1, weight * constWeight_);
+
+    if (printLevel_ > 3) {
+      std::cout << "         Global weights: ";
+      for (double w : eventWeights)
+        std::cout << w << " ";
+      std::cout << std::endl;
+    }    
 
     // Plots that do not require passing the baseline cut
     for (auto* plot : unconditional_) {
