@@ -13,12 +13,12 @@ class BatchManager(object):
 #        submitter.group = 'group_t3mit.urgent'
         submitter.min_memory = 1
 
-        submitter.submit(name = self.name)
+        clusterId = submitter.submit(name = self.name)
 
         if not noWait:
-            self._waitForCompletion(task, dict(submitter.last_submit), argTemplate, autoResubmit)
+            self._waitForCompletion(task, clusterId, argTemplate, autoResubmit)
 
-    def _waitForCompletion(self, jobType, clusterToJob, argTemplate, autoResubmit):
+    def _waitForCompletion(self, jobType, clusterId, argTemplate, autoResubmit):
         print 'Waiting for all jobs to complete.'
 
         # indices of arguments to pick up from condor_q output lines
@@ -27,10 +27,8 @@ class BatchManager(object):
             if a == '%s':
                 argsToExtract.append(ia)
 
-        clusters = clusterToJob.keys()
-    
         while True:
-            proc = subprocess.Popen(['condor_q'] + clusters + ['-af', 'ClusterId', 'JobStatus', 'Arguments'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            proc = subprocess.Popen(['condor_q', str(clusterId), '-af', 'ProcId', 'JobStatus', 'Arguments'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             out, err = proc.communicate()
             lines = out.split('\n')
 
@@ -41,30 +39,23 @@ class BatchManager(object):
     
                 words = line.split()
     
-                clusterId, jobStatus = words[:2]
+                procId, jobStatus = words[:2]
                 if jobStatus == '5':
                     args = tuple(words[3 + i] for i in argsToExtract)
                     print 'Job %s is held' % str(args)
 
                     if autoResubmit:
                         print ' Resubmitting.'
-                        proc = subprocess.Popen(['condor_release', clusterId], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                        proc = subprocess.Popen(['condor_release', '%s.%s' % (clusterId, procId)], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                         out, err = proc.communicate()
                         print out.strip()
                         print err.strip()
-                        jobsInQueue.append(clusterId)
-
-                    else:
-                        clusters.remove(clusterId)
+                        jobsInQueue.append(procId)
 
                 else:
-                    jobsInQueue.append(clusterId)
+                    jobsInQueue.append(procId)
 
-            for clusterId in (set(clusters) - set(jobsInQueue)):
-                clusters.remove(clusterId)
-
-            if len(clusters) == 0:
+            if len(jobsInQueue) == 0:
                 break
     
             time.sleep(10)
-
