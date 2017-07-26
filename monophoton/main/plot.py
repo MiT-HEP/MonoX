@@ -100,7 +100,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         expr = plotdef.formExpression(variation.replacements[iv])
                     else:
                         expr = plotdef.formExpression()
-                    
 
                     plotter.addPlot(
                         hist,
@@ -168,18 +167,17 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         if group.norm >= 0.:
             ghist.Scale(group.norm / baseTotal)
 
+        if group == plotConfig.obs and plotdef.blind is not None:
+            # take care of masking
+            for iBin in range(1, ghist.GetNbinsX() + 1):
+                binCenter = ghist.GetBinCenter(iBin)
+                if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
+                    ghist.SetBinContent(iBin, 0.)
+                    ghist.SetBinError(iBin, 0.)
+
         writeHist(ghist)
 
-        if group == plotConfig.obs:
-            # take care of masking
-            if plotdef.blind is not None:
-                for iBin in range(1, obshist.GetNbinsX()+1):
-                    binCenter = obshist.GetBinCenter(iBin)
-                    if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
-                        obshist.SetBinContent(iBin, 0.)
-                        obshist.SetBinError(iBin, 0.)
-
-        else:
+        if group != plotConfig.obs:
             # write a group total histogram with systematic uncertainties added in quadrature (for display purpose only)
             outDir.cd()
             ghistSyst = ghist.Clone(group.name + '_syst')
@@ -425,11 +423,11 @@ def printCanvas(canvas, plotdef, plotConfig):
             sys.stdout.write(' (lin)')
 
         if addLinear:
-            simple.ylimits = (0., -1.)
-            simple.minimum = -1.
-            plotdef.ymax = -1.
-            plotdef.ymin = 0.
-            simple._needUpdate = True
+            plotPad.SetLogy(False)
+            plotPad.Update()
+            yaxis.SetOption('')
+            yaxis.SetWmin(plotPad.GetUymin())
+            yaxis.SetWmax(plotPad.GetUymax())
             simple.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
 
             sys.stdout.write(' (lin)')
@@ -444,6 +442,7 @@ def printCanvas(canvas, plotdef, plotConfig):
         cnv.IsA().Destructor(cnv)
 
     else:
+        # normal, (partially) unblinded distributions
         canvas.printWeb(plotDir, plotdef.name, drawLegend = False)
 
         sys.stdout.write('    main')
