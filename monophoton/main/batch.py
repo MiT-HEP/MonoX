@@ -55,7 +55,13 @@ class BatchManager(object):
                 else:
                     jobsInQueue.append(procId)
 
+            sys.stdout.write('\r %d jobs in queue.' % len(jobsInQueue))
+            sys.stdout.flush()
+
             if len(jobsInQueue) == 0:
                 break
     
             time.sleep(10)
+
+sys.stdout.write('\n')
+sys.stdout.flush()
