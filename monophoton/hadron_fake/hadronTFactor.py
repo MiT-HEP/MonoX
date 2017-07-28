@@ -27,13 +27,13 @@ rcanvas = RatioCanvas(lumi = lumi)
 
 binning = array.array('d', map(float, selections.photonPtBinning))
 pid = 'medium'
-tune = 'GJetsCWIso'
-extras = 'pixel-max'
-suffix = ''
+tune = 'Spring16'
+extras = 'pixel'
+suffix = '_Spring16'
 
 itune = selections.Tunes.index(tune)
 
-inputFile = ROOT.TFile.Open(basedir+'/data/impurity.root')
+inputFile = ROOT.TFile.Open(basedir+'/data/impurity_' + tune + '.root')
 impurityGraph = inputFile.Get("barrel-" + pid + "-" + extras + "-Met0to60")
 
 outputFile = ROOT.TFile.Open(basedir+'/data/hadronTFactor' + suffix + '.root', 'recreate')

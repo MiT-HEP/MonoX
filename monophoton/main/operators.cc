@@ -1289,14 +1289,22 @@ DijetSelection::addBranches(TTree& _skimTree)
   _skimTree.Branch("dijet.size", &nDijet_, "size/i");
   _skimTree.Branch("dijet.dEtajj", dEtajj_, "dEtajj[dijet.size]/F");
   _skimTree.Branch("dijet.mjj", mjj_, "mjj[dijet.size]/F");
+  _skimTree.Branch("dijet.ij1", ij1_, "ij1[dijet.size]/i");
+  _skimTree.Branch("dijet.ij2", ij2_, "ij2[dijet.size]/i");
+  if (savePassing_) {
+    _skimTree.Branch("pdijet.size", &nDijetPassing_, "size/i");
+    _skimTree.Branch("pdijet.dEtajj", dEtajjPassing_, "dEtajj[dijet.size]/F");
+    _skimTree.Branch("pdijet.mjj", mjjPassing_, "mjj[dijet.size]/F");
+    _skimTree.Branch("pdijet.ij1", ij1Passing_, "ij1[dijet.size]/i");
+    _skimTree.Branch("pdijet.ij2", ij2Passing_, "ij2[dijet.size]/i");
+  }
 }
 
 bool
 DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   nDijet_ = 0;
-
-  bool result(false);
+  nDijetPassing_ = 0;
 
   for (unsigned iJ1(0); iJ1 != _outEvent.jets.size(); ++iJ1) {
     auto& jet1(_outEvent.jets[iJ1]);
@@ -1318,15 +1326,23 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 
       dEtajj_[nDijet_] = jet1.eta() - jet2.eta();
       mjj_[nDijet_] = (jet1.p4() + jet2.p4()).M();
+      ij1_[nDijet_] = iJ1;
+      ij2_[nDijet_] = iJ2;
 
-      if (std::abs(dEtajj_[nDijet_]) > minDEta_ && mjj_[nDijet_] > minMjj_)
-        result = true;
+      if (std::abs(dEtajj_[nDijet_]) > minDEta_ && mjj_[nDijet_] > minMjj_) {
+        dEtajjPassing_[nDijetPassing_] = dEtajj_[nDijet_];
+        mjjPassing_[nDijetPassing_] = mjj_[nDijet_];
+        ij1Passing_[nDijetPassing_] = iJ1;
+        ij2Passing_[nDijetPassing_] = iJ2;
+
+        ++nDijetPassing_;
+      }
 
       ++nDijet_;
     }
   }
 
-  return result;
+  return nDijetPassing_ != 0;
 }
 
 //--------------------------------------------------------------------

@@ -46,27 +46,58 @@ except:
     logger.error("Couldn't compile selectors.cc. Quitting.")
     sys.exit(1)
 
-# MEDIUM ID
-ROOT.gROOT.ProcessLine("int idtune = panda::XPhoton::kGJetsCWIso;")
-photonIDTune = ROOT.idtune
-photonWP = 1
+## Selector-dependent configurations
 
-photonFullSelection = [
-    'HOverE',
-    'Sieie',
-    'NHIso',
-    'PhIso',
-#    'CHIso',
-    'CHIsoMax',
-    'EVeto',
-    'MIP49',
-    'Time',
-    'SieieNonzero',
-    'SipipNonzero',
-    'NoisyRegion'
-]
+selconf = {
+    'photonFullSelection': [],
+    'photonIDTune': -1,
+    'photonWP': 1,
+    'puweightSource': ('', ''), # gROOT directory name, file name
+    'hadronTFactorSource': ('', ''), # file name, suffix
+    'hadronProxyDef': []
+}
+ROOT.gROOT.ProcessLine("int idtune;")
 
-hadronTFactorFile = datadir + '/hadronTFactor.root'
+def monophotonSetting():
+    logger.info('Applying monophoton setting.')
+
+    selconf['photonFullSelection'] = [
+        'HOverE',
+        'Sieie',
+        'NHIso',
+        'PhIso',
+        'CHIsoMax',
+        'EVeto',
+        'MIP49',
+        'Time',
+        'SieieNonzero',
+        'SipipNonzero',
+        'NoisyRegion'
+    ]
+    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
+    selconf['photonIDTune'] = ROOT.idtune
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor.root', '_gjetscwiso')
+    selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
+
+def vbfgSetting():
+    logger.info('Applying vbfg setting.')
+
+    selconf['photonFullSelection'] = [
+        'HOverE',
+        'Sieie',
+        'NHIso',
+        'PhIso',
+        'CHIso',
+        'EVeto'
+    ]
+    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+    selconf['photonIDTune'] = ROOT.idtune
+    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
+    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+
+## utility functions
 
 def setupPhotonSelection(operator, veto = False, changes = []):
     ##### !!!!! IMPORTANT - NOTE THE RESETS #####
@@ -75,7 +106,7 @@ def setupPhotonSelection(operator, veto = False, changes = []):
     else:
         operator.resetSelection()
 
-    sels = list(photonFullSelection)
+    sels = list(selconf['photonFullSelection'])
 
     for change in changes:
         if change.startswith('-'):
@@ -103,7 +134,6 @@ def setupPhotonSelection(operator, veto = False, changes = []):
             else:
                 operator.addSelection(True, getattr(ROOT.PhotonSelection, sel))
     
-
 # avoid auto-deletion by python
 _garbage = []
 
@@ -142,6 +172,8 @@ def monophotonBase(sample, rname, selcls = None):
     Base for other selectors.
     """
 
+    monophotonSetting()
+
     if selcls is None:
         selector = ROOT.EventSelector(rname)
     else:
@@ -177,12 +209,13 @@ def monophotonBase(sample, rname, selcls = None):
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(175.)
-    photonSel.setIDTune(photonIDTune)
-    photonSel.setWP(photonWP)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
 
-    selector.findOperator('LeptonSelection').setN(0, 0)
-    selector.findOperator('LeptonSelection').setRequireMedium(False)
-    selector.findOperator('LeptonSelection').setRequireTight(False)
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 0)
+    leptonSel.setRequireMedium(False)
+    leptonSel.setRequireTight(False)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -215,6 +248,8 @@ def emjetBase(sample, rname):
     Base selector for EM+Jet control region. For MC, a gen-level photon is required.
     """
 
+    monophotonSetting()
+
     selector = monophotonBase(sample, rname)
 
     selector.removeOperator('PhotonMt')
@@ -228,6 +263,12 @@ def emjetBase(sample, rname):
     jets = ROOT.HighPtJetSelection()
     jets.setJetPtCut(100.)
     selector.addOperator(jets)
+
+    dijetSel = ROOT.DijetSelection()
+    dijetSel.setMinDEta(3.)
+    dijetSel.setMinMjj(500.)
+    dijetSel.setIgnoreDecision(True)
+    selector.addOperator(dijetSel)
 
     if not sample.data:
         genPhotonSel = ROOT.GenParticleSelection("GenPhotonSelection")
@@ -245,6 +286,8 @@ def leptonBase(sample, rname, flavor, selcls = None):
     For MC, we could use PartonSelector, but for interest of clarity and comparing cut flow
     with the other groups, we let events with all flavors pass.
     """
+
+    monophotonSetting()
 
     if selcls is None:
         selector = ROOT.EventSelector(rname)
@@ -290,8 +333,11 @@ def leptonBase(sample, rname, flavor, selcls = None):
     jetDPhi.setMetSource(ROOT.kInMet)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setIDTune(photonIDTune)
-    photonSel.setWP(photonWP)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setRequireMedium(False)
 
     setupPhotonSelection(photonSel)
 
@@ -337,6 +383,8 @@ def zmumu(sample, rname):
     Just dimuon. 
     """
 
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+
     selector = ROOT.EventSelector(rname)
     selector.setCanPhotonSkim(False)
 
@@ -374,6 +422,8 @@ def TagAndProbeBase(sample, rname):
     """
     Base for Z->ll tag and probe stuff.
     """
+
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
 
     selector = ROOT.EventSelector(rname)
 
@@ -415,6 +465,8 @@ def tagprobeBase(sample, rname):
     Base for selectors skimming tag & probe input trees.
     """
 
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+
     selector = ROOT.TagAndProbeSelector(rname)
 
     setSampleId(sample, selector)
@@ -424,6 +476,62 @@ def tagprobeBase(sample, rname):
         addPUWeight(sample, selector)
 
     return selector
+
+def vbfgBase(sample, rname):
+    """
+    Base for VBF + photon.
+    """
+
+    vbfgSetting()
+
+    selector = ROOT.EventSelector(rname)
+    selector.setCanPhotonSkim(False)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'))
+
+    operators = [
+        'MetFilters',
+        'PhotonSelection',
+        'LeptonSelection',
+        'JetCleaning',
+        'DijetSelection',
+        'BjetVeto',
+        'CopyMet',
+        'PhotonMt',
+        'PhotonMetDPhi',
+        'JetMetDPhi'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setIDTune(1)
+    photonSel.setMinPt(80.)
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 0)
+    leptonSel.setRequireTight(False)
+    leptonSel.setRequireMedium(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(3.)
+    dijetSel.setMinMjj(500.)
+
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+
+    return selector
+
 
 #####################
 # DERIVED SELECTORS #
@@ -546,10 +654,12 @@ def hfake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    hadproxyTightWeight = getFromFile(hadronTFactorFile, 'tfactTight')
-    hadproxyLooseWeight = getFromFile(hadronTFactorFile, 'tfactLoose')
-    hadproxyPurityUpWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityUp')
-    hadproxyPurityDownWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityDown')
+    filename, suffix = selconf['hadronTFactorSource']
+
+    hadproxyTightWeight = getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
+    hadproxyLooseWeight = getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)
+    hadproxyPurityUpWeight = getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
+    hadproxyPurityDownWeight = getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
 
     modHfake(selector)
 
@@ -576,12 +686,14 @@ def hfakeVtx(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    hadproxyTightWeight = getFromFile(hadronTFactorFile, 'tfactTight')
-    hadproxyLooseWeight = getFromFile(hadronTFactorFile, 'tfactLoose')
-    hadproxyPurityUpWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityUp')
-    hadproxyPurityDownWeight = getFromFile(hadronTFactorFile, 'tfactNomPurityDown')
+    filename, suffix = selconf['hadronTFactorSource']
 
-    isoTFactor = getFromFile(hadronTFactorFile, 'tfactNom')
+    hadproxyTightWeight = getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
+    hadproxyLooseWeight = getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)
+    hadproxyPurityUpWeight = getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
+    hadproxyPurityDownWeight = getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
+
+    isoTFactor = getFromFile(filename, 'tfactNom', 'tfactNom' + suffix)
     noIsoTFactor = getFromFile(datadir + '/hadronTFactorNoICH.root', 'tfactNom')
     isoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'iso')
     noIsoVertexScore = getFromFile(datadir + '/vertex_scores.root', 'noIso')
@@ -613,8 +725,9 @@ def gjets(sample, rname):
     
     selector = emjetBase(sample, rname)
 
-    # measure the parton-level dR between gamma and q/g.
-    selector.addOperator(ROOT.GJetsDR())
+    if not sample.data:
+        # measure the parton-level dR between gamma and q/g.
+        selector.addOperator(ROOT.GJetsDR())
 
     photonSel = selector.findOperator('PhotonSelection')
 
@@ -656,6 +769,8 @@ def dijet(sample, rname):
     """
     Dijet events with no overlap removal for jet vertex score study.
     """
+
+    monophotonSetting()
     
     selector = ROOT.EventSelector(rname)
 
@@ -1219,19 +1334,110 @@ def tp2m(sample, rname):
 
     return selector
 
+def vbfg(sample, rname):
+    """
+    VBF + photon candidate sample.
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    if not sample.data:
+        addIDSFWeight(sample, selector)
+
+    return selector
+
+def vbfgEfake(sample, rname):
+    """
+    VBF + photon e->photon fake control sample.
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    modEfakeLowPt(selector)
+
+    return selector
+
+def vbfgHfake(sample, rname):
+    """
+    VBF + photon had->photon fake control sample.
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    modHfake(selector)
+
+    return selector
+
+def vbfe(sample, rname):
+    """
+    VBF + single electron.
+    """
+
+    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+
+    selector = ROOT.EventSelector(rname)
+    selector.setCanPhotonSkim(False)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+
+    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    trig.setIgnoreDecision(True)
+    selector.addOperator(trig)
+
+    operators = [
+        'MetFilters',
+        'LeptonSelection',
+        'JetCleaning',
+        'DijetSelection',
+        'BjetVeto',
+        'CopyMet',
+        'JetMetDPhi',
+        'Met'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(1, 0)
+    leptonSel.setRequireMedium(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(0.)
+    dijetSel.setMinMjj(0.)
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
+
+    return selector
+
+
 ######################
 # SELECTOR MODIFIERS #
 ######################
 
 def addPUWeight(sample, selector):
-    pudir = ROOT.gROOT.GetDirectory('puweights')
+    pudirName, pufileName = selconf['puweightSource']
+
+    pudir = ROOT.gROOT.GetDirectory(pudirName)
 
     if not pudir:
-        pudir = ROOT.gROOT.mkdir('puweights')
-        f = ROOT.TFile.Open(datadir + '/pileup.root')
+        pudir = ROOT.gROOT.mkdir(pudirName)
+        logger.info('Loading PU weights from %s', pufileName)
+        f = ROOT.TFile.Open(pufileName)
         for k in f.GetListOfKeys():
             if k.GetName().startswith('puweight_'):
-                logger.debug('Loading PU weights %s', k.GetName())
+                logger.info('Saving PU weights %s into ROOT/%s', k.GetName(), pudirName)
                 pudir.cd()
                 obj = k.ReadObj().Clone(k.GetName().replace('puweight_', ''))
                 _garbage.append(obj)
@@ -1240,13 +1446,15 @@ def addPUWeight(sample, selector):
 
     for hist in pudir.GetList():
         if hist.GetName() in sample.fullname:
-            logger.debug('Using PU weights %s for %s', hist.GetName(), sample.name)
+            logger.info('Using PU weights %s/%s for %s', pudirName, hist.GetName(), sample.name)
             selector.addOperator(ROOT.PUWeight(hist))
             break
     else:
         raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
 
 def addIDSFWeight(sample, selector):
+    logger.info('Adding photon ID scale factor (Spring16)')
+
     idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
     idsf.addFactor(getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', newname = 'photonSF'))
     idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
@@ -1254,6 +1462,8 @@ def addIDSFWeight(sample, selector):
     selector.addOperator(ROOT.ConstantWeight(0.991, 'extraSF'))
 
 def addElectronIDSFWeight(sample, selector):
+    logger.info('Adding electron ID scale factor (ICHEP)')
+
     electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
     electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
 
@@ -1268,6 +1478,8 @@ def addElectronIDSFWeight(sample, selector):
     selector.addOperator(track)
 
 def addMuonIDSFWeight(sample, selector):
+    logger.info('Adding muon ID scale factor (ICHEP)')
+
     muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape') # x: abs eta, y: pt
     muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
 
@@ -1283,6 +1495,7 @@ def addMuonIDSFWeight(sample, selector):
 
 def addPDFVariation(sample, selector):
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+        logger.info('Adding PDF variation for %s', sample.name)
         selector.addOperator(ROOT.NNPDFVariation())
 
 def addKfactor(sample, selector):
@@ -1306,21 +1519,21 @@ def addKfactor(sample, selector):
     for variation in ['renUp', 'renDown', 'facUp', 'facDown', 'scaleUp', 'scaleDown']:
         vcorr = getFromFile(datadir + '/kfactor.root', sname + '_' + variation)
         if vcorr:
-            logger.debug('applying qcd var %s %s', variation, sample.name)
+            logger.info('applying qcd var %s %s', variation, sample.name)
             qcd.addVariation('qcd' + variation, vcorr)
 
     selector.addOperator(qcd)
 
     corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
     if corr:
-        logger.debug('applying ewk %s', sample.name)
+        logger.info('applying ewk %s', sample.name)
         ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
         ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
         for variation in ['Up', 'Down']:
             vcorr = getFromFile(datadir + '/ewk_corr.root', sname + '_' + variation)
             if vcorr:
-                logger.debug('applying ewk var %s %s', variation, sample.name)
+                logger.info('applying ewk var %s %s', variation, sample.name)
                 ewk.addVariation('ewk' + variation, vcorr)
 
         selector.addOperator(ewk)
@@ -1356,7 +1569,9 @@ def setSampleId(sample, selector):
 def modHfake(selector):
     """Append PhotonPtWeight with hadProxyWeight and set up the photon selections."""
 
-    hadproxyWeight = getFromFile(hadronTFactorFile, 'tfactNom')
+    filename, suffix = selconf['hadronTFactorSource']
+
+    hadproxyWeight = getFromFile(filename, 'tfactNom', 'tfactNom' + suffix)
 
     weight = ROOT.PhotonPtWeight(hadproxyWeight, 'hadProxyWeight')
     weight.setPhotonType(ROOT.PhotonPtWeight.kReco)
@@ -1364,10 +1579,10 @@ def modHfake(selector):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['!CHIsoMax', '+CHIsoMax11'])
+    setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
     setupPhotonSelection(photonSel, veto = True)
 
-def modEfake(selector):
+def modEfake(selector, selections = []):
     """Append PhotonPtWeight with eproxyWeight and set up the photon selections."""
 
     eproxyWeight = getFromFile(datadir + '/efake_data_ptalt.root', 'frate')
@@ -1378,8 +1593,22 @@ def modEfake(selector):
 
     photonSel = selector.findOperator('PhotonSelection')
 
+    setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, veto = True)
+
+def modEfakeLowPt(selector):
+    """Append PhotonPtWeight and set up the photon selections."""
+
+    eproxyWeight = ROOT.TF1('eproxyWeight', '0.0292 + 0.131 / (x - 12.8)', 0., 6500.)
+
+    weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
     setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
+
 
 #######################
 # MODIFIER GENERATORS #
