@@ -221,7 +221,7 @@ for bin, fitCut in fitBins:
         mubkgModel = None
         hMuBkg = None 
         tMuBkg = inputFile.Get('mubkgtree_' + suffix)
-        if tMuBkg.GetEntries() < 5000.:
+        if tMuBkg.GetEntries() < 50000.:
             mubkgModel = ROOT.KeysShape('mubkgModel_' + suffix, 'mubkgModel', mass, tMuBkg, '', 0.3, 8)
             
             hMuBkg = mubkgModel.createHistogram('mubkg', mass, ROOT.RooFit.Binning(fitBinning))
@@ -265,26 +265,11 @@ for bin, fitCut in fitBins:
             altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
             addToWS(altbkgModel)
 
-            # nombkgModel = mubkgModel.clone('nombkgModel_' + suffix)
-            if tMuBkg.GetEntries() < 50000.:
-                nombkgModel = ROOT.KeysShape('nombkgModel_' + suffix, 'nombkgModel', mass, tMuBkg, '', 0.3, 8)
-            else:
-                hMuBkg = inputFile.Get('mubkg_' + suffix)
-                dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
-                addToWS(dMuBkg)
-
-                nombkgModel = work.factory('HistPdf::nombkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
-            addToWS(nombkgModel)
+            nombkgModel = mubkgModel.clone('nombkgModel_' + suffix)
+            addToWS(nombkgModel)            
 
         elif conf in ['ee', 'eg']:
-            # altbkgModel = mubkgModel.clone('altbkgModel_' + suffix)
-            if tMuBkg.GetEntries() < 50000.:
-                altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tMuBkg, '', 0.3, 8)
-            else:
-                hMuBkg = inputFile.Get('mubkg_' + suffix)
-                dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
-            
-                altbkgModel = work.factory('HistPdf::altbkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
+            altbkgModel = mubkgModel.clone('altbkgModel_' + suffix)
             addToWS(altbkgModel)
 
             if dataType == 'data':                
