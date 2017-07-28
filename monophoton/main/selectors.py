@@ -1407,6 +1407,17 @@ def htTruncator(minimum = 0., maximum = -1.):
 
     return addHtCut
 
+def genBosonPtTruncator(minimum = 0., maximum = -1.):
+    def addGenBosonPtCut(sample, selector):
+        truncator = ROOT.GenBosonPtTruncator()
+        truncator.setPtMin(minimum)
+        if maximum > 0.:
+            truncator.setPtMax(maximum)
+
+        selector.addOperator(truncator, 0)
+
+    return addGenBosonPtCut
+
 
 if needHelp:
     sys.argv.append('--help')

@@ -88,6 +88,7 @@ allSelectors_byPattern = [
     ('znn{,n}-*', mc_cand),
     ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
     ('dy-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('dyn-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt], s.addGenPhotonVeto, s.genBosonPtTruncator(maximum = 50.))),
     ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt], s.addGenPhotonVeto)),
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),
