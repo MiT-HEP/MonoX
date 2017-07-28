@@ -1,5 +1,5 @@
-# Trigger efficiency measurement using X+photon events
-#   eff.py object sname vname tname [output name]
+# Trigger efficiency measurements
+#   eff.py [measurement names (oname_mname ...)]
 
 import os
 import sys
@@ -8,6 +8,7 @@ import array
 import ROOT
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
+ROOT.gStyle.SetNdivisions(510, 'X')
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -15,89 +16,34 @@ sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
+config.skimDir = '/mnt/hadoop/scratch/yiiyama/monophoton/skim_badjets'
+config.localSkimDir = '/local/yiiyama/monophoton/skim_badjets'
 import utils
 
-ROOT.gStyle.SetNdivisions(510, 'X')
-ROOT.gSystem.Load('libPandaTreeObjects.so')
+from trigger.confs import measurements, confs, fitconfs
+
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
 REPLOT = False
 FITEFFICIENCY = False
 
-measurements = [
-    ('photon', 'sel', 'sel-16c-m', 'tpeg', 'probes.medium && !probes.pixelVeto'),
-    ('electron', 'sel', 'sel-16*-m', 'tp2e', 'probes.tight'),
-    ('muon', 'smu', 'smu-16*', 'tp2m', 'probes.tight'),
-    ('vbf', 'sph', 'sph-16*')
-]
-
-## SETUP
+if len(sys.argv) > 1:
+    omnames = [tuple(a.split('_')) for a in sys.argv[1:]]
+else:
+    omnames = measurements.keys()
 
 outName = 'trigger'
-outFileName = basedir + '/data/trigger_efficiency.root'
-
-vconfs = {}
-tconfs = {}
-
-vconfs['photon'] = {
-    'pt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 5. * x for x in range(14)] + [100. + 10. * x for x in range(10)] + [200. + 20. * x for x in range(5)] + [300. + 50. * x for x in range(10)]),
-    'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
-    'hOverE': ('H/E', 'probes.hOverE', 'probes.pt_ > 175.', (25, 0., 0.05)),
-    'hcalE': ('E^{HCAL} (GeV)', 'probes.pt_ * TMath::CosH(probes.eta_) * probes.hOverE', 'probes.pt_ > 175.', (25, 0., 5)),
-    'run': ('Run', 'runNumber', 'probes.pt_ > 175.', (26, 271050., 284050.))
-}
-vconfs['electron'] = {
-    'pt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', (50, 0., 50.)),
-    'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
-    'hOverE': ('H/E', 'probes.hOverE', 'probes.pt_ > 200.', (25, 0., 0.05)),
-    'hcalE': ('E^{HCAL} (GeV)', 'probes.pt_ * TMath::CosH(probes.eta_) * probes.hOverE', 'probes.pt_ > 200.', (25, 0., 5)),
-    'run': ('Run', 'runNumber', 'probes.pt_ > 200.', (350, 271000., 274500.)),
-    'leppt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)]),
-}
-vconfs['muon'] = {
-    'pt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', (50, 0., 50.)),
-    'ptzoom': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [30. + 2. * x for x in range(85)] + [200. + 10. * x for x in range(10)]),
-    'run': ('Run', 'runNumber', 'probes.pt_ > 200.', (350, 271000., 274500.)),
-    'leppt': ('p_{T}^{#gamma} (GeV)', 'probes.pt_', '', [0. + 5. * x for x in range(10)] + [50. + 10. * x for x in range(6)]),
-}
-
-ROOT.gROOT.ProcessLine('int val;')
-def getEnum(cls, name):
-    ROOT.gROOT.ProcessLine('val = panda::' + cls + '::TriggerObject::' + name + ';')
-    return ROOT.val
-
-tconfs['photon'] = {
-    'l1eg40': ('probes.triggerMatch[][%d]' % getEnum('Photon', 'fSEG34IorSEG40'), '', 'L1 seed'),
-    'sph165abs': ('probes.triggerMatch[][%d]' % getEnum('Photon', 'fPh165HE10'), '', 'L1&HLT')
-}
-tconfs['electron'] = {
-    'el27': ('probes.triggerMatch[][%d]' % getEnum('Electron', 'fEl27Tight'), '', 'HLT'),
-}
-tconfs['muon'] = {
-    'mu24ortrk24': ('probes.triggerMatch[][%d] || probes.triggerMatch[][%d]' % (getEnum('Muon', 'fIsoMu24'), getEnum('Muon', 'fIsoTkMu24')), '', 'HLT'),
-}
-
-# TTree output for fitting
-vtconfs = {}
-vtconfs['photon'] = []
-vtconfs['electron'] = [
-    ('ptzoom', 'el27')
-]
-vtconfs['muon'] = []
-
+outDir = config.histDir + '/trigger'
 
 if not REPLOT:
     ## FILL DISTRIBUTIONS AND GRAPHS
-
-    outputFile = ROOT.TFile.Open(outFileName, 'recreate')
-    
-    for oname, mname, snames, region, probeSel in measurements:
+    for oname, mname in omnames:
         print oname, mname
 
-        measDir = outputFile.mkdir(oname + '_' + mname)
-    
-        baseSelection = 'tp.mass > 60. && tp.mass < 120. && ' + probeSel
-    
+        snames, region, basesel = measurements[(oname, mname)]
+
+        outputFile = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname), 'recreate')
+
         # fill the histograms
         plotter = ROOT.MultiDraw()
         plotter.setWeightBranch('')
@@ -105,67 +51,57 @@ if not REPLOT:
         for sample in allsamples.getmany(snames):
             plotter.addInputPath(utils.getSkimPath(sample.name, region))
     
-        plotter.setBaseSelection(baseSelection)
+        plotter.setBaseSelection(basesel)
     
-        # make empty histograms for all (variable, trigger) combination
+        # make an empty histogram for each (trigger, variable) combination
         histograms = []
+
+        for tname, (passdef, commonsel, title, variables) in confs[oname].items():
+            trigDir = outputFile.mkdir(tname)
+
+            for vname, (vtitle, vexpr, denomdef, binning),  in variables.items():
+                if type(binning) is tuple:
+                    template = ROOT.TH1D('template', ';' + vtitle, *binning)
+                else:
+                    template = ROOT.TH1D('template', ';' + vtitle, len(binning) - 1, array.array('d', binning))
     
-        for vname, (vtitle, vexpr, baseline, binning) in vconfs[oname].items():
-            outDir = measDir.mkdir(vname)
-    
-            if type(binning) is tuple:
-                template = ROOT.TH1D('template', ';' + vtitle, *binning)
-            else:
-                template = ROOT.TH1D('template', ';' + vtitle, len(binning) - 1, array.array('d', binning))
-    
-            for tname, (passdef, denomdef, title) in tconfs[oname].items():
-                outDir.cd()
-                hpass = template.Clone(tname + '_pass')
-                hbase = template.Clone(tname + '_base')
+                trigDir.cd()
+                hpass = template.Clone(vname + '_pass')
+                hbase = template.Clone(vname + '_base')
                 histograms.extend([hpass, hbase])
     
-                sels = [passdef]
-                if baseline:
-                    sels.append(baseline)
-                if denomdef:
-                    sels.append(denomdef)
-    
-                plotter.addPlot(hpass, vexpr, ' && '.join(sels), True)
-    
                 sels = []
-                if baseline:
-                    sels.append(baseline)
+                if commonsel:
+                    sels.append(commonsel)
                 if denomdef:
                     sels.append(denomdef)
     
                 plotter.addPlot(hbase, vexpr, ' && '.join(sels), True)
+
+                sels.append(passdef)
+
+                plotter.addPlot(hpass, vexpr, ' && '.join(sels), True)
     
-            template.Delete()
+                template.Delete()
     
         plotter.fillPlots()
     
         # make efficiency graphs and save
-        for vname in vconfs[oname]:
-            print ' ', vname
+        for tname, (_, _, _, variables) in confs[oname].items():
+            print ' ', tname
+            for vname in variables:
+                print '   ', vname
 
-            for tname in tconfs[oname]:
-                print '   ', tname
-
-                hpass = measDir.Get(vname + '/' + tname + '_pass')
-                hbase = measDir.Get(vname + '/' + tname + '_base')
+                hpass = outputFile.Get(tname + '/' + vname + '_pass')
+                hbase = outputFile.Get(tname + '/' + vname + '_base')
                 eff = ROOT.TGraphAsymmErrors(hpass, hbase)
-                measDir.GetDirectory(vname).cd()
-                eff.Write(tname + '_eff')
+                outputFile.GetDirectory(tname).cd()
+                hpass.Write()
+                hbase.Write()
+                eff.Write(vname + '_eff')
+
+        outputFile.Close()
     
-        # save the distributions
-        for hist in histograms:
-            hist.GetDirectory().cd()
-            hist.Write()
-
-else:
-    outputFile = ROOT.TFile.Open(outFileName)
-
-
 ## PLOT GRAPHS
 
 work = ROOT.RooWorkspace('work', 'work')
@@ -179,22 +115,24 @@ if FITEFFICIENCY:
 canvas = SimpleCanvas()
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
-for oname, mname, snames, region, probeSel in measurements:
+for oname, mname in omnames:
     print oname, mname
 
-    measDir = outputFile.GetDirectory(oname + '_' + mname)
+    source = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname))
+
+    snames, region, probeSel = measurements[(oname, mname)]
 
     canvas.lumi = sum(sample.lumi for sample in allsamples.getmany(snames))
 
-    for vname, (vtitle, vexpr, baseline, binning) in vconfs[oname].items():
-        print ' ', vname
+    for tname, (_, _, title, variables) in confs[oname].items():
+        print ' ', tname
 
-        outDir = measDir.GetDirectory(vname)
+        trigDir = source.GetDirectory(tname)
 
-        for tname, (passdef, denomdef, title) in tconfs[oname].items():
-            print '   ', tname
+        for vname, (vtitle, _, _, binning) in variables.items():
+            print '   ', vname
 
-            eff = outDir.Get(tname + '_eff')
+            eff = trigDir.Get(vname + '_eff')
 
             canvas.Clear()
             canvas.SetGrid()
@@ -223,13 +161,15 @@ for oname, mname, snames, region, probeSel in measurements:
             
             eff.GetYaxis().SetRangeUser(0., 1.2)
             
-            canvas.printWeb(outName, oname + '_' + mname + '_' + vname + '_' + tname, logy = False)
+            canvas.printWeb(outName, oname + '_' + mname + '_' + tname + '_' + vname, logy = False)
+
+    source.Close()
 
 # TO BE FIXED
 #    func = None
 #    marker = 0.
 #    
-#    if (vname, tname) in vtconfs[oname]:
+#    if (vname, tname) in fitconfs[oname]:
 #        func = work.factory('FormulaVar::func("(@0 < @1) * @2 * (1. + TMath::Erf((@3 - @2) * @4 / @2 * (@0 - @1))) + (@0 > @1) * (@2 + (@3 - @2) * TMath::Erf(@4 * (@0 - @1)))", {x, turn[170.,0.,300.], norm1[0.5,0.,1.], norm[0.9,0.,1.], rise2[0.1,0.,1.]})')
 #        params = ROOT.RooArgList(work.arg('turn'), work.arg('norm1'), work.arg('norm'), work.arg('rise2'))
 #        fitmin = 150.
