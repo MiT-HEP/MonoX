@@ -15,7 +15,7 @@ plotDir = ''
 plotBinningT = (60, 60., 120.)
 plotBinningT2 = (30, 60., 120.)
 
-def plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'bkgModel', hmcbkg = None, alt = '', plotName = ''):
+def plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'nombkgModel', hmcbkg = None, alt = '', plotName = ''):
     global canvas
 
     if canvas is None:

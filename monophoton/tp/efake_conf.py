@@ -12,7 +12,7 @@ dataSource = 'sel' # sph or sel or smu
 if dataSource == 'sph':
     tpconfs = ['ee', 'eg', 'pass', 'fail']
 elif dataSource == 'sel':
-    tpconfs = ['ee', 'eg', 'pass', 'fail']
+    tpconfs = ['pass', 'fail']
 elif dataSource == 'smu':
     tpconfs = ['passiso', 'failiso']
 
@@ -123,7 +123,7 @@ def getBinning(binningName):
             fitBins.append((name, cut))
 
         binning.pop()
-        binning.append(500.)
+        binning.append(200.)
 
     elif binningName == 'test':
         binningTitle = 'p_{T}^{probe} (GeV)'

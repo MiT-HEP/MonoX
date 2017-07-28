@@ -156,41 +156,31 @@ for bin, fitCut in fitBins:
     sigModelName = 'sigModel_' + bin
     sigDataName = 'sigData_' + bin
 
-    if dataType == 'mc':
-        if dataSource == 'sph':
-            altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
+    if dataSource == 'sph':
+        altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
 
-            res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-            sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
-
-        elif dataSource == 'sel' or dataSource == 'smu':
-            # get signal template
+    elif dataSource == 'sel' or dataSource == 'smu':
+        # get signal template
+        if dataType == 'mc':
             hsig = inputFile.Get('sig_' + bin)
-            
+
             sigData = ROOT.RooDataHist('sigData_' + bin, 'sig', masslist, hsig)
-            addToWS(sigData)
-            
-            # no smearing
-            sigModel = work.factory('HistPdf::sigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
-    else:
-        if dataSource == 'sph':
-            altsigModel = work.factory('BreitWigner::altsigModel_{bin}(mass, mZ, gammaZ)'.format(bin = bin))
-
-        elif dataSource == 'sel' or dataSource == 'smu':
+        elif dataType == 'data':
             sigData = mcWork.data(sigDataName)
             if not sigData:
                 print 'No dataset ' + sigDataName + ' found in ' + mcSource.GetName() + '.'
                 sys.exit(1)
 
-            addToWS(sigData)
+        # no smearing
+        addToWS(sigData)
+        altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
 
-            altsigModel = work.factory('HistPdf::altsigModel_{bin}({{mass}}, sigData_{bin}, 2)'.format(bin = bin))
+    addToWS(altsigModel)
 
-        addToWS(altsigModel)
-
-        res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-        sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
+    res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
+    sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
+    addToWS(sigModel)
 
     print 'Made sigModel_' + bin
 
@@ -227,75 +217,90 @@ for bin, fitCut in fitBins:
 
         print 'Made target_' + suffix
 
-        tbkg = inputFile.Get('bkgtree_' + suffix)
+        ### Make muon+probe background template
+        mubkgModel = None
+        hMuBkg = None
+        tMuBkg = inputFile.Get('mubkgtree_' + suffix)
+        if tMuBkg.GetEntries < 5000.:
+            mubkgModel = ROOT.KeysShape('mubkgModel_' + suffix, 'mubkgModel', mass, tMuBkg, '', 0.3, 8)
 
+            hMuBkg = mubkgModel.createHistogram('mubkg', mass, ROOT.RooFit.Binning(fitBinning))
+            hMuBkg.SetName('mubkg_' + suffix)
+        else:
+            hMuBkg = inputFile.Get('mubkg_' + suffix)
+            dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
+            addToWS(dMuBkg)
+            
+            mubkgModel = work.factory('HistPdf::mubkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
+        addToWS(mubkgModel)
+        outputFile.cd()
+        hMuBkg.SetDirectory(outputFile)
+        hMuBkg.Write()
+
+        ### Make electron+probe background template
+        elbkgModel = None
+        hElBkg = None
         if dataType == 'mc':
-            if conf in ['pass', 'fail']:
-                if tbkg.GetEntries() > 5000:
-                    hbkg = template.Clone('hbkg_' + suffix)
-                    tbkg.Draw('mass>>hbkg_' + suffix, 'weight')
-                    bkgData = ROOT.RooDataHist('bkgData_' + suffix, 'bkg', masslist, hbkg)
-                    addToWS(bkgData)
-            
-                    bkgModel = work.factory('HistPdf::bkgModel_{suffix}({{mass}}, bkgData_{suffix}, 2)'.format(suffix = suffix))
-                else:
-                    bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
-                    addToWS(bkgModel)
+            tElBkg = inputFile.Get('truebkgtree_' + suffix)
+            if tElBkg.GetEntries < 5000.:
+                elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tElBkg, '', 0.3, 8)
 
-                altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
-                addToWS(altbkgModel)
-            
+                hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
+                hElBkg.SetName('elbkg_' + suffix)
             else:
-                tmcbkg = inputFile.Get('mcbkgtree_' + suffix)
+                hElBkg = inputFile.Get('truebkg_' + suffix).Clone('elbkg_' + suffix)
+                dElBkg = ROOT.RooDataHist('delbkg_' + suffix, 'elbkg', masslist, hElBkg)
+                addToWS(dElBkg)
 
-                if tbkg.GetEntries() > 5000:
-                    ## alt bkg model with hmu from tbkg tree
-                    hmubkg = template.Clone('hmubkg_' + suffix)
-                    tbkg.Draw('mass>>hmubkg_' + suffix, 'weight')
-                    
-                    mubkgData = ROOT.RooDataHist('mubkgData_' + suffix, 'mubkg', masslist, hmubkg)
-                    addToWS(mubkgData)
-                    
-                    altbkgModel = work.factory('HistPdf::altbkgModel_{suffix}({{mass}}, mubkgData_{suffix}, 2)'.format(suffix = suffix))
-                    addToWS(altbkgModel)
-                    
-                    ## bkg model with hbkg from tmcbkg tree
-                    hmcbkg = template.Clone('hmcbkg_' + suffix)
-                    tmcbkg.Draw('mass>>hmcbkg_' + suffix, 'weight')
+                elbkgModel = work.factory('HistPdf::elbkgModel_{suffix}({{mass}}, delbkg_{suffix}, 2)'.format(suffix = suffix))
+            addToWS(elbkgModel)
+            outputFile.cd()
+            hElBkg.SetDirectory(outputFile)
+            hElBkg.Write()
 
-                    mcbkgData = ROOT.RooDataHist('mcbkgData_' + suffix, 'mcbkg', masslist, hmcbkg)
-                    addToWS(mcbkgData)
+        ### set up bkg templates
+        altbkgModel = None
+        nombkgModel = None
+        if conf in ['pass', 'fail']:
+            altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
+            addToWS(altbkgModel)
 
-                    bkgModel = work.factory('HistPdf::bkgModel_{suffix}({{mass}}, mcbkgData_{suffix}, 2)'.format(suffix = suffix))
-                    addToWS(bkgModel)
+            # nombkgModel = mubkgModel.clone('nombkgModel_' + suffix)
+            if tMuBkg.GetEntries < 5000.:
+                nombkgModel = ROOT.KeysShape('nombkgModel_' + suffix, 'nombkgModel', mass, tMuBkg, '', 0.3, 8)
+            else:
+                hMuBkg = inputFile.Get('mubkg_' + suffix)
+                dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
+                addToWS(dMuBkg)
+            
+                print suffix
+                nombkgModel = work.factory('HistPdf::nombkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
+            print nombkgModel
+            addToWS(nombkgModel)
 
-                    ## make helblg for scale plots
-                    helbkg = template.Clone('helbkg_' + suffix)
-                    tmcbkg.Draw('mass>>helbkg_' + suffix, 'weight')
+        elif conf in ['ee', 'eg']:
+            # altbkgModel = mubkgModel.clone('altbkgModel_' + suffix)
+            if tMuBkg.GetEntries < 5000.:
+                altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tMuBkg, '', 0.3, 8)
+            else:
+                hMuBkg = inputFile.Get('mubkg_' + suffix)
+                dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
+            
+                altbkgModel = work.factory('HistPdf::altbkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
+            addToWS(altbkgModel)
 
-                else:
-                    altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, 'weight', 0.3, 8)
-                    addToWS(altbkgModel)
+            if dataType == 'data':                
+                scalePdf = mcWork.pdf('elmuscale_' + suffix)
+                addToWS(scalePdf)
+                
+            elif dataType == 'mc':
+                hMuBkg.Scale(1. / hMuBkg.GetSumOfWeights())
+                hElBkg.Scale(1. / hElBkg.GetSumOfWeights())
 
-                    bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tmcbkg, 'weight', 0.3, 8)
-                    addToWS(bkgModel)
-    
-                    hmubkg = altbkgModel.createHistogram('hmubkg', mass, ROOT.RooFit.Binning(fitBinning))
-                    hmubkg.SetName('hmubkg_' + suffix)
-                    helbkg = bkgModel.createHistogram('helbkg', mass, ROOT.RooFit.Binning(fitBinning))
-                    helbkg.SetName('helbkg_' + suffix)
-
-                hmubkg.Scale(1. / hmubkg.GetSumOfWeights())
-                helbkg.Scale(1. / helbkg.GetSumOfWeights())
-
-                elmuscale = helbkg.Clone('elmuscale_' + suffix)
-                elmuscale.Divide(hmubkg)
-
+                elmuscale = hElBkg.Clone('elmuscale_' + suffix)
+                elmuscale.Divide(hMuBkg)
+                
                 outputFile.cd()
-                hmubkg.SetDirectory(outputFile)
-                hmubkg.Write()
-                helbkg.SetDirectory(outputFile)
-                helbkg.Write()
                 elmuscale.SetDirectory(outputFile)
                 elmuscale.Write()
 
@@ -304,44 +309,24 @@ for bin, fitCut in fitBins:
                 addToWS(scaleHist)
                 addToWS(scalePdf)
 
-        else:
-            if conf in ['pass', 'fail']:                
-                bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
-                addToWS(bkgModel)
-
-                altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
-                addToWS(altbkgModel)
-
-            else:
-                if dataSource == 'smu':
-                    bkgModel = ROOT.KeysShape('bkgModel_' + suffix, 'bkgModel', mass, tbkg, '', 0.3, 8)
-                    addToWS(bkgModel)
-                
-                else:
-                    altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tbkg, '', 0.3, 8)
-                    addToWS(altbkgModel)
-
-                    scalePdf = mcWork.pdf('elmuscale_' + suffix)
-                    addToWS(scalePdf)
-                    
-                    bkgModel = work.factory('PROD::bkgModel_{suffix}(altbkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
-                    addToWS(bkgModel)
+            nombkgModel = work.factory('PROD::nombkgModel_{suffix}(mubkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
+            addToWS(nombkgModel)
 
         print 'Made bkgModel_' + suffix
 
         # full fit PDF
-        model = work.factory('SUM::model_{suffix}(nbkg * bkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
+        model = work.factory('SUM::model_{suffix}(nbkg * nombkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
         addToWS(model)
 
         print 'Made model_' + suffix
 
         if dataType == 'mc':
-            hmcbkg = inputFile.Get('mcbkg_' + suffix)
+            hTrueBkg = inputFile.Get('truebkg_' + suffix)
             outputFile.cd()
-            hmcbkg.Write()
+            hTrueBkg.Write()
             inputFile.cd()
         else:
-            hmcbkg = None
+            hTrueBkg = None
 
         # nominal fit
         mZ.setConstant()
@@ -359,11 +344,11 @@ for bin, fitCut in fitBins:
 
         nomparams.add(nompset)
 
-        efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hmcbkg, alt = '')
+        efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hTrueBkg, alt = '')
 
         if dataSource == 'smu':
             continue
-
+   
         # altbkg fit
         model = work.factory('SUM::model_altbkg_{suffix}(nbkg * altbkgModel_{suffix}, nsignal * sigModel_{bin})'.format(suffix = suffix, bin = bin))
 
@@ -375,14 +360,14 @@ for bin, fitCut in fitBins:
 
         altbkgparams.add(altbkgpset)
 
-        efake_plot.plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'altbkgModel', hmcbkg = hmcbkg, alt = 'altbkg')
+        efake_plot.plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'altbkgModel', hmcbkg = hTrueBkg, alt = 'altbkg')
 
         if dataType == 'data':
             # altsig fit
             mZ.setConstant(False)
             gammaZ.setConstant(False)
     
-            model = work.factory('SUM::model_altsig_{suffix}(nbkg * bkgModel_{suffix}, nsignal * altsigModel_{bin})'.format(suffix = suffix, bin = bin))
+            model = work.factory('SUM::model_altsig_{suffix}(nbkg * nombkgModel_{suffix}, nsignal * altsigModel_{bin})'.format(suffix = suffix, bin = bin))
     
             for vname, val in initVals.items():
                 work.var(vname).setVal(val)
@@ -392,7 +377,7 @@ for bin, fitCut in fitBins:
     
             altsigparams.add(altsigpset)
     
-            efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hmcbkg, alt = 'altsig')
+            efake_plot.plotFit(mass, targHist, model, dataType, suffix, hmcbkg = hTrueBkg, alt = 'altsig')
 
 addToWS(nomparams)
 addToWS(altsigparams)

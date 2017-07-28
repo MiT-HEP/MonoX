@@ -399,7 +399,7 @@ MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bo
     });
 
   if (printLevel_ > 1) {
-    std::cout << "Adding Plot " << _hist->GetName() << " with expression " << _expr << std::endl;
+    std::cout << "\nAdding Plot " << _hist->GetName() << " with expression " << _expr << std::endl;
     if (_cuts && std::strlen(_cuts) != 0)
       std::cout << " Cuts: " << _cuts << std::endl;
     if (_reweight && std::strlen(_reweight) != 0)
@@ -417,7 +417,7 @@ MultiDraw::addTree(TTree* _tree, char const* _cuts/* = ""*/, bool _applyBaseline
     });
 
   if (printLevel_ > 1) {
-    std::cout << "Adding Tree " << _tree->GetName() << std::endl;
+    std::cout << "\nAdding Tree " << _tree->GetName() << std::endl;
     if (_cuts && std::strlen(_cuts) != 0)
       std::cout << " Cuts: " << _cuts << std::endl;
     if (_reweight && std::strlen(_reweight) != 0)
@@ -514,21 +514,23 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 
   if (baseSelection_ && baseSelection_->GetMultiplicity() != 0) {
     if (printLevel_ > 1)
-      std::cout << "Base selection is based on an array." << std::endl;
+      std::cout << "\n\nBase selection is based on an array." << std::endl;
 
     baseResults = new std::vector<bool>;
   }
   if (fullSelection_ && fullSelection_->GetMultiplicity() != 0) {
     if (printLevel_ > 1)
-      std::cout << "Full selection is based on an array." << std::endl;
+      std::cout << "\nFull selection is based on an array." << std::endl;
 
     fullResults = new std::vector<bool>;
   }
 
   long printEvery(10000);
   if (printLevel_ == 2)
+    printEvery = 10000;
+  else if (printLevel_ == 3)
     printEvery = 100;
-  else if (printLevel_ >= 3)
+  else if (printLevel_ >= 4)
     printEvery = 1;
 
   long iEntry(_firstEntry);
@@ -539,7 +541,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
   while (iEntry != iEntryMax && tree_.LoadTree(iEntry++) >= 0) {
     if (printLevel_ >= 0 && iEntry % printEvery == 1) {
       std::cout << "\r      " << iEntry << " events";
-      if (printLevel_ > 1)
+      if (printLevel_ > 2)
         std::cout << std::endl;
     }
 
