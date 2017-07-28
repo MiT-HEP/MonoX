@@ -606,6 +606,7 @@ class DijetSelection : public Cut {
   void setMinPt2(double min) { minPt2_ = min; }
   void setMinDEta(double min) { minDEta_ = min; }
   void setMinMjj(double min) { minMjj_ = min; }
+  void setSavePassing(bool b) { savePassing_ = b; }
 
   void addBranches(TTree& skimTree) override;
   
@@ -616,10 +617,18 @@ class DijetSelection : public Cut {
   double minPt2_{50.};
   double minDEta_{3.};
   double minMjj_{800.};
+  bool savePassing_{true};
 
   unsigned nDijet_{0};
   float dEtajj_[NMAX_PARTICLES]{};
   float mjj_[NMAX_PARTICLES]{};
+  unsigned ij1_[NMAX_PARTICLES]{};
+  unsigned ij2_[NMAX_PARTICLES]{};
+  unsigned nDijetPassing_{0};
+  float dEtajjPassing_[NMAX_PARTICLES]{};
+  float mjjPassing_[NMAX_PARTICLES]{};
+  unsigned ij1Passing_[NMAX_PARTICLES]{};
+  unsigned ij2Passing_[NMAX_PARTICLES]{};
 };
 
 class PhotonPtTruncator : public Cut {
