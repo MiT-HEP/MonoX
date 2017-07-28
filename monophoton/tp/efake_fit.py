@@ -242,7 +242,7 @@ for bin, fitCut in fitBins:
         hElBkg = None
         if dataType == 'mc':
             tElBkg = inputFile.Get('truebkgtree_' + suffix)
-            if tElBkg.GetEntries() < 5000.:
+            if tElBkg.GetEntries() < 50000.:
                 elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tElBkg, '', 0.3, 8)
 
                 hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
@@ -266,7 +266,7 @@ for bin, fitCut in fitBins:
             addToWS(altbkgModel)
 
             # nombkgModel = mubkgModel.clone('nombkgModel_' + suffix)
-            if tMuBkg.GetEntries() < 5000.:
+            if tMuBkg.GetEntries() < 50000.:
                 nombkgModel = ROOT.KeysShape('nombkgModel_' + suffix, 'nombkgModel', mass, tMuBkg, '', 0.3, 8)
             else:
                 hMuBkg = inputFile.Get('mubkg_' + suffix)
@@ -278,7 +278,7 @@ for bin, fitCut in fitBins:
 
         elif conf in ['ee', 'eg']:
             # altbkgModel = mubkgModel.clone('altbkgModel_' + suffix)
-            if tMuBkg.GetEntries() < 5000.:
+            if tMuBkg.GetEntries() < 50000.:
                 altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tMuBkg, '', 0.3, 8)
             else:
                 hMuBkg = inputFile.Get('mubkg_' + suffix)

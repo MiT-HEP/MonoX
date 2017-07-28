@@ -169,8 +169,8 @@ else:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-        # egPlotter.setReweight('tags.pt_', eleTrigEff)
-        # mgPlotter.setReweight('tags.pt_', muTrigEff)
+        egPlotter.setReweight('tags.pt_', eleTrigEff)
+        mgPlotter.setReweight('tags.pt_', muTrigEff)
 
     if dataSource == 'sel':
         egPlotter.setBaseSelection('tags.pt_ > 40.')
