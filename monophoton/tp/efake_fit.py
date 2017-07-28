@@ -219,18 +219,18 @@ for bin, fitCut in fitBins:
 
         ### Make muon+probe background template
         mubkgModel = None
-        hMuBkg = None
+        hMuBkg = None 
         tMuBkg = inputFile.Get('mubkgtree_' + suffix)
-        if tMuBkg.GetEntries < 5000.:
+        if tMuBkg.GetEntries() < 5000.:
             mubkgModel = ROOT.KeysShape('mubkgModel_' + suffix, 'mubkgModel', mass, tMuBkg, '', 0.3, 8)
-
+            
             hMuBkg = mubkgModel.createHistogram('mubkg', mass, ROOT.RooFit.Binning(fitBinning))
             hMuBkg.SetName('mubkg_' + suffix)
         else:
             hMuBkg = inputFile.Get('mubkg_' + suffix)
             dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
             addToWS(dMuBkg)
-            
+
             mubkgModel = work.factory('HistPdf::mubkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
         addToWS(mubkgModel)
         outputFile.cd()
@@ -242,7 +242,7 @@ for bin, fitCut in fitBins:
         hElBkg = None
         if dataType == 'mc':
             tElBkg = inputFile.Get('truebkgtree_' + suffix)
-            if tElBkg.GetEntries < 5000.:
+            if tElBkg.GetEntries() < 5000.:
                 elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tElBkg, '', 0.3, 8)
 
                 hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
@@ -266,21 +266,19 @@ for bin, fitCut in fitBins:
             addToWS(altbkgModel)
 
             # nombkgModel = mubkgModel.clone('nombkgModel_' + suffix)
-            if tMuBkg.GetEntries < 5000.:
+            if tMuBkg.GetEntries() < 5000.:
                 nombkgModel = ROOT.KeysShape('nombkgModel_' + suffix, 'nombkgModel', mass, tMuBkg, '', 0.3, 8)
             else:
                 hMuBkg = inputFile.Get('mubkg_' + suffix)
                 dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
                 addToWS(dMuBkg)
-            
-                print suffix
+
                 nombkgModel = work.factory('HistPdf::nombkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
-            print nombkgModel
             addToWS(nombkgModel)
 
         elif conf in ['ee', 'eg']:
             # altbkgModel = mubkgModel.clone('altbkgModel_' + suffix)
-            if tMuBkg.GetEntries < 5000.:
+            if tMuBkg.GetEntries() < 5000.:
                 altbkgModel = ROOT.KeysShape('altbkgModel_' + suffix, 'altbkgModel', mass, tMuBkg, '', 0.3, 8)
             else:
                 hMuBkg = inputFile.Get('mubkg_' + suffix)
