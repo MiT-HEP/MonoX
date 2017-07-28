@@ -33,6 +33,7 @@ class BatchManager(object):
             lines = out.split('\n')
 
             jobsInQueue = []
+            heldJobs = []
             for line in lines:
                 if line.strip() == '':
                     continue
@@ -42,6 +43,9 @@ class BatchManager(object):
                 procId, jobStatus = words[:2]
                 if jobStatus == '5':
                     args = tuple(words[3 + i] for i in argsToExtract)
+                    if args in heldJobs:
+                        continue
+
                     print 'Job %s is held' % str(args)
 
                     if autoResubmit:
@@ -51,6 +55,8 @@ class BatchManager(object):
                         print out.strip()
                         print err.strip()
                         jobsInQueue.append(procId)
+                    else:
+                        heldJobs.append(args)
 
                 else:
                     jobsInQueue.append(procId)
