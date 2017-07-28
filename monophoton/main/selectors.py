@@ -1421,6 +1421,56 @@ def vbfe(sample, rname):
 
     return selector
 
+def vbfm(sample, rname):
+    """
+    VBF + single muon.
+    """
+
+    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+
+    selector = ROOT.EventSelector(rname)
+    selector.setCanPhotonSkim(False)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
+    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    trig.setIgnoreDecision(True)
+    selector.addOperator(trig)
+
+    operators = [
+        'MetFilters',
+        'LeptonSelection',
+        'JetCleaning',
+        'DijetSelection',
+        'BjetVeto',
+        'CopyMet',
+        'JetMetDPhi',
+        'Met'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 1)
+    leptonSel.setRequireMedium(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(0.)
+    dijetSel.setMinMjj(0.)
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
+
+    return selector
 
 ######################
 # SELECTOR MODIFIERS #

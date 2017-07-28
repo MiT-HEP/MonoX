@@ -41,7 +41,8 @@ data_sph = [
 
 data_smu = [
     'dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets', 'zmumu', 'tpmmg',
-    tpmgLowPt, 'tp2m'
+    tpmgLowPt, 'tp2m',
+    'vbfm'
 ]
 
 data_sel = [
@@ -53,10 +54,10 @@ data_sel = [
 mc_cand = ['monoph', 'emjet', 'vbfg']
 mc_qcd = ['hfake']
 mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw']
-mc_lep = ['monomu', 'monoel']
+mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg']
 
-mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
+mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = [
     # Data 2016
@@ -85,13 +86,14 @@ allSelectors_byPattern = [
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt]),
+    ('tt', mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt]),
+    ('st*', mc_lep),
     ('wlnu{,n}-*', mc_wlnu),
     ('w{m,p}lnuewk', mc_wlnu),
     ('znn{,n}-*', mc_cand),
-    ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m', 'vbfe'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
-    ('dy{,n}-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m', 'vbfe'], s.addGenPhotonVeto)),
-    ('zewk', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m', 'vbfe'], s.addGenPhotonVeto)),
+    ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
+    ('dy{,n}-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('zewk', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),
     ('dm*', mc_sig),
