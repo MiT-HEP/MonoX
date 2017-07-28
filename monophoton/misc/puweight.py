@@ -30,7 +30,7 @@ for mcScenario, scenarioName in mcConfs:
     
     mcProb = dict(zip(npvs, probs))
     
-    mcDist = ROOT.TH1D(scenarioName, '', 1000, 0., 80.)
+    mcDist = ROOT.TH1D(scenarioName, '', dataDist.GetNbinsX(), 0., dataDist.GetXaxis().GetXmax())
     mcDist.Sumw2()
     
     for bin in range(1, mcDist.GetNbinsX() + 1):

@@ -35,8 +35,8 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
   float timeSpan[NMAX];
   float mipEnergy[NMAX];
   float trackIso[NMAX];
-  float photonDPhi;
-  float minJetDPhi;
+  float metPhotonDPhi;
+  float metMinJetDPhi;
   //mkbranch
 
   float outTrackIso[NMAX];
@@ -66,8 +66,8 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
     origMet.book(*output[iO]);
     output[iO]->Branch("photons.trackIso", outTrackIso, "trackIso[photons.size]/F");
     output[iO]->Branch("photons.type", photonType, "type[photons.size]/s");
-    output[iO]->Branch("t1Met.photonDPhi", &photonDPhi, "photonDPhi/F");
-    output[iO]->Branch("t1Met.minJetDPhi", &minJetDPhi, "minJetDPhi/F");
+    output[iO]->Branch("t1Met.photonDPhi", &metPhotonDPhi, "photonDPhi/F");
+    output[iO]->Branch("t1Met.minJetDPhi", &metMinJetDPhi, "minJetDPhi/F");
   }
 
   panda::utils::BranchList branchList = {
@@ -349,16 +349,16 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
     }
 
     if (outEvent.photons.size() != 0)
-      photonDPhi = std::abs(TVector2::Phi_mpi_pi(outEvent.t1Met.phi - outEvent.photons[0].phi()));
+      metPhotonDPhi = std::abs(TVector2::Phi_mpi_pi(outEvent.t1Met.phi - outEvent.photons[0].phi()));
     else
-      photonDPhi = 0.;
+      metPhotonDPhi = 0.;
     
-    minJetDPhi = 4.;
+    metMinJetDPhi = 4.;
     for (unsigned iJ(0); iJ != 4 && iJ != outEvent.jets.size(); ++iJ) {
       auto& jet(outEvent.jets[iJ]);
       double dPhi(std::abs(TVector2::Phi_mpi_pi(outEvent.t1Met.phi - jet.phi())));
-      if (dPhi < minJetDPhi)
-        minJetDPhi = dPhi;
+      if (dPhi < metMinJetDPhi)
+        metMinJetDPhi = dPhi;
     }
 
     for (unsigned iO(0); iO != nOutputClasses; ++iO) {

@@ -234,12 +234,11 @@ class SkimSlimWeight(object):
 
 
 class SSWBatchManager(BatchManager):
-    def __init__(self, ssws, skipMissing, readRemote):
+    def __init__(self, ssws):
         BatchManager.__init__(self, 'ssw2')
 
         self.ssws = ssws # list of SlimSkimWeight objects to manage
-        self.skipMissing = skipMissing
-        self.readRemote = readRemote
+        self.catalogDir = ''
 
     def submitMerge(self, noWait, autoResubmit = False):
         submitter = CondorRun(os.path.realpath(__file__))
@@ -260,21 +259,27 @@ class SSWBatchManager(BatchManager):
                     pass
     
         argTemplate = '-M %s -s %s'
+        if self.catalogDir:
+            argTemplate += ' -c ' + self.catalogDir
+
         submitter.job_args = [argTemplate % arg for arg in arguments]
         submitter.job_names = ['%s_%s' % arg for arg in arguments]
 
         self._submit(submitter, 'merge', argTemplate, noWait, autoResubmit)
 
-    def submitSkim(self, noWait, autoResubmit = False):
+    def submitSkim(self, noWait, skipMissing, readRemote, autoResubmit = False):
         submitter = CondorRun(os.path.realpath(__file__))
 
         argTemplate = '%s -f %s'
     
-        if self.skipMissing:
+        if skipMissing:
             argTemplate += ' -K'
 
-        if self.readRemote:
+        if readRemote:
             argTemplate += ' -R'
+
+        if self.catalogDir:
+            argTemplate += ' -c ' + self.catalogDir
 
         for ssw in self.ssws:
             for fileset in ssw.filesets:
@@ -309,7 +314,7 @@ if __name__ == '__main__':
     argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
     argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
     argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
-    argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '/home/cmsprod/catalog/t2mit', help = 'Source file catalog.')
+    argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '', help = 'Source file catalog.')
     argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
     argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
@@ -368,7 +373,9 @@ if __name__ == '__main__':
 
     ## set up samples and selectors
     import datasets
-    datasets.catalogDir = args.catalog
+    if args.catalog:
+        datasets.catalogDir = args.catalog
+
     from main.skimconfig import allSelectors
 
     # list of (sample, {rname: selgen})
@@ -473,12 +480,14 @@ if __name__ == '__main__':
         ## job submission only
         print 'Submitting jobs.'
        
-        batchManager = SSWBatchManager(ssws, args.skipMissing, args.readRemote)
+        batchManager = SSWBatchManager(ssws)
+        if args.catalog:
+            batchManager.catalogDir = args.catalog
 
         if args.merge:
             batchManager.submitMerge(args.noWait, args.autoResubmit)
         else:
-            batchManager.submitSkim(args.noWait, args.autoResubmit)
+            batchManager.submitSkim(args.noWait, args.skipMissing, args.readRemote, args.autoResubmit)
 
         if args.noWait:
             print 'Jobs have been submitted.'

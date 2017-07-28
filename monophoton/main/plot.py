@@ -100,7 +100,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         expr = plotdef.formExpression(variation.replacements[iv])
                     else:
                         expr = plotdef.formExpression()
-                    
 
                     plotter.addPlot(
                         hist,
@@ -168,18 +167,17 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         if group.norm >= 0.:
             ghist.Scale(group.norm / baseTotal)
 
+        if group == plotConfig.obs and plotdef.blind is not None:
+            # take care of masking
+            for iBin in range(1, ghist.GetNbinsX() + 1):
+                binCenter = ghist.GetBinCenter(iBin)
+                if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
+                    ghist.SetBinContent(iBin, 0.)
+                    ghist.SetBinError(iBin, 0.)
+
         writeHist(ghist)
 
-        if group == plotConfig.obs:
-            # take care of masking
-            if plotdef.blind is not None:
-                for iBin in range(1, obshist.GetNbinsX()+1):
-                    binCenter = obshist.GetBinCenter(iBin)
-                    if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
-                        obshist.SetBinContent(iBin, 0.)
-                        obshist.SetBinError(iBin, 0.)
-
-        else:
+        if group != plotConfig.obs:
             # write a group total histogram with systematic uncertainties added in quadrature (for display purpose only)
             outDir.cd()
             ghistSyst = ghist.Clone(group.name + '_syst')
@@ -425,11 +423,11 @@ def printCanvas(canvas, plotdef, plotConfig):
             sys.stdout.write(' (lin)')
 
         if addLinear:
-            simple.ylimits = (0., -1.)
-            simple.minimum = -1.
-            plotdef.ymax = -1.
-            plotdef.ymin = 0.
-            simple._needUpdate = True
+            plotPad.SetLogy(False)
+            plotPad.Update()
+            yaxis.SetOption('')
+            yaxis.SetWmin(plotPad.GetUymin())
+            yaxis.SetWmax(plotPad.GetUymax())
             simple.printWeb(plotDir, plotdef.name + 'Linear', logy = False)
 
             sys.stdout.write(' (lin)')
@@ -444,6 +442,7 @@ def printCanvas(canvas, plotdef, plotConfig):
         cnv.IsA().Destructor(cnv)
 
     else:
+        # normal, (partially) unblinded distributions
         canvas.printWeb(plotDir, plotdef.name, drawLegend = False)
 
         sys.stdout.write('    main')
@@ -486,7 +485,6 @@ if __name__ == '__main__':
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir}/monophoton to save images. Use "-" for no output.')
     argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', default = 0, help = 'Verbosity of the script.')
     argParser.add_argument('--replot', '-P', action = 'store_true', dest = 'replot', default = '', help = 'Do not fill histograms. Need --hist-file.')
-    argParser.add_argument('--save-trees', '-t', action = 'store_true', dest = 'saveTrees', help = 'Write trees to output file instead of histograms.')
     argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
     
     args = argParser.parse_args()
@@ -576,10 +574,6 @@ if __name__ == '__main__':
         histFile = ROOT.gROOT
 
     if args.asimov:
-        if args.saveTrees:
-            print 'Cannot use --save-trees together with --asimov.'
-            sys.exit(1)
-
         if args.asimov == 'background':
             pass
         elif args.asimov in [s.name for s in plotConfig.signalPoints]:
@@ -623,7 +617,7 @@ if __name__ == '__main__':
     
                 sspec.group.samples.append(sspec.sample)
 
-        if not args.asimov:
+        if not args.asimov and not args.blind:
             groups.append(plotConfig.obs)
     
         for group in groups:
@@ -758,15 +752,14 @@ if __name__ == '__main__':
                 else:
                     counters[sspec.name] = shist
 
-        # observed distributions (if not blinded)
-        if not args.blind:
-            obshist = inDir.Get('data_obs')
+        # observed distributions
+        obshist = inDir.Get('data_obs')
 
-            if graphic:
-                formatHist(obshist, plotdef)
-                canvas.addObs(obshist, title = plotConfig.obs.title)
-            else:    
-                counters['data_obs'] = obshist
+        if graphic:
+            formatHist(obshist, plotdef)
+            canvas.addObs(obshist, title = plotConfig.obs.title)
+        else:    
+            counters['data_obs'] = obshist
 
         if plotdef.name == 'count':
             printCounts(counters, plotConfig)
@@ -777,4 +770,5 @@ if __name__ == '__main__':
         else:
             if args.asimov:
                 plotdef.name += args.asimov.capitalize()
+
             printCanvas(canvas, plotdef, plotConfig)

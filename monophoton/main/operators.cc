@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <functional>
+#include <fstream>
 
 #include "fastjet/internal/base.hh"
 #include "fastjet/PseudoJet.hh"
@@ -103,6 +104,11 @@ HLTFilter::initialize(panda::EventMonophoton& _event)
   }
 }
 
+void
+HLTFilter::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch(pathNames_, &pass_, pathNames_ + "/O");
+}
 
 bool
 HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
@@ -110,25 +116,65 @@ HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
   // make sure a trigger menu exists; will return a human readable error if not
   _event.run.triggerMenu();
 
+  pass_ = false;
+
   for (unsigned iT(0); iT != tokens_.size(); ++iT) {
     auto& token(tokens_[iT]);
 
     if (_event.triggerFired(token))
-      return true;
+      pass_ = true;
   }
   
-  return false;
+  return pass_;
+}
+
+//--------------------------------------------------------------------
+// EventVeto
+//--------------------------------------------------------------------
+
+void
+EventVeto::addSource(char const* _path)
+{
+  std::ifstream input(_path);
+  std::string line;
+
+  while (true) {
+    std::getline(input, line);
+    if (!input.good())
+      break;
+
+    unsigned run(std::atoi(line.substr(0, line.find(":")).c_str()));
+    unsigned lumi(std::atoi(line.substr(line.find(":") + 1, line.rfind(":")).c_str()));
+    unsigned event(std::atoi(line.substr(line.rfind(":") + 1).c_str()));
+
+    list_[run][lumi].insert(event);
+  }
+}
+
+void
+EventVeto::addEvent(unsigned run, unsigned lumi, unsigned event)
+{
+  list_[run][lumi].insert(event);
+}
+
+bool
+EventVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+{
+  auto rItr(list_.find(_event.runNumber));
+  if (rItr == list_.end())
+    return true;
+
+  auto lItr(rItr->second.find(_event.lumiNumber));
+  if (lItr == rItr->second.end())
+    return true;
+
+  auto eItr(lItr->second.find(_event.eventNumber));
+  return eItr == lItr->second.end();
 }
 
 //--------------------------------------------------------------------
 // MetFilters
 //--------------------------------------------------------------------
-
-void
-MetFilters::setEventList(char const* _path, int _decision)
-{
-  eventLists_.emplace_back(EventList(_path), _decision);
-}
 
 bool
 MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
@@ -148,19 +194,6 @@ MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
     }
     else {
       if (filterConfig_[iF] == -1)
-        return false;
-    }
-  }
-
-  unsigned iList(0);
-  for (auto& eventList : eventLists_) {
-    iList++;
-    if (eventList.first.inList(_event)) {
-      if (eventList.second == 1)
-        return false;
-    }
-    else {
-      if (eventList.second == -1)
         return false;
     }
   }
@@ -1247,6 +1280,56 @@ HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonop
 }
 
 //--------------------------------------------------------------------
+// DijetSelection
+//--------------------------------------------------------------------
+
+void
+DijetSelection::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("dijet.size", &nDijet_, "size/i");
+  _skimTree.Branch("dijet.dEtajj", dEtajj_, "dEtajj[dijet.size]/F");
+  _skimTree.Branch("dijet.mjj", mjj_, "mjj[dijet.size]/F");
+}
+
+bool
+DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  nDijet_ = 0;
+
+  bool result(false);
+
+  for (unsigned iJ1(0); iJ1 != _outEvent.jets.size(); ++iJ1) {
+    auto& jet1(_outEvent.jets[iJ1]);
+
+    if (jet1.pt() < minPt1_)
+      break;
+
+    for (unsigned iJ2(iJ1 + 1); iJ2 != _outEvent.jets.size(); ++iJ2) {
+      auto& jet2(_outEvent.jets[iJ2]);
+
+      if (jet2.pt() < minPt2_)
+        break;
+
+      if (jet1.eta() * jet2.eta() > 0.)
+        continue;
+
+      if (nDijet_ == NMAX_PARTICLES)
+        throw std::runtime_error("Too many dijet pairs in an event");
+
+      dEtajj_[nDijet_] = jet1.eta() - jet2.eta();
+      mjj_[nDijet_] = (jet1.p4() + jet2.p4()).M();
+
+      if (std::abs(dEtajj_[nDijet_]) > minDEta_ && mjj_[nDijet_] > minMjj_)
+        result = true;
+
+      ++nDijet_;
+    }
+  }
+
+  return result;
+}
+
+//--------------------------------------------------------------------
 // PhotonPtTruncator
 //--------------------------------------------------------------------
 
@@ -1698,11 +1781,29 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "jet " << iJ << std::endl;
 
-    if (jet.pt() < minPt_ || std::abs(jet.eta()) > 5.)
+    if (!jet.loose)
+      continue;
+
+    double absEta(std::abs(jet.eta()));
+
+    if (jet.pt() < minPt_ || absEta > 5.)
       continue;
 
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
-      *stream_ << " pass eta cut" << std::endl;
+      *stream_ << " pass pt and eta cut" << std::endl;
+
+    double puIdCut(0.);
+    if (absEta < 2.5)
+      puIdCut = -0.8;
+    else if (absEta < 2.75)
+      puIdCut = -0.95;
+    else if (absEta < 3.)
+      puIdCut = -0.97;
+    else
+      puIdCut = -0.99;
+
+    if (jet.puid < puIdCut)
+      continue;
 
     // No JEC info stored in nero right now (at least samples I am using)
     // double maxPt(jet.ptCorrUp);

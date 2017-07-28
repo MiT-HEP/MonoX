@@ -233,7 +233,7 @@ class SampleDef(object):
                     self._basenames[dataset][fileset] = []
 
                     if dataset not in self._directories:
-                        self._directories[dataset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms')
+                        self._directories[dataset] = xrdpath.replace('root://xrootd.cmsaf.mit.edu/', '/mnt/hadoop/cms').replace('root://t3serv006.mit.edu/', '/mnt/hadoop')
                         self._downloadable[dataset] = self._directories[dataset].startswith('/mnt/hadoop/cms/store/user/paus')
     
             with open(catalogDir + '/' + self.book + '/' + dataset + '/Files') as fileList:
@@ -271,9 +271,12 @@ class SampleDef(object):
             if not self._downloadable[dataset]:
                 continue
 
-            for basenames in sum(self._basenames[dataset].values(), []):
-                proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                print proc.communicate()[0].strip()
+            directory = self._directories[dataset]
+
+            for basename in sum(self._basenames[dataset].values(), []):
+                if not os.path.exists(directory + '/' + basename):
+                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
@@ -286,12 +289,17 @@ class SampleDef(object):
     def files(self, filesets = []):
         self._readCatalogs()
 
+        if len(filesets) == 0:
+            filesets = self.filesets()
+
         paths = []
 
         for dataset in self.datasetNames:
-            for fileset, basename in self._basenames[dataset].items():
-                if len(filesets) == 0 or fileset in filesets:
-                    paths.append(self._directories[dataset] + '/' + basename)
+            directory = self._directories[dataset]
+
+            basenames = sum((bs for f, bs in self._basenames[dataset].items() if f in filesets), [])
+            for basename in basenames:
+                paths.append(directory + '/' + basename)
 
         return paths
 
