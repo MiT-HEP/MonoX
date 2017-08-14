@@ -18,7 +18,7 @@ def makeZGWGHistograms(sname, binning):
 
     lo = ROOT.TH1D('lo', '', len(binning) - 1, binning)
 
-    tree.Draw('partons.pt_>>lo', 'partons.pdgid == 22 && TMath::Abs(partons.eta_) < 1.4442', 'goff')
+    tree.Draw('TMath::Min(partons.pt_, 999.9)>>lo', 'partons.pdgid == 22 && TMath::Abs(partons.eta_) < 1.4442', 'goff')
 
     lo.Scale(1000. * sample.crosssection / sample.sumw, 'width') # nnlo file given in dsigma / dpT (fb / GeV)
 

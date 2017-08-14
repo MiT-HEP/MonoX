@@ -16,8 +16,8 @@ sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
-config.skimDir = '/mnt/hadoop/scratch/yiiyama/monophoton/skim_badjets'
-config.localSkimDir = '/local/yiiyama/monophoton/skim_badjets'
+config.skimDir = '/mnt/hadoop/scratch/yiiyama/monophoton/skim'
+config.localSkimDir = '/local/yiiyama/monophoton/skim'
 import utils
 
 from trigger.confs import measurements, confs, fitconfs

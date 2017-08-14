@@ -31,8 +31,10 @@ electronData = ['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m',
 
 gj = ['gj-100', 'gj-200', 'gj-400', 'gj-600']
 gj04 = ['gj04-100', 'gj04-200', 'gj04-400', 'gj04-600']
-wlnu = ['wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500']
-dy = ['dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600']
+wlnu = ['wlnu', 'wlnu-70', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500']
+wlnun = ['wlnun-0', 'wlnun-50', 'wlnun-100', 'wlnun-250', 'wlnun-400', 'wlnun-600']
+dy = ['dy-50', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500']
+dyn = ['dyn-50', 'dyn-50-50', 'dyn-50-100', 'dyn-50-250', 'dyn-50-400', 'dyn-50-650']
 qcd = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 minor = ['zllg-130-o', 'zllg-300-o', 'gg-40', 'gg-80'] # + wlnu # 'ttg', 'tg',
 
@@ -94,11 +96,11 @@ def getConfig(confName):
 #        config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 6.77)
-        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', norm = 8.75 * 36.1 / 13.1)
+        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 6.77 * config.effLumi() / 35900.)
+        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', norm = 8.75 * config.effLumi() / 12900.)
         config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
@@ -385,13 +387,16 @@ def getConfig(confName):
         config.addPlot('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', applyFullSel = True, overflow = False)
         config.addPlot('recoil', 'Recoil', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True)
         config.addPlot('recoilScan', 'Recoil', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
+        config.addPlot('recoilPhi', '#phi_{recoil}', 't1Met.phi', (30, -math.pi, math.pi))
+        config.addPlot('realMet', 'E_{T}^{miss}', 't1Met.realMet', [25. * x for x in range(21)], unit = 'GeV', overflow = True)
+        config.addPlot('realMetOverMuPt', 'E_{T}^{miss}/p_{T}^{#mu}', 't1Met.realMet / muons.pt_[0]', (20, 0., 10.), overflow = True)
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi))
-#        config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.realPhotonDPhi', (13, 0., 3.25))
+#        config.addPlot('dPhiPhoRealMet', '#Delta#phi(#gamma, E_{T}^{miss})', 't1Met.realPhotonDPhi', (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, U)', 't1Met.photonDPhi', (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('dPhiPhoMetMt100', '#Delta#phi(#gamma, U)', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton + ' && ' + mtPhoMet + ' > 100.', overflow = True)
         config.addPlot('dRPhoMu', '#DeltaR(#gamma, #mu)', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - muons.eta_[0], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - muons.phi_[0]), 2.))', (10, 0., 4.))
@@ -541,7 +546,7 @@ def getConfig(confName):
         config.addSigPoint('dma-500-1', 'DM A M_{med}=500GeV M_{DM}=1GeV', color = 30) # 0.07827/pb
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
@@ -570,7 +575,7 @@ def getConfig(confName):
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('multiboson', 'multiboson', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [100. + 10. * x for x in range(5)] + [150. + 50. * x for x in range(6)], unit = 'GeV', overflow = True)
@@ -634,7 +639,7 @@ def getConfig(confName):
         config.addSigPoint('dph-125', 'DPH125', color = ROOT.kRed)
         config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
 
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
@@ -722,7 +727,7 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
@@ -765,7 +770,7 @@ def getConfig(confName):
         config.addSigPoint('dmv-2000-1', 'DM2000', color = 50) # 0.07827/pb
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
@@ -839,7 +844,7 @@ def getConfig(confName):
         config.baseline = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi_[0])) > 3. && TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt_[0] > 100. && t1Met.pt > 50. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.pt > 75.'
 
-        config.addBkg('wjets', 'W+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+        config.addBkg('wjets', 'W+jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -875,7 +880,7 @@ def getConfig(confName):
         config.baseline = 'TMath::Abs(TVector2::Phi_mpi_pi(z.phi - jets.phi_[0])) > 3. && TMath::Abs(TVector2::Phi_mpi_pi(z.phi - t1Met.phi)) < 0.5 && z.mass > 81. && z.mass < 101. && z.oppSign == 1 && jets.size == 1 && jets.pt_[0] > 100. && t1Met.pt > 50. && t1Met.minJetDPhi > 0.5'
         config.fullSelection = 't1Met.pt > 75.'
 
-        config.addBkg('wjets', 'W+jets', samples = wlnu, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+        config.addBkg('wjets', 'W+jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('zjets', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -912,7 +917,7 @@ def getConfig(confName):
         config.fullSelection = 't1Met.pt > 170.'
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
@@ -957,7 +962,7 @@ def getConfig(confName):
         config.fullSelection = ''
 
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnu, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
@@ -1166,7 +1171,7 @@ def getConfig(confName):
         config.addPlot('detajj', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, 0., 10.))
         config.addPlot('detajjHighMet', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, 0., 10.), applyBaseline = False, cut = 't1Met.pt > 100. && jets.pt_[0] > 100. && photons.medium[0] && photons.pixelVeto[0]')
         config.addPlot('detajjNonMetAligned', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, 0., 10.), cut = 't1Met.minJetDPhi > 1.')
-        config.addPlot('mjj', 'm^{jj} (GeV)', 'dijet.mjj[0]', (40, 0., 5000.), sensitive = True)
+        config.addPlot('mjj', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
         config.addPlot('jet1Pt', 'p_T^{j1}', 'jets.pt_[0]', (40, 0., 1000.), cut = 'jets.size != 0')
         config.addPlot('jet2Pt', 'p_T^{j2}', 'jets.pt_[1]', (40, 0., 1000.), cut = 'jets.size > 1')
         config.addPlot('jetEta', '#eta^{j}', 'jets.eta_', (20, -5., 5.), cut = 'jets.size != 0')
@@ -1197,8 +1202,7 @@ def getConfig(confName):
 
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
-#        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
-#        config.addBkg('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xcc, 0xdd, 0x99))
+        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'vbfgHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfgEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -1206,7 +1210,7 @@ def getConfig(confName):
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = (100., 'inf'))
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = 'full')
         config.addPlot('mt', 'M_{T}^{#gamma}', 'photons.mt[0]', (50, 0., 500.), unit = 'GeV', overflow = True, sensitive = True)
-        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', (10, 0., 300.), unit = 'GeV', applyFullSel = True, overflow = True, sensitive = True, blind = 'full', ymax = 25.)
+        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', (10, 0., 300.), unit = 'GeV', applyFullSel = True, overflow = True, sensitive = True, blind = 'full')
         config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (80, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('phoPtFullSel', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (80, 0., 1000.), unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5))
@@ -1219,19 +1223,23 @@ def getConfig(confName):
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
         config.addPlot('dPhiJetMetMinHighMet', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi), cut = 't1Met.pt > 100.', sensitive = True, blind =(1., math.pi))
 #        config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (20, 0., math.pi))
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3)
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('njetsFullSel', 'N_{jet}', 'jets.size', (6, 0., 6.), applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
         config.addPlot('njetsMidPtFullSel', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 50.', applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
-        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
-        config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[0]', (40, -5., 5.))
-        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
-        config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[1]', (40, -5., 5.))
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet1PtFullSel', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
+        config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[pdijet.ij1[0]]', (40, -5., 5.))
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet2PtFullSel', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
+        config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[pdijet.ij2[0]]', (40, -5., 5.))
         config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
+        config.addPlot('detajjFullSel', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.), applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('dphijj', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi))
         config.addPlot('dphijjFullSel', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi), applyFullSel = True, sensitive = True, blind = 'full')
-        config.addPlot('mjj', 'm^{jj} (GeV)', 'pdijet.mjj[0]', (40, 0., 5000.), sensitive = True)
-        config.addPlot('mjjFullSel', 'm^{jj} (GeV)', 'pdijet.mjj[0]', (40, 0., 5000.), applyFullSel = True, sensitive = True, blind = 'full')
+        config.addPlot('mjj', 'm^{jj}', 'pdijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
+        config.addPlot('mjjFullSel', 'm^{jj}', 'pdijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), sensitive = True, blind = (0., 1.))
         config.addPlot('phoPtOverMetFullSel', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
@@ -1240,6 +1248,8 @@ def getConfig(confName):
         config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
         config.addPlot('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020))
         config.addPlot('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
+        config.addPlot('npartons', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), sensitive = True, blind = 'full')
+        config.addPlot('npartonsFullSel', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), applyFullSel = True, sensitive = True, blind = 'full')
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
@@ -1273,8 +1283,8 @@ def getConfig(confName):
 #        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
 
 
-    elif confName == 'vbfe':
-        config = PlotConfig('vbfe', ['sel-16*'])
+    elif confName == 'vbfe' or confName == 'vbfelo':
+        config = PlotConfig(confName, ['sel-16*'])
 
         config.baseline = 'electrons.pt_[0] > 40.'
 
@@ -1282,11 +1292,23 @@ def getConfig(confName):
 
         mt = 'TMath::Sqrt(2. * t1Met.pt * electrons.pt_[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - electrons.phi_[0]))))'
 
+        if confName == 'vbfe':
+            main = wlnun
+            wscale = 1.
+        elif confName == 'vbfelo':
+            main = wlnu
+            wscale = 6.153 / 4.997
+
         config.addBkg('top', 't#bar{t}/t', samples = ['tt', 'sttbar', 'stt', 'stwbar', 'stw'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('w', 'W#rightarrowl#nu', samples = wlnu, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('w', 'W#rightarrowl#nu', samples = main, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff), scale = wscale)
         config.addBkg('wewk', 'W#rightarrowl#nu (EWK)', samples = ['wmlnuewk', 'wplnuewk'], color = ROOT.TColor.GetColor(0x77, 0xcc, 0xff))
-        config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 6025. / 4975.)
         config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xff, 0x99))
+
+        if confName == 'vbfelo':
+            config.obs.region = 'vbfe'
+            for group in config.bkgGroups:
+                group.region = 'vbfe'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -1299,13 +1321,14 @@ def getConfig(confName):
         config.addPlot('dPhiElMet', '#Delta#phi(e, E_{T}^{miss})', "TMath::Abs(TVector2::Phi_mpi_pi(electrons.phi_[0] - t1Met.phi))", (20, 0., math.pi))
         config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3)
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
         config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[0]', (40, -5., 5.))
         config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[1]', (40, -5., 5.))
+        config.addPlot('ht', 'H_{T}', 'Sum$(jets.pt_)', (50, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
         config.addPlot('dphijj', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi))
         config.addPlot('mjj', 'm^{jj} (GeV)', 'pdijet.mjj[0]', (40, 0., 5000.), sensitive = True)
@@ -1323,20 +1346,32 @@ def getConfig(confName):
         for group in config.bkgGroups + config.sigGroups:
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-    elif confName == 'vbfm':
-        config = PlotConfig('vbfm', ['smu-16*'])
+    elif confName == 'vbfm' or confName == 'vbfmlo':
+        config = PlotConfig(confName, ['smu-16*-m'])
 
-        config.baseline = 'muons.pt_[0] > 40.'
+        config.baseline = 'pdijet.size != 0 && muons.pt_[0] > 40.'
 
         config.fullSelection = ''
 
         mt = 'TMath::Sqrt(2. * t1Met.pt * muons.pt_[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi_[0]))))'
 
+        if confName == 'vbfm':
+            main = wlnun
+            wscale = 1.
+        elif confName == 'vbfmlo':
+            main = wlnu
+            wscale = 6.153 / 4.997
+
         config.addBkg('top', 't#bar{t}/t', samples = ['tt', 'sttbar', 'stt', 'stwbar', 'stw'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('w', 'W#rightarrowl#nu', samples = wlnu, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('wewk', 'W#rightarrowl#nu (EWK)', samples = ['wmlnuewk', 'wplnuewk'], color = ROOT.TColor.GetColor(0x77, 0xcc, 0xff))
-        config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
-        config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xff, 0x99))
+        config.addBkg('w', 'W#rightarrowl#nu', samples = main, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff), scale = wscale)
+        config.addBkg('wewk', 'W#rightarrowl#nu (EWK)', samples = ['wmlnuewk', 'wplnuewk'], color = ROOT.TColor.GetColor(0x77, 0xcc, 0xdd))
+        config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 6025. / 4975.)
+        config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xdd, 0x99))
+
+        if confName == 'vbfmlo':
+            config.obs.region = 'vbfm'
+            for group in config.bkgGroups:
+                group.region = 'vbfm'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -1346,20 +1381,26 @@ def getConfig(confName):
         config.addPlot('muPhi', '#phi^{#mu}', 'muons.phi_[0]', (20, -math.pi, math.pi))
         config.addPlot('nmuons', 'N_{#mu}', 'muons.size', (4, 0., 4.))
         config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
-        config.addPlot('dPhiElMet', '#Delta#phi(#mu, E_{T}^{miss})', "TMath::Abs(TVector2::Phi_mpi_pi(muons.phi_[0] - t1Met.phi))", (20, 0., math.pi))
+        config.addPlot('dPhiMuMet', '#Delta#phi(#mu, E_{T}^{miss})', "TMath::Abs(TVector2::Phi_mpi_pi(muons.phi_[0] - t1Met.phi))", (20, 0., math.pi))
         config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3)
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
         config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[0]', (40, -5., 5.))
         config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[1]', (40, -5., 5.))
+        config.addPlot('ht', 'H_{T}', 'Sum$(jets.pt_)', (50, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
         config.addPlot('dphijj', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi))
-        config.addPlot('mjj', 'm^{jj} (GeV)', 'pdijet.mjj[0]', (40, 0., 5000.), sensitive = True)
+        config.addPlot('mjj', 'm^{jj}', 'pdijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
+        config.addPlot('genht', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21))', (100, 0., 3000), unit = 'GeV', blind = 'full')
+        config.addPlot('genhtLow', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21))', (100, 0., 200), unit = 'GeV', blind = 'full')
+        bosonPt = 'TMath::Sqrt(TMath::Power(Sum$(partons.pt_ * TMath::Cos(partons.phi_) * (TMath::Abs(partons.pdgid) == 13 || TMath::Abs(partons.pdgid) == 14)), 2.)'
+        bosonPt += ' + TMath::Power(Sum$(partons.pt_ * TMath::Sin(partons.phi_) * (TMath::Abs(partons.pdgid) == 13 || TMath::Abs(partons.pdgid) == 14)), 2.))'
+        config.addPlot('genpt', 'p_{T}^{V,gen}', bosonPt, (100, 0., 800), unit = 'GeV', blind = 'full')
 
         for plot in list(config.plots):
             if plot.name not in ['met', 'metHigh']:
@@ -1368,6 +1409,116 @@ def getConfig(confName):
                     cut += ' && (%s)' % plot.cut
 
                 config.plots.append(plot.clone(plot.name + 'HighMet', cut = cut))
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+    elif confName == 'vbfee' or confName == 'vbfeelo':
+        config = PlotConfig(confName, ['sel-16*'])
+
+        config.baseline = 'electrons.pt_[0] > 40.'
+
+        config.fullSelection = ''
+
+        if confName == 'vbfee':
+            main = dyn
+            zscale = 1.
+        elif confName == 'vbfeelo':
+            main = dy
+            zscale = 6025. / 4975.
+
+        mt = 'TMath::Sqrt(2. * t1Met.pt * electrons.pt_[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - electrons.phi_[0]))))'
+
+        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('z', 'Z#rightarrowll', samples = main, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = zscale)
+        config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xff, 0x99))
+        config.addBkg('vv', 'VV', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+
+        if confName == 'vbfeelo':
+            config.obs.region = 'vbfee'
+            for group in config.bkgGroups:
+                group.region = 'vbfee'
+
+        config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
+        config.addPlot('el1Pt', 'p_{T}^{e1}', 'electrons.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('el1Eta', '#eta^{e1}', 'electrons.eta_[0]', (20, -1.5, 1.5))
+        config.addPlot('el1Phi', '#phi^{e1}', 'electrons.phi_[0]', (20, -math.pi, math.pi))
+        config.addPlot('el2Pt', 'p_{T}^{e2}', 'electrons.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('el2Eta', '#eta^{e2}', 'electrons.eta_[1]', (20, -1.5, 1.5))
+        config.addPlot('el2Phi', '#phi^{e2}', 'electrons.phi_[1]', (20, -math.pi, math.pi))
+        config.addPlot('nelectrons', 'N_{e}', 'electrons.size', (4, 0., 4.))
+        config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
+        config.addPlot('dPhiElMet', '#Delta#phi(e, E_{T}^{miss})', "TMath::Abs(TVector2::Phi_mpi_pi(electrons.phi_[0] - t1Met.phi))", (20, 0., math.pi))
+        config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
+        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
+        config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[0]', (40, -5., 5.))
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[1]', (40, -5., 5.))
+        config.addPlot('ht', 'H_{T}', 'Sum$(jets.pt_)', (50, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
+        config.addPlot('dphijj', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi))
+        config.addPlot('mjj', 'm^{jj}', 'pdijet.mjj[0]', (40, 0., 5000.), sensitive = True)
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
+
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+    elif confName == 'vbfmm' or confName == 'vbfmmlo':
+        config = PlotConfig(confName, ['smu-16*'])
+
+        config.baseline = 'muons.pt_[0] > 40.'
+
+        config.fullSelection = ''
+
+        mt = 'TMath::Sqrt(2. * t1Met.pt * muons.pt_[0] * (1. - TMath::Cos(TVector2::Phi_mpi_pi(t1Met.phi - muons.phi_[0]))))'
+
+        if confName == 'vbfmm':
+            main = dyn
+            zscale = 1.
+        elif confName == 'vbfmmlo':
+            main = dy
+            zscale = 6025. / 4975.
+
+        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('z', 'Z#rightarrowll', samples = main, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = zscale)
+        config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xdd, 0x99))
+        config.addBkg('vv', 'VV', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+
+        if confName == 'vbfmmlo':
+            config.obs.region = 'vbfmm'
+            for group in config.bkgGroups:
+                group.region = 'vbfmm'
+
+        config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
+        config.addPlot('mu1Pt', 'p_{T}^{#mu}', 'muons.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('mu1Eta', '#eta^{#mu}', 'muons.eta_[0]', (20, -1.5, 1.5))
+        config.addPlot('mu1Phi', '#phi^{#mu}', 'muons.phi_[0]', (20, -math.pi, math.pi))
+        config.addPlot('mu2Pt', 'p_{T}^{#mu}', 'muons.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('mu2Eta', '#eta^{#mu}', 'muons.eta_[1]', (20, -1.5, 1.5))
+        config.addPlot('mu2Phi', '#phi^{#mu}', 'muons.phi_[1]', (20, -math.pi, math.pi))
+        config.addPlot('nmuons', 'N_{#mu}', 'muons.size', (4, 0., 4.))
+        config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
+        config.addPlot('dPhiMuMet', '#Delta#phi(#mu, E_{T}^{miss})', "TMath::Abs(TVector2::Phi_mpi_pi(muons.phi_[0] - t1Met.phi))", (20, 0., math.pi))
+        config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
+        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
+        config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[0]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[0]', (40, -5., 5.))
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[1]', (40, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[1]', (40, -5., 5.))
+        config.addPlot('ht', 'H_{T}', 'Sum$(jets.pt_)', (50, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
+        config.addPlot('dphijj', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[pdijet.ij1[0]] - jets.phi_[pdijet.ij2[0]]))', (40, 0., math.pi))
+        config.addPlot('mjj', 'm^{jj}', 'pdijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:

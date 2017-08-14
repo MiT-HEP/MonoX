@@ -648,13 +648,32 @@ class HtTruncator : public Cut {
  public:
   HtTruncator(char const* name = "HtTruncator") : Cut(name) {}
 
+  void addBranches(TTree& skimTree) override;
+
   void setHtMin(double min) { min_ = min; }
   void setHtMax(double max) { max_ = max; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
+  float ht_{-1.};
   double min_{0.};
   double max_{100.};
+};
+
+class GenBosonPtTruncator : public Cut {
+ public:
+  GenBosonPtTruncator(char const* name = "GenBosonPtTruncator") : Cut(name) {}
+
+  void addBranches(TTree& skimTree) override;
+
+  void setPtMin(double min) { min_ = min; }
+  void setPtMax(double max) { max_ = max; }
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  float pt_{-1.};
+  double min_{0.};
+  double max_{50.};
 };
 
 class GenParticleSelection : public Cut {

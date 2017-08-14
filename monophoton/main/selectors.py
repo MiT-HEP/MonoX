@@ -95,7 +95,7 @@ def vbfgSetting():
     selconf['photonIDTune'] = ROOT.idtune
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
-    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
 
 ## utility functions
 
@@ -529,6 +529,54 @@ def vbfgBase(sample, rname):
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+
+    return selector
+
+def vbflBase(sample, rname):
+    """
+    VBF + lepton(s).
+    """
+
+    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+
+    selector = ROOT.EventSelector(rname)
+    selector.setCanPhotonSkim(False)
+
+    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    trig.setIgnoreDecision(True)
+    selector.addOperator(trig)
+
+    operators = [
+        'MetFilters',
+        'LeptonSelection',
+        'JetCleaning',
+        'DijetSelection',
+        'BjetVeto',
+        'CopyMet',
+        'JetMetDPhi',
+        'Met'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setRequireMedium(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(0.)
+    dijetSel.setMinMjj(0.)
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
 
@@ -1012,6 +1060,23 @@ def monomu(sample, rname, selcls = None):
 
     return selector
 
+def monomuLowPt(sample, rname, selcls = None):
+    selector = leptonBase(sample, rname, ROOT.lMuon, selcls = selcls)
+    selector.findOperator('LeptonSelection').setN(0, 1)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.lMuon)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    selector.removeOperator('HLT_Photon165_HE10')
+    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    photons = selector.findOperator('PhotonSelection')
+    photons.setMinPt(10.)
+
+    return selector
+
 def monomuAllPhoton(sample, rname):
     selector = monomu(sample, rname)
 
@@ -1366,58 +1431,45 @@ def vbfgHfake(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    modHfake(selector)
+    # fake rate function obtained from hadron_fake/direct.py
+    hproxyWeight = ROOT.TF1('hproxyWeight', 'TMath::Exp(-0.0173 * x - 0.178)', 80., 600.)
+
+    weight = ROOT.PhotonPtWeight(hproxyWeight, 'vbfhtfactor')
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
+    setupPhotonSelection(photonSel, veto = True)
 
     return selector
+
+def vbfem(sample, rname):
+    """
+    VBF + EM jet.
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'), changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
+
+    if not sample.data:
+        addIDSFWeight(sample, selector)
+
+    return selector
+
 
 def vbfe(sample, rname):
     """
     VBF + single electron.
     """
 
-    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
-
-    selector = ROOT.EventSelector(rname)
-    selector.setCanPhotonSkim(False)
+    selector = vbflBase(sample, rname)
 
     selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
 
-    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
-    trig.setIgnoreDecision(True)
-    selector.addOperator(trig)
-
-    operators = [
-        'MetFilters',
-        'LeptonSelection',
-        'JetCleaning',
-        'DijetSelection',
-        'BjetVeto',
-        'CopyMet',
-        'JetMetDPhi',
-        'Met'
-    ]
-
-    for op in operators:
-        selector.addOperator(getattr(ROOT, op)())
-
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(1, 0)
-    leptonSel.setRequireMedium(False)
-
-    dijetSel = selector.findOperator('DijetSelection')
-    dijetSel.setMinDEta(0.)
-    dijetSel.setMinMjj(0.)
-
-    if not sample.data:
-        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-
-        addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
-
-    selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
-    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
 
@@ -1426,51 +1478,43 @@ def vbfm(sample, rname):
     VBF + single muon.
     """
 
-    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
-
-    selector = ROOT.EventSelector(rname)
-    selector.setCanPhotonSkim(False)
+    selector = vbflBase(sample, rname)
 
     selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
 
-    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
-    trig.setIgnoreDecision(True)
-    selector.addOperator(trig)
-
-    operators = [
-        'MetFilters',
-        'LeptonSelection',
-        'JetCleaning',
-        'DijetSelection',
-        'BjetVeto',
-        'CopyMet',
-        'JetMetDPhi',
-        'Met'
-    ]
-
-    for op in operators:
-        selector.addOperator(getattr(ROOT, op)())
-
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 1)
-    leptonSel.setRequireMedium(False)
-
-    dijetSel = selector.findOperator('DijetSelection')
-    dijetSel.setMinDEta(0.)
-    dijetSel.setMinMjj(0.)
-
-    if not sample.data:
-        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-
-        addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
-
-    selector.findOperator('BjetVeto').setIgnoreDecision(True)
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
-    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('Met').setIgnoreDecision(True)
 
     return selector
+
+def vbfee(sample, rname):
+    """
+    VBF + double electron.
+    """
+
+    selector = vbflBase(sample, rname)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(2, 0)
+
+    return selector
+
+def vbfmm(sample, rname):
+    """
+    VBF + single muon.
+    """
+
+    selector = vbflBase(sample, rname)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 2)
+
+    return selector
+
 
 ######################
 # SELECTOR MODIFIERS #
@@ -1685,6 +1729,17 @@ def htTruncator(minimum = 0., maximum = -1.):
         selector.addOperator(truncator, 0)
 
     return addHtCut
+
+def genBosonPtTruncator(minimum = 0., maximum = -1.):
+    def addGenBosonPtCut(sample, selector):
+        truncator = ROOT.GenBosonPtTruncator()
+        truncator.setPtMin(minimum)
+        if maximum > 0.:
+            truncator.setPtMax(maximum)
+
+        selector.addOperator(truncator, 0)
+
+    return addGenBosonPtCut
 
 
 if needHelp:

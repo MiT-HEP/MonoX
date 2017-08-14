@@ -36,9 +36,10 @@ public:
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
-  void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1);
+  void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1, long firstEntry = 0);
   void prepareEvent(panda::Event const&, panda::EventMonophoton&, panda::GenParticleCollection const* = 0);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
+  void setCompatibilityMode(bool r) { compatibilityMode_ = r; }
 
 private:
   std::vector<TString> paths_{};
@@ -49,6 +50,7 @@ private:
   bool skipMissingFiles_{false};
   unsigned printEvery_{10000};
   unsigned printLevel_{0};
+  bool compatibilityMode_{false};
 };
 
 Skimmer::~Skimmer()
@@ -60,7 +62,7 @@ Skimmer::~Skimmer()
 }
 
 void
-Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long _nEntries/* = -1*/)
+Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 {
   // check all input exists
   for (auto&& pItr(paths_.begin()); pItr != paths_.end(); ++pItr) {
@@ -154,6 +156,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (!isData)
     branchList += {"npvTrue", "genReweight", "genVertex", "partons"};
 
+  if (compatibilityMode_)
+    branchList += {"!eventNumber", "!electrons.triggerMatch", "!muons.triggerMatch", "!photons.triggerMatch"};
+
   if (printLevel_ > 0 && printLevel_ <= DEBUG)
     branchList.setVerbosity(1);
 
@@ -217,7 +222,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     }
 
     if (preselection) {
-      if (preInput.LoadTree(iEntry - 1) < 0)
+      if (preInput.LoadTree(_firstEntry + iEntry - 1) < 0)
         break;
 
       if (preTreeNumber != preInput.GetTreeNumber()) {
@@ -235,7 +240,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
     }
 
-    if (event.getEntry(mainInput, iEntry - 1) <= 0)
+    if (event.getEntry(mainInput, _firstEntry + iEntry - 1) <= 0)
       break;
 
     if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
@@ -248,7 +253,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     }
 
     if (!event.isData) {
-      genParticles.getEntry(genInput, iEntry - 1);
+      genParticles.getEntry(genInput, _firstEntry + iEntry - 1);
       prepareEvent(event, skimmedEvent, &genParticles);
     }
     else

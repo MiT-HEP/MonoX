@@ -1366,20 +1366,65 @@ PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonoph
 // HtTruncator
 //--------------------------------------------------------------------
 
+void
+HtTruncator::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("genHt", &ht_, "genHt/F");
+}
+
 bool
 HtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  double ht = 0.;
+  ht_ = 0.; // ht is an additive quantity; need to start with 0.
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
 
     if ( !(parton.pdgid == 21 || std::abs(parton.pdgid) < 6))
       continue;
 
-    ht += parton.pt();
+    ht_ += parton.pt();
   }
 
-  if (ht < min_ || ht > max_)
+  if (ht_ < min_ || ht_ > max_)
+      return false;
+
+  return true;
+}
+
+//--------------------------------------------------------------------
+// GenBosonPtTruncator
+//--------------------------------------------------------------------
+
+void
+GenBosonPtTruncator::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("genBosonPt", &pt_, "genBosonPt/F");
+}
+
+bool
+GenBosonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  pt_ = -1.;
+  unsigned nLep = 0;
+  TLorentzVector genBoson(0., 0., 0., 0.);
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
+
+    // don't run on diboson samples for now
+    if (nLep > 2)
+      break;
+
+    if ( (std::abs(parton.pdgid) < 11) || (std::abs(parton.pdgid) > 16) )
+      continue;
+
+    genBoson += parton.p4();
+    nLep++;
+  }
+
+  if (nLep == 2)
+    pt_ = genBoson.Pt();
+
+  if (pt_ < min_ || pt_ > max_)
       return false;
 
   return true;

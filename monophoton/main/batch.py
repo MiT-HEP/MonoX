@@ -27,13 +27,16 @@ class BatchManager(object):
             if a == '%s':
                 argsToExtract.append(ia)
 
+        heldJobs = []
+
         while True:
             proc = subprocess.Popen(['condor_q', str(clusterId), '-af', 'ProcId', 'JobStatus', 'Arguments'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             out, err = proc.communicate()
             lines = out.split('\n')
 
-            jobsInQueue = []
-            heldJobs = []
+            newline = False
+
+            jobsInQueue = 0
             for line in lines:
                 if line.strip() == '':
                     continue
@@ -46,6 +49,11 @@ class BatchManager(object):
                     if args in heldJobs:
                         continue
 
+                    if newline:
+                        sys.stdout.write('\n')
+                        sys.stdout.flush()
+                        newline = False
+
                     print 'Job %s is held' % str(args)
 
                     if autoResubmit:
@@ -54,17 +62,18 @@ class BatchManager(object):
                         out, err = proc.communicate()
                         print out.strip()
                         print err.strip()
-                        jobsInQueue.append(procId)
+                        jobsInQueue += 1
                     else:
                         heldJobs.append(args)
 
                 else:
-                    jobsInQueue.append(procId)
+                    jobsInQueue += 1
 
-            sys.stdout.write('\r %d jobs in queue.' % len(jobsInQueue))
+            sys.stdout.write('\r %d jobs in queue.' % jobsInQueue)
             sys.stdout.flush()
+            newline = True
 
-            if len(jobsInQueue) == 0:
+            if jobsInQueue == 0:
                 break
     
             time.sleep(10)

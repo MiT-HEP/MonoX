@@ -26,7 +26,7 @@ public:
   ~TTreeFormulaCached() {}
 
   Int_t GetNdata() override;
-  Double_t EvalInstance(Int_t, char const* [] = 0) override;
+  Double_t EvalInstance(Int_t, char const* [] = nullptr) override;
 
   void ResetCache() { fNdataCache = -1; }
   TObjArray const* GetLeaves() const { return &fLeaves; }
@@ -46,7 +46,7 @@ private:
  */
 class ExprFiller {
 public:
-  ExprFiller(TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
+  ExprFiller(TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr);
   ExprFiller(ExprFiller const&);
   virtual ~ExprFiller();
 
@@ -59,7 +59,7 @@ public:
   TTreeFormula* getCuts() { return cuts_; }
   TTreeFormula const* getReweight() const { return reweight_; }
   void updateTree();
-  void fill(std::vector<double> const& eventWeights, std::vector<bool> const* = 0);
+  void fill(std::vector<double> const& eventWeights, std::vector<bool> const* = nullptr);
 
   virtual TObject const* getObj() const = 0;
 
@@ -72,8 +72,8 @@ protected:
   virtual void doFill_(unsigned) = 0;
 
   std::vector<TTreeFormula*> exprs_{};
-  TTreeFormula* cuts_{0};
-  TTreeFormula* reweight_{0};
+  TTreeFormula* cuts_{nullptr};
+  TTreeFormula* reweight_{nullptr};
   bool ownFormulas_{false};
   double entryWeight_{1.};
   unsigned counter_{0};
@@ -84,7 +84,7 @@ protected:
 class Plot : public ExprFiller {
 public:
   Plot() {}
-  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
+  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr);
   Plot(Plot const&);
   ~Plot() {}
 
@@ -94,13 +94,13 @@ public:
 private:
   void doFill_(unsigned) override;
 
-  TH1* hist_{0};
+  TH1* hist_{nullptr};
 };
 
 class Tree : public ExprFiller {
 public:
   Tree() {}
-  Tree(TTree& tree, TTreeFormula* cuts = 0, TTreeFormula* reweight = 0);
+  Tree(TTree& tree, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr);
   Tree(Tree const&);
   ~Tree() {}
 
@@ -114,7 +114,7 @@ public:
 private:
   void doFill_(unsigned) override;
 
-  TTree* tree_{0};
+  TTree* tree_{nullptr};
   std::vector<double> bvalues_{};
 };
 
@@ -167,7 +167,7 @@ public:
    * TGraph, or TF1 is passed as the second argument, the value of expr is used
    * to look up the y value of the source object, which is used as the weight.
    */
-  void setReweight(char const* expr, TObject const* source = 0);
+  void setReweight(char const* expr, TObject const* source = nullptr);
   //! Add a histogram to fill.
   /*!
    * Currently only 1D histograms can be used.
@@ -180,6 +180,7 @@ public:
   void addTree(TTree* tree, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
   //! Add a branch to a tree already added to the MultiDraw object.
   void addTreeBranch(TTree* tree, char const* bname, char const* expr);
+
   //! Run and fill the plots and trees.
   void fillPlots(long nEntries = -1, long firstEntry = 0);
 
@@ -196,11 +197,11 @@ private:
   TChain tree_;
   TString weightBranchName_{"weight"};
   char weightBranchType_{'F'};
-  TTreeFormulaCached* baseSelection_{0};
-  TTreeFormulaCached* fullSelection_{0};
+  TTreeFormulaCached* baseSelection_{nullptr};
+  TTreeFormulaCached* fullSelection_{nullptr};
   double constWeight_{1.};
   unsigned prescale_{1};
-  TTreeFormulaCached* reweightExpr_{0};
+  TTreeFormulaCached* reweightExpr_{nullptr};
   std::function<void(std::vector<double>&)> reweight_;
   std::vector<ExprFiller*> unconditional_{};
   std::vector<ExprFiller*> postBase_{};
