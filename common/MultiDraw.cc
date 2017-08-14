@@ -621,10 +621,11 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 
   long iEntry(_firstEntry);
   long iEntryMax(_firstEntry + _nEntries);
+  long iLocalEntry(0);
   int treeNumber(-1);
   unsigned passBase(0);
   unsigned passFull(0);
-  while (iEntry != iEntryMax && tree_.LoadTree(iEntry++) >= 0) {
+  while (iEntry != iEntryMax && (iLocalEntry = tree_.LoadTree(iEntry++)) >= 0) {
     if (printLevel_ >= 0 && iEntry % printEvery == 1) {
       std::cout << "\r      " << iEntry << " events";
       if (printLevel_ > 2)
@@ -661,7 +662,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
     }
 
     if (prescale_ > 1) {
-      eventNumberBranch->GetEntry(iEntry - 1);
+      eventNumberBranch->GetEntry(iLocalEntry);
 
       if (eventNumber % prescale_ != 0)
         continue;
@@ -672,7 +673,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
       ff.second->ResetCache();
 
     if (weightBranch) {
-      weightBranch->GetEntry(iEntry - 1);
+      weightBranch->GetEntry(iLocalEntry);
       if (weightBranchType_ == 'F')
         weight = weightF;
 
