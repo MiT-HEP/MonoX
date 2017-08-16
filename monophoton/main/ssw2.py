@@ -118,7 +118,11 @@ class SkimSlimWeight(object):
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
         if not SkimSlimWeight.config['noPhotonSkim']:
             skimmer.setCommonSelection('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
-    
+
+        # temporary - backward compatibility issue 004 -> 005/006
+        if self.sample.book == 'pandaf/005' or self.sample.book == 'pandaf/006':
+            skimmer.setCompatibilityMode(True)
+
         for rname, selgen in self.selectors.items():
             if type(selgen) is tuple: # has modifiers
                 selector = selgen[0](self.sample, rname)
@@ -161,9 +165,10 @@ class SkimSlimWeight(object):
 
             outNameBase = self.getOutNameBase(fileset)
             nentries = SkimSlimWeight.config['nentries']
+            firstEntry = SkimSlimWeight.config['firstEntry']
     
-            logger.debug('Skimmer.run(%s, %s, %s, %d)', tmpOutDir, outNameBase, self.sample.data, nentries)
-            skimmer.run(tmpOutDir, outNameBase, self.sample.data, nentries)
+            logger.debug('Skimmer.run(%s, %s, %s, %d, %d)', tmpOutDir, outNameBase, self.sample.data, nentries, firstEntry)
+            skimmer.run(tmpOutDir, outNameBase, self.sample.data, nentries, firstEntry)
     
             for rname in self.selectors:
                 outName = outNameBase + '_' + rname + '.root'
@@ -317,6 +322,7 @@ if __name__ == '__main__':
     argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '', help = 'Source file catalog.')
     argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
+    argParser.add_argument('--first-entry', '-t', metavar = 'ENTRY', dest = 'firstEntry', type = int, default = 0, help = 'First entry number to process.')
     argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
     argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
     argParser.add_argument('--no-photonskim', '-P', action = 'store_true', dest = 'noPhotonSkim', help = 'Force skim on all events.')

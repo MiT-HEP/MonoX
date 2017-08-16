@@ -303,6 +303,12 @@ class PlotConfig(object):
     def findGroup(self, name):
         return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)
 
+    def fullLumi(self):
+        return sum(s.lumi for s in self.obs.samples)
+
+    def effLumi(self):
+        return sum(s.lumi / self.prescales[s] for s in self.obs.samples)
+
 
 class Variation(object):
     """

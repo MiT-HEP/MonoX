@@ -18,8 +18,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     for sample in group.samples:
         dname = sample.name + '_' + region
 
-        print '   ', dname
-
         sourceName = sourceDir + '/' + dname + '.root'
         
         if altSourceDir:
@@ -29,6 +27,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
         elif not os.path.exists(sourceName):
             raise RuntimeError('Cannot open file ' + sourceName)
+
+        print '   ', dname, '(%s)' % sourceName
     
         histograms = []
    
@@ -56,7 +56,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
         if group == plotConfig.obs:
             plotter.setPrescale(plotConfig.prescales[sample])
-    
+
+        numPlots = 0
         for plotdef in plotdefs:
             if not outFile.GetDirectory(plotdef.name):
                 outFile.mkdir(plotdef.name)
@@ -68,6 +69,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             hist = plotdef.makeHist(dname, outDir = outDir)
             histograms.append(hist)
 
+            if group == plotConfig.obs and plotdef.fullyBlinded():
+                continue
+
             # nominal distribution
             plotter.addPlot(
                 hist,
@@ -76,6 +80,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 plotdef.applyBaseline,
                 plotdef.applyFullSel
             )
+
+            numPlots += 1
     
             # systematic variations
             for variation in group.variations:
@@ -110,8 +116,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         reweight
                     )
 
+                    numPlots += 1
+
         # setup complete. Fill all plots in one go
-        plotter.fillPlots()
+        if numPlots != 0:
+            plotter.fillPlots()
 
         for hist in histograms:
             # ad-hoc scaling
@@ -164,14 +173,14 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             shist = outDir.Get('samples/' + sample.name + '_' + region)
             ghist.Add(shist)
 
-        if group.norm >= 0.:
+        if group.norm >= 0. and baseTotal > 0.:
             ghist.Scale(group.norm / baseTotal)
 
         if group == plotConfig.obs and plotdef.blind is not None:
             # take care of masking
             for iBin in range(1, ghist.GetNbinsX() + 1):
                 binCenter = ghist.GetBinCenter(iBin)
-                if plotdef.fullyBlinded() or (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
+                if (binCenter > plotdef.blind[0] and (plotdef.blind[1] == 'inf' or binCenter < plotdef.blind[1])):
                     ghist.SetBinContent(iBin, 0.)
                     ghist.SetBinError(iBin, 0.)
 
@@ -587,11 +596,8 @@ if __name__ == '__main__':
     ## SET UP FROM PLOTCONFIG ##
     ############################
 
-    fullLumi = 0.
-    effLumi = 0.
-    for sample in plotConfig.obs.samples:
-        fullLumi += sample.lumi
-        effLumi += sample.lumi / plotConfig.prescales[sample]
+    fullLumi = plotConfig.fullLumi()
+    effLumi = plotConfig.effLumi()
 
     #####################################
     ## FILL HISTOGRAMS FROM SKIM TREES ##

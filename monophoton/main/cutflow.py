@@ -169,7 +169,7 @@ if args.eventList:
     if args.outName == '':
         args.outName = 'events_' + args.region + '_' + '+'.join(sampleNames) + '.list'
 
-elif len(args.eventIds) != 0:
+elif args.eventIds is not None:
     run = array.array('I', [0])
     lumi = array.array('I', [0])
     event = array.array('I', [0])

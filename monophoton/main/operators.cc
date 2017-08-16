@@ -1375,7 +1375,7 @@ HtTruncator::addBranches(TTree& _skimTree)
 bool
 HtTruncator::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
-  ht_ = -1.;
+  ht_ = 0.; // ht is an additive quantity; need to start with 0.
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
 
