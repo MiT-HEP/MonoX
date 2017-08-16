@@ -11,7 +11,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import lumiSamples, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import lumiSamples, outputName, outputDir, roofitDictsDir, getBinning
 
 binningName = sys.argv[1]
 
@@ -100,7 +100,7 @@ if ADDFIT:
     canvas.addText(text, 0.3, 0.3, 0.5, 0.2)
 
 canvas.xtitle = binningTitle
-canvas.printWeb('efake', 'scaleFactor_' + binningName, logy = False)
+canvas.printWeb(outputName, 'scaleFactor_' + binningName, logy = False)
 
 print 'Fit Results:'
 for iBin, (bin, _) in enumerate(fitBins):
