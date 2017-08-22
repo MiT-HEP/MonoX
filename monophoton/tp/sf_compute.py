@@ -67,7 +67,7 @@ canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 
 canvas.legend.add('sf', 'Scale Factor', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
 canvas.legend.add('sf_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)
-canvas.ylimits = (0.8, 1.20)
+canvas.ylimits = (0.9, 1.10)
 
 canvas.legend.apply('sf', scaleFactor)
 canvas.addHistogram(scaleFactor, drawOpt = 'EP')

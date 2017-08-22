@@ -65,7 +65,7 @@ def getBinning(binningName):
 
     elif binningName == 'ptalt':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [175., 200., 250., 6500.] # [175., 200., 250., 300., 350., 400., 6500.]
+        binning = [175., 200., 250., 300., 350., 400., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
