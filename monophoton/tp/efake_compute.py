@@ -106,6 +106,11 @@ for iBin, (bin, _) in enumerate(fitBins):
             # compute uncertainties from distributions of nZ-normalized difference of toy yields
 
             toydist = uncSource.Get('pull_nominal_' + suffix)
+
+            if not toydist:
+                print 'No nominal pull distribution for ' + suffix
+                sys.exit(1)
+
             toydists[bin][conf] = toydist
 
             err2 += math.pow(toydist.GetRMS() * nZ, 2.)
