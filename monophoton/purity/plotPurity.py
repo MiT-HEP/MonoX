@@ -10,7 +10,6 @@ if basedir not in sys.path:
     sys.path.append(basedir)
 import config
 from plotstyle import WEBDIR, SimpleCanvas
-from datasets import allsamples
 import selections as s
 
 versDir = s.versionDir 
@@ -108,8 +107,7 @@ for loc in s.Locations[:1]:
                        
 pprint(purities)
 
-sphLumi = sum(allsamples[s].lumi for s in s.sphData)
-canvas = SimpleCanvas(lumi = sphLumi)
+canvas = SimpleCanvas(lumi = s.sphLumi)
 
 for loc in s.Locations[:1]:
     for base in bases:

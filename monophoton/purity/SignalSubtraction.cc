@@ -52,7 +52,15 @@ public:
   double getPurity(int cutBin) const;
   double getNsig(int cutBin) const;
   double getNbkg(int cutBin) const;
+  void preparePlot();
   void plotOn(TCanvas*);
+
+  TH1* getTarget() { return target_; }
+  TH1* getTotal() { return total_; }
+  TH1* getSignal() { return signalTemplate_; }
+  TH1* getBackground() { return bkgTemplate_; }
+  TH1* getSubtractedBackground() { return subtractedBkg_; }
+  
 
   static SSFitter* singleton();
 
@@ -250,7 +258,7 @@ SSFitter::getNbkg(int cutBin) const
 }
 
 void
-SSFitter::plotOn(TCanvas* _canvas)
+SSFitter::preparePlot()
 {
   delete total_;
   delete subtractedBkg_;
@@ -279,6 +287,12 @@ SSFitter::plotOn(TCanvas* _canvas)
   target_->SetMarkerStyle(8);
   target_->SetMarkerColor(kBlack);
   target_->SetLineColor(kBlack);
+}
+
+void
+SSFitter::plotOn(TCanvas* _canvas)
+{
+  SSFitter::preparePlot();
 
   _canvas->cd();
   total_->Draw("HIST");

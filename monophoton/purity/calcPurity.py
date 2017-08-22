@@ -14,6 +14,7 @@ if basedir not in sys.path:
 
 import purity.selections as s
 from purity.plotiso import plotiso
+from plotstyle import RatioCanvas
 
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
@@ -62,7 +63,7 @@ except KeyError:
 
 ### Directory stuff so that results are saved and such
 versDir = s.versionDir
-plotDir = os.path.join(versDir, inputKey)
+plotDir = os.path.join('purity', s.Version, inputKey)
 histDir = os.path.join(versDir, inputKey)
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
@@ -104,7 +105,8 @@ if not QUICKFIT:
     print 'Generating chIso histograms for SR-CR extrapolation..'
     print ''
 
-    plotiso(loc, '-'.join(pids), pt, met, tune)
+    if FORCEHIST:
+        plotiso(loc, '-'.join(pids), pt, met, tune)
     
     isoFile = TFile(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
 
@@ -248,13 +250,47 @@ else:
     hMCSBNear = histFile.Get('TempSidebandGJetsNear')
     hMCSBFar = histFile.Get('TempSidebandGJetsFar')
 
-canvas = ROOT.TCanvas()
+canvas = RatioCanvas(lumi = s.sphLumi)
 
 # allowing the bin edge to be lower than the actual cut (makes the purity higher!)
 cutBin = hDataTarg.FindBin(var.cuts[pid])
 
 FitResult = collections.namedtuple('FitResult', ['purity', 'aveSig', 'nReal', 'nFake'])
 
+def plotSSFit(fitter, purity, name = '', pdir = plotDir):
+    canvas.Clear(full = True)
+    canvas.rtitle = 'data / fit'
+    canvas.titlePave.SetX2NDC(0.5)
+    canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+    canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
+    canvas.legend.add('fit', title = 'Fit', opt = 'L', lcolor = ROOT.kBlue, lwidth = 2, lstyle = ROOT.kSolid)
+    canvas.legend.add('sig', title = 'Sig component', opt = 'L', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add('bkg', title = 'Bkg component', opt = 'L', lcolor = ROOT.kGreen, lwidth = 2, lstyle = ROOT.kDashed)
+
+    fitter.preparePlot()
+
+    target = fitter.getTarget()
+    total = fitter.getTotal()
+    sig = fitter.getSignal()
+    bkg = fitter.getSubtractedBackground();
+
+    canvas.legend.apply('obs', target)
+    canvas.legend.apply('fit', total)
+    canvas.legend.apply('sig', sig)
+    canvas.legend.apply('bkg', bkg)
+    
+    target.SetTitle('')
+
+    iTarget = canvas.addHistogram(target, drawOpt = 'EP')
+    iFit = canvas.addHistogram(total, drawOpt = 'HIST')
+    canvas.addHistogram(sig, drawOpt = 'HIST')
+    canvas.addHistogram(bkg, drawOpt = 'HIST')
+
+    text = "Purity: "+str(round(purity,3))
+    canvas.addText(text, 0.35, 0.3, 0.65, 0.5) 
+
+    canvas.printWeb(pdir, 'ssfit_' + name + '_logy', rList = [iFit, iTarget], logy = True)
+    
 def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir, mcsig = hMCSignal):
     ssfitter.initialize(hDataTarg, mcsig, datasb, mcsb, sbRatio)
     ssfitter.fit()
@@ -265,16 +301,8 @@ def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir, mcsig = hMCSignal
     aveSig = s.StatUncert(nReal, nFake)
 
     if name:
-        ssfitter.plotOn(canvas)
-        text = TLatex()
-        text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
-
-        canvas.SetLogy(False)
-        canvas.Print(pdir + '/ssfit_' + name + '.png')
-        canvas.Print(pdir + '/ssfit_' + name + '.pdf')
-        canvas.SetLogy(True)
-        canvas.Print(pdir + '/ssfit_' + name + '_log.png')
-        canvas.Print(pdir + '/ssfit_' + name + '_log.pdf')
+        if not 'toy' in name:
+            plotSSFit(ssfitter, purity, name, pdir)
 
     return FitResult(purity, aveSig, nReal, nFake)
 
@@ -341,7 +369,7 @@ NTOYS = 100
 toyPlot = ROOT.TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
 toyPlotYield = ROOT.TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
 #toySkims = skims[:4]
-toysDir = os.path.join(plotDir,'toys')
+toysDir = os.path.join(histDir,'toys')
 if not os.path.exists(toysDir):
     os.makedirs(toysDir)
 
@@ -360,7 +388,7 @@ for iToy in range(1, NTOYS + 1):
     canvas.SaveAs(tempName+'.png')
     canvas.SaveAs(tempName+'.C')
 
-    toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'fit%d' % iToy, pdir = toysDir)
+    toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'toy%d' % iToy, pdir = toysDir)
 
     purityDiff = toyResult.purity - nominalResult.purity
     print "Purity diff is:", purityDiff

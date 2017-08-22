@@ -13,6 +13,7 @@ if basedir not in sys.path:
 
 import config
 import utils
+from datasets import allsamples
 
 ### Configuration parameters ###
 
@@ -23,8 +24,8 @@ Version = 'GJetsTune'
 sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
 gjetsMc = ['gj-100', 'gj-200','gj-400','gj-600']
 qcdMc = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
-sphDataNero = ['sph-16b2-d', 'sph-16c2-d', 'sph-16d2-d']
-gjetsMcNero = ['gj-40-d','gj-100-d','gj-200-d','gj-400-d','gj-600-d']
+
+sphLumi = sum(allsamples[s].lumi for s in sphData)
 
 ### Various load-time operations ###
 
