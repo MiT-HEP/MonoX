@@ -9,6 +9,7 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 import selections as s
+from plotstyle import WEBDIR
 
 OVERWRITE = True
 
@@ -26,39 +27,41 @@ except:
 
 inputKey = era+'_'+loc+'_'+wp+'_PhotonPt'+pt+'_Met'+met
 
-versDir = s.versionDir
-plotDir = os.path.join(versDir,inputKey)
+versDir = os.path.join(s.versionDir,inputKey)
+if not os.path.exists(versDir):
+    os.makedirs(versDir)
+
+plotDir = WEBDIR + '/purity/' + s.Version + '/' + inputKey
 if not os.path.exists(plotDir):
     os.makedirs(plotDir)
-"""
-else:
-    shutil.rmtree(outDir)
-    os.makedirs(outDir)
-"""
-treeFilePath = os.path.join(plotDir, 'mceff.root')
+
+treeFilePath = os.path.join(versDir, 'mceff.root')
 filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
 print config.skimDir
-# tree.Add(config.skimDir + '/gj-40_purity.root')
-# tree.Add(config.skimDir + '/gj-100_purity.root')
-# tree.Add(config.skimDir + '/gj-200_purity.root')
-# tree.Add(config.skimDir + '/gj-400_purity.root')
-# tree.Add(config.skimDir + '/gj-600_purity.root')
-tree.Add(config.skimDir + '/znng-130-o_purity.root')
-#tree.Add(config.skimDir + '/zllg-130-o_purity.root')
-#tree.Add(config.skimDir + '/wnlg-130-o_purity.root')
+tree.Add(config.skimDir + '/gj-40_emjet.root')
+tree.Add(config.skimDir + '/gj-100_emjet.root')
+tree.Add(config.skimDir + '/gj-200_emjet.root')
+tree.Add(config.skimDir + '/gj-400_emjet.root')
+tree.Add(config.skimDir + '/gj-600_emjet.root')
+# tree.Add(config.skimDir + '/znng-130-o_emjet.root')
+# tree.Add(config.skimDir + '/zllg-130-o_emjet.root')
+# tree.Add(config.skimDir + '/wnlg-130-o_emjet.root')
+# tree.add(config.skimDir + 'dy-50@_emjet.root')
+# tree.add(config.skimDir + 'dy-50-*_emjet.root')
+
 """
 for samp in ['dma', 'dmv']:
-    tree.Add(config.skimDir + '/' + samp + '-500-1_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-1000-1_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-1000-150_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-2000-1_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-2000-500_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-10000-1_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-10000-10_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-10000-50_purity.root')
-    tree.Add(config.skimDir + '/' + samp + '-10000-150_purity.root')
+    tree.Add(config.skimDir + '/' + samp + '-500-1_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-1000-1_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-1000-150_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-2000-1_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-2000-500_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-1_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-10_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-50_emjet.root')
+    tree.Add(config.skimDir + '/' + samp + '-10000-150_emjet.root')
 """
 
 print tree.GetEntries()
@@ -75,6 +78,10 @@ elif loc == 'endcap':
     maxEta = 2.5
 calc.setMinEta(minEta)
 calc.setMaxEta(maxEta)
+
+wps = wp.split('-')
+wp = wps[0]
+extras = wps[1:]
 
 calc.setWorkingPoint(getattr(ROOT.Calculator, 'WP' + wp))
 calc.setEra(getattr(ROOT.Calculator, era))
@@ -120,6 +127,7 @@ else:
             break
 
 print filePath
+print treeFilePath
 output = file(filePath, 'w')
 
 nMatched = cutTree.GetEntries('Match')
@@ -139,11 +147,16 @@ cuts =[
   "NHIso",
   "PhIso",
   "CHIso",
-  "Eveto",
-#  "Spike",
-#  "Halo",
-#  "CHMaxIso"
 ]
+
+if 'pixel' in extras:
+    cuts.append("Eveto")
+
+if 'monoph' in extras:
+    cuts.append("Spike")
+    cuts.append("Halo")
+
+#  "CHMaxIso"
 
 sequential = ['Match']
 for cut in cuts:
@@ -156,6 +169,7 @@ for cut in cuts:
     errl = eff - ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, False)
     
     string = "Efficiency after %s cut is %f +%f -%f \n" % (cut, eff, errh, errl)
+    string = "Yield after %s cut is %f \n" % (cut, nSelected)
     print string.strip('\n')
     output.write(string)
 
