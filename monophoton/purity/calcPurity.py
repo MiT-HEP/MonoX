@@ -14,7 +14,7 @@ if basedir not in sys.path:
 
 import purity.selections as s
 from purity.plotiso import plotiso
-from plotstyle import RatioCanvas
+from plotstyle import RatioCanvas, WEBDIR
 
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
@@ -445,7 +445,7 @@ totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (shapeUncYield)*
 
 print "Total uncertainty is:", totalUncertainty
 
-outFile = file(plotDir + '/results.out', 'w')
+outFile = file(WEBDIR + '/' + plotDir + '/results.out', 'w')
 
 for key in histFile.GetListOfKeys():
     hist = histFile.Get(key.GetName())
