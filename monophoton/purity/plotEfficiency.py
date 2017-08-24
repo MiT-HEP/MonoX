@@ -84,30 +84,23 @@ for loc in s.Locations[:1]:
                     match = False
                     count = [1., 0., 0.]
                     for line in mcFile:
-                        """
                         if "Efficiency" in line:
-                            # print line
-                            tmp = line.split()
-                            if tmp:
-                                match = True
-                                # pprint(tmp)
-                                count[0] = float(tmp[-3].strip("(),+-"))
-                                count[1] = float(tmp[-2].strip("(),+-"))
-                                count[2] = float(tmp[-1].strip("(),+-"))
-                                #print count
-                        """
-                        if "Yield" in line:
                             # print line
                             tmp = line.split()
                             if tmp: 
                                 match = True
                                 # pprint(tmp)
-                                count[0] = float(tmp[-1].strip("(),+-"))
+                                count[0] = float(tmp[-3].strip("(),+-"))
                                 count[1] = math.sqrt(count[0])
+                                """
+                                count[0] = float(tmp[-6].strip("(),+-"))
+                                count[1] = float(tmp[-5].strip("(),+-"))
+                                count[2] = float(tmp[-4].strip("(),+-"))
+                                """
                                 #print count
 
                     if not match:
-                        print "No mc eff file found for skim:", dirName
+                        print "No mc yields file found for skim:", dirName
                         yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
 
                     mcFile.close()
@@ -218,4 +211,4 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
             plotName = "scalefactor_"+str(loc)+"_"+str(base)
-            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
+            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)

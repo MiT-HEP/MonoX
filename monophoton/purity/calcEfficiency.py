@@ -40,11 +40,11 @@ filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
 print config.skimDir
-tree.Add(config.skimDir + '/gj-40_emjet.root')
-tree.Add(config.skimDir + '/gj-100_emjet.root')
-tree.Add(config.skimDir + '/gj-200_emjet.root')
-tree.Add(config.skimDir + '/gj-400_emjet.root')
-tree.Add(config.skimDir + '/gj-600_emjet.root')
+tree.Add(config.skimDir + '/gj04-40_emjet.root')
+tree.Add(config.skimDir + '/gj04-100_emjet.root')
+tree.Add(config.skimDir + '/gj04-200_emjet.root')
+tree.Add(config.skimDir + '/gj04-400_emjet.root')
+tree.Add(config.skimDir + '/gj04-600_emjet.root')
 # tree.Add(config.skimDir + '/znng-130-o_emjet.root')
 # tree.Add(config.skimDir + '/zllg-130-o_emjet.root')
 # tree.Add(config.skimDir + '/wnlg-130-o_emjet.root')
@@ -84,7 +84,9 @@ wp = wps[0]
 extras = wps[1:]
 
 calc.setWorkingPoint(getattr(ROOT.Calculator, 'WP' + wp))
-calc.setEra(getattr(ROOT.Calculator, era))
+eraEnum = getattr(ROOT.panda.XPhoton, 'k' + era)
+print era, eraEnum
+calc.setEra(eraEnum)
 
 if pt == 'Inclusive':
     minPt = 175.
@@ -168,8 +170,7 @@ for cut in cuts:
     errh = ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, True) - eff
     errl = eff - ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, False)
     
-    string = "Efficiency after %s cut is %f +%f -%f \n" % (cut, eff, errh, errl)
-    string = "Yield after %s cut is %f \n" % (cut, nSelected)
+    string = "Efficiency after %s cut is %f +%f -%f (%f passing events) \n" % (cut, eff, errh, errl, nSelected)
     print string.strip('\n')
     output.write(string)
 

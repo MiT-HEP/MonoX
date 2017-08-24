@@ -14,18 +14,11 @@
 
 class Calculator {
 public:
-  enum Era {
-    Spring15,
-    Spring16,
-    Ashim_ZG_CWIso,
-    Ashim_GJets_CIso,
-    nEras
-  };
-
   enum WP {
     WPloose,
     WPmedium,
-    WPtight
+    WPtight,
+    WPhighpt
   };
 
   enum Cut {
@@ -58,7 +51,7 @@ public:
   void setMaxDPt(float maxDPt) { maxDPt_ = maxDPt; }
 
   void setWorkingPoint(WP wp) { wp_ = wp; }
-  void setEra(Era era) { era_ = era; }
+  void setEra(panda::XPhoton::IDTune era) { era_ = era; }
 
 private:
   double minPhoPt_{175.};
@@ -72,7 +65,7 @@ private:
   double maxDPt_{0.2};
 
   WP wp_{WPmedium};
-  Era era_{Spring16};
+  panda::XPhoton::IDTune era_{panda::XPhoton::kSpring16};
 };
 
 TString Calculator::cutNames[Calculator::nCuts] = {
