@@ -125,12 +125,12 @@ for loc in s.Locations[:1]:
                 for iB, ptCut in enumerate(PhotonPtSels):
                     if 'Inclusive' in ptCut:
                         lowEdge = 175.
-                        highEdge = 600.
+                        highEdge = 500.
                     else:
                         lowEdge = float(ptCut.split('t')[2])
                         highEdge = ptCut.split('to')[-1]
                         if highEdge == 'Inf':
-                            highEdge = 600.
+                            highEdge = 500.
                         highEdge = float(highEdge)
 
                     center = (lowEdge + highEdge) / 2.

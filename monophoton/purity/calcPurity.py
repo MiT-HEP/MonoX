@@ -27,7 +27,9 @@ gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 QUICKFIT = False # just run one main fit
-FORCEHIST = True
+FORCEHIST = False # redraw input histograms
+ITERATIVE = True # use iterative method instead of SignalSubtraction.cc
+DOTOYS = False
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1] # barrel, endcap
@@ -288,21 +290,31 @@ def plotSSFit(fitter, purity, name = '', pdir = plotDir):
 
     text = "Purity: "+str(round(purity,3))
     canvas.addText(text, 0.35, 0.3, 0.65, 0.5) 
+    canvas.xtitle = '#sigma_{i#etai#eta}'
 
     canvas.printWeb(pdir, 'ssfit_' + name + '_logy', rList = [iFit, iTarget], logy = True)
     
 def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir, mcsig = hMCSignal):
-    ssfitter.initialize(hDataTarg, mcsig, datasb, mcsb, sbRatio)
-    ssfitter.fit()
+    if not ITERATIVE:
+        ssfitter.initialize(hDataTarg, mcsig, datasb, mcsb, sbRatio)
+        ssfitter.fit()
 
-    purity = ssfitter.getPurity(cutBin)
-    nReal = ssfitter.getNsig(cutBin)
-    nFake = ssfitter.getNbkg(cutBin)
-    aveSig = s.StatUncert(nReal, nFake)
+        purity = ssfitter.getPurity(cutBin)
+        nReal = ssfitter.getNsig(cutBin)
+        nFake = ssfitter.getNbkg(cutBin)
+        aveSig = s.StatUncert(nReal, nFake)
 
-    if name:
-        if not 'toy' in name:
-            plotSSFit(ssfitter, purity, name, pdir)
+        if name:
+            if not 'toy' in name:
+                plotSSFit(ssfitter, purity, name, pdir)
+
+    else:
+        skims = ['Target', 'Signal', 'Contam', 'Sideband']
+        hists = [hDataTarg, mcsig, mcsb, datasb]
+        rooVar = ROOT.RooRealVar(var.name, var.title, var.binning[1], var.binning[2])
+        templates = [s.HistToTemplate(hist, rooVar, skims[iH], 'v0_'+inputKey, pdir) for iH, hist in enumerate(hists)]
+        (purity, aveSig, nReal, nFake) = s.SignalSubtraction(skims, hists, templates, sbRatio, var.name, rooVar, var.cuts[pid], inputKey, pdir)
+
 
     return FitResult(purity, aveSig, nReal, nFake)
 
@@ -365,58 +377,62 @@ print '\n'
 
 NTOYS = 100
 
-### Get background stat uncertainty
-toyPlot = ROOT.TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
-toyPlotYield = ROOT.TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
-#toySkims = skims[:4]
-toysDir = os.path.join(histDir,'toys')
-if not os.path.exists(toysDir):
-    os.makedirs(toysDir)
+if DOTOYS:
+    ### Get background stat uncertainty
+    toyPlot = ROOT.TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
+    toyPlotYield = ROOT.TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
+    toysDir = os.path.join(histDir,'toys')
+    if not os.path.exists(toysDir):
+        os.makedirs(toysDir)
 
-eventsToGenerate = int(hDataBkgNom.GetSumOfWeights())
- 
-for iToy in range(1, NTOYS + 1):
-    print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
+    eventsToGenerate = int(hDataBkgNom.GetSumOfWeights())
 
-    toyHist = hDataBkgNom.Clone('toyhist')
-    toyHist.FillRandom(hDataBkgNom, eventsToGenerate)
+    for iToy in range(1, NTOYS + 1):
+        print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
 
-    toyHist.Draw()
+        toyHist = hDataBkgNom.Clone('toyhist')
+        toyHist.FillRandom(hDataBkgNom, eventsToGenerate)
 
-    tempName = os.path.join(toysDir, 'toy%d' % iToy)
-    canvas.SaveAs(tempName+'.pdf')
-    canvas.SaveAs(tempName+'.png')
-    canvas.SaveAs(tempName+'.C')
+        toyHist.Draw()
 
-    toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'toy%d' % iToy, pdir = toysDir)
+        tempName = os.path.join(toysDir, 'toy%d' % iToy)
+        canvas.SaveAs(tempName+'.pdf')
+        canvas.SaveAs(tempName+'.png')
+        canvas.SaveAs(tempName+'.C')
 
-    purityDiff = toyResult.purity - nominalResult.purity
-    print "Purity diff is:", purityDiff
-    toyPlot.Fill(purityDiff)
+        toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'toy%d' % iToy, pdir = toysDir)
 
-    yieldDiff = toyResult.nReal - nominalResult.nReal
-    print "Yield diff is:", yieldDiff
-    toyPlotYield.Fill(yieldDiff)
+        purityDiff = toyResult.purity - nominalResult.purity
+        print "Purity diff is:", purityDiff
+        toyPlot.Fill(purityDiff)
 
-bkgdUncertainty = toyPlot.GetStdDev()
-bkgdUncYield = toyPlotYield.GetStdDev()
-toyPlot.GetXaxis().SetTitle("Impurity Difference")
-toyPlot.GetYaxis().SetTitle("# of Toys")
+        yieldDiff = toyResult.nReal - nominalResult.nReal
+        print "Yield diff is:", yieldDiff
+        toyPlotYield.Fill(yieldDiff)
 
-toyPlot.SetLineWidth(3)
-                    
-toyPlot.GetXaxis().SetLabelSize(0.045)
-toyPlot.GetXaxis().SetTitleSize(0.045)
-toyPlot.GetYaxis().SetLabelSize(0.045)
-toyPlot.GetYaxis().SetTitleSize(0.045)
+    bkgdUncertainty = toyPlot.GetStdDev()
+    bkgdUncYield = toyPlotYield.GetStdDev()
+    toyPlot.GetXaxis().SetTitle("Impurity Difference")
+    toyPlot.GetYaxis().SetTitle("# of Toys")
+
+    toyPlot.SetLineWidth(3)
+
+    toyPlot.GetXaxis().SetLabelSize(0.045)
+    toyPlot.GetXaxis().SetTitleSize(0.045)
+    toyPlot.GetYaxis().SetLabelSize(0.045)
+    toyPlot.GetYaxis().SetTitleSize(0.045)
 
 
-toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)
-toyCanvas = TCanvas()
-toyPlot.Draw()
-toyCanvas.SaveAs(toyPlotName+'.pdf')
-toyCanvas.SaveAs(toyPlotName+'.png')
-toyCanvas.SaveAs(toyPlotName+'.C')
+    toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)
+    toyCanvas = TCanvas()
+    toyPlot.Draw()
+    toyCanvas.SaveAs(toyPlotName+'.pdf')
+    toyCanvas.SaveAs(toyPlotName+'.png')
+    toyCanvas.SaveAs(toyPlotName+'.C')
+
+else:
+    bkgdUncertainty = 0.
+    bkgdUncYield = 0.
 
 print '\n'
 print '################################################'

@@ -14,6 +14,7 @@ if basedir not in sys.path:
 import config
 import utils
 from datasets import allsamples
+from plotstyle import WEBDIR
 
 ### Configuration parameters ###
 
@@ -69,7 +70,7 @@ Cuts['monophId'] = ' && '.join([
     Cuts['noisyRegion']
 ])
 
-photonPtBinning = [175,200,250,300,350,400,450,500]
+photonPtBinning = [175,200,250,300,350,400,450]
 PhotonPtSels = {
     'PhotonPtInclusive': 'photons.scRawPt[0] > %d' % photonPtBinning[0],
     'PhotonPt%dtoInf' % photonPtBinning[-1]: 'photons.scRawPt[0] > %d' % photonPtBinning[-1]
@@ -249,6 +250,187 @@ def StatUncert(nReal, nFake):
     downSig = purity - lower;
 
     return float(upSig + downSig) / 2.0;
+
+##########################################
+######### Legacy Iterative Code ##########
+##########################################
+
+def HistToTemplate(_hist,_var,_skim,_selName,_plotDir):
+    # remove negative weights
+    for bin in range(_hist.GetNbinsX()+1):
+        binContent = _hist.GetBinContent(bin)
+        if ( binContent < 0.):
+            _hist.SetBinContent(bin, 0.)
+            _hist.SetBinError(bin, 0.)
+        binErrorLow = _hist.GetBinErrorLow(bin)
+        if ( (binContent - binErrorLow) < 0.):
+            _hist.SetBinError(bin, binContent)
+
+
+    print _selName
+    tempname = 'template_'+_skim+'_'+_selName
+    print _var
+    temp = ROOT.RooDataHist(tempname, tempname, ROOT.RooArgList(_var), _hist)
+    
+    canvas = ROOT.TCanvas()
+    frame = _var.frame()
+    temp.plotOn(frame)
+        
+    print _skim
+    frame.SetTitle(_skim)
+        
+    frame.Draw()
+        
+    outName = os.path.join(_plotDir,tempname)
+    canvas.SaveAs(outName+'.pdf')
+    canvas.SaveAs(outName+'.png')
+    canvas.SaveAs(outName+'.C')
+    
+    return temp
+
+# Fitting function
+def FitTemplates(_name,_title,_var,_cut,_datahist,_sigtemp,_bkgtemp):
+    nEvents = _datahist.sumEntries()
+    sigpdf = ROOT.RooHistPdf('sig', 'sig', ROOT.RooArgSet(_var), _sigtemp) #, 2)
+    bkgpdf = ROOT.RooHistPdf('bkg', 'bkg', ROOT.RooArgSet(_var), _bkgtemp) #, 2)
+    nsig = ROOT.RooRealVar('nsig', 'nsig', nEvents/2, nEvents*0.01, nEvents*1.5)
+    nbkg = ROOT.RooRealVar('nbkg', 'nbkg', nEvents/2, 0., nEvents*1.5)
+    model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(sigpdf, bkgpdf), ROOT.RooArgList(nsig, nbkg))
+    model.fitTo(_datahist) # , Extended(True), Minimizer("Minuit2", "migrad"))
+    
+    canvas = ROOT.TCanvas()
+
+    frame = _var.frame()
+    frame.SetTitle(_title)
+    # frame.SetMinimum(0.001)
+    # frame.SetMaximum(10000)
+
+    _datahist.plotOn(frame, ROOT.RooFit.Name("data"))
+    model.plotOn(frame, ROOT.RooFit.Name("Fit"))
+    model.plotOn(frame, ROOT.RooFit.Components('bkg'),ROOT.RooFit.Name("fake"),ROOT.RooFit.LineStyle(ROOT.kDashed),ROOT.RooFit.LineColor(ROOT.kGreen))
+    model.plotOn(frame, ROOT.RooFit.Components('sig'),ROOT.RooFit.Name("real"),ROOT.RooFit.LineStyle(ROOT.kDashed),ROOT.RooFit.LineColor(ROOT.kRed))
+
+    
+    frame.Draw("goff")
+    
+    _var.setRange("selection",0.0,_cut)
+    
+    fReal = float(sigpdf.createIntegral(ROOT.RooArgSet(_var), "selection").getVal()) / float(sigpdf.createIntegral(ROOT.RooArgSet(_var)).getVal())
+    fFake = float(bkgpdf.createIntegral(ROOT.RooArgSet(_var), "selection").getVal()) / float(bkgpdf.createIntegral(ROOT.RooArgSet(_var)).getVal())
+    nReal = fReal * nsig.getVal()
+    nFake = fFake * nbkg.getVal()
+
+    # Calculate purity and print results
+    print "Number of Real photons passing selection:", nReal
+    print "Number of Fake photons passing selection:", nFake
+    nTotal = nReal + nFake;
+    purity = float(nReal) / float(nTotal)
+    print "Purity of Photons is:", purity
+    
+    upper = ROOT.TEfficiency.ClopperPearson(int(nTotal),int(nReal),0.6827,True)
+    lower = ROOT.TEfficiency.ClopperPearson(int(nTotal),int(nReal),0.6827,False)
+
+    upSig = upper - purity;
+    downSig = purity - lower;
+    aveSig = float(upSig + downSig) / 2.0;
+
+    text = ROOT.TLatex()
+    text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
+
+    leg = ROOT.TLegend(0.6,0.6,0.85,0.75 );
+    leg.SetFillColor(ROOT.kWhite);
+    leg.SetTextSize(0.03);
+    # leg.SetHeader("templates LOWER<p_{T}<UPPER");
+    leg.AddEntry(frame.findObject("data"), "data", "P");
+    leg.AddEntry(frame.findObject("Fit"), "real+fake fit to data", "L");
+    leg.AddEntry(frame.findObject("real"), "real", "L");
+    leg.AddEntry(frame.findObject("fake"), "fake", "L");
+    leg.Draw();
+
+    canvas.SaveAs(_name+'.pdf')
+    canvas.SaveAs(_name+'.png')
+    canvas.SaveAs(_name+'.C')
+    canvas.SaveAs(_name+'.root')
+
+    canvas.SetLogy()
+    canvas.SaveAs(_name+'_Logy.pdf')
+    canvas.SaveAs(_name+'_Logy.png')
+    canvas.SaveAs(_name+'_Logy.C')
+
+    return (purity, aveSig, nReal, nFake)
+
+def SignalSubtraction(_skims,_initialHists,_initialTemplates,_isoRatio,_varName,_var,_cut,_inputKey,_plotDir):
+    ''' initialHists = [ fit template, signal template, subtraction template, background template ]'''
+    nIter = 0
+    purities = [ (1,1,1,1) ]
+    # sigContams = [ (1,1) ]
+    hists = list(_initialHists)
+    templates = list(_initialTemplates)
+
+    while(True):
+        print "Starting on iteration:", nIter
+
+        dataTitle = "Photon Purity in SinglePhoton DataSet Iteration "+str(nIter)
+        dataName = os.path.join(WEBDIR + '/' + _plotDir,"purity_"+"v"+str(nIter)+"_"+_inputKey )
+        
+        print _var
+        dataPurity = FitTemplates(dataName, dataTitle, _var, _cut, templates[0], templates[1], templates[-1])
+       
+        """
+        sbTotal = templates[3].sumEntries()
+        sbTrue = templates[-2].sumEntries()
+        trueContam = float(sbTrue) / float(sbTotal)
+
+        sbTotalPass = templates[3].sumEntries(_varName+' < '+str(_cut))
+        sbTruePass = templates[-2].sumEntries(_varName+' < '+str(_cut))
+        trueContamPass = float(sbTruePass) / float(sbTotalPass)
+
+        print "Signal contamination:", trueContam, trueContamPass
+        sigContams.append( (trueContam, trueContamPass) ) 
+        """
+                
+        print "Purity:", dataPurity[0]
+        purities.append( dataPurity )
+        diff = abs(purities[-1][0] - purities[-2][0] )
+        print diff 
+        if ( diff < 0.001):
+            break
+        nIter += 1
+        if nIter > 10:
+            break
+        
+        nSigTrue = purities[-1][2]
+        nSbTrue = _isoRatio * nSigTrue
+            
+        print "Scaling sideband shape to", nSbTrue, "photons"
+            
+        contamHist = hists[2].Clone()
+        contamHist.Scale(float(nSbTrue) / float(contamHist.GetSumOfWeights()))
+        hists.append(contamHist)
+
+        print _var
+        contamTemp = HistToTemplate(contamHist,_var,_skims[2],"v"+str(nIter)+"_"+_inputKey,_plotDir)
+        templates.append(contamTemp)
+    
+        backHist = hists[3].Clone()
+        backHist.Add(contamHist, -1)
+        hists.append(backHist)
+
+        backTemp = HistToTemplate(backHist,_var,_skims[3],"v"+str(nIter)+"_"+_inputKey,_plotDir)
+        templates.append(backTemp)
+
+    """
+    for version, (purity, contam)  in enumerate(zip(purities[1:],sigContams[1:])):
+        print "Purity for iteration", version, "is:", purity
+        print "Signal contamination for iteration", version, "is:", contam
+    
+    return (purities[-1], sigContams[-1])
+    """
+
+    for version, purity  in enumerate(purities[1:]):
+        print "Purity for iteration", version, "is:", purity
+    return purities[-1]
+     
 
 print 'blah'
 
