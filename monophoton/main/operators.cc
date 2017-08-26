@@ -1286,18 +1286,29 @@ HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonop
 void
 DijetSelection::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("dijet.size", &nDijet_, "size/i");
-  _skimTree.Branch("dijet.dEtajj", dEtajj_, "dEtajj[dijet.size]/F");
-  _skimTree.Branch("dijet.mjj", mjj_, "mjj[dijet.size]/F");
-  _skimTree.Branch("dijet.ij1", ij1_, "ij1[dijet.size]/i");
-  _skimTree.Branch("dijet.ij2", ij2_, "ij2[dijet.size]/i");
+  TString colName("dijet");
+  if (jetType_ == jGen)
+    colName = "digenjet";
+
+  _skimTree.Branch(colName + ".size", &nDijet_, "size/i");
+  _skimTree.Branch(colName + ".dEtajj", dEtajj_, "dEtajj[" + colName + ".size]/F");
+  _skimTree.Branch(colName + ".mjj", mjj_, "mjj[" + colName + ".size]/F");
+  _skimTree.Branch(colName + ".ij1", ij1_, "ij1[" + colName + ".size]/i");
+  _skimTree.Branch(colName + ".ij2", ij2_, "ij2[" + colName + ".size]/i");
   if (savePassing_) {
-    _skimTree.Branch("pdijet.size", &nDijetPassing_, "size/i");
-    _skimTree.Branch("pdijet.dEtajj", dEtajjPassing_, "dEtajj[dijet.size]/F");
-    _skimTree.Branch("pdijet.mjj", mjjPassing_, "mjj[dijet.size]/F");
-    _skimTree.Branch("pdijet.ij1", ij1Passing_, "ij1[dijet.size]/i");
-    _skimTree.Branch("pdijet.ij2", ij2Passing_, "ij2[dijet.size]/i");
+    _skimTree.Branch("p" + colName + ".size", &nDijetPassing_, "size/i");
+    _skimTree.Branch("p" + colName + ".dEtajj", dEtajjPassing_, "dEtajj[p" + colName + ".size]/F");
+    _skimTree.Branch("p" + colName + ".mjj", mjjPassing_, "mjj[p" + colName + ".size]/F");
+    _skimTree.Branch("p" + colName + ".ij1", ij1Passing_, "ij1[p" + colName + ".size]/i");
+    _skimTree.Branch("p" + colName + ".ij2", ij2Passing_, "ij2[p" + colName + ".size]/i");
   }
+}
+
+void
+DijetSelection::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (jetType_ == jGen)
+    _blist += {"ak4GenJets"};
 }
 
 bool
@@ -1306,14 +1317,26 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
   nDijet_ = 0;
   nDijetPassing_ = 0;
 
-  for (unsigned iJ1(0); iJ1 != _outEvent.jets.size(); ++iJ1) {
-    auto& jet1(_outEvent.jets[iJ1]);
+  panda::ParticleCollection const* jets(0);
+  switch (jetType_) {
+  case jReco:
+    jets = &_outEvent.jets;
+    break;
+  case jGen:
+    jets = &_event.genJets;
+    break;
+  default:
+    return false;
+  }
+
+  for (unsigned iJ1(0); iJ1 != jets->size(); ++iJ1) {
+    auto& jet1((*jets)[iJ1]);
 
     if (jet1.pt() < minPt1_)
       break;
 
-    for (unsigned iJ2(iJ1 + 1); iJ2 != _outEvent.jets.size(); ++iJ2) {
-      auto& jet2(_outEvent.jets[iJ2]);
+    for (unsigned iJ2(iJ1 + 1); iJ2 != jets->size(); ++iJ2) {
+      auto& jet2((*jets)[iJ2]);
 
       if (jet2.pt() < minPt2_)
         break;
@@ -1503,7 +1526,7 @@ EcalCrackVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
 
 TagAndProbePairZ::TagAndProbePairZ(char const* name) :
   Cut(name),
-  zs_("z")
+  tp_("tp")
 {
 }
 
@@ -1544,8 +1567,8 @@ TagAndProbePairZ::addBranches(TTree& _skimTree)
     throw runtime_error("Invalid tag species");
   }
 
-  zs_.book(_skimTree);
-  _skimTree.Branch("z.oppSign", &zOppSign_, "z.oppSign/O");
+  tp_.book(_skimTree);
+  _skimTree.Branch("tp.oppSign", &zOppSign_, "tp.oppSign/O");
 
   tags_->book(_skimTree);
   probes_->book(_skimTree);
@@ -1609,7 +1632,7 @@ TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventMonopho
     throw runtime_error("Invalid tag species");
   }
 
-  zs_.clear();
+  tp_.clear();
   tags_->clear();
   probes_->clear();
   nUniqueZ_ = 0;
@@ -1641,25 +1664,25 @@ TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventMonopho
       push_back_probe(probe);
 
       // cannot push back here; resize and use the last element
-      zs_.resize(zs_.size() + 1);
-      auto& z(zs_.back());
+      tp_.resize(tp_.size() + 1);
+      auto& z(tp_.back());
       z.setPtEtaPhiM(tnpPair.Pt(), tnpPair.Eta(), tnpPair.Phi(), tnpPair.M());
       zOppSign_ = ( (tag.charge == probe.charge) ? 0 : 1);
 
       // check if other tag-probe pairs match this pair
       unsigned iZ(0);
-      for (; iZ != zs_.size() - 1; ++iZ) {
+      for (; iZ != tp_.size() - 1; ++iZ) {
         if ((tag.dR2(tags_->at(iZ)) < 0.09 && probe.dR2(probes_->at(iZ)) < 0.09) ||
             (tag.dR2(probes_->at(iZ)) < 0.09 && probe.dR2(tags_->at(iZ)) < 0.09))
           break;
       }
       // if not, increment unique Z counter
-      if (iZ == zs_.size() -1)
+      if (iZ == tp_.size() -1)
         ++nUniqueZ_;
     }
   }
 
-  return zs_.size() != 0;
+  return tp_.size() != 0;
 }
 
 //--------------------------------------------------------------------
