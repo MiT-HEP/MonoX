@@ -1408,6 +1408,12 @@ def vbfg(sample, rname):
 
     setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
+    digenjetSel = ROOT.DijetSelection('DigenjetSelection')
+    digenjetSel.setMinDEta(0.)
+    digenjetSel.setMinMjj(0.)
+    digenjetSel.setJetType(ROOT.DijetSelection.jGen)
+    selector.addOperator(digenjetSel)
+
     if not sample.data:
         addIDSFWeight(sample, selector)
 
