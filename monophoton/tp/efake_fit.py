@@ -12,7 +12,7 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
+from tp.efake_conf import skimConfig, lumiSamples, outputName, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
 import tp.efake_plot as efake_plot
 
 dataType = sys.argv[1] # "data" or "mc"
@@ -25,7 +25,7 @@ fitBins = getBinning(binningName)[2]
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
 efake_plot.lumi = lumi
-efake_plot.plotDir = 'efake/fit_' + binningName
+efake_plot.plotDir = outputName + '/fit_' + binningName
 
 sys.argv = []
 
