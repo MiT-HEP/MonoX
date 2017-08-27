@@ -39,7 +39,6 @@ public:
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1, long firstEntry = 0);
   void prepareEvent(panda::Event const&, panda::EventMonophoton&, panda::GenParticleCollection const* = 0);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
-  void setCompatibilityMode(bool r) { compatibilityMode_ = r; }
 
 private:
   std::vector<TString> paths_{};
@@ -50,7 +49,6 @@ private:
   bool skipMissingFiles_{false};
   unsigned printEvery_{10000};
   unsigned printLevel_{0};
-  bool compatibilityMode_{false};
 };
 
 Skimmer::~Skimmer()
@@ -155,9 +153,6 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   if (!isData)
     branchList += {"npvTrue", "genReweight", "genVertex", "partons"};
-
-  if (compatibilityMode_)
-    branchList += {"!eventNumber", "!electrons.triggerMatch", "!muons.triggerMatch", "!photons.triggerMatch"};
 
   if (printLevel_ > 0 && printLevel_ <= DEBUG)
     branchList.setVerbosity(1);
