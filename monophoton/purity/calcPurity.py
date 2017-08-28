@@ -29,7 +29,7 @@ RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 QUICKFIT = False # just run one main fit
 FORCEHIST = False # redraw input histograms
 ITERATIVE = True # use iterative method instead of SignalSubtraction.cc
-DOTOYS = False
+DOTOYS = True
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1] # barrel, endcap
@@ -461,7 +461,12 @@ totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (shapeUncYield)*
 
 print "Total uncertainty is:", totalUncertainty
 
-outFile = file(WEBDIR + '/' + plotDir + '/results.out', 'w')
+if ITERATIVE:
+    outFileName = WEBDIR + '/' + plotDir + '/results_iterative.out'
+else:
+    outFileName = WEBDIR + '/' + plotDir + '/results.out'
+
+outFile = file(outFileName, 'w')
 
 for key in histFile.GetListOfKeys():
     hist = histFile.Get(key.GetName())

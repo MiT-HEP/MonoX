@@ -39,7 +39,8 @@ for loc in s.Locations[:1]:
                 purities[loc][pid][ptCut][metCut] = {}
                 
                 dirName = tune + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
-                condorFileName = os.path.join(versDir,dirName,"results.out")
+                resultsName = "results_iterative.out"
+                condorFileName = os.path.join(versDir,dirName,resultsName)
                 print condorFileName
                 try:
                     condorFile = open(condorFileName)
@@ -155,7 +156,7 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = 'Plot_' + tune + '_impurity_' + str(loc) + '_' + str(base)
+            plotName = 'Plot_' + tune + '_impurity_iterative_' + str(loc) + '_' + str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
 
 outFile.Close()
@@ -166,7 +167,7 @@ for loc in s.Locations[:1]:
             for iMod, mod in enumerate(mods):
                 
                 # start new table
-                purityFileName = 'table_' + tune + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFileName = 'table_' + tune + '_impurity_iterative_' + str(loc) + '_' + str(base+mod) + '.tex'
                 purityFilePath = outDir + '/' + purityFileName
                 purityFile = open(purityFilePath, 'w')
 
