@@ -70,13 +70,14 @@ Cuts['monophId'] = ' && '.join([
     Cuts['noisyRegion']
 ])
 
+photonPtVar = 'photons.scRawPt[0]'
 photonPtBinning = [175,200,250,300,350,400,450]
 PhotonPtSels = {
-    'PhotonPtInclusive': 'photons.scRawPt[0] > %d' % photonPtBinning[0],
-    'PhotonPt%dtoInf' % photonPtBinning[-1]: 'photons.scRawPt[0] > %d' % photonPtBinning[-1]
+    'PhotonPtInclusive': '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[0],
+    'PhotonPt%dtoInf' % photonPtBinning[-1]: '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[-1]
 }
 for low, high in zip(photonPtBinning, photonPtBinning[1:]):
-    PhotonPtSels['PhotonPt%dto%d' % (low, high)] = '(photons.scRawPt[0] > %d && photons.scRawPt[0] < %d)' % (low, high)
+    PhotonPtSels['PhotonPt%dto%d' % (low, high)] = '({pt} > %d && {pt} < %d)'.format(pt = photonPtVar) % (low, high)
 
 metBinning = [0, 60, 120]
 MetSels = {
