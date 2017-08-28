@@ -40,11 +40,12 @@ filePath = os.path.join(plotDir, 'mceff.out')
 
 tree = ROOT.TChain('events')
 print config.skimDir
-tree.Add(config.skimDir + '/gj04-40_emjet.root')
+# tree.Add(config.skimDir + '/gj04-40_emjet.root')
 tree.Add(config.skimDir + '/gj04-100_emjet.root')
 tree.Add(config.skimDir + '/gj04-200_emjet.root')
 tree.Add(config.skimDir + '/gj04-400_emjet.root')
 tree.Add(config.skimDir + '/gj04-600_emjet.root')
+# tree.Add(config.skimDir + '/wlnu-*_emjet.root')
 # tree.Add(config.skimDir + '/znng-130-o_emjet.root')
 # tree.Add(config.skimDir + '/zllg-130-o_emjet.root')
 # tree.Add(config.skimDir + '/wnlg-130-o_emjet.root')
@@ -132,6 +133,8 @@ print filePath
 print treeFilePath
 output = file(filePath, 'w')
 
+hYield = ROOT.TH1F('hYield', 'Yields', 1, 0., 1.)
+
 nMatched = cutTree.GetEntries('Match')
 nUnmatched = cutTree.GetEntries('!Match')
 
@@ -142,6 +145,16 @@ errl = eff - ROOT.TEfficiency.ClopperPearson(nGen, nMatched, 0.6827, False)
 string = "Matching efficiency is %f +%f -%f \n" % (eff, errh, errl)
 print string.strip('\n')
 output.write(string)
+
+cutTree.Draw('0.5>>hYield', 'weight * Match', 'E')
+nMatched = hYield.Integral()
+hYield.Reset()
+
+"""
+cutTree.Draw('0.5>>hYield', 'weight * !Match', 'E')
+nUnmatched = hYield.Integral()
+hYield.Reset()
+"""
 
 cuts =[
   "HoverE",
@@ -164,13 +177,18 @@ sequential = ['Match']
 for cut in cuts:
     sequential.append(cut)
 
-    nSelected = cutTree.GetEntries(' && '.join(sequential))
+    drawString = 'weight * (' + ' && '.join(sequential) + ')'
+    cutTree.Draw('0.5>>hYield', drawString, 'E')
+    nSelected = hYield.Integral()
+    nErr = hYield.GetBinError(1)
+    hYield.Reset()
 
     eff = float(nSelected) / nMatched
+
     errh = ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, True) - eff
     errl = eff - ROOT.TEfficiency.ClopperPearson(nMatched, nSelected, 0.6827, False)
     
-    string = "Efficiency after %s cut is %f +%f -%f (%f passing events) \n" % (cut, eff, errh, errl, nSelected)
+    string = "Efficiency after %s cut is %f +%f -%f (%f +-%f passing events) \n" % (cut, eff, errh, errl, nSelected, nErr)
     print string.strip('\n')
     output.write(string)
 

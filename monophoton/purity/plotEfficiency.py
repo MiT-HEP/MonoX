@@ -90,12 +90,12 @@ for loc in s.Locations[:1]:
                             if tmp: 
                                 match = True
                                 # pprint(tmp)
-                                count[0] = float(tmp[-3].strip("(),+-"))
-                                count[1] = math.sqrt(count[0])
+                                count[0] = float(tmp[-4].strip("(),+-"))
+                                count[1] = float(tmp[-3].strip("(),+-"))
                                 """
-                                count[0] = float(tmp[-6].strip("(),+-"))
-                                count[1] = float(tmp[-5].strip("(),+-"))
-                                count[2] = float(tmp[-4].strip("(),+-"))
+                                count[0] = float(tmp[-7].strip("(),+-"))
+                                count[1] = float(tmp[-6].strip("(),+-"))
+                                count[2] = float(tmp[-5].strip("(),+-"))
                                 """
                                 #print count
 

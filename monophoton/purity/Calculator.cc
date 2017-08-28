@@ -101,9 +101,11 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
   auto* output(new TTree("cutflow", "cutflow"));
   event.book(*output, {"runNumber", "lumiNumber", "eventNumber", "npv"});
 
+  float weight;
   float pt;
   float eta;
   float phi;
+  output->Branch("weight", &weight, "weight/F");
   output->Branch("pt", &pt, "pt/F");
   output->Branch("eta", &eta, "eta/F");
   output->Branch("phi", &phi, "phi/F");
@@ -119,6 +121,8 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
   while (event.getEntry(*_input, iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
+
+    weight = event.weight;
     
     if (event.t1Met.pt > maxMet_ || event.t1Met.pt < minMet_)
       continue;
