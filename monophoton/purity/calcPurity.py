@@ -27,8 +27,8 @@ gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 QUICKFIT = False # just run one main fit
-FORCEHIST = False # redraw input histograms
-ITERATIVE = True # use iterative method instead of SignalSubtraction.cc
+FORCEHIST = True # redraw input histograms
+ITERATIVE = False # use iterative method instead of SignalSubtraction.cc
 DOTOYS = True
 
 ### take inputs and make sure they match a selection
@@ -107,10 +107,12 @@ if not QUICKFIT:
     print 'Generating chIso histograms for SR-CR extrapolation..'
     print ''
 
-    if FORCEHIST:
+    isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+
+    if FORCEHIST or not isoFile:
         plotiso(loc, '-'.join(pids), pt, met, tune)
-    
-    isoFile = TFile(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+
+        isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
 
     # SB / signal region transfer factor
     isoTF = {}
