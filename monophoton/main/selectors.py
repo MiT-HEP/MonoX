@@ -276,7 +276,7 @@ def emjetBase(sample, rname):
         genPhotonSel.setMinPt(140.)
         genPhotonSel.setMaxEta(1.7)
 
-        selector.addOperator(genPhotonSel, 1)
+        # selector.addOperator(genPhotonSel, 1)
 
     return selector
 

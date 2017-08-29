@@ -133,7 +133,7 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
 
     for (auto& gen : event.genParticles) {
       // 22 is already testFlag-ed to be IsPrompt in EventMonophoton::copyGenParticles
-      if (gen.pdgid != 22)
+      if ( !( (gen.pdgid == 22) || (std::abs(gen.pdgid) == 11) ) )
         continue;
 
       if ( gen.pt() < minGenPt_ || gen.pt() > maxGenPt_ )

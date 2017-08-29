@@ -45,7 +45,7 @@ tree.Add(config.skimDir + '/gj04-100_emjet.root')
 tree.Add(config.skimDir + '/gj04-200_emjet.root')
 tree.Add(config.skimDir + '/gj04-400_emjet.root')
 tree.Add(config.skimDir + '/gj04-600_emjet.root')
-# tree.Add(config.skimDir + '/wlnu-*_emjet.root')
+tree.Add(config.skimDir + '/wlnun-*_emjet.root')
 # tree.Add(config.skimDir + '/znng-130-o_emjet.root')
 # tree.Add(config.skimDir + '/zllg-130-o_emjet.root')
 # tree.Add(config.skimDir + '/wnlg-130-o_emjet.root')
@@ -86,7 +86,6 @@ extras = wps[1:]
 
 calc.setWorkingPoint(getattr(ROOT.Calculator, 'WP' + wp))
 eraEnum = getattr(ROOT.panda.XPhoton, 'k' + era)
-print era, eraEnum
 calc.setEra(eraEnum)
 
 if pt == 'Inclusive':

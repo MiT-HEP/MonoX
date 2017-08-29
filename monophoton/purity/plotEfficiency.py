@@ -24,7 +24,7 @@ PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[:1]
 
-era = 'Spring16'
+era = 'GJetsCWIso'
 
 yields = {}
 for loc in s.Locations[:1]:
@@ -71,7 +71,7 @@ for loc in s.Locations[:1]:
                     dataFile.close()
 
                 except IOError:
-                    print "No mc eff file found for skim:", dirName
+                    print "No data eff file found for skim:", dirName
                     yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
                     
                 yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
@@ -175,7 +175,7 @@ for loc in s.Locations[:1]:
                 gDataEff.SetPoint(iB, center, dataEff)
                 gDataEff.SetPointError(iB, exl, exh, dataEffError, dataEffError)
                 
-                print ptCut, dataEffError, mcEffError
+                # print ptCut, dataEffError, mcEffError
 
                 sf = dataEff / mcEff
                 sfErrLow = sf * math.sqrt( (dataEffError / dataEff)**2 + (mcEffError / mcEff)**2)
@@ -197,8 +197,8 @@ for loc in s.Locations[:1]:
             canvas.legend.apply(loc+'-'+base, gSF)
             canvas.addHistogram(gSF, drawOpt = 'EP')
             
-            rcanvas.ylimits = (0.0, 1.3)
-            rcanvas.rlimits = (0.8, 1.2)
+            rcanvas.ylimits = (0.5, 1.2)
+            rcanvas.rlimits = (0.9, 1.1)
             rcanvas.ytitle = 'Pixel Veto Efficiency'
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             rcanvas.SetGridy(True)
@@ -206,7 +206,7 @@ for loc in s.Locations[:1]:
             plotName = "efficiency_"+str(loc)+"_"+str(base)
             rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)
             
-            canvas.ylimits = (0.8, 1.2)
+            canvas.ylimits = (0.9, 1.1)
             canvas.ytitle = 'Pixel Veto Factor'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
