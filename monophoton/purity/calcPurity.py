@@ -27,7 +27,7 @@ gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 QUICKFIT = False # just run one main fit
-FORCEHIST = True # redraw input histograms
+FORCEHIST = False # redraw input histograms
 ITERATIVE = False # use iterative method instead of SignalSubtraction.cc
 DOTOYS = True
 
@@ -269,19 +269,22 @@ def plotSSFit(fitter, purity, name = '', pdir = plotDir):
     canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
     canvas.legend.add('fit', title = 'Fit', opt = 'L', lcolor = ROOT.kBlue, lwidth = 2, lstyle = ROOT.kSolid)
     canvas.legend.add('sig', title = 'Sig component', opt = 'L', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
-    canvas.legend.add('bkg', title = 'Bkg component', opt = 'L', lcolor = ROOT.kGreen, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add('bkg', title = 'Unsubtracted bkg', opt = 'L', lcolor = ROOT.kMagenta, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add('subbkg', title = 'Subtracted bkg', opt = 'L', lcolor = ROOT.kGreen, lwidth = 2, lstyle = ROOT.kDashed)
 
     fitter.preparePlot()
 
     target = fitter.getTarget()
     total = fitter.getTotal()
     sig = fitter.getSignal()
-    bkg = fitter.getSubtractedBackground();
+    bkg = fitter.getBackground();
+    subbkg = fitter.getSubtractedBackground();
 
     canvas.legend.apply('obs', target)
     canvas.legend.apply('fit', total)
     canvas.legend.apply('sig', sig)
     canvas.legend.apply('bkg', bkg)
+    canvas.legend.apply('subbkg', subbkg)
     
     target.SetTitle('')
 
@@ -289,6 +292,7 @@ def plotSSFit(fitter, purity, name = '', pdir = plotDir):
     iFit = canvas.addHistogram(total, drawOpt = 'HIST')
     canvas.addHistogram(sig, drawOpt = 'HIST')
     canvas.addHistogram(bkg, drawOpt = 'HIST')
+    canvas.addHistogram(subbkg, drawOpt = 'HIST')
 
     text = "Purity: "+str(round(purity,3))
     canvas.addText(text, 0.35, 0.3, 0.65, 0.5) 
