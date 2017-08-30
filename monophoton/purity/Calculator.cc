@@ -38,7 +38,7 @@ public:
   static TString cutNames[nCuts];
 
   Calculator() {}
-  unsigned calculate(TTree* _input, TFile* _outputFile);
+  unsigned calculate(TTree* _input, TFile* _outputFile, TString _sname);
 
   void setMinPhoPt(float minPhoPt) { minPhoPt_ = minPhoPt; }
   void setMaxPhoPt(float maxPhoPt) { maxPhoPt_ = maxPhoPt; }
@@ -82,7 +82,7 @@ TString Calculator::cutNames[Calculator::nCuts] = {
 };
 
 unsigned
-Calculator::calculate(TTree* _input, TFile* _outputFile)
+Calculator::calculate(TTree* _input, TFile* _outputFile, TString _sname)
 {
   panda::EventMonophoton event;
   event.setReadRunTree(false);
@@ -98,7 +98,7 @@ Calculator::calculate(TTree* _input, TFile* _outputFile)
   printf("%.2f < gen eta < %.2f \n", minGenEta_, maxGenEta_);
 
   _outputFile->cd();
-  auto* output(new TTree("cutflow", "cutflow"));
+  auto* output(new TTree(TString("cutflow_")+_sname, TString("cutflow_")+_sname));
   event.book(*output, {"runNumber", "lumiNumber", "eventNumber", "npv"});
 
   float weight;

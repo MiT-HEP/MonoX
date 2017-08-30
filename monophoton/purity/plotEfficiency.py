@@ -18,13 +18,15 @@ outDir = os.path.join(versDir, 'ScaleFactor')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
+tune = 'GJetsCWIso'
+
+outFile = r.TFile("../data/impurity_" + tune + ".root", "RECREATE")
+
 bases = ['loose', 'medium', 'tight', 'highpt']
 mods = ['', '-pixel'] #  '-pixel-monoph'
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
-MetSels = sorted(s.MetSels.keys())[:1]
-
-era = 'GJetsCWIso'
+MetSels = sorted(s.MetSels.keys())[:2]
 
 yields = {}
 for loc in s.Locations[:1]:
@@ -35,15 +37,15 @@ for loc in s.Locations[:1]:
             yields[loc][pid][ptCut] = {}
             for metCut in MetSels: 
                 yields[loc][pid][ptCut][metCut] = {}
-                dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
+                dirName = tune + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
                 print dirName
 
                 # Get Data Yields
                 dataFileName = os.path.join(versDir,dirName,"results.out") 
+                match = False
                 try:
                     dataFile = open(dataFileName)
 
-                    match = False
                     count = [1., 0.]
                     for line in dataFile:
                         if "# of real photons is:" in line:
@@ -63,9 +65,6 @@ for loc in s.Locations[:1]:
                                 count[1] = float(tmp[-1].strip("(),"))
                                 #print count
 
-                    if not match:
-                        print "No data yields found for skim:", dirName
-                        yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
                         # dataFile.close()
 
                     dataFile.close()
@@ -74,34 +73,46 @@ for loc in s.Locations[:1]:
                     print "No data eff file found for skim:", dirName
                     yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
                     
-                yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
+                if match:
+                    yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
+
+                else:
+                    print "No data yields found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
+
 
                 # get mc effs
                 mcFileName = os.path.join(versDir,dirName,"mceff.out") 
+                gjMatch = False
+                wjMatch = False
+                    
                 try:
                     mcFile = open(mcFileName)
 
-                    match = False
-                    count = [1., 0., 0.]
+                    gjCount = [1., 0.]
+                    wjCount = [1., 0.]
+
+                    count = [1., 0.]
                     for line in mcFile:
-                        if "Efficiency" in line:
+                        if "gj04 efficiency" in line:
                             # print line
                             tmp = line.split()
                             if tmp: 
-                                match = True
+                                gjMatch = True
                                 # pprint(tmp)
-                                count[0] = float(tmp[-4].strip("(),+-"))
-                                count[1] = float(tmp[-3].strip("(),+-"))
-                                """
-                                count[0] = float(tmp[-7].strip("(),+-"))
-                                count[1] = float(tmp[-6].strip("(),+-"))
-                                count[2] = float(tmp[-5].strip("(),+-"))
-                                """
+                                gjCount[0] = float(tmp[-4].strip("(),+-"))
+                                gjCount[1] = float(tmp[-3].strip("(),+-"))
                                 #print count
 
-                    if not match:
-                        print "No mc yields file found for skim:", dirName
-                        yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
+                        elif "wlnun efficiency" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp: 
+                                wjMatch = True
+                                # pprint(tmp)
+                                wjCount[0] = float(tmp[-4].strip("(),+-"))
+                                wjCount[1] = 0.14 * wjCount[0]
+                                #print count
 
                     mcFile.close()
 
@@ -109,7 +120,17 @@ for loc in s.Locations[:1]:
                     print "No mc eff file found for skim:", dirName
                     yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
 
-                yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
+                    
+                if gjMatch and wjMatch:
+                    count[0] = gjCount[0] + wjCount[0]
+                    count[1] = math.sqrt(gjCount[1]**2 + wjCount[1]**2)
+
+                    yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
+
+                else:
+                    print "No mc yields file found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
+                    
                     
 pprint(yields)
 
@@ -183,6 +204,11 @@ for loc in s.Locations[:1]:
                 gSF.SetPoint(iB, center, sf)
                 gSF.SetPointError(iB, exl, exh, sfErrLow, sfErrHigh)
 
+                outFile.cd()
+                gMcEff.Write()
+                gDataEff.Write()
+                gSF.Write()
+
                 # print ptCut, sf, sfErrLow
 
             rcanvas.legend.add("mc", title = 'mc ' + base, mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
@@ -203,12 +229,14 @@ for loc in s.Locations[:1]:
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             rcanvas.SetGridy(True)
 
-            plotName = "efficiency_"+str(loc)+"_"+str(base)
-            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)
+            plotName = "efficiency_"+str(metCut)+"_"+str(loc)+"_"+str(base)
+            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', tune+'_'+plotName, logy = False)
             
             canvas.ylimits = (0.9, 1.1)
             canvas.ytitle = 'Pixel Veto Factor'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
-            plotName = "scalefactor_"+str(loc)+"_"+str(base)
-            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)
+            plotName = "scalefactor_"+str(metCut)+"_"+str(loc)+"_"+str(base)
+            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', tune+'_'+plotName, logy = False)
+
+outFile.Close()
