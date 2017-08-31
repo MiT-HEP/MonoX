@@ -86,7 +86,7 @@ allSelectors_byPattern = [
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt]),
+    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt]),
     ('st*', mc_lep),
     ('wlnu', applyMod(mc_wlnu, s.htTruncator(maximum = 70.))),
     ('wlnu{,n}-*', mc_wlnu),

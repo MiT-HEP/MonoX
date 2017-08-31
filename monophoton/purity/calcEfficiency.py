@@ -87,13 +87,22 @@ treeDict['gj04'] = gj04Tree
 
 wlnunTree = ROOT.TChain('events')
 wlnunTree.Add(config.skimDir + '/wlnun-*_emjet.root')
+wlnunTree.Add(config.skimDir + '/tt_emjet.root')
 treeDict['wlnun'] = wlnunTree
 
 # tree.Add(config.skimDir + '/znng-130-o_emjet.root')
 # tree.Add(config.skimDir + '/zllg-130-o_emjet.root')
 # tree.Add(config.skimDir + '/wnlg-130-o_emjet.root')
-# tree.add(config.skimDir + 'dy-50@_emjet.root')
-# tree.add(config.skimDir + 'dy-50-*_emjet.root')
+
+dynTree = ROOT.TChain('events')
+dynTree.Add(config.skimDir + '/dyn-50@_emjet.root')
+dynTree.Add(config.skimDir + '/dyn-50-*_emjet.root')
+# treeDict['dyn'] = dynTree
+
+topTree = ROOT.TChain('events')
+topTree.Add(config.skimDir + '/tt_emjet.root')
+topTree.Add(config.skimDir + '/st*_emjet.root')
+# treeDict['top'] = topTree
 
 """
 for samp in ['dma', 'dmv']:
