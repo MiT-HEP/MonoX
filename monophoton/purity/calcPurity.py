@@ -27,7 +27,7 @@ gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 QUICKFIT = False # just run one main fit
-FORCEHIST = False # redraw input histograms
+FORCEHIST = True # redraw input histograms
 ITERATIVE = False # use iterative method instead of SignalSubtraction.cc
 DOTOYS = True
 
@@ -152,6 +152,7 @@ selections = s.getSelections(tune, loc, pid)
 
 # high-pt jet + met + photon pt + photon hOverE/NHIso/PhIso
 baseSel = ' && '.join([
+#     'event.metFilters.dupECALClusters',
     'jets.pt_[0] > 100.',
     metSel,    
     ptSel,

@@ -22,7 +22,6 @@ tune = 'GJetsCWIso'
 outFile = r.TFile("../data/impurity_" + tune + ".root", "RECREATE")
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-# bases = ['medium']
 mods = ['', '-pixel', '-pixel-monoph']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]

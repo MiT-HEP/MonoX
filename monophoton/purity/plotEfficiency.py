@@ -1,32 +1,32 @@
-import os 
+import os
 import sys
 from pprint import pprint
-import ROOT as r
 from array import array
-import math 
+from subprocess import Popen, PIPE
+import ROOT as r
+import math
 
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if basedir not in sys.path:
     sys.path.append(basedir)
 import config
-from plotstyle import SimpleCanvas, RatioCanvas, WEBDIR
-from datasets import allsamples
+from plotstyle import WEBDIR, SimpleCanvas, RatioCanvas
 import selections as s
 
 versDir = WEBDIR + '/purity/' + s.Version
-outDir = os.path.join(versDir, 'ScaleFactor')
+outDir = os.path.join(versDir, 'ScaleFactors')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
 tune = 'GJetsCWIso'
 
-outFile = r.TFile("../data/impurity_" + tune + ".root", "RECREATE")
+outFile = r.TFile("../data/pvsf_" + tune + ".root", "RECREATE")
 
 bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel'] #  '-pixel-monoph'
+mods = ['', '-pixel-monoph'] #  '-pixel-monoph'
 PhotonIds = [base+mod for base in bases for mod in mods]
-PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
-MetSels = sorted(s.MetSels.keys())[:2]
+PhotonPtSels = sorted(s.PhotonPtSels.keys())[:]
+MetSels = sorted(s.MetSels.keys())[1:2]
 
 yields = {}
 for loc in s.Locations[:1]:
@@ -137,10 +137,16 @@ pprint(yields)
 canvas = SimpleCanvas(lumi = s.sphLumi)
 rcanvas = RatioCanvas(lumi = s.sphLumi)
 
+scalefactors = {}
+
 for loc in s.Locations[:1]:
+    scalefactors[loc] = {}
     for base in bases:
+        scalefactors[loc][base] = {}
         print '\n' + base
         for metCut in MetSels:
+            scalefactors[loc][base][metCut] = {}
+
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
@@ -160,10 +166,29 @@ for loc in s.Locations[:1]:
             gSF = r.TGraphAsymmErrors()
             gSF.SetName(loc+'-'+base+mod+'-'+metCut+'-sf')
 
-            for iB, ptCut in enumerate(PhotonPtSels):
+            for iB, ptCut in enumerate(PhotonPtSels):        
+                mcPasses = yields[loc][base+mods[1]][ptCut][metCut]['mc']
+                mcTotals = yields[loc][base+mods[0]][ptCut][metCut]['mc']
+
+                mcEff = mcPasses[0] / mcTotals[0]
+                mcCorr = mcEff
+                mcEffError = mcEff * math.sqrt( (mcPasses[1]/mcPasses[0])**2 + (mcTotals[1]/mcTotals[0])**2 + 2*mcCorr*(mcPasses[1]/mcPasses[0])*(mcTotals[1]/mcPasses[0]) )
+
+                dataPasses = yields[loc][base+mods[1]][ptCut][metCut]['data']
+                dataTotals = yields[loc][base+mods[0]][ptCut][metCut]['data']
+
+                dataEff = dataPasses[0] / dataTotals[0]
+                dataCorr = dataEff
+                dataEffError = dataEff * math.sqrt( (dataPasses[1]/dataPasses[0])**2 + (dataTotals[1]/dataTotals[0])**2 + 2*dataCorr*(dataPasses[1]/dataPasses[0])*(dataTotals[1]/dataPasses[0]) )
+
+                sf = dataEff / mcEff
+                sfErrLow = sf * math.sqrt( (dataEffError / dataEff)**2 + (mcEffError / mcEff)**2)
+                sfErrHigh = sfErrLow
+
+                scalefactors[loc][base][metCut][ptCut] = (sf, sfErrLow, dataEffError / dataEff, mcEffError / mcEff)
+
                 if 'Inclusive' in ptCut:
-                    lowEdge = 175.
-                    highEdge = 500.
+                    continue
                 else:
                     lowEdge = float(ptCut.split('t')[2])
                     highEdge = ptCut.split('to')[-1]
@@ -174,42 +199,20 @@ for loc in s.Locations[:1]:
                 center = (lowEdge + highEdge) / 2.
                 exl = center - lowEdge
                 exh = highEdge - center
-        
-                mcPasses = yields[loc][base+mods[1]][ptCut][metCut]['mc']
-                mcTotals = yields[loc][base+mods[0]][ptCut][metCut]['mc']
-
-                mcEff = mcPasses[0] / mcTotals[0]
-                mcCorr = mcEff
-                mcEffError = mcEff * math.sqrt( (mcPasses[1]/mcPasses[0])**2 + (mcTotals[1]/mcTotals[0])**2 + 2*mcCorr*(mcPasses[1]/mcPasses[0])*(mcTotals[1]/mcPasses[0]) )
-
 
                 gMcEff.SetPoint(iB, center, mcEff)
                 gMcEff.SetPointError(iB, exl, exh, mcEffError, mcEffError)
 
-                dataPasses = yields[loc][base+mods[1]][ptCut][metCut]['data']
-                dataTotals = yields[loc][base+mods[0]][ptCut][metCut]['data']
-
-                dataEff = dataPasses[0] / dataTotals[0]
-                dataCorr = dataEff
-                dataEffError = dataEff * math.sqrt( (dataPasses[1]/dataPasses[0])**2 + (dataTotals[1]/dataTotals[0])**2 + 2*dataCorr*(dataPasses[1]/dataPasses[0])*(dataTotals[1]/dataPasses[0]) )
-
                 gDataEff.SetPoint(iB, center, dataEff)
                 gDataEff.SetPointError(iB, exl, exh, dataEffError, dataEffError)
-                
-                # print ptCut, dataEffError, mcEffError
 
-                sf = dataEff / mcEff
-                sfErrLow = sf * math.sqrt( (dataEffError / dataEff)**2 + (mcEffError / mcEff)**2)
-                sfErrHigh = sfErrLow
                 gSF.SetPoint(iB, center, sf)
                 gSF.SetPointError(iB, exl, exh, sfErrLow, sfErrHigh)
 
-                outFile.cd()
-                gMcEff.Write()
-                gDataEff.Write()
-                gSF.Write()
-
-                # print ptCut, sf, sfErrLow
+            outFile.cd()
+            gMcEff.Write()
+            gDataEff.Write()
+            gSF.Write()
 
             rcanvas.legend.add("mc", title = 'mc ' + base, mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
             rcanvas.legend.apply("mc", gMcEff)
@@ -229,14 +232,104 @@ for loc in s.Locations[:1]:
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             rcanvas.SetGridy(True)
 
-            plotName = "efficiency_"+str(metCut)+"_"+str(loc)+"_"+str(base)
-            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', tune+'_'+plotName, logy = False)
+            suffix = str(tune) + '_' + str(metCut) + '_' + str(loc) + '_'  +str(base)
+
+            plotName = 'efficiency_' + suffix
+            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
             
             canvas.ylimits = (0.9, 1.1)
             canvas.ytitle = 'Pixel Veto Factor'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
 
-            plotName = "scalefactor_"+str(metCut)+"_"+str(loc)+"_"+str(base)
-            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', tune+'_'+plotName, logy = False)
+            plotName = 'scalefactor_' + suffix
+            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
 
 outFile.Close()
+
+for loc in s.Locations[:1]:
+    for base in bases:
+        for metCut in MetSels:
+            suffix = str(tune) + '_' + str(metCut) + '_' + str(loc) + '_'  +str(base)
+
+            outFileName = 'table_' + suffix + '.tex'
+            outFilePath = outDir + '/' + outFileName
+            outFile = open(outFilePath, 'w')
+
+            outFile.write(r"\documentclass{article}")
+            outFile.write("\n")
+            outFile.write(r"\usepackage[paperwidth=115mm, paperheight=58mm, margin=5mm]{geometry}")
+            outFile.write("\n")
+            outFile.write(r"\begin{document}")
+            outFile.write("\n")
+            outFile.write(r"\pagenumbering{gobble}")
+            outFile.write("\n")
+
+            # table header based on ID
+            outFile.write(r"\begin{tabular}{ |c|c|c c c| }")
+            outFile.write("\n")
+            outFile.write(r"\hline")
+            outFile.write("\n")
+            outFile.write(r"\multicolumn{5}{ |c| }{Pixel Veto Scale Factor for " + loc + " " + base +r" photons} \\")
+            outFile.write("\n")
+            outFile.write(r"\hline")
+            outFile.write("\n")
+
+            # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
+            outFile.write(r"$p_{T}$ Range & Nominal & \multicolumn{3}{ |c| }{Relative Uncertainty} \\")
+            outFile.write("\n")
+            outFile.write(r" (GeV) & & SF & Data Eff. & MC Eff \\")
+            outFile.write(r"\hline")
+            outFile.write("\n")
+
+            for iB, ptCut in enumerate(PhotonPtSels):
+                # string formatting to make pT label look nice
+                if 'Inclusive' in ptCut:
+                    ptString = 'Inclusive'
+                    outFile.write(r"\hline")
+                    outFile.write("\n")
+
+                else:
+                    lowEdge = ptCut.split('t')[2]
+                    highEdge = ptCut.split('to')[-1]
+                    if highEdge == 'Inf':
+                        highEdge = r'$\infty$'
+
+                    ptString = ' (' + lowEdge +', ' + highEdge +') '
+
+                sf = scalefactors[loc][base][metCut][ptCut]
+                print sf
+
+                # fill in row with sf / uncertainty values properly
+                nomString = '$%.4f \\pm %.4f$' % tuple(sf[:2])
+                systString = '%.4f & %.4f & %.4f' % tuple([sf[1] / sf[0]] + list(sf[2:]))
+                rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
+
+                outFile.write(rowString)
+                outFile.write('\n')
+
+            # end table
+            outFile.write(r"\hline")
+            outFile.write("\n")
+            outFile.write(r"\end{tabular}")
+            outFile.write("\n")
+
+            # end tex file
+            outFile.write(r"\end{document}")
+            outFile.close()
+
+            # convert tex to pdf
+            pdflatex = Popen( ["pdflatex",outFilePath,"-interaction nonstopmode"]
+                              ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+            pdfout = pdflatex.communicate()
+            print pdfout[0]
+            if not pdfout[1] == "":
+                print pdfout[1]
+
+            # convert tex/pdf to png
+            convert = Popen( ["convert",outFilePath.replace(".tex",".pdf")
+                              ,outFilePath.replace(".tex",".png") ]
+                             ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+            conout = convert.communicate()
+            print conout[0]
+            if not conout[1] == "":
+                print conout[1]    

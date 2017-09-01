@@ -18,8 +18,8 @@ from plotstyle import WEBDIR
 
 ### Configuration parameters ###
 
+# Version = 'GSCheck'
 Version = 'GJetsTune'
-# Version = 'MonojetSync'
 
 # Skims for Purity Calculation
 sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
