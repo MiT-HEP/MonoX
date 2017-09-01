@@ -212,12 +212,12 @@ else:
 
 if dataType == 'mc':
     canvas.legend.add(PRODUCT + '_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)
+    canvas.legend.apply(PRODUCT + '_truth', trueResult)
+    canvas.addHistogram(trueResult, drawOpt = 'EP')
 
 canvas.legend.apply(PRODUCT, result)
 canvas.addHistogram(result, drawOpt = 'EP')
-if dataType == 'mc':
-    canvas.legend.apply(PRODUCT + '_truth', trueResult)
-    canvas.addHistogram(trueResult, drawOpt = 'EP')
+
 
 if ADDFIT:
     # exclude bins 42 < pT < 48

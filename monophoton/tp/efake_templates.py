@@ -17,7 +17,8 @@ from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, ge
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+# monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+monophSel = 'probes.mediumX[][%d]' % itune
 
 fitBins = getBinning(binningName)[2]
 

@@ -1,6 +1,6 @@
 import os
 
-outputName = 'efake'
+outputName = 'idsf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
@@ -115,6 +115,29 @@ def getBinning(binningName):
 
         binning.pop()
         binning.append(200.)
+
+    elif binningName == 'pteta':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        
+        ptBinning = [175., 200., 250., 300., 350., 400., 6500.]
+        etaBinning = [-1.5, -0.8, 0., 0.8, 1.5]
+
+        fitBins = []
+        for iBin in range(len(etaBinning) - 1):
+            etaRepl = {'low': etaBinning[iBin], 'high': etaBinning[iBin + 1]}
+            etaName = 'eta_{low:.0f}_{high:.0f}'.format(**etaRepl)
+            etaCut = 'probes.scEta > {low:.2f} && probes.scEta < {high:.2f}'.format(**etaRepl)
+
+            for jBin in range(len(ptBinning) - 1):
+                ptRepl = {'low': ptBinning[jBin], 'high': ptBinning[jBin + 1]}
+                ptName = 'pt_{low:.0f}_{high:.0f}'.format(**ptRepl)
+                ptCut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**ptRepl)
+
+                name = etaName + '_' + ptName
+                cut = etaCut + ' && ' + ptCut
+                fitBins.append((name, cut))
+
+        binning = range(len(fitBins) + 1)
 
     elif binningName in ['ht', 'htalt']:
         binningTitle = 'H_{T} (GeV)'

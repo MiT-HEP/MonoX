@@ -69,11 +69,11 @@ canvas.legend.add('sf', 'Scale Factor', opt = 'LP', color = ROOT.kBlack, mstyle 
 canvas.legend.add('sf_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)
 canvas.ylimits = (0.9, 1.10)
 
-canvas.legend.apply('sf', scaleFactor)
-canvas.addHistogram(scaleFactor, drawOpt = 'EP')
-
 canvas.legend.apply('sf_truth', sfTruth)
 canvas.addHistogram(sfTruth, drawOpt = 'EP')
+
+canvas.legend.apply('sf', scaleFactor)
+canvas.addHistogram(scaleFactor, drawOpt = 'EP')
 
 if ADDFIT:
     power = ROOT.TF1('power', '[0] + [1] / (x - [2])', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
