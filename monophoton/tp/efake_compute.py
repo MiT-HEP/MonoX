@@ -198,17 +198,17 @@ if dataType == 'mc':
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
-result.SetMaximum(0.05)
 
 canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.SetGrid(False, True)
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 if PRODUCT == 'frate':
+    result.SetMaximum(0.05)
     canvas.legend.add(PRODUCT, 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
     canvas.ylimits = (0., 0.05)
 else:
     canvas.legend.add(PRODUCT, '#epsilon_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-    canvas.ylimits = (0.5, 1.05)
+    canvas.ylimits = (0.75, 1.)
 
 if dataType == 'mc':
     canvas.legend.add(PRODUCT + '_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)
