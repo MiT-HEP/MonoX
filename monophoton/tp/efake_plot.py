@@ -48,6 +48,7 @@ def plotFit(mass, targHist, model, dataType, suffix, bkgModel = 'nombkgModel', h
         canvas.legend.apply('mcbkg', htruth)
         canvas.addHistogram(htruth)
 
+    canvas.rlimits = (-2., 2.)
     canvas.Update(rList = [], logy = False)
 
     frame.Print()
