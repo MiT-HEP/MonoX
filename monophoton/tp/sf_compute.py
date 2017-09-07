@@ -144,7 +144,7 @@ except:
     var = binningTitle
     varString = ' $' + var + '$ '
 
-outFile.write(varString + r" & Nominal & Truth \\") # \multicolumn{3}{ |c| }{Relative Uncertainty} \\")
+outFile.write(varString + r" & MC Fit & Truth \\") # \multicolumn{3}{ |c| }{Relative Uncertainty} \\")
 # outFile.write("\n")
 # outFile.write(r" (GeV) & & SF & Data Eff. & MC Eff \\")
 outFile.write(r"\hline")
