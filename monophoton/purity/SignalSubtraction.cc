@@ -58,6 +58,7 @@ public:
   TH1* getTarget() { return target_; }
   TH1* getTotal() { return total_; }
   TH1* getSignal() { return signalTemplate_; }
+  TH1* getSignalCR() { return signalCRTemplate_; }
   TH1* getBackground() { return bkgTemplate_; }
   TH1* getSubtractedBackground() { return subtractedBkg_; }
   
