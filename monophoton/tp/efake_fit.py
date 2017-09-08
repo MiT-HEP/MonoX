@@ -305,8 +305,10 @@ for bin, fitCut in fitBins:
 
         if dataType == 'mc':
             hTrueBkg = inputFile.Get('truebkg_' + suffix)
+            hTrueSig = inputFile.Get('truesig_' + suffix)
             outputFile.cd()
             hTrueBkg.Write()
+            hTrueSig.Write()
             inputFile.cd()
         else:
             hTrueBkg = None

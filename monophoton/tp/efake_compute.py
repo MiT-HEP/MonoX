@@ -129,28 +129,25 @@ for iBin, (bin, _) in enumerate(fitBins):
         yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
         if dataType == 'mc':
-            htarg = source.Get('target_' + suffix)
-            hmcbkg = source.Get('truebkg_' + suffix)
-            hsig = htarg.Clone('hsig')
-            hsig.Add(hmcbkg, -1.)
+            hsig = source.Get('truesig_' + suffix)
 
             compBinning = work.var('mass').getBinning('compWindow')
 
-            ilow = htarg.FindFixBin(compBinning.lowBound())
-            ihigh = htarg.FindFixBin(compBinning.highBound())
-            if compBinning.highBound() == htarg.GetXaxis().GetBinLowEdge(ihigh):
+            ilow = hsig.FindFixBin(compBinning.lowBound())
+            ihigh = hsig.FindFixBin(compBinning.highBound())
+            if compBinning.highBound() == hsig.GetXaxis().GetBinLowEdge(ihigh):
                 ihigh -= 1
 
             integral = 0.
             err2 = 0.
             while ilow <= ihigh:
                 integral += hsig.GetBinContent(ilow)
-                err2 += math.pow(htarg.GetBinError(ilow), 2.) # using htarg error
+                err2 += math.pow(hsig.GetBinError(ilow), 2.)
                 ilow += 1
-
 
             trueYields[conf].SetBinContent(iBin + 1, integral)
             trueYields[conf].SetBinError(iBin + 1, math.sqrt(err2))
+            print conf, iBin, integral, math.sqrt(err2), math.sqrt(err2) / integral
 
     ratio = yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
 
