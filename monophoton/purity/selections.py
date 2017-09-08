@@ -19,7 +19,7 @@ from plotstyle import WEBDIR
 ### Configuration parameters ###
 
 # Version = 'GSCheck'
-Version = 'GJetsTune'
+Version = 'CustomIDSF'
 
 # Skims for Purity Calculation
 sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
@@ -71,7 +71,7 @@ Cuts['monophId'] = ' && '.join([
 ])
 
 photonPtVar = 'photons.scRawPt[0]'
-photonPtBinning = [175,200,250,300,350,400,450]
+photonPtBinning = [175,200,250,300,350,400]
 PhotonPtSels = {
     'PhotonPtInclusive': '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[0],
     'PhotonPt%dtoInf' % photonPtBinning[-1]: '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[-1]

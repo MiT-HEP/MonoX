@@ -135,7 +135,7 @@ for loc in s.Locations[:1]:
 pprint(yields)
 
 canvas = SimpleCanvas(lumi = s.sphLumi)
-rcanvas = RatioCanvas(lumi = s.sphLumi)
+rcanvas = SimpleCanvas(lumi = s.sphLumi, name = 'effs')
 
 scalefactors = {}
 
@@ -150,12 +150,12 @@ for loc in s.Locations[:1]:
             rcanvas.cd()
             rcanvas.Clear()
             rcanvas.legend.Clear()
-            rcanvas.legend.setPosition(0.45, 0.725, 0.8, 0.925)
+            rcanvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 
             canvas.cd()
             canvas.Clear()
             canvas.legend.Clear()
-            canvas.legend.setPosition(0.45, 0.725, 0.8, 0.925)
+            canvas.legend.setPosition(0.7, 0.75, 0.9, 0.85)
 
             gDataEff = r.TGraphAsymmErrors()
             gDataEff.SetName(loc+'-'+base+mod+'-'+metCut+'-data')
@@ -171,14 +171,14 @@ for loc in s.Locations[:1]:
                 mcTotals = yields[loc][base+mods[0]][ptCut][metCut]['mc']
 
                 mcEff = mcPasses[0] / mcTotals[0]
-                mcCorr = mcEff
+                mcCorr = 0.
                 mcEffError = mcEff * math.sqrt( (mcPasses[1]/mcPasses[0])**2 + (mcTotals[1]/mcTotals[0])**2 + 2*mcCorr*(mcPasses[1]/mcPasses[0])*(mcTotals[1]/mcPasses[0]) )
 
                 dataPasses = yields[loc][base+mods[1]][ptCut][metCut]['data']
                 dataTotals = yields[loc][base+mods[0]][ptCut][metCut]['data']
 
                 dataEff = dataPasses[0] / dataTotals[0]
-                dataCorr = dataEff
+                dataCorr = 1.0
                 dataEffError = dataEff * math.sqrt( (dataPasses[1]/dataPasses[0])**2 + (dataTotals[1]/dataTotals[0])**2 + 2*dataCorr*(dataPasses[1]/dataPasses[0])*(dataTotals[1]/dataPasses[0]) )
 
                 sf = dataEff / mcEff
@@ -214,20 +214,20 @@ for loc in s.Locations[:1]:
             gDataEff.Write()
             gSF.Write()
 
-            rcanvas.legend.add("mc", title = 'mc ' + base, mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
+            rcanvas.legend.add("mc", title = 'mc', mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
             rcanvas.legend.apply("mc", gMcEff)
             rcanvas.addHistogram(gMcEff, drawOpt = 'EP')
             
-            rcanvas.legend.add("data", title = "data " + base, mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
+            rcanvas.legend.add("data", title = "data", mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
             rcanvas.legend.apply("data", gDataEff)
             rcanvas.addHistogram(gDataEff, drawOpt = 'EP')
 
-            canvas.legend.add(loc+'-'+base, title = loc+'-'+base, color = r.kBlack, lwidth = 2)
+            canvas.legend.add(loc+'-'+base, title = loc+' '+base, color = r.kBlack, lwidth = 2)
             canvas.legend.apply(loc+'-'+base, gSF)
             canvas.addHistogram(gSF, drawOpt = 'EP')
             
-            rcanvas.ylimits = (0.5, 1.2)
-            rcanvas.rlimits = (0.9, 1.1)
+            rcanvas.ylimits = (0.75, 1.0)
+            # rcanvas.rlimits = (0.9, 1.1)
             rcanvas.ytitle = 'Pixel Veto Efficiency'
             rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             rcanvas.SetGridy(True)
@@ -237,9 +237,10 @@ for loc in s.Locations[:1]:
             plotName = 'efficiency_' + suffix
             rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
             
-            canvas.ylimits = (0.9, 1.1)
-            canvas.ytitle = 'Pixel Veto Factor'
+            canvas.ylimits = (0.95, 1.05)
+            canvas.ytitle = 'Pixel Veto Scale Factor'
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+            canvas.SetGridy(True)
 
             plotName = 'scalefactor_' + suffix
             canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
@@ -275,9 +276,9 @@ for loc in s.Locations[:1]:
             outFile.write("\n")
 
             # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
-            outFile.write(r"$p_{T}$ Range & Nominal & \multicolumn{3}{ |c| }{Relative Uncertainty} \\")
+            outFile.write(r"$p_{T}$ Range (GeV) & Nominal & \multicolumn{3}{ |c| }{Relative Uncertainty (\%)} \\")
             outFile.write("\n")
-            outFile.write(r" (GeV) & & SF & Data Eff. & MC Eff \\")
+            outFile.write(r" & & SF & Data Eff. & MC Eff \\")
             outFile.write(r"\hline")
             outFile.write("\n")
 
@@ -300,8 +301,8 @@ for loc in s.Locations[:1]:
                 print sf
 
                 # fill in row with sf / uncertainty values properly
-                nomString = '$%.4f \\pm %.4f$' % tuple(sf[:2])
-                systString = '%.4f & %.4f & %.4f' % tuple([sf[1] / sf[0]] + list(sf[2:]))
+                nomString = '$%.3f \\pm %.3f$' % tuple(sf[:2])
+                systString = '%.2f & %.2f & %.2f' % (sf[1] / sf[0] * 100., sf[2] * 100., sf[3] * 100.)
                 rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
 
                 outFile.write(rowString)
