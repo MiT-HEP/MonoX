@@ -526,6 +526,8 @@ def vbfgBase(sample, rname):
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
 
+        selector.addOperator(ROOT.AddGenJets())
+
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
@@ -1407,6 +1409,12 @@ def vbfg(sample, rname):
     selector = vbfgBase(sample, rname)
 
     setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    digenjetSel = ROOT.DijetSelection('DigenjetSelection')
+    digenjetSel.setMinDEta(0.)
+    digenjetSel.setMinMjj(0.)
+    digenjetSel.setJetType(ROOT.DijetSelection.jGen)
+    selector.addOperator(digenjetSel)
 
     if not sample.data:
         addIDSFWeight(sample, selector)

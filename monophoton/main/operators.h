@@ -50,6 +50,7 @@
 //     JetCleaning *
 //     CopyMet
 //     CopySuperClusters
+//     AddGenJets *
 //     PhotonMt *
 //     LeptonRecoil *
 //     MetVariations *
@@ -602,13 +603,21 @@ class DijetSelection : public Cut {
  public:
   DijetSelection(char const* name = "DijetSelection") : Cut(name) {}
 
+  enum JetType {
+    jReco,
+    jGen,
+    nJetTypes
+  };
+
   void setMinPt1(double min) { minPt1_ = min; }
   void setMinPt2(double min) { minPt2_ = min; }
   void setMinDEta(double min) { minDEta_ = min; }
   void setMinMjj(double min) { minMjj_ = min; }
   void setSavePassing(bool b) { savePassing_ = b; }
+  void setJetType(JetType j) { jetType_ = j; }
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
   
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -618,6 +627,7 @@ class DijetSelection : public Cut {
   double minDEta_{3.};
   double minMjj_{800.};
   bool savePassing_{true};
+  JetType jetType_{jReco};
 
   unsigned nDijet_{0};
   float dEtajj_[NMAX_PARTICLES]{};
@@ -719,7 +729,7 @@ class TagAndProbePairZ : public Cut {
   void setProbeSpecies(Collection species) { probeSpecies_ = species; }
 
   unsigned getNUniqueZ() const { return nUniqueZ_; }
-  float getPhiZ(unsigned idx) const { return zs_[idx].phi(); }
+  float getPhiZ(unsigned idx) const { return tp_[idx].phi(); }
   
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -729,7 +739,7 @@ class TagAndProbePairZ : public Cut {
 
   panda::ParticleCollection* tags_{0};
   panda::ParticleCollection* probes_{0};
-  panda::ParticleMCollection zs_;
+  panda::ParticleMCollection tp_;
   bool zOppSign_{0};
 
   unsigned nUniqueZ_{0};
@@ -862,6 +872,20 @@ class PhotonMt : public Modifier {
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 
   float mt_[NMAX_PARTICLES];
+};
+
+class AddGenJets : public Modifier {
+ public:
+  AddGenJets(char const* name = "AddGenJets") : Modifier(name) {}
+  void addInputBranch(panda::utils::BranchList&) override;
+
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxEta(double maxEta) { maxEta_ = maxEta; }
+ protected:
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
+
+  double minPt_{30.};
+  double maxEta_{5.};
 };
 
 class LeptonRecoil : public Modifier {

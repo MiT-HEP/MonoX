@@ -83,6 +83,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       if (skipMissingFiles_)
         break;
 
+      std::cerr << *pItr << " is not available. Waiting for " << tryEvery << " seconds.." << std::endl;
+
       gSystem->Sleep(tryEvery * 1000.);
     }
 

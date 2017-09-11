@@ -149,7 +149,11 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 
   _inEvent.book(*skimOut_, blist);
 
-  outEvent_.book(*skimOut_, {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"});
+  blist = {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"};
+  if (_isMC)
+    blist += {"genJets"}; // filled only if AddGenJets operator is run
+
+  outEvent_.book(*skimOut_, blist);
 }
 
 void
