@@ -2673,7 +2673,16 @@ IDSFWeight::applyParticle(unsigned iP, panda::EventMonophoton const& _event, pan
     int iBin(0);
     switch (variables_[iV]) {
     case kPt:
-      iBin = axis->FindFixBin(part->pt());
+      switch (object_) {
+      case cPhotons:
+	{
+	  panda::XPhoton const* photon = &_outEvent.photons.at(iP);
+	  iBin = axis->FindFixBin(photon->scRawPt);
+	  break;
+	}
+      default:
+	iBin = axis->FindFixBin(part->pt());
+      }
       break;
     case kEta:
       iBin = axis->FindFixBin(part->eta());
