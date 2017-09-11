@@ -18,13 +18,13 @@ sys.argv = argv
 photonDataICHEP = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m']
 photonData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
 photonDataPrescaled = [
-    ('sph-16b-m', 1),
-    ('sph-16c-m', 1),
-    ('sph-16d-m', 1),
-#     ('sph-16e-m', 4),
-#     ('sph-16f-m', 4),
-#     ('sph-16g-m', 4),
-#     ('sph-16h', 4)
+    ('sph-16b-m', 5),
+    ('sph-16c-m', 5),
+    ('sph-16d-m', 5),
+    ('sph-16e-m', 5),
+    ('sph-16f-m', 5),
+    ('sph-16g-m', 5),
+    ('sph-16h-m', 5)
 ]
 muonData = ['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m']
 electronData = ['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m']
@@ -69,9 +69,14 @@ def getConfig(confName):
         monophData = photonData
         if 'ICHEP' in confName:
             monophData = photonDataICHEP
+        elif 'Blind' in confName:
+            monophData = photonDataPrescaled
 
         for sname in monophData:
-            config.addObs(sname)
+            if type(sname) == tuple:
+                config.addObs(*sname)
+            else:
+                config.addObs(sname)
 
         config.baseline = baseSel
 
@@ -141,10 +146,6 @@ def getConfig(confName):
         config.addPlot('time', 'time', 'photons.time[0]', (20, -5., 5.), unit = 'ns')
         config.addPlot('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns')
 
-        if 'Blind' in confName:
-            for plot in config.plots:
-                plot.blind = 'full'
-
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
             if group.name in ['efake', 'hfake', 'halo', 'spike']:
@@ -153,6 +154,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 

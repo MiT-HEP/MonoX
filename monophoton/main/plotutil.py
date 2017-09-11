@@ -272,7 +272,10 @@ class PlotConfig(object):
         if len(args) > 2:
             args = args[0:2] + allsamples.getmany(args[2]) + args[3:]
         elif 'samples' in kwd:
-            kwd['samples'] = allsamples.getmany(kwd['samples'])
+            if type(kwd['samples'][0]) == tuple:
+                kwd['samples'] = [ allsamples.get(sname) for (sname, _) in kwd['samples'] ]
+            else:
+                kwd['samples'] = allsamples.getmany(kwd['samples'])
             
         self.bkgGroups.append(GroupSpec(*args, **kwd))
 
