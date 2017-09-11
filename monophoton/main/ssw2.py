@@ -119,8 +119,8 @@ class SkimSlimWeight(object):
         if not SkimSlimWeight.config['noPhotonSkim']:
             skimmer.setCommonSelection('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
-        # temporary - backward compatibility issue 004 -> 005/006
-        if self.sample.book == 'pandaf/005' or self.sample.book == 'pandaf/006':
+        # temporary - backward compatibility issue 004 -> 005/006/007
+        if self.sample.book != 'pandaf/004':
             skimmer.setCompatibilityMode(True)
 
         for rname, selgen in self.selectors.items():

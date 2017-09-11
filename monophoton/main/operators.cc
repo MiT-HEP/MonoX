@@ -2066,6 +2066,27 @@ CopySuperClusters::apply(panda::EventMonophoton const& _event, panda::EventMonop
 }
 
 //--------------------------------------------------------------------
+// AddGenJets
+//--------------------------------------------------------------------
+
+void
+AddGenJets::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"ak4GenJets"};
+}
+
+void
+AddGenJets::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  _outEvent.genJets.clear();
+  
+  for (auto& jet : _event.genJets) {
+    if (jet.pt() > minPt_ && std::abs(jet.eta()) < maxEta_)
+      _outEvent.genJets.push_back(jet);
+  }
+}
+
+//--------------------------------------------------------------------
 // PhotonMt
 //--------------------------------------------------------------------
 

@@ -50,6 +50,7 @@
 //     JetCleaning *
 //     CopyMet
 //     CopySuperClusters
+//     AddGenJets *
 //     PhotonMt *
 //     LeptonRecoil *
 //     MetVariations *
@@ -871,6 +872,20 @@ class PhotonMt : public Modifier {
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 
   float mt_[NMAX_PARTICLES];
+};
+
+class AddGenJets : public Modifier {
+ public:
+  AddGenJets(char const* name = "AddGenJets") : Modifier(name) {}
+  void addInputBranch(panda::utils::BranchList&) override;
+
+  void setMinPt(double minPt) { minPt_ = minPt; }
+  void setMaxEta(double maxEta) { maxEta_ = maxEta; }
+ protected:
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
+
+  double minPt_{30.};
+  double maxEta_{5.};
 };
 
 class LeptonRecoil : public Modifier {

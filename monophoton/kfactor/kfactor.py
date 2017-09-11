@@ -9,6 +9,11 @@ sys.path.append(basedir)
 from datasets import allsamples
 import config
 
+ROOT.gSystem.Load('libPandaTreeObjects.so')
+e = ROOT.panda.Event
+
+ROOT.gROOT.LoadMacro('makeZGWGHistograms.cc+')
+
 def makeZGWGHistograms(sname, binning):
     sample = allsamples[sname]
 
@@ -18,7 +23,8 @@ def makeZGWGHistograms(sname, binning):
 
     lo = ROOT.TH1D('lo', '', len(binning) - 1, binning)
 
-    tree.Draw('TMath::Min(partons.pt_, 999.9)>>lo', 'partons.pdgid == 22 && TMath::Abs(partons.eta_) < 1.4442', 'goff')
+    ROOT.makeZGWGHistograms(tree, lo)
+#    tree.Draw('TMath::Min(partons.pt_, 999.9)>>lo', 'partons.pdgid == 22 && TMath::Abs(partons.eta_) < 1.4442', 'goff')
 
     lo.Scale(1000. * sample.crosssection / sample.sumw, 'width') # nnlo file given in dsigma / dpT (fb / GeV)
 

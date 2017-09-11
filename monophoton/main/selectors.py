@@ -526,6 +526,8 @@ def vbfgBase(sample, rname):
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
 
+        selector.addOperator(ROOT.AddGenJets())
+
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
