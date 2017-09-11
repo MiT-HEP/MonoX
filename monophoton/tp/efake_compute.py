@@ -106,6 +106,11 @@ for iBin, (bin, _) in enumerate(fitBins):
             # compute uncertainties from distributions of nZ-normalized difference of toy yields
 
             toydist = uncSource.Get('pull_nominal_' + suffix)
+
+            if not toydist:
+                print 'No nominal pull distribution for ' + suffix
+                sys.exit(1)
+
             toydists[bin][conf] = toydist
 
             err2 += math.pow(toydist.GetRMS() * nZ, 2.)
@@ -124,28 +129,25 @@ for iBin, (bin, _) in enumerate(fitBins):
         yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
 
         if dataType == 'mc':
-            htarg = source.Get('target_' + suffix)
-            hmcbkg = source.Get('truebkg_' + suffix)
-            hsig = htarg.Clone('hsig')
-            hsig.Add(hmcbkg, -1.)
+            hsig = source.Get('truesig_' + suffix)
 
             compBinning = work.var('mass').getBinning('compWindow')
 
-            ilow = htarg.FindFixBin(compBinning.lowBound())
-            ihigh = htarg.FindFixBin(compBinning.highBound())
-            if compBinning.highBound() == htarg.GetXaxis().GetBinLowEdge(ihigh):
+            ilow = hsig.FindFixBin(compBinning.lowBound())
+            ihigh = hsig.FindFixBin(compBinning.highBound())
+            if compBinning.highBound() == hsig.GetXaxis().GetBinLowEdge(ihigh):
                 ihigh -= 1
 
             integral = 0.
             err2 = 0.
             while ilow <= ihigh:
                 integral += hsig.GetBinContent(ilow)
-                err2 += math.pow(htarg.GetBinError(ilow), 2.) # using htarg error
+                err2 += math.pow(hsig.GetBinError(ilow), 2.)
                 ilow += 1
-
 
             trueYields[conf].SetBinContent(iBin + 1, integral)
             trueYields[conf].SetBinError(iBin + 1, math.sqrt(err2))
+            print conf, iBin, integral, math.sqrt(err2), math.sqrt(err2) / integral
 
     ratio = yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
 
@@ -193,26 +195,26 @@ if dataType == 'mc':
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
-result.SetMaximum(0.05)
 
 canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.SetGrid(False, True)
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 if PRODUCT == 'frate':
+    result.SetMaximum(0.05)
     canvas.legend.add(PRODUCT, 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
     canvas.ylimits = (0., 0.05)
 else:
     canvas.legend.add(PRODUCT, '#epsilon_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-    canvas.ylimits = (0.5, 1.05)
+    canvas.ylimits = (0.75, 1.)
 
 if dataType == 'mc':
     canvas.legend.add(PRODUCT + '_truth', 'MC truth', opt = 'LP', color = ROOT.kGreen, mstyle = 4)
+    canvas.legend.apply(PRODUCT + '_truth', trueResult)
+    canvas.addHistogram(trueResult, drawOpt = 'EP')
 
 canvas.legend.apply(PRODUCT, result)
 canvas.addHistogram(result, drawOpt = 'EP')
-if dataType == 'mc':
-    canvas.legend.apply(PRODUCT + '_truth', trueResult)
-    canvas.addHistogram(trueResult, drawOpt = 'EP')
+
 
 if ADDFIT:
     # exclude bins 42 < pT < 48

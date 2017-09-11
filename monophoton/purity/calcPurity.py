@@ -14,6 +14,7 @@ if basedir not in sys.path:
 
 import purity.selections as s
 from purity.plotiso import plotiso
+from plotstyle import WEBDIR, SimpleCanvas, RatioCanvas
 
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
@@ -26,7 +27,9 @@ gStyle.SetOptStat(0)
 RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)
 
 QUICKFIT = False # just run one main fit
-FORCEHIST = True
+FORCEHIST = True # redraw input histograms
+ITERATIVE = False # use iterative method instead of SignalSubtraction.cc
+DOTOYS = True
 
 ### take inputs and make sure they match a selection
 loc = sys.argv[1] # barrel, endcap
@@ -62,10 +65,10 @@ except KeyError:
 
 ### Directory stuff so that results are saved and such
 versDir = s.versionDir
-plotDir = os.path.join(versDir, inputKey)
+plotDir = os.path.join('purity', s.Version, inputKey)
 histDir = os.path.join(versDir, inputKey)
-if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
+if not os.path.exists(WEBDIR + '/' + plotDir):
+    os.makedirs(WEBDIR + '/' + plotDir)
 if not os.path.exists(histDir):
     os.makedirs(histDir)
 
@@ -104,9 +107,12 @@ if not QUICKFIT:
     print 'Generating chIso histograms for SR-CR extrapolation..'
     print ''
 
-    plotiso(loc, '-'.join(pids), pt, met, tune)
-    
-    isoFile = TFile(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+    isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+
+    if FORCEHIST or not isoFile:
+        plotiso(loc, '-'.join(pids), pt, met, tune)
+
+        isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
 
     # SB / signal region transfer factor
     isoTF = {}
@@ -146,6 +152,7 @@ selections = s.getSelections(tune, loc, pid)
 
 # high-pt jet + met + photon pt + photon hOverE/NHIso/PhIso
 baseSel = ' && '.join([
+#     'event.metFilters.dupECALClusters',
     'jets.pt_[0] > 100.',
     metSel,    
     ptSel,
@@ -194,6 +201,7 @@ print '\n'
 if not os.path.exists(os.path.join(histDir, 'initialHists.root')) or FORCEHIST:
     sphDataExt = s.HistExtractor('sphData', s.sphData, var)
     gjetsMcExt = s.HistExtractor('gjetsMc', s.gjetsMc, var)
+    gjetsMcExt.plotter.setConstantWeight(s.sphLumi)
     
     print 'setBaseSelection(' + baseSel + ')'
     sphDataExt.plotter.setBaseSelection(baseSel)
@@ -248,33 +256,105 @@ else:
     hMCSBNear = histFile.Get('TempSidebandGJetsNear')
     hMCSBFar = histFile.Get('TempSidebandGJetsFar')
 
-canvas = ROOT.TCanvas()
+### plot "estimated" contamination in the sidebands
+scanvas = SimpleCanvas(lumi = s.sphLumi)
+def plotSigContam(hdata, hmc, name = '', pdir = plotDir):
+    scanvas.Clear(full = True)
+    scanvas.titlePave.SetX2NDC(0.5)
+    scanvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+    scanvas.legend.add('obs', title = 'Data sideband', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
+    scanvas.legend.add('sig', title = '#gamma+jets MC', opt = 'L', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
+
+    scanvas.legend.apply('obs', hdata)
+    scanvas.legend.apply('sig', hmc)
+    
+    hdata.SetTitle('')
+
+    scanvas.addHistogram(hdata, drawOpt = 'EP')
+    scanvas.addHistogram(hmc, drawOpt = 'HIST')
+
+    scanvas.xtitle = '#sigma_{i#etai#eta}'
+
+    contam = hmc.Integral() / hdata.Integral() * 100.
+    text = 'Sig. Contam: {contam}%'.format(contam = round(contam,1))
+    scanvas.addText(text, 0.225, 0.4, 0.4, 0.6)
+
+    scanvas.printWeb(pdir + '/sbcontam' , 'sbcontam_' + name, logy = False)
+
+plotSigContam(hDataBkgNom, hMCSBNom, name = 'nominal')
+plotSigContam(hDataBkgNear, hMCSBNear, name = 'near')
+plotSigContam(hDataBkgFar, hMCSBFar, name = 'far')
+
+canvas = RatioCanvas(lumi = s.sphLumi)
 
 # allowing the bin edge to be lower than the actual cut (makes the purity higher!)
 cutBin = hDataTarg.FindBin(var.cuts[pid])
 
 FitResult = collections.namedtuple('FitResult', ['purity', 'aveSig', 'nReal', 'nFake'])
 
+def plotSSFit(fitter, purity, nReal, name = '', pdir = plotDir):
+    fitter.preparePlot()
+
+    target = fitter.getTarget()
+    total = fitter.getTotal()
+    sig = fitter.getSignal()
+    sigcr = fitter.getSignalCR()
+    bkg = fitter.getBackground()
+    subbkg = fitter.getSubtractedBackground()
+
+    plotSigContam(bkg, sigcr, name = name + '_postfit', pdir = pdir)
+
+    canvas.Clear(full = True)
+    canvas.rtitle = 'data / fit'
+    canvas.titlePave.SetX2NDC(0.5)
+    canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
+    canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
+    canvas.legend.add('fit', title = 'Fit', opt = 'L', lcolor = ROOT.kBlue, lwidth = 2, lstyle = ROOT.kSolid)
+    canvas.legend.add('sig', title = 'Sig component', opt = 'L', lcolor = ROOT.kRed, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add('bkg', title = 'Unsubtracted bkg', opt = 'L', lcolor = ROOT.kMagenta, lwidth = 2, lstyle = ROOT.kDashed)
+    canvas.legend.add('subbkg', title = 'Subtracted bkg', opt = 'L', lcolor = ROOT.kGreen, lwidth = 2, lstyle = ROOT.kDashed)
+
+    canvas.legend.apply('obs', target)
+    canvas.legend.apply('fit', total)
+    canvas.legend.apply('sig', sig)
+    canvas.legend.apply('bkg', bkg)
+    canvas.legend.apply('subbkg', subbkg)
+    
+    target.SetTitle('')
+
+    iTarget = canvas.addHistogram(target, drawOpt = 'EP')
+    iFit = canvas.addHistogram(total, drawOpt = 'HIST')
+    canvas.addHistogram(sig, drawOpt = 'HIST')
+    canvas.addHistogram(bkg, drawOpt = 'HIST')
+    canvas.addHistogram(subbkg, drawOpt = 'HIST')
+
+    text = '#splitline{Purity: ' + str(round(purity,3)) + '}{N_{True #gamma}: ' + str(int(nReal)) + '}'
+    canvas.addText(text, 0.4, 0.3, 0.7, 0.5) 
+    canvas.xtitle = '#sigma_{i#etai#eta}'
+
+    canvas.printWeb(pdir, 'ssfit_' + name + '_logy', rList = [iFit, iTarget], logy = True)
+    
 def runSSFit(datasb, mcsb, sbRatio, name = '', pdir = plotDir, mcsig = hMCSignal):
-    ssfitter.initialize(hDataTarg, mcsig, datasb, mcsb, sbRatio)
-    ssfitter.fit()
+    if not ITERATIVE:
+        ssfitter.initialize(hDataTarg, mcsig, datasb, mcsb, sbRatio)
+        ssfitter.fit()
 
-    purity = ssfitter.getPurity(cutBin)
-    nReal = ssfitter.getNsig(cutBin)
-    nFake = ssfitter.getNbkg(cutBin)
-    aveSig = s.StatUncert(nReal, nFake)
+        purity = ssfitter.getPurity(cutBin)
+        nReal = ssfitter.getNsig(cutBin)
+        nFake = ssfitter.getNbkg(cutBin)
+        aveSig = s.StatUncert(nReal, nFake)
 
-    if name:
-        ssfitter.plotOn(canvas)
-        text = TLatex()
-        text.DrawLatexNDC(0.525,0.8,"Purity: "+str(round(purity,3))+'#pm'+str(round(aveSig,3))) 
+        if name:
+            if not 'toy' in name:
+                plotSSFit(ssfitter, purity, nReal, name, pdir)
 
-        canvas.SetLogy(False)
-        canvas.Print(pdir + '/ssfit_' + name + '.png')
-        canvas.Print(pdir + '/ssfit_' + name + '.pdf')
-        canvas.SetLogy(True)
-        canvas.Print(pdir + '/ssfit_' + name + '_log.png')
-        canvas.Print(pdir + '/ssfit_' + name + '_log.pdf')
+    else:
+        skims = ['Target', 'Signal', 'Contam', 'Sideband']
+        hists = [hDataTarg, mcsig, mcsb, datasb]
+        rooVar = ROOT.RooRealVar(var.name, var.title, var.binning[1], var.binning[2])
+        templates = [s.HistToTemplate(hist, rooVar, skims[iH], 'v0_'+inputKey, pdir) for iH, hist in enumerate(hists)]
+        (purity, aveSig, nReal, nFake) = s.SignalSubtraction(skims, hists, templates, sbRatio, var.name, rooVar, var.cuts[pid], inputKey, pdir)
+
 
     return FitResult(purity, aveSig, nReal, nFake)
 
@@ -335,60 +415,73 @@ print '######## Doing background stat uncertainty ########'
 print '###################################################'
 print '\n'
 
-NTOYS = 100
+NTOYS = 200
 
-### Get background stat uncertainty
-toyPlot = ROOT.TH1F("toyplot","Impurity Difference from Background Template Toys", 100, -5, 5)
-toyPlotYield = ROOT.TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 100, -5000, 5000)
-#toySkims = skims[:4]
-toysDir = os.path.join(plotDir,'toys')
-if not os.path.exists(toysDir):
-    os.makedirs(toysDir)
+if DOTOYS:
+    ### Get background stat uncertainty
+    toyPlot = ROOT.TH1F("toyplot","Impurity Difference from Background Template Toys", 200, -0.010, 0.010)
+    toyPlotYield = ROOT.TH1F("toyplotyield","True Photon Yield Difference from Background Template Toys", 200, -1000, 1000)
+    toysDir = os.path.join(histDir,'toys')
+    if not os.path.exists(toysDir):
+        os.makedirs(toysDir)
 
-eventsToGenerate = int(hDataBkgNom.GetSumOfWeights())
- 
-for iToy in range(1, NTOYS + 1):
-    print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
+    eventsToGenerate = int(hDataBkgNom.GetSumOfWeights())
+    print eventsToGenerate
 
-    toyHist = hDataBkgNom.Clone('toyhist')
-    toyHist.FillRandom(hDataBkgNom, eventsToGenerate)
+    for iToy in range(1, NTOYS + 1):
+        print "\n###############\n#### Toy "+str(iToy)+" ####\n###############\n"
 
-    toyHist.Draw()
+        toyHist = hDataBkgNom.Clone('toyhist')
+        toyHist.Reset()
+        toyHist.FillRandom(hDataBkgNom, eventsToGenerate)
 
-    tempName = os.path.join(toysDir, 'toy%d' % iToy)
-    canvas.SaveAs(tempName+'.pdf')
-    canvas.SaveAs(tempName+'.png')
-    canvas.SaveAs(tempName+'.C')
+        toyHist.Draw()
 
-    toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'fit%d' % iToy, pdir = toysDir)
+        tempName = os.path.join(toysDir, 'toy%d' % iToy)
+        canvas.SaveAs(tempName+'.pdf')
+        canvas.SaveAs(tempName+'.png')
+        canvas.SaveAs(tempName+'.C')
 
-    purityDiff = toyResult.purity - nominalResult.purity
-    print "Purity diff is:", purityDiff
-    toyPlot.Fill(purityDiff)
+        toyResult = runSSFit(toyHist, hMCSBNom, nominalRatio, 'toy%d' % iToy, pdir = toysDir)
 
-    yieldDiff = toyResult.nReal - nominalResult.nReal
-    print "Yield diff is:", yieldDiff
-    toyPlotYield.Fill(yieldDiff)
+        purityDiff = toyResult.purity - nominalResult.purity
+        print "Purity diff is:", purityDiff
+        toyPlot.Fill(purityDiff)
 
-bkgdUncertainty = toyPlot.GetStdDev()
-bkgdUncYield = toyPlotYield.GetStdDev()
-toyPlot.GetXaxis().SetTitle("Impurity Difference")
-toyPlot.GetYaxis().SetTitle("# of Toys")
+        yieldDiff = toyResult.nReal - nominalResult.nReal
+        print "Yield diff is:", yieldDiff
+        toyPlotYield.Fill(yieldDiff)
 
-toyPlot.SetLineWidth(3)
-                    
-toyPlot.GetXaxis().SetLabelSize(0.045)
-toyPlot.GetXaxis().SetTitleSize(0.045)
-toyPlot.GetYaxis().SetLabelSize(0.045)
-toyPlot.GetYaxis().SetTitleSize(0.045)
+    bkgdUncertainty = toyPlot.GetStdDev()
+    bkgdUncYield = toyPlotYield.GetStdDev()
 
+    tcanvas = SimpleCanvas(lumi = s.sphLumi, name = 'toys')
+    toyPlot.SetTitle('')
 
-toyPlotName = os.path.join(toysDir, 'toyplot_'+inputKey)
-toyCanvas = TCanvas()
-toyPlot.Draw()
-toyCanvas.SaveAs(toyPlotName+'.pdf')
-toyCanvas.SaveAs(toyPlotName+'.png')
-toyCanvas.SaveAs(toyPlotName+'.C')
+    tcanvas.legend.add('toys', title = 'toys', opt = 'L', lcolor = ROOT.kBlue, lwidth = 2, lstyle = ROOT.kSolid)
+    tcanvas.legend.apply('toys', toyPlot)
+    tcanvas.addHistogram(toyPlot)
+
+    tcanvas.xtitle = 'Impurity Difference (%)'
+    tcanvas.ytitle = '# of Toys'
+    
+    tcanvas.printWeb(plotDir, 'ssfit_toy_dist', logy = False)
+    
+    tcanvas.Clear()
+    toyPlotYield.SetTitle('')
+    
+    tcanvas.legend.apply('toys', toyPlotYield)
+    tcanvas.addHistogram(toyPlotYield)
+
+    tcanvas.xtitle = '#Delta(# of True Photons)'
+    tcanvas.ytitle = '# of Toys'
+    
+    tcanvas.printWeb(plotDir, 'ssfit_toyyield_dist', logy = False)
+    
+
+else:
+    bkgdUncertainty = 0.
+    bkgdUncYield = 0.
 
 print '\n'
 print '################################################'
@@ -417,7 +510,12 @@ totalUncYield = ( (sidebandUncYield)**2 + (scaledUncYield)**2 + (shapeUncYield)*
 
 print "Total uncertainty is:", totalUncertainty
 
-outFile = file(plotDir + '/results.out', 'w')
+if ITERATIVE:
+    outFileName = WEBDIR + '/' + plotDir + '/results_iterative.out'
+else:
+    outFileName = WEBDIR + '/' + plotDir + '/results.out'
+
+outFile = file(outFileName, 'w')
 
 for key in histFile.GetListOfKeys():
     hist = histFile.Get(key.GetName())

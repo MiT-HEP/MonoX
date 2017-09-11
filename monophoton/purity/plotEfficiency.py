@@ -1,207 +1,336 @@
-import os 
+import os
 import sys
 from pprint import pprint
-import ROOT as r
 from array import array
-import math 
+from subprocess import Popen, PIPE
+import ROOT as r
+import math
 
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if basedir not in sys.path:
     sys.path.append(basedir)
 import config
-from plotstyle import SimpleCanvas, RatioCanvas
-from datasets import allsamples
+from plotstyle import WEBDIR, SimpleCanvas, RatioCanvas
 import selections as s
 
-versDir = s.versionDir
-outDir = os.path.join(versDir, 'ScaleFactor')
+versDir = WEBDIR + '/purity/' + s.Version
+outDir = os.path.join(versDir, 'ScaleFactors')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-bases = ['loose', 'medium', 'tight']
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # '-pixel-monoph-worst', 
-PhotonIds = [base+mod for base in bases for mod in mods]
-PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
-MetSels = sorted(s.MetSels.keys())[:1]
+tune = 'GJetsCWIso'
 
-era = 'Spring16'
+outFile = r.TFile("../data/pvsf_" + tune + ".root", "RECREATE")
+
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel-monoph'] #  '-pixel-monoph'
+PhotonIds = [base+mod for base in bases for mod in mods]
+PhotonPtSels = sorted(s.PhotonPtSels.keys())[:]
+MetSels = sorted(s.MetSels.keys())[1:2]
 
 yields = {}
 for loc in s.Locations[:1]:
     yields[loc] = {}
-    for pid in PhotonIds + ['none']:
+    for pid in PhotonIds:
         yields[loc][pid] = {}
         for ptCut in PhotonPtSels:
             yields[loc][pid][ptCut] = {}
             for metCut in MetSels: 
                 yields[loc][pid][ptCut][metCut] = {}
-                dirName = era + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
+                dirName = tune + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut
                 print dirName
 
-                """
                 # Get Data Yields
                 dataFileName = os.path.join(versDir,dirName,"results.out") 
-                # dataFile = open(dataFileName)
-                
                 match = False
-                count = [1., 0.]
-                for line in dataFile:
-                    if "# of real photons is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            count[0] = float(tmp[-1].strip("(),"))
-                            #print count
-                    elif "Total unc yield is:" in line:
-                        # print line
-                        tmp = line.split()
-                        if tmp:
-                            match = True
-                            # pprint(tmp)
-                            count[1] = float(tmp[-1].strip("(),"))
-                            #print count
-
-                if not match:
-                    print "No data yields found for skim:", dirName
-                    yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
-                    # dataFile.close()
-                
-                yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
-
-                if pid == 'none':
-                    continue
-                """
-
-                # get mc effs
-                mcFileName = os.path.join(versDir,dirName,"mceff.out") 
                 try:
-                    mcFile = open(mcFileName)
+                    dataFile = open(dataFileName)
 
-                    match = False
-                    count = [1., 0., 0.]
-                    for line in mcFile:
-                        if "Efficiency" in line:
+                    count = [1., 0.]
+                    for line in dataFile:
+                        if "# of real photons is:" in line:
                             # print line
                             tmp = line.split()
                             if tmp:
                                 match = True
                                 # pprint(tmp)
-                                count[0] = float(tmp[-3].strip("(),+-"))
-                                count[1] = float(tmp[-2].strip("(),+-"))
-                                count[2] = float(tmp[-1].strip("(),+-"))
+                                count[0] = float(tmp[-1].strip("(),"))
+                                #print count
+                        elif "Total unc yield is:" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp:
+                                match = True
+                                # pprint(tmp)
+                                count[1] = float(tmp[-1].strip("(),"))
                                 #print count
 
-                    if not match:
-                        print "No mc eff file found for skim:", dirName
-                        yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0, 0.0)
+                        # dataFile.close()
+
+                    dataFile.close()
+
+                except IOError:
+                    print "No data eff file found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
+                    
+                if match:
+                    yields[loc][pid][ptCut][metCut]['data'] = tuple(count)
+
+                else:
+                    print "No data yields found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['data'] = (-1., 0.0)
+
+
+                # get mc effs
+                mcFileName = os.path.join(versDir,dirName,"mceff.out") 
+                gjMatch = False
+                wjMatch = False
+                    
+                try:
+                    mcFile = open(mcFileName)
+
+                    gjCount = [1., 0.]
+                    wjCount = [1., 0.]
+
+                    count = [1., 0.]
+                    for line in mcFile:
+                        if "gj04 efficiency" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp: 
+                                gjMatch = True
+                                # pprint(tmp)
+                                gjCount[0] = float(tmp[-4].strip("(),+-"))
+                                gjCount[1] = float(tmp[-3].strip("(),+-"))
+                                #print count
+
+                        elif "wlnun efficiency" in line:
+                            # print line
+                            tmp = line.split()
+                            if tmp: 
+                                wjMatch = True
+                                # pprint(tmp)
+                                wjCount[0] = float(tmp[-4].strip("(),+-"))
+                                wjCount[1] = 0.14 * wjCount[0]
+                                #print count
 
                     mcFile.close()
 
                 except IOError:
                     print "No mc eff file found for skim:", dirName
-                    yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0, 0.0)
+                    yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
 
-                yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
+                    
+                if gjMatch and wjMatch:
+                    count[0] = gjCount[0] + wjCount[0]
+                    count[1] = math.sqrt(gjCount[1]**2 + wjCount[1]**2)
+
+                    yields[loc][pid][ptCut][metCut]['mc'] = tuple(count)
+
+                else:
+                    print "No mc yields file found for skim:", dirName
+                    yields[loc][pid][ptCut][metCut]['mc'] = (-1., 0.0)
+                    
                     
 pprint(yields)
 
+canvas = SimpleCanvas(lumi = s.sphLumi)
+rcanvas = SimpleCanvas(lumi = s.sphLumi, name = 'effs')
 
-sphLumi = sum(allsamples[s].lumi for s in ['sph-16b-r', 'sph-16c-r', 'sph-16d-r', 'sph-16e-r', 'sph-16f-r', 'sph-16g-r', 'sph-16h'])
-canvas = SimpleCanvas(lumi = sphLumi)
-rcanvas = SimpleCanvas(lumi = sphLumi)
+scalefactors = {}
+
+for loc in s.Locations[:1]:
+    scalefactors[loc] = {}
+    for base in bases:
+        scalefactors[loc][base] = {}
+        print '\n' + base
+        for metCut in MetSels:
+            scalefactors[loc][base][metCut] = {}
+
+            rcanvas.cd()
+            rcanvas.Clear()
+            rcanvas.legend.Clear()
+            rcanvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
+
+            canvas.cd()
+            canvas.Clear()
+            canvas.legend.Clear()
+            canvas.legend.setPosition(0.7, 0.75, 0.9, 0.85)
+
+            gDataEff = r.TGraphAsymmErrors()
+            gDataEff.SetName(loc+'-'+base+mod+'-'+metCut+'-data')
+            
+            gMcEff = r.TGraphAsymmErrors()
+            gMcEff.SetName(loc+'-'+base+mod+'-'+metCut+'-mc')
+            
+            gSF = r.TGraphAsymmErrors()
+            gSF.SetName(loc+'-'+base+mod+'-'+metCut+'-sf')
+
+            for iB, ptCut in enumerate(PhotonPtSels):        
+                mcPasses = yields[loc][base+mods[1]][ptCut][metCut]['mc']
+                mcTotals = yields[loc][base+mods[0]][ptCut][metCut]['mc']
+
+                mcEff = mcPasses[0] / mcTotals[0]
+                mcCorr = 0.
+                mcEffError = mcEff * math.sqrt( (mcPasses[1]/mcPasses[0])**2 + (mcTotals[1]/mcTotals[0])**2 + 2*mcCorr*(mcPasses[1]/mcPasses[0])*(mcTotals[1]/mcPasses[0]) )
+
+                dataPasses = yields[loc][base+mods[1]][ptCut][metCut]['data']
+                dataTotals = yields[loc][base+mods[0]][ptCut][metCut]['data']
+
+                dataEff = dataPasses[0] / dataTotals[0]
+                dataCorr = 1.0
+                dataEffError = dataEff * math.sqrt( (dataPasses[1]/dataPasses[0])**2 + (dataTotals[1]/dataTotals[0])**2 + 2*dataCorr*(dataPasses[1]/dataPasses[0])*(dataTotals[1]/dataPasses[0]) )
+
+                sf = dataEff / mcEff
+                sfErrLow = sf * math.sqrt( (dataEffError / dataEff)**2 + (mcEffError / mcEff)**2)
+                sfErrHigh = sfErrLow
+
+                scalefactors[loc][base][metCut][ptCut] = (sf, sfErrLow, dataEffError / dataEff, mcEffError / mcEff)
+
+                if 'Inclusive' in ptCut:
+                    continue
+                else:
+                    lowEdge = float(ptCut.split('t')[2])
+                    highEdge = ptCut.split('to')[-1]
+                    if highEdge == 'Inf':
+                        highEdge = 500.
+                    highEdge = float(highEdge)
+
+                center = (lowEdge + highEdge) / 2.
+                exl = center - lowEdge
+                exh = highEdge - center
+
+                gMcEff.SetPoint(iB, center, mcEff)
+                gMcEff.SetPointError(iB, exl, exh, mcEffError, mcEffError)
+
+                gDataEff.SetPoint(iB, center, dataEff)
+                gDataEff.SetPointError(iB, exl, exh, dataEffError, dataEffError)
+
+                gSF.SetPoint(iB, center, sf)
+                gSF.SetPointError(iB, exl, exh, sfErrLow, sfErrHigh)
+
+            outFile.cd()
+            gMcEff.Write()
+            gDataEff.Write()
+            gSF.Write()
+
+            rcanvas.legend.add("mc", title = 'mc', mcolor = r.kRed, lcolor = r.kRed, lwidth = 2)
+            rcanvas.legend.apply("mc", gMcEff)
+            rcanvas.addHistogram(gMcEff, drawOpt = 'EP')
+            
+            rcanvas.legend.add("data", title = "data", mcolor = r.kBlack, lcolor = r.kBlack, lwidth = 2)
+            rcanvas.legend.apply("data", gDataEff)
+            rcanvas.addHistogram(gDataEff, drawOpt = 'EP')
+
+            canvas.legend.add(loc+'-'+base, title = loc+' '+base, color = r.kBlack, lwidth = 2)
+            canvas.legend.apply(loc+'-'+base, gSF)
+            canvas.addHistogram(gSF, drawOpt = 'EP')
+            
+            rcanvas.ylimits = (0.75, 1.0)
+            # rcanvas.rlimits = (0.9, 1.1)
+            rcanvas.ytitle = 'Pixel Veto Efficiency'
+            rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+            rcanvas.SetGridy(True)
+
+            suffix = str(tune) + '_' + str(metCut) + '_' + str(loc) + '_'  +str(base)
+
+            plotName = 'efficiency_' + suffix
+            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
+            
+            canvas.ylimits = (0.95, 1.05)
+            canvas.ytitle = 'Pixel Veto Scale Factor'
+            canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+            canvas.SetGridy(True)
+
+            plotName = 'scalefactor_' + suffix
+            canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
+
+outFile.Close()
 
 for loc in s.Locations[:1]:
     for base in bases:
         for metCut in MetSels:
-            rcanvas.cd()
-            rcanvas.Clear()
-            rcanvas.legend.Clear()
-            rcanvas.legend.setPosition(0.45, 0.725, 0.8, 0.925)
+            suffix = str(tune) + '_' + str(metCut) + '_' + str(loc) + '_'  +str(base)
 
-            for iMod, mod in enumerate(mods):
+            outFileName = 'table_' + suffix + '.tex'
+            outFilePath = outDir + '/' + outFileName
+            outFile = open(outFilePath, 'w')
 
-                dataEff = r.TGraphAsymmErrors()
-                dataEff.SetName(loc+'-'+base+mod+'-'+metCut+'-data')
+            outFile.write(r"\documentclass{article}")
+            outFile.write("\n")
+            outFile.write(r"\usepackage[paperwidth=115mm, paperheight=58mm, margin=5mm]{geometry}")
+            outFile.write("\n")
+            outFile.write(r"\begin{document}")
+            outFile.write("\n")
+            outFile.write(r"\pagenumbering{gobble}")
+            outFile.write("\n")
 
-                mcEff = r.TGraphAsymmErrors()
-                mcEff.SetName(loc+'-'+base+mod+'-'+metCut+'-mc')
+            # table header based on ID
+            outFile.write(r"\begin{tabular}{ |c|c|c c c| }")
+            outFile.write("\n")
+            outFile.write(r"\hline")
+            outFile.write("\n")
+            outFile.write(r"\multicolumn{5}{ |c| }{Pixel Veto Scale Factor for " + loc + " " + base +r" photons} \\")
+            outFile.write("\n")
+            outFile.write(r"\hline")
+            outFile.write("\n")
 
-                gSF = r.TGraphAsymmErrors()
-                gSF.SetName(loc+'-'+base+mod+'-'+metCut+'-sf')
+            # column headers: | pT Range | nominal+/-unc | uncA uncB uncC uncD |
+            outFile.write(r"$p_{T}$ Range (GeV) & Nominal & \multicolumn{3}{ |c| }{Relative Uncertainty (\%)} \\")
+            outFile.write("\n")
+            outFile.write(r" & & SF & Data Eff. & MC Eff \\")
+            outFile.write(r"\hline")
+            outFile.write("\n")
 
-                for iB, ptCut in enumerate(PhotonPtSels):
-                    if 'Inclusive' in ptCut:
-                        lowEdge = 175.
-                        highEdge = 500.
-                    else:
-                        lowEdge = float(ptCut.split('t')[2])
-                        highEdge = ptCut.split('to')[-1]
-                        if highEdge == 'Inf':
-                            highEdge = 500.
-                        highEdge = float(highEdge)
+            for iB, ptCut in enumerate(PhotonPtSels):
+                # string formatting to make pT label look nice
+                if 'Inclusive' in ptCut:
+                    ptString = 'Inclusive'
+                    outFile.write(r"\hline")
+                    outFile.write("\n")
 
-                    center = (lowEdge + highEdge) / 2.
-                    exl = center - lowEdge
-                    exh = highEdge - center
+                else:
+                    lowEdge = ptCut.split('t')[2]
+                    highEdge = ptCut.split('to')[-1]
+                    if highEdge == 'Inf':
+                        highEdge = r'$\infty$'
 
-                    mceffs = yields[loc][base+mod][ptCut][metCut]['mc']
-                    # print loc, base+mod, ptCut, metCut, 'mc'
-                    # print mceffs
-                    mcEff.SetPoint(iB, center, mceffs[0])
-                    mcEff.SetPointError(iB, exl, exh, mceffs[2], mceffs[1])
+                    ptString = ' (' + lowEdge +', ' + highEdge +') '
 
-                    """
-                    passes = yields[loc][base+mod][ptCut][metCut]['data']
-                    totals = yields[loc]['none'][ptCut][metCut]['data']
+                sf = scalefactors[loc][base][metCut][ptCut]
+                print sf
 
-                    # print passes
-                    # print totals
- 
-                    eff = passes[0] / totals[0]
-                    corr = eff
-                    effError = eff * math.sqrt( (passes[1]/passes[0])**2 + (totals[1]/totals[0])**2 + 2*corr*(passes[1]/passes[0])*(totals[1]/passes[0]) )
+                # fill in row with sf / uncertainty values properly
+                nomString = '$%.3f \\pm %.3f$' % tuple(sf[:2])
+                systString = '%.2f & %.2f & %.2f' % (sf[1] / sf[0] * 100., sf[2] * 100., sf[3] * 100.)
+                rowString = ptString + ' & ' + nomString + ' & ' + systString + r' \\'
 
-                    # print eff
-                    # print effError
+                outFile.write(rowString)
+                outFile.write('\n')
 
-                    dataEff.SetPoint(iB, center, eff)
-                    dataEff.SetPointError(iB, exl, exh, effError, effError)
+            # end table
+            outFile.write(r"\hline")
+            outFile.write("\n")
+            outFile.write(r"\end{tabular}")
+            outFile.write("\n")
 
-                    sf = eff / mceffs[0]
-                    sfErrLow = effError / mceffs[0]
-                    sfErrHigh = effError / mceffs[0]
-                    gSF.SetPoint(iB, center, sf)
-                    gSF.SetPointError(iB, exl, exh, sfErrLow, sfErrHigh)
+            # end tex file
+            outFile.write(r"\end{document}")
+            outFile.close()
 
-                    # print sf, sfErrLow, sfErrLow / sf
-                    """
+            # convert tex to pdf
+            pdflatex = Popen( ["pdflatex",outFilePath,"-interaction nonstopmode"]
+                              ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+            pdfout = pdflatex.communicate()
+            print pdfout[0]
+            if not pdfout[1] == "":
+                print pdfout[1]
 
-                # if not 'max' in mod:
-                rcanvas.legend.add("mc"+mod, title = base+mod, mcolor = r.kRed+iMod, lcolor = r.kRed+iMod, lwidth = 2)
-                rcanvas.legend.apply("mc"+mod, mcEff)
-                rcanvas.addHistogram(mcEff, drawOpt = 'EP')
-
-                # rcanvas.legend.add("data"+mod, title = "Data"+mod, mcolor = r.Blue+iMod, lcolor = r.kBlue+iMod, lwidth = 2)
-                # rcanvas.legend.apply("data"+mod, dataEff)
-                # rcanvas.addHistogram(dataEff, drawOpt = 'EP')
-
-                canvas.legend.add(loc+'-'+base+mod, title = loc+'-'+base+mod, color = r.kBlack+iMod, lwidth = 2)
-                canvas.legend.apply(loc+'-'+base+mod, gSF)
-                canvas.addHistogram(gSF, drawOpt = 'EP')
-
-            rcanvas.ylimits = (0.0, 1.3)
-            rcanvas.ytitle = 'Photon Efficiency'
-            rcanvas.xtitle = 'E_{T}^{#gamma} (GeV)'
-            rcanvas.SetGridy(True)
-
-            plotName = "efficiency_"+str(loc)+"_"+str(base)
-            rcanvas.printWeb('purity/'+s.Version+'/ScaleFactors', era+'_'+plotName, logy = False)
-            
-            # canvas.ylimits = (0.0, 2.0)
-            canvas.ytitle = 'Photon Scale Factor'
-            canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
-
-            plotName = "scalefactor_"+str(loc)+"_"+str(base)
-            # canvas.printWeb('purity/'+s.Version+'/ScaleFactors', plotName, logy = False)
+            # convert tex/pdf to png
+            convert = Popen( ["convert",outFilePath.replace(".tex",".pdf")
+                              ,outFilePath.replace(".tex",".png") ]
+                             ,stdout=PIPE,stderr=PIPE,cwd=outDir)
+            conout = convert.communicate()
+            print conout[0]
+            if not conout[1] == "":
+                print conout[1]    

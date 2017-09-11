@@ -32,14 +32,14 @@ def formatHist(hist, ytitle, lstyle = ROOT.kDashed):
     hist.GetDirectory().cd()
     hist.Write()
 
-def printHist(histograms, drawOpt, name):
+def printHist(histograms, drawOpt, name, pdir, logy = False):
     canvas = ROOT.TCanvas()
     leg = ROOT.TLegend(0.725, 0.7, 0.875, 0.85);
     leg.SetFillColor(ROOT.kWhite);
     leg.SetTextSize(0.03);
 
     dopt = drawOpt
-    icolor = 2
+    icolor = 1
     for hist in histograms:
         hist.SetLineColor(icolor)
         icolor += 1
@@ -50,15 +50,17 @@ def printHist(histograms, drawOpt, name):
         leg.AddEntry(hist, hist.GetName(), 'L')
 
     leg.Draw()
-
-    canvas.SaveAs(name+'.pdf')
-    canvas.SaveAs(name+'.png')
-    canvas.SaveAs(name+'.C')
     
-    canvas.SetLogy()
-    canvas.SaveAs(name+'_Logy.pdf')
-    canvas.SaveAs(name+'_Logy.png')
-    canvas.SaveAs(name+'_Logy.C')
+    if logy:
+        canvas.SetLogy()
+        canvas.SaveAs(pdir + '/' + name + '_logy.pdf')
+        canvas.SaveAs(pdir + '/' + name + '_logy.png')
+        # canvas.SaveAs(name+'_Logy.C')
+
+    else:
+        canvas.SaveAs(pdir + '/' + name + '.pdf')
+        canvas.SaveAs(pdir + '/' + name + '.png')
+        # canvas.SaveAs(name+'.C')
 
 
 def plotiso(loc, pid, pt, met, tune):
@@ -81,9 +83,13 @@ def plotiso(loc, pid, pt, met, tune):
     var = s.getVariable('chiso', tune, loc)
     
     versDir = s.versionDir
-    plotDir = os.path.join(versDir, inputKey)
+    WEBDIR = os.environ['HOME'] + '/public_html/cmsplots'
+    plotDir = os.path.join(WEBDIR, 'purity', s.Version, inputKey, 'chiso')
+    histDir = os.path.join(versDir, inputKey)
     if not os.path.exists(plotDir):
         os.makedirs(plotDir)
+    if not os.path.exists(histDir):
+        os.makedirs(histDir)
    
     pids = pid.split('-')
     pid = pids[0]
@@ -115,9 +121,9 @@ def plotiso(loc, pid, pt, met, tune):
     truthSel = '(photons.matchedGenId == -22)'
 
     # output file
-    outName = os.path.join(plotDir, 'chiso_' + inputKey)
-    print 'plotiso writing to', outName + '.root'
-    outFile = ROOT.TFile(outName + '.root', 'RECREATE')
+    outName = 'chiso' #  + inputKey
+    print 'plotiso writing to', histDir + '/' + outName + '.root'
+    outFile = ROOT.TFile(histDir + '/' + outName + '.root', 'RECREATE')
 
     # don't use var.binning for binning
     binning = [0., var.cuts[pid]] + [0.1 * x for x in range(20, 111, 5)]
@@ -131,7 +137,7 @@ def plotiso(loc, pid, pt, met, tune):
     hist.Scale(1. / hist.GetSumOfWeights())
 
     formatHist(hist, 'Events')
-    printHist([hist], 'HIST', outName + '_data')
+    printHist([hist], 'HIST', outName + '_data', plotDir, logy = True)
 
     extractor = s.HistExtractor('gjetsMc', s.Samples['gjetsMc'], var)
     print 'setBaseSelection(' + baseSel + ' && ' + truthSel + ')'
@@ -187,7 +193,7 @@ def plotiso(loc, pid, pt, met, tune):
 
     formatHist(dataHist, 'Events')
 
-    printHist([mcHist, dataHist], 'HIST', outName + '_electrons')
+    printHist([mcHist, dataHist], 'HIST', outName + '_electrons', plotDir, logy = True)
 
     scaled = raw.Clone("scaledmc")
 
@@ -217,8 +223,8 @@ def plotiso(loc, pid, pt, met, tune):
     formatHist(scaled, 'Events')
     formatHist(scaleHist, 'Scale Factor', lstyle = ROOT.kSolid)
 
-    printHist([scaleHist], '', outName + '_scale')
-    printHist([raw, scaled], 'HIST', outName + '_photons')
+    printHist([scaleHist], '', outName + '_scale', plotDir, logy = False)
+    printHist([raw, scaled], 'HIST', outName + '_photons', plotDir, logy = True)
 
     outFile.Close()
 

@@ -10,24 +10,22 @@ if basedir not in sys.path:
     sys.path.append(basedir)
 import config
 from plotstyle import WEBDIR, SimpleCanvas
-from datasets import allsamples
 import selections as s
 
-versDir = s.versionDir 
+versDir = WEBDIR + '/purity/'+s.Version
 outDir = os.path.join(versDir, 'Fitting')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-tune = 'Spring16'
+tune = 'GJetsCWIso'
 
 outFile = r.TFile("../data/impurity_" + tune + ".root", "RECREATE")
 
-#bases = ['loose', 'medium', 'tight', 'highpt']
-bases = ['medium']
-mods = ['-pixel']
+bases = ['loose', 'medium', 'tight', 'highpt']
+mods = ['', '-pixel', '-pixel-monoph']
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
-MetSels = sorted(s.MetSels.keys())[:1]
+MetSels = sorted(s.MetSels.keys())[1:2]
 
 purities = {}
 for loc in s.Locations[:1]:
@@ -40,7 +38,8 @@ for loc in s.Locations[:1]:
                 purities[loc][pid][ptCut][metCut] = {}
                 
                 dirName = tune + '_' + loc+'_'+pid+'_'+ptCut+'_'+metCut 
-                condorFileName = os.path.join(versDir,dirName,"results.out")
+                resultsName = "results.out"
+                condorFileName = os.path.join(versDir,dirName,resultsName)
                 print condorFileName
                 try:
                     condorFile = open(condorFileName)
@@ -108,8 +107,7 @@ for loc in s.Locations[:1]:
                        
 pprint(purities)
 
-sphLumi = sum(allsamples[s].lumi for s in s.sphData)
-canvas = SimpleCanvas(lumi = sphLumi)
+canvas = SimpleCanvas(lumi = s.sphLumi)
 
 for loc in s.Locations[:1]:
     for base in bases:
@@ -157,7 +155,7 @@ for loc in s.Locations[:1]:
             canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
             canvas.SetGridy(True)
 
-            plotName = 'Plot_' + tune + '_impurity_' + str(loc) + '_' + str(base)
+            plotName = 'Plot_' + tune + '_impurity_' + str(metCut) + '_' + str(loc) + '_' + str(base)
             canvas.printWeb('purity/'+s.Version+'/Fitting', plotName, logy = False)
 
 outFile.Close()
@@ -168,7 +166,7 @@ for loc in s.Locations[:1]:
             for iMod, mod in enumerate(mods):
                 
                 # start new table
-                purityFileName = 'table_' + tune + '_impurity_' + str(loc) + '_' + str(base+mod) + '.tex'
+                purityFileName = 'table_' + tune + '_impurity_' + str(metCut) + '_' + str(loc) + '_' + str(base+mod) + '.tex'
                 purityFilePath = outDir + '/' + purityFileName
                 purityFile = open(purityFilePath, 'w')
 

@@ -686,7 +686,7 @@ if __name__ == '__main__':
         else:
             plotDir = args.plotDir
     else:
-        plotDir = 'monophoton/' + plotConfig.name
+        plotDir = 'monophoton/' + args.config
 
     if plotDir and args.clearDir:
         for plot in os.listdir(WEBDIR + '/' + plotDir):

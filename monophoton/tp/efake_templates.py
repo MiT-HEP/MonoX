@@ -17,7 +17,8 @@ from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, ge
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+# monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+monophSel = 'probes.mediumX[][%d]' % itune
 
 fitBins = getBinning(binningName)[2]
 
@@ -250,9 +251,18 @@ for bin, fitCut in fitBins:
             tTrueBkg = ROOT.TTree('truebkgtree_' + suffix, 'truth background')
             objects.append(tTrueBkg)
 
+            hTrueSig = template.Clone('truesig_' + suffix)
+            objects.append(hTrueSig)
+            tTrueSig = ROOT.TTree('truesigtree_' + suffix, 'truth signal')
+            objects.append(tTrueSig)
+
             egPlotter.addPlot(hTrueBkg, 'tp.mass', cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
             egPlotter.addTree(tTrueBkg, cut + ' && !(TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
             egPlotter.addTreeBranch(tTrueBkg, 'mass', 'tp.mass')
+
+            egPlotter.addPlot(hTrueSig, 'tp.mass', cut + ' && (TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTree(tTrueSig, cut + ' && (TMath::Abs(probes.matchedGenId) == 11 && sample == 1)')
+            egPlotter.addTreeBranch(tTrueSig, 'mass', 'tp.mass')
 
 egPlotter.fillPlots()
 mgPlotter.fillPlots()

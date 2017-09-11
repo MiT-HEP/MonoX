@@ -57,7 +57,7 @@ mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm']
 
-mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel'], s.addGenPhotonVeto)
+mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = [
     # Data 2016
@@ -88,7 +88,7 @@ allSelectors_byPattern = [
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
+    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
     ('st*', mc_lep),
     ('wlnu', applyMod(mc_wlnu, s.htTruncator(maximum = 70.))),
     ('wlnu{,n}-*', mc_wlnu),
