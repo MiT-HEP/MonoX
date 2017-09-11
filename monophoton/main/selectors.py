@@ -52,6 +52,7 @@ selconf = {
     'photonFullSelection': [],
     'photonIDTune': -1,
     'photonWP': 1,
+    'photonSF':('', '', [], (1., 0.)), # filename, histname, varlist, pixelveto SF and uncertainty
     'puweightSource': ('', ''), # gROOT directory name, file name
     'hadronTFactorSource': ('', ''), # file name, suffix
     'hadronProxyDef': []
@@ -76,8 +77,9 @@ def monophotonSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
     selconf['photonIDTune'] = ROOT.idtune
+    selconf['photonSF'] = (datadir + '/scaleFactor_photon_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor.root', '_gjetscwiso')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
 
 def vbfgSetting():
@@ -93,6 +95,7 @@ def vbfgSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
     selconf['photonIDTune'] = ROOT.idtune
+    selconf['photonSF'] = (datadir + '/photon_id_sf16.root', 'EGamma_SF2D', [ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt], (0.988, .0134))
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
@@ -1555,13 +1558,19 @@ def addPUWeight(sample, selector):
         raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
 
 def addIDSFWeight(sample, selector):
-    logger.info('Adding photon ID scale factor (Spring16)')
+    filename, histname, variables, (pvSF, pvUnc) = selconf['photonSF']
 
+    logger.info('Adding photon ID scale factor from ' + filename)
+    
     idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
-    idsf.addFactor(getFromFile(datadir + '/photon_id_sf16.root', 'EGamma_SF2D', newname = 'photonSF'))
-    idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
+    idsf.addFactor(getFromFile(filename, histname, newname = 'photonSF'))
+    idsf.setVariable(*variables)
     selector.addOperator(idsf)
-    selector.addOperator(ROOT.ConstantWeight(0.991, 'extraSF'))
+
+    pvsf = ROOT.ConstantWeight(pvSF, 'pixelVetoSF')
+    pvsf.setUncertaintyUp(pvUnc)
+    pvsf.setUncertaintyDown(pvUnc)
+    selector.addOperator(pvsf)
 
 def addElectronIDSFWeight(sample, selector):
     logger.info('Adding electron ID scale factor (ICHEP)')
