@@ -417,6 +417,11 @@ def getConfig(confName):
 #        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.realMinJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = noDPhiJet)
 #        config.addPlot('dPhiJetRecoilMin', 'min#Delta#phi(U, j)', 'TMath::Abs(t1Met.minJetDPhi)', (14, 0., 3.50), cut = 'jets.size != 0')
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
+        config.addPlot('phoEtaRecoilPeak', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5), cut = 't1Met.pt > 225 && t1Met.pt < 275')
+        config.addPlot('phoPtRecoilPeak', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True, cut = 't1Met.pt > 225 && t1Met.pt < 275')
+        config.addPlot('muPtOverMetRecoilPeak', 'p_{T}^{#mu}/E_{T}^{miss}', 'muons.pt_[0] / t1Met.realMet', (20, 0., 2.), cut = 't1Met.pt > 225 && t1Met.pt < 275')
+        config.addPlot('metPhiRecoilPeak', '#phi(E_{T}^{miss})', 't1Met.realPhi', (20, -math.pi, math.pi), cut = 't1Met.pt > 225 && t1Met.pt < 275')
+        config.addPlot('recoilPhiRecoilPeak', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi), cut = 't1Met.pt > 225 && t1Met.pt < 275')
 #        config.addPlot('partonID', 'PGD ID', 'TMath::Abs(photons.matchedGen[0])', (31, 0., 31.), overflow = True)
 
 #        Standard MC systematic variations
@@ -1183,7 +1188,7 @@ def getConfig(confName):
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
 
 
-    elif confName == 'vbfg':
+    elif confName == 'vbfg' or confName == 'vbfglo':
         allsamples['sph-16b-m'].lumi = 4778.
         allsamples['sph-16c-m'].lumi = 2430.
         allsamples['sph-16d-m'].lumi = 4044.
@@ -1202,13 +1207,23 @@ def getConfig(confName):
 
         config.addSigPoint('dphv-nlo-125', 'DPH125', color = ROOT.kCyan)
 
+        if confName == 'vbfg':
+            main = ['gjn']
+        elif confName == 'vbfglo':
+            main = gj
+
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-#        config.addBkg('gjets', '#gamma + jets', samples = ['gjn'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
-        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+        config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'vbfgHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfgEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+
+        if confName == 'vbfglo':
+            config.obs.region = 'vbfg'
+            for group in config.bkgGroups:
+                if group.region == 'vbfglo':
+                    group.region = 'vbfg'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = (100., 'inf'))
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = 'full')

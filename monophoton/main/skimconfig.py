@@ -64,6 +64,7 @@ allSelectors_byPattern = [
     ('sph-16*', data_sph),
     ('smu-16*', data_smu),
     ('sel-16*', data_sel),
+    ('sel-17*', data_sel),
     # MC
     ('znng', mc_sig),
     ('znng-130', applyMod(mc_sig, s.addKfactor)),
