@@ -89,7 +89,7 @@ def getConfig(confName):
 
         config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'])
         config.addSig('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1'])
-#        config.addSig('dph', 'Dark Photon', samples = ['dph-*'])
+        config.addSig('dph', 'Dark Photon', samples = ['dph-*'])
         config.addSig('add', 'ADD', samples = ['add-3-*'])
 #        config.addSig('dmewk', 'DM EWK', samples = ['dmewk-*'])
         config.addSig('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1'])
@@ -97,7 +97,7 @@ def getConfig(confName):
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)
-#        config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
+        config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
 #        config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
@@ -106,7 +106,7 @@ def getConfig(confName):
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 8.9 * config.effLumi() / 35900.)
         config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', norm = 8.75 * config.effLumi() / 12900.)
-        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+        config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -276,7 +276,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
 
@@ -360,7 +360,7 @@ def getConfig(confName):
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
     elif confName == 'monomu':
@@ -454,7 +454,7 @@ def getConfig(confName):
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
     elif confName == 'monoel':
 
@@ -540,7 +540,7 @@ def getConfig(confName):
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
     elif confName == 'phistack':
         config = PlotConfig('monoph', photonData)

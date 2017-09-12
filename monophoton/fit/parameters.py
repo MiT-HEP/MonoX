@@ -13,9 +13,9 @@ histname = distribution + '/{process}'
 signalHistname = distribution + '/samples/{process}_monoph'
 
 # sr = 'bmonoph' # blinded version
-sr = 'monophout'
+sr = 'monophHighPhi'
 
-regions = [sr, 'monophin', 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowdphi'] # , 'lowmt']
+regions = [sr, 'monophLowPhi', 'monoel', 'monomu', 'diel', 'dimu'] # , 'lowdphi'] # , 'lowmt']
 data = 'data_obs' # name of data process
 processes = ['efake', 'gjets', 'halo', 'hfake', 'minor', 'spike', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets']
 #signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-1000', 'dph-125']
@@ -35,9 +35,9 @@ links = [
     (('zg', 'monoel'), ('zg', sr)),
     (('zg', 'monomu'), ('zg', sr)),
     (('wg', sr), ('zg', sr)),
-    (('zg', 'monophin'), ('zg', sr)),
-    (('wg', 'monophin'), ('wg', sr)),
-    (('halo', 'monophin'), ('halo', sr))
+    (('zg', 'monophLowPhi'), ('zg', sr)),
+    (('wg', 'monophLowPhi'), ('wg', sr)),
+    (('halo', 'monophLowPhi'), ('halo', sr))
 #     (('gjets', 'lowdphi'), ('gjets', sr)),
 #     (('zg', 'lowdphi'), ('zg', sr)),
 #     (('wg', 'lowdphi'), ('wg', sr))
