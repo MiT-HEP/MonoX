@@ -725,7 +725,7 @@ def getConfig(confName):
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('gjets').variations.append(Variation('gjetsTF', reweight = 0.5)
+        config.findGroup('gjets').variations.append(Variation('gjetsTF', reweight = 0.5))
 
 
     elif confName == 'photonjet':
