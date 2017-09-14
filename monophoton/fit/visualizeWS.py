@@ -15,6 +15,7 @@ from plotstyle import SimpleCanvas, RatioCanvas
 import fit.parameters as parameters
 
 import ROOT
+ROOT.gROOT.SetBatch(True) 
 
 canvas1 = SimpleCanvas(name = 'canvas1')
 canvas1.legend.setPosition(0.7, 0.7, 0.9, 0.9)
