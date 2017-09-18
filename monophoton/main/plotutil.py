@@ -18,7 +18,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, cut = '', scale = 1., norm = -1.):
+    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, altbaseline = '', cut = '', scale = 1., norm = -1.):
         self.name = name
         self.title = title
         self.samples = samples
@@ -27,6 +27,7 @@ class GroupSpec(object):
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
         self.cut = cut # additional cut (if samples are looser than the nominal region, e.g. to allow variations)
+        self.altbaseline = altbaseline # use to replace baseline cut (hack for using lowdphi gjets shape in SR)
         self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after baseline selection
         self.variations = []
 

@@ -38,7 +38,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
         cuts = []
         if plotConfig.baseline.strip():
-            cuts.append('(' + plotConfig.baseline.strip() + ')')
+            if group.altbaseline.strip():
+                cuts.append('(' + group.altbaseline.strip() + ')')
+            else:
+                cuts.append('(' + plotConfig.baseline.strip() + ')')
         if group.cut.strip():
             cuts.append('(' + group.cut + ')')
 
