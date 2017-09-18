@@ -15,7 +15,7 @@ def plotPreFitPostFit(region,category,sb=False):
   
   f_mlfit = TFile('mlfit.root','READ')
 
-  f_data = TFile('/data/t3home000/ballen/monophoton/fit/ws_phoPtWisc_plots.root')
+  f_data = TFile('/data/t3home000/ballen/monophoton/fit/ws_phoPtHighMet_plots.root')
   # ws = f_data.Get('wspace')
 
   n_data = 'data_obs_' + region + '__x'
@@ -33,15 +33,15 @@ def plotPreFitPostFit(region,category,sb=False):
   
 
   processes = [
-    'wjets',
     'zjets',
     'gg',
-    'top',
     'minor',
-    'gjets',
+    'wjets',
     'vvg',
+    'top',
     'spike',
-    # 'halo',
+    'halo',
+    'gjets',
     'hfake',
     'efake',
     'wg',
@@ -288,7 +288,7 @@ def plotPreFitPostFit(region,category,sb=False):
     legend.AddEntry(h_postfit['efake'], "Electron fakes", "f")
     legend.AddEntry(h_postfit['hfake'], "Hadron fakes", "f")
     legend.AddEntry(h_postfit['gjets'], "#gamma+jets", "f")
-    # legend.AddEntry(h_postfit['halo'], "Beam halo", "f")
+    legend.AddEntry(h_postfit['halo'], "Beam halo", "f")
     legend.AddEntry(h_postfit['spike'], "Spikes", "f")
     legend.AddEntry(h_postfit['top'], "t#bar{t}#gamma/t#gamma", "f")
     legend.AddEntry(h_postfit['vvg'], "VV#gamma", "f")

@@ -1,7 +1,7 @@
 import os
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
-distribution = 'phoPtWisc'
+distribution = 'phoPtHighMet'
 
 sourcedir = workdir + '/plots'
 fitdir = workdir + '/fit'
