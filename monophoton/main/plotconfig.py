@@ -187,8 +187,8 @@ def getConfig(confName):
         # Specific systematic variations
         config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 1.0))
         haloCuts = (
-            'metFilters.globalHalo16 && photons.mipEnergy > 4.9 && photons.sieie > 0.015',
-            'metFilters.globalHalo16 && photons.mipEnergy > 4.9 && photons.sieie < 0.015'
+            'metFilters.globalHalo16 && photons.mipEnergy[0] > 2.45',
+            'metFilters.globalHalo16 && photons.mipEnergy[0] > 9.8'
         )
         config.findGroup('halo').variations.append(Variation('haloShape', cuts = haloCuts))
         proxyDefCuts = (
