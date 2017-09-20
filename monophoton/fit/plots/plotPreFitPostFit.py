@@ -493,12 +493,12 @@ def plotPreFitPostFit(region,category,sb=False):
     #dummy2.SetMaximum(1.85)                                                                        
     #dummy2.SetMinimum(0.15) 
 
-    dummy2.SetMaximum(1.6)                                                                        
-    dummy2.SetMinimum(0.4) 
+    dummy2.SetMaximum(2.0)                                                                        
+    dummy2.SetMinimum(0.0) 
 
   else:
-    dummy2.SetMaximum(1.6)                                                                        
-    dummy2.SetMinimum(0.4) 
+    dummy2.SetMaximum(2.0)                                                                        
+    dummy2.SetMinimum(0.0) 
     #dummy2.SetMaximum(1.85)                                                                        
     #dummy2.SetMinimum(0.15) 
 
