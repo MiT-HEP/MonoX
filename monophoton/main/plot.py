@@ -89,7 +89,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 plotdef.formExpression(),
                 cut.strip(),
                 plotdef.applyBaseline,
-                plotdef.applyFullSel
+                plotdef.applyFullSel,
+                '',
+                plotdef.overflow
             )
 
             numPlots += 1
@@ -130,7 +132,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         cut.strip(),
                         plotdef.applyBaseline,
                         plotdef.applyFullSel,
-                        reweight
+                        reweight,
+                        plotdef.overflow
                     )
 
                     numPlots += 1

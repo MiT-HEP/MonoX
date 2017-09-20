@@ -121,6 +121,7 @@ class PlotDef(object):
             if self.overflow:
                 lastbinWidth = (arr[-1] - arr[0]) / 30.
                 arr += array.array('d', [self.binning[-1] + lastbinWidth])
+                nbins += 1
     
             hist = ROOT.TH1D(hname, '', nbins, arr)
     
