@@ -31,6 +31,7 @@ parser.add_option("-A", "--absolute", dest="abs",    default=False,  action="sto
 parser.add_option("-p", "--poi",      dest="poi",    default="r",    type="string",  help="Name of signal strength parameter (default is 'r' as per text2workspace.py)")
 parser.add_option("-f", "--format",   dest="format", default="text", type="string",  help="Output format ('text', 'latex', 'twiki'")
 parser.add_option("-g", "--histogram", dest="plotfile", default=None, type="string", help="If true, plot the pulls of the nuisances to the given file.")
+parser.add_option("-s", "--stat-only", dest="stat", default=False, action="store_true", help="If True, only stat unc; if False, only systematic unc.")
 
 (options, args) = parser.parse_args()
 if len(args) == 0:
@@ -55,19 +56,34 @@ table = {}
 fpf_b = fit_b.floatParsFinal()
 fpf_s = fit_s.floatParsFinal()
 
-pulls = []
-
-nuis_p_i=0
-# Also make histograms for pull distributions:
-hist_fit_b  = ROOT.TH1F("prefit_fit_b"   ,"B-only fit Nuisances;;#theta ",prefit.getSize(),0,prefit.getSize())
-hist_fit_s  = ROOT.TH1F("prefit_fit_s"   ,"S+B fit Nuisances   ;;#theta ",prefit.getSize(),0,prefit.getSize())
-hist_prefit = ROOT.TH1F("prefit_nuisancs","Prefit Nuisances    ;;#theta ",prefit.getSize(),0,prefit.getSize())
-
-# loop over all fitted parameters
+nuisances = []
 for i in range(fpf_s.getSize()):
 
     nuis_s = fpf_s.at(i)
     name   = nuis_s.GetName();
+    nuis_p = prefit.find(name)
+    
+    if nuis_p == None:
+        continue
+
+    if options.stat:
+        if "stat" in name:
+            nuisances.append(name)
+    else:
+        if not "stat" in name:
+            nuisances.append(name)
+
+pulls = []
+
+nuis_p_i=0
+# Also make histograms for pull distributions:
+hist_fit_b  = ROOT.TH1F("prefit_fit_b"   ,"B-only fit Nuisances;;#theta ",len(nuisances),0,len(nuisances))
+hist_fit_s  = ROOT.TH1F("prefit_fit_s"   ,"S+B fit Nuisances   ;;#theta ",len(nuisances),0,len(nuisances))
+hist_prefit = ROOT.TH1F("prefit_nuisancs","Prefit Nuisances    ;;#theta ",len(nuisances),0,len(nuisances))
+
+# loop over all fitted parameters
+for name in nuisances:
+    nuis_s = fpf_s.find(name)
     nuis_b = fpf_b.find(name)
     nuis_p = prefit.find(name)
 
@@ -317,10 +333,10 @@ if options.plotfile:
     fout.WriteTObject(canvas_nuis)
     canvas_pferrs = ROOT.TCanvas("post_fit_errs", "post_fit_errs", 900, 600)
     for b in range(1,hist_fit_e_s.GetNbinsX()+1): 
-      hist_fit_e_s.SetBinContent(b,hist_fit_s.GetBinError(b)/hist_prefit.GetBinError(b))
-      hist_fit_e_b.SetBinContent(b,hist_fit_b.GetBinError(b)/hist_prefit.GetBinError(b))
-      hist_fit_e_s.SetBinError(b,0)
-      hist_fit_e_b.SetBinError(b,0)
+        hist_fit_e_s.SetBinContent(b,hist_fit_s.GetBinError(b)/hist_prefit.GetBinError(b))
+        hist_fit_e_b.SetBinContent(b,hist_fit_b.GetBinError(b)/hist_prefit.GetBinError(b))
+        hist_fit_e_s.SetBinError(b,0)
+        hist_fit_e_b.SetBinError(b,0)
     hist_fit_e_s.SetFillColor(ROOT.kRed)
     hist_fit_e_b.SetFillColor(ROOT.kBlue)
     hist_fit_e_s.SetBarWidth(0.4)
