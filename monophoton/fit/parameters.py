@@ -75,7 +75,7 @@ ignoredNuisances = {
 
 # Artificial bin-to-bin decorrelation (de-shaping)
 deshapedNuisances = [
-    'EWK',
+#     'EWK',
 ]
 
 # Correlation in ratios.

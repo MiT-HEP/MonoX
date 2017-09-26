@@ -497,7 +497,7 @@ if __name__ == '__main__':
 
                     if sample == ('halo', 'monophHighPhi'):
                         normName = 'freenorm_{sample}'.format(sample = sampleName)
-                        normModifiers[normName] = fct('{norm}[1.,0.,1000.]'.format(norm = normName))
+                        normModifiers[normName] = fct('{norm}[1.,0.,10.]'.format(norm = normName))
                         
                         for ibin in range(1, nominal.GetNbinsX() + 1):
                             # mu = raw x freenorm
