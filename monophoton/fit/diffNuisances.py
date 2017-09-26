@@ -31,7 +31,7 @@ parser.add_option("-A", "--absolute", dest="abs",    default=False,  action="sto
 parser.add_option("-p", "--poi",      dest="poi",    default="r",    type="string",  help="Name of signal strength parameter (default is 'r' as per text2workspace.py)")
 parser.add_option("-f", "--format",   dest="format", default="text", type="string",  help="Output format ('text', 'latex', 'twiki'")
 parser.add_option("-g", "--histogram", dest="plotfile", default=None, type="string", help="If true, plot the pulls of the nuisances to the given file.")
-parser.add_option("-s", "--stat-only", dest="stat", default=False, action="store_true", help="If True, only stat unc; if False, only systematic unc.")
+parser.add_option("-s", "--split", dest="split", default="all", type="string", help="syst = systematics only, SR = SR stats only, CR = CR stats only.")
 
 (options, args) = parser.parse_args()
 if len(args) == 0:
@@ -66,11 +66,14 @@ for i in range(fpf_s.getSize()):
     if nuis_p == None:
         continue
 
-    if options.stat:
-        if "stat" in name:
-            nuisances.append(name)
-    else:
+    if options.split == 'syst':
         if not "stat" in name:
+            nuisances.append(name)
+    elif options.split == 'SR':
+        if "monoph" in name:
+            nuisances.append(name)
+    elif options.split == 'CR':
+        if "stat" in name and not "monoph" in name:
             nuisances.append(name)
 
 pulls = []
@@ -81,11 +84,23 @@ hist_fit_b  = ROOT.TH1F("prefit_fit_b"   ,"B-only fit Nuisances;;#theta ",len(nu
 hist_fit_s  = ROOT.TH1F("prefit_fit_s"   ,"S+B fit Nuisances   ;;#theta ",len(nuisances),0,len(nuisances))
 hist_prefit = ROOT.TH1F("prefit_nuisancs","Prefit Nuisances    ;;#theta ",len(nuisances),0,len(nuisances))
 
+regionDict = { 'monophHighPhi': 'High',
+               'monophLowPhi': 'Low',
+               'dimu': '2m',
+               'diel': '2e',
+               'monomu': '1m',
+               'monoel': '1e'
+               }
+
 # loop over all fitted parameters
 for name in nuisances:
     nuis_s = fpf_s.find(name)
     nuis_b = fpf_b.find(name)
     nuis_p = prefit.find(name)
+
+    if 'stat' in name:
+        parts = name.split('_')
+        name = parts[0] + '_' + regionDict[parts[1]] + '_' + parts[2].strip('bin')
 
     # keeps information to be printed about the nuisance parameter
     row = []
@@ -295,6 +310,10 @@ if options.plotfile:
     #canvas.SaveAs(options.plotfile)
     fout.WriteTObject(canvas)
 
+    fout.WriteTObject(hist_prefit)
+    fout.WriteTObject(hist_fit_b)
+    fout.WriteTObject(hist_fit_s)
+
     canvas_nuis = ROOT.TCanvas("nuisancs", "nuisances", 900, 600)
     hist_fit_e_s = hist_fit_s.Clone("errors_s")
     hist_fit_e_b = hist_fit_b.Clone("errors_b")
@@ -331,6 +350,7 @@ if options.plotfile:
     leg.AddEntry(gr_fit_s,"S+B fit"   ,"EPL")
     leg.Draw()
     fout.WriteTObject(canvas_nuis)
+    
     canvas_pferrs = ROOT.TCanvas("post_fit_errs", "post_fit_errs", 900, 600)
     for b in range(1,hist_fit_e_s.GetNbinsX()+1): 
         hist_fit_e_s.SetBinContent(b,hist_fit_s.GetBinError(b)/hist_prefit.GetBinError(b))
