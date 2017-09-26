@@ -773,29 +773,24 @@ def getConfig(confName):
 
     elif confName == 'gjets':
 
-        config = PlotConfig('monoph', photonData)
+        config = PlotConfig('emjet', photonData)
 
-        baseSels['met170'] = 't1Met.pt > 100. && t1Met.pt < 150.'
+        baseSels['met170'] = 't1Met.pt < 60.'
+        baseSels['fiducial'] = 'photons.isEB'
+        baseSels['hovere'] = 'photons.hOverE[0] < 0.26'
+        baseSels['nhiso'] = 'photons.nhIsoX[0][2] < 2.792'
+        baseSels['phiso'] = 'photons.phIsoX[0][2] < 2.176'
+        baseSels['chiso'] = 'photons.chIsoX[0][2] < 1.146'
+
         config.baseline = ' && '.join(baseSels.values())
-        config.fullSelection = ''
+        config.fullSelection = '' # 'photons.pixelVeto[0]'
 
-        config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'])
-
-        config.addSigPoint('dmv-500-1', 'DM500', color = 46) # 0.01437/pb
-        config.addSigPoint('dmv-1000-1', 'DM1000', color = 30) # 0.07827/pb
-        config.addSigPoint('dmv-2000-1', 'DM2000', color = 50) # 0.07827/pb
-
-        config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
-        config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
-        config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
-        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        # config.addBkg('fakes', samples = photonData, region = 'emjet', cut = 'photons.chIsoX[0] > 5.0 && photons.chIsoX[0][2] < 7.5', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('wjets', 'W(e#nu) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
 
+        config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020))
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [100. + 10. * x for x in range(6)], unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True)
         config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True)
@@ -810,15 +805,18 @@ def getConfig(confName):
         config.addPlot('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.))
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
 
+        for plot in list(config.plots):
+            config.plots.append(plot.clone(plot.name + 'PixelVeto', applyFullSel = True))
+
         for group in config.bkgGroups + config.sigGroups:
-            if group.name in ['efake', 'hfake', 'halo']:
+            if group.name in ['fakes']:
                 continue
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('pixelVetoSF', reweight = 0.01))
+            # group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
             if group.name in ['vvg']:
                 continue
@@ -835,22 +833,6 @@ def getConfig(confName):
                 continue
 
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-
-        for gname in ['zg', 'wg']:
-            group = config.findGroup(gname)
-
-            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
-            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-
-#        Specific systematic variations
-#        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose')))
-#        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
-        # TODO use cuts
-#        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
-        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
 
 
     elif confName == 'tp2m':
