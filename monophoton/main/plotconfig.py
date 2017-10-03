@@ -54,6 +54,7 @@ baseSels = {
     'met170': 't1Met.pt > 170.',
     'photonDPhi0.5': 't1Met.photonDPhi > 0.5',
     'minJetDPhi0.5': 't1Met.minJetDPhi > 0.5',
+    'photonPtOverMet1.4': '(photons.scRawPt[0] / t1Met.pt) < 1.4',
 #    'mtPhoMet100': 'mtPhoMet > 100.'
 }
 
