@@ -5,6 +5,8 @@
 #include "TGraph.h"
 #include "TF1.h"
 #include "TError.h"
+#include "TLeafF.h"
+#include "TLeafD.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -581,7 +583,7 @@ MultiDraw::deleteFormula_(TTreeFormulaCached* _formula)
 void
 MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 {
-  float weightF(1.);
+  float* weightF(nullptr);
   double weight(1.);
   unsigned eventNumber;
   TBranch* weightBranch(nullptr);
@@ -643,10 +645,27 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
         if (!weightBranch)
           throw std::runtime_error(("Could not find branch " + weightBranchName_).Data());
 
-        if (weightBranchType_ == 'F')
-          weightBranch->SetAddress(&weightF);
-        else
+        auto* leaves(weightBranch->GetListOfLeaves());
+        if (leaves->GetEntries() == 0) // ??
+          throw std::runtime_error(("Branch " + weightBranchName_ + " does not have any leaves").Data());
+
+        auto* leaf(static_cast<TLeaf*>(leaves->At(0)));
+
+        if (leaf->InheritsFrom(TLeafF::Class())) {
+          if (weightF == nullptr)
+            weightF = new float;
+          weightBranch->SetAddress(weightF);
+        }
+        else if (leaf->InheritsFrom(TLeafD::Class())) {
+          if (weightF != nullptr) {
+            // we don't really need to handle a case like this (trees with different weight branch types are mixed), but we can..
+            delete weightF;
+            weightF = nullptr;
+          }
           weightBranch->SetAddress(&weight);
+        }
+        else
+          throw std::runtime_error(("I do not know how to read the leaf type of branch " + weightBranchName_).Data());
       }
 
       if (prescale_ > 1) {
@@ -674,8 +693,8 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 
     if (weightBranch) {
       weightBranch->GetEntry(iLocalEntry);
-      if (weightBranchType_ == 'F')
-        weight = weightF;
+      if (weightF != nullptr)
+        weight = *weightF;
 
       if (printLevel_ > 3)
         std::cout << "        Input weight " << weight << std::endl;
@@ -804,6 +823,7 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 
   delete baseResults;
   delete fullResults;
+  delete weightF;
 
   if (printLevel_ >= 0) {
     std::cout << "\r      " << iEntry << " events";
