@@ -16,8 +16,6 @@ sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
 import config
-config.skimDir = '/mnt/hadoop/scratch/yiiyama/monophoton/skim'
-config.localSkimDir = '/local/yiiyama/monophoton/skim'
 import utils
 
 from trigger.confs import measurements, confs, fitconfs
@@ -40,7 +38,7 @@ if not REPLOT:
     for oname, mname in omnames:
         print oname, mname
 
-        snames, region, basesel = measurements[(oname, mname)]
+        snames, region, basesel, colname = measurements[(oname, mname)]
 
         outputFile = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname), 'recreate')
 
@@ -59,7 +57,13 @@ if not REPLOT:
         for tname, (passdef, commonsel, title, variables) in confs[oname].items():
             trigDir = outputFile.mkdir(tname)
 
+            passdef = passdef.format(col = colname)
+            commonsel = commonsel.format(col = colname)
+
             for vname, (vtitle, vexpr, denomdef, binning),  in variables.items():
+                vexpr = vexpr.format(col = colname)
+                denomdef = denomdef.format(col = colname)
+
                 if type(binning) is tuple:
                     template = ROOT.TH1D('template', ';' + vtitle, *binning)
                 else:
@@ -120,7 +124,7 @@ for oname, mname in omnames:
 
     source = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname))
 
-    snames, region, probeSel = measurements[(oname, mname)]
+    snames, region, probeSel, colname = measurements[(oname, mname)]
 
     canvas.lumi = sum(sample.lumi for sample in allsamples.getmany(snames))
 
@@ -148,7 +152,7 @@ for oname, mname in omnames:
             canvas.addHistogram(eff, drawOpt = 'EP')
             
             canvas.xtitle = vtitle
-            canvas.ylimits = (0., 1.2)
+            canvas.ylimits = (0.8, 1.2)
             
             canvas.Update()
             
