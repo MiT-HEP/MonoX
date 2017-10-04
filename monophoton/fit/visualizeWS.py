@@ -40,13 +40,28 @@ for region in parameters.regions:
             huncert = source.Get(proc + '_' + region + '_uncertainties')
         if not hnominal:
             continue
+
+        plot = True
+        for iX in range(hnominal.GetNbinsX() + 2):
+            if ROOT.TMath.IsNaN(hnominal.GetBinContent(iX)) or ROOT.TMath.IsNaN(hnominal.GetBinError(iX)):
+                print hnominal.GetName(), 'cannot be plotted because it contains NaN'
+                plot = False
+                break
+
+            if huncert and (ROOT.TMath.IsNaN(huncert.GetBinContent(iX)) or ROOT.TMath.IsNaN(huncert.GetBinError(iX))):
+                print huncert.GetName(), 'cannot be plotted because it contains NaN'
+                plot = False
+                break
+
+        if not plot:
+            continue
     
         canvas1.legend.apply('stat', hnominal)
     
         if huncert:
             canvas1.Clear()
             canvas1.legend.apply('total', huncert)
-    
+   
             canvas1.addHistogram(huncert, drawOpt = 'E2')
             canvas1.addHistogram(hnominal, drawOpt = 'EP')
             canvas1.printWeb(plotDir, hnominal.GetName(), logy = not proc.startswith('tf_'))
