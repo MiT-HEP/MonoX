@@ -218,16 +218,18 @@ ExprFiller::fill(std::vector<double> const& _eventWeights, std::vector<bool> con
 }
 
 
-Plot::Plot(TH1& _hist, TTreeFormula& _expr, TTreeFormula* _cuts/* = nullptr*/, TTreeFormula* _reweight/* = nullptr*/) :
+Plot::Plot(TH1& _hist, TTreeFormula& _expr, TTreeFormula* _cuts/* = nullptr*/, TTreeFormula* _reweight/* = nullptr*/, bool _overflow/* = false*/) :
   ExprFiller(_cuts, _reweight),
-  hist_(&_hist)
+  hist_(&_hist),
+  overflow_(_overflow)
 {
   exprs_.push_back(&_expr);
 }
 
 Plot::Plot(Plot const& _orig) :
   ExprFiller(_orig),
-  hist_(_orig.hist_)
+  hist_(_orig.hist_),
+  overflow_(_orig.overflow_)
 {
 }
 
@@ -237,7 +239,12 @@ Plot::doFill_(unsigned _iD)
   if (printLevel_ > 3)
     std::cout << "            Fill(" << exprs_[0]->EvalInstance(_iD) << "; " << entryWeight_ << ")" << std::endl;
 
-  hist_->Fill(exprs_[0]->EvalInstance(_iD), entryWeight_);
+  double x = exprs_[0]->EvalInstance(_iD);
+  if (overflow_ && (x > hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX()))) {
+    x = hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX());
+  }
+
+  hist_->Fill(x, entryWeight_);
 }
 
 
@@ -457,7 +464,7 @@ MultiDraw::setReweight(char const* _expr, TObject const* _source/* = nullptr*/)
 }
 
 void
-MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/)
+MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/, bool _overflow/* = false*/)
 {
   TTreeFormulaCached* exprFormula(getFormula_(_expr));
   if (exprFormula == nullptr) {
@@ -465,8 +472,8 @@ MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bo
     return;
   }
 
-  auto newPlot([_hist, exprFormula](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
-      return new Plot(*_hist, *exprFormula, _cutsFormula, _reweightFormula);
+  auto newPlot([_hist, _overflow, exprFormula](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
+      return new Plot(*_hist, *exprFormula, _cutsFormula, _reweightFormula, _overflow);
     });
 
   if (printLevel_ > 1) {

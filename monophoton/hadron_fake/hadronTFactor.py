@@ -27,9 +27,9 @@ rcanvas = RatioCanvas(lumi = lumi)
 
 binning = array.array('d', map(float, selections.photonPtBinning))
 pid = 'medium'
-tune = 'Spring16'
-extras = 'pixel'
-suffix = '_Spring16'
+tune = 'GJetsCWIso'
+extras = 'pixel-monoph'
+suffix = '_GJetsCWIso'
 
 itune = selections.Tunes.index(tune)
 

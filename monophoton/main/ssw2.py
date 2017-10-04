@@ -399,11 +399,11 @@ if __name__ == '__main__':
     
     ## get the list of sample objects according to args.snames
     if 'all' in args.snames:
-        spatterns = selectors.keys()
+        spatterns = allSelectors.keys()
         samples = datasets.allsamples.getmany(spatterns)
         sampleList = [(sample, dict()) for sample in samples]
     elif 'bkgd' in args.snames:
-        spatterns = selectors.keys() + ['!add*', '!dm*']
+        spatterns = allSelectors.keys() + ['!add*', '!dm*', '!dph*']
         samples = datasets.allsamples.getmany(spatterns)
         sampleList = [(sample, dict()) for sample in samples]
     else:

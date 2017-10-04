@@ -18,13 +18,13 @@ sys.argv = argv
 photonDataICHEP = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m']
 photonData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
 photonDataPrescaled = [
-    ('sph-16b-m', 1),
-    ('sph-16c-m', 1),
-    ('sph-16d-m', 1),
-#     ('sph-16e-m', 4),
-#     ('sph-16f-m', 4),
-#     ('sph-16g-m', 4),
-#     ('sph-16h', 4)
+    ('sph-16b-m', 5),
+    ('sph-16c-m', 5),
+    ('sph-16d-m', 5),
+    ('sph-16e-m', 5),
+    ('sph-16f-m', 5),
+    ('sph-16g-m', 5),
+    ('sph-16h-m', 5)
 ]
 muonData = ['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m']
 electronData = ['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m']
@@ -41,7 +41,7 @@ minor = ['zllg-130-o', 'zllg-300-o', 'gg-40', 'gg-80'] # + wlnu # 'ttg', 'tg',
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi_[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.pt * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi_[0] - t1Met.phi)))'
 
-# combinedFitPtBinning = [175., 190., 250., 400., 700., 1000.]
+wiscFitPtBinning = [175., 190., 250., 400., 700., 1000.]
 # combinedFitPtBinning = [175.0, 200., 225., 250., 275., 300., 325., 350., 400., 450., 500., 600., 800., 1000.0]
 
 mtPhoMetBinning = [0., 200., 300., 400., 500., 600., 700., 800., 1000., 1200.]
@@ -54,6 +54,7 @@ baseSels = {
     'met170': 't1Met.pt > 170.',
     'photonDPhi0.5': 't1Met.photonDPhi > 0.5',
     'minJetDPhi0.5': 't1Met.minJetDPhi > 0.5',
+    'photonPtOverMet1.4': '(photons.scRawPt[0] / t1Met.pt) < 1.4',
 #    'mtPhoMet100': 'mtPhoMet > 100.'
 }
 
@@ -69,22 +70,32 @@ def getConfig(confName):
         monophData = photonData
         if 'ICHEP' in confName:
             monophData = photonDataICHEP
+        elif 'Blind' in confName:
+            monophData = photonDataPrescaled
 
         for sname in monophData:
-            config.addObs(sname)
-
-        config.baseline = baseSel
+            if type(sname) == tuple:
+                config.addObs(*sname)
+            else:
+                config.addObs(sname)
 
         config.fullSelection = '' # mtPhoMet + ' < 200.'
 
         if 'LowPhi' in confName:
-            config.fullSelection = 'TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) < 0.5'.format(halfpi = math.pi * 0.5)
+            config.baseline = baseSel + ' && (TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) < 0.5)'.format(halfpi = math.pi * 0.5)
+            phiFactor = 1. / math.pi
         elif 'HighPhi' in confName:
-            config.fullSelection = 'TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) > 0.5'.format(halfpi = math.pi * 0.5)
+            config.baseline = baseSel + ' && (TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) > 0.5)'.format(halfpi = math.pi * 0.5)
+            phiFactor = (math.pi - 1.) / math.pi
+        else:
+            config.baseline = baseSel
+            phiFactor = 1.
+
+        spikeNorm = phiFactor * 23.9 * config.effLumi() / 35900.
 
         config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'])
         config.addSig('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1'])
-#        config.addSig('dph', 'Dark Photon', samples = ['dph-*'])
+        config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
         config.addSig('add', 'ADD', samples = ['add-3-*'])
 #        config.addSig('dmewk', 'DM EWK', samples = ['dmewk-*'])
         config.addSig('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1'])
@@ -92,16 +103,18 @@ def getConfig(confName):
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)
-#        config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
-#        config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
+        config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
+        config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
+
+        lowDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], 't1Met.minJetDPhi < 0.5')
 
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 8.9 * config.effLumi() / 35900.)
-        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', norm = 8.75 * config.effLumi() / 12900.)
-        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = spikeNorm ) # 8.9
+        config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', scale = 1. / 3000.)
+        config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), altbaseline = lowDPhiJet, scale = 0.147)
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -116,6 +129,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, sensitive = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton, sensitive = True)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True, sensitive = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi))
@@ -141,10 +155,6 @@ def getConfig(confName):
         config.addPlot('time', 'time', 'photons.time[0]', (20, -5., 5.), unit = 'ns')
         config.addPlot('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns')
 
-        if 'Blind' in confName:
-            for plot in config.plots:
-                plot.blind = 'full'
-
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
             if group.name in ['efake', 'hfake', 'halo', 'spike']:
@@ -153,7 +163,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
             if group.name in ['vvg']:
@@ -178,10 +188,10 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
 
         # Specific systematic variations
-        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.7))
+        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 1.0))
         haloCuts = (
-            'metFilters.globalHalo16 && photons.mipEnergy > 4.9 && photons.sieie > 0.015',
-            'metFilters.globalHalo16 && photons.mipEnergy > 4.9 && photons.sieie < 0.015'
+            'metFilters.globalHalo16 && photons.mipEnergy[0] > 2.45',
+            'metFilters.globalHalo16 && photons.mipEnergy[0] > 9.8'
         )
         config.findGroup('halo').variations.append(Variation('haloShape', cuts = haloCuts))
         proxyDefCuts = (
@@ -220,6 +230,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi))
@@ -253,8 +264,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-    #        group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
 
             if group.name in ['vvg']:
@@ -274,6 +284,7 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
 
 
@@ -301,6 +312,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi))
@@ -335,8 +347,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-    #        group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
 
             if group.name in ['vvg']:
@@ -357,6 +368,7 @@ def getConfig(confName):
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
     elif confName == 'monomu':
@@ -391,6 +403,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi))
@@ -428,8 +441,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-    #        group.variations.append(Variation('muonSF', reweight = 'MuonSF')) # only statistical from current estimates
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
 
             if group.name in ['vvg']:
@@ -450,6 +462,8 @@ def getConfig(confName):
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+
 
     elif confName == 'monoel':
 
@@ -482,6 +496,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (10, -1.5, 1.5))
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (10, -math.pi, math.pi))
@@ -513,8 +528,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-    #        group.variations.append(Variation('electronSF', reweight = 'ElectronSF')) # only statistical from current estimates
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
 
             if group.name in ['vvg']:
@@ -535,6 +549,8 @@ def getConfig(confName):
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+
 
     elif confName == 'phistack':
         config = PlotConfig('monoph', photonData)
@@ -660,6 +676,7 @@ def getConfig(confName):
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, sensitive = True)
         config.addPlot('mtPhoMetFullDPhi', 'M_{T#gamma}', mtPhoMet, (12, 0., 1200.), unit = 'GeV', overflow = True, applyBaseline = False, cut = noDPhiPhoton)
         config.addPlot('phoPtHighMet', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', combinedFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True)
+        config.addPlot('phoPtWisc', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', wiscFitPtBinning, unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True)
         config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True, sensitive = True)
         config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
         config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton, overflow = True)
@@ -681,7 +698,7 @@ def getConfig(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
             if group.name in ['vvg']:
@@ -709,12 +726,13 @@ def getConfig(confName):
 #        Specific systematic variations
         # TODO use cuts
 #        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose')))
-        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
+        # config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
 #        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
         config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('gjets').variations.append(Variation('gjetsTF', reweight = 0.5))
 
 
     elif confName == 'photonjet':
@@ -758,29 +776,24 @@ def getConfig(confName):
 
     elif confName == 'gjets':
 
-        config = PlotConfig('monoph', photonData)
+        config = PlotConfig('emjet', photonData)
 
-        baseSels['met170'] = 't1Met.pt > 100. && t1Met.pt < 150.'
+        baseSels['met170'] = 't1Met.pt < 60.'
+        baseSels['fiducial'] = 'photons.isEB'
+        baseSels['hovere'] = 'photons.hOverE[0] < 0.26'
+        baseSels['nhiso'] = 'photons.nhIsoX[0][2] < 2.792'
+        baseSels['phiso'] = 'photons.phIsoX[0][2] < 2.176'
+        baseSels['chiso'] = 'photons.chIsoX[0][2] < 1.146'
+
         config.baseline = ' && '.join(baseSels.values())
-        config.fullSelection = ''
+        config.fullSelection = '' # 'photons.pixelVeto[0]'
 
-        config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'])
-
-        config.addSigPoint('dmv-500-1', 'DM500', color = 46) # 0.01437/pb
-        config.addSigPoint('dmv-1000-1', 'DM1000', color = 30) # 0.07827/pb
-        config.addSigPoint('dmv-2000-1', 'DM2000', color = 50) # 0.07827/pb
-
-        config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
-        config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
-        config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
-        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        # config.addBkg('fakes', samples = photonData, region = 'emjet', cut = 'photons.chIsoX[0] > 5.0 && photons.chIsoX[0][2] < 7.5', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('wjets', 'W(e#nu) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
 
+        config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020))
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [100. + 10. * x for x in range(6)], unit = 'GeV', overflow = True)
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, (22, 200., 1300.), unit = 'GeV', overflow = True)
         config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175.] + [180. + 10. * x for x in range(12)] + [300., 350., 400., 450.] + [500. + 100. * x for x in range(6)], unit = 'GeV', overflow = True)
@@ -795,15 +808,18 @@ def getConfig(confName):
         config.addPlot('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.))
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
 
+        for plot in list(config.plots):
+            config.plots.append(plot.clone(plot.name + 'PixelVeto', applyFullSel = True))
+
         for group in config.bkgGroups + config.sigGroups:
-            if group.name in ['efake', 'hfake', 'halo']:
+            if group.name in ['fakes']:
                 continue
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
-            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
-            group.variations.append(Variation('customIDSF', reweight = 0.055))
-            group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            # group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            # group.variations.append(Variation('pixelVetoSF', reweight = 0.01))
+            # group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
 
             if group.name in ['vvg']:
                 continue
@@ -820,22 +836,6 @@ def getConfig(confName):
                 continue
 
             group.variations.append(Variation('minorQCDscale', reweight = 0.033))
-
-        for gname in ['zg', 'wg']:
-            group = config.findGroup(gname)
-
-            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
-            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-
-#        Specific systematic variations
-#        config.findGroup('halo').variations.append(Variation('haloShape', region = ('haloMIPLoose', 'haloLoose')))
-#        config.findGroup('halo').variations.append(Variation('haloNorm', reweight = 1.0))
-        # TODO use cuts
-#        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
-        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
-        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
 
 
     elif confName == 'tp2m':

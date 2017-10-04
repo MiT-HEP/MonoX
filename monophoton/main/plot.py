@@ -38,9 +38,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
         cuts = []
         if plotConfig.baseline.strip():
-            cuts.append('(' + plotConfig.baseline.strip() + ')')
-        if group.cut.strip():
-            cuts.append('(' + group.cut + ')')
+            if group.altbaseline.strip():
+                cuts.append('(' + group.altbaseline.strip() + ')')
+            else:
+                cuts.append('(' + plotConfig.baseline.strip() + ')')
 
         baseSel = ' && '.join(cuts)
 
@@ -71,14 +72,26 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
             if group == plotConfig.obs and plotdef.fullyBlinded():
                 continue
+            
+            plotCuts = []
+
+            if plotdef.cut.strip():
+                plotCuts.append('(' + plotdef.cut.strip() + ')')
+
+            if group.cut.strip():
+                plotCuts.append('(' + group.cut.strip() + ')' )
+
+            cut = ' && '.join(plotCuts)
 
             # nominal distribution
             plotter.addPlot(
                 hist,
                 plotdef.formExpression(),
-                plotdef.cut.strip(),
+                cut.strip(),
                 plotdef.applyBaseline,
-                plotdef.applyFullSel
+                plotdef.applyFullSel,
+                '',
+                plotdef.overflow
             )
 
             numPlots += 1
@@ -96,11 +109,17 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     else:
                         reweight = ''
 
+                    plotCuts = []
                     if variation.cuts is not None:
                         # variation cuts override the plotdef cut
-                        cut = variation.cuts[iv].strip()
-                    else:
-                        cut = plotdef.cut.strip()
+                        plotCuts.append('(' + variation.cuts[iv].strip() + ')')
+                    elif group.cut.strip():
+                        plotCuts.append('(' + group.cut.strip() + ')')
+
+                    if plotdef.cut.strip():
+                        plotCuts.append('(' + plotdef.cut.strip() + ')')
+
+                    cut = ' && '.join(plotCuts)
 
                     if variation.replacements is not None:
                         expr = plotdef.formExpression(variation.replacements[iv])
@@ -110,10 +129,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     plotter.addPlot(
                         hist,
                         expr,
-                        cut,
+                        cut.strip(),
                         plotdef.applyBaseline,
                         plotdef.applyFullSel,
-                        reweight
+                        reweight,
+                        plotdef.overflow
                     )
 
                     numPlots += 1
@@ -201,6 +221,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     sdownhist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Down')
                     uphist.Add(suphist)
                     downhist.Add(sdownhist)
+
+                if group.norm >= 0. and baseTotal > 0.:
+                    uphist.Scale(group.norm / baseTotal)
+                    downhist.Scale(group.norm / baseTotal)
     
                 writeHist(uphist)
                 writeHist(downhist)

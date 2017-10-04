@@ -495,15 +495,27 @@ if __name__ == '__main__':
                     # each bin must be described by a free-floating RooRealVar
                     # uncertainties are all casted on tfactors
 
-                    for ibin in range(1, nominal.GetNbinsX() + 1):
-                        bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
-                        bins.add(bin)
+                    if sample == ('halo', 'monophHighPhi'):
+                        normName = 'freenorm_{sample}'.format(sample = sampleName)
+                        normModifiers[normName] = fct('{norm}[1.,0.,10.]'.format(norm = normName))
+                        
+                        for ibin in range(1, nominal.GetNbinsX() + 1):
+                            # mu = raw x freenorm
+                            bin = fct('raw_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
+                            bin = fct('prod::mu_{sample}_bin{bin}(raw_{sample}_bin{bin},freenorm_{sample})'.format(sample = sampleName, bin = ibin))
+
+                            bins.add(bin)
+
+                    else:
+                        for ibin in range(1, nominal.GetNbinsX() + 1):
+                            bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
+                            bins.add(bin)
 
                 else:
                     print '    this sample does not participate in constraints'
 
                     if sample in config.floats:
-                        normName = '{0}_{1}_freenorm'.format(*sample)
+                        normName = 'freenorm_{sample}'.format(sample = sampleName)
                         normModifiers[normName] = fct('{norm}[1.,0.,1000.]'.format(norm = normName))
 
                     for ibin in range(1, nominal.GetNbinsX() + 1):
@@ -582,7 +594,7 @@ if __name__ == '__main__':
                     fct('expr::{sample}_{norm}("@0", {{{bin}}})'.format(sample = sampleName, norm = normName, bin = bins.at(0).GetName()))
 
                 if len(normModifiers) > 0:
-                    fct('prod::unc_{sample}_norm({mod})'.format(sample = sampleName, mod = ','.join(m.GetName() for m in normModifiers.values())))
+                    fct('prod::unc_{sample}_norm({mod})'.format(sample = sampleName, mod = ','.join(m.GetName() for m in normModifiers.values() if not 'freenorm' in m.GetName())))
                     fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, unc_{sample}_norm}})'.format(sample = sampleName))
             
             # / for process, plots in sourcePlots[region].items():

@@ -84,7 +84,7 @@ protected:
 class Plot : public ExprFiller {
 public:
   Plot() {}
-  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr);
+  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr, bool overflow = false);
   Plot(Plot const&);
   ~Plot() {}
 
@@ -95,6 +95,7 @@ private:
   void doFill_(unsigned) override;
 
   TH1* hist_{nullptr};
+  bool overflow_{false};
 };
 
 class Tree : public ExprFiller {
@@ -172,7 +173,7 @@ public:
   /*!
    * Currently only 1D histograms can be used.
    */
-  void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "");
+  void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "", bool overflow = false);
   //! Add a tree to fill.
   /*!
    * Use addTreeBranch to add branches.

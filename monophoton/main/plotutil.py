@@ -18,7 +18,7 @@ black = ROOT.kBlack # need to load something from ROOT to actually import
 sys.argv = argv
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, cut = '', scale = 1., norm = -1.):
+    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, altbaseline = '', cut = '', scale = 1., norm = -1.):
         self.name = name
         self.title = title
         self.samples = samples
@@ -27,6 +27,7 @@ class GroupSpec(object):
         self.color = color
         self.scale = scale # use for ad-hoc scaling of histograms
         self.cut = cut # additional cut (if samples are looser than the nominal region, e.g. to allow variations)
+        self.altbaseline = altbaseline # use to replace baseline cut (hack for using lowdphi gjets shape in SR)
         self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after baseline selection
         self.variations = []
 
@@ -117,9 +118,11 @@ class PlotDef(object):
                 nbins = self.binning[0]
                 arr = array.array('d', [self.binning[1] + (self.binning[2] - self.binning[1]) / nbins * i for i in range(nbins + 1)])
     
-            if self.overflow:
-                lastbinWidth = (arr[-1] - arr[0]) / 30.
-                arr += array.array('d', [self.binning[-1] + lastbinWidth])
+            ### need to reimplement as another option
+            # if self.overflow:
+            #     lastbinWidth = (arr[-1] - arr[0]) / 30.
+            #     arr += array.array('d', [self.binning[-1] + lastbinWidth])
+            #     nbins += 1
     
             hist = ROOT.TH1D(hname, '', nbins, arr)
     
@@ -272,7 +275,10 @@ class PlotConfig(object):
         if len(args) > 2:
             args = args[0:2] + allsamples.getmany(args[2]) + args[3:]
         elif 'samples' in kwd:
-            kwd['samples'] = allsamples.getmany(kwd['samples'])
+            if type(kwd['samples'][0]) == tuple:
+                kwd['samples'] = [ allsamples.get(sname) for (sname, _) in kwd['samples'] ]
+            else:
+                kwd['samples'] = allsamples.getmany(kwd['samples'])
             
         self.bkgGroups.append(GroupSpec(*args, **kwd))
 
