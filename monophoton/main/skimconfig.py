@@ -36,13 +36,14 @@ data_sph = [
     'emjet',
     'dimuAllPhoton', 'dielAllPhoton', 'monomuAllPhoton', 
     'dijet',
-    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake'
+    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'ph75'
 ]
 
 data_smu = [
-    'dimu', 'monomu', 'monomuHfake', 'elmu', 'zmmJets', 'zmumu', 'tpmmg',
+    'dimu', 'monomu', 'monomuHfake', 'zmmJets', 'zmumu', 'tpmmg',
     tpmgLowPt, 'tp2m',
-    'vbfm', 'vbfmm'
+    'vbfm', 'vbfmm',
+    'elmu'
 ]
 
 data_sel = [
@@ -51,11 +52,11 @@ data_sel = [
     'vbfe', 'vbfee'
 ]
 
-mc_cand = ['monoph', 'emjet', 'vbfg']
+mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl']
 mc_qcd = ['hfake']
 mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm']
-mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'elmu', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm']
+mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu']
 
 mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet'], s.addGenPhotonVeto)
 
@@ -75,11 +76,12 @@ allSelectors_byPattern = [
     ('wglo', mc_cand + mc_lep + [tpegLowPt, tpmgLowPt]),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
     ('znng-40-o', applyMod(mc_sig, s.ptTruncator(maximum = 130.))),
-    ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto'], s.addKfactor)),
+    ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto', 'trivialShower'], s.addKfactor)),
     ('zllg-130-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor, s.ptTruncator(maximum = 300.))),
     ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
+    ('wnlg-130-p', applyMod(mc_sig + mc_lep, s.addKfactor)),
     ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['monoel', 'vbfem'], s.addKfactor)),
     ('gjn', mc_qcd + mc_cand + ['monoel', 'vbfem']),
     ('gg-*', mc_cand + mc_lep + mc_dilep),
