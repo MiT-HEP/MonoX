@@ -3,6 +3,7 @@
 import sys
 import os
 import subprocess
+import collections
 
 from batch import BatchManager
 
@@ -116,13 +117,13 @@ class SkimSlimWeight(object):
         skimmer.setPrintEvery(SkimSlimWeight.config['printEvery'])
         skimmer.setPrintLevel(SkimSlimWeight.config['printLevel'])
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
-        if not SkimSlimWeight.config['noPhotonSkim']:
-            skimmer.setCommonSelection('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
-
+           
         # temporary - backward compatibility issue 004 -> 005/006/007
         if self.sample.book != 'pandaf/004':
             skimmer.setCompatibilityMode(True)
 
+        # can eventually think of submitting jobs separately for different preskims
+        bypreskim = collections.defaultdict(list)
         for rname, selgen in self.selectors.items():
             if type(selgen) is tuple: # has modifiers
                 selector = selgen[0](self.sample, rname)
@@ -133,7 +134,17 @@ class SkimSlimWeight(object):
 
             selector.setUseTimers(SkimSlimWeight.config['timer'])
             skimmer.addSelector(selector)
-    
+
+            bypreskim[selector.getPreskim()].append(selector)
+
+        if len(bypreskim) > 1:
+            print 'Selectors with different preskims mixed. Aborting.'
+            for preskim, selectors in bypreskim.iteritems():
+                print preskim
+                print ' ' + ' '.join(s.name() for s in selectors)
+
+            raise RuntimeError('invalid configuration')
+
         if self.sample.data and SkimSlimWeight.config['json']:
             logger.info('Good lumi filter: %s', SkimSlimWeight.config['json'])
             skimmer.setGoodLumiFilter(makeGoodLumiFilter(SkimSlimWeight.config['json']))
@@ -245,7 +256,7 @@ class SSWBatchManager(BatchManager):
         self.ssws = ssws # list of SlimSkimWeight objects to manage
         self.catalogDir = ''
 
-    def submitMerge(self, noWait, autoResubmit = False):
+    def submitMerge(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
 
         arguments = []
@@ -270,17 +281,17 @@ class SSWBatchManager(BatchManager):
         submitter.job_args = [argTemplate % arg for arg in arguments]
         submitter.job_names = ['%s_%s' % arg for arg in arguments]
 
-        self._submit(submitter, 'merge', argTemplate, noWait, autoResubmit)
+        self._submit(submitter, 'merge', argTemplate, args.noWait, args.autoResubmit)
 
-    def submitSkim(self, noWait, skipMissing, readRemote, autoResubmit = False):
+    def submitSkim(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
 
         argTemplate = '%s -f %s'
     
-        if skipMissing:
+        if args.skipMissing:
             argTemplate += ' -K'
 
-        if readRemote:
+        if args.readRemote:
             argTemplate += ' -R'
 
         if self.catalogDir:
@@ -299,7 +310,7 @@ class SSWBatchManager(BatchManager):
                 except:
                     pass
 
-        self._submit(submitter, 'skim', argTemplate, noWait, autoResubmit)
+        self._submit(submitter, 'skim', argTemplate, args.noWait, args.autoResubmit)
     
 
 if __name__ == '__main__':
@@ -325,7 +336,6 @@ if __name__ == '__main__':
     argParser.add_argument('--first-entry', '-t', metavar = 'ENTRY', dest = 'firstEntry', type = int, default = 0, help = 'First entry number to process.')
     argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
     argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
-    argParser.add_argument('--no-photonskim', '-P', action = 'store_true', dest = 'noPhotonSkim', help = 'Force skim on all events.')
     argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
     argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
     argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '*', default = None, help = 'Selectors to process. With --list, print the selectors configured with the samples.')
@@ -497,9 +507,9 @@ if __name__ == '__main__':
             batchManager.catalogDir = args.catalog
 
         if args.merge:
-            batchManager.submitMerge(args.noWait, args.autoResubmit)
+            batchManager.submitMerge(args)
         else:
-            batchManager.submitSkim(args.noWait, args.skipMissing, args.readRemote, args.autoResubmit)
+            batchManager.submitSkim(args)
 
         if args.noWait:
             print 'Jobs have been submitted.'

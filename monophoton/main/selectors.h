@@ -35,8 +35,8 @@ public:
   TString const& name() const { return name_; }
   virtual char const* className() const = 0;
 
-  void setCanPhotonSkim(bool b) { canPhotonSkim_ = b; }
-  bool getCanPhotonSkim() const { return canPhotonSkim_; }
+  void setPreskim(char const* s) { preskim_ = s; }
+  char const* getPreskim() const { return preskim_.Data(); }
 
   void setOwnOperators(bool b) { ownOperators_ = b; }
   void setUseTimers(bool b) { useTimers_ = b; }
@@ -58,7 +58,7 @@ protected:
   bool useTimers_{false};
   std::vector<Clock::duration> timers_;
 
-  bool canPhotonSkim_{true};
+  TString preskim_{""};
 
   unsigned printLevel_{0};
   std::ostream* stream_{&std::cout};
