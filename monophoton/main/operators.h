@@ -45,12 +45,14 @@
 //     Met
 //     MtRange
 //     HighPtJetSelection
+//     DijetSelection *
 //     PhotonPtTruncator
 //   Modifier
 //     JetCleaning *
 //     CopyMet
 //     CopySuperClusters
 //     AddGenJets *
+//     AddTrailingPhotons *
 //     PhotonMt *
 //     LeptonRecoil *
 //     MetVariations *
@@ -336,11 +338,11 @@ class PhotonSelection : public Cut {
   void addVeto(bool, unsigned, unsigned = nSelections, unsigned = nSelections);
   void resetVeto() { vetoes_.clear(); }
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
+
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setIDTune(panda::XPhoton::IDTune t) { idTune_ = t; }
   void setWP(unsigned wp) { wp_ = wp; }
-
   double ptVariation(panda::XPhoton const&, bool up);
 
  protected:
@@ -860,6 +862,15 @@ class CopySuperClusters : public Modifier {
   CopySuperClusters(char const* name = "CopySuperClusters") : Modifier(name) {}
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+};
+
+class AddTrailingPhotons : public Modifier {
+  // Keep photons[0] and add all other loose photons to output
+ public:
+  AddTrailingPhotons(char const* name = "AddTrailingPhotons") : Modifier(name) {}
+  
+ protected:
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 };
 
 class PhotonMt : public Modifier {

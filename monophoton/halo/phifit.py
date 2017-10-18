@@ -13,7 +13,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-TEMPLATEONLY = False
+TEMPLATEONLY = True
 FITPSEUDODATA = False
 
 from datasets import allsamples
@@ -24,7 +24,8 @@ import utils
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
-targs = allsamples.getmany(['sph-16b-m', 'sph-16c-m', 'sph-16d-m'])
+#targs = allsamples.getmany(['sph-16b-m', 'sph-16c-m', 'sph-16d-m'])
+targs = allsamples.getmany(['sph-16*-m'])
 dataLumi = sum(s.lumi for s in targs)
 
 ### Canvas
@@ -58,7 +59,7 @@ mcPlotter.setBaseSelection('photons.scRawPt[0] > 175. && t1Met.pt > 170. && t1Me
 
 foldedPhi = 'TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}'.format(halfpi = math.pi * 0.5)
 
-empty = ROOT.TH1D('empty', ';#phi\'', 40, -math.pi, math.pi)
+empty = ROOT.TH1D('empty', ';#phi\'', 40, -0.5 * math.pi, 0.5 * math.pi)
 empty.SetLineColor(ROOT.kBlack)
 empty.SetLineWidth(2)
 
@@ -99,6 +100,24 @@ trees['haloTempVar2'] = tree
 
 haloPlotter.fillPlots()
 
+outint = trees['haloTemp'].GetEntries('TMath::Abs(phi) > 0.5')
+inint = trees['haloTemp'].GetEntries('TMath::Abs(phi) < 0.5')
+
+tf = float(outint) / inint
+print 'Out / In (|phi| <> 0.5) transfer factor:', tf
+
+outint = trees['haloTempVar1'].GetEntries('TMath::Abs(phi) > 0.5')
+inint = trees['haloTempVar1'].GetEntries('TMath::Abs(phi) < 0.5')
+tfVar1 = float(outint) / inint
+
+outint = trees['haloTempVar2'].GetEntries('TMath::Abs(phi) > 0.5')
+inint = trees['haloTempVar2'].GetEntries('TMath::Abs(phi) < 0.5')
+tfVar2 = float(outint) / inint
+
+print 'Transfer factor uncertainty:', max(abs(tfVar1 - tf), abs(tfVar2 - tf))
+
+sys.exit(0)
+
 if not TEMPLATEONLY and not FITPSEUDODATA:
     candPlotter = ROOT.MultiDraw()
     for sample in targs:
@@ -138,9 +157,6 @@ phi.setRange('low', -math.pi * 0.5, -0.5)
 phi.setRange('mid', -0.5, 0.5)
 phi.setRange('high', 0.5, math.pi * 0.5)
 
-outint = haloModel.createIntegral(phiset, ROOT.RooFit.Range('low'), ROOT.RooFit.Range('high'))
-inint = haloModel.createIntegral(phiset, ROOT.RooFit.Range('mid'))
-
 # Visualization
 def plotFit(data, name):
     frame = phi.frame()
@@ -156,9 +172,6 @@ haloData = ROOT.RooDataSet('haloData', 'haloData', trees['haloTemp'], phiset)
 haloModel.fitTo(haloData)
 plotFit(haloData, 'nominal')
 
-tf = outint.getVal() / inint.getVal()
-print 'Out / In (|phi| <> 0.5) transfer factor:', tf
-
 tfMin = tf
 tfMax = tf
 
@@ -166,24 +179,9 @@ haloDataVar1 = ROOT.RooDataSet('haloDataVar1', 'haloData', trees['haloTempVar1']
 haloModel.fitTo(haloDataVar1)
 plotFit(haloDataVar1, 'var1')
 
-tf = outint.getVal() / inint.getVal()
-if tf < tfMin:
-    tfMin = tf
-if tf > tfMax:
-    tfMax = tf
-
 haloDataVar2 = ROOT.RooDataSet('haloDataVar2', 'haloData', trees['haloTempVar2'], phiset)
 haloModel.fitTo(haloDataVar2)
 plotFit(haloDataVar2, 'var2')
-
-tf = outint.getVal() / inint.getVal()
-if tf < tfMin:
-    tfMin = tf
-if tf > tfMax:
-    tfMax = tf
-
-print 'Transfer factor uncertainty:', (tfMax - tfMin) * 0.5
-
 
 if TEMPLATEONLY:
     sys.exit(0)

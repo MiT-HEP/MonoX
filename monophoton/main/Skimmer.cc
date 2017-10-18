@@ -32,7 +32,6 @@ public:
   void clearPaths() { paths_.clear(); }
   void addSelector(EventSelectorBase* _sel) { selectors_.push_back(_sel); }
   void setOwnSelectors(bool b) { ownSelectors_ = b; }
-  void setCommonSelection(char const* _sel) { commonSelection_ = _sel; }
   void setGoodLumiFilter(GoodLumiFilter* _filt) { goodLumiFilter_ = _filt; }
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
@@ -45,7 +44,6 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
   bool ownSelectors_{true};
-  TString commonSelection_{};
   GoodLumiFilter* goodLumiFilter_{};
   bool skipMissingFiles_{false};
   unsigned printEvery_{10000};
@@ -64,6 +62,9 @@ Skimmer::~Skimmer()
 void
 Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 {
+  if (selectors_.size() == 0)
+    throw std::runtime_error("No selectors set");
+
   // check all input exists
   for (auto&& pItr(paths_.begin()); pItr != paths_.end(); ++pItr) {
     TFile* source(0);
@@ -164,7 +165,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   if (printLevel_ > 0 && printLevel_ <= DEBUG)
     branchList.setVerbosity(1);
 
-  bool doPreskim(commonSelection_.Length() != 0);
+  TString commonSelection(selectors_[0]->getPreskim());
 
   for (auto* sel : selectors_) {
     sel->setPrintLevel(printLevel_, stream);
@@ -172,8 +173,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
     sel->initialize(outputPath, skimmedEvent, branchList, !isData);
 
-    if (!sel->getCanPhotonSkim())
-      doPreskim = false;
+    if (TString(sel->getPreskim()) != commonSelection) {
+      // this case is filtered out by ssw2.py
+      throw std::runtime_error("inconsistent preskims");
+    }
   }
 
   // if the selectors register triggers, make sure the information is passed to the actual input event
@@ -195,10 +198,10 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   TTreeFormula* preselection(0);
   int preTreeNumber(-1);
-  if (doPreskim) {
-    *stream << "Applying baseline selection \"" << commonSelection_ << "\"" << std::endl;
+  if (commonSelection != "") {
+    *stream << "Applying baseline selection \"" << commonSelection << "\"" << std::endl;
 
-    preselection = new TTreeFormula("preselection", commonSelection_, &preInput);
+    preselection = new TTreeFormula("preselection", commonSelection, &preInput);
   }
 
   event.setStatus(mainInput, branchList);
@@ -242,8 +245,14 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         continue;
     }
 
-    if (event.getEntry(mainInput, _firstEntry + iEntry - 1) <= 0)
-      break;
+    try {
+      if (event.getEntry(mainInput, _firstEntry + iEntry - 1) <= 0)
+        break;
+    }
+    catch (std::exception& _ex) {
+      *stream << "Error while processing " << mainInput.GetCurrentFile()->GetName() << std::endl;
+      throw;
+    }
 
     if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
       continue;

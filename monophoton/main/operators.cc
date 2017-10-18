@@ -448,16 +448,18 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 
     if (!photon.isEB)
       continue;
-    
+
+    bool passPt(false);
     if (vetoes_.size() == 0) {
       // veto is not set -> this is a simple photon selection. Pass if upward variation is above the threshold.
-      if (ptVariation(photon, true) < minPt_)
-        continue;
+      passPt = (ptVariation(photon, true) > minPt_);
     }
     else {
-      if (photon.scRawPt < minPt_)
-        continue;
+      passPt = (photon.scRawPt > minPt_);
     }
+
+    if (size_ == 0 && !passPt) // leading photon has to pass the pt threshold
+      continue;
 
     int selection(selectPhoton(photon, size_));
 
@@ -466,7 +468,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "Photon " << iP << " returned selection " << selection << std::endl;
 
-    if (selection < 0) {
+    if (selection < 0 && passPt) {
       // vetoed
       _outEvent.photons.clear();
       break;
@@ -2062,6 +2064,25 @@ CopySuperClusters::apply(panda::EventMonophoton const& _event, panda::EventMonop
   for (auto& electron : _outEvent.electrons) {
     if (electron.superCluster.idx() != -1)
       electron.superCluster.idx() = referenced[electron.superCluster.idx()];
+  }
+}
+
+//--------------------------------------------------------------------
+// AddTrailingPhotons
+//--------------------------------------------------------------------
+
+void
+AddTrailingPhotons::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  // truncate the output to 1
+  _outEvent.photons.resize(1);
+
+  for (auto& ph : _event.photons) {
+    if (ph.dR2(_outEvent.photons[0]) < 0.01)
+      continue;
+
+    if (ph.loose && ph.csafeVeto)
+      _outEvent.photons.push_back(ph);
   }
 }
 

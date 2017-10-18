@@ -182,6 +182,8 @@ def monophotonBase(sample, rname, selcls = None):
     else:
         selector = selcls(rname)
 
+    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
@@ -297,6 +299,8 @@ def leptonBase(sample, rname, flavor, selcls = None):
     else:
         selector = selcls(rname)
 
+    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
     else:
@@ -389,7 +393,8 @@ def zmumu(sample, rname):
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
 
     selector = ROOT.EventSelector(rname)
-    selector.setCanPhotonSkim(False)
+
+    selector.setPreskim('muons.size > 1')
 
     selector.addOperator(ROOT.MetFilters())
 
@@ -399,9 +404,10 @@ def zmumu(sample, rname):
     leptons.setRequireTight(False)
     selector.addOperator(leptons)
 
-    vtx = ROOT.LeptonVertex()
-    vtx.setSpecies(ROOT.lMuon)
-    selector.addOperator(vtx)
+    # LeptonVertex loads pfCandidates - turning it off for speedup
+#    vtx = ROOT.LeptonVertex()
+#    vtx.setSpecies(ROOT.lMuon)
+#    selector.addOperator(vtx)
 
     mass = ROOT.Mass()
     mass.setPrefix('dimu')
@@ -410,6 +416,61 @@ def zmumu(sample, rname):
     mass.setCollection1(ROOT.cMuons)
     mass.setCollection2(ROOT.cMuons)
     selector.addOperator(mass)
+
+    jets = ROOT.JetCleaning()
+    jets.setCleanAgainst(ROOT.cPhotons, False)
+    jets.setCleanAgainst(ROOT.cElectrons, False)
+    jets.setCleanAgainst(ROOT.cTaus, False)
+    selector.addOperator(jets)
+
+    selector.addOperator(ROOT.CopyMet())
+
+    if not sample.data:
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+
+        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+            selector.addOperator(ROOT.NNPDFVariation())
+
+    return selector
+
+def elmu(sample, rname):
+    """
+    1e, 1mu. mostly ttbar
+    """
+
+    monophotonSetting()
+
+    selector = ROOT.EventSelector(rname)
+
+    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+
+    selector.setPreskim('muons.size > 0 && electrons.size > 0')
+
+    selector.addOperator(ROOT.MetFilters())
+
+    leptons = ROOT.LeptonSelection()
+    leptons.setN(1, 1)
+    leptons.setStrictMu(False)
+    leptons.setStrictEl(False)
+    leptons.setRequireTight(False)
+    selector.addOperator(leptons)
+
+    # NOTE: photon selection is not cleaned up against leptons and we want it that way - we are interested in photons overlapping with electrons
+    photonSel = ROOT.PhotonSelection()
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
+    setupPhotonSelection(photonSel, changes = ['!EVeto'])
+    photonSel.setMinPt(30.)
+    photonSel.setIgnoreDecision(True)
+    selector.addOperator(photonSel)
+
+    jets = ROOT.JetCleaning()
+    jets.setCleanAgainst(ROOT.cTaus, False)
+    selector.addOperator(jets)
+
+    selector.addOperator(ROOT.CopyMet())
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
@@ -488,7 +549,8 @@ def vbfgBase(sample, rname):
     vbfgSetting()
 
     selector = ROOT.EventSelector(rname)
-    selector.setCanPhotonSkim(False)
+
+    selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
 
     selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'))
 
@@ -500,6 +562,7 @@ def vbfgBase(sample, rname):
         'DijetSelection',
         'BjetVeto',
         'CopyMet',
+        'AddTrailingPhotons',
         'PhotonMt',
         'PhotonMetDPhi',
         'JetMetDPhi'
@@ -545,7 +608,8 @@ def vbflBase(sample, rname):
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
 
     selector = ROOT.EventSelector(rname)
-    selector.setCanPhotonSkim(False)
+
+    selector.setPreskim('Sum$(chsAK4Jets.pt_ > 50.) > 1')
 
     trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
     trig.setIgnoreDecision(True)
@@ -827,6 +891,8 @@ def dijet(sample, rname):
     
     selector = ROOT.EventSelector(rname)
 
+    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
 
@@ -886,7 +952,7 @@ def trivialShower(sample, rname):
     photonSel = selector.findOperator('PhotonSelection')
 
     setupPhotonSelection(photonSel, changes = ['-SieieNonzero', '-SipipNonzero'])
-    photonSel.addSelection(True, ROOT.PhotonSelection.Sieie08, ROOT.PhotonSelection.Sipip08)
+    setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
@@ -1112,15 +1178,6 @@ def monomuEfake(sample, rname):
 
     return selector
 
-def elmu(sample, rname):
-    selector = leptonBase(sample, rname, ROOT.lMuon)
-    selector.findOperator('LeptonSelection').setN(1, 1)
-
-    if not sample.data:
-        addElectronIDSFWeight(sample, selector)
-
-    return selector
-
 def wenu(sample, rname):
     """
     Candidate-like selection but for W->enu, no pixel veto on the photon.
@@ -1288,6 +1345,8 @@ def tpegLowPt(sample, rname):
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTPEG)
 
+    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
+
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
 
@@ -1301,8 +1360,6 @@ def tpegLowPt(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
 
-    selector.setCanPhotonSkim(False)
-
     return selector
 
 def tpmgLowPt(sample, rname):
@@ -1312,6 +1369,8 @@ def tpmgLowPt(sample, rname):
 
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTPMG)
+
+    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
@@ -1326,8 +1385,6 @@ def tpmgLowPt(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMG))
 
-    selector.setCanPhotonSkim(False)
-
     return selector
 
 def tpmmg(sample, rname):
@@ -1337,6 +1394,8 @@ def tpmmg(sample, rname):
 
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTPMMG)
+
+    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
@@ -1354,8 +1413,6 @@ def tpmmg(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMMG))
 
-    selector.setCanPhotonSkim(False)
-
     return selector
 
 def tp2e(sample, rname):
@@ -1365,6 +1422,8 @@ def tp2e(sample, rname):
 
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTP2E)
+
+    selector.setPreskim('electrons.size > 1')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
@@ -1377,8 +1436,6 @@ def tp2e(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2E))
 
-    selector.setCanPhotonSkim(False)
-
     return selector
 
 def tp2m(sample, rname):
@@ -1388,6 +1445,8 @@ def tp2m(sample, rname):
 
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTP2M)
+
+    selector.setPreskim('muons.size > 1')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
@@ -1400,8 +1459,6 @@ def tp2m(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2M))
 
-    selector.setCanPhotonSkim(False)
-
     return selector
 
 def vbfg(sample, rname):
@@ -1413,14 +1470,30 @@ def vbfg(sample, rname):
 
     setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
-    digenjetSel = ROOT.DijetSelection('DigenjetSelection')
-    digenjetSel.setMinDEta(0.)
-    digenjetSel.setMinMjj(0.)
-    digenjetSel.setJetType(ROOT.DijetSelection.jGen)
-    selector.addOperator(digenjetSel)
-
     if not sample.data:
+        digenjetSel = ROOT.DijetSelection('DigenjetSelection')
+        digenjetSel.setMinDEta(0.)
+        digenjetSel.setMinMjj(0.)
+        digenjetSel.setJetType(ROOT.DijetSelection.jGen)
+        selector.addOperator(digenjetSel)
+
         addIDSFWeight(sample, selector)
+
+    return selector
+
+def vbfgCtrl(sample, rname):
+    """
+    VBF + photon control sample.
+    """
+
+    selector = vbfg(sample, rname)
+
+    selector.setPreskim('superClusters.rawPt > 80.')
+
+    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+
+    selector.findOperator('DijetSelection').setIgnoreDecision(True)
 
     return selector
 
@@ -1526,6 +1599,33 @@ def vbfmm(sample, rname):
 
     return selector
 
+def ph75(sample, rname):
+    selector = ROOT.EventSelector(rname)
+
+    selector.setPreskim('superClusters.rawPt > 50.')
+
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon50_OR_HLT_Photon75'))
+
+    ph50 = ROOT.HLTFilter('HLT_Photon50')
+    ph50.setIgnoreDecision(True)
+    selector.addOperator(ph50)
+    ph75 = ROOT.HLTFilter('HLT_Photon75')
+    ph75.setIgnoreDecision(True)
+    selector.addOperator(ph75)
+
+    selector.addOperator(ROOT.MetFilters())
+
+    vbfgSetting()
+
+    photonSel = ROOT.PhotonSelection()
+    photonSel.setMinPt(50.)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
+    setupPhotonSelection(photonSel)
+    selector.addOperator(photonSel)
+
+    return selector
+
 
 ######################
 # SELECTOR MODIFIERS #
@@ -1615,6 +1715,7 @@ def addKfactor(sample, selector):
     """
 
     sname = sample.name.replace('gj04', 'gj')
+    sname = sample.name.replace('-p', '-o')
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')

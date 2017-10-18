@@ -8,7 +8,7 @@ outname = workdir + '/fit/ws_' + distribution + '.root'
 plotsOutname = workdir + '/fit/ws_' + distribution + '_plots.root'
 carddir = workdir + '/fit/datacards'
 
-filename = '{region}.root'
+filename = 'vbfglo.root'
 histname = distribution + '/{process}'
 signalHistname = distribution + '/samples/{process}_vbfg'
 
@@ -26,7 +26,7 @@ binWidthNormalized = False
 links = []
 
 # Sample with free normalization that are not involved in links.
-floats = []
+floats = [('gjets', 'vbfg')]
 
 ignoredNuisances = {}
 

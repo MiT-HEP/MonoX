@@ -149,7 +149,7 @@ public:
   //! Add an input file.
   void addInputPath(char const* path) { tree_.Add(path); }
   //! Set the name and the C variable type of the weight branch. Pass an empty string to unset.
-  void setWeightBranch(char const* bname, char type = 'F') { weightBranchName_ = bname; weightBranchType_ = type; }
+  void setWeightBranch(char const* bname, char type = 'F') { weightBranchName_ = bname; }
   //! Set the baseline selection.
   void setBaseSelection(char const* cuts);
   //! Set the full selection.
@@ -197,7 +197,6 @@ private:
 
   TChain tree_;
   TString weightBranchName_{"weight"};
-  char weightBranchType_{'F'};
   TTreeFormulaCached* baseSelection_{nullptr};
   TTreeFormulaCached* fullSelection_{nullptr};
   double constWeight_{1.};

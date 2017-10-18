@@ -117,7 +117,7 @@ def getConfig(confName):
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), altbaseline = lowDPhiJet, scale = 0.147)
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
         noDPhiPhoton = config.baseline.replace(baseSels['photonDPhi0.5'], '1')
@@ -389,7 +389,7 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
 
         noDPhiPhoton = config.baseline.replace(baseSels['photonDPhi0.5'], '1')
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
@@ -464,6 +464,7 @@ def getConfig(confName):
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
+
     elif confName == 'monoel':
 
         dPhiPhoMet = 'TMath::Abs(TVector2::Phi_mpi_pi(photons.phi_[0] - t1Met.realPhi))'
@@ -484,7 +485,7 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
 
         noDPhiPhoton = config.baseline.replace(baseSels['photonDPhi0.5'], '1')
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
@@ -549,6 +550,7 @@ def getConfig(confName):
 
         config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+
 
     elif confName == 'phistack':
         config = PlotConfig('monoph', photonData)
@@ -1217,6 +1219,8 @@ def getConfig(confName):
                 if group.region == 'vbfglo':
                     group.region = 'vbfg'
 
+        jetPtBinning = [x * 10. for x in range(20)] + [200. + x * 20. for x in range(10)] + [400. + x * 50. for x in range(9)]
+
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = (100., 'inf'))
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = 'full')
         config.addPlot('mt', 'M_{T}^{#gamma}', 'photons.mt[0]', (50, 0., 500.), unit = 'GeV', overflow = True, sensitive = True)
@@ -1237,12 +1241,12 @@ def getConfig(confName):
         config.addPlot('njetsFullSel', 'N_{jet}', 'jets.size', (6, 0., 6.), applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
         config.addPlot('njetsMidPtFullSel', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 50.', applyFullSel = True, sensitive = True, blind = 'full')
-        config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 1000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
-        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', overflow = True)
-        config.addPlot('jet1PtFullSel', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
+        config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', jetPtBinning, unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', jetPtBinning, unit = 'GeV', overflow = True)
+        config.addPlot('jet1PtFullSel', 'p_{T}^{j1}', 'jets.pt_[pdijet.ij1[0]]', jetPtBinning, unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
         config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[pdijet.ij1[0]]', (40, -5., 5.))
-        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', overflow = True)
-        config.addPlot('jet2PtFullSel', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', jetPtBinning, unit = 'GeV', overflow = True)
+        config.addPlot('jet2PtFullSel', 'p_{T}^{j2}', 'jets.pt_[pdijet.ij2[0]]', jetPtBinning, unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full', overflow = True)
         config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[pdijet.ij2[0]]', (40, -5., 5.))
         config.addPlot('detajj', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.))
         config.addPlot('detajjFullSel', '#Delta#eta^{jj}', 'pdijet.dEtajj[0]', (40, 0., 10.), applyFullSel = True, sensitive = True, blind = 'full')
@@ -1260,6 +1264,12 @@ def getConfig(confName):
         config.addPlot('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
         config.addPlot('npartons', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), sensitive = True, blind = 'full')
         config.addPlot('npartonsFullSel', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), applyFullSel = True, sensitive = True, blind = 'full')
+        mgg = 'TMath::Sqrt('
+        mgg += 'TMath::Power(photons.pt_[0] * TMath::CosH(photons.eta_[0]) + photons.pt_[1] * TMath::CosH(photons.eta_[1]), 2.)'
+        mgg += ' - TMath::Power(photons.pt_[0] * TMath::Cos(photons.phi_[0]) + photons.pt_[1] * TMath::Cos(photons.phi_[1]), 2.)'
+        mgg += ' - TMath::Power(photons.pt_[0] * TMath::Sin(photons.phi_[0]) + photons.pt_[1] * TMath::Sin(photons.phi_[1]), 2.)'
+        mgg += ' - TMath::Power(photons.pt_[0] * TMath::SinH(photons.eta_[0]) + photons.pt_[1] * TMath::SinH(photons.eta_[1]), 2.))'
+        config.addPlot('mgg', 'm^{#gamma#gamma}', mgg, (50, 100., 200.), unit = 'GeV', applyFullSel = False)
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
@@ -1292,6 +1302,35 @@ def getConfig(confName):
 #        config.findGroup('hfake').variations.append(Variation('vertex', reweight = 0.5))
 #        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
 
+    elif confName == 'vbfgCtrl' or confName == 'vbfgloCtrl':
+        allsamples['sph-16b-m'].lumi = 4778. * 0.1 # roughly
+        allsamples['sph-16c-m'].lumi = 2430. * 0.1 # roughly
+        allsamples['sph-16d-m'].lumi = 4044. * 0.1 # roughly
+        allsamples['sph-16e-m'].lumi = 3284. * 0.1 # roughly
+        allsamples['sph-16f-m'].lumi = 2292. * 0.1 # roughly
+        allsamples['sph-16g-m'].lumi = 5190. * 0.1 # roughly
+        allsamples['sph-16h-m'].lumi = 5470. * 0.1 # roughly
+
+        config = PlotConfig('vbfgCtrl', photonData)
+
+        config.baseline = 'photons.scRawPt[0] > 80. && dijet.mjj[0] > 350.'
+
+        if confName == 'vbfgCtrl':
+            main = ['gjn']
+        elif confName == 'vbfgloCtrl':
+            main = gj
+
+        config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+
+        if confName == 'vbfgloCtrl':
+            config.obs.region = 'vbfgCtrl'
+            for group in config.bkgGroups:
+                if group.region == 'vbfgloCtrl':
+                    group.region = 'vbfgCtrl'
+
+        config.addPlot('detajjAll', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, 0., 10.))
+        config.addPlot('dphijjAll', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi))
+        config.addPlot('mjjAll', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
 
     elif confName == 'vbfe' or confName == 'vbfelo':
         config = PlotConfig(confName, ['sel-16*'])
