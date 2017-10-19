@@ -1714,8 +1714,9 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gj04', 'gj')
-    sname = sample.name.replace('-p', '-o')
+    sname = sample.name.replace('gje', 'gj')
+    sname = sname.replace('gj04', 'gj')
+    sname = sname.replace('-p', '-o')
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
