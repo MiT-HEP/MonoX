@@ -14,7 +14,7 @@
 #include <bitset>
 
 void
-skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
+skimUncleaned(TTree* _input, char const* _outputNameBase, bool _triggeringPhotons, long _nEntries = -1)
 {
   // Skim the input tree for off-time (-15 < t < -10 ns) or narrow (sieie < 0.001 || sipip < 0.001 || (sieie < 0.008 && sipip < 0.008)) super clusters and write an EventMonophoton output
 
@@ -43,22 +43,32 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
   unsigned short photonType[NMAX]; // 0 -> SC replaced, 1 -> SC unchanged, 2 -> created
   panda::EventMonophoton outEvent;
   panda::RecoMet origMet("origMet");
+  bool pass165(false);
+  bool pass135(false);
+  bool pass120(false);
 
   enum OutputClass {
     kOfftime,
     kNarrow,
+    kOfftimeAltTrig,
+    kNarrowAltTrig,
     nOutputClasses
   };
 
   TString outputSuffix[nOutputClasses] = {
     "offtime",
-    "narrow"
+    "narrow",
+    "offtimealt",
+    "narrowalt"
   };
 
   TString outputNameBase(_outputNameBase);
   TTree* output[nOutputClasses];
 
   for (unsigned iO(0); iO != nOutputClasses; ++iO) {
+    if (!_triggeringPhotons && (iO == kOfftimeAltTrig || iO == kNarrowAltTrig))
+      continue;
+
     auto* outputFile(TFile::Open(outputNameBase + "_" + outputSuffix[iO] + ".root", "recreate"));
 
     output[iO] = new TTree("events", "Events");
@@ -68,6 +78,9 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
     output[iO]->Branch("photons.type", photonType, "type[photons.size]/s");
     output[iO]->Branch("t1Met.photonDPhi", &metPhotonDPhi, "photonDPhi/F");
     output[iO]->Branch("t1Met.minJetDPhi", &metMinJetDPhi, "minJetDPhi/F");
+    output[iO]->Branch("HLT_Photon165_HE10", &pass165, "HLT_Photon165_HE10/O");
+    output[iO]->Branch("HLT_Photon135_PFMET100", &pass135, "HLT_Photon135_PFMET100/O");
+    output[iO]->Branch("HLT_Photon120_R9Id90_HE10_IsoM", &pass120, "HLT_Photon120_R9Id90_HE10_IsoM/O");
   }
 
   panda::utils::BranchList branchList = {
@@ -95,7 +108,14 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
 
   event.setAddress(*_input, branchList);
 
-  auto hltToken(event.registerTrigger("HLT_Photon165_HE10"));
+  unsigned hlt165(0);
+  unsigned hlt135(0);
+  unsigned hlt120(0);
+  if (_triggeringPhotons) {
+    hlt165 = event.registerTrigger("HLT_Photon165_HE10");
+    hlt135 = event.registerTrigger("HLT_Photon135_PFMET100");
+    hlt120 = event.registerTrigger("HLT_Photon120_R9Id90_HE10_IsoM");
+  }
 
   struct MyBranch {
     MyBranch(char const* _n, void* _a) : name(_n), addr(_a) {}
@@ -167,12 +187,17 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
     matchClass.reset();
 
     for (unsigned iC(0); iC != size; ++iC) {
-      if (rawPt[iC] > 170. && std::abs(eta[iC]) < 1.4442) {
-        if (time[iC] > -15. && time[iC] < -10.)
-          matchClass.set(kOfftime);
-        if (sieie[iC] < 0.001 || sipip[iC] < 0.001 || (sieie[iC] < 0.008 && sipip[iC] < 0.008))
-          matchClass.set(kNarrow);
-      }
+      if (_triggeringPhotons && rawPt[iC] < 110.)
+        continue;
+      if (rawPt[iC] < 20.)
+        continue;
+      if (std::abs(eta[iC]) > 1.4442)
+        continue;
+
+      if (time[iC] > -15. && time[iC] < -10.)
+        matchClass.set(kOfftime);
+      if (sieie[iC] < 0.001 || sipip[iC] < 0.001 || (sieie[iC] < 0.008 && sipip[iC] < 0.008))
+        matchClass.set(kNarrow);
     }
 
     if (matchClass.none())
@@ -180,8 +205,32 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
 
     event.getEntry(*_input, localEntry, true);
 
-    if (!event.triggerFired(hltToken))
-      continue;
+    pass165 = false;
+    pass135 = false;
+    pass120 = false;
+
+    if (_triggeringPhotons) {
+      pass165 = event.triggerFired(hlt165);
+      pass135 = event.triggerFired(hlt135);
+      pass120 = event.triggerFired(hlt120);
+
+      if (!pass165 && !pass135 && !pass120)
+        continue;
+    }
+
+    if (matchClass[kOfftime]) {
+      if (!pass165)
+        matchClass.reset(kOfftime);
+      if (pass135 || pass120)
+        matchClass.set(kOfftimeAltTrig);
+    }
+
+    if (matchClass[kNarrow]) {
+      if (!pass165)
+        matchClass.reset(kNarrow);
+      if (pass135 || pass120)
+        matchClass.set(kNarrowAltTrig);
+    }
 
     for (unsigned iB(nBranchIndices); iB != extraBranches.size(); ++iB)
       extraBranches[iB].branch->GetEntry(localEntry);
@@ -370,6 +419,9 @@ skimUncleaned(TTree* _input, char const* _outputNameBase, long _nEntries = -1)
   std::cout << "Processed " << iEntry << " events" << std::endl;
 
   for (unsigned iO(0); iO != nOutputClasses; ++iO) {
+    if (!_triggeringPhotons && (iO == kOfftimeAltTrig || iO == kNarrowAltTrig))
+      continue;
+
     auto* outputFile(output[iO]->GetCurrentFile());
     outputFile->cd();
     output[iO]->Write();
