@@ -8,7 +8,6 @@ import array
 import ROOT
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
-ROOT.gStyle.SetNdivisions(510, 'X')
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -19,6 +18,8 @@ import config
 import utils
 
 from trigger.confs import measurements, confs, fitconfs
+
+ROOT.gStyle.SetNdivisions(510, 'X')
 
 ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
 
@@ -35,7 +36,9 @@ outDir = config.histDir + '/trigger'
 
 if not REPLOT:
     ## FILL DISTRIBUTIONS AND GRAPHS
-    for oname, mname in omnames:
+    for omname in omnames:
+        oname = omname[0]
+        mname = omname[1]
         print oname, mname
 
         snames, region, basesel, colname = measurements[(oname, mname)]
@@ -55,6 +58,9 @@ if not REPLOT:
         histograms = []
 
         for tname, (passdef, commonsel, title, variables) in confs[oname].items():
+            if len(omname) > 2 and tname != omname[2]:
+                continue
+
             trigDir = outputFile.mkdir(tname)
 
             passdef = passdef.format(col = colname)
@@ -92,6 +98,9 @@ if not REPLOT:
     
         # make efficiency graphs and save
         for tname, (_, _, _, variables) in confs[oname].items():
+            if len(omname) > 2 and tname != omname[2]:
+                continue
+
             print ' ', tname
             for vname in variables:
                 print '   ', vname
@@ -119,7 +128,9 @@ if FITEFFICIENCY:
 canvas = SimpleCanvas()
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
 
-for oname, mname in omnames:
+for omname in omnames:
+    oname = omname[0]
+    mname = omname[1]
     print oname, mname
 
     source = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname))
@@ -129,6 +140,9 @@ for oname, mname in omnames:
     canvas.lumi = sum(sample.lumi for sample in allsamples.getmany(snames))
 
     for tname, (_, _, title, variables) in confs[oname].items():
+        if len(omname) > 2 and tname != omname[2]:
+            continue
+
         print ' ', tname
 
         trigDir = source.GetDirectory(tname)
@@ -152,7 +166,7 @@ for oname, mname in omnames:
             canvas.addHistogram(eff, drawOpt = 'EP')
             
             canvas.xtitle = vtitle
-            canvas.ylimits = (0.8, 1.2)
+            canvas.ylimits = (0., 1.1)
             
             canvas.Update()
             
@@ -164,6 +178,9 @@ for oname, mname in omnames:
                 eff.GetXaxis().SetLimits(binning[0], binning[-1])
             
             eff.GetYaxis().SetRangeUser(0., 1.2)
+
+            if tname == 'sph165abs' and vname.startswith('pt'):
+                canvas.addLine(175., canvas.ylimits[0], 175., canvas.ylimits[1], color = ROOT.kRed, width = 2, style = ROOT.kDashed)
             
             canvas.printWeb(outName, oname + '_' + mname + '_' + tname + '_' + vname, logy = False)
 
