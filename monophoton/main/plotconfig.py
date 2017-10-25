@@ -63,6 +63,7 @@ hfakeSels = 'photons.nhIsoX[0][2] < 2.792 && photons.phIsoX[0][2] < 2.176 && pho
 baseSel = ' && '.join(baseSels.values())
 
 def getConfig(confName):
+    global baseSels
 
     if confName == 'monoph' or confName == 'monophICHEP' or confName == 'monophBlind' or confName == 'monophLowPhi' or confName == 'monophHighPhi':
         config = PlotConfig('monoph')
@@ -778,6 +779,8 @@ def getConfig(confName):
 
         config = PlotConfig('emjet', photonData)
 
+        baseSels = {}
+
         baseSels['met170'] = 't1Met.pt < 60.'
         baseSels['fiducial'] = 'photons.isEB'
         baseSels['hovere'] = 'photons.hOverE[0] < 0.26'
@@ -789,8 +792,8 @@ def getConfig(confName):
         config.fullSelection = '' # 'photons.pixelVeto[0]'
 
         # config.addBkg('fakes', samples = photonData, region = 'emjet', cut = 'photons.chIsoX[0] > 5.0 && photons.chIsoX[0][2] < 7.5', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
-        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('wjets', 'W(e#nu) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+#        config.addBkg('top', 't#bar{t}', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+#        config.addBkg('wjets', 'W(e#nu) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
 
         config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020))
