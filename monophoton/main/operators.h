@@ -26,9 +26,7 @@
 // * = has addBranches
 // Operator
 //   Cut
-//     HLTPhoton165HE10
-//     HLTEle27eta2p1WPLooseGs
-//     HLTIsoMu27
+//     HLTFilter
 //     MetFilters
 //     GenPhotonVeto
 //     PartonFlavor
@@ -48,6 +46,7 @@
 //     DijetSelection *
 //     PhotonPtTruncator
 //   Modifier
+//     TriggerMatch
 //     JetCleaning *
 //     CopyMet
 //     CopySuperClusters
@@ -766,8 +765,27 @@ class ZJetBackToBack: public Cut {
 
 
 //--------------------------------------------------------------------
-// Modifiers
+// Modifiers -- does not work in 004!!
 //--------------------------------------------------------------------
+
+class TriggerMatch : public Modifier {
+ public:
+  TriggerMatch(char const* name = "TriggerMatch") : Modifier(name) {}
+  ~TriggerMatch() {}
+
+  void addBranches(TTree& skimTree) override {}
+
+  void setCollection(Collection col) { collection_ = col; }
+  void setBranchName(char const* outName) { outName_ = outName; }
+  void addTriggerFilter(char const* filterName) { filterNames_.emplace_back(filterName); }
+
+ protected:
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override {}
+
+  Collection collection_{nCollections};
+  TString outName_{""};
+  std::vector<TString> filterNames_{};
+};
 
 class TriggerEfficiency : public Modifier {
  public:
