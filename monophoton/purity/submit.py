@@ -17,14 +17,14 @@ scratchPath = s.versionDir
 argFile = file('condorArgs.txt', 'w')
 
 bases = ['loose', 'medium', 'tight', 'highpt'] 
-mods = ['', '-pixel', '-pixel-monoph', '-pixel-monoph-max'] # , '-pixel-monoph-worst']
+mods = ['', '-pixel', '-pixel-monoph'] 
 PhotonIds = [base+mod for base in bases for mod in mods]
 # PhotonIds.append('none')
 
-for era in s.Eras[:]:
+for era in ['GJetsCWIso']:
     for loc in s.Locations[:1]:
-        for pt in sorted(s.PhotonPtSels.keys())[:-1]:
-            for met in sorted(s.MetSels.keys())[:1]:
+        for pt in sorted(s.PhotonPtSels.keys())[:]:
+            for met in sorted(s.MetSels.keys())[1:2]:
                 for sel in PhotonIds:
                     outDir = scratchPath + '/' + era + '_' + loc + '_' + sel + '_' + pt + '_' + met
 

@@ -18,8 +18,6 @@ import tp.efake_plot as efake_plot
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
-
 fitBins = getBinning(binningName)[2]
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)

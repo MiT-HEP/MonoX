@@ -30,6 +30,7 @@ muonData = ['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'sm
 electronData = ['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m']
 
 gj = ['gj-100', 'gj-200', 'gj-400', 'gj-600']
+gje = ['gje-100', 'gje-200', 'gje-400', 'gje-600']
 gj04 = ['gj04-100', 'gj04-200', 'gj04-400', 'gj04-600']
 wlnu = ['wlnu', 'wlnu-70', 'wlnu-100', 'wlnu-200', 'wlnu-400', 'wlnu-600', 'wlnu-800', 'wlnu-1200', 'wlnu-2500']
 wlnun = ['wlnun-0', 'wlnun-50', 'wlnun-100', 'wlnun-250', 'wlnun-400', 'wlnun-600']
@@ -114,7 +115,7 @@ def getConfig(confName):
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = spikeNorm ) # 8.9
         config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', scale = 1. / 3000.)
-        config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), altbaseline = lowDPhiJet, scale = 0.147)
+        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
@@ -1150,8 +1151,8 @@ def getConfig(confName):
         config.baseline = 't1Met.pt < 60. && jets.pt_[0] > 100. && photons.medium[0] && photons.pixelVeto[0]'
         config.fullSelection = ''
 
-#        config.addBkg('jets', '#gamma + jets', samples = gj, color = ROOT.kBlue, cut = 'photons.matchedGenId[0] == -22 && genPhotonDR < 0.4')
-        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), cut = 'photons.matchedGenId[0] == -22')
+        config.addBkg('gj', '#gamma + jets', samples = gj, color = ROOT.kBlue, cut = 'photons.matchedGenId[0] == -22')
+        config.addBkg('gj04', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), cut = 'photons.matchedGenId[0] == -22')
 #        config.addBkg('gg', '#gamma#gamma', samples = ['gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), cut = 'photons.matchedGenId[0] == -22')
 #        config.addBkg('top', '#gamma + t(t)', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff), cut = 'photons.matchedGenId[0] == -22')
 
