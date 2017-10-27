@@ -21,6 +21,18 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
 
+import ROOT
+
+ROOT.gSystem.Load(config.libobjs)
+try:
+    e = ROOT.panda.Event
+except AttributeError:
+    pass
+
+ROOT.gROOT.LoadMacro(thisdir + '/skimUncleaned.cc+')
+
+skimfunc = ROOT.skimUncleaned
+
 if task == 'submit':
     sys.path.append('/home/yiiyama/lib')
     from condor_run import CondorRun
@@ -46,16 +58,6 @@ if task == 'submit':
         submitter.submit(name = 'skimUncleaned')
 
 elif task == 'skim':
-    import ROOT
-    
-    ROOT.gSystem.Load(config.libobjs)
-    try:
-        e = ROOT.panda.Event
-    except AttributeError:
-        pass
-    
-    ROOT.gROOT.LoadMacro(thisdir + '/skimUncleaned.cc+')
-    
     datadir = '/mnt/hadoop/scratch/yiiyama/ftpanda'
 
     tree = ROOT.TChain('events')
@@ -83,11 +85,13 @@ elif task == 'skim':
         os.makedirs(os.path.dirname(finalname))
     except:
         pass
+
+    triggeringPhotons = sname.startswith('sph')
     
-    ROOT.skimUncleaned(tree, tmpname)
+    skimfunc(tree, tmpname, triggeringPhotons)
 
     if not test:
-        for suffix in ['offtime', 'narrow']:
+        for suffix in ['offtime', 'narrow', 'offtimealt', 'narrowalt']:
             shutil.copy(tmpname + '_' + suffix + '.root', finalname + '_' + suffix + '.root')
             os.remove(tmpname + '_' + suffix + '.root')
  

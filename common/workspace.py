@@ -272,6 +272,8 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
     for source in sources.values():
         source.Close()
 
+    sources = {}
+
     # make sure all signal processes appear at least in one region
     for process in config.signals:
         for region in config.regions:
@@ -516,7 +518,7 @@ if __name__ == '__main__':
 
                     if sample in config.floats:
                         normName = 'freenorm_{sample}'.format(sample = sampleName)
-                        normModifiers[normName] = fct('{norm}[1.,0.,1000.]'.format(norm = normName))
+                        normModifiers[normName] = fct('{norm}[1.,0.1,1000.]'.format(norm = normName))
 
                     for ibin in range(1, nominal.GetNbinsX() + 1):
                         binName = sampleName + '_bin{0}'.format(ibin)
@@ -785,10 +787,6 @@ if __name__ == '__main__':
             if not pdf:
                 break
 
-            hnominal = None # nominal value +- stat uncertainty
-            huncert = None # nominal value +- stat + syst uncertainty
-            isTF = False
-
             hmods = {}
             normMods = {}
 
@@ -808,28 +806,47 @@ if __name__ == '__main__':
                     normMods[uncertName] = mod
                     hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
 
+            # test to determine PDF type
+            # if mu is a RooRealVar -> simplest case; static PDF
+            # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
+            # if mu = raw x unc and raw is a function -> linked from another sample
+
+            bin1Name = '%s_bin1' % pdf.GetName()
+
+            if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name):
+                # raw is tf x another mu -> plot the TF
+                hnominal = ROOT.TH1D('tf_' + tfName, ';' + config.xtitle, len(binning) - 1, binning)
+                huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
+                isTF = True
+
+            else:
+                # otherwise plot the distribution
+                hnominal = ROOT.TH1D(pdf.GetName(), ';' + config.xtitle, len(binning) - 1, binning)
+                hnominal.GetXaxis().SetTitle(config.xtitle)
+                hnominal.GetYaxis().SetTitle('Events / GeV')
+                huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
+                isTF = False
+
+                # pdf.createHistogram returns something very weird
+                # hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
+                for iX in range(1, hnominal.GetNbinsX() + 1):
+                    # has to be a RooParametricHist
+                    hnominal.SetBinContent(iX, workspace.arg('mu_%s_bin%d' % (pdf.GetName(), iX)).getVal())
+
+            # hnominal: nominal value +- stat uncertainty
+            # huncert: nominal value +- stat + syst uncertainty
+
             for ibin in range(1, len(binning)):
-                binName = pdf.GetName() + '_bin' + str(ibin)
+                binName = '%s_bin%d' % (pdf.GetName(), ibin)
 
-                # if mu is a RooRealVar -> simplest case; static PDF
-                # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
-                # if mu = raw x unc and raw is a function -> linked from another sample
-
-                if not workspace.var('mu_' + binName) and not workspace.var('raw_' + binName):
-                    # raw is tf x another mu -> plot the TF
-
-                    (samp, region, bin) = binName.split('_')
+                if isTF:
+                    samp, region = pdf.GetName().split('_')
                     sample = (samp, region)
                     sbase = linkSource(sample)
                     sbaseName = '{0}_{1}'.format(*sbase)
                     tfName = samp + '_' + region + '_' + sbaseName 
 
-                    if hnominal is None:
-                        hnominal = ROOT.TH1D('tf_' + tfName, ';' + config.xtitle, len(binning) - 1, binning)
-                        huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
-                        isTF = True
-
-                    tf = workspace.var(tfName + '_' + bin + '_tf')
+                    tf = workspace.var('%s_bin%d_tf' % (tfName, ibin))
                     val = tf.getVal()
 
                     # TF is historically plotted inverted
@@ -837,16 +854,6 @@ if __name__ == '__main__':
                     huncert.SetBinContent(ibin, 1. / val)
 
                 else:
-                    if hnominal is None:
-                        hnominal = pdf.createHistogram(pdf.GetName(), x, ROOT.RooFit.Binning('default'))
-                        for iX in range(1, hnominal.GetNbinsX() + 1):
-                            hnominal.SetBinError(iX, 0.)
-
-                        hnominal.SetName(pdf.GetName())
-                        hnominal.GetXaxis().SetTitle(config.xtitle)
-                        hnominal.GetYaxis().SetTitle('Events / GeV')
-                        huncert = hnominal.Clone(pdf.GetName() + '_uncertainties')
-
                     val = hnominal.GetBinContent(ibin)
 
                 totalUncert2 = 0.
@@ -915,6 +922,9 @@ if __name__ == '__main__':
                 h.SetDirectory(plotsFile)
                 h.Write()
 
+            hmods.clear()
+            normMods.clear()
+
         allData = workspace.allData()
         """
         dataItr = allData.iterator()
@@ -924,11 +934,11 @@ if __name__ == '__main__':
                 break
         """
         for data in allData:
-            hnominal = None
-
             hData = data.createHistogram(data.GetName(), x, ROOT.RooFit.Binning('default'))
             hData.SetDirectory(plotsFile)
             hData.Write()
+
+        workspace = None
 
         plotsFile.Close()
 

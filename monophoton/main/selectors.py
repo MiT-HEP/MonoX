@@ -457,11 +457,11 @@ def elmu(sample, rname):
     leptons.setRequireTight(False)
     selector.addOperator(leptons)
 
-    # NOTE: photon selection is not cleaned up against leptons and we want it that way - we are interested in photons overlapping with electrons
+    # NOTE: photon selection is not cleaned up against leptons and we want it that way - we are interested also in photons overlapping with electrons
     photonSel = ROOT.PhotonSelection()
     photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setWP(selconf['photonWP'])
-    setupPhotonSelection(photonSel, changes = ['!EVeto'])
+    setupPhotonSelection(photonSel, changes = ['-EVeto'])
     photonSel.setMinPt(30.)
     photonSel.setIgnoreDecision(True)
     selector.addOperator(photonSel)
@@ -1621,7 +1621,7 @@ def ph75(sample, rname):
     photonSel.setMinPt(50.)
     photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setWP(selconf['photonWP'])
-    setupPhotonSelection(photonSel)
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
     selector.addOperator(photonSel)
 
     return selector
@@ -1714,9 +1714,8 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gje', 'gj')
-    sname = sname.replace('gj04', 'gj')
-    sname = sname.replace('-p', '-o')
+    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj')
+
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')

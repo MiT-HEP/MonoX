@@ -9,8 +9,6 @@ sys.path.append(basedir)
 
 from plotstyle import WEBDIR
 
-sourceName = sys.argv[1]
-
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
@@ -21,91 +19,77 @@ canvas.SetRightMargin(0.15)
 nx = 900
 ny = 350
 
-hists_trivial = [
-    ROOT.TH2D('pulses_trivial', ';time (ns);normalized ADC', nx, 0., 225., ny, -0.1, 1.3),
-    ROOT.TH1D('alpha_trivial', ';#alpha', 100, 0., 2.),
-    ROOT.TH1D('beta_trivial', ';#beta', 100, 1., 4.),
-    ROOT.TH2D('alphabeta_trivial', ';#alpha;#beta', 100, 0., 2., 100, 1., 4.),
-    ROOT.TH1D('t0_trivial', ';t_{0}', 100, 0., 10.)
+outputFile = ROOT.TFile.Open('/data/t3home000/yiiyama/spike/spikes_sph_wide.root', 'recreate')
+#outputFile = ROOT.TFile.Open('/data/t3home000/yiiyama/spike/spikes.root', 'recreate')
+
+hists_list = [
+    ROOT.TH2D('pulses', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH2D('pulses_below10', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH2D('pulses_above10', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH2D('pulsesns', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH2D('pulsesns_below10', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH2D('pulsesns_above10', ';time (ns);normalized ADC', nx, -125., 125., ny, -0.1, 1.3),
+    ROOT.TH1D('alpha', ';#alpha', 100, 0., 2.),
+    ROOT.TH1D('beta', ';#beta', 100, 1., 4.),
+    ROOT.TH2D('alphabeta', ';#alpha;#beta', 100, 0., 2., 100, 1., 4.),
+    ROOT.TH1D('t0', ';t_{0}', 100, -25., 25.)
 ]
 
-hists_physical = [
-    ROOT.TH2D('pulses_physical', ';time (ns);normalized ADC', nx, 0., 225., ny, -0.1, 1.3),
-    ROOT.TH1D('alpha_physical', ';#alpha', 100, 0., 2.),
-    ROOT.TH1D('beta_physical', ';#beta', 100, 1., 4.),
-    ROOT.TH2D('alphabeta_physical', ';#alpha;#beta', 100, 0., 2., 100, 1., 4.),
-    ROOT.TH1D('t0_physical', ';t_{0}', 100, 0., 10.)
-]
+hists = dict((h.GetName(), h) for h in hists_list)
 
-source = ROOT.TFile.Open(sourceName)
-tree = source.Get('digiTree')
-amplitude = array.array('d', [4000.])
-adc = array.array('d', [0.] * 10)
-sieie = array.array('d', [0.])
-tree.SetBranchAddress('amplitude', amplitude)
-tree.SetBranchAddress('adc', adc)
+tree = ROOT.TChain('hits')
+tree.Add('/data/t3home000/yiiyama/spike/SinglePhoton.root')
+#tree.Add('/data/t3home000/yiiyama/spike/JetHT.root')
+#tree.Add('/data/t3home000/yiiyama/spike/SingleMuon.root')
+
+sieie = array.array('f', [0.])
+sipip = array.array('f', [0.])
+ieta = array.array('h', [0])
+iphi = array.array('h', [0])
+pedestal = array.array('d', [0.])
+amps = array.array('d', [0.] * 10)
+height = array.array('d', [0.])
+alpha = array.array('d', [0.])
+beta = array.array('d', [0.])
+t0 = array.array('d', [0.])
+torig = array.array('f', [0.])
+
 tree.SetBranchAddress('sieie', sieie)
+tree.SetBranchAddress('sipip', sipip)
+tree.SetBranchAddress('ieta', ieta)
+tree.SetBranchAddress('iphi', iphi)
+tree.SetBranchAddress('pedestal', pedestal)
+tree.SetBranchAddress('amps', amps)
+tree.SetBranchAddress('height', height)
+tree.SetBranchAddress('alpha', alpha)
+tree.SetBranchAddress('beta', beta)
+tree.SetBranchAddress('t0', t0)
+tree.SetBranchAddress('torig', torig)
 
-func = ROOT.TF1('pulse', '[0] * TMath::Power(TMath::Max(0., 1. + (x - [3]) / [1] / [2]), [1]) * TMath::Exp(-(x - [3]) / [2])')
-
-iEntry = 8
+iEntry = 0
 while tree.GetEntry(iEntry) > 0:
     iEntry += 1
 
-    if amplitude[0] < 3000.:
+#    if (sieie[0] > 0.001 and sipip[0] > 0.008) or (sieie[0] > 0.008 and sipip[0] > 0.001):
+    if sieie[0] < 0.01:
         continue
-
-    pmin = min(adc[:3])
-    pmax = max(adc[:3])
-    if pmax - pmin > 5.:
-        continue
-
-    pedestal = sum(adc[:3]) / 3.
-
-    graph = ROOT.TGraphErrors(7)
-    #graph.SetMarkerStyle(34)
-
-    for i in xrange(3, 10):
-        graph.SetPoint(i - 3, float(i), max(0., adc[i] - pedestal))
-        graph.SetPointError(i - 3, 0., 3.)
-
-    func.SetParameters(amplitude[0], 1., 1.7, 4.5)
-
-    graph.Fit(func)
-
-#    graph.GetXaxis().SetLimits(2.5, 9.5)
-#    func.SetRange(2.5, 9.5)
-#
-#    graph.Draw('AP')
-#    func.Draw('SAME')
-#
-#    canvas.Update()
-#    
-#    r = sys.stdin.readline().strip()
-#    if r == 'q':
-#        sys.exit(0)
-#    else:
-#        continue
-
-    amp = func.GetParameter(0)
-    alpha = func.GetParameter(1)
-    beta = func.GetParameter(2)
-    t0 = func.GetParameter(3)
-
-    if sieie[0] < 0.001:
-        hists = hists_trivial
-    else:
-        hists = hists_physical
 
     for i in xrange(10):
-        x0 = (i - t0 + 4.) * 25.
-        y0 = (adc[i] - pedestal) / amp
-        hists[0].Fill(x0, y0)
+        x0 = (i - t0[0]) * 25.
+        y0 = (amps[i] - pedestal[0]) / height[0]
+        hists['pulses'].Fill(x0, y0)
+        hists['pulsesns'].Fill((i - 5.) * 25., y0)
+        if (t0[0] - 5.) * 25. > -10.:
+            hists['pulses_above10'].Fill(x0, y0)
+            hists['pulsesns_above10'].Fill((i - 5.) * 25., y0)
+        else:
+            hists['pulses_below10'].Fill(x0, y0)
+            hists['pulsesns_below10'].Fill((i - 5.) * 25., y0)
 
-    hists[1].Fill(alpha)
-    hists[2].Fill(beta)
-    hists[3].Fill(alpha, beta)
-    hists[4].Fill(t0)
+    hists['alpha'].Fill(alpha[0])
+    hists['beta'].Fill(beta[0])
+    hists['alphabeta'].Fill(alpha[0], beta[0])
+    hists['t0'].Fill((t0[0] - 5.) * 25.)
 
 # Clean out bins with contents less than 1% of maximum or just 1 entry
 #for hist in [trivial, physical, intime]:
@@ -117,12 +101,15 @@ while tree.GetEntry(iEntry) > 0:
 #            if hist.GetBinContent(iX, iY) < maxcont * 0.01 or hist.GetBinContent(iX, iY) == 1.:
 #                hist.SetBinContent(iX, iY, 0.)
 
-for hists in [hists_trivial, hists_physical]:
-    for hist in hists:
-        if hist.IsA() == ROOT.TH2D.Class():
-            hist.Draw('COLZ')
-        else:
-            hist.Draw('HIST')
+#for hist in hists:
+#    if hist.IsA() == ROOT.TH2D.Class():
+#        hist.Draw('COLZ')
+#    else:
+#        hist.Draw('HIST')
+#
+#    canvas.Print(WEBDIR + '/singlemu_digis_shifted/' + hist.GetName() + '.png')
+#    canvas.Print(WEBDIR + '/singlemu_digis_shifted/' + hist.GetName() + '.pdf')
 
-        canvas.Print(WEBDIR + '/normal_digis_shifted/' + hist.GetName() + '.png')
-        canvas.Print(WEBDIR + '/normal_digis_shifted/' + hist.GetName() + '.pdf')
+outputFile.cd()
+outputFile.Write()
+outputFile.Close()
