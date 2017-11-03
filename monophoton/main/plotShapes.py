@@ -33,25 +33,25 @@ monophConfig = getConfig('monoph')
 source = r.TFile.Open(args.input)
 
 variable = args.variable
-xtitle = monophConfig.getVariable(variable).title
+xtitle = monophConfig.getPlot(variable).title
 
 lumi = 0.
 for sName in monophConfig.obs.samples:
-    lumi += allsamples[sName].lumi
+    lumi += allsamples[sName.name].lumi
 
 def getHist(name, syst = ''):
     if syst:
-        return source.Get(variable + '-' + name + '_' + syst)
+        return source.Get(variable + '/' + name + '_' + syst)
     else:
-        return source.Get(variable + '-' + name)
+        return source.Get(variable + '/' + name)
 
 # gather process names
 processes = [g.name for g in monophConfig.bkgGroups] # [args.model] +
 
 # get nuisances
 nuisances = {}
-for key in source.GetListOfKeys():
-    matches = re.match(variable + '-([0-9a-zA-Z-]+)_([0-9a-zA-Z]+)(Up|Var)', key.GetName())
+for key in source.Get(variable).GetListOfKeys():
+    matches = re.match('([0-9a-zA-Z-]+)_([0-9a-zA-Z]+)(Up|Var)', key.GetName())
     if not matches:
         continue
 

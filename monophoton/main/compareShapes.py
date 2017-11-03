@@ -29,20 +29,20 @@ from datasets import allsamples
 import config
 from main.plotconfig import getConfig
 
-monophConfig = getConfig('nosel')
+monophConfig = getConfig('emjet')
 source = r.TFile.Open(args.input)
 
 colors = [r.kBlack, r.kRed, r.kBlue]
 
 lumi = 0.
 for sName in monophConfig.obs.samples:
-    lumi += allsamples[sName].lumi
+    lumi += allsamples[sName.name].lumi
 
 def getHist(name, syst = ''):
     if syst:
-        return source.Get(variable + '-' + name + '_' + syst)
+        return source.Get(variable + '/' + name + '_' + syst)
     else:
-        return source.Get(variable + '-' + name)
+        return source.Get(variable + '/' + name)
 
 rcanvas = RatioCanvas(lumi = lumi, name = 'raw')
 scanvas = RatioCanvas(lumi = lumi, name = 'norm')
@@ -53,7 +53,7 @@ if args.outdir is None:
 plotDir = 'monophoton/compareShapes/' + args.input.rstrip('.root') + '/' + args.outdir
 
 for variable in args.variable:
-    xtitle = monophConfig.getVariable(variable).title
+    xtitle = monophConfig.getPlot(variable).title
     
     rcanvas.Clear()
     rcanvas.legend.Clear()
