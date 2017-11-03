@@ -814,6 +814,12 @@ if __name__ == '__main__':
             bin1Name = '%s_bin1' % pdf.GetName()
 
             if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name):
+                samp, region = pdf.GetName().split('_')
+                sample = (samp, region)
+                sbase = linkSource(sample)
+                sbaseName = '{0}_{1}'.format(*sbase)
+
+                tfName = samp + '_' + region + '_' + sbaseName 
                 # raw is tf x another mu -> plot the TF
                 hnominal = ROOT.TH1D('tf_' + tfName, ';' + config.xtitle, len(binning) - 1, binning)
                 huncert = hnominal.Clone(hnominal.GetName() + '_uncertainties')
@@ -840,12 +846,6 @@ if __name__ == '__main__':
                 binName = '%s_bin%d' % (pdf.GetName(), ibin)
 
                 if isTF:
-                    samp, region = pdf.GetName().split('_')
-                    sample = (samp, region)
-                    sbase = linkSource(sample)
-                    sbaseName = '{0}_{1}'.format(*sbase)
-                    tfName = samp + '_' + region + '_' + sbaseName 
-
                     tf = workspace.var('%s_bin%d_tf' % (tfName, ibin))
                     val = tf.getVal()
 
