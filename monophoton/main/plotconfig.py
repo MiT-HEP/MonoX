@@ -105,8 +105,8 @@ def getConfig(confName):
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)
-        config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
-        config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
+        # config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
+        # config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
 
         lowDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], 't1Met.minJetDPhi < 0.5')
 
@@ -142,7 +142,7 @@ def getConfig(confName):
         config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = noDPhiJet, overflow = True)
         config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), overflow = True)
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3)
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.), ymax = 5.e+3, sensitive = True)
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'jets.size', (10, 0., 10.), cut = 'jets.pt_ > 100.')
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
         config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.))

@@ -159,6 +159,8 @@ for key in prefitDir.GetListOfKeys():
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.0)
+    canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+    canvas.ytitle = 'Events / GeV'
 
     canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio])
     canvas.Clear()
