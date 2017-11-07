@@ -233,7 +233,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 uphist.Add(downhist, -1.)
                 uphist.Scale(0.5)
     
-                for iX in range(1, hist.GetNbinsX() + 1):
+                for iX in range(1, ghist.GetNbinsX() + 1):
                     err = math.sqrt(math.pow(ghistSyst.GetBinError(iX), 2.) + math.pow(uphist.GetBinContent(iX), 2.))
                     if err > ghistSyst.GetBinContent(iX):
                         err = ghistSyst.GetBinContent(iX)
