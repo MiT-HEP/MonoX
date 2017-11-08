@@ -206,6 +206,7 @@ def monophotonBase(sample, rname, selcls = None):
         'JetMetDPhi',
         'PhotonJetDPhi',
         'Met',
+        'PhotonPtOverMet',
         'PhotonMt'
     ]
 
@@ -245,6 +246,7 @@ def monophotonBase(sample, rname, selcls = None):
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('Met').setIgnoreDecision(True)
+    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
 
     return selector
 
@@ -330,7 +332,9 @@ def leptonBase(sample, rname, flavor, selcls = None):
     operators += [
         'PhotonMetDPhi',
         'JetMetDPhi',
-        'Met'
+        'Met',
+        'PhotonPtOverMet',
+        'PhotonMt'
     ]
 
     for op in operators:
@@ -382,6 +386,7 @@ def leptonBase(sample, rname, flavor, selcls = None):
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
     selector.findOperator('Met').setIgnoreDecision(True)
+    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
 
     return selector
 

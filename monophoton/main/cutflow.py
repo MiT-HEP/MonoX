@@ -80,6 +80,7 @@ if args.cutflow is None:
             ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
             # ('TauVeto',)
         ]
 
@@ -90,6 +91,7 @@ if args.cutflow is None:
             ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
     elif args.region == 'monomu':
@@ -98,6 +100,7 @@ if args.cutflow is None:
             ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
     elif args.region in ['dimu', 'diel']:
@@ -107,6 +110,7 @@ if args.cutflow is None:
             ('PhotonMetDPhi',),
             ('Mass',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
 else:

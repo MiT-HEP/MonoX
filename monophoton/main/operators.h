@@ -568,6 +568,21 @@ class Met : public Cut {
   double max_{6500.};
 };
 
+class PhotonPtOverMet : public Cut {
+ public:
+  PhotonPtOverMet(char const* name = "PhotonPtOverMet") : Cut(name) {}
+
+  void setMetSource(MetSource s) { metSource_ = s; }
+  void setThreshold(double min) { min_ = min; }
+  void setCeiling(double max) { max_ = max; }
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton& outEvent) override;
+
+  MetSource metSource_{kOutMet};
+  double min_{0.};
+  double max_{1.4};
+};
+
 class PhotonMt;
 
 class MtRange : public Cut {
