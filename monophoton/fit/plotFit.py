@@ -4,6 +4,7 @@ import sys
 sys.dont_write_bytecode = True
 import os
 import re
+import math
 
 import parameters
 
@@ -14,7 +15,6 @@ sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import RatioCanvas
 from main.plotconfig import getConfig
-from parameters import sourcedir, distribution
 
 import ROOT
 
@@ -27,8 +27,8 @@ x = workspace.arg('x')
 for key in postfitDir.GetListOfKeys():
     region = key.GetName()
 
-    prefitFile = ROOT.TFile.Open(sourcedir + '/' + region + '.root')
-    prefitDir = prefitFile.Get(distribution)
+    prefitFile = ROOT.TFile.Open(parameters.sourcedir + '/' + region + '.root')
+    prefitDir = prefitFile.Get(parameters.distribution)
 
     prefitTotal = prefitDir.Get('bkgtotal_syst')
     prefitTotal.Scale(1., 'width')
@@ -41,16 +41,21 @@ for key in postfitDir.GetListOfKeys():
     postfitRatio = postfitTotal.Clone('postfitRatio')
     postfitUncRatio = postfitTotal.Clone('postfitUncRatio')
 
-    dataHist = postfitTotal.Clone('dataHist')
+    dataHist = postfitTotal.Clone("dataHist")
     dataHist.Reset()
 
-    data = workspace.data('data_obs_' + region)
+    data = postfitDir.Get(region + '/data')
+    x = ROOT.Double(0.)
+    y = ROOT.Double(0.)
     for iBin in range(1, dataHist.GetNbinsX() + 1):
-        center = dataHist.GetXaxis().GetBinCenter(iBin)
-        x.setVal(center)
-        cont = int(data.weight(ROOT.RooArgSet(x)))
-        for _ in xrange(cont):
-            dataHist.Fill(center)
+        width = dataHist.GetXaxis().GetBinWidth(iBin)
+
+        data.GetPoint(iBin-1, x, y)
+        ywidth = y * width
+        yerr = math.sqrt(ywidth)
+
+        dataHist.SetBinContent(iBin, ywidth)
+        dataHist.SetBinError(iBin, yerr)
 
     obs = ROOT.RooHist(dataHist, 1.)
     obs.SetName('data_obs')

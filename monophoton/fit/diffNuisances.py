@@ -84,12 +84,12 @@ hist_fit_b  = ROOT.TH1F("prefit_fit_b"   ,"B-only fit Nuisances;;#theta ",len(nu
 hist_fit_s  = ROOT.TH1F("prefit_fit_s"   ,"S+B fit Nuisances   ;;#theta ",len(nuisances),0,len(nuisances))
 hist_prefit = ROOT.TH1F("prefit_nuisancs","Prefit Nuisances    ;;#theta ",len(nuisances),0,len(nuisances))
 
-regionDict = { 'monophHighPhi': 'High',
-               'monophLowPhi': 'Low',
-               'dimu': '2m',
-               'diel': '2e',
-               'monomu': '1m',
-               'monoel': '1e'
+regionDict = { 'monophHighPhi': 'V',
+               'monophLowPhi': 'H',
+               'dimu': 'mm',
+               'diel': 'ee',
+               'monomu': 'm',
+               'monoel': 'e'
                }
 
 # loop over all fitted parameters
@@ -100,7 +100,7 @@ for name in nuisances:
 
     if 'stat' in name:
         parts = name.split('_')
-        name = parts[0] + '_' + regionDict[parts[1]] + '_' + parts[2].strip('bin')
+        name = parts[0] + '_' + regionDict[parts[1]] + parts[2].strip('bin')
 
     # keeps information to be printed about the nuisance parameter
     row = []
