@@ -100,6 +100,29 @@ def vbfgSetting():
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
 
+def gghSetting():
+    logger.info('Applying ggh setting.')
+
+    selconf['photonFullSelection'] = [
+        'HOverE',
+        'Sieie',
+        'NHIso',
+        'PhIso',
+        'CHIso',
+        'EVeto',
+        # 'MIP49',
+        # 'Time',
+        # 'SieieNonzero',
+        # 'SipipNonzero',
+        'NoisyRegion'
+    ]
+    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+    selconf['photonIDTune'] = ROOT.idtune
+    selconf['photonSF'] = (datadir + '/scaleFactor_photon_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
+    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+
 ## utility functions
 
 def setupPhotonSelection(operator, veto = False, changes = []):
@@ -654,6 +677,195 @@ def vbflBase(sample, rname):
 
     return selector
 
+def gghgBase(sample, rname, selcls = None):
+    """
+    For low MT case.
+    Monophoton candidate-like selection (high-pT photon, lepton veto, dphi(photon, MET) and dphi(jet, MET)). 
+    Base for other selectors.
+    """
+
+    gghSetting()
+
+    if selcls is None:
+        selector = ROOT.EventSelector(rname)
+    else:
+        selector = selcls(rname)
+
+    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+
+    operators = [
+        'MetFilters',
+        'PhotonSelection',
+        'LeptonSelection',
+        'TauVeto',
+        'JetCleaning',
+        'BjetVeto',
+        'CopyMet',
+        'CopySuperClusters'
+    ]
+
+    if not sample.data:
+        operators.append('MetVariations')
+        
+    operators += [
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'PhotonJetDPhi',
+        'Met',
+        'PhotonPtOverMet',
+        'PhotonMt'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setMinPt(175.)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 0)
+    leptonSel.setRequireMedium(False)
+    leptonSel.setRequireTight(False)
+
+    
+
+    if not sample.data:
+        metVar = selector.findOperator('MetVariations')
+        metVar.setPhotonSelection(photonSel)
+
+        photonDPhi = selector.findOperator('PhotonMetDPhi')
+        photonDPhi.setMetVariations(metVar)
+        
+        jetDPhi = selector.findOperator('JetMetDPhi')
+        jetDPhi.setMetVariations(metVar)
+
+        selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
+
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
+    selector.findOperator('Met').setThreshold(100.)
+    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
+
+    return selector
+
+def gghlBase(sample, rname, flavor, selcls = None):
+    """
+    For low MT case.
+    Base for n-lepton + photon selection.
+    For MC, we could use PartonSelector, but for interest of clarity and comparing cut flow
+    with the other groups, we let events with all flavors pass.
+    """
+
+    monophotonSetting()
+
+    if selcls is None:
+        selector = ROOT.EventSelector(rname)
+    else:
+        selector = selcls(rname)
+
+    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+    else:
+        partons = ROOT.PartonFlavor()
+        if flavor == ROOT.lElectron:
+            partons.setRequiredPdgId(11)
+        elif flavor == ROOT.lMuon:
+            partons.setRequiredPdgId(13)
+
+        selector.addOperator(partons)
+
+    operators = [
+        'MetFilters',
+        'PhotonSelection',
+        'LeptonSelection',
+        'TauVeto',
+        'JetCleaning',
+        'BjetVeto',
+        'CopyMet',
+        'CopySuperClusters',
+        'LeptonRecoil',
+    ]
+
+    if not sample.data:
+        operators.append('MetVariations')
+        
+    operators += [
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'Met',
+        'PhotonPtOverMet',
+        'PhotonMt'
+    ]
+
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    jetDPhi = selector.findOperator('JetMetDPhi')
+    jetDPhi.setMetSource(ROOT.kInMet)
+
+    photonSel = selector.findOperator('PhotonSelection')
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setRequireMedium(False)
+
+    setupPhotonSelection(photonSel)
+
+    selector.findOperator('LeptonRecoil').setFlavor(flavor)
+
+    if not sample.data:
+        metVar = selector.findOperator('MetVariations')
+        metVar.setPhotonSelection(photonSel)
+
+        realMetVar = ROOT.MetVariations('RealMetVar')
+        realMetVar.setMetSource(ROOT.kInMet)
+        realMetVar.setPhotonSelection(photonSel)
+
+        selector.findOperator('PhotonMetDPhi').setMetVariations(metVar)
+        
+        jetDPhi.setMetVariations(realMetVar)
+
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addIDSFWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+        if flavor == ROOT.lElectron:
+            addElectronIDSFWeight(sample, selector)
+        else:
+            addMuonIDSFWeight(sample, selector)
+
+    if not sample.data:
+        selector.findOperator('PartonFlavor').setIgnoreDecision(True)
+
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
+    selector.findOperator('Met').setThreshold(100.)
+    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
+
+    return selector
 
 #####################
 # DERIVED SELECTORS #
@@ -765,7 +977,7 @@ def emjet(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
     
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIsoMax', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
+    setupPhotonSelection(photonSel, changes = ['-Sieie', '+Sieie15', '-CHIsoMax', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto', '-MIP49', '-Time', '-SieieNonzero', '-SipipNonzero'])
         
     return selector
 
@@ -1631,6 +1843,176 @@ def ph75(sample, rname):
 
     return selector
 
+def gghg(sample, rname):
+    """
+    GGH + photon candidate sample.
+    """
+
+    selector = gghgBase(sample, rname)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    if not sample.data:
+        addIDSFWeight(sample, selector)
+
+    return selector
+
+def gghEfake(sample, rname):
+    """
+    GGH + photon e->photon fake control sample.
+    """
+
+    selector = gghgBase(sample, rname)
+
+    modEfake(selector)
+
+    return selector
+
+def gghHfake(sample, rname):
+    """
+    GGH + photon had->photon fake control sample.
+    """
+
+    selector = gghgBase(sample, rname)
+
+    filename, suffix = selconf['hadronTFactorSource']
+
+    hadproxyTightWeight = getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
+    hadproxyLooseWeight = getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)
+    hadproxyPurityUpWeight = getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
+    hadproxyPurityDownWeight = getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
+
+    modHfake(selector)
+
+    weight = selector.findOperator('hadProxyWeight')
+
+    weight.addVariation('proxyDefUp', hadproxyTightWeight)
+    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
+    # Proper cut applied at plotconfig as variations
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    setupPhotonSelection(photonSel, veto = True)
+
+    return selector
+
+def gghe(sample, rname, selcls = None):
+    """
+    GGH + single electron.
+    """
+
+    selector = gghlBase(sample, rname, ROOT.lElectron, selcls = selcls)
+    selector.findOperator('LeptonSelection').setN(1, 0)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.lElectron)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    metCut = ROOT.Met('RealMetCut')
+    metCut.setMetSource(ROOT.kInMet)
+    metCut.setThreshold(50.)
+    metCut.setIgnoreDecision(True)
+    selector.addOperator(metCut)
+
+    return selector
+
+def gghm(sample, rname, selcls = None):
+    """
+    GGH + single muon.
+    """
+
+    selector = gghlBase(sample, rname, ROOT.lMuon, selcls = selcls)
+    selector.findOperator('LeptonSelection').setN(0, 1)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.lMuon)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    return selector
+
+def gghee(sample, rname):
+    """
+    GGH + double electron.
+    """
+
+    selector = gghlBase(sample, rname, ROOT.lElectron)
+    selector.findOperator('LeptonSelection').setN(2, 0)
+
+    dielMass = ROOT.Mass()
+    dielMass.setPrefix('diel')
+    dielMass.setMin(60.)
+    dielMass.setMax(120.)
+    dielMass.setCollection1(ROOT.cElectrons)
+    dielMass.setCollection2(ROOT.cElectrons)
+    dielMass.setIgnoreDecision(True)
+    selector.addOperator(dielMass)
+
+    dielSign = ROOT.OppositeSign()
+    dielSign.setPrefix('diel')
+    dielSign.setCollection1(ROOT.cElectrons)
+    dielSign.setCollection2(ROOT.cElectrons)
+    dielSign.setIgnoreDecision(True)
+    selector.addOperator(dielSign)
+
+    if not sample.data:
+        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
+        electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+
+        idsf = selector.findOperator('ElectronSF')
+        idsf.addFactor(electronLooseSF)
+        idsf.setNParticles(2)
+
+        track = selector.findOperator('GsfTrackSF')
+        track.addFactor(electronTrackSF)
+        track.setNParticles(2)
+
+    return selector
+
+def gghmm(sample, rname):
+    """
+    GGH + single muon.
+    """
+
+    selector = gghlBase(sample, rname, ROOT.lMuon)
+    selector.findOperator('LeptonSelection').setN(0, 2)
+
+    dimuMass = ROOT.Mass()
+    dimuMass.setPrefix('dimu')
+    dimuMass.setMin(60.)
+    dimuMass.setMax(120.)
+    dimuMass.setCollection1(ROOT.cMuons)
+    dimuMass.setCollection2(ROOT.cMuons)
+    dimuMass.setIgnoreDecision(True)
+    selector.addOperator(dimuMass)
+
+    dimuSign = ROOT.OppositeSign()
+    dimuSign.setPrefix('dimu')
+    dimuSign.setCollection1(ROOT.cMuons)
+    dimuSign.setCollection2(ROOT.cMuons)
+    dimuSign.setIgnoreDecision(True)
+    selector.addOperator(dimuSign)
+
+    if not sample.data:
+        muonLooseSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape') # x: abs eta, y: pt
+        muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
+
+        idsf = selector.findOperator('MuonSF')
+        idsf.addFactor(muonLooseSF)
+        idsf.setNParticles(2)
+
+        track = selector.findOperator('MuonTrackSF')
+        track.addFactor(muonTrackSF)
+        track.setNParticles(2)
+
+    return selector
 
 ######################
 # SELECTOR MODIFIERS #
