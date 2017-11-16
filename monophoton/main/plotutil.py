@@ -61,7 +61,7 @@ class PlotDef(object):
         self.ymin = ymin
 
     def clone(self, name, **keywords):
-        for vname in ['title', 'unit', 'expr', 'cut', 'applyBaseline', 'applyFullSel', 'binning', 'blind', 'overflow', 'logy', 'ymax']:
+        for vname in ['title', 'unit', 'expr', 'cut', 'applyBaseline', 'applyFullSel', 'binning', 'blind', 'overflow', 'logy', 'ymax', 'sensitive']:
             if vname not in keywords:
                 keywords[vname] = copy.copy(getattr(self, vname))
 
