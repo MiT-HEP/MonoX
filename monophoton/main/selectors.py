@@ -1857,6 +1857,20 @@ def gghg(sample, rname):
 
     return selector
 
+def gghgNoE(sample, rname):
+    """
+    Full monophoton selection filtering out electron events.
+    """
+
+    selector = gghgBase(sample, rname, selcls = ROOT.PartonSelector)
+    selector.setRejectedPdgId(11)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    addIDSFWeight(sample, selector)
+
+    return selector
+
 def gghEfake(sample, rname):
     """
     GGH + photon e->photon fake control sample.
@@ -1922,6 +1936,21 @@ def gghe(sample, rname, selcls = None):
 
     return selector
 
+def ggheEfake(sample, rname):
+    selector = gghe(sample, rname, selcls = ROOT.ZeeEventSelector)
+    selector.findOperator('LeptonSelection').setStrictEl(False)
+
+    modEfake(selector)
+
+    return selector
+
+def ggheHfake(sample, rname):
+    selector = gghe(sample, rname)
+
+    modHfake(selector)
+
+    return selector
+
 def gghm(sample, rname, selcls = None):
     """
     GGH + single muon.
@@ -1935,6 +1964,20 @@ def gghm(sample, rname, selcls = None):
     mtCut.setMax(160.)
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
+
+    return selector
+
+def gghmEfake(sample, rname):
+    selector = gghm(sample, rname)
+
+    modEfake(selector)
+
+    return selector
+
+def gghmHfake(sample, rname):
+    selector = gghm(sample, rname)
+
+    modHfake(selector)
 
     return selector
 
