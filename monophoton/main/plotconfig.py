@@ -260,7 +260,8 @@ def getConfig(confName):
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
-        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        for gname in ['top', 'vvg']:
+            config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
 
 
     elif confName == 'diel':
@@ -343,7 +344,8 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
 
         config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        for gname in ['top', 'vvg']:
+            config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
@@ -438,7 +440,8 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
-        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        for gname in ['top', 'vvg']:
+            config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
@@ -526,7 +529,8 @@ def getConfig(confName):
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
             group.variations.append(Variation('EWK', reweight = 'ewk'))
 
-        config.findGroup('top').variations.append(Variation('topQCDscale', reweight = 0.033))
+        for gname in ['top', 'gg', 'vvg']:
+            config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
 
