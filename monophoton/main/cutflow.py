@@ -72,41 +72,48 @@ if args.cutflow is None:
     cutflow += [
         ('MetFilters',),
         ('PhotonSelection',),
-        ('LeptonSelection',),
     ]
 
     if args.region == 'monoph':
         cutflow += [
             ('Met',),
             ('PhotonMetDPhi',),
+            ('LeptonSelection',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
             # ('TauVeto',)
         ]
 
     elif args.region == 'monoel':
         cutflow += [
+            ('LeptonSelection',),
             ('RealMetCut',),
             ('LeptonMt',),
             ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
     elif args.region == 'monomu':
         cutflow += [
+            ('LeptonSelection',),
             ('LeptonMt',),
             ('Met',),
             ('PhotonMetDPhi',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
     elif args.region in ['dimu', 'diel']:
         cutflow += [
+            ('LeptonSelection',),
             ('OppositeSign',),
             ('Met',),
             ('PhotonMetDPhi',),
             ('Mass',),
             ('JetMetDPhi',),
+            ('PhotonPtOverMet',),
         ]
 
 else:

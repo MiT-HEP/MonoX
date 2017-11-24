@@ -16,7 +16,15 @@ signalHistname = distribution + '/samples/{process}_monoph'
 # sr = 'bmonoph' # blinded version
 sr = 'monophHighPhi'
 
-regions = [sr, 'monophLowPhi', 'monoel', 'monomu', 'diel', 'dimu'] # + ['lowdphi'] # , 'lowmt']
+regions = [sr, 
+           'monophLowPhi', 
+           'monoel', 
+           'monomu', 
+           'diel', 
+           'dimu', 
+           # 'lowdphi', 
+           # 'lowmt',
+           ]
 data = 'data_obs' # name of data process
 processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike'] + ['halo']
 #signals = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1', 'dma-500-1', 'dma-1000-1', 'dma-2000-1', 'dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1', 'dmalo-1000-1', 'dmalo-2000-1', 'dph-1000', 'dph-125']

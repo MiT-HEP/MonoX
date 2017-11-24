@@ -36,7 +36,10 @@ data_sph = [
     'emjet',
     'dimuAllPhoton', 'dielAllPhoton', 'monomuAllPhoton', 
     'dijet',
-    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'ph75'
+    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'ph75',
+    'gghg', 'gghEfake', 'gghHfake', 
+    'gghe', 'ggheEfake', 'ggheHfake', 'gghm', 'gghmEfake', 'gghmHfake', 
+    'gghee', 'gghmm'
 ]
 
 data_smu = [
@@ -52,13 +55,13 @@ data_sel = [
     'vbfe', 'vbfee'
 ]
 
-mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl']
+mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl', 'gghg']
 mc_qcd = ['hfake']
-mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw']
-mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm']
-mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu']
+mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
+mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm', 'gghe', 'gghm']
+mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu', 'gghee', 'gghmm']
 
-mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet'], s.addGenPhotonVeto)
+mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet', ('gghg', s.gghgNoE), 'gghe', 'gghm'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = [
     # Data 2016

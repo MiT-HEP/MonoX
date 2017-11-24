@@ -532,6 +532,8 @@ if __name__ == '__main__':
 
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
     from main.plotconfig import getConfig
+    from main.plotconfig_vbf import getConfigVBF
+    from main.plotconfig_ggh import getConfigGGH
     import config
 
     ##################################
@@ -545,6 +547,14 @@ if __name__ == '__main__':
         localSkimDir = config.localSkimDir
 
     plotConfig = getConfig(args.config)
+    if plotConfig is None:
+        plotConfig = getConfigVBF(args.config)
+        
+        if plotConfig is None:
+            plotConfig = getConfigGGH(args.config)
+
+            if plotConfig is None:
+                sys.exit(0)
 
     if args.listSamples:
         print 'Obs:', ' '.join('%s_%s' % (s.name, plotConfig.name) for s in plotConfig.obs.samples)

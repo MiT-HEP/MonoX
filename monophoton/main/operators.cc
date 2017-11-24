@@ -1258,9 +1258,22 @@ bool
 Met::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (metSource_ == kInMet)
-    return _event.t1Met.pt > min_;
+    return _event.t1Met.pt > min_ && _event.t1Met.pt < max_;
   else
-    return _outEvent.t1Met.pt > min_;
+    return _outEvent.t1Met.pt > min_ && _outEvent.t1Met.pt < max_;
+}
+
+//--------------------------------------------------------------------
+// PhotonPtOverMet
+//--------------------------------------------------------------------
+
+bool
+PhotonPtOverMet::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (metSource_ == kInMet)
+    return (_outEvent.photons[0].scRawPt / _event.t1Met.pt) < max_;
+  else
+    return (_outEvent.photons[0].scRawPt / _outEvent.t1Met.pt) < max_;
 }
 
 //--------------------------------------------------------------------
