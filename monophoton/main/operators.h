@@ -338,10 +338,13 @@ class PhotonSelection : public Cut {
   void resetVeto() { vetoes_.clear(); }
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
 
+  void setIncludeLowPt(bool i) { includeLowPt_ = i; }
+
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setIDTune(panda::XPhoton::IDTune t) { idTune_ = t; }
   void setWP(unsigned wp) { wp_ = wp; }
+  void setN(unsigned n) { nPhotons_ = n; }
   double ptVariation(panda::XPhoton const&, bool up);
 
  protected:
@@ -352,8 +355,11 @@ class PhotonSelection : public Cut {
   double maxPt_{6500.};
   panda::XPhoton::IDTune idTune_{panda::XPhoton::kGJetsCWIso};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
+  unsigned nPhotons_{1}; // required number of photons
   float ptVarUp_[NMAX_PARTICLES];
   float ptVarDown_[NMAX_PARTICLES];
+
+  bool includeLowPt_{false};
 
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;

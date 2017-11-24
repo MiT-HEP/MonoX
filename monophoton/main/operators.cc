@@ -443,6 +443,8 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 
   size_ = 0;
 
+  bool vetoed(false);
+
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
 
@@ -458,6 +460,11 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       passPt = (photon.scRawPt > minPt_);
     }
 
+    // We continue in both cases below because photons are not necessarily sorted by scRawPt
+
+    if (!includeLowPt_ && !passPt)
+      continue;
+
     if (size_ == 0 && !passPt) // leading photon has to pass the pt threshold
       continue;
 
@@ -468,12 +475,15 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "Photon " << iP << " returned selection " << selection << std::endl;
 
+    if (vetoed)
+      continue;
+
     if (selection < 0 && passPt) {
-      // vetoed
       _outEvent.photons.clear();
-      break;
+      vetoed = true;
     }
     else if (selection > 0) {
+      // if includeLowPt = true, here we push back soft photons passing the ID
       if (vetoes_.size() == 0) {
         ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, true);
         ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, false);
@@ -481,10 +491,16 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       _outEvent.photons.push_back(photon);
     }
   }
-  
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_ && _outEvent.photons[0].isEB;
 
-  return _outEvent.photons.size() != 0;
+  unsigned nPassNominal(0);
+  for (auto& ph : _outEvent.photons) {
+    if (ph.scRawPt > minPt_)
+      ++nPassNominal;
+  }
+
+  nominalResult_ = (nPassNominal >= nPhotons_);
+  
+  return _outEvent.photons.size() >= nPhotons_;
 }
 
 int
