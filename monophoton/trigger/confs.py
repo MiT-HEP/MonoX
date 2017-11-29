@@ -44,7 +44,7 @@ confs = {
         }),
         'ph75r9iso': ('{col}.triggerMatch[][%d]' % getEnum('Photon', 'fPh75EBR9Iso'), '{col}.isEB', 'Photon75Iso40R9', {
             'pt': ('p_{T}^{#gamma} (GeV)', '{col}.pt_', '{col}.r9 > 0.9', (50, 0., 100.)),
-            'ptwide': ('p_{T}^{#gamma} (GeV)', '{col}.pt_', '{col}.r9 > 0.9', [30. + 10. * x for x in range(7)] + [100. + 20. * x for x in range(6)] + [220. + 40. * x for x in range(4)] + [380., 600.]),
+            'ptwide': ('p_{T}^{#gamma} (GeV)', '{col}.pt_', '{col}.r9 > 0.9', [30. + 10. * x for x in range(7)] + [100., 120., 140., 160., 200., 300., 400., 600.]),
             'r9': ('R^{9}', '{col}.r9', '{col}.pt_ > 80.', (30, 0.7, 1.))
         })
     },
