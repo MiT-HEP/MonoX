@@ -144,7 +144,7 @@ class SkimSlimWeight(object):
             print 'Selectors with different preskims mixed. Aborting.'
             for preskim, selectors in bypreskim.iteritems():
                 print preskim
-                print ' ' + ' '.join(s.name() for s in selectors)
+                print ' ' + ' '.join(str(s.name()) for s in selectors)
 
             raise RuntimeError('invalid configuration')
 
