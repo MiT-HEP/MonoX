@@ -26,6 +26,7 @@ baseSels = {
     'met150': 't1Met.pt > 150.',
     'mtPhoMet300': 'photons.mt[0] < 300.',
     'minJetDPhi0.5': 't1Met.minJetDPhi > 0.5',
+    'vbfVeto': 'pdijet.size == 0'
     # 'photonDPhi0.5': 't1Met.photonDPhi > 0.5',
     # 'jetReq': 'Sum$(jets.pt_ > 30.) > 0', 
     # 'tauVeto': 'taus.size == 0',
@@ -64,19 +65,19 @@ def getConfigGGH(confName):
         # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         # config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = top, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
+        config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'gghHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+        config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
 
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
         noMtPhoMet = config.baseline.replace(baseSels['mtPhoMet300'], '1')
         noMet = config.baseline.replace(baseSels['met150'], '1')
         
         config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
-        config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
-        config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
+        # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
+        # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
         config.addPlot('mtPhoMetWide', 'M_{T#gamma}', 'photons.mt[0]', mtWideBinning, unit = 'GeV', applyBaseline = False, cut = noMtPhoMet, overflow = True)
         config.addPlot('recoilScan', 'E_{T}^{miss}', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', applyBaseline = False, cut = noMet, overflow = True, sensitive = True)
@@ -169,8 +170,8 @@ def getConfigGGH(confName):
         noMet = config.baseline.replace(baseSels['met150'], '1')
 
         config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True, ymax = 1.0)
-        config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 1.0)
-        config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 1.0)
+        # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 1.0)
+        # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 1.0)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
         config.addPlot('mtPhoMetWide', 'M_{T#gamma}', 'photons.mt[0]', mtWideBinning, unit = 'GeV', applyBaseline = False, cut = noMtPhoMet, overflow = True)
         config.addPlot('recoilScan', 'Recoil', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', applyBaseline = False, cut = noMet, overflow = True, sensitive = True)
@@ -254,8 +255,8 @@ def getConfigGGH(confName):
         noMet = config.baseline.replace(baseSels['met150'], '1')
 
         config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True, ymax = 0.5)
-        config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 0.5)
-        config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 0.5)
+        # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 0.5)
+        # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 0.5)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
         config.addPlot('mtPhoMetWide', 'M_{T#gamma}', 'photons.mt[0]', mtWideBinning, unit = 'GeV', applyBaseline = False, cut = noMtPhoMet, overflow = True)
         config.addPlot('recoilScan', 'Recoil', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', applyBaseline = False, cut = noMet, overflow = True, sensitive = True)
@@ -409,8 +410,8 @@ def getConfigGGH(confName):
         noMet = config.baseline.replace(baseSels['met150'], '1')
 
         config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True)
-        config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True)
-        config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True)
+        # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True)
+        # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
         config.addPlot('mtPhoMetWide', 'M_{T#gamma}', 'photons.mt[0]', mtWideBinning, unit = 'GeV', applyBaseline = False, cut = noMtPhoMet, overflow = True)
         config.addPlot('recoilScan', 'Recoil', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', applyBaseline = False, cut = noMet, overflow = True, sensitive = True)
@@ -490,8 +491,8 @@ def getConfigGGH(confName):
         noMet = config.baseline.replace(baseSels['met150'], '1')
 
         config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True)
-        config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True)
-        config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True)
+        # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True)
+        # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
         config.addPlot('mtPhoMetWide', 'M_{T#gamma}', 'photons.mt[0]', mtWideBinning, unit = 'GeV', applyBaseline = False, cut = noMtPhoMet, overflow = True)
         config.addPlot('recoilScan', 'Recoil', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', applyBaseline = False, cut = noMet, overflow = True, sensitive = True)

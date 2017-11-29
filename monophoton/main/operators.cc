@@ -1378,10 +1378,6 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
     return false;
   }
 
-  cout << "out event address " << &_outEvent << std::endl;
-  printf("%i %i %i \n", _event.runNumber, _event.lumiNumber, _event.eventNumber);
-  printf("jets.size %i \n", jets->size());
-
   for (unsigned iJ1(0); iJ1 != jets->size(); ++iJ1) {
     auto& jet1((*jets)[iJ1]);
 
