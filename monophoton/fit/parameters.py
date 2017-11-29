@@ -22,6 +22,7 @@ regions = [sr,
            'monomu', 
            'diel', 
            'dimu', 
+           # 'diph',
            # 'lowdphi', 
            # 'lowmt',
            ]
@@ -46,6 +47,7 @@ links = [
     (('zg', 'monophLowPhi'), ('zg', sr)),
     (('wg', 'monophLowPhi'), ('wg', sr)),
     (('halo', 'monophLowPhi'), ('halo', sr)),
+#     (('gg', 'diph'), ('zg', sr)),
 #    (('gjets', 'lowdphi'), ('gjets', sr)),
 #    (('zg', 'lowdphi'), ('zg', sr)),
 #    (('wg', 'lowdphi'), ('wg', sr))
@@ -71,6 +73,7 @@ ignoredNuisances = {
     ('zg', 'monophHighPhi'): wzIgnoreListExp,
     ('wg', 'monophHighPhi'): wzIgnoreListExp,
     ('halo', 'monophHighPhi'): ['haloNorm'],
+#     ('gg', 'diph'): wzIgnoreListExp,
 #    ('zg', 'lowdphi'): wzIgnoreListExp + wzIgnoreListThe,
 #    ('wg', 'lowdphi'): wzIgnoreListExp + wzIgnoreListThe,
 #    ('gjets', 'lowdphi'): gjIgnoreList,
