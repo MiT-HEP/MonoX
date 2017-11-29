@@ -1279,6 +1279,7 @@ class TPLeptonPhoton : public TPCut {
   bool probeTriggerMatch_{false};
 
   bool hasCollinearL_[NMAX_PARTICLES];
+  float ptdiff_[NMAX_PARTICLES];
 };
 
 class TPDilepton : public TPCut {

@@ -3422,6 +3422,7 @@ void
 TPLeptonPhoton::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("probes.hasCollinearL", hasCollinearL_, "hasCollinearL[probes.size]/O");
+  _skimTree.Branch("probes.ptdiff", ptdiff_, "ptdiff[probes.size]/F");
 }
 
 bool
@@ -3520,10 +3521,16 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
         }
       }
       else {
-        double mlg((pg + lepton.p4()).M());
-
-        if (mlg < 20. || mlg > 160.)
-          continue;
+	auto&& pl(lepton.p4());
+        double mlg((pg + pl).M());
+	
+	// calculate expected pt using z mass 
+	TLorentzVector ug;
+	ug.SetPtEtaPhiM(1., photon.eta(), photon.phi(), 0.);
+	float ptdiff = (91.2 * 91.2) / (2 * ug.Dot(pl)) - photon.scRawPt;
+	
+        // if (mlg < 20. || mlg > 160.)
+        //   continue;
 
         // veto additional loose leptons
         unsigned iVeto(0);
@@ -3581,6 +3588,7 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
         }
 
         hasCollinearL_[_outEvent.tp.size() - 1] = hasCollinearL;
+	ptdiff_[_outEvent.tp.size() - 1] = ptdiff;
       }
     }
   }
