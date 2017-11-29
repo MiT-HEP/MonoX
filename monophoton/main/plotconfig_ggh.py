@@ -473,7 +473,6 @@ def getConfigGGH(confName):
 
 
     else:
-        print 'Unknown configuration', confName
-        return
+        config = None
 
     return config
