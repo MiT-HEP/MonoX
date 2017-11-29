@@ -1378,6 +1378,10 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
     return false;
   }
 
+  cout << "out event address " << &_outEvent << std::endl;
+  printf("%i %i %i \n", _event.runNumber, _event.lumiNumber, _event.eventNumber);
+  printf("jets.size %i \n", jets->size());
+
   for (unsigned iJ1(0); iJ1 != jets->size(); ++iJ1) {
     auto& jet1((*jets)[iJ1]);
 
@@ -1406,7 +1410,7 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
       // }
 
       if (nDijet_ == NMAX_PARTICLES)
-        throw std::runtime_error("Too many dijet pairs in an event");
+        throw std::runtime_error(TString::Format("Too many dijet pairs in an event %i, %i, %i", _event.runNumber, _event.lumiNumber, _event.eventNumber).Data());
 
       dEtajj_[nDijet_] = jet1.eta() - jet2.eta();
       mjj_[nDijet_] = (jet1.p4() + jet2.p4()).M();

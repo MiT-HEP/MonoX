@@ -703,6 +703,7 @@ def gghgBase(sample, rname, selcls = None):
         'LeptonSelection',
         'TauVeto',
         'JetCleaning',
+        'DijetSelection',
         'BjetVeto',
         'CopyMet',
         'CopySuperClusters'
@@ -733,7 +734,10 @@ def gghgBase(sample, rname, selcls = None):
     leptonSel.setRequireMedium(False)
     leptonSel.setRequireTight(False)
 
-    
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(3.)
+    dijetSel.setMinMjj(500.)
+    dijetSel.setIgnoreDecision(True)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -797,6 +801,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
         'LeptonSelection',
         'TauVeto',
         'JetCleaning',
+        'DijetSelection',
         'BjetVeto',
         'CopyMet',
         'CopySuperClusters',
@@ -826,6 +831,11 @@ def gghlBase(sample, rname, flavor, selcls = None):
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setRequireMedium(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(3.)
+    dijetSel.setMinMjj(500.)
+    dijetSel.setIgnoreDecision(True)
 
     setupPhotonSelection(photonSel)
 
