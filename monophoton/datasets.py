@@ -195,13 +195,15 @@ class SampleDef(object):
         self.nevents = 0
         self.sumw = 0.
 
+        error = False
         for dataset in self.datasetNames:
             for fileset, basenames in self._basenames[dataset].items():
                 for basename in basenames:
                     path = self._directories[dataset] + '/' + basename
                     source = ROOT.TFile.Open(path)
                     if not source:
-                        raise IOError('Could not open', path)
+                        error = True
+                        continue
 
                     try:
                         counter = source.Get('eventcounter')
@@ -212,10 +214,13 @@ class SampleDef(object):
                             self._sumw2 += math.pow(sumw.GetBinError(1), 2.)
 
                     except:
-                        print path
-                        raise
+                        print path, 'corrupt'
+                        error = True
 
                     source.Close()
+
+        if error:
+            raise RuntimeError('Corrupt input')
 
     def _readCatalogs(self):
         # Loop over dataset names of the sample
@@ -462,6 +467,15 @@ add INFO: Add a new dataset.'''
             sys.exit(1)
 
         sample.dump()
+
+    elif command == 'filesets':
+        try:
+            sample = samples[arguments[0]]
+        except:
+            print 'No sample', arguments[0]
+            sys.exit(1)
+
+        print ' '.join(sample.filesets())
 
     elif command == 'dump':
         if len(arguments) == 0:

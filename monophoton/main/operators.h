@@ -65,6 +65,7 @@
 //     JetClustering *
 //     JetScore *
 //     LeptonVertex *
+//     WHadronizer *
 //   PUWeight
 //   TPCut
 //     TPLeptonPhoton *
@@ -338,10 +339,13 @@ class PhotonSelection : public Cut {
   void resetVeto() { vetoes_.clear(); }
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
 
+  void setIncludeLowPt(bool i) { includeLowPt_ = i; }
+
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setIDTune(panda::XPhoton::IDTune t) { idTune_ = t; }
   void setWP(unsigned wp) { wp_ = wp; }
+  void setN(unsigned n) { nPhotons_ = n; }
   double ptVariation(panda::XPhoton const&, bool up);
 
  protected:
@@ -352,8 +356,11 @@ class PhotonSelection : public Cut {
   double maxPt_{6500.};
   panda::XPhoton::IDTune idTune_{panda::XPhoton::kGJetsCWIso};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
+  unsigned nPhotons_{1}; // required number of photons
   float ptVarUp_[NMAX_PARTICLES];
   float ptVarDown_[NMAX_PARTICLES];
+
+  bool includeLowPt_{false};
 
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
@@ -631,6 +638,7 @@ class DijetSelection : public Cut {
   void setMinMjj(double min) { minMjj_ = min; }
   void setSavePassing(bool b) { savePassing_ = b; }
   void setJetType(JetType j) { jetType_ = j; }
+  void setDEtajjReweight(TFile* _plotsFile);
 
   void addBranches(TTree& skimTree) override;
   void addInputBranch(panda::utils::BranchList&) override;
@@ -655,6 +663,8 @@ class DijetSelection : public Cut {
   float mjjPassing_[NMAX_PARTICLES]{};
   unsigned ij1Passing_[NMAX_PARTICLES]{};
   unsigned ij2Passing_[NMAX_PARTICLES]{};
+  TH1D* reweightSource_{0};
+  double detajjReweight_;
 };
 
 class PhotonPtTruncator : public Cut {
@@ -844,14 +854,19 @@ class JetCleaning : public Modifier {
   void addBranches(TTree& skimTree) override;
   void initialize(panda::EventMonophoton&) override;
 
+  void useTightWP(bool b) { useTightWP_ = b; }
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
   //  void setJetResolution(char const* sourcePath);
   void setMinPt(double min) { minPt_ = min; }
+  void setPUIdWP(int i) { puidWP_ = i; }
 
   /* double ptScaled(unsigned iJ) const { return ptScaled_[iJ]; } */
   /* double ptScaledUp(unsigned iJ) const { return ptScaledUp_[iJ]; } */
   /* double ptScaledDown(unsigned iJ) const { return ptScaledDown_[iJ]; } */
-  
+
+  static double const puidCuts[4][4][4]; // WP x pt x eta
+  static bool passPUID(int wp, panda::Jet const& jet);
+
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
@@ -865,6 +880,8 @@ class JetCleaning : public Modifier {
   //  JER* jer_{0};
   //  TRandom3* rndm_{0};
   double minPt_{30.};
+  bool useTightWP_{false};
+  int puidWP_{3}; // 0: loose, 1: medium, 2: tight, 3: some old WP
 };
 
 class PhotonJetDPhi : public Modifier {
@@ -1186,6 +1203,17 @@ class LeptonVertex : public Modifier {
   short ivtx_;
   short ivtxNoL_;
   float score_;
+};
+
+class WHadronizer : public Modifier {
+ public:
+  WHadronizer(char const* name = "WHadronizer") : Modifier(name) {}
+
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  double weight_;
 };
 
 class PhotonRecoil : public Modifier {

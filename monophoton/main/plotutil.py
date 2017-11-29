@@ -44,7 +44,7 @@ class SampleSpec(object):
 
 
 class PlotDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, sensitive = False, overflow = False, logy = None, ymax = -1., ymin = 0.):
+    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, sensitive = False, overflow = False, mcOnly = False, logy = None, ymax = -1., ymin = 0.):
         self.name = name
         self.title = title
         self.unit = unit
@@ -56,6 +56,7 @@ class PlotDef(object):
         self.blind = blind # 'full' or a range in 2-tuple. Always takes effect if set.
         self.sensitive = sensitive # whether to add signal distributions + prescale observed
         self.overflow = overflow # add overflow bin
+        self.mcOnly = mcOnly # plotting MC-only quantity
         self.logy = logy
         self.ymax = ymax
         self.ymin = ymin

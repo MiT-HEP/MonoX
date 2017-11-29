@@ -72,6 +72,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
             if group == plotConfig.obs and plotdef.fullyBlinded():
                 continue
+
+            if sample.data and plotdef.mcOnly:
+                continue
             
             plotCuts = []
 
@@ -549,12 +552,11 @@ if __name__ == '__main__':
     plotConfig = getConfig(args.config)
     if plotConfig is None:
         plotConfig = getConfigVBF(args.config)
-        
-        if plotConfig is None:
-            plotConfig = getConfigGGH(args.config)
-
-            if plotConfig is None:
-                sys.exit(0)
+    if plotConfig is None:
+        plotConfig = getConfigGGH(args.config)
+    if plotConfig is None:
+        print 'Unknown configuration', args.config
+        sys.exit(1)
 
     if args.listSamples:
         print 'Obs:', ' '.join('%s_%s' % (s.name, plotConfig.name) for s in plotConfig.obs.samples)
@@ -662,7 +664,7 @@ if __name__ == '__main__':
     
         for group in groups:
             print ' ', group.name
-    
+
             fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir)
    
         # Save a background total histogram (for display purpose) for each plotdef

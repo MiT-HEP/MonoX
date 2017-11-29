@@ -13,7 +13,7 @@ ROOT.gStyle.SetTitleSize(0.05, 'X')
 ROOT.gStyle.SetTitleSize(0.05, 'Y')
 ROOT.gStyle.SetTitleOffset(0.84, 'X')
 ROOT.gStyle.SetTitleOffset(1.3, 'Y')
-ROOT.gStyle.SetNdivisions(205, 'X')
+ROOT.gStyle.SetNdivisions(208, 'X')
 ROOT.gStyle.SetFillStyle(0)
 
 def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035):

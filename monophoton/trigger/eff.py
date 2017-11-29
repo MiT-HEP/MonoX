@@ -162,8 +162,8 @@ for omname in omnames:
             else:
                 eff.SetMarkerColor(ROOT.kBlack)
                 eff.SetMarkerStyle(8)
-            
-            canvas.addHistogram(eff, drawOpt = 'EP')
+          
+            canvas.addHistogram(eff, drawOpt = 'EP', clone = False)
             
             canvas.xtitle = vtitle
             canvas.ylimits = (0., 1.1)
@@ -171,16 +171,16 @@ for omname in omnames:
             canvas.Update()
             
             if type(binning) is tuple:
-                canvas.addLine(binning[0], 1., binning[2], 1.)
                 eff.GetXaxis().SetLimits(binning[1], binning[2])
+                eff.GetXaxis().SetRangeUser(binning[1], binning[2])
             else:
-                canvas.addLine(binning[0], 1., binning[-1], 1.)
                 eff.GetXaxis().SetLimits(binning[0], binning[-1])
+                eff.GetXaxis().SetRangeUser(binning[0], binning[-1])
             
             eff.GetYaxis().SetRangeUser(0., 1.2)
 
-            if tname == 'sph165abs' and vname.startswith('pt'):
-                canvas.addLine(175., canvas.ylimits[0], 175., canvas.ylimits[1], color = ROOT.kRed, width = 2, style = ROOT.kDashed)
+#            if tname == 'sph165abs' and vname.startswith('pt'):
+#                canvas.addLine(175., canvas.ylimits[0], 175., canvas.ylimits[1], color = ROOT.kRed, width = 2, style = ROOT.kDashed)
             
             canvas.printWeb(outName, oname + '_' + mname + '_' + tname + '_' + vname, logy = False)
 

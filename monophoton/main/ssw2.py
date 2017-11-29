@@ -117,6 +117,9 @@ class SkimSlimWeight(object):
         skimmer.setPrintEvery(SkimSlimWeight.config['printEvery'])
         skimmer.setPrintLevel(SkimSlimWeight.config['printLevel'])
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
+
+        if SkimSlimWeight.config['openTimeout'] is not None:
+            ROOT.TIMEOUT = SkimSlimWeight.config['openTimeout']
            
         # temporary - backward compatibility issue 004 -> 005/006/007
         if self.sample.book != 'pandaf/004':
@@ -141,7 +144,7 @@ class SkimSlimWeight(object):
             print 'Selectors with different preskims mixed. Aborting.'
             for preskim, selectors in bypreskim.iteritems():
                 print preskim
-                print ' ' + ' '.join(s.name() for s in selectors)
+                print ' ' + ' '.join(str(s.name()) for s in selectors)
 
             raise RuntimeError('invalid configuration')
 
@@ -297,6 +300,9 @@ class SSWBatchManager(BatchManager):
         if self.catalogDir:
             argTemplate += ' -c ' + self.catalogDir
 
+        if args.openTimeout is not None:
+            argTemplate += ' -m ' + str(args.openTimeout)
+
         for ssw in self.ssws:
             for fileset in ssw.filesets:
                 submitter.job_args.append(argTemplate % (ssw.sample.name, fileset) + ' -s ' + ' '.join(ssw.selectors.keys()))
@@ -345,6 +351,7 @@ if __name__ == '__main__':
     argParser.add_argument('--read-remote', '-R', action = 'store_true', dest = 'readRemote', help = 'Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
     argParser.add_argument('--resubmit', '-S', action = 'store_true', dest = 'autoResubmit', help = '(Without no-wait option) Automatically release held jobs.')
     argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
+    argParser.add_argument('--open-timeout', '-m', metavar = 'SECONDS', dest = 'openTimeout', type = int, help = 'Timeout for opening input files. Open is attempted every 30 seconds.')
     argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area. Sets --filesets to 0000 by default.')
     
     args = argParser.parse_args()

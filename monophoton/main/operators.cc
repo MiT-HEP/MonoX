@@ -443,6 +443,8 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 
   size_ = 0;
 
+  bool vetoed(false);
+
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
 
@@ -458,6 +460,11 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       passPt = (photon.scRawPt > minPt_);
     }
 
+    // We continue in both cases below because photons are not necessarily sorted by scRawPt
+
+    if (!includeLowPt_ && !passPt)
+      continue;
+
     if (size_ == 0 && !passPt) // leading photon has to pass the pt threshold
       continue;
 
@@ -468,12 +475,15 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << "Photon " << iP << " returned selection " << selection << std::endl;
 
+    if (vetoed)
+      continue;
+
     if (selection < 0 && passPt) {
-      // vetoed
       _outEvent.photons.clear();
-      break;
+      vetoed = true;
     }
     else if (selection > 0) {
+      // if includeLowPt = true, here we push back soft photons passing the ID
       if (vetoes_.size() == 0) {
         ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, true);
         ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, false);
@@ -481,10 +491,16 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
       _outEvent.photons.push_back(photon);
     }
   }
-  
-  nominalResult_ = _outEvent.photons.size() != 0 && _outEvent.photons[0].scRawPt > minPt_ && _outEvent.photons[0].isEB;
 
-  return _outEvent.photons.size() != 0;
+  unsigned nPassNominal(0);
+  for (auto& ph : _outEvent.photons) {
+    if (ph.scRawPt > minPt_)
+      ++nPassNominal;
+  }
+
+  nominalResult_ = (nPassNominal >= nPhotons_);
+  
+  return _outEvent.photons.size() >= nPhotons_;
 }
 
 int
@@ -1299,6 +1315,21 @@ HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonop
 //--------------------------------------------------------------------
 
 void
+DijetSelection::setDEtajjReweight(TFile* _plotsFile)
+{
+  delete reweightSource_;
+
+  auto* gjets(static_cast<TH1D*>(_plotsFile->Get("detajjAll/gjets")));
+  auto* obs(static_cast<TH1D*>(_plotsFile->Get("detajjAll/data_obs")));
+  auto* qcd(static_cast<TH1D*>(_plotsFile->Get("detajjAll/hfake")));
+
+  reweightSource_ = static_cast<TH1D*>(obs->Clone("detajjweight"));
+  reweightSource_->SetDirectory(0);
+  reweightSource_->Add(qcd, -1.);
+  reweightSource_->Divide(gjets);
+}
+
+void
 DijetSelection::addBranches(TTree& _skimTree)
 {
   TString colName("dijet");
@@ -1317,6 +1348,9 @@ DijetSelection::addBranches(TTree& _skimTree)
     _skimTree.Branch("p" + colName + ".ij1", ij1Passing_, "ij1[p" + colName + ".size]/i");
     _skimTree.Branch("p" + colName + ".ij2", ij2Passing_, "ij2[p" + colName + ".size]/i");
   }
+
+  if (reweightSource_)
+    _skimTree.Branch("reweight_detajj", &detajjReweight_, "reweight_detajj/D");
 }
 
 void
@@ -1354,6 +1388,12 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
     if (jet1.pt() < minPt1_)
       break;
 
+    // if (jetType_ == jReco) {
+    //   auto& recoJet(static_cast<panda::Jet const&>(jet1));
+    //   if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
+    //     continue;
+    // }
+
     for (unsigned iJ2(iJ1 + 1); iJ2 != jets->size(); ++iJ2) {
       auto& jet2((*jets)[iJ2]);
 
@@ -1362,6 +1402,12 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 
       if (jet1.eta() * jet2.eta() > 0.)
         continue;
+
+      // if (jetType_ == jReco) {
+      //   auto& recoJet(static_cast<panda::Jet const&>(jet2));
+      //   if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
+      //     continue;
+      // }
 
       if (nDijet_ == NMAX_PARTICLES)
         throw std::runtime_error(TString::Format("Too many dijet pairs in an event %i, %i, %i", _event.runNumber, _event.lumiNumber, _event.eventNumber).Data());
@@ -1376,6 +1422,12 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
         mjjPassing_[nDijetPassing_] = mjj_[nDijet_];
         ij1Passing_[nDijetPassing_] = iJ1;
         ij2Passing_[nDijetPassing_] = iJ2;
+
+        if (reweightSource_ && nDijetPassing_ == 0) {
+          int ibin(reweightSource_->FindFixBin(dEtajj_[nDijet_]));
+          _outEvent.weight *= reweightSource_->GetBinContent(ibin);
+          detajjReweight_ = reweightSource_->GetBinContent(ibin);
+        }
 
         ++nDijetPassing_;
       }
@@ -1826,6 +1878,67 @@ ExtraPhotons::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
 // JetCleaning
 //--------------------------------------------------------------------
 
+// Values from a talk linked from https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetID
+// under Information for 13TeV data analysis in 80X
+// and Hgg AN 2017-036
+
+/*static*/
+double const JetCleaning::puidCuts[4][4][4] = {
+  {
+    {-0.97, -0.68, -0.53, -0.47},
+    {-0.97, -0.68, -0.53, -0.47},
+    {-0.89, -0.52, -0.38, -0.3},
+    {-0.56, -0.17, -0.04, -0.01}
+  },
+  {
+    {0.18, -0.55, -0.42, -0.36},
+    {0.18, -0.55, -0.42, -0.36},
+    {0.61, -0.35, -0.23, -0.17},
+    {0.87, 0.03, 0.13, 0.12}
+  },
+  {
+    {0.69, -0.35, -0.26, -0.21},
+    {0.69, -0.35, -0.26, -0.21},
+    {0.86, -0.1, -0.05, -0.01},
+    {0.95, 0.28, 0.31, 0.28}
+  },
+  {
+    {-0.8, -0.95, -0.97, -0.99},
+    {-0.8, -0.95, -0.97, -0.99},
+    {-0.8, -0.95, -0.97, -0.99},
+    {-0.8, -0.95, -0.97, -0.99}
+  }
+};
+
+/*static*/
+bool
+JetCleaning::passPUID(int _wp, panda::Jet const& _jet)
+{
+  int ptBin(0);
+  if (_jet.pt() < 20.)
+    ptBin = 0;
+  else if (_jet.pt() < 30.)
+    ptBin = 1;
+  else if (_jet.pt() < 50.)
+    ptBin = 2;
+  else
+    ptBin = 3;
+
+  double absEta(std::abs(_jet.eta()));
+
+  int etaBin(0);
+  if (absEta < 2.5)
+    etaBin = 0;
+  else if (absEta < 2.75)
+    etaBin = 1;
+  else if (absEta < 3.)
+    etaBin = 2;
+  else
+    etaBin = 3;
+
+  return _jet.puid > puidCuts[_wp][ptBin][etaBin];
+}
+
 JetCleaning::JetCleaning(char const* _name/* = "JetCleaning"*/) :
   Modifier(_name)
 {
@@ -1887,6 +2000,9 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (!jet.loose)
       continue;
 
+    if (useTightWP_ && !jet.tight)
+      continue;
+
     double absEta(std::abs(jet.eta()));
 
     if (jet.pt() < minPt_ || absEta > 5.)
@@ -1895,17 +2011,7 @@ JetCleaning::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&
     if (printLevel_ > 0 && printLevel_ <= DEBUG)
       *stream_ << " pass pt and eta cut" << std::endl;
 
-    double puIdCut(0.);
-    if (absEta < 2.5)
-      puIdCut = -0.8;
-    else if (absEta < 2.75)
-      puIdCut = -0.95;
-    else if (absEta < 3.)
-      puIdCut = -0.97;
-    else
-      puIdCut = -0.99;
-
-    if (jet.puid < puIdCut)
+    if (!passPUID(puidWP_, jet))
       continue;
 
     // No JEC info stored in nero right now (at least samples I am using)
@@ -3084,7 +3190,7 @@ LeptonVertex::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   score_ = 0.;
 
   panda::LeptonCollection* col(0);
-  unsigned pdgId(0);
+  int pdgId(0);
 
   switch (flavor_) {
   case lElectron:
@@ -3161,6 +3267,43 @@ LeptonVertex::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
   for (ivtxNoL_ = ivtx_; ivtxNoL_ < int(_event.vertices.size()) - 1; ++ivtxNoL_) {
     if (score_ > _event.vertices[ivtxNoL_ + 1].score)
       break;
+  }
+}
+
+//--------------------------------------------------------------------
+// WHadronizer
+//--------------------------------------------------------------------
+
+void
+WHadronizer::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("reweight_whadronizer", &weight_, "reweight_whadronizer/D");
+}
+
+void
+WHadronizer::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  weight_ = 67.41 / (10.86 * 3.);
+  _outEvent.weight *= weight_;
+
+  for (auto& part : _event.genParticles) {
+    if (!part.finalState)
+      continue;
+
+    unsigned absId(std::abs(part.pdgid));
+    if (absId < 11 || absId > 16)
+      continue;
+
+    auto* parent(part.parent.get());
+    if (parent && std::abs(parent->pdgid) == part.pdgid)
+      parent = parent->parent.get();
+
+    if (parent && std::abs(parent->pdgid) == 24) {
+      auto& outJet(_outEvent.jets.create_back());
+      outJet.setPtEtaPhiM(part.pt(), part.eta(), part.phi(), part.m());
+      outJet.puid = 1.;
+      outJet.rawPt = part.pt();
+    }
   }
 }
 

@@ -1165,7 +1165,6 @@ def getConfig(confName):
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
 
     else:
-        print 'Unknown configuration', confName
-        return
+        config = None
 
     return config
