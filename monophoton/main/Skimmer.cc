@@ -220,7 +220,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   long iEntry(0);
   while (iEntry++ != _nEntries) {
-    if (iEntry % printEvery_ == 1 && printLevel_ > 0) {
+    if ((iEntry - 1) % printEvery_ == 0 && printLevel_ > 0) {
       auto past = now;
       now = SClock::now();
       *stream << " " << iEntry << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
