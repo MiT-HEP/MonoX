@@ -44,14 +44,13 @@ def getConfigVBF(confName):
         config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'vbfgHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfgEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
-        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
-        if confName == 'vbfglo':
-            config.obs.region = 'vbfg'
-            for group in config.bkgGroups:
-                if group.region == 'vbfglo':
-                    group.region = 'vbfg'
+        config.obs.region = 'vbfg'
+        for group in config.bkgGroups:
+            if not group.region:
+                group.region = 'vbfg'
 
         jetPtBinning = [x * 10. for x in range(20)] + [200. + x * 20. for x in range(10)] + [400. + x * 50. for x in range(9)]
 
@@ -137,34 +136,54 @@ def getConfigVBF(confName):
 #        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
 
     elif confName == 'vbfgCtrl' or confName == 'vbfgloCtrl':
-        allsamples['sph-16b-m'].lumi = 4778. * 0.1 # roughly
-        allsamples['sph-16c-m'].lumi = 2430. * 0.1 # roughly
-        allsamples['sph-16d-m'].lumi = 4044. * 0.1 # roughly
-        allsamples['sph-16e-m'].lumi = 3284. * 0.1 # roughly
-        allsamples['sph-16f-m'].lumi = 2292. * 0.1 # roughly
-        allsamples['sph-16g-m'].lumi = 5190. * 0.1 # roughly
-        allsamples['sph-16h-m'].lumi = 5470. * 0.1 # roughly
+        allsamples['sph-16b-m'].lumi = 2570.6
+        allsamples['sph-16c-m'].lumi = 0.
+        allsamples['sph-16d-m'].lumi = 0.
+        allsamples['sph-16e-m'].lumi = 0.
+        allsamples['sph-16f-m'].lumi = 0.
+        allsamples['sph-16g-m'].lumi = 0.
+        allsamples['sph-16h-m'].lumi = 0.
 
-        config = PlotConfig('vbfgCtrl', photonData)
+        config = PlotConfig(confName, photonData)
 
-        config.baseline = 'photons.scRawPt[0] > 80. && dijet.mjj[0] > 350.'
+#        config.baseline = 'photons.scRawPt[0] > 80. && dijet.mjj[0] > 350. && t1Met.pt < 50.'
+        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80. && jets.pt_[dijet.ij2[0]] > 40.'
+#        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.'
 
         if confName == 'vbfgCtrl':
             main = ['gjn']
         elif confName == 'vbfgloCtrl':
-            main = gj
+            main = ['gj04-40'] + gj
 
+#        config.addBkg('wg', 'W#gamma', samples = ['wglo'], region = 'vbfgWHadCtrl', color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('hfake', 'QCD', samples = photonData, region = 'vbfgHfakeCtrl', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
 
-        if confName == 'vbfgloCtrl':
-            config.obs.region = 'vbfgCtrl'
-            for group in config.bkgGroups:
-                if group.region == 'vbfgloCtrl':
-                    group.region = 'vbfgCtrl'
+        config.obs.region = 'vbfgCtrl'
+        for group in config.bkgGroups:
+            if not group.region:
+                group.region = 'vbfgCtrl'
 
-        config.addPlot('detajjAll', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, 0., 10.))
+        config.addPlot('detajjAll', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, -8., 8.))
         config.addPlot('dphijjAll', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi))
-        config.addPlot('mjjAll', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 5000.), unit = 'GeV', sensitive = True)
+        config.addPlot('mjjAll', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 5000.), unit = 'GeV')
+        config.addPlot('dphijjDEtaGt2', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi), cut = 'TMath::Abs(dijet.dEtajj) > 2.')
+        config.addPlot('dphijjDEtaLt2', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi), cut = 'TMath::Abs(dijet.dEtajj) < 2.')
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet1PtLow', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet2PtLow', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet1PtLowJ280', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij2[0]] > 80.')
+        config.addPlot('jet2PtLowJ180', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80.')
+        config.addPlot('jetDPt', 'p_{T}^{j1} - p_{T}^{j2}', 'jets.pt_[dijet.ij1[0]] - jets.pt_[dijet.ij2[0]]', (40, -100., 1000.), unit = 'GeV')
+        config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[dijet.ij1[0]]', (40, -5., 5.))
+        config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[dijet.ij2[0]]', (40, -5., 5.))
+        config.addPlot('jet1Phi', '#phi^{j1}', 'jets.phi_[dijet.ij1[0]]', (40, -math.pi, math.pi))
+        config.addPlot('jet2Phi', '#phi^{j2}', 'jets.phi_[dijet.ij2[0]]', (40, -math.pi, math.pi))
+        config.addPlot('jet1PUID', 'puid(j1)', 'jets.puid[dijet.ij1[0]]', (40, 0., 1.))
+        config.addPlot('jet2PUID', 'puid(j2)', 'jets.puid[dijet.ij2[0]]', (40, 0., 1.))
+        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('genHt', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 6 || partons.pdgid == 21))', (40, 0., 800.), mcOnly = True)
 
     elif confName == 'vbfe' or confName == 'vbfelo':
         config = PlotConfig(confName, ['sel-16*'])
@@ -188,9 +207,9 @@ def getConfigVBF(confName):
         config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 6025. / 4975.)
         config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xff, 0x99))
 
-        if confName == 'vbfelo':
-            config.obs.region = 'vbfe'
-            for group in config.bkgGroups:
+        config.obs.region = 'vbfe'
+        for group in config.bkgGroups:
+            if not group.region:
                 group.region = 'vbfe'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -251,9 +270,9 @@ def getConfigVBF(confName):
         config.addBkg('z', 'Z#rightarrowll', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 6025. / 4975.)
         config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xdd, 0x99))
 
-        if confName == 'vbfmlo':
-            config.obs.region = 'vbfm'
-            for group in config.bkgGroups:
+        config.obs.region = 'vbfm'
+        for group in config.bkgGroups:
+            if not group.region:
                 group.region = 'vbfm'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -318,9 +337,9 @@ def getConfigVBF(confName):
         config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xff, 0x99))
         config.addBkg('vv', 'VV', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
 
-        if confName == 'vbfeelo':
-            config.obs.region = 'vbfee'
-            for group in config.bkgGroups:
+        config.obs.region = 'vbfee'
+        for group in config.bkgGroups:
+            if not group.region:
                 group.region = 'vbfee'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -373,9 +392,9 @@ def getConfigVBF(confName):
         config.addBkg('zewk', 'Z#rightarrowll (EWK)', samples = ['zewk'], color = ROOT.TColor.GetColor(0x77, 0xdd, 0x99))
         config.addBkg('vv', 'VV', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
 
-        if confName == 'vbfmmlo':
-            config.obs.region = 'vbfmm'
-            for group in config.bkgGroups:
+        config.obs.region = 'vbfmm'
+        for group in config.bkgGroups:
+            if not group.region:
                 group.region = 'vbfmm'
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
@@ -408,7 +427,6 @@ def getConfigVBF(confName):
             group.variations.append(Variation('lumi', reweight = 0.027))
 
     else:
-        print 'Unknown configuration', confName
-        return
+        config = None
 
     return config
