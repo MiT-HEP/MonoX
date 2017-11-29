@@ -612,7 +612,8 @@ def vbfgBase(sample, rname):
     dijetSel.setMinDEta(3.)
     dijetSel.setMinMjj(500.)
 
-    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    jetCleaning = selector.findOperator('JetCleaning')
+    jetCleaning.setCleanAgainst(ROOT.cTaus, False)
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
@@ -1696,6 +1697,11 @@ def vbfg(sample, rname):
 
         addIDSFWeight(sample, selector)
 
+        if sample.name.startswith('gj'):
+            dijetSel = selector.findOperator('DijetSelection')
+            plots = ROOT.TFile.Open('/data/t3home000/yiiyama/monophoton/plots/vbfgloCtrl.root')
+            dijetSel.setDEtajjReweight(plots)
+
     return selector
 
 def vbfgCtrl(sample, rname):
@@ -1742,6 +1748,52 @@ def vbfgHfake(sample, rname):
 
     setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
     setupPhotonSelection(photonSel, veto = True)
+
+    return selector
+
+def vbfgHfakeCtrl(sample, rname):
+    """
+    VBF + photon had->photon fake control sample (low MET).
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    selector.setPreskim('superClusters.rawPt > 80.')
+
+    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+
+    selector.findOperator('DijetSelection').setIgnoreDecision(True)
+
+    # fake rate function obtained from hadron_fake/direct.py
+    hproxyWeight = ROOT.TF1('hproxyWeight', 'TMath::Exp(-0.0173 * x - 0.178)', 80., 600.)
+
+    weight = ROOT.PhotonPtWeight(hproxyWeight, 'vbfhtfactor')
+    selector.addOperator(weight)
+
+    photonSel = selector.findOperator('PhotonSelection')
+
+    setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
+    setupPhotonSelection(photonSel, veto = True)
+
+    return selector
+
+def vbfgWHadCtrl(sample, rname):
+    """
+    VBF + photon control sample for Wgamma, replacing the lepton and neutrino with jets.
+    """
+
+    selector = vbfg(sample, rname)
+
+    selector.setPreskim('superClusters.rawPt > 80.')
+
+    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+
+    selector.findOperator('DijetSelection').setIgnoreDecision(True)
+
+    ijet = selector.index('JetCleaning')
+    selector.addOperator(ROOT.WHadronizer(), ijet)
 
     return selector
 
