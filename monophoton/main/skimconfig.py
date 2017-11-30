@@ -36,7 +36,7 @@ data_sph = [
     'emjet',
     'dimuAllPhoton', 'dielAllPhoton', 'monomuAllPhoton', 
     'dijet',
-    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'vbfgHfakeCtrl', 'ph75',
+    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'vbfgHfakeCtrl', 'ph75', 'vbfgLJCtrl',
     'gghg', 'gghEfake', 'gghHfake', 
     'gghe', 'ggheEfake', 'ggheHfake', 'gghm', 'gghmEfake', 'gghmHfake', 
     'gghee', 'gghmm'
@@ -55,7 +55,7 @@ data_sel = [
     'vbfe', 'vbfee'
 ]
 
-mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl', 'gghg']
+mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl', 'vbfgLJCtrl', 'gghg']
 mc_qcd = ['hfake']
 mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm', 'gghe', 'gghm']
