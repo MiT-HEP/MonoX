@@ -803,11 +803,12 @@ if __name__ == '__main__':
         # observed distributions
         obshist = inDir.Get('data_obs')
 
-        if graphic:
-            formatHist(obshist, plotdef)
-            canvas.addObs(obshist, title = plotConfig.obs.title)
-        else:    
-            counters['data_obs'] = obshist
+        if obshist:
+            if graphic:
+                formatHist(obshist, plotdef)
+                canvas.addObs(obshist, title = plotConfig.obs.title)
+            else:    
+                counters['data_obs'] = obshist
 
         if plotdef.name == 'count':
             printCounts(counters, plotConfig)
