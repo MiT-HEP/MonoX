@@ -774,7 +774,10 @@ if __name__ == '__main__':
 
             if graphic:
                 formatHist(ghist, plotdef)
-                canvas.addStacked(ghist, title = group.title, color = group.color, drawOpt = drawOpt)
+                title = group.title
+                if group.scale != 1.:
+                    title += (' #times %.1f' % group.scale)
+                canvas.addStacked(ghist, title = title, color = group.color, drawOpt = drawOpt)
             else:
                 counters[group.name] = ghist
 
@@ -790,7 +793,10 @@ if __name__ == '__main__':
 
                 if graphic:
                     formatHist(shist, plotdef)
-                    canvas.addSignal(shist, title = sspec.title, color = sspec.color, drawOpt = drawOpt)
+                    title = sspec.title
+                    if sspec.group.scale != 1.:
+                        title += (' #times %.1f' % sspec.group.scale)
+                    canvas.addSignal(shist, title = title, color = sspec.color, drawOpt = drawOpt)
                 else:
                     counters[sspec.name] = shist
 
