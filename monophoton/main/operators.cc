@@ -1379,18 +1379,24 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
   }
 
   for (unsigned iJ1(0); iJ1 != jets->size(); ++iJ1) {
+    if (leadingOnly_ && iJ1 != 0)
+      break;
+
     auto& jet1((*jets)[iJ1]);
 
     if (jet1.pt() < minPt1_)
       break;
 
-    // if (jetType_ == jReco) {
-    //   auto& recoJet(static_cast<panda::Jet const&>(jet1));
-    //   if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
-    //     continue;
-    // }
+    if (jetType_ == jReco) {
+      auto& recoJet(static_cast<panda::Jet const&>(jet1));
+      if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
+        continue;
+    }
 
     for (unsigned iJ2(iJ1 + 1); iJ2 != jets->size(); ++iJ2) {
+      if (leadingOnly_ && iJ2 != 1)
+        break;
+
       auto& jet2((*jets)[iJ2]);
 
       if (jet2.pt() < minPt2_)
@@ -1399,11 +1405,11 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
       if (jet1.eta() * jet2.eta() > 0.)
         continue;
 
-      // if (jetType_ == jReco) {
-      //   auto& recoJet(static_cast<panda::Jet const&>(jet2));
-      //   if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
-      //     continue;
-      // }
+      if (jetType_ == jReco) {
+        auto& recoJet(static_cast<panda::Jet const&>(jet2));
+        if (!recoJet.tight || !JetCleaning::passPUID(2, recoJet))
+          continue;
+      }
 
       if (nDijet_ == NMAX_PARTICLES)
         throw std::runtime_error(TString::Format("Too many dijet pairs in an event %i, %i, %i", _event.runNumber, _event.lumiNumber, _event.eventNumber).Data());

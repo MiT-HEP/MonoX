@@ -638,6 +638,7 @@ class DijetSelection : public Cut {
   void setMinMjj(double min) { minMjj_ = min; }
   void setSavePassing(bool b) { savePassing_ = b; }
   void setJetType(JetType j) { jetType_ = j; }
+  void setLeadingOnly(bool b) { leadingOnly_ = b; }
   void setDEtajjReweight(TFile* _plotsFile);
 
   void addBranches(TTree& skimTree) override;
@@ -652,6 +653,7 @@ class DijetSelection : public Cut {
   double minMjj_{800.};
   bool savePassing_{true};
   JetType jetType_{jReco};
+  bool leadingOnly_{false}; // use leading two jets only
 
   unsigned nDijet_{0};
   float dEtajj_[NMAX_PARTICLES]{};

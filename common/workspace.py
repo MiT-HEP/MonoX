@@ -87,9 +87,6 @@ STATCUTOFF = 0.1
 # print the list of nuisance parameters at the end
 PRINTNUISANCE = False
 
-workspace = ROOT.RooWorkspace('wspace')
-wsimport = SafeWorkspaceImporter(workspace)
-
 nuisances = []
 
 def fct(*args):
@@ -298,6 +295,9 @@ if __name__ == '__main__':
     fetchHistograms(config, sourcePlots, totals, hstore)
 
     ## WORKSPACE
+
+    workspace = ROOT.RooWorkspace('wspace')
+    wsimport = SafeWorkspaceImporter(workspace)
 
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
@@ -623,6 +623,12 @@ if __name__ == '__main__':
 
     print 'Workspace written to', config.outname
 
+    wsimport = None
+    wssource = ROOT.TFile.Open(config.outname)
+    workspace = wssource.Get('wspace')
+
+    x = workspace.var('x')
+
     ## DATACARDS
     if hasattr(config, 'carddir'):
         print 'Writing data cards'
@@ -939,6 +945,7 @@ if __name__ == '__main__':
             hData.Write()
 
         workspace = None
+        wssource.Close()
 
         plotsFile.Close()
 
