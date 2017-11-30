@@ -1707,10 +1707,10 @@ def vbfg(sample, rname):
 
         addIDSFWeight(sample, selector)
 
-        if sample.name.startswith('gj'):
-            dijetSel = selector.findOperator('DijetSelection')
-            plots = ROOT.TFile.Open('/data/t3home000/yiiyama/monophoton/plots/vbfgloCtrl.root')
-            dijetSel.setDEtajjReweight(plots)
+#        if sample.name.startswith('gj'):
+#            dijetSel = selector.findOperator('DijetSelection')
+#            plots = ROOT.TFile.Open('/data/t3home000/yiiyama/monophoton/plots/vbfgloCtrl.root')
+#            dijetSel.setDEtajjReweight(plots)
 
     return selector
 
@@ -1726,7 +1726,21 @@ def vbfgCtrl(sample, rname):
     selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
     selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
 
-    selector.findOperator('DijetSelection').setIgnoreDecision(True)
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(0.)
+    dijetSel.setMinMjj(0.)
+
+    return selector
+
+def vbfgLJCtrl(sample, rname):
+    """
+    VBF + photon control sample using leading 2 jets only.
+    """
+
+    selector = vbfgCtrl(sample, rname)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setLeadingOnly(True)
 
     return selector
 
