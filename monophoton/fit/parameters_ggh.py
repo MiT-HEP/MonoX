@@ -23,7 +23,7 @@ regions = [sr,
 
 data = 'data_obs' # name of data process
 processes = ['efake', 'wg', 'zg', 'gjets', 'hfake', 'top', 'wjets', 'gg']
-signals = ['dph-125'] 
+signals = ['dph-nlo-125'] 
 xtitle = 'm_{T}({#gamma, E_{T}^{miss}) (GeV)'
 binWidthNormalized = False
 
@@ -40,7 +40,7 @@ links = [
 ]
 
 # Sample with free normalization that are not involved in links.
-floats = []
+floats = ['gjets']
 
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
 wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWK']
