@@ -263,6 +263,10 @@ def monophotonBase(sample, rname, selcls = None):
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
 
+        # SFs need to be calculated first
+        # addElectronVetoSFWeight(sample, selector)
+        # addMuonVetoSFWeight(sample, selector)
+
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
@@ -399,6 +403,10 @@ def leptonBase(sample, rname, flavor, selcls = None):
             addElectronIDSFWeight(sample, selector)
         else:
             addMuonIDSFWeight(sample, selector)
+
+        # SFs need to be calculated first
+        # addElectronVetoSFWeight(sample, selector)
+        # addMuonVetoSFWeight(sample, selector)
 
     if not sample.data:
         selector.findOperator('PartonFlavor').setIgnoreDecision(True)
@@ -2197,8 +2205,8 @@ def addElectronIDSFWeight(sample, selector):
 def addMuonIDSFWeight(sample, selector):
     logger.info('Adding muon ID scale factor (ICHEP)')
 
-    muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape') # x: abs eta, y: pt
-    muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
+    muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape', 'muonTightSF') # x: abs eta, y: pt
+    muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2', 'muonTrackSF',) # x: npv
 
     idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
     idsf.addFactor(muonTightSF)
@@ -2209,6 +2217,33 @@ def addMuonIDSFWeight(sample, selector):
     track.addFactor(muonTrackSF)
     track.setVariable(ROOT.IDSFWeight.kNpv)
     selector.addOperator(track)
+
+def addElectronVetoSFWeight(sample, selector):
+    logger.info('Adding electron veto scale factor (ICHEP)')
+
+    # need to make actual histogram with actual scale factors for this
+    electronVetoSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronVetoSF') # x: sc eta, y: pt
+
+    idsf = ROOT.IDSFWeight(ROOT.nCollections, 'ElectronVetoSF')
+    failingElectrons = selector.findOperator('LeptonSelection').getFailingElectrons()
+    idsf.addCustomCollection(failingElectrons)
+    idsf.addFactor(electronVetoSF)
+    idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
+    selector.addOperator(idsf)
+
+def addMuonVetoSFWeight(sample, selector):
+    logger.info('Adding muon veto scale factor (ICHEP)')
+
+    # need to make actual histogram with actual scale factors for this
+    muonVetoSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape', 'muonVetoSF') # x: abs eta, y: pt
+
+    idsf = ROOT.IDSFWeight(ROOT.nCollections, 'MuonVetoSF')
+    failingMuons = selector.findOperator('LeptonSelection').getFailingMuons()
+    print failingMuons
+    idsf.addCustomCollection(failingMuons)
+    idsf.addFactor(muonVetoSF)
+    idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
+    selector.addOperator(idsf)
 
 def addPDFVariation(sample, selector):
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..

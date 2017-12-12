@@ -528,7 +528,9 @@ class JetMetDPhi : public Cut {
 
 class LeptonSelection : public Cut {
  public:
-  LeptonSelection(char const* name = "LeptonSelection") : Cut(name) {}
+  LeptonSelection(char const* name = "LeptonSelection");
+  ~LeptonSelection();
+  void addBranches(TTree& skimTree) override;
 
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
@@ -536,6 +538,8 @@ class LeptonSelection : public Cut {
   void setRequireMedium(bool require, unsigned btof = false) { requireMedium_ = require; mediumBtoF_ = btof; }
   void setRequireTight(bool require) { requireTight_ = require; }
   void setAllowPhotonOverlap(bool allow) { allowPhotonOverlap_ = allow; }
+  panda::MuonCollection* getFailingMuons() { return failingMuons_; }
+  panda::ElectronCollection* getFailingElectrons() {return failingElectrons_; }
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -548,6 +552,9 @@ class LeptonSelection : public Cut {
   bool allowPhotonOverlap_{false};
   unsigned nEl_{0};
   unsigned nMu_{0};
+
+  panda::MuonCollection* failingMuons_{0};
+  panda::ElectronCollection* failingElectrons_{0};
 };
 
 class FakeElectron : public Cut {
@@ -1089,9 +1096,12 @@ class IDSFWeight : public Modifier {
   void setVariable(Variable, Variable = nVariables);
   void setNParticles(unsigned _nP) { nParticles_ = _nP; }
   void addFactor(TH1* factor) { factors_.emplace_back(factor); }
+  void addCustomCollection(panda::ParticleCollection* coll) { customCollection_ = coll; }
  protected:
   void applyParticle(unsigned iP, panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent);
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  panda::ParticleCollection* customCollection_{0};
 
   Collection object_;
   Variable variables_[2];

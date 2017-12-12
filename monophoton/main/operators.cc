@@ -1127,6 +1127,26 @@ JetMetDPhi::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _
 // LeptonSelection
 //--------------------------------------------------------------------
 
+LeptonSelection::LeptonSelection(char const* name) :
+  Cut(name)
+{
+  failingMuons_ = new panda::MuonCollection("failingsMuons");
+  failingElectrons_ = new panda::ElectronCollection("failingElectrons");
+}
+
+LeptonSelection::~LeptonSelection()
+{
+  delete failingMuons_;
+  delete failingElectrons_;
+}
+
+void
+LeptonSelection::addBranches(TTree& _skimTree)
+{
+  failingMuons_->book(_skimTree);
+  failingElectrons_->book(_skimTree);
+}
+
 bool
 LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
@@ -1134,12 +1154,18 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   bool foundTight(false);
   unsigned nLooseIsoMuons(0);
 
+  failingMuons_->clear();
+  failingElectrons_->clear();
+
   std::vector<panda::ParticleCollection*> cols;
   if (!allowPhotonOverlap_)
     cols.push_back(&_outEvent.photons);
 
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
+
+    if (std::abs(muon.eta()) > 2.5 || muon.pt() < 10.)
+      continue;
 
     if (nMu_ != 0 && muon.pt() > 30.) {
       if (muon.tight && muon.combIso() / muon.pt() < 0.15)
@@ -1165,17 +1191,22 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (overlap)
       continue;
     
-    if (muon.loose && muon.pt() > 10.) {
+    if (muon.loose) {
       _outEvent.muons.push_back(muon);
       if ((muon.combIso() / muon.pt()) < 0.25)
         ++nLooseIsoMuons;
     }
+    else if (muon.matchedGen.idx() != -1)
+      failingMuons_->push_back(muon);
   }
 
   cols.push_back(&_outEvent.muons);
 
   for (unsigned iE(0); iE != _event.electrons.size(); ++iE) {
     auto& electron(_event.electrons[iE]);
+
+    if (std::abs(electron.eta()) > 2.5 || electron.pt() < 10.)
+      continue;
 
     if (nEl_ != 0 && electron.pt() > 30.) {
       if (electron.tight)
@@ -1201,8 +1232,10 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (overlap)
       continue;
     
-    if (electron.loose && electron.pt() > 10.)
+    if (electron.loose)
       _outEvent.electrons.push_back(electron);
+    else if (electron.matchedGen.idx() != -1)
+      failingElectrons_->push_back(electron);
   }
 
   if (requireTight_ && !foundTight)
@@ -2791,6 +2824,13 @@ IDSFWeight::applyParticle(unsigned iP, panda::EventMonophoton const& _event, pan
   case cMuons:
     if (_outEvent.muons.size() > iP)
       part = &_outEvent.muons.at(iP);
+    break;
+  case nCollections:
+    if (customCollection_ && customCollection_->size() > iP) {
+      part = &customCollection_->at(iP);
+    }
+    else
+      return;
     break;
   default:
     return;
