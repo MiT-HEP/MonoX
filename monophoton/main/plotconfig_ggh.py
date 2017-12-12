@@ -312,6 +312,56 @@ def getConfigGGH(confName):
         config.findGroup('top').variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
+    elif confName == 'zee':
+
+        config = PlotConfig('tpeg', photonData)
+        
+        config.baseline = 'tags.pt_ > 30. && TMath::Abs(tags.eta_) < 2.4 && tags.tight && probes.scRawPt > 175. && probes.isEB && probes.mediumX[][1] && !probes.pixelVeto'
+        config.fullSelection = 'TMath::Abs(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_)) > 3.'
+
+        # config.addBkg('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+        config.addBkg('wglo', 'W#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+        config.addBkg('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('zjets', 'Z+jets', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+
+        config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', (20, 0., 1000.), unit = 'GeV', overflow = True)
+        config.addPlot('metPhi', '#phi_{E_{T}^{miss}}', 't1Met.phi', (10, -math.pi, math.pi))
+        config.addPlot('htReco', 'H_{T}^{reco}', 'Sum$(jets.pt_)', (100, 0., 2000.), overflow = True)
+        # config.addPlot('htGen', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 6 || partons.pdgid == 21))', (200, 0., 2000.), overflow = True)
+        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.))
+        config.addPlot('jetPt', 'p_{T}^{j}', 'jets.pt_', (50, 0., 2000.), unit = 'GeV', overflow = True)
+        config.addPlot('jetEta', '#eta_{j}', 'jets.eta_', (10, -5., 5.))
+        config.addPlot('jetPhi', '#phi_{j}', 'jets.phi_', (10, -math.pi, math.pi))
+        config.addPlot('tagPt', 'p_{T}^{tag}', 'tags.pt_', (20, 0., 200.), unit = 'GeV', overflow = True)
+        config.addPlot('tagEta', '#eta_{tag}', 'tags.eta_', (10, -2.5, 2.5))
+        config.addPlot('tagPhi', '#phi_{tag}', 'tags.phi_', (10, -math.pi, math.pi))
+        config.addPlot('probePt', 'p_{T}^{probe}', 'probes.scRawPt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True)
+        config.addPlot('probeEta', '#eta_{probe}', 'probes.eta_', (10, -2.5, 2.5))
+        config.addPlot('probePhi', '#phi_{probe}', 'probes.phi_', (10, -math.pi, math.pi))
+        config.addPlot('probePtDiff', 'p_{T}^{pred} - p_{T}^{probe}', 'probes.ptdiff', (40, -500., 500.))
+        config.addPlot('probePtDiffWide', 'p_{T}^{pred} - p_{T}^{probe}', 'probes.ptdiff', (80, -1000., 1000.))
+        # config.addPlot('zPt', 'p_{T}^{Z}', 'z.pt[0]', (20, 0., 1000.), unit = 'GeV')
+        # config.addPlot('zEta', '#eta_{Z}', 'z.eta[0]', (10, -5., 5.))
+        # config.addPlot('zPhi', '#phi_{Z}', 'z.phi[0]', (10, -math.pi, math.pi))
+        config.addPlot('zMass', 'm_{Z}', 'tp.mass', (50, 0., 1000.), unit = 'GeV')
+        config.addPlot('zMassDiff', 'm_{Z}', 'tp.mass', (50, 0., 100.), unit = 'GeV', cut = 'probes.ptdiff > 500.')
+        config.addPlot('dRTagProbe', '#DeltaR(tag, probe)', 'TMath::Sqrt(TMath::Power(tags.eta_ - probes.eta_, 2.) + TMath::Power(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_), 2.))', (10, 0., 4.))
+        config.addPlot('dRTagProbeDiff', '#DeltaR(tag, probe)', 'TMath::Sqrt(TMath::Power(tags.eta_ - probes.eta_, 2.) + TMath::Power(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_), 2.))', (10, 0., 4.), cut = 'probes.ptdiff > 500.')
+        config.addPlot('dEtaTagProbe', '#Delta#eta(tag, probe)', 'TMath::Abs(tags.eta_ - probes.eta_)', (10, 0., 4.))
+        config.addPlot('dEtaTagProbeDiff', '#Delta#eta(tag, probe)', 'TMath::Abs(tags.eta_ - probes.eta_)', (10, 0., 4.), cut = 'probes.ptdiff > 500.')
+        config.addPlot('dPhiTagProbe', '#Delta#phi(tag, probe)', 'TMath::Abs(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_))', (10, 0., math.pi))
+        config.addPlot('dPhiTagProbeDiff', '#Delta#phi(tag, probe)', 'TMath::Abs(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_))', (10, 0., math.pi), cut = 'probes.ptdiff > 500.')
+        config.addPlot('dThetaTagProbe', '#Theta(tag, probe)', 'TMath::Abs(TMath::ACos(1 - TMath::Power(tp.mass, 2) / ( 2 * tags.pt_ * probes.pt_ * TMath::CosH(tags.eta_) * TMath::CosH(probes.eta_))))', (10, 0., math.pi))
+        config.addPlot('dThetaTagProbeDiff', '#Theta(tag, probe)', 'TMath::Abs(TMath::ACos(1 - TMath::Power(tp.mass, 2) / ( 2 * tags.pt_ * probes.pt_ * TMath::CosH(tags.eta_) * TMath::CosH(probes.eta_))))', (10, 0., math.pi), cut = 'probes.ptdiff > 500.')
+        config.addPlot('dPtTagProbe', 'p_{T}^{tag} - p_{T}^{probe}', 'tags.pt_ - probes.pt_', (20, -500., 500.), unit = 'GeV')
+
+
+        
+        for plot in list(config.plots):
+            if plot.name not in ['met']:
+                config.plots.append(plot.clone('BackToBack' + plot.name, applyFullSel = True))
+        
+
     elif confName == 'gghgg':
 
         config = PlotConfig('gghg', photonData)
@@ -351,7 +401,7 @@ def getConfigGGH(confName):
         config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (10, 0., 0.020))
         config.addPlot('sipip', '#sigma_{i#phi i#phi}', 'photons.sipip[0]', (10, 0., 0.020))
         config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
-        config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.))
         config.addPlot('jetPt', 'p_{T}^{leading j}', 'jets.pt_[0]', [0., 50., 100.]  + [200. + 200. * x for x in range(5)], unit = 'GeV', overflow = True)
         config.addPlot('jetEta', '#eta_{leading j}', 'jets.eta_[0]', (10, -5., 5.))
         config.addPlot('jetPhi', '#phi_{leading j}', 'jets.phi_[0]', (10, -math.pi, math.pi))
