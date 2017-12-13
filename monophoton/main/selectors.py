@@ -263,9 +263,8 @@ def monophotonBase(sample, rname, selcls = None):
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
 
-        # SFs need to be calculated first
-        # addElectronVetoSFWeight(sample, selector)
-        # addMuonVetoSFWeight(sample, selector)
+        addElectronVetoSFWeight(sample, selector)
+        addMuonVetoSFWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -404,9 +403,8 @@ def leptonBase(sample, rname, flavor, selcls = None):
         else:
             addMuonIDSFWeight(sample, selector)
 
-        # SFs need to be calculated first
-        # addElectronVetoSFWeight(sample, selector)
-        # addMuonVetoSFWeight(sample, selector)
+        addElectronVetoSFWeight(sample, selector)
+        addMuonVetoSFWeight(sample, selector)
 
     if not sample.data:
         selector.findOperator('PartonFlavor').setIgnoreDecision(True)
@@ -1213,14 +1211,14 @@ def diel(sample, rname):
     selector.addOperator(dielSign)
 
     if not sample.data:
-        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
-        electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_2016.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
+        electronTrackSF = getFromFile(datadir + '/egamma_electron_reco_SF_2016.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
 
         idsf = selector.findOperator('ElectronSF')
         idsf.addFactor(electronLooseSF)
         idsf.setNParticles(2)
 
-        track = selector.findOperator('GsfTrackSF')
+        track = selector.findOperator('ElectronTrackSF')
         track.addFactor(electronTrackSF)
         track.setNParticles(2)
 
@@ -1318,7 +1316,7 @@ def dimu(sample, rname):
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        muonLooseSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape') # x: abs eta, y: pt
+        muonLooseSF = getFromFile(datadir + '/muo_muon_idsf_2016.root', 'Loose_ScaleFactor') # x: abs eta, y: pt
         muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
 
         idsf = selector.findOperator('MuonSF')
@@ -2090,14 +2088,14 @@ def gghee(sample, rname):
     selector.addOperator(dielSign)
 
     if not sample.data:
-        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
-        electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+        electronLooseSF = getFromFile(datadir + '/egamma_electron_loose_SF_2016.root', 'EGamma_SF2D', 'electronLooseSF') # x: sc eta, y: pt
+        electronTrackSF = getFromFile(datadir + '/egamma_electron_reco_SF_2016.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
 
         idsf = selector.findOperator('ElectronSF')
         idsf.addFactor(electronLooseSF)
         idsf.setNParticles(2)
 
-        track = selector.findOperator('GsfTrackSF')
+        track = selector.findOperator('ElectronTrackSF')
         track.addFactor(electronTrackSF)
         track.setNParticles(2)
 
@@ -2128,7 +2126,7 @@ def gghmm(sample, rname):
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        muonLooseSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape') # x: abs eta, y: pt
+        muonLooseSF = getFromFile(datadir + '/muo_muon_looseid_2016.root', 'Loose_ScaleFactor') # x: abs eta, y: pt
         muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
 
         idsf = selector.findOperator('MuonSF')
@@ -2189,15 +2187,15 @@ def addIDSFWeight(sample, selector):
 def addElectronIDSFWeight(sample, selector):
     logger.info('Adding electron ID scale factor (ICHEP)')
 
-    electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_ichep.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
-    electronTrackSF = getFromFile(datadir + '/egamma_gsf_tracking_SF_ichep.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
+    electronTightSF = getFromFile(datadir + '/egamma_electron_tight_SF_2016.root', 'EGamma_SF2D', 'electronTightSF') # x: sc eta, y: pt
+    electronTrackSF = getFromFile(datadir + '/egamma_electron_reco_SF_2016.root', 'EGamma_SF2D', 'electronTrackSF') # x: sc eta, y: npv
 
     idsf = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronSF')
     idsf.addFactor(electronTightSF)
     idsf.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt)
     selector.addOperator(idsf)
 
-    track = ROOT.IDSFWeight(ROOT.cElectrons, 'GsfTrackSF')
+    track = ROOT.IDSFWeight(ROOT.cElectrons, 'ElectronTrackSF')
     track.addFactor(electronTrackSF)
     track.setVariable(ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kNpv)
     selector.addOperator(track)
@@ -2205,7 +2203,7 @@ def addElectronIDSFWeight(sample, selector):
 def addMuonIDSFWeight(sample, selector):
     logger.info('Adding muon ID scale factor (ICHEP)')
 
-    muonTightSF = getFromFile(datadir + '/scaleFactor_muon_tightid_12p9.root', 'scaleFactor_muon_tightid_RooCMSShape', 'muonTightSF') # x: abs eta, y: pt
+    muonTightSF = getFromFile(datadir + '/muo_muon_idsf_2016.root', 'Tight_ScaleFactor', 'muonTightSF') # x: abs eta, y: pt
     muonTrackSF = getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2', 'muonTrackSF',) # x: npv
 
     idsf = ROOT.IDSFWeight(ROOT.cMuons, 'MuonSF')
@@ -2221,8 +2219,8 @@ def addMuonIDSFWeight(sample, selector):
 def addElectronVetoSFWeight(sample, selector):
     logger.info('Adding electron veto scale factor (ICHEP)')
 
-    # need to make actual histogram with actual scale factors for this
-    electronVetoSF = getFromFile(datadir + '/egamma_electron_loose_SF_ichep.root', 'EGamma_SF2D', 'electronVetoSF') # x: sc eta, y: pt
+    # made using misc/SFmerge.py
+    electronVetoSF = getFromFile(datadir + '/egamma_electron_veto_SF_2016.root', 'EGamma_VetoSF2D', 'electronVetoSF') # x: sc eta, y: pt
 
     idsf = ROOT.IDSFWeight(ROOT.nCollections, 'ElectronVetoSF')
     failingElectrons = selector.findOperator('LeptonSelection').getFailingElectrons()
@@ -2234,8 +2232,8 @@ def addElectronVetoSFWeight(sample, selector):
 def addMuonVetoSFWeight(sample, selector):
     logger.info('Adding muon veto scale factor (ICHEP)')
 
-    # need to make actual histogram with actual scale factors for this
-    muonVetoSF = getFromFile(datadir + '/scaleFactor_muon_looseid_12p9.root', 'scaleFactor_muon_looseid_RooCMSShape', 'muonVetoSF') # x: abs eta, y: pt
+    # made using misc/SFmerge.py
+    muonVetoSF = getFromFile(datadir + '/muo_muon_idsf_2016.root', 'LooseVeto_ScaleFactor', 'muonVetoSF') # x: abs eta, y: pt
 
     idsf = ROOT.IDSFWeight(ROOT.nCollections, 'MuonVetoSF')
     failingMuons = selector.findOperator('LeptonSelection').getFailingMuons()
