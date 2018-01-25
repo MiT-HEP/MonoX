@@ -204,6 +204,8 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
 
         histname = config.histname.format(process = dataName, region = region)
 
+        print histname
+
         hist = sourceDir.Get(histname)
         hist.SetDirectory(hstore)
 
@@ -286,7 +288,7 @@ if __name__ == '__main__':
     # fetch all source histograms first    
 
     sourcePlots = {}
-    totals = {}
+    totals = {} # {region: background total}
 
     hstore = ROOT.gROOT.mkdir('hstore')
 
@@ -517,6 +519,7 @@ if __name__ == '__main__':
                     print '    this sample does not participate in constraints'
 
                     if sample in config.floats:
+                        print '      normalization is floated'
                         normName = 'freenorm_{sample}'.format(sample = sampleName)
                         normModifiers[normName] = fct('{norm}[1.,0.1,1000.]'.format(norm = normName))
 
@@ -524,7 +527,7 @@ if __name__ == '__main__':
                         binName = sampleName + '_bin{0}'.format(ibin)
 
                         cval = nominal.GetBinContent(ibin)
-                        if cval == 0.:
+                        if cval <= 0.:
                             # bin content is 0
                             bin = fct('mu_{bin}[0.]'.format(bin = binName))
                         else:
@@ -533,7 +536,8 @@ if __name__ == '__main__':
 
                             # statistical uncertainty - often not considered
                             relErr = nominal.GetBinError(ibin) / cval
-                            if relErr > SMALLNUMBER and cval / totals[region].GetBinContent(ibin) > STATCUTOFF:
+                            bkgTotal = totals[region].GetBinContent(ibin)
+                            if relErr > SMALLNUMBER and (bkgTotal <= 0. or cval / bkgTotal > STATCUTOFF):
                                 modifiers.append(nuisance('{bin}_stat'.format(bin = binName), '', relErr, -relErr, 'lnN'))
 
                             for variation in plots:

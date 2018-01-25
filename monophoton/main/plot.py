@@ -16,17 +16,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
     # run the Plotter for each sample
     for sample in group.samples:
+        sourceName = utils.getSkimPath(sample.name, region, sourceDir, altSourceDir)
+
         dname = sample.name + '_' + region
-
-        sourceName = sourceDir + '/' + dname + '.root'
-        
-        if altSourceDir:
-            altName = altSourceDir + '/' + dname + '.root'
-            if os.path.exists(altName) and os.stat(altName).st_mtime > os.stat(sourceName).st_mtime:
-                sourceName = altName
-
-        elif not os.path.exists(sourceName):
-            raise RuntimeError('Cannot open file ' + sourceName)
 
         print '   ', dname, '(%s)' % sourceName
     
@@ -538,6 +530,7 @@ if __name__ == '__main__':
     from main.plotconfig_vbf import getConfigVBF
     from main.plotconfig_ggh import getConfigGGH
     import config
+    import utils
 
     ##################################
     ## PARSE COMMAND-LINE ARGUMENTS ##
