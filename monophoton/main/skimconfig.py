@@ -109,7 +109,8 @@ allSelectors_byPattern = [
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),
     ('dm*', mc_sig),
-    ('dph*', mc_sig)
+    ('dph*', mc_sig),
+    ('hbb-nlo-125', mc_sig)
 ]
 
 allSelectors = {}

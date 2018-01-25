@@ -934,6 +934,8 @@ def signalRaw(sample, rname):
 
     selector = monoph(sample, rname)
 
+    selector.setPreskim('')
+
     cuts = [
         'MetFilters',
         'PhotonSelection',

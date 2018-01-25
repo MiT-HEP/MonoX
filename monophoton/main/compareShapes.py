@@ -29,7 +29,7 @@ from datasets import allsamples
 import config
 from main.plotconfig import getConfig
 
-monophConfig = getConfig('emjet')
+monophConfig = getConfig('nosel')
 source = r.TFile.Open(args.input)
 
 colors = [r.kBlack, r.kRed, r.kBlue]
@@ -40,9 +40,10 @@ for sName in monophConfig.obs.samples:
 
 def getHist(name, syst = ''):
     if syst:
-        return source.Get(variable + '/' + name + '_' + syst)
+        return source.Get(variable + '/samples/' + name + '_' + syst)
+        
     else:
-        return source.Get(variable + '/' + name)
+        return source.Get(variable + '/samples/' + name + '_signalRaw')
 
 rcanvas = RatioCanvas(lumi = lumi, name = 'raw')
 scanvas = RatioCanvas(lumi = lumi, name = 'norm')
