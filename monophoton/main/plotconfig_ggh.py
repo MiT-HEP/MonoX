@@ -312,7 +312,7 @@ def getConfigGGH(confName):
         config.findGroup('top').variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 
-    elif confName == 'zee':
+    elif confName == 'zeenlo':
 
         config = PlotConfig('tpeg', photonData)
         
@@ -322,7 +322,8 @@ def getConfigGGH(confName):
         # config.addBkg('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wglo', 'W#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('tt', 'Top', samples = ['tt'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('zjets', 'Z+jets', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        # config.addBkg('zjets', 'Z+jets', samples = dy, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 1.21)
+        config.addBkg('zjets', 'Z+jets', samples = dyn, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa), scale = 1.03)
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', (20, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('metPhi', '#phi_{E_{T}^{miss}}', 't1Met.phi', (10, -math.pi, math.pi))
