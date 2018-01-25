@@ -139,6 +139,9 @@ def getConfig(confName):
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
+            
 
             if group.name in ['vvg']:
                 continue
@@ -241,6 +244,8 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
                 continue
@@ -326,6 +331,8 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
                 continue
@@ -422,6 +429,8 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
                 continue
@@ -511,6 +520,8 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
                 continue
@@ -1019,6 +1030,7 @@ def getConfig(confName):
         config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'], norm = 1.)
         config.addSig('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1'], norm = 1.)
         config.addSig('dph', 'Dark Photon', samples = ['dph-*'], norm = 1.)
+        config.addSig('hbb', 'Dark Photon', samples = ['hbb-*'], norm = 1.)
         config.addSig('add', 'ADD', samples = ['add-3-*'], norm = 1.)
 #        config.addSig('dmewk', 'DM EWK', samples = ['dmewk-*'])
         config.addSig('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1'], norm = 1.)
@@ -1075,6 +1087,7 @@ def getConfig(confName):
         config.addPlot('jetPtScan', 'p_{T}^{jet}', 'jets.pt_', (80, 0., 2000.), unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
         config.addPlot('jetEta', '#eta_{j}', 'jets.eta_', (40, -5., 5.))
         config.addPlot('jetPhi', '#phi_{j}', 'jets.phi_', (40, -math.pi, math.pi))
+        config.addPlot('genHiggsPt', 'Gen #p_{T}^{H}', 'partons.pt_', (40, 0., 2000.), cut = 'partons.pdgid == 25.')
         """
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
         config.addPlot('mu0Pt', 'p_{T}^{leading #mu}', 'muons.pt_[0]', [0. + 10 * x for x in range(10)] + [100., 125., 150., 175., 200., 250., 300., 400., 500.], unit = 'GeV', overflow = True)
