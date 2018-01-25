@@ -280,7 +280,11 @@ class SampleDef(object):
 
             for basename in sum(self._basenames[dataset].values(), []):
                 if not os.path.exists(directory + '/' + basename):
-                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    cmnd = ['dynamoCache', 'request', '--panda', self.book.strip('pandaf/'), '--dataset', dataset] # , '--files', basename]
+                    print cmnd
+                    proc = subprocess.Popen(cmnd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                    break # if missing file, request entire dataset
+                    # proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                     print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
