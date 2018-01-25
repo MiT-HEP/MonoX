@@ -91,7 +91,92 @@ def getConfigGGH(confName):
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = noDPhiJet, overflow = True)
         config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), overflow = True)
         config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.), sensitive = True)
-        config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'Sum$(jets.pt_ > 30.)', (10, 0., 10.), sensitive = True) #, cut = 'jets.pt_ > 100.')
+        config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'Sum$(jets.pt_ > 100.)', (10, 0., 10.), sensitive = True) 
+        config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True, sensitive = True)
+        config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), sensitive = True)
+        config.addPlot('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (30, 0., 3.), sensitive = True)
+        config.addPlot('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.), sensitive = True)
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
+        config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020))
+        config.addPlot('sipip', '#sigma_{i#phi i#phi}', 'photons.sipip[0]', (40, 0., 0.020))
+        config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
+    
+        # Standard MC systematic variations
+        for group in config.bkgGroups + config.sigGroups:
+            if group.name in ['efake', 'hfake']:
+                continue
+
+            group.variations.append(Variation('lumi', reweight = 0.027))
+
+            group.variations.append(Variation('photonSF', reweight = 'photonSF'))
+            group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
+            group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
+
+            if group.name in ['vvg']:
+                continue
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECUp'), ('t1Met.pt', 't1Met.ptCorrUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiJECDown'), ('t1Met.pt', 't1Met.ptCorrDown')]
+            group.variations.append(Variation('jec', replacements = (replUp, replDown)))
+
+            replUp = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECUp'), ('photons.scRawPt', 'photons.ptVarUp'), ('t1Met.pt', 't1Met.ptGECUp')]
+            replDown = [('t1Met.minJetDPhi', 't1Met.minJetDPhiGECDown'), ('photons.scRawPt', 'photons.ptVarDown'), ('t1Met.pt', 't1Met.ptGECDown')]
+            group.variations.append(Variation('gec', replacements = (replUp, replDown)))
+
+            if group.name in ['zg', 'wg']:
+                continue
+
+            group.variations.append(Variation('minorQCDscale', reweight = 0.033))
+
+        for gname in ['zg', 'wg']:
+            group = config.findGroup(gname)
+            group.variations.append(Variation('vgPDF', reweight = 'pdf'))
+            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
+
+        # Specific systematic variations
+        proxyDefCuts = (
+            'photons.nhIso < 0.264 && photons.phIso < 2.362',
+            'photons.nhIso < 10.910 && photons.phIso < 3.630'
+        )
+        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
+        config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
+        config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
+        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
+        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
+
+    elif confName == 'gghgj':
+        config = PlotConfig('gghg', photonData)
+
+        config.baseline = 'photons.scRawPt[0] > 325. && photons.minJetDPhi[0] > 0.5'
+        config.fullSelection = ''
+
+        config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
+
+        config.addSigPoint('dph-125', 'H_{125}(#gamma, #gamma_{D}) #times 0.1', color = ROOT.kCyan)
+
+        # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
+        # config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
+        config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = top, color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+        config.addBkg('gg', '#gamma#gamma', samples = gg, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
+        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'gghHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
+        config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+
+        config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
+        config.addPlot('recoilScan', 'E_{T}^{miss}', 't1Met.pt', [0. + 25. * x for x in range(21)], unit = 'GeV', overflow = True, sensitive = True)
+        config.addPlot('recoilPhi', '#phi_{E_{T}^{miss}}', 't1Met.phi', (30, -math.pi, math.pi))
+        config.addPlot('phoPtScan', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True, sensitive = True)
+        config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5), sensitive = True)
+        config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi))
+        config.addPlot('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.))
+        config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), overflow = True, sensitive = True)
+        config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
+        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), overflow = True)
+        config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), applyBaseline = False, cut = 'photons.scRawPt[0] > 325.', overflow = True)
+        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.), sensitive = True)
+        config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'Sum$(jets.pt_ > 100.)', (10, 0., 10.), sensitive = True) 
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True, sensitive = True)
         config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), sensitive = True)
         config.addPlot('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (30, 0., 3.), sensitive = True)
@@ -317,7 +402,7 @@ def getConfigGGH(confName):
         config = PlotConfig('tpeg', photonData)
         
         config.baseline = 'tags.pt_ > 30. && TMath::Abs(tags.eta_) < 2.4 && tags.tight && probes.scRawPt > 175. && probes.isEB && probes.mediumX[][1] && !probes.pixelVeto'
-        config.fullSelection = 'TMath::Abs(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_)) > 3.'
+        config.fullSelection = 'probes.ptdiff > 150.' # 'TMath::Abs(TVector2::Phi_mpi_pi(tags.phi_ - probes.phi_)) > 3. && TMath::Abs(tags.pt_ - probes.pt_) > 150.'
 
         # config.addBkg('diboson', 'Diboson', samples =  ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wglo', 'W#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
