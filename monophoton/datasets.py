@@ -272,16 +272,21 @@ class SampleDef(object):
     def download(self, filesets = []):
         self._readCatalogs()
 
-        for dataset in self.datasetNames:
-            if not self._downloadable[dataset]:
-                continue
+        subprocess.Popen(
+            ['/usr/local/bin/dynamoCache', 'request', 'datasets', '--panda', self.book[self.book.find('/') + 1:], '--sit_and_wait', 'True', '--datasets'] + self.datasetNames,
+            stdout = subprocess.PIPE, stderr = subprocess.PIPE
+        )
 
-            directory = self._directories[dataset]
-
-            for basename in sum(self._basenames[dataset].values(), []):
-                if not os.path.exists(directory + '/' + basename):
-                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                    print proc.communicate()[0].strip()
+#        for dataset in self.datasetNames:
+#            if not self._downloadable[dataset]:
+#                continue
+#
+#            directory = self._directories[dataset]
+#
+#            for basename in sum(self._basenames[dataset].values(), []):
+#                if not os.path.exists(directory + '/' + basename):
+#                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+#                    print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
@@ -312,7 +317,8 @@ class SampleDef(object):
 class SampleDefList(object):
     def __init__(self, samples = [], listpath = ''):
         self.samples = list(samples)
-        self._commentLines = [] # to reproduce comment lines from the source
+        self._commentLines = {} # {path: [(dataset before, comment)]} to reproduce comment lines from the source
+        self._sample_source = {} # {path: set(sample name)}
 
         if listpath:
             self._load(listpath)
@@ -330,16 +336,32 @@ class SampleDefList(object):
             raise KeyError(key + ' not defined')
 
     def _load(self, listpath):
+        self._commentLines[listpath] = []
+        self._sample_source[listpath] = set()
+
         with open(listpath) as dsSource:
             name = ''
             for line in dsSource:
                 line = line.strip()
                 
                 if not line or line.startswith('#'):
-                    self._commentLines.append((name, line))
+                    self._commentLines[listpath].append((name, line))
+                    continue
+
+                matches = re.match('<(.*)>', line)
+                if matches:
+                    # use commentLines for imports too
+                    self._commentLines[listpath].append((name, line))
+
+                    # importing another list
+                    path = matches.group(1)
+                    if path[0] != '/':
+                        path = os.path.dirname(listpath) + '/' + path
+                    
+                    self._load(path)
                     continue
         
-                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line.strip())
+                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line)
                 if not matches:
                     print 'Ill-formed line in ' + listpath
                     print line
@@ -347,6 +369,8 @@ class SampleDefList(object):
         
                 name, title, crosssection, nevents, sumw, book, fullnames, comments = [matches.group(i) for i in range(1, 9)]
                 fullnames = fullnames.split()
+
+                self._sample_source[listpath].add(name)
 
                 for pattern in fullnames:
                     if '{' in pattern: # bash-like substitution pattern delimited by ','
@@ -363,18 +387,33 @@ class SampleDefList(object):
                 self.samples.append(SampleDef(name, **kwd))
 
     def save(self, listpath):
-        with open(listpath, 'w') as out:
-            iC = 0
-            while iC != len(self._commentLines) and self._commentLines[iC][0] == '':
-                out.write(self._commentLines[iC][1] + '\n')
+        commentLines = self._commentLines[listpath]
+
+        def insert_comment(out, iC, name):
+            while iC != len(commentLines) and commentLines[iC][0] == name:
+                line = commentLines[iC][1]
+                out.write(line + '\n')
+                if line.startswith('<'):
+                    path = line[1:-1]
+                    if path[0] != '/':
+                        path = os.path.dirname(listpath) + '/' + path
+    
+                    self.save(path)
+                    
                 iC += 1
-            
+
+            return iC
+
+        with open(listpath, 'w') as out:
+            iC = insert_comment(out, 0, '')
+
             for sample in self.samples:
+                if sample.name not in self._sample_source[listpath]:
+                    continue
+
                 out.write(sample.linedump() + '\n')
-                
-                while iC != len(self._commentLines) and self._commentLines[iC][0] == sample.name:
-                    out.write(self._commentLines[iC][1] + '\n')
-                    iC += 1
+
+                iC = insert_comment(out, iC, sample.name)
 
     def names(self):
         return [s.name for s in self.samples]
@@ -522,6 +561,8 @@ add INFO: Add a new dataset.'''
             kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
 
         samples.samples.append(SampleDef(name, **kwd))
+        # add to the main file
+        samples._sample_source[args.listPath].add(name)
 
     elif command == 'lumi':
         source = samples.getmany(arguments)
