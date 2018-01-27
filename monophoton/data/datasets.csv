@@ -120,21 +120,16 @@ qcd-700          "QCD"                               6845                 454127
 qcd-1000         "QCD"                               1208                 15127293   15127293.0           pandaf/004           QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6{,_ext1}-v1+MINIAODSIM
 qcd-1500         "QCD"                               120.3                11826702   11826702.0           pandaf/004           QCD_HT1500to2000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6{,_ext1}-v1+MINIAODSIM
 qcd-2000         "QCD"                               26.05                6039005    6039005.0            pandaf/004           QCD_HT2000toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6{,_ext1}-v1+MINIAODSIM
-### NLO Signal MC
-dma-500-1        "DMA"                               0.3392               51036      2.72524853322e+04    pandaf/004           DarkMatter_MonoPhoton_NLO_Axial_Mx-1_Mv-500_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dma-1000-1       "DMA"                               0.04213              49070      3.68972039008e+03    pandaf/004           DarkMatter_MonoPhoton_NLO_Axial_Mx-1_Mv-1000_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dma-2000-1       "DMA"                               2.897e-03            46489      2.38430238417e+02    pandaf/004           DarkMatter_MonoPhoton_NLO_Axial_Mx-1_Mv-2000_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmv-500-1        "DMV"                               0.2974               52210      2.62714999536e+04    pandaf/004           DarkMatter_MonoPhoton_NLO_Vector_Mx-1_Mv-500_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmv-1000-1       "DMV"                               0.04310              47083      3.47181659604e+03    pandaf/004           DarkMatter_MonoPhoton_NLO_Vector_Mx-1_Mv-1000_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmv-2000-1       "DMV"                               2.871e-03            46267      2.31302544365e+02    pandaf/004           DarkMatter_MonoPhoton_NLO_Vector_Mx-1_Mv-2000_gDM1_gQ0p25_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmvp-1000-1      "DMV"                               1.680e-02            451297     1.47879034721e+04    pandaf/005           DarkMatter_MonoPhoton_NLO_Vector_Mx-1_Mv-1000_gDM1_gQ0p25_PtG-130_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
+### DM vector mediator
+<datasets_dmv.csv>
+### DM axial vector mediator
+<datasets_dma.csv>
+### ADD Signal MC
+<datasets_add.csv>
+### EFT MC
+dmewk-3000-1     "DMEWK"                             1.200e-06            48200      4.57023800192e+04    pandaf/004           DarkMatter_MonoPhoton_EWK_scalar_Mx-1_lambda-3000_LO_13TeV-madgraph+RunIISpring16reHLT80-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1+AODSIM
+### Dark photon ggH
 hgg-125          "Dark Photon"                       48.58                809384     8.88452738409e+07    pandaf/004           GluGluHToGG_M125_13TeV_amcatnloFXFX_pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1+MINIAODSIM # from Higgs twikis: ggH 48.58 pb * 0.0028 BR to gg
-### LO Signal MC
-dmalo-1000-1     "DMA"                               0.01465              50000      50000.0              pandaf/004           DarkMatter_MonoPhoton_AV_Mx-1_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmalo-2000-1     "DMA"                               1.213e-03            50000      50000.0              pandaf/004           DarkMatter_MonoPhoton_AV_Mx-1_Mv-2000_gDMgQ1_LO_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmvlo-500-1      "DMV"                               0.07464              50000      50000.0              pandaf/004           DarkMatter_MonoPhoton_V_Mx-1_Mv-500_gDMgQ1_LO_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmvlo-1000-1     "DMV"                               0.01446              50000      50000.0              pandaf/004           DarkMatter_MonoPhoton_V_Mx-1_Mv-1000_gDMgQ1_LO_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-dmvlo-2000-1     "DMV"                               1.207e-03            47600      47600.0              pandaf/004           DarkMatter_MonoPhoton_V_Mx-1_Mv-2000_gDMgQ1_LO_13TeV-madgraph+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
 hgg-1000         "Dark Photon"                       0.1845               50000      50000.0              pandaf/004           GluGluSpin0ToGG_W-5p6_M-1000_TuneCUEP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb
 ### Dark Photon LO Signal MC
 #dph-125          "Dark Photon"                       48.58                1594081    1594081.0            pandaf/004           GluGluHToGG_M125_13TeV_amcatnloFXFX_pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1+MINIAODSIM # from Higgs twikis: ggH 48.58 pb * 0.0028 BR to gg
@@ -153,11 +148,3 @@ dph-1000-80      "Dark Photon (M=80 GeV)"            0.1845               67195 
 dph-nlo-125      "Dark Photon"                       48.58                586182     6.43654432174e+07    pandaf/004           DarkPhoton_ggH_amcatnlo-pythia8_M-125+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb
 ### Dark Photon VBF NLO Signal MC
 dphv-nlo-125     "Dark Photon"                       3.748                4361482    1.63042112618e+07    pandaf/004           DarkPhoton_VBF_powheg_M-125+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb
-### ADD Signal MC
-add-3-3          "#scale[0.8]{ADD +3d M_{D}=3 TeV}"  0.01089              48848      5.15803581492e+04    pandaf/004           ADDmonoPhoton_MD-3_d-3_TuneCUETP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-add-3-4          "#scale[0.8]{ADD +4d M_{D}=3 TeV}"  0.01054              49501      5.35570023640e+04    pandaf/004           ADDmonoPhoton_MD-3_d-4_TuneCUETP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-add-3-5          "#scale[0.8]{ADD +5d M_{D}=3 TeV}"  0.01062              50000      5.96357465324e+04    pandaf/004           ADDmonoPhoton_MD-3_d-5_TuneCUETP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-add-3-6          "#scale[0.8]{ADD +6d M_{D}=3 TeV}"  0.01084              50000      6.29047388252e+04    pandaf/004           ADDmonoPhoton_MD-3_d-6_TuneCUETP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-add-3-8          "#scale[0.8]{ADD +8d M_{D}=3 TeV}"  0.01258              50000      7.20973694883e+04    pandaf/004           ADDmonoPhoton_MD-3_d-8_TuneCUETP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
-### EFT MC
-dmewk-3000-1     "DMEWK"                             1.200e-06            48200      4.57023800192e+04    pandaf/004           DarkMatter_MonoPhoton_EWK_scalar_Mx-1_lambda-3000_LO_13TeV-madgraph+RunIISpring16reHLT80-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1+AODSIM
