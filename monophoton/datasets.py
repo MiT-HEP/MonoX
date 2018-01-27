@@ -272,21 +272,11 @@ class SampleDef(object):
     def download(self, filesets = []):
         self._readCatalogs()
 
-        subprocess.Popen(
+        proc = subprocess.Popen(
             ['/usr/local/bin/dynamoCache', 'request', 'datasets', '--panda', self.book[self.book.find('/') + 1:], '--sit_and_wait', 'True', '--datasets'] + self.datasetNames,
             stdout = subprocess.PIPE, stderr = subprocess.PIPE
         )
-
-#        for dataset in self.datasetNames:
-#            if not self._downloadable[dataset]:
-#                continue
-#
-#            directory = self._directories[dataset]
-#
-#            for basename in sum(self._basenames[dataset].values(), []):
-#                if not os.path.exists(directory + '/' + basename):
-#                    proc = subprocess.Popen(['/usr/local/DynamicData/SmartCache/Client/addDownloadRequest.py', '--file', basename, '--dataset', dataset, '--book', self.book], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-#                    print proc.communicate()[0].strip()
+        print proc.communicate()[0].strip()
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()

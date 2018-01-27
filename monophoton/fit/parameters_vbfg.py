@@ -2,6 +2,7 @@ import os
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 distribution = 'mtFullSel'
+#distribution = 'mtFullSelDPhiCut'
 
 sourcedir = workdir + '/plots'
 outname = workdir + '/fit/ws_' + distribution + '.root'
@@ -26,7 +27,8 @@ binWidthNormalized = False
 links = []
 
 # Sample with free normalization that are not involved in links.
-floats = [('gjets', 'vbfg')]
+#floats = [('gjets', 'vbfg')]
+floats = []
 
 ignoredNuisances = {}
 
