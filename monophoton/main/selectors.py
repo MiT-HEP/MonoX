@@ -230,7 +230,8 @@ def monophotonBase(sample, rname, selcls = None):
         'PhotonJetDPhi',
         'Met',
         'PhotonPtOverMet',
-        'PhotonMt'
+        'PhotonMt',
+        'PFMatch'
     ]
 
     for op in operators:
@@ -1090,6 +1091,28 @@ def gjets(sample, rname):
     
     return selector
 
+def gjets325(sample, rname):
+    """
+    For GJets MC study. 
+    """
+    
+    selector = emjetBase(sample, rname)
+
+    selector.setPreskim('superClusters.rawPt > 300. && TMath::Abs(superClusters.eta) < 1.4442')
+
+    jets = selector.findOperator('HighPtJetSelection')
+    jets.setIgnoreDecision(True)
+
+    if not sample.data:
+        # measure the parton-level dR between gamma and q/g.
+        selector.addOperator(ROOT.GJetsDR())
+
+    photonSel = selector.findOperator('PhotonSelection')
+    setupPhotonSelection(photonSel)
+    photonSel.setMinPt(325.)
+    
+    return selector
+
 def gjSmeared(sample, rname):
     """
     Candidate-like, with a smeared MET distribution.
@@ -1424,7 +1447,7 @@ def wenu(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(15.)
-    
+
     setupPhotonSelection(photonSel, changes = ['-EVeto'])
 
     return selector
@@ -1843,6 +1866,33 @@ def vbfem(sample, rname):
 
     return selector
 
+def vbfzee(sample, rname):
+    """
+    VBF + Zee sample for e-fake validation.
+    """
+
+    selector = vbfgBase(sample, rname)
+
+    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+
+    if not sample.data:
+        addIDSFWeight(sample, selector)
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(1, 0)
+
+    return selector
+
+def vbfzeeEfake(sample, rname):
+    """
+    VBF + Zee sample for e-fake validation.
+    """
+
+    selector = vbfzee(sample, rname)
+
+    modEfakeLowPt(selector)
+
+    return selector
 
 def vbfe(sample, rname):
     """
@@ -2239,7 +2289,6 @@ def addMuonVetoSFWeight(sample, selector):
 
     idsf = ROOT.IDSFWeight(ROOT.nCollections, 'MuonVetoSF')
     failingMuons = selector.findOperator('LeptonSelection').getFailingMuons()
-    print failingMuons
     idsf.addCustomCollection(failingMuons)
     idsf.addFactor(muonVetoSF)
     idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
