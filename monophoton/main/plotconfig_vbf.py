@@ -29,23 +29,25 @@ def getConfigVBF(confName):
 
         config.baseline = 'photons.scRawPt[0] > 80.'
 
-        config.fullSelection = 't1Met.pt > 100. && t1Met.minJetDPhi > 1.'
+        config.fullSelection = 't1Met.pt > 110. && t1Met.minJetDPhi > 1.'
 
-        config.addSig('dph', 'Dark Photon', samples = ['dphv-*'])
+        config.addSig('dph', 'Dark Photon', samples = ['dphv-*'], scale = 0.1)
 
-        config.addSigPoint('dphv-nlo-125', 'DPH125', color = ROOT.kCyan)
+        config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D})', color = ROOT.kCyan)
 
         if confName == 'vbfg':
             main = ['gjn']
+            gjscale = 1.
         elif confName == 'vbfglo':
-            main = gj
+            main = gj04
+            gjscale = 1.4
 
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
+        config.addBkg('gjets', '#gamma + jets', samples = main, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), scale = gjscale)
         config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'vbfgHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
-        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfgEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfgEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
 
         config.obs.region = 'vbfg'
         for group in config.bkgGroups:
@@ -57,7 +59,9 @@ def getConfigVBF(confName):
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = (100., 'inf'))
         config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True, sensitive = True, blind = 'full')
         config.addPlot('mt', 'M_{T}^{#gamma}', 'photons.mt[0]', (50, 0., 500.), unit = 'GeV', overflow = True, sensitive = True)
-        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', (10, 0., 300.), unit = 'GeV', applyFullSel = True, overflow = True, sensitive = True, blind = 'full')
+#        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', [20. * x for x in range(5)] + [100 + 25. * x for x in range(9)], unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full')
+        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', (12, 0., 300.), unit = 'GeV', applyFullSel = True, sensitive = True, blind = 'full')
+        config.addPlot('mtFullSelDPhiCut', 'M_{T}^{#gamma}', 'photons.mt[0]', (12, 0., 300.), unit = 'GeV', applyFullSel = True, cut = 't1Met.photonDPhi > 0.5', sensitive = True, blind = 'full')
         config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (80, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('phoPtFullSel', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (80, 0., 1000.), unit = 'GeV', overflow = True, applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5))
@@ -66,6 +70,7 @@ def getConfigVBF(confName):
         config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
         config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (20, 0., math.pi), sensitive = True)
         config.addPlot('dPhiPhoMetFullSel', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyFullSel = True, sensitive = True, blind = 'full')
+        config.addPlot('dPhiPhoMetFullSelLow', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyFullSel = True, sensitive = True, blind = 'full')
         config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
         config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi))
         config.addPlot('dPhiJetMetMinHighMet', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (20, 0., math.pi), cut = 't1Met.pt > 100.', sensitive = True, blind =(1., math.pi))
@@ -95,8 +100,8 @@ def getConfigVBF(confName):
         config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
         config.addPlot('etaWidth', 'etaWidth', 'photons.etaWidth[0]', (30, 0.005, .020))
         config.addPlot('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
-        config.addPlot('npartons', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), sensitive = True, blind = 'full')
-        config.addPlot('npartonsFullSel', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), applyFullSel = True, sensitive = True, blind = 'full')
+        config.addPlot('npartons', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), sensitive = True, blind = 'full', mcOnly = True)
+        config.addPlot('npartonsFullSel', 'N_{q,g}', 'Sum$(TMath::Abs(partons.pdgid) < 7 || partons.pdgid == 21)', (5, 0., 5.), applyFullSel = True, sensitive = True, blind = 'full', mcOnly = True)
         mgg = 'TMath::Sqrt('
         mgg += 'TMath::Power(photons.pt_[0] * TMath::CosH(photons.eta_[0]) + photons.pt_[1] * TMath::CosH(photons.eta_[1]), 2.)'
         mgg += ' - TMath::Power(photons.pt_[0] * TMath::Cos(photons.phi_[0]) + photons.pt_[1] * TMath::Cos(photons.phi_[1]), 2.)'
@@ -126,8 +131,8 @@ def getConfigVBF(confName):
         for gname in ['zg', 'wg']:
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
-            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
-            group.variations.append(Variation('EWK', reweight = 'ewk'))
+#            group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
+#            group.variations.append(Variation('EWK', reweight = 'ewk'))
 
         # Specific systematic variations
 #        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
@@ -146,8 +151,9 @@ def getConfigVBF(confName):
 
         config = PlotConfig(confName, photonData)
 
-#        config.baseline = 'photons.scRawPt[0] > 80. && dijet.mjj[0] > 350. && t1Met.pt < 50.'
-        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80. && jets.pt_[dijet.ij2[0]] > 40.'
+#        config.baseline = 'photons.scRawPt[0] > 80. && TMath::Abs(dijet.dEtajj[0]) > 3.5 && dijet.mjj[0] > 400. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80.'
+        config.baseline = 'photons.scRawPt[0] > 80. && TMath::Abs(dijet.dEtajj[0]) > 3.5 && dijet.mjj[0] > 400. && t1Met.pt < 50.'
+#        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80. && jets.pt_[dijet.ij2[0]] > 40.'
 #        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.'
 
         if confName == 'vbfgCtrl':
@@ -164,17 +170,29 @@ def getConfigVBF(confName):
             if not group.region:
                 group.region = 'vbfgCtrl'
 
-        config.addPlot('detajjAll', '#Delta#eta^{jj}', 'dijet.dEtajj[0]', (40, -8., 8.))
+        config.addPlot('phoDRJet1', '#DeltaR^{#gamma,j1}', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - jets.eta_[dijet.ij1[0]], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - jets.phi_[dijet.ij1[0]]), 2.))', (40, 0., 5.))
+        config.addPlot('phoDRJet2', '#DeltaR^{#gamma,j2}', 'TMath::Sqrt(TMath::Power(photons.eta_[0] - jets.eta_[dijet.ij2[0]], 2.) + TMath::Power(TVector2::Phi_mpi_pi(photons.phi_[0] - jets.phi_[dijet.ij2[0]]), 2.))', (40, 0., 5.))
+        config.addPlot('detajjAll', '#Delta#eta^{jj}', 'TMath::Abs(dijet.dEtajj[0])', (20, 0., 8.), applyBaseline = False, cut = 'photons.scRawPt[0] > 80. && dijet.mjj[0] > 400. && t1Met.pt < 50.')
         config.addPlot('dphijjAll', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi))
         config.addPlot('mjjAll', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 5000.), unit = 'GeV')
+        config.addPlot('mjjLow', 'm^{jj}', 'dijet.mjj[0]', (40, 0., 500.), unit = 'GeV')
         config.addPlot('dphijjDEtaGt2', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi), cut = 'TMath::Abs(dijet.dEtajj) > 2.')
         config.addPlot('dphijjDEtaLt2', '#Delta#phi^{jj}', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_[dijet.ij1[0]] - jets.phi_[dijet.ij2[0]]))', (40, 0., math.pi), cut = 'TMath::Abs(dijet.dEtajj) < 2.')
-        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
-        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
-        config.addPlot('jet1PtLow', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
-        config.addPlot('jet2PtLow', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet1Pt', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV')
+        config.addPlot('jet2Pt', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV')
+        config.addPlot('jet1PtAll', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet2PtAll', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 1000.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet1PtLow', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV')
+        config.addPlot('jet2PtLow', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV')
+        config.addPlot('jet1PtLowAll', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet2PtLowAll', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
         config.addPlot('jet1PtLowJ280', 'p_{T}^{j1}', 'jets.pt_[dijet.ij1[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij2[0]] > 80.')
         config.addPlot('jet2PtLowJ180', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80.')
+        config.addPlot('jet2PtLowNoHemisphere', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'jets.size > 1 && photons.scRawPt[0] > 80. && t1Met.pt < 50.')
+        config.addPlot('jet2PtLowLowPU', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && vertices.size < 9.')
+        config.addPlot('jet2PtLowPh90', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 90. && t1Met.pt < 50.')
+        config.addPlot('jet2PtLowJ1100', 'p_{T}^{j2}', 'jets.pt_[dijet.ij2[0]]', (40, 0., 200.), unit = 'GeV', applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 100.')
+        config.addPlot('jet2EtaJ180', '#eta^{j2}', 'jets.eta_[dijet.ij2[0]]', (40, -5., 5.), applyBaseline = False, cut = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50. && jets.pt_[dijet.ij1[0]] > 80.')
         config.addPlot('jetDPt', 'p_{T}^{j1} - p_{T}^{j2}', 'jets.pt_[dijet.ij1[0]] - jets.pt_[dijet.ij2[0]]', (40, -100., 1000.), unit = 'GeV')
         config.addPlot('jet1Eta', '#eta^{j1}', 'jets.eta_[dijet.ij1[0]]', (40, -5., 5.))
         config.addPlot('jet2Eta', '#eta^{j2}', 'jets.eta_[dijet.ij2[0]]', (40, -5., 5.))
@@ -183,6 +201,8 @@ def getConfigVBF(confName):
         config.addPlot('jet1PUID', 'puid(j1)', 'jets.puid[dijet.ij1[0]]', (40, 0., 1.))
         config.addPlot('jet2PUID', 'puid(j2)', 'jets.puid[dijet.ij2[0]]', (40, 0., 1.))
         config.addPlot('njets', 'N_{jet}', 'jets.size', (6, 0., 6.))
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
+        config.addPlot('ht', 'H_{T}', 'Sum$(jets.pt_)', (50, 0., 1000.), unit = 'GeV', overflow = True)
         config.addPlot('genHt', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 6 || partons.pdgid == 21))', (40, 0., 800.), mcOnly = True)
 
     elif confName == 'vbfe' or confName == 'vbfelo':
@@ -425,6 +445,39 @@ def getConfigVBF(confName):
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
             group.variations.append(Variation('lumi', reweight = 0.027))
+
+    elif confName == 'vbfzee':
+        allsamples['sph-16b-m'].lumi = 4778.
+        allsamples['sph-16c-m'].lumi = 2430.
+        allsamples['sph-16d-m'].lumi = 4044.
+        allsamples['sph-16e-m'].lumi = 3284.
+        allsamples['sph-16f-m'].lumi = 2292.
+        allsamples['sph-16g-m'].lumi = 5190.
+        allsamples['sph-16h-m'].lumi = 5470.
+
+        meg = 'TMath::Sqrt(TMath::Power(photons.scRawPt[0] * TMath::CosH(photons.eta_[0]) + electrons.pt_[0] * TMath::CosH(electrons.eta_[0]), 2.)'
+        meg += ' - TMath::Power(photons.scRawPt[0] * TMath::Cos(photons.phi_[0]) + electrons.pt_[0] * TMath::Cos(electrons.phi_[0]), 2.)'
+        meg += ' - TMath::Power(photons.scRawPt[0] * TMath::Sin(photons.phi_[0]) + electrons.pt_[0] * TMath::Sin(electrons.phi_[0]), 2.)'
+        meg += ' - TMath::Power(photons.scRawPt[0] * TMath::SinH(photons.eta_[0]) + electrons.pt_[0] * TMath::SinH(electrons.eta_[0]), 2.))'
+
+        config = PlotConfig('vbfzee', photonData)
+
+        config.baseline = 'photons.scRawPt[0] > 80.'
+
+        config.fullSelection = 'electrons.pt_[0] > 110.'
+
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wglo'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
+        config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['zllg'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'vbfzeeEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+
+        config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', [10. * x for x in range(10)] + [100. + 20. * x for x in range(20)], unit = 'GeV', overflow = True)
+        config.addPlot('metHigh', 'E_{T}^{miss}', 't1Met.pt', [100. + 40. * x for x in range(20)], unit = 'GeV', overflow = True,)
+        config.addPlot('mt', 'M_{T}^{#gamma}', 'photons.mt[0]', (50, 0., 500.), unit = 'GeV', overflow = True)
+#        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', [20. * x for x in range(5)] + [100 + 25. * x for x in range(9)], unit = 'GeV', applyFullSel = True)
+        config.addPlot('mtFullSel', 'M_{T}^{#gamma}', 'photons.mt[0]', (12, 0., 300.), unit = 'GeV', applyFullSel = True)
+        config.addPlot('meg', 'M_{e#gamma}', meg, (50, 0., 200.), unit = 'GeV')
+
 
     else:
         config = None

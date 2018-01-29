@@ -261,6 +261,7 @@ class SSWBatchManager(BatchManager):
 
     def submitMerge(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
+        submitter.requirements = 'OpSysAndVer == "SL6"'
 
         arguments = []
 
@@ -288,6 +289,7 @@ class SSWBatchManager(BatchManager):
 
     def submitSkim(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
+        submitter.requirements = 'OpSysAndVer == "SL6"'
 
         argTemplate = '%s -f %s'
     

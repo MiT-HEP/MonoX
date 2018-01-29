@@ -47,6 +47,7 @@
 //     PhotonPtTruncator
 //   Modifier
 //     TriggerMatch
+//     PFMatch *
 //     JetCleaning *
 //     CopyMet
 //     CopySuperClusters
@@ -799,9 +800,10 @@ class ZJetBackToBack: public Cut {
 
 
 //--------------------------------------------------------------------
-// Modifiers -- does not work in 004!!
+// Modifiers
 //--------------------------------------------------------------------
 
+// Does not work in 004!!
 class TriggerMatch : public Modifier {
  public:
   TriggerMatch(char const* name = "TriggerMatch") : Modifier(name) {}
@@ -819,6 +821,27 @@ class TriggerMatch : public Modifier {
   Collection collection_{nCollections};
   TString outName_{""};
   std::vector<TString> filterNames_{};
+};
+
+class PFMatch : public Modifier {
+  /*Match a PF charged hadron to a photon (hardest within the dR cone).*/
+  
+ public:
+  PFMatch(char const* name = "PFMatch") : Modifier(name) {}
+  ~PFMatch() {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
+  void addBranches(TTree& skimTree) override;
+
+  void setDR(double dr) { dr_ = dr; }
+
+ protected:
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
+
+  double dr_{0.1};
+  unsigned short matchedPtype_[NMAX_PARTICLES]{};
+  float matchedDR_[NMAX_PARTICLES]{};
+  float matchedRelPt_[NMAX_PARTICLES]{};
 };
 
 class TriggerEfficiency : public Modifier {

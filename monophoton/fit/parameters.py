@@ -28,7 +28,7 @@ regions = [sr,
            ]
 data = 'data_obs' # name of data process
 processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike'] + ['halo']
-signals = ['dmvlo-1000-1'] # 
+signals = ['dmvp-1000-1'] # 
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 

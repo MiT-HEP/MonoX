@@ -1814,6 +1814,53 @@ ZJetBackToBack::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 }
 
 //--------------------------------------------------------------------
+// PFMatch
+//--------------------------------------------------------------------
+
+void
+PFMatch::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfCandidates"};
+}
+
+void
+PFMatch::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("photons.pfDR", matchedDR_, "pfDR[photons.size]/F");
+  _skimTree.Branch("photons.pfRelPt", matchedRelPt_, "pfRelPt[photons.size]/F");
+  _skimTree.Branch("photons.pfPtype", matchedPtype_, "pfPtype[photons.size]/s");
+}
+
+void
+PFMatch::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  std::vector<panda::PFCand const*> chargedCands;
+
+  for (auto& cand : _event.pfCandidates) {
+    if (cand.q() != 0)
+      chargedCands.push_back(&cand);
+  }
+
+  for (unsigned iPh(0); iPh != _outEvent.photons.size(); ++iPh) {
+    auto& photon(_outEvent.photons[iPh]);
+
+    matchedPtype_[iPh] = -1;
+    matchedDR_[iPh] = -1.;
+    matchedRelPt_[iPh] = -1.;
+
+    for (auto* cand : chargedCands) {
+      double dr(cand->dR(photon));
+      double relPt(cand->pt() / photon.scRawPt);
+      if (dr < dr_ && relPt > matchedRelPt_[iPh]) {
+        matchedPtype_[iPh] = cand->ptype;
+        matchedRelPt_[iPh] = relPt;
+        matchedDR_[iPh] = dr;
+      }
+    }
+  }
+}
+
+//--------------------------------------------------------------------
 // TriggerEfficiency
 //--------------------------------------------------------------------
 
