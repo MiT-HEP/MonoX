@@ -16,7 +16,7 @@ from tp.efake_conf import lumiSamples, outputName, outputDir, roofitDictsDir, ge
 
 binningName = sys.argv[1]
 
-ADDFIT = False
+ADDFIT = True
 
 binningTitle, binning, fitBins = getBinning(binningName)
 
@@ -77,28 +77,28 @@ canvas.legend.apply('sf', scaleFactor)
 canvas.addHistogram(scaleFactor, drawOpt = 'EP')
 
 if ADDFIT:
-    power = ROOT.TF1('power', '[0] + [1] / (x - [2])', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
-    power.SetParameters(0.02, 1., 0.)
-    power.SetParLimits(2, -175., 10000.)
+    flat = ROOT.TF1('flat', '[0]', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
+    flat.SetParameter(0, 1.)
+    flat.SetParLimits(0, 0.95, 1.05)
 
-    quad = ROOT.TF1('quad', '[0] + [1] * x + [2] * x**2', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
-    quad.SetParameters(1., 0.001, 0.00001)
+    sfTruth.Fit(flat)
+    canvas.addObject(flat)
 
-    function = quad
+    linear = ROOT.TF1('linear', '[0] + [1] * x', scaleFactor.GetXaxis().GetXmin(), scaleFactor.GetXaxis().GetXmax())
+    linear.SetParameters(1., 0.01)
+    linear.SetParLimits(0, 0.95, 1.05)
+    linear.SetParLimits(1, -0.0001, 0.0001)
 
-    scaleFactor.Fit(function)
-    canvas.addObject(function)
+    sfTruth.Fit(linear)
+    canvas.addObject(linear)
 
-    """
-    text = 'f = %.4f + #frac{%.3f}{p_{T}' % (function.GetParameter(0), function.GetParameter(1))
-    if function.GetParameter(2) >= 0.:
-        text += ' - %.2f}' % function.GetParameter(2)
-    else:
-        text += ' + %.2f}' % (-function.GetParameter(2))
-    """
-    text = 'f = %.4f + %.4f * p_{T} + %.4f * p_{T}^{2}' % (function.GetParameter(0), function.GetParameter(1), function.GetParameter(2))
+    text = 'flat = %.3f #pm %.3f' % (flat.GetParameter(0), flat.GetParError(0))
+    canvas.addText(text, 0.3, 0.25, 0.5, 0.2)
 
-    canvas.addText(text, 0.3, 0.3, 0.5, 0.2)
+    text = 'line = %.6f + %.6f * p_{T}' % (linear.GetParameter(0), linear.GetParameter(1))
+    canvas.addText(text, 0.3, 0.35, 0.5, 0.25)
+
+
 
 canvas.xtitle = binningTitle
 canvas.printWeb(outputName, 'scaleFactor_' + binningName, logy = False)
