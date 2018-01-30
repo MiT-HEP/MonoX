@@ -9,12 +9,12 @@ MMED=$(echo $POINT | cut -d- -f 2)
 MDM=$(echo $POINT | cut -d- -f 3)
 
 SCRIPTDIR=$(cd $(dirname $0); pwd)
-CARDDIR=/scratch5/ballen/hist/monophoton/datacards
-OUTDIR=/scratch5/ballen/hist/monophoton/limits
+CARDDIR=/data/t3home000/ballen/monophoton/fit/datacards
+OUTDIR=/data/t3home000/ballen/monophoton/fit/limits
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-export CMSSW_BASE=/home/ballen/cms/cmssw/042/CMSSW_7_4_6
+export CMSSW_BASE=/home/ballen/cms/cmssw/004/CMSSW_8_1_0
 cd $CMSSW_BASE
 eval `scram runtime -sh`
 
@@ -22,8 +22,9 @@ cd -
 
 DATACARD=$CARDDIR/$POINT.dat
 
-combine -M Asymptotic --run blind $DATACARD
-METHOD=Asymptotic
+METHOD=AsymptoticLimits
+combine -M $METHOD --run blind $DATACARD
+
 # combine -M ProfileLikelihood --significance $DATACARD -t -1 --expectSignal=1 # --toysFreq
 # METHOD=ProfileLikelihood
 

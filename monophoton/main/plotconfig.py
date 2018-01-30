@@ -67,13 +67,13 @@ def getConfig(confName):
 
         spikeNorm = phiFactor * 23.9 * config.effLumi() / 35900.
 
-        config.addSig('dmv', 'DM V', samples = ['dmv-500-1', 'dmv-1000-1', 'dmv-2000-1'])
-        config.addSig('dma', 'DM A', samples = ['dma-500-1', 'dma-1000-1', 'dma-2000-1'])
-        config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
+        config.addSig('dmv', 'DM V', samples = ['dmv-*'])
+        config.addSig('dma', 'DM A', samples = ['dma-*'])
+        # config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
         config.addSig('add', 'ADD', samples = ['add-3-*'])
 #        config.addSig('dmewk', 'DM EWK', samples = ['dmewk-*'])
-        config.addSig('dmvlo', 'DM V', samples = ['dmvlo-500-1', 'dmvlo-1000-1', 'dmvlo-2000-1'])
-#        config.addSig('dmalo', 'DM A', samples = ['dmalo-1000-1', 'dmalo-2000-1'])
+        config.addSig('dmvlo', 'DM V', samples = ['dmvlo-*'])
+        config.addSig('dmalo', 'DM A', samples = ['dmalo-*'])
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)

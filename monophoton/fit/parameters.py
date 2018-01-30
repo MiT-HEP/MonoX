@@ -1,4 +1,12 @@
 import os
+import sys
+
+## directories to include
+thisdir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(thisdir)
+sys.path.append(basedir)
+
+import datasets
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 distribution = 'phoPtHighMet'
@@ -28,9 +36,13 @@ regions = [sr,
            ]
 data = 'data_obs' # name of data process
 processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike'] + ['halo']
-signals = ['dmvp-1000-1'] # 
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
+
+snames = ['add-3-*', 'dmvlo-*']
+signals = []
+for sname in snames:
+    signals += [s.name for s in datasets.allsamples.getmany(sname)]
 
 # Links between samples. List of tuples.
 # The first sample (=target) of the tuple is represented by (transfer factor) * (second sample (=source)).

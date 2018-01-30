@@ -127,7 +127,7 @@ qcd-2000         "QCD"                               26.05                603900
 ### ADD Signal MC
 <datasets_add.csv>
 ### EFT MC
-dmewk-3000-1     "DMEWK"                             1.200e-06            48200      4.57023800192e+04    pandaf/004           DarkMatter_MonoPhoton_EWK_scalar_Mx-1_lambda-3000_LO_13TeV-madgraph+RunIISpring16reHLT80-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1+AODSIM
+# dmewk-3000-1     "DMEWK"                             1.200e-06            48200      4.57023800192e+04    pandaf/004           DarkMatter_MonoPhoton_EWK_scalar_Mx-1_lambda-3000_LO_13TeV-madgraph+RunIISpring16reHLT80-PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1+AODSIM
 ### Dark photon ggH
 hgg-125          "Dark Photon"                       48.58                809384     8.88452738409e+07    pandaf/004           GluGluHToGG_M125_13TeV_amcatnloFXFX_pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1+MINIAODSIM # from Higgs twikis: ggH 48.58 pb * 0.0028 BR to gg
 hgg-1000         "Dark Photon"                       0.1845               50000      50000.0              pandaf/004           GluGluSpin0ToGG_W-5p6_M-1000_TuneCUEP8M1_13TeV-pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb

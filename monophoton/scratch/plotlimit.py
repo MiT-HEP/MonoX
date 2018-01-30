@@ -139,7 +139,7 @@ expectedEntries = len(entryNames)
 
 compare = True
 
-sourcedir = '/scratch5/ballen/hist/monophoton/limits/' + model
+sourcedir = '/data/t3home000/ballen/monophoton/fit/limits/' + model
 
 limits = {}
 
