@@ -40,7 +40,8 @@ data_sph = [
     'vbfzee', 'vbfzeeEfake',
     'gghg', 'gghEfake', 'gghHfake', 
     'gghe', 'ggheEfake', 'ggheHfake', 'gghm', 'gghmEfake', 'gghmHfake', 
-    'gghee', 'gghmm'
+    'gghee', 'gghmm',
+    'fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75'
 ]
 
 data_smu = [
@@ -57,7 +58,7 @@ data_sel = [
 ]
 
 mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl', 'vbfgLJCtrl', 'gghg']
-mc_qcd = ['hfake']
+mc_qcd = ['hfake', 'fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75']
 mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm', 'gghe', 'gghm']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu', 'gghee', 'gghmm']

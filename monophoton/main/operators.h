@@ -1010,6 +1010,36 @@ class LeptonRecoil : public Modifier {
   float realPhiUnclDown_;
 };
 
+class PhotonFakeMet : public Modifier {
+ public:
+  PhotonFakeMet(char const* name = "PhotonFakeMet") : Modifier(name) {}
+  void addBranches(TTree& skimTree) override;
+
+  void setFraction(float frac) { fraction_ = frac; }
+
+  TVector2 realMet() const { TVector2 v; v.SetMagPhi(realMet_, realPhi_); return v; }
+  TVector2 realMetCorr(int corr) const;
+  TVector2 realMetUncl(int corr) const;
+
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  float fraction_{-1.};
+  MetVariations* metVar_{0};
+
+  float realPhoPt_;
+  float realMet_;
+  float realPhi_;
+  float realMetCorrUp_;
+  float realPhiCorrUp_;
+  float realMetCorrDown_;
+  float realPhiCorrDown_;
+  float realMetUnclUp_;
+  float realPhiUnclUp_;
+  float realMetUnclDown_;
+  float realPhiUnclDown_;
+};
+
 class EGCorrection : public Modifier {
  public:
   EGCorrection(char const* name = "EGCorrection") : Modifier(name) {}

@@ -2005,6 +2005,57 @@ def gghgNoE(sample, rname):
 
     return selector
 
+def fakeMetRandom(sample, rname):
+    """
+    Full monophoton selection with a random fraction of photon energy lost to MET.
+    """
+
+    selector = gghg(sample, rname)
+
+    fakeMet = ROOT.PhotonFakeMet()
+    selector.addOperator(fakeMet, selector.index('CopyMet')+1)
+
+    return selector
+
+def fakeMet25(sample, rname):
+    """
+    Full monophoton selection without with 25% of photon energy lost to MET.
+    """
+
+    selector = gghg(sample, rname)
+
+    fakeMet = ROOT.PhotonFakeMet()
+    fakeMet.setFraction(0.25)
+    selector.addOperator(fakeMet, selector.index('CopyMet')+1)
+
+    return selector
+
+def fakeMet50(sample, rname):
+    """
+    Full monophoton selection without with 50% of photon energy lost to MET.
+    """
+
+    selector = gghg(sample, rname)
+
+    fakeMet = ROOT.PhotonFakeMet()
+    fakeMet.setFraction(0.50)
+    selector.addOperator(fakeMet, selector.index('CopyMet')+1)
+
+    return selector
+
+def fakeMet75(sample, rname):
+    """
+    Full monophoton selection without with 75% of photon energy lost to MET.
+    """
+
+    selector = gghg(sample, rname)
+
+    fakeMet = ROOT.PhotonFakeMet()
+    fakeMet.setFraction(0.75)
+    selector.addOperator(fakeMet, selector.index('CopyMet')+1)
+
+    return selector
+
 def gghEfake(sample, rname):
     """
     GGH + photon e->photon fake control sample.

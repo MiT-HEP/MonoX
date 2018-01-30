@@ -2465,6 +2465,139 @@ LeptonRecoil::realMetUncl(int corr) const
 
   return vec;
 }
+
+//--------------------------------------------------------------------
+// PhotonFakeMet
+//--------------------------------------------------------------------
+
+void
+PhotonFakeMet::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("photons[0].realScRawPt", &realPhoPt_, "realScRawPt/F");
+  _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
+  _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
+}
+
+void
+PhotonFakeMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  float inMets[] = {
+    _outEvent.t1Met.pt,
+    _outEvent.t1Met.ptCorrUp,
+    _outEvent.t1Met.ptCorrDown,
+    _outEvent.t1Met.ptUnclUp,
+    _outEvent.t1Met.ptUnclDown
+  };
+  float inPhis[] = {
+    _outEvent.t1Met.phi,
+    _outEvent.t1Met.phiCorrUp,
+    _outEvent.t1Met.phiCorrDown,
+    _outEvent.t1Met.phiUnclUp,
+    _outEvent.t1Met.phiUnclDown
+  };
+
+  float* outRecoils[] = {
+    &_outEvent.t1Met.pt,
+    &_outEvent.t1Met.ptCorrUp,
+    &_outEvent.t1Met.ptCorrDown,
+    &_outEvent.t1Met.ptUnclUp,
+    &_outEvent.t1Met.ptUnclDown
+  };
+  float* outRecoilPhis[] = {
+    &_outEvent.t1Met.phi,
+    &_outEvent.t1Met.phiCorrUp,
+    &_outEvent.t1Met.phiCorrDown,
+    &_outEvent.t1Met.phiUnclUp,
+    &_outEvent.t1Met.phiUnclDown
+  };
+
+  float* realMets[] = {
+    &realMet_,
+    &realMetCorrUp_,
+    &realMetCorrDown_,
+    &realMetUnclUp_,
+    &realMetUnclDown_
+  };
+  float* realPhis[] = {
+    &realPhi_,
+    &realPhiCorrUp_,
+    &realPhiCorrDown_,
+    &realPhiUnclUp_,
+    &realPhiUnclDown_
+  };
+
+  for (unsigned iM(0); iM != sizeof(realMets) / sizeof(float*); ++iM) {
+    *realMets[iM] = inMets[iM];
+    *realPhis[iM] = inPhis[iM];
+  }
+
+  double px(0.);
+  double py(0.);
+ 
+  auto& pho = _outEvent.photons[0];
+
+  double fraction(0.);
+  TRandom3* rand = new TRandom3();
+
+  if (fraction_ < 0.) {
+    fraction = rand->Uniform(1.);
+  }
+  else
+    fraction = fraction_;
+
+  px += fraction * pho.scRawPt * std::cos(pho.phi());
+  py += fraction * pho.scRawPt * std::sin(pho.phi());
+
+  realPhoPt_ = pho.scRawPt;
+  _outEvent.photons[0].scRawPt = (1. - fraction) * pho.scRawPt;
+
+  for (unsigned iM(0); iM != sizeof(outRecoils) / sizeof(float*); ++iM) {
+    double mex(px + inMets[iM] * std::cos(inPhis[iM]));
+    double mey(py + inMets[iM] * std::sin(inPhis[iM]));
+    *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
+    *outRecoilPhis[iM] = std::atan2(mey, mex);
+  }
+  
+}
+
+TVector2
+PhotonFakeMet::realMetCorr(int corr) const
+{
+  if (corr == 0)
+    return realMet();
+
+  TVector2 vec;
+  switch (corr) {
+  case 1:
+    vec.SetMagPhi(realMetCorrUp_, realPhiCorrUp_);
+    break;
+  case -1:
+    vec.SetMagPhi(realMetCorrDown_, realPhiCorrDown_);
+    break;
+  };
+
+  return vec;
+}
+
+TVector2
+PhotonFakeMet::realMetUncl(int corr) const
+{
+  if (corr == 0)
+    return realMet();
+
+  TVector2 vec;
+  switch (corr) {
+  case 1:
+    vec.SetMagPhi(realMetUnclUp_, realPhiUnclUp_);
+    break;
+  case -1:
+    vec.SetMagPhi(realMetUnclDown_, realPhiUnclDown_);
+    break;
+  };
+
+  return vec;
+}
+
 //--------------------------------------------------------------------
 // EGCorrection
 //--------------------------------------------------------------------
