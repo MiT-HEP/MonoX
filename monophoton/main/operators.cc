@@ -2319,7 +2319,7 @@ AddGenJets::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& 
 void
 PhotonMt::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("photons.mt", mt_, "mt[photons.size]/ F");
+  _skimTree.Branch("photons.mt", mt_, "mt[photons.size]/F");
 }
 
 void
