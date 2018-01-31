@@ -1027,7 +1027,7 @@ class PhotonFakeMet : public Modifier {
   float fraction_{-1.};
   MetVariations* metVar_{0};
 
-  float realPhoPt_;
+  float realPhoPt_[NMAX_PARTICLES];
   float realMet_;
   float realPhi_;
   float realMetCorrUp_;

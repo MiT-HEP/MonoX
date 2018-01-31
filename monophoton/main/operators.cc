@@ -2319,7 +2319,7 @@ AddGenJets::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& 
 void
 PhotonMt::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("photons.mt", mt_, "mt[photons.size]/F");
+  _skimTree.Branch("photons.mt", mt_, "mt[photons.size]/ F");
 }
 
 void
@@ -2473,7 +2473,7 @@ LeptonRecoil::realMetUncl(int corr) const
 void
 PhotonFakeMet::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch("photons[0].realScRawPt", &realPhoPt_, "realScRawPt/F");
+  _skimTree.Branch("photons.realScRawPt", &realPhoPt_, "realScRawPt[photons.size]/F");
   _skimTree.Branch("t1Met.realMet", &realMet_, "realMet/F");
   _skimTree.Branch("t1Met.realPhi", &realPhi_, "realPhi/F");
 }
@@ -2533,23 +2533,25 @@ PhotonFakeMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
 
   double px(0.);
   double py(0.);
- 
-  auto& pho = _outEvent.photons[0];
 
   double fraction(0.);
-  TRandom3* rand = new TRandom3();
+  TRandom3 rand;
 
   if (fraction_ < 0.) {
-    fraction = rand->Uniform(1.);
+    fraction = rand.Uniform(1.);
   }
   else
     fraction = fraction_;
 
-  px += fraction * pho.scRawPt * std::cos(pho.phi());
-  py += fraction * pho.scRawPt * std::sin(pho.phi());
+  for (unsigned iP(0); iP != _outEvent.photons.size(); ++iP) {
+    auto& pho = _outEvent.photons[iP];
 
-  realPhoPt_ = pho.scRawPt;
-  _outEvent.photons[0].scRawPt = (1. - fraction) * pho.scRawPt;
+    px += fraction * pho.scRawPt * std::cos(pho.phi());
+    py += fraction * pho.scRawPt * std::sin(pho.phi());
+
+    realPhoPt_[iP] = pho.scRawPt;
+    _outEvent.photons[iP].scRawPt = (1. - fraction) * pho.scRawPt;
+  }
 
   for (unsigned iM(0); iM != sizeof(outRecoils) / sizeof(float*); ++iM) {
     double mex(px + inMets[iM] * std::cos(inPhis[iM]));
