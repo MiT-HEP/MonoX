@@ -58,8 +58,10 @@ def getConfigGGH(confName):
         config.fullSelection = 'photons.mt[0] > 100. && photons.mt[0] < 150.'
 
         config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
+        config.addSig('fakemet50', 'Fake Met 50%', samples = ['gj04-*'], region = 'fakeMet50') # , norm = 50.)
 
-        config.addSigPoint('dph-125', 'H_{125}(#gamma, #gamma_{D}) #times 0.1', color = ROOT.kCyan)
+        config.addSigPoint('dph-125', 'H_{125}(#gamma, #gamma_{D})', color = ROOT.kCyan)
+        config.addSigPoint('gj04-600', 'Fake E_{T}^{miss} (50% E_{T}^{#gamma})', color = ROOT.kRed)
 
         config.addBkg('gg', '#gamma#gamma', samples = gg, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
