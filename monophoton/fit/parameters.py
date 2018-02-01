@@ -39,7 +39,7 @@ processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 
-snames = ['add-3-*', 'dmvlo-*']
+snames = ['add-3-8'] # , 'dmvlo-*']
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
@@ -67,6 +67,9 @@ links = [
 
 # Sample with free normalization that are not involved in links.
 floats = []
+
+# Sample with free normalization involved in links
+freeNorms = [ ('halo', 'monophHighPhi') ]
 
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
 wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWK']

@@ -499,7 +499,7 @@ if __name__ == '__main__':
                     # each bin must be described by a free-floating RooRealVar
                     # uncertainties are all casted on tfactors
 
-                    if sample == ('halo', 'monophHighPhi'):
+                    if sample in config.freeNorms:
                         normName = 'freenorm_{sample}'.format(sample = sampleName)
                         normModifiers[normName] = fct('{norm}[1.,0.001,10.]'.format(norm = normName))
                         
