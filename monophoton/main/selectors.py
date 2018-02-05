@@ -69,6 +69,7 @@ def monophotonSetting():
         'PhIso',
         'CHIsoMax',
         'EVeto',
+        'ChargedPFVeto',
         'MIP49',
         'Time',
         'SieieNonzero',
@@ -91,7 +92,8 @@ def vbfgSetting():
         'NHIso',
         'PhIso',
         'CHIso',
-        'EVeto'
+        'EVeto',
+        'ChargedPFVeto'
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
     selconf['photonIDTune'] = ROOT.idtune
@@ -110,6 +112,7 @@ def gghSetting():
         'PhIso',
         'CHIso',
         'EVeto',
+        'ChragedPFVeto',
         # 'MIP49',
         # 'Time',
         # 'SieieNonzero',

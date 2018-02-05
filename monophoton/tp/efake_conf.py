@@ -1,17 +1,19 @@
 import os
 
-outputName = 'idsf'
+outputName = 'efake_s16'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
-itune = 2
+itune = 1
+vetoCut = 'probes.pixelVeto && probes.chargedPFVeto'
 
 fitBinningT = (120, 60., 120.)
 
 dataSource = 'sph' # sph or sel or smu
 if dataSource == 'sph':
-    tpconfs = ['pass', 'fail']
+#    tpconfs = ['pass', 'fail']
+    tpconfs = ['ee', 'eg']
 elif dataSource == 'sel':
     tpconfs = ['pass', 'fail']
 elif dataSource == 'smu':

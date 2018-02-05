@@ -10,6 +10,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from plotstyle import WEBDIR
+import config
 
 plotDir = WEBDIR + '/monophoton/limits/'
 if not os.path.exists(plotDir):
@@ -126,7 +127,7 @@ except:
 
 if result == 'limit':
     method = 'Asymptotic'
-    entryNames = ['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up']
+    entryNames = ['exp2down', 'exp1down', 'exp', 'exp1up', 'exp2up', 'obs']
 elif result == 'signif':
     method = 'ProfileLikelihood'
     entryNames = ['exp']
@@ -137,9 +138,9 @@ if obs:
 
 expectedEntries = len(entryNames)
 
-compare = True
+compare = False
 
-sourcedir = '/data/t3home000/ballen/monophoton/fit/limits/' + model
+sourcedir = config.histDir + '/fit/limits'
 
 limits = {}
 
@@ -184,16 +185,23 @@ for fname in sorted(os.listdir(sourcedir)):
         compLimit = compTree.GetV1()
 
         limits[point] = tuple([ math.fabs((compLimit[i] / limit[i] - 1) * 100.)  for i in range(expectedEntries)])
+
+        if result == 'limit':
+            print '%5s %4s  %15.2f %15.2f  %4.1f' % (matches.group(1), matches.group(2), limit[2], compLimit[2], limits[point][2])
+        elif result == 'signif':
+            print '%5s %4s  %6.2f %6.2f  %4.1f' % (matches.group(1), matches.group(2), limit[0], compLimit[0], limits[point][0])
+        else:
+            print '%5s %4s  ' % (matches.group(1), matches.group(2)), limits[point]
+
     else:
         limits[point] = tuple([limit[i] for i in range(expectedEntries)])
 
-    if result == 'limit':
-        print '%5s %4s  %15.2f %15.2f  %4.1f' % (matches.group(1), matches.group(2), limit[2], compLimit[2], limits[point][2])
-    elif result == 'signif':
-        print '%5s %4s  %6.2f %6.2f  %4.1f' % (matches.group(1), matches.group(2), limit[0], compLimit[0], limits[point][0])
-    else:
-        print '%5s %4s  ' % (matches.group(1), matches.group(2)), limits[point]
-        
+        if result == 'limit':
+            print '%5s %4s  %15.2f  %4.1f' % (matches.group(1), matches.group(2), limit[2], limits[point][2])
+        elif result == 'signif':
+            print '%5s %4s  %6.2f  %4.1f' % (matches.group(1), matches.group(2), limit[0], limits[point][0])
+        else:
+            print '%5s %4s  ' % (matches.group(1), matches.group(2)), limits[point]
 
     source.Close()
     if compare:
@@ -214,7 +222,7 @@ mmeds = array.array('d', [100. + 20. * i for i in range(51)])
 mdms = array.array('d', [10. * i for i in range(51)])
 htemplate = ROOT.TH2D('template', ';M_{med} (GeV);M_{DM} (GeV)', len(mmeds) - 1, mmeds, len(mdms) - 1, mdms)
 
-output = ROOT.TFile.Open('../data/' + model + '.root', 'recreate')
+output = ROOT.TFile.Open('/data/t3home000/yiiyama/monophoton/fit/grids/' + model + '.root', 'recreate')
 
 #ROOT.gStyle.SetPalette(1)
 ROOT.gStyle.SetOptStat(0)
@@ -235,6 +243,9 @@ colors = array.array('i', [pstart + i for i in range(255)])
 ROOT.gStyle.SetPalette(255, colors)
 
 interpolations = {
+    'dmvlo': [
+        ((1000., 150.), (1995., 1000.), (1500., 650.))
+    ],
     'dmvfs': [
         ((600., 300.), (825., 400.), (725., 300.)),
         ((825., 300.), (1000., 400.), (900., 350.)),
@@ -276,6 +287,9 @@ histograms = {}
 contours = collections.defaultdict(list)
 
 for iL, name in enumerate(entryNames):
+    if not obs and name == 'obs':
+        continue
+
     gr = ROOT.TGraph2D(len(limits))
     gr.SetName(name)
 
@@ -327,7 +341,7 @@ for iL, name in enumerate(entryNames):
                 hist.SetBinContent(iX, iY, mean)
                 textDump.write('%5d %5d %6.2f \n' % (hist.GetXaxis().GetBinCenter(iX), hist.GetYaxis().GetBinCenter(iY), mean))
 
-        textDump.close()
+    textDump.close()
 
     output.cd()
     hist.Write()

@@ -173,6 +173,8 @@ class SkimSlimWeight(object):
         tmpOutDir = self.tmpDir + '/' + self.sample.name
     
         for fileset, fnames in paths.items():
+            print 'Fileset', fileset
+
             skimmer.clearPaths()
             for fname in fnames:
                 skimmer.addPath(fname)

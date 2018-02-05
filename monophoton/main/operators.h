@@ -293,6 +293,7 @@ class PhotonSelection : public Cut {
     CHIsoMax,
     EVeto,
     CSafeVeto,
+    ChargedPFVeto,
     MIP49,
     Time,
     SieieNonzero,
@@ -326,6 +327,7 @@ class PhotonSelection : public Cut {
   PhotonSelection(char const* name = "PhotonSelection") : Cut(name) {}
 
   void initialize(panda::EventMonophoton&) override;
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
 
@@ -369,6 +371,8 @@ class PhotonSelection : public Cut {
 
   unsigned size_{0};
   bool nominalResult_{false};
+  std::vector<panda::PFCand const*> chargedCands_;
+  bool chargedPFVeto_[NMAX_PARTICLES];
 };
 
 class TauVeto : public Cut {
@@ -1328,6 +1332,7 @@ class TPLeptonPhoton : public TPCut {
   TPLeptonPhoton(TPEventType t, char const* name = "TPLeptonPhoton") : TPCut(name), eventType_(t) {}
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
@@ -1342,7 +1347,10 @@ class TPLeptonPhoton : public TPCut {
   double minTagPt_{15.};
   bool tagTriggerMatch_{false};
   bool probeTriggerMatch_{false};
+  double chargedPFDR_{0.1};
+  double chargedPFRelPt_{0.6};
 
+  bool chargedPFVeto_[NMAX_PARTICLES];
   bool hasCollinearL_[NMAX_PARTICLES];
   float ptdiff_[NMAX_PARTICLES];
 };

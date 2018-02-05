@@ -598,7 +598,25 @@ class Normalizer(object):
         if obj.InheritsFrom(ROOT.TH1.Class()):
             # normalizing a TH1
 
-            targ = obj.Clone(name)
+            # can be a TProfile - need to create a TH1D (cannot just clone)
+            if obj.GetXaxis().GetXbins().GetSize() == 0:
+                targ = ROOT.TH1D(name, '', obj.GetNbinsX(), obj.GetXaxis().GetXmin(), obj.GetXaxis().GetXmax())
+            else:
+                targ = ROOT.TH1D(name, '', obj.GetNbinsX(), obj.GetXaxis().GetXbins().GetArray())
+
+            for iX in range(1, obj.GetNbinsX() + 1):
+                targ.SetBinContent(iX, obj.GetBinContent(iX))
+                targ.SetBinError(iX, obj.GetBinError(iX))
+#            targ = obj.Clone(name)
+#            if targ.InheritsFrom(ROOT.TProfile.Class()):
+#                for iX in range(1, obj.GetNbinsX() + 1):
+#                    targ.SetBinEntries(iX, obj.GetBinEntries(iX))
+
+            # apply style
+            tmp = Legend(0., 0., 0., 0.)
+            tmp.add(obj)
+            tmp.apply(obj.GetName(), targ)
+
             targAxis = targ.GetXaxis()
 
             if self._normObj.InheritsFrom(ROOT.TH1.Class()):

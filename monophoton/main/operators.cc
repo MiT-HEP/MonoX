@@ -274,6 +274,7 @@ PhotonSelection::selectionName[PhotonSelection::nSelections] = {
   "CHIsoMax",
   "EVeto",
   "CSafeVeto",
+  "ChargedPFVeto",
   "MIP49",
   "Time",
   "SieieNonzero",
@@ -362,6 +363,27 @@ PhotonSelection::addBranches(TTree& _skimTree)
     _skimTree.Branch("photons.ptVarUp", ptVarUp_, "ptVarUp[photons.size]/F");
     _skimTree.Branch("photons.ptVarDown", ptVarDown_, "ptVarDown[photons.size]/F");
   }
+  _skimTree.Branch("photons.chargedPFVeto", chargedPFVeto_, "chargedPFVeto[photons.size]/O");
+}
+
+void
+PhotonSelection::addInputBranch(panda::utils::BranchList& _blist)
+{
+  bool hasPF(false);
+  for (auto& sel : selections_) {
+    if (sel.second[ChargedPFVeto]) {
+      hasPF = true;
+    }
+  }
+  for (auto& sel : vetoes_) {
+    if (sel.second[ChargedPFVeto]) {
+      hasPF = true;
+      break;
+    }
+  }
+
+  if (hasPF)
+    _blist += {"pfCandidates"};
 }
 
 void
@@ -441,6 +463,13 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iC(0); iC != nSelections; ++iC)
     std::fill_n(cutRes_[iC], NMAX_PARTICLES, false);
 
+  chargedCands_.clear();
+
+  for (auto& cand : _event.pfCandidates) {
+    if (cand.q() != 0)
+      chargedCands_.push_back(&cand);
+  }
+
   size_ = 0;
 
   bool vetoed(false);
@@ -488,6 +517,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
         ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, true);
         ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, false);
       }
+      chargedPFVeto_[_outEvent.photons.size()] = cutRes_[ChargedPFVeto][_outEvent.photons.size()];
       _outEvent.photons.push_back(photon);
     }
   }
@@ -551,6 +581,19 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
   cutres[PhIsoTight] = _photon.passPhIso(2, idTune_);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
+
+  cutres[ChargedPFVeto] = true;
+  for (auto* cand : chargedCands_) {
+    double dr(cand->dR(_photon));
+    if (dr > 0.1)
+      continue;
+
+    double relPt(cand->pt() / _photon.scRawPt);
+    if (relPt > 0.6) {
+      cutres[ChargedPFVeto] = false;
+      break;
+    }
+  }
 
   for (unsigned iC(0); iC != nSelections; ++iC)
     cutRes_[iC][_idx] = cutres[iC];
@@ -3649,8 +3692,15 @@ PUWeight::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent
 void
 TPLeptonPhoton::addBranches(TTree& _skimTree)
 {
+  _skimTree.Branch("probes.chargedPFVeto", chargedPFVeto_, "chargedPFVeto[probes.size]/O");
   _skimTree.Branch("probes.hasCollinearL", hasCollinearL_, "hasCollinearL[probes.size]/O");
   _skimTree.Branch("probes.ptdiff", ptdiff_, "ptdiff[probes.size]/F");
+}
+
+void
+TPLeptonPhoton::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfCandidates"};
 }
 
 bool
@@ -3673,12 +3723,33 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
     throw runtime_error("Incompatible event type in TPLeptonPhoton");
   }
 
+  std::vector<panda::PFCand const*> chargedCands;
+
+  for (auto& cand : _inEvent.pfCandidates) {
+    if (cand.q() != 0)
+      chargedCands.push_back(&cand);
+  }
+
   for (auto& photon : _inEvent.photons) {
     if (!photon.isEB || photon.scRawPt < minProbePt_)
       continue;
 
     if (probeTriggerMatch_ && !photon.triggerMatch[panda::Photon::fPh165HE10])
       continue;
+
+    bool chargedPFMatch(false);
+
+    for (auto* cand : chargedCands) {
+      double dr(cand->dR(photon));
+      if (dr > chargedPFDR_)
+        continue;
+
+      double relPt(cand->pt() / photon.scRawPt);
+      if (relPt > chargedPFRelPt_) {
+        chargedPFMatch = true;
+        break;
+      }
+    }
 
     auto&& pg(photon.p4());
 
@@ -3746,6 +3817,8 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
             outEvent.tags.push_back(static_cast<panda::Muon const&>(lepton));
             outEvent.probes.push_back(photon);
           }
+
+          chargedPFVeto_[_outEvent.tp.size() - 1] = !chargedPFMatch;
         }
       }
       else {
@@ -3815,6 +3888,7 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
           outEvent.probes.push_back(photon);
         }
 
+        chargedPFVeto_[_outEvent.tp.size() - 1] = !chargedPFMatch;
         hasCollinearL_[_outEvent.tp.size() - 1] = hasCollinearL;
 	ptdiff_[_outEvent.tp.size() - 1] = ptdiff;
       }

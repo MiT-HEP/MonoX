@@ -12,13 +12,13 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, fitBinningT, dataSource, tpconfs
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, vetoCut, fitBinningT, dataSource, tpconfs
 
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
 
-# monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
-monophSel = 'probes.mediumX[][%d]' % itune
+monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+#monophSel = 'probes.mediumX[][%d]' % itune
 
 fitBins = getBinning(binningName)[2]
 
@@ -144,9 +144,6 @@ if dataType == 'data':
             egPlotter.setBaseSelection('tags.pt_ > 40.')
             mgPlotter.setBaseSelection('tags.pt_ > 40.')
 
-    mcSource = ROOT.TFile.Open(outputDir + '/fityields_mc_' + binningName + '.root')
-    mcWork = mcSource.Get('work')
-
 else:
     trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
     eleTrigEff = trigsource.Get('electron_sel/leppt/el27_eff')
@@ -211,9 +208,9 @@ for bin, fitCut in fitBins:
             cut = 'probes.mediumX[][{itune}] && !probes.csafeVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
             bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'eg':
-            # target is a tree with pixelVeto
+            # target is a tree with vetoCut
             # also perform binned max L fit
-            cut = 'probes.mediumX[][{itune}] && probes.pixelVeto && ({fitCut})'.format(itune = itune, fitCut = fitCut)
+            cut = ('probes.mediumX[][{itune}] && ' + vetoCut + ' && ({fitCut})').format(itune = itune, fitCut = fitCut)
             bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'pass':
             cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
