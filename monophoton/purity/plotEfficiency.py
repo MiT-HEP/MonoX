@@ -18,12 +18,12 @@ outDir = os.path.join(versDir, 'ScaleFactors')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-tune = 'GJetsCWIso'
+tune = 'Spring16' # 'GJetsCWIso'
 
 outFile = r.TFile("../data/pvsf_" + tune + ".root", "RECREATE")
 
-bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel-monoph'] #  '-pixel-monoph'
+bases = s.bases
+mods = s.mods
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:]
 MetSels = sorted(s.MetSels.keys())[1:2]

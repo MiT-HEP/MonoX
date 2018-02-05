@@ -17,12 +17,12 @@ outDir = os.path.join(versDir, 'Fitting')
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
-tune = 'GJetsCWIso'
+tune = 'Spring16'
 
 outFile = r.TFile("../data/impurity_" + tune + ".root", "RECREATE")
 
-bases = ['loose', 'medium', 'tight', 'highpt']
-mods = ['', '-pixel', '-pixel-monoph']
+bases = s.bases
+mods = s.mods
 PhotonIds = [base+mod for base in bases for mod in mods]
 PhotonPtSels = sorted(s.PhotonPtSels.keys())[:-1]
 MetSels = sorted(s.MetSels.keys())[1:2]
