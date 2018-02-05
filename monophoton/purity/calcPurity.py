@@ -40,7 +40,7 @@ met = sys.argv[4] # Inclusive, XtoY
 try:
     tune = sys.argv[5]
 except:
-    tune = 'Spring15'
+    tune = 'Spring16'
 
 inputKey = tune+'_'+loc+'_'+pid+'_PhotonPt'+pt+'_Met'+met
 
@@ -107,12 +107,12 @@ if not QUICKFIT:
     print 'Generating chIso histograms for SR-CR extrapolation..'
     print ''
 
-    isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+    isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso.root'))
 
     if FORCEHIST or not isoFile:
         plotiso(loc, '-'.join(pids), pt, met, tune)
 
-        isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso_'+inputKey+'.root'))
+        isoFile = TFile.Open(os.path.join(versDir, inputKey, 'chiso.root'))
 
     # SB / signal region transfer factor
     isoTF = {}

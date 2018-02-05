@@ -18,12 +18,15 @@ from plotstyle import WEBDIR
 
 ### Configuration parameters ###
 
-# Version = 'GSCheck'
-Version = 'CustomIDSF'
+Version = 'DarkPhoton'
+# Version = 'CustomIDSF'
+
+bases = ['medium'] # ['loose', 'medium', 'tight', 'highpt'] 
+mods = ['', '-pixel'] # , '-pixel-monoph'] 
 
 # Skims for Purity Calculation
 sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
-gjetsMc = ['gj-100', 'gj-200','gj-400','gj-600']
+gjetsMc = ['gj04-100', 'gj04-200','gj04-400','gj04-600']
 qcdMc = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qcd-1500', 'qcd-2000']
 
 sphLumi = sum(allsamples[s].lumi for s in sphData)

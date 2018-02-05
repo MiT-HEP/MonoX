@@ -120,7 +120,7 @@ def gghSetting():
     selconf['photonIDTune'] = ROOT.idtune
     selconf['photonSF'] = (datadir + '/scaleFactor_photon_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
 
 ## utility functions

@@ -23,7 +23,7 @@ met = sys.argv[4] # Inclusive or (Min)to(Max)
 try:
     era = sys.argv[5]
 except:
-    era = 'Spring15'
+    era = 'Spring16'
 
 inputKey = era+'_'+loc+'_'+wp+'_PhotonPt'+pt+'_Met'+met
 
