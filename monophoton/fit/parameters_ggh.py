@@ -22,7 +22,7 @@ regions = [sr,
            ]
 
 data = 'data_obs' # name of data process
-processes = ['efake', 'wg', 'zg', 'gjets', 'hfake', 'top', 'wjets', 'gg']
+processes = ['efake', 'wg', 'zg', 'gjets', 'hfake', 'top', 'wjets', 'gg', 'fakemet']
 signals = ['dph-nlo-125'] 
 xtitle = 'm_{T}({#gamma, E_{T}^{miss}) (GeV)'
 binWidthNormalized = False
@@ -40,7 +40,9 @@ links = [
 ]
 
 # Sample with free normalization that are not involved in links.
-floats = ['gjets']
+floats = ['gjets', 'fakemet']
+
+
 
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
 wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWK']
@@ -71,5 +73,8 @@ ratioCorrelations = {
 # Nuisances affecting normalization only
 #scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
 scaleNuisances = ['lumi', 'photonSF', 'pixelVetoIDSF', 'leptonVetoSF', 'egFakerate', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
+
+# Shape Nuisances without penalty
+flatParams = ['fakeMetShape']
 
 # def customize(workspace):

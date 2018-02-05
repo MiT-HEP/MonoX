@@ -114,7 +114,7 @@ def nuisance(nuis, target, up, down, form):
     modifierName = 'mod_{target}{nuis}'.format(target = target, nuis = nuis)
 
     if form == 'lnN':
-        mod = fct('expr::{mod}("TMath::Exp({a1}*@0)", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
+        mod = fct('expr::{mod}("TMath::Exp({a1}*@0)*({a1}*@0<0.) + (1.+{a1}*@0)*({a1}*@0>=0.)", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
     elif form == 'quad':
         if abs(a2) < SMALLNUMBER:
             mod = fct('expr::{mod}("1.+{a1}*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
@@ -426,6 +426,9 @@ if __name__ == '__main__':
                                 # this uncertainty is non-shape and is taken care of already
                                 continue
 
+#                            if var in ['muonVetoSF', 'electronVetoSF']:
+#                                continue
+
                             if var + 'Up' in plots:
                                 numerUp = plots[var + 'Up'].GetBinContent(ibin)
                                 numerDown = plots[var + 'Down'].GetBinContent(ibin)
@@ -566,7 +569,7 @@ if __name__ == '__main__':
                                     if var in config.deshapedNuisances:
                                         # this nuisance is artificially decorrelated among bins
                                         # treat each (variation name)_(bin name) as a variation name
-                                        var = var + '_bin{ibin}'.format(ibin = ibin)
+                                        var += '_bin{ibin}'.format(ibin = ibin)
 
                                     modifiers.append(nuisance(var, binName, dup, ddown, 'lnN'))
 
@@ -644,7 +647,7 @@ if __name__ == '__main__':
 
         samplesByRegion = {} # names of background samples by region
         procIds = {}
-        signalRegions = []
+        signalRegions = set()
 
         maxRegionNameLength = 0
 
@@ -664,7 +667,7 @@ if __name__ == '__main__':
                 if p == 'data_obs':
                     continue
                 elif p in config.signals:
-                    signalRegions.append(region)
+                    signalRegions.add(region)
                 else:
                     samplesByRegion[region].append(p)
                     if p not in procIds:
@@ -672,6 +675,8 @@ if __name__ == '__main__':
 
             if len(region) > maxRegionNameLength:
                 maxRegionNameLength = len(region)
+
+        print 'signalRegions', signalRegions
 
         # define datacard template
 
@@ -689,7 +694,7 @@ if __name__ == '__main__':
         colw = max(maxRegionNameLength + 1, 9)
 
         # list of regions, signal regions first
-        line = 'bin          ' + ''.join(sorted(['%{w}s'.format(w = colw) % r for r in signalRegions])) + ''.join(sorted(['%{w}s'.format(w = colw) % r for r in samplesByRegion if r not in signalRegions]))
+        line = 'bin          ' + ''.join(sorted('%{w}s'.format(w = colw) % r for r in signalRegions)) + ''.join(sorted('%{w}s'.format(w = colw) % r for r in samplesByRegion if r not in signalRegions))
         lines.append(line)
 
         # number of observed events in each region (set to -1 - combine will read it from workspace)
@@ -744,11 +749,18 @@ if __name__ == '__main__':
 
             for nuisance in sorted(nuisances):
                 # remove nuisances related to other signal models
+                matched_other_signal = False
                 for s in config.signals:
                     if s != signal and nuisance.startswith(s):
+                        matched_other_signal = True
                         break
+
+                if matched_other_signal:
+                    continue
+
+                if nuisance in config.flatParams:
+                    cardlines.append(nuisance + ' flatParam 0 1')
                 else:
-                    # no other signal name matched -> nuisance either not related to signal or related to this signal model
                     cardlines.append(nuisance + ' param 0 1')
 
             with open(config.carddir + '/' + signal + '.dat', 'w') as datacard:

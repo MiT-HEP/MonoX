@@ -6,7 +6,7 @@ import os
 import re
 import math
 
-import parameters
+import parameters_ggh as parameters
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -14,12 +14,13 @@ sys.path.append(basedir)
 
 from datasets import allsamples
 from plotstyle import RatioCanvas
-from main.plotconfig import getConfig
+from main.plotconfig_ggh import getConfigGGH as getConfig
 
 import ROOT
 
 mlfit = ROOT.TFile.Open(sys.argv[1])
 postfitDir = mlfit.Get('shapes_fit_b')
+sbfitDir = mlfit.Get('shapes_fit_s')
 
 workspace = ROOT.TFile.Open(parameters.outname).Get('wspace')
 x = workspace.arg('x')
@@ -40,6 +41,11 @@ for key in postfitDir.GetListOfKeys():
     postfitUnc = postfitTotal.Clone('postfitUnc')
     postfitRatio = postfitTotal.Clone('postfitRatio')
     postfitUncRatio = postfitTotal.Clone('postfitUncRatio')
+
+    sbfitTotal = sbfitDir.Get(region + '/total')
+    sbfitUnc = sbfitTotal.Clone('sbfitUnc')
+    sbfitRatio = sbfitTotal.Clone('sbfitRatio')
+    sbfitUncRatio = sbfitTotal.Clone('sbfitUncRatio')
 
     dataHist = postfitTotal.Clone("dataHist")
     dataHist.Reset()
@@ -84,6 +90,13 @@ for key in postfitDir.GetListOfKeys():
         postfitUncRatio.SetBinError(iBin, data * postfiterror / postfitcontent)
         postfitUncRatio.SetBinContent(iBin, data)
 
+        sbfitcontent = sbfitUncRatio.GetBinContent(iBin)
+        sbfiterror = sbfitUncRatio.GetBinError(iBin)
+        sbfitRatio.SetBinContent(iBin, data**2 / sbfitcontent)
+        sbfitRatio.SetBinError(iBin, dataerr * data / sbfitcontent) 
+        sbfitUncRatio.SetBinError(iBin, data * sbfiterror / sbfitcontent)
+        sbfitUncRatio.SetBinContent(iBin, data)
+
     floatNames = []
 
     allVars = workspace.allVars()
@@ -114,7 +127,9 @@ for key in postfitDir.GetListOfKeys():
     else:
         postfitSub = None
 
+    print region
     plotConfig = getConfig(region)
+    print plotConfig
     
     lumi = 0.
     for sample in plotConfig.obs.samples:
@@ -122,11 +137,12 @@ for key in postfitDir.GetListOfKeys():
     
     canvas = RatioCanvas(lumi = lumi, name = region)
     canvas.legend.setPosition(0.6, 0.6, 0.9, 0.9)
-    canvas.legend.add('obs', title = 'Observed', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
-    canvas.legend.add('prefit', title = 'Prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
+    canvas.legend.add('obs', title = 'toy data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
+    canvas.legend.add('prefit', title = 'prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
     if postfitSub:
-        canvas.legend.add('subdom', title = 'Postfit subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
-    canvas.legend.add('postfit', title = 'Postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+        canvas.legend.add('subdom', title = 'postfit subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
+    canvas.legend.add('postfit', title = 'b-only postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+    canvas.legend.add('sbfit', title = 's+b postfit total', opt = 'LF', color = ROOT.kMagenta, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3006, mstyle = 8, msize = 0.8)
 
     obs.SetTitle('')
     prefitTotal.SetTitle('')
@@ -144,6 +160,11 @@ for key in postfitDir.GetListOfKeys():
     canvas.legend.apply('postfit', postfitUnc, opt = 'F')
     canvas.legend.apply('postfit', postfitRatio, opt = 'LP')
     canvas.legend.apply('postfit', postfitUncRatio, opt = 'F')
+
+    canvas.legend.apply('sbfit', sbfitTotal, opt = 'L')
+    canvas.legend.apply('sbfit', sbfitUnc, opt = 'F')
+    canvas.legend.apply('sbfit', sbfitRatio, opt = 'LP')
+    canvas.legend.apply('sbfit', sbfitUncRatio, opt = 'F')
         
     if postfitSub:
         canvas.legend.apply('subdom', postfitSub)
@@ -158,25 +179,28 @@ for key in postfitDir.GetListOfKeys():
     iPre = canvas.addHistogram(prefitTotal, drawOpt = 'HIST')
     iPostUnc = canvas.addHistogram(postfitUnc, drawOpt = 'E2')
     iPost = canvas.addHistogram(postfitTotal, drawOpt = 'HIST')
+    iSbfitUnc = canvas.addHistogram(sbfitUnc, drawOpt = 'E2')
+    iSbfit = canvas.addHistogram(sbfitTotal, drawOpt = 'HIST')
 
     iLine = canvas.addHistogram(dataHist, drawOpt = 'HIST')
     iPreUncRatio = canvas.addHistogram(prefitUncRatio, drawOpt = 'E2')
     iPreRatio = canvas.addHistogram(prefitRatio, drawOpt = 'LP')
     iPostUncRatio = canvas.addHistogram(postfitUncRatio, drawOpt = 'E2')
     iPostRatio = canvas.addHistogram(postfitRatio, drawOpt = 'LP')
-    
+    iSbfitUncRatio = canvas.addHistogram(sbfitUncRatio, drawOpt = 'E2')
+    iSbfitRatio = canvas.addHistogram(sbfitRatio, drawOpt = 'LP')
 
     if postfitSub:
         iSub = canvas.addHistogram(postfitSub)
-        hList = [iSub, iPreUnc, iPre, iPostUnc, iPost, iObs]
+        hList = [iSub, iPreUnc, iPre, iPostUnc, iPost, iSbfitUnc, iSbfit, iObs]
     else:
-        hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
+        hList = [iPreUnc, iPre, iPostUnc, iPost, iSbfitUnc, iSbfit, iObs]
 
     canvas.rlimits = (0.0, 2.0)
-    canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+    canvas.xtitle = 'M_{T}(#gamma, E_{T}^{miss}) (GeV)' # 'E_{T}^{#gamma} (GeV)'
     canvas.ytitle = 'Events / GeV'
 
-    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio])
+    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iSbfitUncRatio, iPreUncRatio, iPostUncRatio, iSbfitRatio, iPreRatio, iPostRatio], logy = False)
     canvas.Clear()
 
     dataHist.Delete()
