@@ -7,6 +7,7 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
 itune = 1
 vetoCut = 'probes.pixelVeto && probes.chargedPFVeto'
+#vetoCut = 'probes.pixelVeto'
 
 fitBinningT = (120, 60., 120.)
 
@@ -75,6 +76,9 @@ def getBinning(binningName):
             name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
             cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
             fitBins.append((name, cut))
+
+        # hack to elimiate one large-weight event
+        fitBins[-1] = (fitBins[-1][0], fitBins[-1][1] + ' && (weight == 1 || weight < 0.0001)')
 
         binning.pop()
         binning.append(500.)
