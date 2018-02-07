@@ -32,6 +32,7 @@ public:
     sSpike,
     sHalo,
     sCHMaxIso,
+    sPFVeto,
     nCuts
   };
 
@@ -78,7 +79,8 @@ TString Calculator::cutNames[Calculator::nCuts] = {
   "Eveto",
   "Spike",
   "Halo",
-  "CHMaxIso"
+  "CHMaxIso",
+  "PFVeto"
 };
 
 unsigned
@@ -89,6 +91,11 @@ Calculator::calculate(TTree* _input, TFile* _outputFile, TString _sname)
 
   _input->SetBranchStatus("*", false);
   event.setAddress(*_input, {"runNumber", "lumiNumber", "eventNumber", "weight", "npv", "npvTrue", "genParticles", "photons", "t1Met", "rho", "superClusters"});
+  
+  bool chargedPFVeto[256];
+  TBranch* bPFVeto{0};
+  _input->SetBranchAddress("photons.chargedPFVeto", chargedPFVeto);
+
   double minGenPt_ = minPhoPt_ / ( 1 + maxDPt_ );
   double maxGenPt_ = maxPhoPt_ / ( 1 - maxDPt_ );
   double minGenEta_ = std::max(0., minEta_ - maxDR_);
@@ -118,9 +125,22 @@ Calculator::calculate(TTree* _input, TFile* _outputFile, TString _sname)
   unsigned nMatchedPhotons(0);
 
   long iEntry(0);
+  int iTree(-1);
   while (event.getEntry(*_input, iEntry++) > 0) {
     if (iEntry % 100000 == 1)
       std::cout << " " << iEntry << std::endl;
+
+    long localEntry(_input->LoadTree(iEntry++));
+    if (localEntry < 0)
+      break;
+
+    if (_input->GetTreeNumber() != iTree) {
+      iTree = _input->GetTreeNumber();
+
+      bPFVeto = _input->GetBranch("photons.chargedPFVeto");
+    }
+
+    bPFVeto->GetEntry(localEntry);
 
     weight = event.weight;
     
@@ -147,13 +167,16 @@ Calculator::calculate(TTree* _input, TFile* _outputFile, TString _sname)
 
     nGenPhotons += genPhotons.size();
       
-    for (auto& pho : event.photons) {
+    // for (auto& pho : event.photons) {
+    for (unsigned iP(0); iP != event.photons.size(); iP++) {
+      auto& pho = event.photons[iP];
+
       if ( pho.scRawPt > maxPhoPt_ || pho.scRawPt < minPhoPt_ )
         continue;
-
+      
       if ( std::abs(pho.eta()) > maxEta_ || std::abs(pho.eta()) < minEta_ )
         continue;
-
+      
       pt = pho.pt();
       eta = pho.eta();
       phi = pho.phi();
@@ -179,6 +202,7 @@ Calculator::calculate(TTree* _input, TFile* _outputFile, TString _sname)
       results[sEveto] = pho.pixelVeto;
       results[sSpike] = std::abs(pho.time) < 3. && pho.sieie > 0.001 && pho.sipip > 0.001 && !(pho.eta() > 0. && pho.eta() < 0.15 && pho.phi() > 0.527580 && pho.phi() < 0.541795);
       results[sHalo] = pho.mipEnergy < 4.9;
+      results[sPFVeto] = chargedPFVeto[iP];
 
       output->Fill();
     }

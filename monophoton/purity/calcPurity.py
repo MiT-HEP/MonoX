@@ -166,6 +166,8 @@ if 'pixel' in extras:
     baseSel = baseSel + ' && ' + s.Cuts['pixelVeto']
 if 'monoph' in extras:
     baseSel = baseSel + ' && ' + s.Cuts['monophId']
+if 'chargedpf' in extras:
+    baseSel = baseSel + ' && ' + s.Cuts['chargedPFVeto']
 
 if 'noICH' in extras:
     sigSel = ''

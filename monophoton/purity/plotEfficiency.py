@@ -139,6 +139,9 @@ rcanvas = SimpleCanvas(lumi = s.sphLumi, name = 'effs')
 
 scalefactors = {}
 
+passes = base+mods[2]
+totals = base+mods[0]
+
 for loc in s.Locations[:1]:
     scalefactors[loc] = {}
     for base in bases:
@@ -167,15 +170,15 @@ for loc in s.Locations[:1]:
             gSF.SetName(loc+'-'+base+mod+'-'+metCut+'-sf')
 
             for iB, ptCut in enumerate(PhotonPtSels):        
-                mcPasses = yields[loc][base+mods[1]][ptCut][metCut]['mc']
-                mcTotals = yields[loc][base+mods[0]][ptCut][metCut]['mc']
+                mcPasses = yields[loc][passes][ptCut][metCut]['mc']
+                mcTotals = yields[loc][totals][ptCut][metCut]['mc']
 
                 mcEff = mcPasses[0] / mcTotals[0]
                 mcCorr = 0.
                 mcEffError = mcEff * math.sqrt( (mcPasses[1]/mcPasses[0])**2 + (mcTotals[1]/mcTotals[0])**2 + 2*mcCorr*(mcPasses[1]/mcPasses[0])*(mcTotals[1]/mcPasses[0]) )
 
-                dataPasses = yields[loc][base+mods[1]][ptCut][metCut]['data']
-                dataTotals = yields[loc][base+mods[0]][ptCut][metCut]['data']
+                dataPasses = yields[loc][passes][ptCut][metCut]['data']
+                dataTotals = yields[loc][totals][ptCut][metCut]['data']
 
                 dataEff = dataPasses[0] / dataTotals[0]
                 dataCorr = 1.0

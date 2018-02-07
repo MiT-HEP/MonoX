@@ -28,7 +28,7 @@ rcanvas = RatioCanvas(lumi = lumi)
 binning = array.array('d', map(float, selections.photonPtBinning))
 pid = 'medium'
 tune = 'Spring16' # 'GJetsCWIso'
-extras = 'pixel' # -monoph'
+extras = 'pixel-chargedpf' # -monoph'
 suffix = '_Spring16' # '_GJetsCWIso'
 
 itune = selections.Tunes.index(tune)
@@ -79,6 +79,9 @@ looseSels = {
 
 if 'pixel' in extras:
     baseSels['eveto'] = 'photons.pixelVeto[0]'
+
+if 'chargedpf' in extras:
+    baseSels['pfveto'] = 'photons.chargedPFVeto[0]'
 
 if 'noICH' in extras:
     goodSels.pop('chIso')

@@ -188,6 +188,9 @@ for tname, tree in sorted(treeDict.iteritems()):
         cuts.append("Spike")
         cuts.append("Halo")
 
+    if 'chargedpf' in extras:
+        cuts.append("PFVeto")
+
     #  "CHMaxIso"
 
     sequential = ['Match']

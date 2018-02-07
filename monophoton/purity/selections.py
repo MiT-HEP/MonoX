@@ -22,7 +22,7 @@ Version = 'DarkPhoton'
 # Version = 'CustomIDSF'
 
 bases = ['medium'] # ['loose', 'medium', 'tight', 'highpt'] 
-mods = ['', '-pixel'] # , '-pixel-monoph'] 
+mods = ['', '-pixel', '-pixel-chargedpf'] # , '-pixel-monoph'] 
 
 # Skims for Purity Calculation
 sphData = ['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m']
@@ -59,6 +59,7 @@ Samples = {
 
 Cuts = {
     'pixelVeto': 'photons.pixelVeto[0]',
+    'chargedPFVeto': 'photons.chargedPFVeto[0]',
     'mip': 'photons.mipEnergy[0] < 4.9',
     'time': 'std::abs(photons.time[0]) < 3.',
     'sieieNonzero': 'photons.sieie[0] > 0.001',
