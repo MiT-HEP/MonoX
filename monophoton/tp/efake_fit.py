@@ -146,7 +146,7 @@ print 'Finished common setup.'
 massset = ROOT.RooArgSet(mass) # for convenience
 masslist = ROOT.RooArgList(mass) # for convenience
 
-for bin, fitCut in fitBins:
+for bin, _ in fitBins:
     print 'Run fits for', bin
 
     binName.setLabel(bin)
