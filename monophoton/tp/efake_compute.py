@@ -284,6 +284,6 @@ if uncSource:
     
             canvas.legend.apply('nominal', arrow)
     
-            canvas.printWeb('efake/toys_' + binningName, dataType + '_' + conf + '_' + bin, logy = False)
+            canvas.printWeb(outputName + '/toys_' + binningName, dataType + '_' + conf + '_' + bin, logy = False)
 
 outputFile.Close()

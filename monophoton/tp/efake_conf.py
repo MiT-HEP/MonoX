@@ -1,6 +1,6 @@
 import os
 
-outputName = 'efake_s16'
+outputName = 'dphsf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
@@ -13,8 +13,8 @@ fitBinningT = (120, 60., 120.)
 
 dataSource = 'sph' # sph or sel or smu
 if dataSource == 'sph':
-#    tpconfs = ['pass', 'fail']
-    tpconfs = ['ee', 'eg']
+    tpconfs = ['pass', 'fail']
+    # tpconfs = ['ee', 'eg']
 elif dataSource == 'sel':
     tpconfs = ['pass', 'fail']
 elif dataSource == 'smu':

@@ -121,7 +121,7 @@ def gghSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
     selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (datadir + '/scaleFactor_photon_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+    selconf['photonSF'] = (datadir + '/scaleFactor_spring16_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
