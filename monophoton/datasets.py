@@ -273,7 +273,7 @@ class SampleDef(object):
         self._readCatalogs()
 
         proc = subprocess.Popen(
-            ['/usr/local/bin/dynamoCache', 'request', 'datasets', '--panda', self.book[self.book.find('/') + 1:], '--sit_and_wait', 'True', '--datasets'] + self.datasetNames,
+            ['/usr/local/bin/dynamoCache', 'request', 'datasets', '--panda', self.book[self.book.find('/') + 1:], '--datasets'] + self.datasetNames,
             stdout = subprocess.PIPE, stderr = subprocess.PIPE
         )
         print proc.communicate()[0].strip()
