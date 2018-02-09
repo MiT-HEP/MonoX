@@ -16,7 +16,7 @@ ROOT.gStyle.SetTitleOffset(1.3, 'Y')
 ROOT.gStyle.SetNdivisions(208, 'X')
 ROOT.gStyle.SetFillStyle(0)
 
-def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035):
+def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
     if type(align) is str:
         al = 0
         if 'left' in align:
@@ -36,10 +36,17 @@ def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035):
         align = al
 
     pave = ROOT.TPaveText()
-    pave.SetX1NDC(x1)
-    pave.SetX2NDC(x2)
-    pave.SetY1NDC(y1)
-    pave.SetY2NDC(y2)
+    if ndc:
+        pave.SetX1NDC(x1)
+        pave.SetX2NDC(x2)
+        pave.SetY1NDC(y1)
+        pave.SetY2NDC(y2)
+    else:
+        pave.SetX1(x1)
+        pave.SetX2(x2)
+        pave.SetY1(y1)
+        pave.SetY2(y2)
+
     pave.SetTextAlign(align)
     pave.SetTextSize(size)
     pave.SetFillStyle(0)
@@ -101,7 +108,7 @@ class Legend(object):
         self.legend.SetTextAlign(12)
 
         self.entries = {}
-        self.ncolumns = 1
+        self.ncolumns = -1
         self.defaultOrder = []
         self._modified = False
 
@@ -111,7 +118,7 @@ class Legend(object):
         self.legend.SetX2(x2)
         self.legend.SetY2(y2)
 
-    def add(self, obl, title = '', opt = 'LFP', color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
+    def add(self, obl, title = None, opt = 'LFP', color = -1, lwidth = -1, lstyle = -1, lcolor = -1, fstyle = -1, fcolor = -1, msize = -1, mstyle = -1, mcolor = -1):
         ent = ROOT.TLegendEntry(0)
 
         modified = []
@@ -121,7 +128,7 @@ class Legend(object):
         else:
             obj = obl
             name = obj.GetName()
-            if not title:
+            if title is None:
                 title = obj.GetTitle()
 
             for at in Legend.Attributes:
@@ -191,9 +198,10 @@ class Legend(object):
 
         self.legend.Clear()
 
-        self.ncolumns = int(math.ceil(float(len(self.entries)) / 5.))
+        if self.ncolumns < 0:
+            self.ncolumns = -int(math.ceil(float(len(self.entries)) / 5.))
 
-        self.legend.SetNColumns(self.ncolumns)
+        self.legend.SetNColumns(abs(self.ncolumns))
 
         for name in order:
             ent = self.entries[name]
@@ -258,6 +266,7 @@ class SimpleCanvas(object):
         self.xtitle = ''
         self.ytitle = ''
 
+        self.xlimits = (0., -1.)
         self.ylimits = (0., -1.)
 
         self.minimum = -1.
@@ -363,8 +372,8 @@ class SimpleCanvas(object):
 
         return line
 
-    def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035):
-        pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size)
+    def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
+        pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size, ndc = ndc)
         pave.AddText(text)
         self._objects.append(pave)
 
@@ -495,6 +504,12 @@ class SimpleCanvas(object):
 
             pad.Update()
 
+            if self.xlimits[1] > self.xlimits[0]:
+                if base.InheritsFrom(ROOT.TH1.Class()):
+                    base.GetXaxis().SetRangeUser(self.xlimits[0], self.xlimits[1])
+                elif base.InheritsFrom(ROOT.TGraph.Class()):
+                    base.GetXaxis().SetLimits(*self.xlimits)
+
             if self.ylimits[1] < self.ylimits[0]:
                 if logy:
                     if self.minimum > 0.:
@@ -508,6 +523,9 @@ class SimpleCanvas(object):
                     base.SetMinimum(self.ylimits[0])
 
                 base.SetMaximum(self.ylimits[1])
+
+            base.GetXaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
+            base.GetYaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('Y'))
 
             if len(self.legend.entries) != 0 and drawLegend:
                 self.legend.Draw()
