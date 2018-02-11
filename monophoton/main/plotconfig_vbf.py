@@ -116,6 +116,7 @@ def getConfigVBF(confName):
 
             group.variations.append(Variation('lumi', reweight = 0.027))
 
+            group.variations.append(Variation('triggerSF', reweight = 0.005))
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('customIDSF', reweight = 0.055))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))

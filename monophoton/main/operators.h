@@ -1122,8 +1122,14 @@ class PhotonPtWeight : public Modifier {
   void addBranches(TTree& skimTree) override;
 
   void setPhotonType(unsigned t) { photonType_ = t; }
-  void addVariation(char const* suffix, TObject* corr);
+  void addVariation(char const* tag, TObject* corr);
   void useErrors(bool); // use errors of the nominal histogram weight for Up/Down variation
+
+  double getWeight() const { return weight_; }
+  double getVariation(TString const& var) const { return *varWeights_.at(var); }
+
+  void computeWeight(panda::EventMonophoton const&, panda::EventMonophoton const& _outEvent);
+
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
@@ -1134,7 +1140,33 @@ class PhotonPtWeight : public Modifier {
   std::map<TString, TObject*> variations_;
   std::map<TString, double*> varWeights_;
   unsigned photonType_{kReco};
-  bool useErrors_{false};
+  int leptonCharge_{0};
+};
+
+class PhotonPtWeightSigned : public Modifier {
+  // Rather non-generic operator to apply separate weights for W+ and W-
+ public:
+
+  PhotonPtWeightSigned(TObject* pfactors, TObject* nfactors, char const* name = "PhotonPtWeightSigned");
+  ~PhotonPtWeightSigned();
+
+  enum Sign {
+    kPositive,
+    kNegative,
+    nSigns
+  };
+
+  void addBranches(TTree& skimTree) override;
+
+  void addVariation(char const* tag, TObject* pcorr, TObject* ncorr);
+  void setPhotonType(unsigned t);
+  void useErrors(bool); // use errors of the nominal histogram weight for Up/Down variation
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+  
+  PhotonPtWeight* operators_[nSigns];
+  double weight_;
+  std::map<TString, double*> varWeights_;
 };
 
 class IDSFWeight : public Modifier {

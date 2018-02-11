@@ -2909,26 +2909,47 @@ PhotonPtWeight::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonPtWeight::addVariation(char const* _suffix, TObject* _corr)
+PhotonPtWeight::addVariation(char const* _tag, TObject* _corr)
 {
+  if (variations_.count(_tag) != 0) {
+    delete variations_[_tag];
+    delete varWeights_[_tag];
+  }
+
   auto* clone(_corr->Clone(name_ + "_" + _corr->GetName()));
   if (clone->InheritsFrom(TH1::Class()))
     static_cast<TH1*>(clone)->SetDirectory(0);
-  variations_[_suffix] = clone;
-  varWeights_[_suffix] = new double;
+  variations_[_tag] = clone;
+  varWeights_[_tag] = new double;
 }
 
 void
 PhotonPtWeight::useErrors(bool _b)
 {
-  useErrors_ = _b;
-  varWeights_[name_ + "Up"] = new double;
-  varWeights_[name_ + "Down"] = new double;
+  TString tag(name_ + "Up");
+  if (varWeights_.count(tag) != 0) {
+    delete varWeights_[tag];
+    varWeights_.erase(tag);
+  }
+  tag = name_ + "Down";
+  if (varWeights_.count(tag) != 0) {
+    delete varWeights_[tag];
+    varWeights_.erase(tag);
+  }
+
+  if (_b) {
+    varWeights_[name_ + "Up"] = new double;
+    varWeights_[name_ + "Down"] = new double;
+  }
 }
 
 void
-PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+PhotonPtWeight::computeWeight(panda::EventMonophoton const& _event, panda::EventMonophoton const& _outEvent)
 {
+  weight_ = 1.;
+  for (auto& var : varWeights_)
+    *var.second = 1.;
+
   double maxPt(0.);
   switch (photonType_) {
   case kReco:
@@ -2966,16 +2987,22 @@ PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophot
 
   double weight(_calcWeight(nominal_, maxPt));
   weight_ = weight;
-  _outEvent.weight *= weight;
 
   for (auto& var : varWeights_) {
-    if (var.first == name_ + "Up")
+    if (var.first == name_ + "Up") // using errors
       *var.second = _calcWeight(nominal_, maxPt, 1) / weight;
-    else if (var.first == name_ + "Down")
+    else if (var.first == name_ + "Down") // using errors
       *var.second = _calcWeight(nominal_, maxPt, -1) / weight;
-    else
+    else // other variations
       *var.second = _calcWeight(variations_[var.first], maxPt) / weight;
   }
+}
+
+void
+PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  computeWeight(_event, _outEvent);
+  _outEvent.weight *= weight_;
 }
 
 double
@@ -3009,6 +3036,102 @@ PhotonPtWeight::_calcWeight(TObject* source, double pt, int var/* = 0*/)
   }
   else
     return 0.;
+}
+
+//--------------------------------------------------------------------
+// PhotonPtWeightSigned
+//--------------------------------------------------------------------
+
+PhotonPtWeightSigned::PhotonPtWeightSigned(TObject* _pfactors, TObject* _nfactors, char const* name/* = "PhotonPtWeightSigned"*/) :
+  Modifier(name)
+{
+  operators_[kPositive] = new PhotonPtWeight(_pfactors, name_ + "_positive");
+  operators_[kNegative] = new PhotonPtWeight(_nfactors, name_ + "_negative");
+}
+
+PhotonPtWeightSigned::~PhotonPtWeightSigned()
+{
+  for (auto& v : varWeights_)
+    delete v.second;
+
+  delete operators_[kPositive];
+  delete operators_[kNegative];
+}
+
+void
+PhotonPtWeightSigned::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+  for (auto& var : varWeights_)
+    _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
+}
+
+void
+PhotonPtWeightSigned::addVariation(char const* _tag, TObject* _pcorr, TObject* _ncorr)
+{
+  if (varWeights_.count(_tag) != 0)
+    delete varWeights_[_tag];
+
+  operators_[kPositive]->addVariation(_tag, _pcorr);
+  operators_[kNegative]->addVariation(_tag, _ncorr);
+  if (varWeights_.count(_tag) == 0)
+    varWeights_[_tag] = new double;
+}
+
+void
+PhotonPtWeightSigned::setPhotonType(unsigned _t)
+{
+  for (auto* op : operators_)
+    op->setPhotonType(_t);
+}
+
+void
+PhotonPtWeightSigned::useErrors(bool _b)
+{
+  TString tag(name_ + "Up");
+  if (varWeights_.count(tag) != 0) {
+    delete varWeights_[tag];
+    varWeights_.erase(tag);
+  }
+  tag = name_ + "Down";
+  if (varWeights_.count(tag) != 0) {
+    delete varWeights_[tag];
+    varWeights_.erase(tag);
+  }
+
+  if (_b) {
+    varWeights_[name_ + "Up"] = new double;
+    varWeights_[name_ + "Down"] = new double;
+  }
+
+  for (auto* op : operators_)
+    op->useErrors(_b);
+}
+
+void
+PhotonPtWeightSigned::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  weight_ = 1.;
+  for (auto& var : varWeights_)
+    *var.second = 1.;
+
+  PhotonPtWeight* op(0);
+  for (auto& part : _event.partons) {
+    if (part.pdgid == 11 || part.pdgid == 13 || part.pdgid == 15)
+      op = operators_[kNegative];
+    else if (part.pdgid == -11 || part.pdgid == -13 || part.pdgid == -15)
+      op = operators_[kPositive];
+  }
+  if (!op)
+    return;
+
+  op->computeWeight(_event, _outEvent);
+
+  weight_ = op->getWeight();
+  _outEvent.weight *= weight_;
+
+  for (auto& var : varWeights_)
+    *var.second = op->getVariation(var.first);
 }
 
 

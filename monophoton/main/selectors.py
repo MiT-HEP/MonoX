@@ -69,7 +69,6 @@ def monophotonSetting():
         'PhIso',
         'CHIsoMax',
         'EVeto',
-        'ChargedPFVeto',
         'MIP49',
         'Time',
         'SieieNonzero',
@@ -139,13 +138,16 @@ def setupPhotonSelection(operator, veto = False, changes = []):
 
     for change in changes:
         if change.startswith('-'):
-            sels.remove(change[1:])
+            try:
+                sels.remove(change[1:])
+            except ValueError:
+                pass
         elif change.startswith('+'):
             sels.append(change[1:])
         elif change.startswith('!'):
             try:
                 sels.remove(change[1:])
-            except:
+            except ValueError:
                 pass
 
             sels.append(change)
@@ -627,9 +629,13 @@ def vbfgBase(sample, rname):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+        selector.addOperator(ROOT.ConstantWeight(0.967, 'triggereff'))
 
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
+
+        addElectronVetoSFWeight(sample, selector)
+        addMuonVetoSFWeight(sample, selector)        
 
         selector.addOperator(ROOT.AddGenJets())
 
@@ -1955,28 +1961,82 @@ def vbfmm(sample, rname):
 
 def ph75(sample, rname):
     selector = ROOT.EventSelector(rname)
+    vbfgSetting()
 
     selector.setPreskim('superClusters.rawPt > 50.')
 
     selector.addOperator(ROOT.HLTFilter('HLT_Photon50_OR_HLT_Photon75'))
 
-    ph50 = ROOT.HLTFilter('HLT_Photon50')
-    ph50.setIgnoreDecision(True)
-    selector.addOperator(ph50)
-    ph75 = ROOT.HLTFilter('HLT_Photon75')
-    ph75.setIgnoreDecision(True)
-    selector.addOperator(ph75)
+    hltph50 = ROOT.HLTFilter('HLT_Photon50')
+    hltph50.setIgnoreDecision(True)
+    selector.addOperator(hltph50)
+    hltph75 = ROOT.HLTFilter('HLT_Photon75')
+    hltph75.setIgnoreDecision(True)
+    selector.addOperator(hltph75)
 
-    selector.addOperator(ROOT.MetFilters())
+    operators = [
+        'MetFilters',
+        'PhotonSelection',
+        'LeptonSelection',
+        'TauVeto',
+        'JetCleaning',
+        'BjetVeto',
+        'CopyMet',
+        'CopySuperClusters'
+    ]
 
-    vbfgSetting()
+    if not sample.data:
+        operators.append('MetVariations')
+        
+    operators += [
+        'PhotonMetDPhi',
+        'JetMetDPhi',
+        'PhotonJetDPhi',
+        'PhotonMt',
+        'PFMatch'
+    ]
 
-    photonSel = ROOT.PhotonSelection()
+    for op in operators:
+        selector.addOperator(getattr(ROOT, op)())
+
+    photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(50.)
     photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setWP(selconf['photonWP'])
     setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
-    selector.addOperator(photonSel)
+
+    leptonSel = selector.findOperator('LeptonSelection')
+    leptonSel.setN(0, 0)
+    leptonSel.setRequireMedium(False)
+    leptonSel.setRequireTight(False)
+
+    if not sample.data:
+        metVar = selector.findOperator('MetVariations')
+        metVar.setPhotonSelection(photonSel)
+
+        photonDPhi = selector.findOperator('PhotonMetDPhi')
+        photonDPhi.setMetVariations(metVar)
+        
+        jetDPhi = selector.findOperator('JetMetDPhi')
+        jetDPhi.setMetVariations(metVar)
+
+        selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
+
+        selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+
+        addPUWeight(sample, selector)
+        addPDFVariation(sample, selector)
+
+        addElectronVetoSFWeight(sample, selector)
+        addMuonVetoSFWeight(sample, selector)
+
+    selector.findOperator('TauVeto').setIgnoreDecision(True)
+    selector.findOperator('BjetVeto').setIgnoreDecision(True)
+    selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
+    selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
+    selector.findOperator('Met').setIgnoreDecision(True)
+    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
 
     return selector
 
@@ -2358,8 +2418,7 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj')
-
+    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj').replace('zllg', 'znng')
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
@@ -2380,17 +2439,35 @@ def addKfactor(sample, selector):
 
     selector.addOperator(qcd)
 
-    corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
-    if corr:
+    if sname.startswith('znng'):
         logger.info('applying ewk %s', sample.name)
+
+        corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
         ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
         ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
-        for variation in ['Up', 'Down']:
+        for variation in ['straightUp', 'straightDown', 'twistedUp', 'twistedDown', 'gammaUp', 'gammaDown']:
             vcorr = getFromFile(datadir + '/ewk_corr.root', sname + '_' + variation)
             if vcorr:
                 logger.info('applying ewk var %s %s', variation, sample.name)
                 ewk.addVariation('ewk' + variation, vcorr)
+
+        selector.addOperator(ewk)
+
+    elif sample.name.startswith('wnlg'):
+        logger.info('applying ewk %s', sample.name)
+
+        suffix = '_p'
+        corrp = getFromFile(datadir + '/ewk_corr.root', sname + suffix, newname = sname + suffix + '_ewkcorr')
+        suffix = '_m'
+        corrm = getFromFile(datadir + '/ewk_corr.root', sname + suffix, newname = sname + suffix + '_ewkcorr')
+
+        ewk = ROOT.PhotonPtWeightSigned(corrp, corrm, 'EWKNLOCorrection')
+
+        for variation in ['straightUp', 'straightDown', 'twistedUp', 'twistedDown', 'gammaUp', 'gammaDown']:
+            vcorrp = getFromFile(datadir + '/ewk_corr.root', sname + '_p_' + variation)
+            vcorrm = getFromFile(datadir + '/ewk_corr.root', sname + '_m_' + variation)
+            ewk.addVariation('ewk' + variation, vcorrp, vcorrm)
 
         selector.addOperator(ewk)
 
@@ -2449,7 +2526,7 @@ def modEfake(selector, selections = []):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '-ChargedPFVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
 def modEfakeLowPt(selector):
@@ -2462,7 +2539,7 @@ def modEfakeLowPt(selector):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = ['-EVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, changes = ['-EVeto', '-ChargedPFVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
 
