@@ -55,6 +55,7 @@ selconf = {
     'photonSF':('', '', [], (1., 0.)), # filename, histname, varlist, pixelveto SF and uncertainty
     'puweightSource': ('', ''), # gROOT directory name, file name
     'hadronTFactorSource': ('', ''), # file name, suffix
+    'electronTFactorSource': '',
     'hadronProxyDef': []
 }
 ROOT.gROOT.ProcessLine("int idtune;")
@@ -81,6 +82,7 @@ def monophotonSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
+    selconf['electronTFactorSource'] = datadir + '/efake_data_ptalt.root'
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -100,6 +102,7 @@ def vbfgSetting():
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
+    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt.root'
 
 def gghSetting():
     logger.info('Applying ggh setting.')
@@ -124,6 +127,7 @@ def gghSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt.root'
 
 ## utility functions
 
@@ -235,8 +239,7 @@ def monophotonBase(sample, rname, selcls = None):
         'PhotonJetDPhi',
         'Met',
         'PhotonPtOverMet',
-        'PhotonMt',
-        'PFMatch'
+        'PhotonMt'
     ]
 
     for op in operators:
@@ -1992,8 +1995,7 @@ def ph75(sample, rname):
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'PhotonMt',
-        'PFMatch'
+        'PhotonMt'
     ]
 
     for op in operators:
@@ -2418,7 +2420,7 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj').replace('zllg', 'znng')
+    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj').replace('zllg', 'znng').replace('300-o', '130-o')
 
     # temporarily don't apply QCD k-factor until we redrive for nlo samples
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
@@ -2518,7 +2520,8 @@ def modHfake(selector):
 def modEfake(selector, selections = []):
     """Append PhotonPtWeight with eproxyWeight and set up the photon selections."""
 
-    eproxyWeight = getFromFile(datadir + '/efake_data_ptalt.root', 'frate')
+    filename = selconf['electronTFactorSource']
+    eproxyWeight = getFromFile(filename, 'frate')
 
     weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
     weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
