@@ -78,11 +78,11 @@ def monophotonSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
     selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (datadir + '/scaleFactor_photon_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
+    selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
-    selconf['electronTFactorSource'] = datadir + '/efake_data_ptalt.root'
+    selconf['electronTFactorSource'] = (0.0303, 0.0022)
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -123,7 +123,7 @@ def gghSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
     selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (datadir + '/scaleFactor_spring16_ptalt.root', 'sf_truth', [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+    selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
@@ -2338,14 +2338,25 @@ def addPUWeight(sample, selector):
         raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
 
 def addIDSFWeight(sample, selector):
-    filename, histname, variables, (pvSF, pvUnc) = selconf['photonSF']
+    x, y, variables, (pvSF, pvUnc) = selconf['photonSF']
 
-    logger.info('Adding photon ID scale factor from ' + filename)
+    if type(x) is str and type(y) is str:
+        filename, histname = x, y
+        logger.info('Adding photon ID scale factor from ' + filename)
     
-    idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
-    idsf.addFactor(getFromFile(filename, histname, newname = 'photonSF'))
-    idsf.setVariable(*variables)
-    selector.addOperator(idsf)
+        idsf = ROOT.IDSFWeight(ROOT.cPhotons, 'photonSF')
+        idsf.addFactor(getFromFile(filename, histname, newname = 'photonSF'))
+        idsf.setVariable(*variables)
+        selector.addOperator(idsf)
+    
+    else:
+        sf, unc = x, y
+        logger.info('Adding numeric photon ID scale factor')
+
+        idsf = ROOT.ConstantWeight(sf, 'photonSF')
+        idsf.setUncertaintyUp(unc)
+        idsf.setUncertaintyDown(unc)
+        selector.addOperator(idsf)
 
     pvsf = ROOT.ConstantWeight(pvSF, 'pixelVetoSF')
     pvsf.setUncertaintyUp(pvUnc)
@@ -2520,12 +2531,25 @@ def modHfake(selector):
 def modEfake(selector, selections = []):
     """Append PhotonPtWeight with eproxyWeight and set up the photon selections."""
 
-    filename = selconf['electronTFactorSource']
-    eproxyWeight = getFromFile(filename, 'frate')
+    x = selconf['electronTFactorSource']
 
-    weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
-    weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
-    selector.addOperator(weight)
+    if type(x) is str:
+        filename = x
+        logger.info('Adding electron fake rate from ' + filename)
+    
+        eproxyWeight = getFromFile(filename, 'frate')
+        weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
+        weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
+        selector.addOperator(weight)
+    
+    else:
+        (frate, unc) = x
+        logger.info('Adding numeric electron fake rate')
+
+        weight = ROOT.ConstantWeight(frate, 'egfakerate')
+        weight.setUncertaintyUp(unc)
+        weight.setUncertaintyDown(unc)
+        selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
 
