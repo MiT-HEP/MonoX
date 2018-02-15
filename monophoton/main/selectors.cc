@@ -212,18 +212,10 @@ ZeeEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
   EventSelector::setupSkim_(_inEvent, _isMC);
 
-  for (oneAfterLeptonSelection_ = operators_.begin(); oneAfterLeptonSelection_ != operators_.end(); ++oneAfterLeptonSelection_) {
-    if (dynamic_cast<LeptonSelection*>(*oneAfterLeptonSelection_))
+  for (leptonSelection_ = operators_.begin(); leptonSelection_ != operators_.end(); ++leptonSelection_) {
+    if (dynamic_cast<LeptonSelection*>(*leptonSelection_))
       break;
   }
-  if (oneAfterLeptonSelection_ == operators_.end())
-    return;
-
-  // this is LeptonSelection
-  static_cast<LeptonSelection*>(*oneAfterLeptonSelection_)->setAllowPhotonOverlap(true);
-
-  // now it's one after
-  ++oneAfterLeptonSelection_;
 }
 
 void
@@ -237,7 +229,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
 
   bool passUpToLS(true);
   unsigned iO(0);
-  for (auto itr(operators_.begin()); itr != oneAfterLeptonSelection_; ++itr) {
+  for (auto itr(operators_.begin()); itr != leptonSelection_; ++itr) {
     auto& op(**itr);
     
     if (useTimers_)
@@ -252,64 +244,66 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
     ++iO;
   }
 
-  if (passUpToLS) {
-    // Assumption: both Photon and Lepton selectors are run
+  if (passUpToLS && outEvent_.photons.size() > 1) {
+    // Assumption: Photon selector is run
     panda::XPhotonCollection photonsTmp(outEvent_.photons);
-    panda::ElectronCollection electronsTmp(outEvent_.electrons);
 
     for (auto& photon : photonsTmp) {
-      for (auto& electron : electronsTmp) {
-        if (electron.dR2(photon) < 0.01)
-          continue;
+      outEvent_.electrons.clear();
+      outEvent_.photons.clear();
+      outEvent_.photons.push_back(photon);
 
-        outEvent_.photons.clear();
-        outEvent_.electrons.clear();
-        outEvent_.photons.push_back(photon);
-        outEvent_.electrons.push_back(electron);
+      bool pass(true);
 
-        bool pass(true);
+      unsigned iOPair(iO);
+      for (auto itr(leptonSelection_); itr != operators_.end(); ++itr) {
+        auto& op(**itr);
 
-        unsigned iOPair(iO);
-        for (auto itr(oneAfterLeptonSelection_); itr != operators_.end(); ++itr) {
-          auto& op(**itr);
+        if (useTimers_)
+          start = Clock::now();
 
-          if (useTimers_)
-            start = Clock::now();
+        if (!op.exec(_event, outEvent_))
+          pass = false;
 
-          if (!op.exec(_event, outEvent_))
-            pass = false;
+        if (useTimers_)
+          timers_[iOPair] += Clock::now() - start;
 
-          if (useTimers_)
-            timers_[iOPair] += Clock::now() - start;
-
-          ++iOPair;
-        }
-
-        if (pass) {
-          prepareFill_(_event);
-          
-          outEvent_.fill(*skimOut_);
-        }
-
-        cutsOut_->Fill();
+        ++iOPair;
       }
+
+      if (pass) {
+        prepareFill_(_event);
+          
+        outEvent_.fill(*skimOut_);
+      }
+
+      cutsOut_->Fill();
     }
   }
   else {
     // just run the remaining operators
 
-    for (auto itr(oneAfterLeptonSelection_); itr != operators_.end(); ++itr) {
+    bool pass(passUpToLS);
+
+    for (auto itr(leptonSelection_); itr != operators_.end(); ++itr) {
       auto& op(**itr);
 
       if (useTimers_)
         start = Clock::now();
 
-      op.exec(_event, outEvent_);
+      if (!op.exec(_event, outEvent_))
+        pass = false;
 
       if (useTimers_)
         timers_[iO] += Clock::now() - start;
 
       ++iO;
+    }
+
+    if (pass) {
+      prepareFill_(_event);
+          
+      outEvent_.fill(*skimOut_);
     }
 
     cutsOut_->Fill();

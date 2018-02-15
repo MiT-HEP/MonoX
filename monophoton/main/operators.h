@@ -542,7 +542,6 @@ class LeptonSelection : public Cut {
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
   void setRequireMedium(bool require, unsigned btof = false) { requireMedium_ = require; mediumBtoF_ = btof; }
   void setRequireTight(bool require) { requireTight_ = require; }
-  void setAllowPhotonOverlap(bool allow) { allowPhotonOverlap_ = allow; }
   panda::MuonCollection* getFailingMuons() { return failingMuons_; }
   panda::ElectronCollection* getFailingElectrons() {return failingElectrons_; }
 
@@ -554,7 +553,6 @@ class LeptonSelection : public Cut {
   bool requireMedium_{true};
   bool mediumBtoF_{false};
   bool requireTight_{true};
-  bool allowPhotonOverlap_{false};
   unsigned nEl_{0};
   unsigned nMu_{0};
 

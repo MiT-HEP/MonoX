@@ -127,7 +127,7 @@ def gghSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt.root'
+    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt2.root'
 
 ## utility functions
 
@@ -794,7 +794,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
     with the other groups, we let events with all flavors pass.
     """
 
-    monophotonSetting()
+    gghSetting()
 
     if selcls is None:
         selector = ROOT.EventSelector(rname)
@@ -812,6 +812,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
         elif flavor == ROOT.lMuon:
             partons.setRequiredPdgId(13)
 
+        partons.setIgnoreDecision(True)
         selector.addOperator(partons)
 
     operators = [
@@ -882,9 +883,6 @@ def gghlBase(sample, rname, flavor, selcls = None):
             addElectronIDSFWeight(sample, selector)
         else:
             addMuonIDSFWeight(sample, selector)
-
-    if not sample.data:
-        selector.findOperator('PartonFlavor').setIgnoreDecision(True)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -2188,7 +2186,6 @@ def gghe(sample, rname, selcls = None):
 
 def ggheEfake(sample, rname):
     selector = gghe(sample, rname, selcls = ROOT.ZeeEventSelector)
-    selector.findOperator('LeptonSelection').setStrictEl(False)
 
     modEfake(selector)
 
@@ -2523,6 +2520,8 @@ def modEfake(selector, selections = []):
     filename = selconf['electronTFactorSource']
     eproxyWeight = getFromFile(filename, 'frate')
 
+    logger.info('Applying %s (%s) to %s', eproxyWeight.GetName(), filename, selector.name())
+
     weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
     weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
     selector.addOperator(weight)
@@ -2534,6 +2533,8 @@ def modEfake(selector, selections = []):
 
 def modEfakeLowPt(selector):
     """Append PhotonPtWeight and set up the photon selections."""
+
+    logger.info('Applying low-pt eproxy weight formula to %s', selector.name())
 
     eproxyWeight = ROOT.TF1('eproxyWeight', '0.0292 + 0.131 / (x - 12.8)', 0., 6500.)
 

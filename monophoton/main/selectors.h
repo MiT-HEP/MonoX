@@ -98,7 +98,7 @@ class ZeeEventSelector : public EventSelector {
  protected:
   void setupSkim_(panda::EventMonophoton& event, bool isMC) override;
 
-  std::vector<Operator*>::iterator oneAfterLeptonSelection_;
+  std::vector<Operator*>::iterator leptonSelection_;
 };
 
 class PartonSelector : public EventSelector {

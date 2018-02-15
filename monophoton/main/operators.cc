@@ -1201,8 +1201,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   failingElectrons_->clear();
 
   std::vector<panda::ParticleCollection*> cols;
-  if (!allowPhotonOverlap_)
-    cols.push_back(&_outEvent.photons);
+  cols.push_back(&_outEvent.photons);
 
   for (unsigned iM(0); iM != _event.muons.size(); ++iM) {
     auto& muon(_event.muons[iM]);
