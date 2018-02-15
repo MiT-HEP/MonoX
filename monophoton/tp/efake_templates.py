@@ -12,13 +12,10 @@ sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, vetoCut, fitBinningT, dataSource, tpconfs
+from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, vetoCut, fitBinningT, dataSource, tpconfs, monophSel, analysis
 
 dataType = sys.argv[1] # "data" or "mc"
 binningName = sys.argv[2] # see efake_conf
-
-# monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
-monophSel = 'probes.mediumX[][%d]' % itune
 
 fitBins = getBinning(binningName)[2]
 
@@ -139,8 +136,11 @@ if dataType == 'data':
     
         for sname in skimConfig[mgSamp][0]:
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
-    
-        if dataSource == 'sel':
+
+        if dataSource == 'sph' and analysis == 'monophoton':
+            egPlotter.setBaseSelection('probes.triggerMatch[][8]') # 8 = fPh165HE10
+            mgPlotter.setBaseSelection('probes.triggerMatch[][8]')
+        elif dataSource == 'sel':
             egPlotter.setBaseSelection('tags.pt_ > 40.')
             mgPlotter.setBaseSelection('tags.pt_ > 40.')
 
@@ -210,7 +210,7 @@ for bin, fitCut in fitBins:
         elif conf == 'eg':
             # target is a tree with vetoCut
             # also perform binned max L fit
-            cut = ('probes.mediumX[][{itune}] && ' + vetoCut + ' && ({fitCut})').format(itune = itune, fitCut = fitCut)
+            cut = ('probes.mediumX[][{itune}] && {vetoCut} && ({fitCut})').format(itune = itune, vetoCut = vetoCut, fitCut = fitCut)
             bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'pass':
             cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)

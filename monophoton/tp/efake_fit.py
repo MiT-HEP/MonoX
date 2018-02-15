@@ -176,8 +176,8 @@ for bin, _ in fitBins:
 
     addToWS(altsigModel)
 
-    res = work.factory('CBShape::res(mass, m0, sigma, alpha, n)')
-    sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res)'.format(bin = bin))
+    res = work.factory('CBShape::res_{bin}(mass, m0, sigma, alpha, n)'.format(bin = bin))
+    sigModel = work.factory('FCONV::sigModel_{bin}(mass, altsigModel_{bin}, res_{bin})'.format(bin = bin))
     addToWS(sigModel)
 
     print 'Made sigModel_' + bin
@@ -215,22 +215,26 @@ for bin, _ in fitBins:
 
         print 'Made target_' + suffix
 
-        ### Make muon+probe background template
-        mubkgModel = None
-        hMuBkg = None 
+        ### Make muon+probe background template - this is not the actual background template (see below)
         tMuBkg = inputFile.Get('mubkgtree_' + suffix)
         if tMuBkg.GetEntries() < 50000.:
-            mubkgModel = ROOT.KeysShape('mubkgModel_' + suffix, 'mubkgModel', mass, tMuBkg, '', 0.3, 8)
+            print 'Making mubkg from mubkgtree'
+
+            mubkgModel = ROOT.KeysShape('mubkgModel_' + suffix, 'mubkgModel', mass, tMuBkg, 'weight', 0.5, 8)
             
             hMuBkg = mubkgModel.createHistogram('mubkg', mass, ROOT.RooFit.Binning(fitBinning))
             hMuBkg.SetName('mubkg_' + suffix)
         else:
+            print 'Making mubkg from mubkg histogram'
+
             hMuBkg = inputFile.Get('mubkg_' + suffix)
             dMuBkg = ROOT.RooDataHist('dmubkg_' + suffix, 'mubkg', masslist, hMuBkg)
             addToWS(dMuBkg)
 
             mubkgModel = work.factory('HistPdf::mubkgModel_{suffix}({{mass}}, dmubkg_{suffix}, 2)'.format(suffix = suffix))
+
         addToWS(mubkgModel)
+
         outputFile.cd()
         hMuBkg.SetDirectory(outputFile)
         hMuBkg.Write()
@@ -241,16 +245,21 @@ for bin, _ in fitBins:
         if dataType == 'mc':
             tElBkg = inputFile.Get('truebkgtree_' + suffix)
             if tElBkg.GetEntries() < 50000.:
-                elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tElBkg, '', 0.3, 8)
+                print 'Making elbkg from truebkgtree'
+
+                elbkgModel = ROOT.KeysShape('elbkgModel_' + suffix, 'elbkgModel', mass, tElBkg, 'weight', 0.5, 8)
 
                 hElBkg = elbkgModel.createHistogram('elbkg', mass, ROOT.RooFit.Binning(fitBinning))
                 hElBkg.SetName('elbkg_' + suffix)
             else:
+                print 'Making elbkg from elbkg histogram'
+
                 hElBkg = inputFile.Get('truebkg_' + suffix).Clone('elbkg_' + suffix)
                 dElBkg = ROOT.RooDataHist('delbkg_' + suffix, 'elbkg', masslist, hElBkg)
                 addToWS(dElBkg)
 
                 elbkgModel = work.factory('HistPdf::elbkgModel_{suffix}({{mass}}, delbkg_{suffix}, 2)'.format(suffix = suffix))
+
             addToWS(elbkgModel)
             outputFile.cd()
             hElBkg.SetDirectory(outputFile)
@@ -278,11 +287,10 @@ for bin, _ in fitBins:
                 hMuBkg.Scale(1. / hMuBkg.GetSumOfWeights())
                 hElBkg.Scale(1. / hElBkg.GetSumOfWeights())
 
+                outputFile.cd()
                 elmuscale = hElBkg.Clone('elmuscale_' + suffix)
                 elmuscale.Divide(hMuBkg)
-                
-                outputFile.cd()
-                elmuscale.SetDirectory(outputFile)
+
                 elmuscale.Write()
 
                 scaleHist = ROOT.RooDataHist('elmuscaleData_' + suffix, 'elmuscale', masslist, elmuscale)
@@ -292,6 +300,12 @@ for bin, _ in fitBins:
 
             nombkgModel = work.factory('PROD::nombkgModel_{suffix}(mubkgModel_{suffix}, elmuscale_{suffix})'.format(suffix = suffix))
             addToWS(nombkgModel)
+
+            hNomBkg = nombkgModel.createHistogram('nombkg', mass, ROOT.RooFit.Binning(fitBinning))
+            hNomBkg.SetName('nombkg_' + suffix)
+            outputFile.cd()
+            hNomBkg.SetDirectory(outputFile)
+            hNomBkg.Write()
 
         print 'Made bkgModel_' + suffix
 

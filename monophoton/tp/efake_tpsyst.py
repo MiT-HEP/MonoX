@@ -118,15 +118,29 @@ for _ in range(nToys):
         altModel.Print()
 
     print 'Generating', nompset.find('ntarg').getVal(), 'events'
-    # for MC, ntarg is the effective number of entries != htarg integral
-    altData = altModel.generate(ROOT.RooArgSet(mass), nompset.find('ntarg').getVal())
 
-    # perform binned fit
+    altHist = None
+    nToGenerate = nompset.find('ntarg').getVal()
+    while nToGenerate > 0:
+        # for MC, ntarg is the effective number of entries != htarg integral
+        altData = altModel.generate(ROOT.RooArgSet(mass), min(100000, nToGenerate))
+        nToGenerate -= 100000
+    
+        # perform binned fit
+    
+        #upcast to call TH1 version of createHistogram()
+        altAbsData = ROOT.RooDataSet.Class().DynamicCast(ROOT.RooAbsData.Class(), altData)
+    
+        tmpHist = altAbsData.createHistogram('altDataTmp', mass, ROOT.RooFit.Binning('fitWindow'))
+        if altHist is None:
+            altHist = tmpHist
+            altHist.SetName('altData')
+        else:
+            altHist.Add(tmpHist)
+            tmpHist.Delete()
 
-    #upcast to call TH1 version of createHistogram()
-    altAbsData = ROOT.RooDataSet.Class().DynamicCast(ROOT.RooAbsData.Class(), altData)
+        del altData
 
-    altHist = altAbsData.createHistogram('altData', mass, ROOT.RooFit.Binning('fitWindow'))
     data = ROOT.RooDataHist('altDataHist', 'altDataHist', ROOT.RooArgList(mass), altHist)
 
     # unbinned fit - need to translate from RooDataSet on "mass" from alt workspace to "mass" in nom workspace
