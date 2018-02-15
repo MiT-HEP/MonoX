@@ -136,6 +136,8 @@ if args.eventList:
             cutflow[ic] = cut[0]
             cutflow.extend(list(cut[1:]))
 
+    print ' && '.join(cutflow)
+
     tree.Draw('>>elist', ' && '.join(cutflow), 'entrylist')
     elist = ROOT.gDirectory.Get('elist')
     tree.SetEntryList(elist)
