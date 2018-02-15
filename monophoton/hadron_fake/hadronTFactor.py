@@ -43,20 +43,22 @@ selExprsLoose = selections.getSelections(tune, 'barrel', 'loose')
 selExprsTight = selections.getSelections(tune, 'barrel', 'tight')
 
 baseSels = {
-    'jet': 'jets.pt_[0] > 100.',
     'met': 't1Met.pt < 60.',
     'nph': 'photons.size == 1',
     'eb': 'photons.isEB[0]',
     'hOverE': selExprs['hovere'],
-    'monoph': selections.Cuts['monophId'],
     'chIso': 'photons.chIsoX[0][%d] < 11.' % itune,
     'sieie': selExprs['sieie']
 }
 
+if not selections.lowpt:
+    baseSels['jet'] = 'jets.pt_[0] > 100.'
+
 goodSels = {
     'chIso': selExprs['chiso'],
     'nhIso': selExprs['nhiso'],
-    'phIso': selExprs['phiso']
+    'phIso': selExprs['phiso'],
+    'trigger': 'photons.triggerMatch[0][13]'
 }
 
 nomSels = {
@@ -83,6 +85,9 @@ if 'pixel' in extras:
 if 'chargedpf' in extras:
     baseSels['pfveto'] = 'photons.chargedPFVeto[0]'
 
+if 'monoph' in extras:
+    baseSels['monoph'] = selections.Cuts['monophId']
+
 if 'noICH' in extras:
     goodSels.pop('chIso')
 
@@ -108,7 +113,10 @@ configurations = [
 plotter = ROOT.MultiDraw()
 plotter.setPrintLevel(1)
 for sample in allsamples.getmany(snames):
-    plotter.addInputPath(utils.getSkimPath(sample.name, 'emjet'))
+    if selections.lowpt:
+        plotter.addInputPath(utils.getSkimPath(sample.name, 'ph75'))
+    else:
+        plotter.addInputPath(utils.getSkimPath(sample.name, 'emjet'))
 
 plotter.setBaseSelection(' && '.join(baseSels.values()))
 

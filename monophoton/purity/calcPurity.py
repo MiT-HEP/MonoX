@@ -153,7 +153,6 @@ selections = s.getSelections(tune, loc, pid)
 # high-pt jet + met + photon pt + photon hOverE/NHIso/PhIso
 baseSel = ' && '.join([
 #     'event.metFilters.dupECALClusters',
-    'jets.pt_[0] > 100.',
     metSel,    
     ptSel,
     selections['fiducial'],
@@ -163,19 +162,22 @@ baseSel = ' && '.join([
 ])
 
 if 'pixel' in extras:
-    baseSel = baseSel + ' && ' + s.Cuts['pixelVeto']
+    baseSel += ' && ' + s.Cuts['pixelVeto']
 if 'monoph' in extras:
-    baseSel = baseSel + ' && ' + s.Cuts['monophId']
+    baseSel += ' && ' + s.Cuts['monophId']
 if 'chargedpf' in extras:
-    baseSel = baseSel + ' && ' + s.Cuts['chargedPFVeto']
+    baseSel += ' && ' + s.Cuts['chargedPFVeto']
 
-if 'noICH' in extras:
-    sigSel = ''
-else:
+sigSels = []
+if 'noICH' not in extras:
     if 'max' in extras:
-        sigSel = selections['chisomax']
+        sigSels.append(selections['chisomax'])
     else:
-        sigSel = selections['chiso']
+        sigSels.append(selections['chiso'])
+
+sigSels.append(selections['trigger'])
+
+sigSel = ' && '.join(sigSels)
 
 ChIsoNear = 'ChIso35to50'
 ChIsoNominal = 'ChIso50to75'
