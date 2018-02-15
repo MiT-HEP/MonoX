@@ -4,21 +4,33 @@
 #include "TH1D.h"
 
 void
-makeZGWGHistograms(TTree* _input, TH1D* _output)
+makeZGWGHistograms(TTree* _input, TH1D* _poutput, TH1D* _noutput = 0)
 {
   panda::Event event;
-  event.setAddress(*_input, {"!*", "genParticles", "weight"});
+  event.setAddress(*_input, {"!*", "partons", "genParticles", "weight"});
 
   long iEntry(0);
   while (event.getEntry(*_input, iEntry++) > 0) {
     if (iEntry % 10000 == 1)
       std::cout << iEntry << std::endl;
 
+    TH1D* out(_poutput);
+
+    if (_noutput != 0) {
+      // we are looking for charge-separated WG
+      for (auto& part : event.partons) {
+        if (part.pdgid == 11 || part.pdgid == 13 || part.pdgid == 15) {
+          out = _noutput;
+          break;
+        }
+      }
+    }
+
     for (auto& part : event.genParticles) {
       if (part.pdgid != 22 || !part.finalState)
         continue;
 
-      if (part.pt() < _output->GetXaxis()->GetXmin() || std::abs(part.eta()) > 1.4442)
+      if (part.pt() < out->GetXaxis()->GetXmin() || std::abs(part.eta()) > 1.4442)
         continue;
 
       auto* parent(part.parent.get());
@@ -31,7 +43,7 @@ makeZGWGHistograms(TTree* _input, TH1D* _output)
       if (!parent || parent->pdgid != 22)
         continue;
       
-      _output->Fill(part.pt());
+      out->Fill(part.pt());
       break;
     }
   }
