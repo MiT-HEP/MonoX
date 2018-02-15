@@ -20,7 +20,8 @@ do
   i=$(($i+1))
 done
 
-MAXFS=$(tail -n 1 $CATALOGDIR/Files | sed 's/^0*\([1-9][0-9]*\) .*/\1/')
+MAXFS=$(tail -n 1 $CATALOGDIR/Files | sed 's/^0*\([0-9]*\) .*/\1/')
+[ "$MAXFS" ] || MAXFS=0
 
 URL=root://t3serv006.mit.edu/$(echo $DIR | sed 's|/mnt/hadoop||')
 
