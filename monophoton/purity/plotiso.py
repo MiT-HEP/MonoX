@@ -133,7 +133,7 @@ def plotiso(loc, pid, pt, met, tune):
     print 'setBaseSelection(' + baseSel + ')'
     extractor.plotter.setBaseSelection(baseSel)
     extractor.categories.append(('data', 'I_{CH} Distribution from SinglePhoton Data', ''))
-    hist = extractor.extract(binning)[0]
+    hist = extractor.extract(binning, outFile = outFile)[0]
     hist.Scale(1. / hist.GetSumOfWeights())
 
     formatHist(hist, 'Events')
@@ -143,7 +143,7 @@ def plotiso(loc, pid, pt, met, tune):
     print 'setBaseSelection(' + baseSel + ' && ' + truthSel + ')'
     extractor.plotter.setBaseSelection(baseSel + ' && ' + truthSel)
     extractor.categories.append(('rawmc', 'I_{CH} Distribution from #gamma+jets MC', ''))
-    raw = extractor.extract(binning)[0]
+    raw = extractor.extract(binning, outFile = outFile)[0]
     raw.Scale(1. / raw.GetSumOfWeights())
 
     formatHist(raw, 'Events')

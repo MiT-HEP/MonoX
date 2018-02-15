@@ -31,6 +31,8 @@ qcdMc = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qc
 
 sphLumi = sum(allsamples[s].lumi for s in sphData)
 
+lowpt = True
+
 ### Various load-time operations ###
 
 versionDir =  config.histDir + '/purity/' + Version
@@ -75,7 +77,12 @@ Cuts['monophId'] = ' && '.join([
 ])
 
 photonPtVar = 'photons.scRawPt[0]'
-photonPtBinning = [175,200,250,300,350,400]
+
+if lowpt:
+    photonPtBinning = [80., 90., 100., 120., 160., 200.]
+else:
+    photonPtBinning = [175,200,250,300,350,400]
+
 PhotonPtSels = {
     'PhotonPtInclusive': '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[0],
     'PhotonPt%dtoInf' % photonPtBinning[-1]: '{pt} > %d'.format(pt = photonPtVar) % photonPtBinning[-1]
@@ -85,13 +92,13 @@ for low, high in zip(photonPtBinning, photonPtBinning[1:]):
 
 metBinning = [0, 60, 120]
 MetSels = {
-    'MetInclusive': 't1Met.pt > %d' % metBinning[0],
-    'Met%dtoInf' % metBinning[-1]: 't1Met.pt > %d' % metBinning[-1]
+    'MetInclusive': 't1Met.pt >= %d' % metBinning[0],
+    'Met%dtoInf' % metBinning[-1]: 't1Met.pt >= %d' % metBinning[-1]
 } 
 for low, high in zip(metBinning, metBinning[1:]):
-    MetSels['Met%dto%d' % (low, high)] = 't1Met.pt > %d && t1Met.pt < %d' % (low, high)
+    MetSels['Met%dto%d' % (low, high)] = 't1Met.pt >= %d && t1Met.pt < %d' % (low, high)
 
-MetSels['Met0to30'] = 't1Met.pt > 0. && t1Met.pt < 30.'
+MetSels['Met0to30'] = 't1Met.pt >= 0. && t1Met.pt < 30.'
 
 print 'bloop'
 
@@ -129,6 +136,11 @@ def getSelections(tune, location, pid):
 
     selections = {}
     cuts = getCuts(tune)
+
+    if lowpt:
+        selections['trigger'] = 'photons.triggerMatch[0][13]'
+    else:
+        selections['trigger'] = '1'
 
     selections['fiducial'] = 'photons.isEB' if location == 'barrel' else '!photons.isEB'
     selections['hovere'] = 'photons.hOverE[0] < %f' % cuts['hovere'][location][pid]
@@ -181,7 +193,10 @@ class HistExtractor(object):
         self.name = name
         self.plotter = ROOT.MultiDraw()
         for sname in snames:
-            self.plotter.addInputPath(utils.getSkimPath(sname, 'emjet'))
+            if lowpt:
+                self.plotter.addInputPath(utils.getSkimPath(sname, 'ph75'))
+            else:
+                self.plotter.addInputPath(utils.getSkimPath(sname, 'emjet'))
 
         self.variable = variable
 

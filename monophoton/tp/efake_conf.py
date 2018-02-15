@@ -1,24 +1,43 @@
 import os
 
-outputName = 'dphsf'
+outputName = 'efake_pixelpf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
+PRODUCT = 'frate'
+# PRODUCT = 'eff'
+
+#analysis = 'monophoton'
+analysis = 'darkphoton'
+
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
-itune = 1
-vetoCut = 'probes.pixelVeto && probes.chargedPFVeto'
-#vetoCut = 'probes.pixelVeto'
+if analysis == 'monophoton':
+    itune = 2
+    vetoCut = 'probes.pixelVeto'
+    monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+else:
+    itune = 1
+    vetoCut = 'probes.pixelVeto && probes.chargedPFVeto'
+    monophSel = 'probes.mediumX[][%d]' % itune
 
 fitBinningT = (120, 60., 120.)
 
-dataSource = 'sph' # sph or sel or smu
+dataSource = 'sel' # sph or sel or smu
 if dataSource == 'sph':
-    tpconfs = ['pass', 'fail']
-    # tpconfs = ['ee', 'eg']
+    if PRODUCT == 'eff':
+        tpconfs = ['pass', 'fail']
+    else:
+        tpconfs = ['ee', 'eg']
 elif dataSource == 'sel':
-    tpconfs = ['pass', 'fail']
+    if PRODUCT == 'eff':
+        tpconfs = ['pass', 'fail']
+    else:
+        tpconfs = ['ee', 'eg']
 elif dataSource == 'smu':
-    tpconfs = ['passiso', 'failiso']
+    if PRODUCT == 'eff':
+        tpconfs = ['passiso', 'failiso']
+    else:
+        tpconfs = ['ee', 'eg']
 
 # Grouping of samples for convenience.
 # Argument targets can be individual sample names or the config names (eldata/mudata/mc).
@@ -30,7 +49,7 @@ skimConfig = {
     'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
 #    'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
     'mudata': (['smu-16c-m'], ['kME']),
-    'mc': (dy50 + ['wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
+    'mc': (dy50 + ['wglo'], ['kEG', 'kMG', 'kMMG']),
     'mcmu': (dy50, ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
@@ -69,6 +88,23 @@ def getBinning(binningName):
     elif binningName == 'ptalt':
         binningTitle = 'p_{T}^{probe} (GeV)'
         binning = [175., 200., 250., 300., 350., 400., 6500.]
+        
+        fitBins = []
+        for iBin in range(len(binning) - 1):
+            repl = {'low': binning[iBin], 'high': binning[iBin + 1]}
+            name = 'pt_{low:.0f}_{high:.0f}'.format(**repl)
+            cut = 'probes.scRawPt > {low:.0f} && probes.scRawPt < {high:.0f}'.format(**repl)
+            fitBins.append((name, cut))
+
+        # hack to elimiate one large-weight event
+        fitBins[-1] = (fitBins[-1][0], fitBins[-1][1] + ' && (weight == 1 || weight < 0.0001)')
+
+        binning.pop()
+        binning.append(500.)
+
+    elif binningName == 'ptalt2':
+        binningTitle = 'p_{T}^{probe} (GeV)'
+        binning = [175., 200., 250., 6500.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):
@@ -190,7 +226,7 @@ def getBinning(binningName):
 
     elif binningName == 'test':
         binningTitle = 'p_{T}^{probe} (GeV)'
-        binning = [24., 28.]
+        binning = [28., 32.]
         
         fitBins = []
         for iBin in range(len(binning) - 1):

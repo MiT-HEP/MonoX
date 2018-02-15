@@ -69,16 +69,12 @@ def getConfig(confName):
 
         config.addSig('dmv', 'DM V', samples = ['dmv-*'])
         config.addSig('dma', 'DM A', samples = ['dma-*'])
-        # config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
-        config.addSig('add', 'ADD', samples = ['add-3-*'])
-#        config.addSig('dmewk', 'DM EWK', samples = ['dmewk-*'])
         config.addSig('dmvlo', 'DM V', samples = ['dmvlo-*'])
         config.addSig('dmalo', 'DM A', samples = ['dmalo-*'])
+        config.addSig('add', 'ADD', samples = ['add-*'])
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)
-        # config.addSigPoint('dph-125', 'DPH125', color = ROOT.kCyan)
-        # config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kMagenta)
 
         lowDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], 't1Met.minJetDPhi < 0.5')
 
@@ -86,7 +82,7 @@ def getConfig(confName):
         config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = spikeNorm ) # 8.9
+        config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = spikeNorm) # 8.9
         config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', scale = 1. / 3000.)
         config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
@@ -109,16 +105,16 @@ def getConfig(confName):
         config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi))
         config.addPlot('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.))
         config.addPlot('metPhi', '#phi(E_{T}^{miss})', 't1Met.phi', (20, -math.pi, math.pi))
-        config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton, overflow = True)
-        config.addPlot('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., 3.25), applyBaseline = False, cut = noDPhiPhoton + ' && ' + mtPhoMet + ' > 100.', overflow = True, sensitive = True)
-        config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., 3.25), cut = 'jets.pt_ > 30.')
-        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., 3.50), applyBaseline = False, cut = noDPhiJet, overflow = True)
-        config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., 3.50), overflow = True)
-        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.), ymax = 5.e+3, sensitive = True)
+        config.addPlot('dPhiPhoMet', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., math.pi), applyBaseline = False, cut = noDPhiPhoton)
+        config.addPlot('dPhiPhoMetMt100', '#Delta#phi(#gamma, E_{T}^{miss})', "t1Met.photonDPhi", (13, 0., math.pi), applyBaseline = False, cut = noDPhiPhoton + ' && ' + mtPhoMet + ' > 100.', sensitive = True)
+        config.addPlot('dPhiJetMet', '#Delta#phi(E_{T}^{miss}, j)', 'TMath::Abs(TVector2::Phi_mpi_pi(jets.phi_ - t1Met.phi))', (13, 0., math.pi), cut = 'jets.pt_ > 30.')
+        config.addPlot('dPhiJetMetMin', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., math.pi), applyBaseline = False, cut = noDPhiJet)
+        config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., math.pi))
+        config.addPlot('njets', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.), ymax = 5.e+3)
         config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'Sum$(jets.pt_ > 100.)', (10, 0., 10.)) # , cut = 'jets.pt_ > 100.')
         config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30', overflow = True)
-        config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.))
-        config.addPlot('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (20, 0., 10.))
+        config.addPlot('phoPtOverMet', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), overflow = True)
+        config.addPlot('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (20, 0., 10.), overflow = True)
         config.addPlot('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.), sensitive = True)
         config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
         config.addPlot('sieie', '#sigma_{i#eta i#eta}', 'photons.sieie[0]', (40, 0., 0.020))
@@ -128,6 +124,14 @@ def getConfig(confName):
         config.addPlot('phiWidth', 'phiWidth', 'photons.phiWidth[0]', (18, 0., 0.05))
         config.addPlot('time', 'time', 'photons.time[0]', (20, -5., 5.), unit = 'ns')
         config.addPlot('timeSpan', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns')
+        config.addPlot('dPhiJetMetMinPhi3', 'min#Delta#phi(E_{T}^{miss}, j)', 't1Met.minJetDPhi', (14, 0., math.pi), applyBaseline = False, cut = noDPhiJet + ' && photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8')
+        config.addPlot('phoEtaPhi3', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5), cut = 'photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8')
+        config.addPlot('phoPtOverMetPhi3', 'E_{T}^{#gamma}/E_{T}^{miss}', 'photons.scRawPt[0] / t1Met.pt', (30, 0., 3.), cut = 'photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8', overflow = True)
+        config.addPlot('phoPtOverJetPtPhi3', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (20, 0., 10.), cut = 'photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8', overflow = True)
+        config.addPlot('njetsPhi3', 'N_{jet}', 'Sum$(jets.pt_ > 30.)', (6, 0., 6.), ymax = 5.e+3, cut = 'photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8')
+        config.addPlot('jetPtPhi3', 'p_{T}^{jet}', 'jets.pt_', [0., 100., 200., 300., 400., 600., 1000.], unit = 'GeV', cut = 'jets.pt_ > 30 && photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8', overflow = True)
+        config.addPlot('timeSpanPhi3', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns', cut = 'photons.phi_[0] > 2.2 && photons.phi_[0] < 2.8')
+        config.addPlot('timeSpanNonPhi3', 'timeSpan', 'photons.timeSpan[0]', (20, -20., 20.), unit = 'ns', cut = 'photons.phi_[0] < 2.2 || photons.phi_[0] > 2.8')
 
         # Standard MC systematic variations
         for group in config.bkgGroups + config.sigGroups:
@@ -163,6 +167,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
         # Specific systematic variations
         config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 1.0))
@@ -179,9 +186,6 @@ def getConfig(confName):
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
 #        config.findGroup('hfake').variations.append(Variation('vertex', reweight = 0.5))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
-
 
     elif confName == 'dimu':
         mass = 'TMath::Sqrt(2. * muons.pt_[0] * muons.pt_[1] * (TMath::CosH(muons.eta_[0] - muons.eta_[1]) - TMath::Cos(muons.phi_[0] - muons.phi_[1])))'
@@ -262,8 +266,10 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         for gname in ['top', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -349,8 +355,10 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         for gname in ['top', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
@@ -447,7 +455,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWK', reweight = 'ewk'))
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
         for gname in ['top', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -538,7 +548,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWK', reweight = 'ewk'))
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
         for gname in ['top', 'gg', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -712,9 +724,11 @@ def getConfig(confName):
 
         for gname in ['zg', 'wg']:
             group = config.findGroup(gname)
-
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
+            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
 
 #        Specific systematic variations
         # TODO use cuts
@@ -723,8 +737,6 @@ def getConfig(confName):
 #        config.findGroup('hfake').variations.append(Variation('hfakeTfactor', region = ('hfakeTight', 'hfakeLoose')))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('wg').variations.append(Variation('EWK', reweight = 'ewk'))
-        config.findGroup('zg').variations.append(Variation('EWK', reweight = 'ewk'))
         config.findGroup('gjets').variations.append(Variation('gjetsTF', reweight = 0.5))
 
 

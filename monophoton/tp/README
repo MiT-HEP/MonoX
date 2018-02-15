@@ -54,12 +54,12 @@
     do
       for type in nominal altsig altbkg
       do
-        while [ $(($seed%10)) -ne 0 ]
+        while true
         do
-          echo $bin $conf $type 100 $seed >> syst_args.txt
+          echo $bin $conf $type 1000 $seed >> syst_args.txt
           seed=$(($seed+1))
+          [ $(($seed%2)) -eq 0 ] && break
         done
-        seed=$(($seed+1))
       done
     done
   done

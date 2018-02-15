@@ -11,14 +11,12 @@ basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
 from plotstyle import SimpleCanvas
-from tp.efake_conf import lumiSamples, outputName, outputDir, roofitDictsDir, getBinning
+from tp.efake_conf import lumiSamples, outputName, outputDir, roofitDictsDir, getBinning, PRODUCT
 
 dataType = sys.argv[1]
 binningName = sys.argv[2]
 
-# PRODUCT = 'frate'
-PRODUCT = 'eff'
-ADDFIT = False
+ADDFIT = True
 
 binningTitle, binning, fitBins = getBinning(binningName)
 
@@ -226,9 +224,9 @@ if ADDFIT:
         ibin += 1
 
     power = ROOT.TF1('power', '[0] + [1] / ((x - [3])- [2])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
-    power.SetParameters(0.02, 1., 0., binning[0])
+    power.SetParameters(0.01, 1., 10., binning[0])
     power.FixParameter(3, binning[0])
-    power.SetParLimits(2, -100000., 0.)
+    power.SetParLimits(2, -500., 0.)
     result.Fit(power)
     canvas.addObject(power)
 
@@ -256,12 +254,11 @@ if uncSource:
     for conf in meas:
         for bin, _ in fitBins:
             canvas.Clear(full = True)
-            canvas.ylimits = (0., 0.05)
-            canvas.xtitle = 'N_{Z}'
+            canvas.ylimits = (0., 0.1)
+            canvas.xtitle = '(N_{Z}^{toy}-N_{Z}^{orig})/N_{Z}^{orig}'
     
             canvas.legend.setPosition(0.7, 0.7, 0.9, 0.9)
             canvas.legend.add('toys', title = 'Toys', opt = 'LF', color = ROOT.kBlue - 7, lwidth = 2, fstyle = 3003)
-            canvas.legend.add('nominal', title = 'Nominal', opt = 'L', color = ROOT.kBlack, lwidth = 2)
 
             for ip in range(nomparams.numEntries()):
                 nompset = nomparams.get(ip)
@@ -276,13 +273,6 @@ if uncSource:
             toydist.Scale(1. / toydist.GetSumOfWeights())
     
             canvas.legend.apply('toys', toydist)
-    
-            canvas.addHistogram(toydist, drawOpt = 'HIST')
-            canvas.Update(logy = False)
-            arrow = canvas.addLine(nZ, toydist.GetMaximum() * 0.2, nZ, 0., width = 2, cls = ROOT.TArrow)
-            arrow.SetArrowSize(0.1)
-    
-            canvas.legend.apply('nominal', arrow)
     
             canvas.printWeb(outputName + '/toys_' + binningName, dataType + '_' + conf + '_' + bin, logy = False)
 
