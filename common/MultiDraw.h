@@ -187,6 +187,8 @@ public:
 
   void setPrintLevel(int l) { printLevel_ = l; }
 
+  unsigned numObjs() const { return unconditional_.size() + postBase_.size() + postFull_.size(); }
+
 private:
   //! Handle addPlot and addTree with the same interface (requires a callback to generate the right object)
   typedef std::function<ExprFiller*(TTreeFormula*, TTreeFormula*)> ObjGen;
