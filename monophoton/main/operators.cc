@@ -1192,14 +1192,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 
     if (std::abs(muon.eta()) > 2.5 || muon.pt() < 10.)
       continue;
-
-    if (nMu_ != 0 && muon.pt() > 30.) {
-      if (muon.tight && muon.combIso() / muon.pt() < 0.15)
-        foundTight = true;
-      if ((mediumBtoF_ && muon.mediumBtoF) || (!mediumBtoF_ && muon.medium))
-        foundMedium = true;
-    }
-    
+   
     bool overlap(false);
     for (auto* col : cols) {
       unsigned iP(0);
@@ -1216,6 +1209,13 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     
     if (overlap)
       continue;
+
+    if (nMu_ != 0 && muon.pt() > 30.) {
+      if (muon.tight && muon.combIso() / muon.pt() < 0.15)
+        foundTight = true;
+      if ((mediumBtoF_ && muon.mediumBtoF) || (!mediumBtoF_ && muon.medium))
+        foundMedium = true;
+    }
     
     if (muon.loose) {
       _outEvent.muons.push_back(muon);
@@ -1234,13 +1234,6 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (std::abs(electron.eta()) > 2.5 || electron.pt() < 10.)
       continue;
 
-    if (nEl_ != 0 && electron.pt() > 30.) {
-      if (electron.tight)
-        foundTight = true;
-      if (electron.medium)
-        foundMedium = true;
-    }
-
     bool overlap(false);
     for (auto* col : cols) {
       unsigned iP(0);
@@ -1257,7 +1250,14 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     
     if (overlap)
       continue;
-    
+
+    if (nEl_ != 0 && electron.pt() > 30.) {
+      if (electron.tight)
+        foundTight = true;
+      if (electron.medium)
+        foundMedium = true;
+    }
+
     if (electron.loose)
       _outEvent.electrons.push_back(electron);
     else if (electron.matchedGen.idx() != -1)

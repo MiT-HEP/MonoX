@@ -12,7 +12,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     else:
         region = plotConfig.name
 
-    baseTotal = 0.
+    histograms = {} # {(sample, plotdef, variation): histogram}
 
     # run the Plotter for each sample
     for sample in group.samples:
@@ -21,8 +21,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         dname = sample.name + '_' + region
 
         print '   ', dname, '(%s)' % sourceName
-    
-        histograms = []
+
+        if not os.path.exists(sourceName):
+            sys.stderr.write('File ' + sourceName + ' does not exist.\n')
+            raise RuntimeError('InvalidSource')
    
         plotter = ROOT.MultiDraw()
         plotter.addInputPath(sourceName)
@@ -60,14 +62,14 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 outDir = outFile.GetDirectory(plotdef.name).mkdir('samples')
 
             hist = plotdef.makeHist(dname, outDir = outDir)
-            histograms.append(hist)
+            histograms[(sample, plotdef, None)] = hist
 
             if group == plotConfig.obs and plotdef.fullyBlinded():
                 continue
 
             if sample.data and plotdef.mcOnly:
                 continue
-            
+
             plotCuts = []
 
             if plotdef.cut.strip():
@@ -95,7 +97,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             for variation in group.variations:
                 for iv, direction in [(0, 'Up'), (1, 'Down')]:
                     hist = plotdef.makeHist(dname + '_' + variation.name + direction, outDir = outDir)
-                    histograms.append(hist)
+                    histograms[(sample, plotdef, variation.name + direction)] = hist
     
                     if type(variation.reweight) is str:
                         reweight = 'reweight_' + variation.reweight + direction
@@ -137,40 +139,44 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         if numPlots != 0:
             plotter.fillPlots()
 
-        for hist in histograms:
-            # ad-hoc scaling
-            hist.Scale(group.scale)
+    if group.norm >= 0.:
+        normalization = sum(hist.GetBinContent(1) for (_, plotdef, variation), hist in histograms.items() if plotdef.name == 'count' and variation is None)
+        print 'normalization', normalization
 
-            if sample.data and group != plotConfig.obs:
-                # this is a data-driven background sample
-                hist.Scale(postscale)
+    for (sample, plotdef, _), hist in histograms.items():
+        # ad-hoc scaling
+        hist.Scale(group.scale)
 
-            # zero out negative bins (save the original as _orig)
-            horig = None
-            for iX in range(1, hist.GetNbinsX() + 1):
-                if hist.GetBinContent(iX) < 0.:
-                    if horig is None:
-                        print '      Adjusting bin contents of', hist.GetDirectory().GetMotherDir().GetName(), hist.GetName(), 'to be non-negative'
-                        horig = hist.Clone(hist.GetName() + '_original')
+        if group.norm >= 0.:
+            hist.Scale(group.norm / normalization)
 
-                    hist.SetBinContent(iX, 0.)
-                    hist.SetBinError(iX, 0.)
+        if sample.data and group != plotConfig.obs:
+            # this is a data-driven background sample
+            hist.Scale(postscale)
 
-                elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
-                    if horig is None:
-                        print '      Adjusting bin errors of', hist.GetDirectory().GetMotherDir().GetName(), hist.GetName(), 'to be non-negative'
-                        horig = hist.Clone(hist.GetName() + '_original')
+        # zero out negative bins (save the original as _orig)
+        horig = None
+        for iX in range(1, hist.GetNbinsX() + 1):
+            if hist.GetBinContent(iX) < 0.:
+                if horig is None:
+                    # print '      Adjusting bin contents of', plotdef.name, hist.GetName(), 'to be non-negative'
+                    horig = hist.Clone(hist.GetName() + '_original')
 
-                    hist.SetBinError(iX, hist.GetBinContent(iX))
+                hist.SetBinContent(iX, 0.)
+                hist.SetBinError(iX, 0.)
 
-            writeHist(hist)
+            elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+                if horig is None:
+                    # print '      Adjusting bin errors of', plotdef.name, hist.GetName(), 'to be non-negative'
+                    horig = hist.Clone(hist.GetName() + '_original')
 
-            if horig is not None:
-                horig.SetDirectory(hist.GetDirectory())
-                writeHist(horig)
+                hist.SetBinError(iX, hist.GetBinContent(iX))
 
-            if hist.GetName() == dname and hist.GetDirectory().GetMotherDir().GetName() == 'base':
-                baseTotal += hist.GetSumOfWeights()
+        writeHist(hist)
+
+        if horig is not None:
+            horig.SetDirectory(hist.GetDirectory())
+            writeHist(horig)
 
     # aggregate group plots
 
@@ -187,9 +193,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         for sample in group.samples:
             shist = outDir.Get('samples/' + sample.name + '_' + region)
             ghist.Add(shist)
-
-        if group.norm >= 0. and baseTotal > 0.:
-            ghist.Scale(group.norm / baseTotal)
 
         if group == plotConfig.obs and plotdef.blind is not None:
             # take care of masking
@@ -217,10 +220,6 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     uphist.Add(suphist)
                     downhist.Add(sdownhist)
 
-                if group.norm >= 0. and baseTotal > 0.:
-                    uphist.Scale(group.norm / baseTotal)
-                    downhist.Scale(group.norm / baseTotal)
-    
                 writeHist(uphist)
                 writeHist(downhist)
                 
@@ -277,24 +276,6 @@ def formatHist(hist, plotdef):
         hist.SetMinimum(0.)
 
 
-def unformatHist(hist, plotdef):
-    # Recompute raw bin contents
-    if plotdef.ndim() == 1:
-        for iX in range(1, hist.GetNbinsX() + 1):
-            cont = hist.GetBinContent(iX)
-            err = hist.GetBinError(iX)
-            w = hist.GetXaxis().GetBinWidth(iX)
-            if plotdef.unit:
-                hist.SetBinContent(iX, cont * w)
-                hist.SetBinError(iX, err * w)
-            else:
-                if iX == 1:
-                    wnorm = w
-
-                hist.SetBinContent(iX, cont * (w / wnorm))
-                hist.SetBinError(iX, err * (w / wnorm))
-
-
 def printCounts(counters, plotConfig):
     prec = '%.2f'
 
@@ -335,7 +316,7 @@ def printBinByBin(stack, plotdef, plotConfig, precision = '.2f'):
 
     boundaries = []
     for iX in range(1, nBins + 1):
-        boundaries.append('%12s' % ('[%.0f, %.0f]' % (obs.GetXaxis().GetBinLowEdge(iX), obs.GetXaxis().GetBinUpEdge(iX))))
+        boundaries.append('%12s' % ('[%.1f, %.1f]' % (obs.GetXaxis().GetBinLowEdge(iX), obs.GetXaxis().GetBinUpEdge(iX))))
     boundaries.append('%12s' % 'total')
 
     print 'Bin-by-bin yield for plot', plotdef.name
@@ -347,7 +328,7 @@ def printBinByBin(stack, plotdef, plotConfig, precision = '.2f'):
     for group in reversed(plotConfig.bkgGroups):
         yields = []
         for iX in range(1, nBins + 1):
-            cont = stack[group.name].GetBinContent(iX) * obs.GetXaxis().GetBinWidth(iX)
+            cont = stack[group.name].GetBinContent(iX)
             yields.append(cont)
             bkgTotal[iX - 1] += cont
 
@@ -356,7 +337,13 @@ def printBinByBin(stack, plotdef, plotConfig, precision = '.2f'):
     print '------------------------------------------------------------------------------------'
     print ('%+12s' % 'total'), ' '.join([('%12' + precision) % b for b in bkgTotal]), (('%12' + precision) % sum(bkgTotal))
     print '===================================================================================='
-    print ('%+12s' % 'data_obs'), ' '.join(['%12d' % int(round(obs.GetBinContent(iX)  * obs.GetXaxis().GetBinWidth(iX))) for iX in range(1, nBins + 1)]), ('%12d' % int(round(obs.Integral('width'))))
+
+    yields = []
+    for iX in range(1, nBins + 1):
+        cont = obs.GetBinContent(iX)
+        yields.append(int(round(cont)))
+
+    print ('%+12s' % 'data_obs'), ' '.join(['%12d' % y for y in yields]), ('%12d' % sum(yields))
 
 
 def printChi2(stack, plotdef, plotConfig, precision = '.2f'):
@@ -575,24 +562,32 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if args.bbb:
-        plotdefs = [plotConfig.getPlot(args.bbb)]
+        plotdefs = set([plotConfig.getPlot(args.bbb)])
     elif args.chi2:
-        plotdefs = [plotConfig.getPlot(args.chi2)]
+        plotdefs = set([plotConfig.getPlot(args.chi2)])
     elif len(args.plots) != 0:
-        plotdefs = []
+        plotdefs = set()
         if 'sensitive' in args.plots:
-            plotdefs += [ plot for plot in plotConfig.getPlots() if plot.sensitive == True]
-            plotdefs += plotConfig.getPlots('base')
+            plotdefs.update([plot for plot in plotConfig.getPlots() if plot.sensitive])
             args.plots.remove('sensitive')
+
         if 'insensitive' in args.plots:
-            plotdefs += [ plot for plot in plotConfig.getPlots() if not plot.sensitive and plot.name != 'count' ]
+            plotdefs.update([plot for plot in plotConfig.getPlots() if not plot.sensitive])
+            plotConfig.getPlot('count').blind = 'full'
             args.plots.remove('insensitive')
+
         if len(args.plots) != 0:
-            plotdefs += plotConfig.getPlots(args.plots)
+            plotdefs.update(plotConfig.getPlots(args.plots))
     else:
-        plotdefs = plotConfig.getPlots()
+        plotdefs = set(plotConfig.getPlots())
+
+    plotdefs.add(plotConfig.getPlot('count'))
 
     plotNames = [p.name for p in plotdefs]
+
+    if args.blind:
+        for plotdef in plotdefs:
+            plotdef.blind = 'full'
 
     if args.histFile:
         if args.replot:
@@ -722,9 +717,7 @@ if __name__ == '__main__':
             os.remove(WEBDIR + '/' + plotDir + '/' + plot)
 
     for plotdef in plotdefs:
-        if plotdef.name == 'base':
-            continue
-        elif plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
+        if plotdef.name != 'count' and plotdef.name != args.bbb and plotdef.name != args.chi2:
             graphic = True
         else:
             graphic = False

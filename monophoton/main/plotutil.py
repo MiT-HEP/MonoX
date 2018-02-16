@@ -28,7 +28,7 @@ class GroupSpec(object):
         self.scale = scale # use for ad-hoc scaling of histograms
         self.cut = cut # additional cut (if samples are looser than the nominal region, e.g. to allow variations)
         self.altbaseline = altbaseline # use to replace baseline cut (hack for using lowdphi gjets shape in SR)
-        self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after baseline selection
+        self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after full selection
         self.variations = []
 
 
@@ -119,11 +119,10 @@ class PlotDef(object):
                 nbins = self.binning[0]
                 arr = array.array('d', [self.binning[1] + (self.binning[2] - self.binning[1]) / nbins * i for i in range(nbins + 1)])
     
-            ### need to reimplement as another option
-            # if self.overflow:
-            #     lastbinWidth = (arr[-1] - arr[0]) / 30.
-            #     arr += array.array('d', [self.binning[-1] + lastbinWidth])
-            #     nbins += 1
+            if self.overflow:
+                lastbinWidth = (arr[-1] - arr[0]) / 30.
+                arr += array.array('d', [self.binning[-1] + lastbinWidth])
+                nbins += 1
     
             hist = ROOT.TH1D(hname, '', nbins, arr)
     
@@ -249,6 +248,8 @@ class PlotConfig(object):
         self.plots = []
         self.treeMaker = ''
 
+        self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
+
     def addObs(self, sname, prescale = 1):
         sample = allsamples[sname]
         self.obs.samples.append(sample)
@@ -296,14 +297,8 @@ class PlotConfig(object):
                 if plot.name in names:
                     plots.append(plot)
 
-            if 'count' in names:
-                plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
-
         else:
             plots = list(self.plots)
-            plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
-
-        plots.append(PlotDef('base', '', '0.5', (1, 0., 1.)))
 
         return plots
 
