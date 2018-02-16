@@ -102,7 +102,9 @@ def vbfgSetting():
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
-    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt.root'
+    selconf['electronTFactorSource'] = ROOT.TF1('eproxyWeight', '0.0052 + 1.114 * TMath::Power(x + 122.84, -0.75)', 0., 6500.)
+
+datadir + '/efakepf_data_ptalt.root'
 
 def gghSetting():
     logger.info('Applying ggh setting.')
@@ -1792,7 +1794,7 @@ def vbfgEfake(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    modEfakeLowPt(selector)
+    modEfake(selector)
 
     return selector
 
@@ -1900,7 +1902,7 @@ def vbfzeeEfake(sample, rname):
 
     selector = vbfzee(sample, rname)
 
-    modEfakeLowPt(selector)
+    modEfake(selector)
 
     return selector
 
@@ -2539,7 +2541,7 @@ def modEfake(selector, selections = []):
         weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
         selector.addOperator(weight)
     
-    else:
+    elif type(x) is tuple:
         (frate, unc) = x
         logger.info('Adding numeric electron fake rate %f +- %f', frate, unc)
 
@@ -2548,24 +2550,16 @@ def modEfake(selector, selections = []):
         weight.setUncertaintyDown(unc)
         selector.addOperator(weight)
 
+    else:
+        logger.info('Adding electron fake rate from TF1 ' + x.GetTitle())
+
+        # type is TF1
+        weight = ROOT.PhotonPtWeight(x, 'egfakerate')
+        selector.addOperator(weight)
+
     photonSel = selector.findOperator('PhotonSelection')
 
     setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '-ChargedPFVeto', '!CSafeVeto'])
-    setupPhotonSelection(photonSel, veto = True)
-
-def modEfakeLowPt(selector):
-    """Append PhotonPtWeight and set up the photon selections."""
-
-    logger.info('Applying low-pt eproxy weight formula to %s', selector.name())
-
-    eproxyWeight = ROOT.TF1('eproxyWeight', '0.0292 + 0.131 / (x - 12.8)', 0., 6500.)
-
-    weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
-    selector.addOperator(weight)
-
-    photonSel = selector.findOperator('PhotonSelection')
-
-    setupPhotonSelection(photonSel, changes = ['-EVeto', '-ChargedPFVeto', '!CSafeVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
 
