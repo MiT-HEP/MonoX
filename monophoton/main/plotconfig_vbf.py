@@ -36,7 +36,7 @@ def getConfigVBF(confName):
         config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D})', color = ROOT.kCyan)
 
         if confName == 'vbfg':
-            main = ['gjn']
+            main = ['gjn-vbf']
             gjscale = 1.
         elif confName == 'vbfglo':
             main = gj04
@@ -158,7 +158,7 @@ def getConfigVBF(confName):
 #        config.baseline = 'dijet.size != 0 && photons.scRawPt[0] > 80. && t1Met.pt < 50.'
 
         if confName == 'vbfgCtrl':
-            main = ['gjn']
+            main = ['gjn-vbf']
         elif confName == 'vbfgloCtrl':
             main = ['gj04-40'] + gj
 

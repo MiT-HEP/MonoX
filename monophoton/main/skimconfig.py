@@ -89,7 +89,7 @@ allSelectors_byPattern = [
     ('wnlg-130-p', applyMod(mc_sig + mc_lep, s.addKfactor)),
     ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['halo', 'monoel', 'vbfem', 'ph75', 'gjets325'], s.addKfactor)),
     ('gje-*', applyMod(['monoph'], s.addKfactor)),
-    ('gjn', mc_qcd + mc_cand + ['monoel', 'vbfem']),
+    ('gjn-vbf', mc_qcd + mc_cand + ['monoel', 'vbfem']),
     ('gg-*', mc_cand + mc_lep + mc_dilep),
     ('ttg', mc_cand + mc_lep + mc_dilep + ['vbfzee']),
     ('tg', mc_cand + mc_lep + ['vbfzee']),
