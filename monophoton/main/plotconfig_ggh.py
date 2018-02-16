@@ -55,7 +55,7 @@ def getConfigGGH(confName):
                 config.addObs(sname)
 
         config.baseline = baseSel 
-        config.fullSelection = 'photons.mt[0] > 100. && photons.mt[0] < 150.'
+        config.fullSelection = '' # 'photons.mt[0] > 100. && photons.mt[0] < 150.'
 
         config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
         # config.addSig('fakemet50', 'Fake Met 50%', samples = ['gj04-*'], region = 'fakeMet50', scale = 1000000.)
@@ -72,7 +72,7 @@ def getConfigGGH(confName):
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 100.)
+        config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 0.01)
         config.addBkg('fakemet_fakeMetShapeUp', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet75', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 0.01)
         config.addBkg('fakemet_fakeMetShapeDown', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet25', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 0.01)
 

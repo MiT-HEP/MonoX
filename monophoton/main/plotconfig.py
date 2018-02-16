@@ -72,6 +72,7 @@ def getConfig(confName):
         config.addSig('dmvlo', 'DM V', samples = ['dmvlo-*'])
         config.addSig('dmalo', 'DM A', samples = ['dmalo-*'])
         config.addSig('add', 'ADD', samples = ['add-*'])
+        config.addSig('dmvp', 'DM V', samples = ['dmvp-*'])
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         config.addSigPoint('dmvlo-1000-1', 'DMV1000', color = ROOT.kGreen)

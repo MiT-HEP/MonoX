@@ -39,7 +39,7 @@ processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets
 xtitle = 'p_{T}^{#gamma} (GeV)'
 binWidthNormalized = False
 
-snames = ['add-3-8'] # , 'dmvlo-*']
+snames = ['add-3-4'] # , 'dmvlo-*']
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
@@ -114,5 +114,8 @@ ratioCorrelations = {
 # Nuisances affecting normalization only
 #scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
 scaleNuisances = ['lumi', 'photonSF', 'pixelVetoIDSF', 'leptonVetoSF', 'egFakerate', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
+
+###
+flatParams = []
 
 # def customize(workspace):
