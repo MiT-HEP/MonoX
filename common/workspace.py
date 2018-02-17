@@ -30,35 +30,6 @@ All nuisances where histograms are defined will be included in the workspace, re
 the nuisance-process matrix and instead will list all the nuisances as "param"s.
 If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
 If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
-
- Variables to be defined (optional variables in parentheses):
- <input>
-  sourcedir - Where to find the ROOT files containing histograms.
-  filename - Source file name format. Wildcards {region} and {process} can be used.
-  histname - Format of histogram names to be found in the source files. Wildcards {region} and {process} can be used.
-  (data) - Process name of the observed data. If not set, default value of 'data_obs' will be used.
-  signalHistname - Format of signal histogram names.
-  binWidthNormalized - boolean specifying whether the input histograms are already bin-width normalized.
- <output>
-  (carddir) - When given, data card files are produced and saved in this directory.
-  (cardname) - Name of the data card files. Wild card {signal} can be used as a placeholder for signal model name.
-  (plotsOutname) - When given, a ROOT file with histograms visualizing the workspace content is created.
-  (xtitle) - X axis title of the histograms.
- <physics>
-  regions - List of signal and control region names. Replaces the {region} wildcard in the input definitions.
-  processes - Full list of process names. Not all processes have to appear in every region.
-  signals - List of signal point names.
-  links - List of links between samples. [(target process, target region), (source process, source region)].
-  (staticBase) - List of base samples who are not allowed to change shape.
- <nuisances>
-  ignoredNuisances - For each (process, region), list the nuisances that can be found in the input files as histograms but should be ignored. {(process, region): [nuisance]}.
-  scaleNuisances - List of nuisances that affect the normalization only. All of them must have corresponding histograms.
-  ratioCorrelations - Nuisances are fully correlated between samples in a link by default. Use this to specify partial correlations. {((target sample), (source sample), nuisance): correlation}.
-  deshapedNuisances - List of nuisances to be artificially bin-decorrelated. Systematic variations in this list will have nuisance a parameter for each bin.
-  (floatProcesses) - List of processes with floating normalization but does not participate in any links.
- <optional>
-  customize - A function that takes a RooWorkspace as the sole argument. Called at the end of workspace preparation to edit the workspace content.
-
 """
 
 import os
@@ -72,14 +43,15 @@ import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
+from workspace_config import WorkspaceConfig
+
 if len(sys.argv) == 2:
     configPath = sys.argv[1]
 else:
     print 'Using configuration ' + os.getcwd() + '/parameters.py'
     configPath = os.getcwd() + '/parameters.py'
 
-sys.path.append(os.path.dirname(configPath))
-config = __import__(os.path.basename(configPath).replace('.py', ''))
+execfile(configPath)
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
@@ -193,7 +165,7 @@ def isLinkSource(source):
     return False
 
 def openHistSource(config, process, region, sources):
-    fname = config.sourcedir + '/' + config.filename.format(process = process, region = region)
+    fname = config.sourcename.format(process = process, region = region)
     try:
         source = sources[fname]
     except KeyError:
@@ -216,15 +188,10 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
     for region in config.regions:
         sourcePlots[region] = collections.defaultdict(dict)
 
-        try:
-            dataName = config.data
-        except AttributeError:
-            dataName = 'data_obs'
-
         # data histogram
-        sourceDir = openHistSource(config, dataName, region, sources)
+        sourceDir = openHistSource(config, config.data, region, sources)
 
-        histname = config.histname.format(process = dataName, region = region)
+        histname = config.histname.format(process = config.data, region = region)
 
         hist = sourceDir.Get(histname)
         hist.SetDirectory(hstore)
@@ -244,6 +211,7 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
             hist = sourceDir.Get(histname)
             if not hist: # signal can be absent in some regions
                 continue
+
             hist.SetDirectory(hstore)
 
             if config.binWidthNormalized:
@@ -253,7 +221,7 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
             sourcePlots[region][process]['nominal'] = hist
 
         # background histograms
-        for process in config.processes:
+        for process in config.bkgProcesses:
             sourceDir = openHistSource(config, process, region, sources)
 
             histname = config.histname.format(process = process, region = region)
@@ -311,8 +279,6 @@ if __name__ == '__main__':
     totals = {} # {region: background total}
 
     hstore = ROOT.gROOT.mkdir('hstore')
-
-    print 'Retrieving all histograms from', config.sourcedir
 
     fetchHistograms(config, sourcePlots, totals, hstore)
 
@@ -524,7 +490,7 @@ if __name__ == '__main__':
                     # each bin must be described by a free-floating RooRealVar unless this is a fixed base
                     # uncertainties are all casted on tfactors
 
-                    if hasattr(config, 'staticBase') and sample in config.staticBase:
+                    if sample in config.staticBase:
                         print '      with a static shape'
                         fct('mu_{sample}_scale[1.,0.,10.]'.format(sample = sampleName))
                         # bin mu is raw x norm
@@ -646,9 +612,6 @@ if __name__ == '__main__':
             else:
                 done = False
 
-    if hasattr(config, 'customize'):
-        config.customize(workspace)
-
     if PRINTNUISANCE:
         for n in sorted(nuisances):
             print n, 'param 0 1'
@@ -667,7 +630,7 @@ if __name__ == '__main__':
     x = workspace.var('x')
 
     ## DATACARDS
-    if hasattr(config, 'carddir'):
+    if config.carddir:
         print 'Writing data cards'
 
         if not os.path.isdir(config.carddir):
@@ -788,12 +751,12 @@ if __name__ == '__main__':
                 if matched_other_signal:
                     continue
                 
-                if hasattr(config, 'flatParams') and nuisance in config.flatParams:
+                if nuisance in config.flatParams:
                     cardlines.append(nuisance + ' flatParam 0 1')
                 else:
                     cardlines.append(nuisance + ' param 0 1')
 
-            if hasattr(config, 'cardname'):
+            if config.cardname:
                 cardname = config.cardname.format(signal = signal)
             else:
                 cardname = signal + '.dat'
@@ -810,7 +773,7 @@ if __name__ == '__main__':
         print 'Cards saved to', config.carddir
 
     ## PLOTS
-    if hasattr(config, 'plotsOutname'):
+    if config.plotsOutname:
         print 'Visualizing workspace'
 
         plotsFile = ROOT.TFile.Open(config.plotsOutname, 'recreate')
