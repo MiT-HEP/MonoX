@@ -31,7 +31,7 @@ the nuisance-process matrix and instead will list all the nuisances as "param"s.
 If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
 If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
 
- Variables to be defined:
+ Variables to be defined (optional variables in parentheses):
  <input>
   sourcedir - Where to find the ROOT files containing histograms.
   filename - Source file name format. Wildcards {region} and {process} can be used.
@@ -39,22 +39,26 @@ If the parameter card defines a variable plotOutname, a ROOT file is created und
   (data) - Process name of the observed data. If not set, default value of 'data_obs' will be used.
   signalHistname - Format of signal histogram names.
   binWidthNormalized - boolean specifying whether the input histograms are already bin-width normalized.
+ <output>
+  (carddir) - When given, data card files are produced and saved in this directory.
+  (cardname) - Name of the data card files. Wild card {signal} can be used as a placeholder for signal model name.
+  (plotsOutname) - When given, a ROOT file with histograms visualizing the workspace content is created.
+  (xtitle) - X axis title of the histograms.
  <physics>
   regions - List of signal and control region names. Replaces the {region} wildcard in the input definitions.
   processes - Full list of process names. Not all processes have to appear in every region.
   signals - List of signal point names.
   links - List of links between samples. [(target process, target region), (source process, source region)].
+  (staticBase) - List of base samples who are not allowed to change shape.
  <nuisances>
   ignoredNuisances - For each (process, region), list the nuisances that can be found in the input files as histograms but should be ignored. {(process, region): [nuisance]}.
   scaleNuisances - List of nuisances that affect the normalization only. All of them must have corresponding histograms.
   ratioCorrelations - Nuisances are fully correlated between samples in a link by default. Use this to specify partial correlations. {((target sample), (source sample), nuisance): correlation}.
   deshapedNuisances - List of nuisances to be artificially bin-decorrelated. Systematic variations in this list will have nuisance a parameter for each bin.
-  floats - List of samples with floating normalization but does not participate in any links.
+  (floatProcesses) - List of processes with floating normalization but does not participate in any links.
  <optional>
-  (customize) - A function that takes a RooWorkspace as the sole argument. Called at the end of workspace preparation to edit the workspace content.
-  (carddir) - When given, data card files are produced and saved in this directory.
-  (plotsOutname) - When given, a ROOT file with histograms visualizing the workspace content is created.
-    (xtitle) - X axis title of the histograms.
+  customize - A function that takes a RooWorkspace as the sole argument. Called at the end of workspace preparation to edit the workspace content.
+
 """
 
 import os
@@ -111,17 +115,17 @@ def nuisance(nuis, target, up, down, form):
     if target:
         target += '_'
 
-    modifierName = 'mod_{target}{nuis}'.format(target = target, nuis = nuis)
+    variationName = 'var_{target}{nuis}'.format(target = target, nuis = nuis)
 
     if form == 'lnN':
-        mod = fct('expr::{mod}("TMath::Exp({a1}*@0)*({a1}*@0<0.) + (1.+{a1}*@0)*({a1}*@0>=0.)", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
+        var = fct('expr::{name}("TMath::Exp({a1}*@0)*({a1}*@0<0.) + (1.+{a1}*@0)*({a1}*@0>=0.)", {{{nuis}}})'.format(name = variationName, a1 = a1, nuis = nuis))
     elif form == 'quad':
         if abs(a2) < SMALLNUMBER:
-            mod = fct('expr::{mod}("1.+{a1}*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, nuis = nuis))
+            var = fct('expr::{name}("1.+{a1}*@0", {{{nuis}}})'.format(name = variationName, a1 = a1, nuis = nuis))
         else:
-            mod = fct('expr::{mod}("1.+{a1}*@0+{a2}*@0*@0", {{{nuis}}})'.format(mod = modifierName, a1 = a1, a2 = a2, nuis = nuis))
+            var = fct('expr::{name}("1.+{a1}*@0+{a2}*@0*@0", {{{nuis}}})'.format(name = variationName, a1 = a1, a2 = a2, nuis = nuis))
 
-    return mod
+    return var
 
 def ratioStatNuisance(numerName, denomName, nRelErr, dRelErr):
     """
@@ -137,11 +141,29 @@ def ratioStatNuisance(numerName, denomName, nRelErr, dRelErr):
     fct('{nuis}[0.,-5.,5.]'.format(nuis = nNuis))
     nuisances.append(nNuis)
 
-    modifierName = 'mod_{numer}_{denom}_stat'.format(numer = numerName, denom = denomName)
+    variationName = 'var_{numer}_{denom}_stat'.format(numer = numerName, denom = denomName)
 
-    mod = fct('expr::{mod}("TMath::Exp({n}*@0+{d}*@1)", {{{nNuis}, {dNuis}}})'.format(mod = modifierName, n = nRelErr, d = dRelErr, nNuis = nNuis, dNuis = dNuis))
+    var = fct('expr::{name}("TMath::Exp({n}*@0+{d}*@1)", {{{nNuis}, {dNuis}}})'.format(name = variationName, n = nRelErr, d = dRelErr, nNuis = nNuis, dNuis = dNuis))
 
-    return mod
+    return var
+
+def modRelUncert2(var):
+    # stat uncertainty of TFs have two parameters
+    # allow for general case of N parameters
+    relUncert2 = 0.
+    iparam = 0
+    p = var.getParameter(iparam)
+    while p:
+        p.setVal(1.)
+        d = var.getVal() - 1.
+        p.setVal(0.)
+
+        relUncert2 += d * d
+
+        iparam += 1
+        p = var.getParameter(iparam)
+
+    return relUncert2
 
 def linkSource(target):
     """
@@ -203,8 +225,6 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
         sourceDir = openHistSource(config, dataName, region, sources)
 
         histname = config.histname.format(process = dataName, region = region)
-
-        print histname
 
         hist = sourceDir.Get(histname)
         hist.SetDirectory(hstore)
@@ -426,9 +446,6 @@ if __name__ == '__main__':
                                 # this uncertainty is non-shape and is taken care of already
                                 continue
 
-#                            if var in ['muonVetoSF', 'electronVetoSF']:
-#                                continue
-
                             if var + 'Up' in plots:
                                 numerUp = plots[var + 'Up'].GetBinContent(ibin)
                                 numerDown = plots[var + 'Down'].GetBinContent(ibin)
@@ -474,7 +491,9 @@ if __name__ == '__main__':
                                     continue
 
                                 if var in config.scaleNuisances:
-                                    normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
+                                    # this is a bin-independent modifier
+                                    if var not in normModifiers:
+                                        normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), rup, rdown, 'lnN')
                                 else:
                                     if var in config.deshapedNuisances:
                                         # this nuisance is artificially decorrelated among bins
@@ -486,10 +505,13 @@ if __name__ == '__main__':
                         if len(modifiers) > 0:
                             # "raw" yield (= base x tfactor)
                             fct('expr::raw_{bin}("@0*@1", {{{tf}, mu_{baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
-                            fct('prod::unc_{bin}({mod})'.format(bin = binName, mod = ','.join(m.GetName() for m in modifiers)))
-
-                            # mu = raw x unc
-                            bin = fct('prod::mu_{bin}(raw_{bin},unc_{bin})'.format(bin = binName))
+                            if len(modifiers) == 1:
+                                # mu = raw x var
+                                bin = fct('prod::mu_{bin}(raw_{bin},{var})'.format(bin = binName, var = modifiers[0].GetName()))
+                            else:
+                                fct('prod::mod_{bin}({names})'.format(bin = binName, names = ','.join(m.GetName() for m in modifiers)))
+                                # mu = raw x mod
+                                bin = fct('prod::mu_{bin}(raw_{bin},mod_{bin})'.format(bin = binName))
                         else:
                             bin = fct('expr::mu_{bin}("@0*@1", {{{tf}, mu_{baseBin}}})'.format(bin = binName, tf = tfName, baseBin = baseBinName))
 
@@ -499,20 +521,17 @@ if __name__ == '__main__':
 
                 elif isLinkSource(sample):
                     print '    this sample is a base of some other sample'
-                    # each bin must be described by a free-floating RooRealVar
+                    # each bin must be described by a free-floating RooRealVar unless this is a fixed base
                     # uncertainties are all casted on tfactors
 
-                    if sample in config.freeNorms:
-                        normName = 'freenorm_{sample}'.format(sample = sampleName)
-                        normModifiers[normName] = fct('{norm}[1.,0.001,10.]'.format(norm = normName))
-                        
+                    if hasattr(config, 'staticBase') and sample in config.staticBase:
+                        print '      with a static shape'
+                        fct('mu_{sample}_scale[1.,0.,10.]'.format(sample = sampleName))
+                        # bin mu is raw x norm
                         for ibin in range(1, nominal.GetNbinsX() + 1):
-                            # mu = raw x freenorm
-                            bin = fct('raw_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
-                            bin = fct('prod::mu_{sample}_bin{bin}(raw_{sample}_bin{bin},freenorm_{sample})'.format(sample = sampleName, bin = ibin))
-
+                            fct('rawmu_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
+                            bin = fct('prod::mu_{sample}_bin{bin}(rawmu_{sample}_bin{bin},mu_{sample}_scale)'.format(sample = sampleName, bin = ibin))
                             bins.add(bin)
-
                     else:
                         for ibin in range(1, nominal.GetNbinsX() + 1):
                             bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
@@ -521,10 +540,10 @@ if __name__ == '__main__':
                 else:
                     print '    this sample does not participate in constraints'
 
-                    if sample in config.floats:
+                    if sample[0] in config.floatProcesses:
                         print '      normalization is floated'
                         normName = 'freenorm_{sample}'.format(sample = sampleName)
-                        normModifiers[normName] = fct('{norm}[1.,0.1,1000.]'.format(norm = normName))
+                        normModifiers['free'] = fct('{name}[1.,0.,100.]'.format(name = normName))
 
                     for ibin in range(1, nominal.GetNbinsX() + 1):
                         binName = sampleName + '_bin{0}'.format(ibin)
@@ -534,7 +553,6 @@ if __name__ == '__main__':
                             # bin content is 0
                             bin = fct('mu_{bin}[0.]'.format(bin = binName))
                         else:
-
                             modifiers = []
 
                             # statistical uncertainty - often not considered
@@ -549,11 +567,11 @@ if __name__ == '__main__':
 
                                 var = variation[:-2]
 
-                                if sample in config.ignoredNuisances and var in config.ignoredNuisances[sample]:
-                                    continue
-
-                                if var in config.scaleNuisances and (var in normModifiers or sample in config.floats):
-                                    continue
+                                try:
+                                    if var in config.ignoredNuisances[sample]:
+                                        continue
+                                except KeyError:
+                                    pass
 
                                 dup = plots[var + 'Up'].GetBinContent(ibin) / cval - 1.
                                 ddown = plots[var + 'Down'].GetBinContent(ibin) / cval - 1.
@@ -562,9 +580,16 @@ if __name__ == '__main__':
                                     continue
 
                                 if var in config.scaleNuisances:
-                                    if sample not in config.floats:
+                                    # this is a bin-independent variation
+                                    if var in normModifiers:
+                                        # we took care of this already
+                                        continue
+
+                                    if sample[0] in config.floatProcesses:
                                         # if this sample is freely floating, scale modifiers are unnecessary degrees of freedom
-                                        normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
+                                        continue
+
+                                    normModifiers[var] = nuisance(var, '{sample}_norm'.format(sample = sampleName), dup, ddown, 'lnN')
                                 else:
                                     if var in config.deshapedNuisances:
                                         # this nuisance is artificially decorrelated among bins
@@ -575,10 +600,13 @@ if __name__ == '__main__':
 
                             if len(modifiers) > 0:
                                 raw = fct('raw_{bin}[{val}]'.format(bin = binName, val = cval))
-                                fct('prod::unc_{bin}({mod})'.format(bin = binName, mod = ','.join(m.GetName() for m in modifiers)))
-
-                                # mu = raw x unc
-                                bin = fct('prod::mu_{bin}(raw_{bin},unc_{bin})'.format(bin = binName))
+                                if len(modifiers) == 1:
+                                    # mu = raw x mod
+                                    bin = fct('prod::mu_{bin}(raw_{bin},{var})'.format(bin = binName, var = modifiers[0].GetName()))
+                                else:
+                                    fct('prod::mod_{bin}({names})'.format(bin = binName, names = ','.join(m.GetName() for m in modifiers)))
+                                    # mu = raw x mod
+                                    bin = fct('prod::mu_{bin}(raw_{bin},mod_{bin})'.format(bin = binName))
                             else:
                                 bin = fct('mu_{bin}[{val}]'.format(bin = binName, val = cval))
 
@@ -602,9 +630,11 @@ if __name__ == '__main__':
                 else:
                     fct('expr::{sample}_{norm}("@0", {{{bin}}})'.format(sample = sampleName, norm = normName, bin = bins.at(0).GetName()))
 
-                if len(normModifiers) > 0:
-                    fct('prod::unc_{sample}_norm({mod})'.format(sample = sampleName, mod = ','.join(m.GetName() for m in normModifiers.values() if not 'freenorm' in m.GetName())))
-                    fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, unc_{sample}_norm}})'.format(sample = sampleName))
+                if len(normModifiers) == 1:
+                    fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, {var}}})'.format(sample = sampleName, var = normModifiers.values()[0].GetName()))
+                elif len(normModifiers) > 0:
+                    fct('prod::mod_{sample}_norm({names})'.format(sample = sampleName, names = ','.join(m.GetName() for m in normModifiers.values())))
+                    fct('expr::{sample}_norm("@0*@1", {{{sample}_rawnorm, mod_{sample}_norm}})'.format(sample = sampleName))
             
             # / for process, plots in sourcePlots[region].items():
 
@@ -676,7 +706,7 @@ if __name__ == '__main__':
             if len(region) > maxRegionNameLength:
                 maxRegionNameLength = len(region)
 
-        print 'signalRegions', signalRegions
+        print 'signalRegions', list(signalRegions)
 
         # define datacard template
 
@@ -757,44 +787,31 @@ if __name__ == '__main__':
 
                 if matched_other_signal:
                     continue
-
-                if nuisance in config.flatParams:
+                
+                if hasattr(config, 'flatParams') and nuisance in config.flatParams:
                     cardlines.append(nuisance + ' flatParam 0 1')
                 else:
                     cardlines.append(nuisance + ' param 0 1')
 
-            with open(config.carddir + '/' + signal + '.dat', 'w') as datacard:
+            if hasattr(config, 'cardname'):
+                cardname = config.cardname.format(signal = signal)
+            else:
+                cardname = signal + '.dat'
+
+            with open(config.carddir + '/' + cardname, 'w') as datacard:
                 for line in cardlines:
                     if '{signal}' in line:
                         line = line.format(signal = signal)
 
                     datacard.write(line + '\n')
             
-            print ' ', signal
+            print ' ', signal, '-->', cardname
 
         print 'Cards saved to', config.carddir
 
     ## PLOTS
     if hasattr(config, 'plotsOutname'):
         print 'Visualizing workspace'
-
-        def modRelUncert2(mod):
-            # stat uncertainty of TFs have two parameters
-            # allow for general case of N parameters
-            relUncert2 = 0.
-            iparam = 0
-            p = mod.getParameter(iparam)
-            while p:
-                p.setVal(1.)
-                d = mod.getVal() - 1.
-                p.setVal(0.)
-
-                relUncert2 += d * d
-
-                iparam += 1
-                p = mod.getParameter(iparam)
-
-            return relUncert2
 
         plotsFile = ROOT.TFile.Open(config.plotsOutname, 'recreate')
 
@@ -809,29 +826,29 @@ if __name__ == '__main__':
             if not pdf:
                 break
 
-            hmods = {}
-            normMods = {}
+            hvars = {}
+            normVars = {}
 
-            unc = workspace.function('unc_' + pdf.GetName() + '_norm')
-            if unc:
-                # normalization given to this PDF has associated uncertainties
+            mod = workspace.function('mod_' + pdf.GetName() + '_norm')
+            if mod:
+                # normalization given to this PDF has associated variations
 
-                # loop over all modifiers
-                mods = unc.components()
-                modItr = mods.iterator()
+                # loop over all variations
+                variations = mod.components()
+                varItr = variations.iterator()
                 while True:
-                    mod = modItr.Next()
-                    if not mod:
+                    var = varItr.Next()
+                    if not var:
                         break
 
-                    uncertName = mod.GetName().replace('mod_' + pdf.GetName() + '_norm_', '')
-                    normMods[uncertName] = mod
-                    hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+                    varName = var.GetName().replace('var_' + pdf.GetName() + '_norm_', '')
+                    normVars[varName] = var
+                    hvars[varName] = ROOT.TH1D(pdf.GetName() + '_' + varName, '', len(binning) - 1, binning)
 
             # test to determine PDF type
             # if mu is a RooRealVar -> simplest case; static PDF
-            # if mu = raw x unc and raw is a RooRealVar -> dynamic PDF, not linked
-            # if mu = raw x unc and raw is a function -> linked from another sample
+            # if mu = raw x mod and raw is a RooRealVar -> dynamic PDF, not linked
+            # if mu = raw x mod and raw is a function -> linked from another sample
 
             bin1Name = '%s_bin1' % pdf.GetName()
 
@@ -880,30 +897,34 @@ if __name__ == '__main__':
 
                 totalUncert2 = 0.
 
-                for uncertName, mod in normMods.items():
-                    # modRelUncert2 is used for convenience - all mods here should have a single parameter.
+                for varName, var in normVars.items():
+                    if varName.startswith('freenorm'):
+                        # don't plot free normalizations
+                        continue
+
+                    # modRelUncert2 is used for convenience - all vars here should have a single parameter.
                     # also, TF-based pdf should not have norm mods - OK to not consider "if isTF".
-                    uncert2 = modRelUncert2(mod) * val * val
-                    hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                    uncert2 = modRelUncert2(var) * val * val
+                    hvars[varName].SetBinContent(ibin, math.sqrt(uncert2))
 
                     totalUncert2 += uncert2
 
-                unc = workspace.function('unc_' + binName)
-                if unc:
-                    # loop over all modifiers for this bin
-                    mods = unc.components()
-                    modItr = mods.iterator()
+                mod = workspace.function('mod_' + binName)
+                if mod:
+                    # loop over all variations for this bin
+                    variations = mod.components()
+                    varItr = variations.iterator()
                     while True:
-                        mod = modItr.Next()
-                        if not mod:
+                        var = varItr.Next()
+                        if not var:
                             break
 
-                        uncert2 = modRelUncert2(mod) * val * val
+                        uncert2 = modRelUncert2(var) * val * val
 
                         if uncert2 > 1000.:
-                            print modRelUncert2(mod), val, pdf.GetName(), mod.GetName()
+                            print modRelUncert2(var), val, pdf.GetName(), var.GetName()
 
-                        if mod.GetName().endswith('_stat'):
+                        if var.GetName().endswith('_stat'):
                             if isTF: # nominal is 1/value - d(1/f) = -df/f^2.
                                 if val > 0.:
                                     hnominal.SetBinError(ibin, math.sqrt(uncert2) / val / val)
@@ -912,14 +933,14 @@ if __name__ == '__main__':
                             else:
                                 hnominal.SetBinError(ibin, math.sqrt(uncert2))
                         else:
-                            uncertName = mod.GetName().replace('mod_' + binName + '_', '')
-                            if uncertName not in hmods:
-                                hmods[uncertName] = ROOT.TH1D(pdf.GetName() + '_' + uncertName, '', len(binning) - 1, binning)
+                            varName = var.GetName().replace('var_' + binName + '_', '')
+                            if varName not in hvars:
+                                hvars[varName] = ROOT.TH1D(pdf.GetName() + '_' + varName, '', len(binning) - 1, binning)
 
                             if isTF:
-                                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2) / val / val)
+                                hvars[varName].SetBinContent(ibin, math.sqrt(uncert2) / val / val)
                             else:
-                                hmods[uncertName].SetBinContent(ibin, math.sqrt(uncert2))
+                                hvars[varName].SetBinContent(ibin, math.sqrt(uncert2))
 
                         # total uncertainty includes stat
                         totalUncert2 += uncert2
@@ -940,12 +961,12 @@ if __name__ == '__main__':
             if hasUncert:
                 huncert.SetDirectory(plotsFile)
                 huncert.Write()
-            for h in hmods.values():
+            for h in hvars.values():
                 h.SetDirectory(plotsFile)
                 h.Write()
 
-            hmods.clear()
-            normMods.clear()
+            hvars.clear()
+            normVars.clear()
 
         allData = workspace.allData()
         """

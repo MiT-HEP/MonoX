@@ -9,45 +9,24 @@ sys.path.append(basedir)
 import datasets
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
-distribution = 'phoPtHighMet'
-
-sourcedir = workdir + '/plots'
 fitdir = workdir + '/fit'
-outname = fitdir + '/ws_' + distribution + '.root'
-plotsOutname = fitdir + '/ws_' + distribution + '_plots.root'
-carddir = fitdir + '/datacards'
-
-filename = '{region}.root'
-histname = distribution + '/{process}'
-signalHistname = distribution + '/samples/{process}_monoph'
-
-# sr = 'bmonoph' # blinded version
+distribution = 'phoPtHighMet'
 sr = 'monophHighPhi'
-
-regions = [sr, 
-           'monophLowPhi', 
-           'monoel', 
-           'monomu', 
-           'diel', 
-           'dimu', 
-           # 'diph',
-           # 'lowdphi', 
-           # 'lowmt',
-           ]
-data = 'data_obs' # name of data process
-processes = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike'] + ['halo']
-xtitle = 'p_{T}^{#gamma} (GeV)'
-binWidthNormalized = False
 
 snames = ['add-3-8'] # , 'dmvlo-*']
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
 
-# Links between samples. List of tuples.
-# The first sample (=target) of the tuple is represented by (transfer factor) * (second sample (=source)).
-# In the fit, the normalization of the source and the transfer factors are allowed to float, with constraints
-# on the transfer factors.
+regions = [
+    sr,
+    'monophLowPhi',
+    'monoel',
+    'monomu',
+    'diel',
+    'dimu'
+]
+
 links = [
     (('zg', 'diel'), ('zg', sr)),
     (('zg', 'dimu'), ('zg', sr)),
@@ -65,15 +44,9 @@ links = [
 #    (('wg', 'lowdphi'), ('wg', sr))
 ]
 
-# Sample with free normalization that are not involved in links.
-floats = []
-
-# Sample with free normalization involved in links
-freeNorms = [ ('halo', 'monophHighPhi') ]
-
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
 wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWK']
-gjIgnoreList = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'minorQCDScale'],
+gjIgnoreList = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'minorQCDScale']
 
 ignoredNuisances = {
     ('zg', 'diel'): wzIgnoreListExp + wzIgnoreListThe, # leptonVetoSF ignored because it's supposed to be present in both SR and CR but is missing from CR
@@ -94,25 +67,43 @@ ignoredNuisances = {
 #    ('gjets', 'lowdphi'): gjIgnoreList,
 #    ('gjets', 'monophLowPhi'): gjIgnoreList,
 #    ('gjets', 'monophHighPhi'): gjIgnoreList,
-
-
 }
 
-# Artificial bin-to-bin decorrelation (de-shaping)
-deshapedNuisances = [
-#     'EWK',
-]
-
-# Correlation in ratios.
-# {(target, source, nuisance): correlation}
 ratioCorrelations = {
     (('wg', sr), ('zg', sr), 'vgQCDscale'): 1.,
     (('wg', sr), ('zg', sr), 'vgPDF'): 1.,
-    (('wg', sr), ('zg', sr), 'EWK'): 1.
 }
 
 # Nuisances affecting normalization only
-#scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF', 'egFakerate', 'haloNorm', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
-scaleNuisances = ['lumi', 'photonSF', 'pixelVetoIDSF', 'leptonVetoSF', 'egFakerate', 'spikeNorm', 'minorQCDScale', 'muonSF', 'electronSF'] # lepton SF also flat for now
+scaleNuisances = [
+    'lumi',
+    'photonSF',
+    'customIDSF',
+    'leptonVetoSF',
+    'egFakerate',
+    'haloNorm',
+    'spikeNorm',
+    'minorQCDScale',
+    'muonSF', # lepton SF also flat for now
+    'electronSF' # lepton SF also flat for now
+]
 
-# def customize(workspace):
+
+config = WorkspaceConfig(
+    sourcename = workdir + '/plots/{region}.root',
+    outname = fitdir + '/ws_' + distribution + '.root',
+    plotsOutname = fitdir + '/ws_' + distribution + '_plots.root',
+    carddir = fitdir + '/datacards',
+    cardname = 'monoph_{signal}.dat',
+    histname = distribution + '/{process}',
+    signalHistname = distribution + '/samples/{process}_{region}',
+    regions = regions,
+    bkgProcesses = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike', 'halo'],
+    signals = signals,
+    xtitle = 'p_{T}^{#gamma} (GeV)',
+    links = links,
+    staticBase = [('halo', 'monophLowPhi')],
+    ignoredNuisances = ignoredNuisances,
+    ratioCorrelations = ratioCorrelations,
+    scaleNuisances = scaleNuisances
+)
