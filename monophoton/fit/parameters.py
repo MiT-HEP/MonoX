@@ -13,7 +13,11 @@ fitdir = workdir + '/fit'
 distribution = 'phoPtHighMet'
 sr = 'monophHighPhi'
 
-snames = ['add-3-8'] # , 'dmvlo-*']
+snames = [
+    'add-3-4',
+#    'dmvlo-*'
+]
+
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
@@ -87,7 +91,6 @@ scaleNuisances = [
     'muonSF', # lepton SF also flat for now
     'electronSF' # lepton SF also flat for now
 ]
-
 
 config = WorkspaceConfig(
     sourcename = workdir + '/plots/{region}.root',

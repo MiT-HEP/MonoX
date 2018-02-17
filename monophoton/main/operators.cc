@@ -179,26 +179,10 @@ EventVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 bool
 MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  bool fired[] = {
-    _event.metFilters.globalHalo16,
-    _event.metFilters.hbhe,
-    _event.metFilters.hbheIso,
-    _event.metFilters.badsc,
-    _event.metFilters.ecalDeadCell,
-  };
-
-  for (unsigned iF(0); iF != sizeof(fired) / sizeof(Bool_t); ++iF) {
-    if (fired[iF]) {
-      if (filterConfig_[iF] == 1)
-        return false;
-    }
-    else {
-      if (filterConfig_[iF] == -1)
-        return false;
-    }
-  }
-
-  return true;
+  if (_event.metFilters.pass() && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons)
+    return true;
+  else
+    return false;
 }
 
 //--------------------------------------------------------------------

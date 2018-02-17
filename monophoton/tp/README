@@ -56,7 +56,7 @@
       do
         while true
         do
-          echo $bin $conf $type 1000 $seed >> syst_args.txt
+          echo $bin $conf $type 200 $seed >> syst_args.txt
           seed=$(($seed+1))
           [ $(($seed%2)) -eq 0 ] && break
         done

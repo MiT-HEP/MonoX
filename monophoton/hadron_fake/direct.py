@@ -18,7 +18,7 @@ from datasets import allsamples
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 ROOT.gStyle.SetOptStat(0)
 
-MAKE_TEMPLATES = False
+MAKE_TEMPLATES = True
 
 ptBinning = [80, 90, 100, 115, 130, 150, 600]
 

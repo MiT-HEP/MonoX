@@ -55,7 +55,6 @@ def getConfigGGH(confName):
                 config.addObs(sname)
 
         config.baseline = baseSel 
-#        config.fullSelection = 'photons.mt[0] > 100. && photons.mt[0] < 150.'
 
         config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
         config.addSig('dphv', 'Dark Photon (VBF)', samples = ['dphv-*'], scale = 0.1)

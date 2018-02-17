@@ -121,7 +121,7 @@ for iBin, (bin, _) in enumerate(fitBins):
                 sigshift[conf] = altsig.GetMean()
             if altbkg:
                 bkgshift[conf] = altbkg.GetMean()
-
+                
         err2 += math.pow(max(abs(sigshift[conf]), abs(bkgshift[conf])) * nZ, 2.)
 
         yields[conf].SetBinError(iBin + 1, math.sqrt(err2))
@@ -146,6 +146,9 @@ for iBin, (bin, _) in enumerate(fitBins):
             trueYields[conf].SetBinContent(iBin + 1, integral)
             trueYields[conf].SetBinError(iBin + 1, math.sqrt(err2))
             print conf, iBin, integral, math.sqrt(err2), math.sqrt(err2) / integral
+
+            if not uncSource:
+                stat2 += err2 / integral / integral
 
     ratio = yields[meas[1]].GetBinContent(iBin + 1) / yields[meas[0]].GetBinContent(iBin + 1)
 
@@ -215,31 +218,39 @@ canvas.addHistogram(result, drawOpt = 'EP')
 
 
 if ADDFIT:
+    contents = {}
+
+    print result.GetBinContent(1), result.GetBinError(1)
+
     # exclude bins 42 < pT < 48
-    errors = {}
     ibin = result.FindFixBin(42.)
     while ibin <= result.FindFixBin(48.):
-        errors[ibin] = result.GetBinError(ibin)
+        contents[ibin] = (result.GetBinContent(ibin), result.GetBinError(ibin))
+#        result.SetBinContent(ibin, 0.)
         result.SetBinError(ibin, 1.e+6)
         ibin += 1
 
-    power = ROOT.TF1('power', '[0] + [1] / ((x - [3])- [2])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
-    power.SetParameters(0.01, 1., 10., binning[0])
-    power.FixParameter(3, binning[0])
-    power.SetParLimits(2, -500., 0.)
+    power = ROOT.TF1('power', '[0] + [1] * TMath::Power(x - [2], [3])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
+    power.SetParameters(0.01, 1., 10., -1.)
+    power.SetParLimits(0, 0.005, 0.03)
+    power.SetParLimits(1, 0.01, 3.)
+    power.SetParLimits(2, -500., 500.)
+    power.SetParLimits(3, -5., 0.)
     result.Fit(power)
     canvas.addObject(power)
 
-    for ibin, err in errors.items():
-        result.SetBinError(ibin, err)
-
-    text = 'f = %.4f + #frac{%.3f}{(p_{T} - %.0f)' % (power.GetParameter(0), power.GetParameter(1), binning[0])
+    text = 'f = %.4f + %.3f#times(p_{T} ' % (power.GetParameter(0), power.GetParameter(1))
     if power.GetParameter(2) >= 0.:
-        text += ' - %.2f}' % power.GetParameter(2)
+        text += ' - '
     else:
-        text += ' + %.2f}' % (-power.GetParameter(2))
+        text += ' + '
+    text += '%.2f)^{%.2f}' % (abs(power.GetParameter(2)), power.GetParameter(3))
 
-    canvas.addText(text, 0.3, 0.3, 0.5, 0.2)
+    canvas.addText(text, 0.4, 0.15, 0.6, 0.2)
+
+    for ibin, (cont, err) in contents.items():
+        result.SetBinContent(ibin, cont)
+        result.SetBinError(ibin, err)
 
 canvas.xtitle = binningTitle
 canvas.printWeb(outputName, PRODUCT + '_' + dataType + '_' + binningName, logy = False)

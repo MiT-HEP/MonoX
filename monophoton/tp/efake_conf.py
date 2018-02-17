@@ -49,7 +49,7 @@ skimConfig = {
     'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
 #    'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
     'mudata': (['smu-16c-m'], ['kME']),
-    'mc': (dy50 + ['wglo'], ['kEG', 'kMG', 'kMMG']),
+    'mc': (dy50 + ['wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcmu': (dy50, ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
