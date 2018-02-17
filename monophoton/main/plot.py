@@ -5,6 +5,38 @@ sys.dont_write_bytecode = True
 import os
 import math
 import re
+import collections
+
+def makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel):
+    plotter = ROOT.MultiDraw()
+    plotter.addInputPath(sourceName)
+
+    cuts = []
+    if plotConfig.baseline.strip():
+        if group.altbaseline.strip():
+            cuts.append('(' + group.altbaseline.strip() + ')')
+        else:
+            cuts.append('(' + plotConfig.baseline.strip() + ')')
+
+    baseSel = ' && '.join(cuts)
+
+    if printLevel > 0:
+        print '      Baseline selection:', baseSel
+        print '      Full selection:', plotConfig.fullSelection.strip()
+
+    plotter.setBaseSelection(baseSel)
+    plotter.setFullSelection(plotConfig.fullSelection.strip())
+
+    if not sample.data:
+        plotter.setConstantWeight(lumi)
+
+    if group == plotConfig.obs:
+        plotter.setPrescale(plotConfig.prescales[sample])
+
+    plotter.setPrintLevel(printLevel)
+
+    return plotter
+    
 
 def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0, altSourceDir = ''):
     if group.region:
@@ -12,7 +44,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
     else:
         region = plotConfig.name
 
-    histograms = {} # {(sample, plotdef, variation): histogram}
+    histograms = collections.OrderedDict() # {(sample, plotdef, variation, direction): histogram}
 
     # run the Plotter for each sample
     for sample in group.samples:
@@ -25,34 +57,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         if not os.path.exists(sourceName):
             sys.stderr.write('File ' + sourceName + ' does not exist.\n')
             raise RuntimeError('InvalidSource')
-   
-        plotter = ROOT.MultiDraw()
-        plotter.addInputPath(sourceName)
-        plotter.setPrintLevel(printLevel)
 
-        cuts = []
-        if plotConfig.baseline.strip():
-            if group.altbaseline.strip():
-                cuts.append('(' + group.altbaseline.strip() + ')')
-            else:
-                cuts.append('(' + plotConfig.baseline.strip() + ')')
+        plotter = makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel)
+        varPlotters = {} # additional plotters for variations of sample type
 
-        baseSel = ' && '.join(cuts)
-
-        if printLevel > 0:
-            print '      Baseline selection:', baseSel
-            print '      Full selection:', plotConfig.fullSelection.strip()
-
-        plotter.setBaseSelection(baseSel)
-        plotter.setFullSelection(plotConfig.fullSelection.strip())
-
-        if not sample.data:
-            plotter.setConstantWeight(lumi)
-
-        if group == plotConfig.obs:
-            plotter.setPrescale(plotConfig.prescales[sample])
-
-        numPlots = 0
         for plotdef in plotdefs:
             if not outFile.GetDirectory(plotdef.name):
                 outFile.mkdir(plotdef.name)
@@ -62,7 +70,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 outDir = outFile.GetDirectory(plotdef.name).mkdir('samples')
 
             hist = plotdef.makeHist(dname, outDir = outDir)
-            histograms[(sample, plotdef, None)] = hist
+            histograms[(sample, plotdef, None, None)] = hist
 
             if group == plotConfig.obs and plotdef.fullyBlinded():
                 continue
@@ -91,13 +99,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 plotdef.overflow
             )
 
-            numPlots += 1
-    
             # systematic variations
             for variation in group.variations:
                 for iv, direction in [(0, 'Up'), (1, 'Down')]:
                     hist = plotdef.makeHist(dname + '_' + variation.name + direction, outDir = outDir)
-                    histograms[(sample, plotdef, variation.name + direction)] = hist
+                    histograms[(sample, plotdef, variation, direction)] = hist
     
                     if type(variation.reweight) is str:
                         reweight = 'reweight_' + variation.reweight + direction
@@ -123,7 +129,17 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     else:
                         expr = plotdef.formExpression()
 
-                    plotter.addPlot(
+                    if variation.regions is not None:
+                        try:
+                            varPlotter = varPlotters[hist.GetName()]
+                        except KeyError:
+                            varSourceName = utils.getSkimPath(sample.name, variation.regions[iv], sourceDir, altSourceDir)
+                            varPlotter = makePlotter(varSourceName, plotConfig, group, sample, lumi, printLevel)
+                            varPlotters[hist.GetName()] = varPlotter
+                    else:
+                        varPlotter = plotter
+
+                    varPlotter.addPlot(
                         hist,
                         expr,
                         cut.strip(),
@@ -133,17 +149,18 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         plotdef.overflow
                     )
 
-                    numPlots += 1
-
         # setup complete. Fill all plots in one go
-        if numPlots != 0:
+        if plotter.numObjs() != 0:
             plotter.fillPlots()
 
-    if group.norm >= 0.:
-        normalization = sum(hist.GetBinContent(1) for (_, plotdef, variation), hist in histograms.items() if plotdef.name == 'count' and variation is None)
-        print 'normalization', normalization
+        for varname, varPlotter in varPlotters.items():
+            if varPlotter.numObjs() != 0:
+                varPlotter.fillPlots()
 
-    for (sample, plotdef, _), hist in histograms.items():
+    if group.norm >= 0.:
+        normalization = sum(hist.GetBinContent(1) for (_, plotdef, variation, direction), hist in histograms.items() if plotdef.name == 'count' and variation is None)
+
+    for (sample, plotdef, variation, _), hist in histograms.items():
         # ad-hoc scaling
         hist.Scale(group.scale)
 
@@ -153,6 +170,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
         if sample.data and group != plotConfig.obs:
             # this is a data-driven background sample
             hist.Scale(postscale)
+
+        # histograms is an ordered dict -> nominal histogram always comes before the variations
+        if variation and variation.normalize and hist.GetSumOfWeights() > 0.:
+            nominal = histograms[(sample, plotdef, None, None)]
+            hist.Scale(nominal.GetSumOfWeights() / hist.GetSumOfWeights())
 
         # zero out negative bins (save the original as _orig)
         horig = None
@@ -219,6 +241,14 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     sdownhist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Down')
                     uphist.Add(suphist)
                     downhist.Add(sdownhist)
+
+                if variation.normalize:
+                    # individual sample variation plots are normalized to corresponding sample nominal already
+                    # in the fringe case where sample variation has SumWeight of 0, the sample-level normalization
+                    # does not work, leading to sum of SumWeights of variation samples not being equal to nominal
+                    # total. We therefore re-normalize the variation at group level here.
+                    uphist.Scale(ghist.GetSumOfWeights() / uphist.GetSumOfWeights())
+                    downhist.Scale(ghist.GetSumOfWeights() / downhist.GetSumOfWeights())
 
                 writeHist(uphist)
                 writeHist(downhist)
@@ -489,9 +519,11 @@ if __name__ == '__main__':
     argParser = ArgumentParser(description = 'Plot and count')
     argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot config name.')
     argParser.add_argument('--all-signal', '-S', action = 'store_true', dest = 'allSignal', help = 'Write histogram for all signal points.')
-    argParser.add_argument('--asimov', '-v', metavar = '(background|<signal>)', dest = 'asimov', default = '', help = 'Plot the total background or signal + background as the observed distribution. For signal + background, give the signal point name.')
+    argParser.add_argument('--asimov', '-v', metavar = '(background|<signal>)', dest = 'asimov', help = 'Plot the total background or signal + background as the observed distribution. For signal + background, give the signal point name.')
+    argParser.add_argument('--use-variation', '-z', metavar = 'GROUP:VARIATION', dest = 'asimov_variation', nargs = '+', default = [], help = 'Use with --asimov option to inject variation of the group to the pseudo-data instead of nominal.')
     argParser.add_argument('--bin-by-bin', '-y', metavar = 'PLOT', dest = 'bbb', default = '', help = 'Print out bin-by-bin breakdown of the backgrounds and observation.')
-    argParser.add_argument('--blind', '-B', action = 'store_true', dest = 'blind', help = 'Do not plot the observed distribution.')
+    argParser.add_argument('--blind', '-B', action = 'store_true', dest = 'blind', help = 'Do not plot the observed distribution at all.')
+    argParser.add_argument('--unblind', '-U', action = 'store_true', dest = 'unblind', help = 'Ignore the blind option of plot configs.')
     argParser.add_argument('--chi2', '-x', metavar = 'PLOT', dest = 'chi2', default = '', help = 'Compute the chi2 for the plot.')
     argParser.add_argument('--clear-dir', '-R', action = 'store_true', dest = 'clearDir', help = 'Clear the plot directory first.')
     argParser.add_argument('--hist-file', '-o', metavar = 'PATH', dest = 'histFile', default = '', help = 'Histogram output file.')
@@ -562,9 +594,9 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if args.bbb:
-        plotdefs = set([plotConfig.getPlot(args.bbb)])
+        plotdefs = [plotConfig.getPlot(args.bbb)]
     elif args.chi2:
-        plotdefs = set([plotConfig.getPlot(args.chi2)])
+        plotdefs = [plotConfig.getPlot(args.chi2)]
     elif len(args.plots) != 0:
         plotdefs = set()
         if 'sensitive' in args.plots:
@@ -578,15 +610,26 @@ if __name__ == '__main__':
 
         if len(args.plots) != 0:
             plotdefs.update(plotConfig.getPlots(args.plots))
-    else:
-        plotdefs = set(plotConfig.getPlots())
 
-    plotdefs.add(plotConfig.getPlot('count'))
+        plotdefs = list(plotdefs)
+    else:
+        plotdefs = plotConfig.getPlots()
+
+    if plotConfig.getPlot('count') not in plotdefs:
+        plotdefs.append(plotConfig.getPlot('count'))
 
     plotNames = [p.name for p in plotdefs]
 
+    if args.unblind:
+        for plotdef in plotdefs:
+            plotdef.blind = None
+
     if args.blind:
         for plotdef in plotdefs:
+            plotdef.blind = 'full'
+
+    for plotdef in plotdefs:
+        if plotdef.sensitive and plotdef.blind is None:
             plotdef.blind = 'full'
 
     if args.histFile:
@@ -610,8 +653,7 @@ if __name__ == '__main__':
         if args.asimov == 'background':
             pass
         elif args.asimov in [s.name for s in plotConfig.signalPoints]:
-            print 'Feature under construction.'
-            sys.exit(0)
+            pass
         else:
             print 'Invalid value for option --asimov.'
             sys.exit(1)
@@ -669,13 +711,43 @@ if __name__ == '__main__':
             writeHist(bkghist)
             writeHist(bkghistSyst)
 
-            if args.asimov == 'background':
+            if args.asimov:
                 # generate the "observed" distribution from background total
                 obshist = plotdef.makeHist('data_obs', outDir = outDir)
+
+                for varspec in args.asimov_variation:
+                    # example: fakemet:fakemetShapeUp:5
+                    words = varspec.split(':')
+                    gname, varname = words[:2]
+                    if len(words) > 2:
+                        scale = float(words[2])
+                    else:
+                        scale = 1.
+
+                    nominal = outDir.Get(gname)
+                    if varname:
+                        varhist = outDir.Get(gname + '_' + varname)
+                    else:
+                        varhist = nominal
+                    
+                    if not nominal or not varhist:
+                        print 'Invalid variation specified for pseudo-data:', varspec
+                        continue
+
+                    bkghist.Add(nominal, -1.)
+                    bkghist.Add(varhist, scale)
+
                 for iBin in xrange(1, bkghist.GetNbinsX() + 1):
                     x = bkghist.GetXaxis().GetBinCenter(iBin)
                     for _ in xrange(int(round(bkghist.GetBinContent(iBin)))):
                         obshist.Fill(x)
+
+                if args.asimov != 'background':
+                    sighist = outDir.Get('samples/' + args.asimov + '_' + plotConfig.name)
+                    for iBin in xrange(1, sighist.GetNbinsX() + 1):
+                        x = sighist.GetXaxis().GetBinCenter(iBin)
+                        for _ in xrange(int(round(sighist.GetBinContent(iBin)))):
+                            obshist.Fill(x)
 
                 writeHist(obshist)
 
