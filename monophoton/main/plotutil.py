@@ -291,14 +291,16 @@ class PlotConfig(object):
         return next(plot for plot in self.plots if plot.name == name)
 
     def getPlots(self, names = []):
+        # reverse so that count comes at last
+
         if len(names) != 0:
             plots = []
-            for plot in self.plots:
+            for plot in reversed(self.plots):
                 if plot.name in names:
                     plots.append(plot)
 
         else:
-            plots = list(self.plots)
+            plots = list(reversed(self.plots))
 
         return plots
 
@@ -319,14 +321,20 @@ class Variation(object):
     Alternatively reweight can be specified as a string or a value. See comments below.
     """
 
-    def __init__(self, name, cuts = None, replacements = None, reweight = None):
+    def __init__(self, name, normalize = False, cuts = None, replacements = None, regions = None, reweight = None):
         self.name = name
+        # normalize:
+        #  set integral of the variation to the integral of nominal
+        self.normalize = normalize
         # cuts:
         #  a 2-tuple (Up & Down) of cuts to be applied
         self.cuts = cuts
         # replacements:
         #  a 2-tuple (Up & Down) of list of 2-tuples (variable replacements (original, replaced))
         self.replacements = replacements
+        # regions:
+        #  a 2-tuple (Up & Down) of strings (region names)
+        self.regions = regions
         # reweight:
         #  single float -> scale up and down uniformly.
         #  string -> use branches 'reweight_%sUp' & 'reweight_%sDown'. Output suffix _{name}Up & _{name}Down
