@@ -28,7 +28,7 @@ Once inputs are defined, specify the links between samples and special treatment
 the histogram names following the convention given above.
 All nuisances where histograms are defined will be included in the workspace, regardless of whether they are "shape" or "scale" type nuisances. Thus the datacard will not contain
 the nuisance-process matrix and instead will list all the nuisances as "param"s.
-If the parameter card defines a variable carddir, data cards are written to the path specified in the variable, one card per signal model.
+If the parameter card defines a variable cardname, data cards are written to the path specified in the variable, one card per signal model.
 If the parameter card defines a variable plotOutname, a ROOT file is created under the given name with the visualization of the workspace content as TH1's.
 """
 
@@ -194,6 +194,10 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
         histname = config.histname.format(process = config.data, region = region)
 
         hist = sourceDir.Get(histname)
+        if not hist:
+            print histname, 'not found'
+            sys.exit(1)
+
         hist.SetDirectory(hstore)
 
         if config.binWidthNormalized:
@@ -630,11 +634,12 @@ if __name__ == '__main__':
     x = workspace.var('x')
 
     ## DATACARDS
-    if config.carddir:
+    if config.cardname:
         print 'Writing data cards'
 
-        if not os.path.isdir(config.carddir):
-            os.makedirs(config.carddir)
+        carddir = os.path.dirname(config.cardname)
+        if not os.path.isdir(carddir):
+            os.makedirs(carddir)
 
         # sort samples
 
@@ -675,12 +680,16 @@ if __name__ == '__main__':
 
         hrule = '-' * 140
 
+        # combine likes to have relative path to the workspace (matters when using combineCards.py)
+        ws_abs_path = os.path.realpath(config.outname)
+        ws_path = os.path.relpath(ws_abs_path, carddir)
+
         lines = [
             'imax * number of bins',
             'jmax * number of processes minus 1',
             'kmax * number of nuisance parameters',
             hrule,
-            'shapes * * ' + os.path.realpath(config.outname) + ' wspace:$PROCESS_$CHANNEL',
+            'shapes * * %s wspace:$PROCESS_$CHANNEL' % ws_path,
             hrule,
         ]
 
@@ -756,12 +765,9 @@ if __name__ == '__main__':
                 else:
                     cardlines.append(nuisance + ' param 0 1')
 
-            if config.cardname:
-                cardname = config.cardname.format(signal = signal)
-            else:
-                cardname = signal + '.dat'
+            cardname = config.cardname.format(signal = signal)
 
-            with open(config.carddir + '/' + cardname, 'w') as datacard:
+            with open(cardname, 'w') as datacard:
                 for line in cardlines:
                     if '{signal}' in line:
                         line = line.format(signal = signal)
@@ -769,8 +775,6 @@ if __name__ == '__main__':
                     datacard.write(line + '\n')
             
             print ' ', signal, '-->', cardname
-
-        print 'Cards saved to', config.carddir
 
     ## PLOTS
     if config.plotsOutname:
