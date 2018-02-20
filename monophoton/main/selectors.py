@@ -74,7 +74,8 @@ def monophotonSetting():
         'Time',
         'SieieNonzero',
         'SipipNonzero',
-        'NoisyRegion'
+        'NoisyRegion',
+        'R9Unity'
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
     selconf['photonIDTune'] = ROOT.idtune

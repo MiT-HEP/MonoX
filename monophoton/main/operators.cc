@@ -565,6 +565,7 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
   cutres[PhIsoTight] = _photon.passPhIso(2, idTune_);
   cutres[Sieie05] = (_photon.sieie < 0.005);
   cutres[Sipip05] = (_photon.sipip < 0.005);
+  cutres[R9Unity] = (_photon.r9 < 1.0);
 
   cutres[ChargedPFVeto] = true;
   for (auto* cand : chargedCands_) {
