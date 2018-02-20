@@ -3,7 +3,7 @@ import workspace_config as wc
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-distribution = 'imt'
+distribution = 'mt'
 
 wc.config = wc.WorkspaceConfig(
     sourcename = basedir + '/data/zh_results.root',
@@ -14,6 +14,7 @@ wc.config = wc.WorkspaceConfig(
     regions = ['zhg'],
     bkgProcesses = ['EM', 'VVV', 'ZZ', 'Zjets', 'WZ'],
     signals = ['dph-nlo-125'],
+    xname = 'mtzh',
     xtitle = 'm_{T}^{#gamma} (GeV)',
     scaleNuisances = ['lumi', 'photonSF', 'zh_triggerSF']
 )

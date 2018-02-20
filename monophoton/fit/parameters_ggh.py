@@ -6,7 +6,7 @@ fitdir = workdir + '/fit'
 distribution = 'mtPhoMet'
 
 wc.config = wc.WorkspaceConfig(
-    sourcename = workdir + '/plots/gghgNoFake_blind_combined.root',
+    sourcename = workdir + '/plots/gghgNoFake_background_combined.root',
     outname = fitdir + '/ws_gghg_' + distribution + '.root',
     plotsOutname = fitdir + '/ws_gghg_' + distribution + '_plots.root',    
     cardname = fitdir + '/datacards/gghg_{signal}.dat',
@@ -16,6 +16,7 @@ wc.config = wc.WorkspaceConfig(
 #    bkgProcesses = ['efake', 'wg', 'zg', 'gjets', 'hfake', 'top', 'gg', 'fakemet'],
     bkgProcesses = ['efake', 'wg', 'zg', 'gjets', 'hfake', 'top', 'gg'],
     signals = ['dph-nlo-125'],
+    xname = 'mtggh',
     xtitle = 'm_{T}({#gamma, E_{T}^{miss}) (GeV)',
     floatProcesses = ['fakemet'],
     scaleNuisances = ['lumi', 'photonSF', 'pixelVetoIDSF', 'leptonVetoSF', 'egfakerate', 'minorQCDScale'],

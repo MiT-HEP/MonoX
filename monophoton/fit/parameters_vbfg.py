@@ -14,6 +14,7 @@ wc.config = wc.WorkspaceConfig(
     regions = ['vbfg'],
     bkgProcesses = ['gjets', 'efake', 'zg', 'wg', 'hfake', 'top'],
     signals = ['signal'],
+    xname = 'mtvbfh',
     xtitle = 'm_{T}^{#gamma} (GeV)',
     scaleNuisances = ['lumi', 'photonSF', 'customIDSF', 'leptonVetoSF']
 )
