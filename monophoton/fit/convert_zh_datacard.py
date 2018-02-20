@@ -12,7 +12,8 @@ ROOT.gSystem.Load('libRooFitCore.so')
 
 outputFile = ROOT.TFile.Open(basedir + '/data/zh_results.root', 'recreate')
 
-outputDir = outputFile.mkdir('imt')
+outputDir = outputFile.mkdir('mt')
+binning = [0., 75., 100., 125., 150., 175.]
 
 with open(basedir + '/data/zh_datacard.dat') as source:
     while True:
@@ -25,8 +26,10 @@ with open(basedir + '/data/zh_datacard.dat') as source:
 
         elif line.startswith('imax'):
             nbins = int(line.split()[1])
+            if len(binning) - 1 != nbins:
+                raise RuntimeError('Inconsistent nbins')
 
-            template = ROOT.TH1D('template', '', nbins, array.array('d', [0. + x for x in range(nbins + 1)]))
+            template = ROOT.TH1D('template', '', nbins, array.array('d', binning))
 
         elif line.startswith('jmax'):
             nprocs = int(line.split()[1])
@@ -38,14 +41,16 @@ with open(basedir + '/data/zh_datacard.dat') as source:
                 outputDir.cd()
                 obs = template.Clone('data_obs')
                 for iw, word in enumerate(line.split()[1:]):
+                    x = obs.GetXaxis().GetBinCenter(iw + 1)
                     for _ in range(int(float(word))):
-                        obs.Fill(float(iw))
+                        obs.Fill(x)
 
                 obs.Write()
 
             else:
                 line = source.readline() # process
                 proc_names = line.split()[1:nprocs + 2]
+                proc_ids = []
 
                 outputDir.cd()
                 nominals = []
@@ -53,13 +58,16 @@ with open(basedir + '/data/zh_datacard.dat') as source:
                     proc_name = proc_names[iproc]
                     nominals.append(template.Clone(proc_name))
 
-                source.readline() # skip the process number line
+                line = source.readline()
+                for word in line.split()[1:]:
+                    proc_ids.append(int(word))
+
                 line = source.readline()
                 iproc = 0
                 ibin = 1
                 for word in line.split()[1:]:
                     cont = float(word)
-                    if proc_names[iproc] == 'dph-nlo-125':
+                    if proc_ids[iproc] <= 0:
                         cont *= 0.1 # gghg and vbfg uses 0.1*SM
 
                     nominals[iproc].SetBinContent(ibin, cont)
@@ -68,9 +76,14 @@ with open(basedir + '/data/zh_datacard.dat') as source:
                         iproc = 0
                         ibin += 1
 
+                bkgtotal = template.Clone('bkgtotal')
                 for iproc, nominal in enumerate(nominals):
                     # signal will be written to outputDir
                     nominal.Write()
+                    if proc_ids[iproc] > 0:
+                        bkgtotal.Add(nominal)
+
+                bkgtotal.Write()
 
         else: # nuisance
             words = line.split()
