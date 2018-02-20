@@ -276,7 +276,7 @@ if __name__ == '__main__':
 
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
-    x = fct('x[-1.e+10,1.e+10]')
+    x = fct('{xname}[-1.e+10,1.e+10]'.format(xname = config.xname))
 
     # binning
     h = sourcePlots[config.regions[0]]['data_obs']['nominal']
@@ -626,7 +626,7 @@ if __name__ == '__main__':
     wssource = ROOT.TFile.Open(config.outname)
     workspace = wssource.Get('wspace')
 
-    x = workspace.var('x')
+    x = workspace.var(config.xname)
 
     ## DATACARDS
     if config.cardname:

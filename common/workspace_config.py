@@ -55,6 +55,7 @@ class WorkspaceConfig(object):
         mandatory('outname')
         optional('cardname')
         optional('plotsOutname')
+        optional('xname', 'x')
         optional('xtitle')
 
         # physics
