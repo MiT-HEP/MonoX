@@ -6,10 +6,9 @@ distribution = 'mtPhoMet'
 
 config = WorkspaceConfig(
     sourcename = workdir + '/plots/{region}_combined.root',
-    outname = fitdir + '/ws_' + distribution + '.root',
-    plotsOutname = fitdir + '/ws_' + distribution + '_plots.root',    
-    carddir = fitdir + '/datacards',
-    cardname = 'gghg_{signal}.dat',
+    outname = fitdir + '/ws_gghg_' + distribution + '.root',
+    plotsOutname = fitdir + '/ws_gghg_' + distribution + '_plots.root',    
+    cardname = fitdir + '/datacards/gghg_{signal}.dat',
     histname = distribution + '/{process}',
     signalHistname = distribution + '/samples/{process}_{region}',
     regions = ['gghg'],

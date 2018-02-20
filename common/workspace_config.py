@@ -53,7 +53,6 @@ class WorkspaceConfig(object):
 
         # output
         mandatory('outname')
-        optional('carddir')
         optional('cardname')
         optional('plotsOutname')
         optional('xtitle')
