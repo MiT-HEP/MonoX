@@ -1,9 +1,10 @@
 import os
+import workspace_config as wc
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 distribution = 'mtFullSel'
 
-config = WorkspaceConfig(
+wc.config = wc.WorkspaceConfig(
     sourcename = workdir + '/plots/vbfglo_combined.root',
     outname = workdir + '/fit/ws_vbfg_' + distribution + '.root',
     plotsOutname = workdir + '/fit/ws_vbfg_' + distribution + '_plots.root',

@@ -47,7 +47,7 @@ class WorkspaceConfig(object):
         # input
         mandatory('sourcename')
         mandatory('histname')
-        optional('signalHistname', self.histname)
+        optional('signalHistname')
         optional('data', 'data_obs')
         optional('binWidthNormalized', False)
 
@@ -71,3 +71,6 @@ class WorkspaceConfig(object):
         optional('ratioCorrelations', {})
         optional('deshapedNuisances', [])
         optional('flatParams', [])
+
+# Set this to a WorkspaceConfig instance
+config = None

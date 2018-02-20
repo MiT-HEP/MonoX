@@ -1,10 +1,13 @@
 import os
 import sys
 
+import workspace_config as wc
+
 ## directories to include
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
-sys.path.append(basedir)
+if basedir not in sys.path:
+    sys.path.append(basedir)
 
 import datasets
 
@@ -92,7 +95,7 @@ scaleNuisances = [
     'electronSF' # lepton SF also flat for now
 ]
 
-config = WorkspaceConfig(
+wc.config = wc.WorkspaceConfig(
     sourcename = workdir + '/plots/{region}.root',
     outname = fitdir + '/ws_' + distribution + '.root',
     plotsOutname = fitdir + '/ws_' + distribution + '_plots.root',

@@ -43,15 +43,15 @@ import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
-from workspace_config import WorkspaceConfig
-
 if len(sys.argv) == 2:
     configPath = sys.argv[1]
 else:
     print 'Using configuration ' + os.getcwd() + '/parameters.py'
     configPath = os.getcwd() + '/parameters.py'
 
-execfile(configPath)
+execfile(configPath, {'__file__': os.path.realpath(configPath)})
+
+from workspace_config import config
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
@@ -207,7 +207,11 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
         for process in config.bkgProcesses + config.signals:
             sourceDir = openHistSource(config, process, region, sources)
 
-            histname = config.histname.format(process = process, region = region)
+            if process in config.signals and config.signalHistname:
+                histname = config.signalHistname.format(process = process, region = region)
+            else:
+                histname = config.histname.format(process = process, region = region)
+
             if '/' in histname:
                 # to automatically find all the variations, we need to do an "ls" of the directory
                 sourceDir = sourceDir.GetDirectory(os.path.dirname(histname))

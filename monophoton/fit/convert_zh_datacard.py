@@ -59,7 +59,7 @@ with open(basedir + '/data/zh_datacard.dat') as source:
                 ibin = 1
                 for word in line.split()[1:]:
                     cont = float(word)
-                    if proc_names[iproc] == 'signal':
+                    if proc_names[iproc] == 'dph-nlo-125':
                         cont *= 0.1 # gghg and vbfg uses 0.1*SM
 
                     nominals[iproc].SetBinContent(ibin, cont)
