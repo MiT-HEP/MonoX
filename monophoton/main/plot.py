@@ -620,16 +620,16 @@ if __name__ == '__main__':
 
     plotNames = [p.name for p in plotdefs]
 
+    for plotdef in plotdefs:
+        if plotdef.sensitive and plotdef.blind is None:
+            plotdef.blind = 'full'
+
     if args.unblind:
         for plotdef in plotdefs:
             plotdef.blind = None
 
     if args.blind:
         for plotdef in plotdefs:
-            plotdef.blind = 'full'
-
-    for plotdef in plotdefs:
-        if plotdef.sensitive and plotdef.blind is None:
             plotdef.blind = 'full'
 
     if args.histFile:
