@@ -2,6 +2,7 @@ import sys
 import os
 import array
 import logging
+import fnmatch
 
 needHelp = False
 for opt in ['-h', '--help']:
@@ -606,7 +607,13 @@ def vbfgBase(sample, rname):
         'JetCleaning',
         'DijetSelection',
         'BjetVeto',
-        'CopyMet',
+        'CopyMet'
+    ]
+
+    if not sample.data:
+        operators.append('MetVariations')
+
+    operators += [
         'AddTrailingPhotons',
         'PhotonMt',
         'PhotonMetDPhi',
@@ -633,6 +640,15 @@ def vbfgBase(sample, rname):
     jetCleaning.setCleanAgainst(ROOT.cTaus, False)
 
     if not sample.data:
+        metVar = selector.findOperator('MetVariations')
+        metVar.setPhotonSelection(photonSel)
+
+        photonDPhi = selector.findOperator('PhotonMetDPhi')
+        photonDPhi.setMetVariations(metVar)
+        
+        jetDPhi = selector.findOperator('JetMetDPhi')
+        jetDPhi.setMetVariations(metVar)
+
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
         selector.addOperator(ROOT.ConstantWeight(0.967, 'triggereff'))
 
@@ -2430,9 +2446,24 @@ def addKfactor(sample, selector):
     Apply the k-factor corrections.
     """
 
-    sname = sample.name.replace('gj04', 'gj').replace('-p', '-o').replace('gje', 'gj').replace('zllg', 'znng').replace('300-o', '130-o')
+    if sample.name in ['znng-130-o', 'zllg-130-o', 'zllg-300-o', 'wnlg-130-o', 'wnlg-130-p']:
+        sname = sample.name.replace('-p', '-o').replace('zllg', 'znng').replace('300-o', '130-o')
 
-    # temporarily don't apply QCD k-factor until we redrive for nlo samples
+        addQCDKfactor(sample, sname, selector)
+        addEWKKfactor(sample, sname, selector)
+
+    elif fnmatch.fnmatch(sample.name, 'gj-*') or fnmatch.fnmatch(sample.name, 'gj04-*') or fnmatch.fnmatch(sample.name, 'gje-*'):
+        sname = sample.name.replace('gj04', 'gj').replace('gje', 'gj')
+
+        addQCDKfactor(sample, sname, selector)
+    
+    elif sample.name == 'wglo':
+        corr = ROOT.TF1('kfactor', '1.45', 80., 600.)
+        qcd = ROOT.PhotonPtWeight(corr, 'QCDCorrection')
+        qcd.setPhotonType(ROOT.PhotonPtWeight.kParton)
+        selector.addOperator(qcd)
+
+def addQCDKfactor(sample, sname, selector):
     corr = getFromFile(datadir + '/kfactor.root', sname, newname = sname + '_kfactor')
     if not corr:
         raise RuntimeError('kfactor not found for ' + sample.name)
@@ -2451,6 +2482,7 @@ def addKfactor(sample, selector):
 
     selector.addOperator(qcd)
 
+def addEWKKfactor(sample, sname, selector):
     if sname.startswith('znng'):
         logger.info('applying ewk %s', sample.name)
 

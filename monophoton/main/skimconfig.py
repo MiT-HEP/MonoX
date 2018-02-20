@@ -78,7 +78,7 @@ allSelectors_byPattern = [
     ('zllg-130', mc_sig + mc_lep + mc_dilep),
     ('wnlg', mc_sig + mc_lep),
     ('wnlg-{130,500}', applyMod(mc_sig + mc_lep, s.addKfactor)),
-    ('wglo', mc_cand + mc_lep + [tpegLowPt, tpmgLowPt, 'vbfgWHadCtrl', 'vbfzee']),
+    ('wglo', applyMod(mc_cand + mc_lep + [tpegLowPt, tpmgLowPt, 'vbfgWHadCtrl', 'vbfzee'], s.addKfactor)),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
     ('znng-40-o', applyMod(mc_sig, s.ptTruncator(maximum = 130.))),
     ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto', 'trivialShower'], s.addKfactor)),
