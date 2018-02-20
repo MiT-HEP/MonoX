@@ -313,6 +313,7 @@ class PhotonSelection : public Cut {
     PhIsoTight,
     Sieie05,
     Sipip05,
+    R9Unity,
     nSelections
   };
 
