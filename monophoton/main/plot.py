@@ -620,16 +620,16 @@ if __name__ == '__main__':
 
     plotNames = [p.name for p in plotdefs]
 
+    for plotdef in plotdefs:
+        if plotdef.sensitive and plotdef.blind is None:
+            plotdef.blind = 'full'
+
     if args.unblind:
         for plotdef in plotdefs:
             plotdef.blind = None
 
-    if args.blind:
+    if args.blind or args.asimov:
         for plotdef in plotdefs:
-            plotdef.blind = 'full'
-
-    for plotdef in plotdefs:
-        if plotdef.sensitive and plotdef.blind is None:
             plotdef.blind = 'full'
 
     if args.histFile:
@@ -689,8 +689,7 @@ if __name__ == '__main__':
     
                 sspec.group.samples.append(sspec.sample)
 
-        if not args.asimov and not args.blind:
-            groups.append(plotConfig.obs)
+        groups.append(plotConfig.obs)
     
         for group in groups:
             print ' ', group.name
@@ -713,8 +712,6 @@ if __name__ == '__main__':
 
             if args.asimov:
                 # generate the "observed" distribution from background total
-                obshist = plotdef.makeHist('data_obs', outDir = outDir)
-
                 for varspec in args.asimov_variation:
                     # example: fakemet:fakemetShapeUp:5
                     words = varspec.split(':')
@@ -736,6 +733,9 @@ if __name__ == '__main__':
 
                     bkghist.Add(nominal, -1.)
                     bkghist.Add(varhist, scale)
+
+                # data_obs is empty at this point because blind is 'full'
+                obshist = outDir.Get('data_obs')
 
                 for iBin in xrange(1, bkghist.GetNbinsX() + 1):
                     x = bkghist.GetXaxis().GetBinCenter(iBin)
