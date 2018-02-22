@@ -88,6 +88,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
             cut = ' && '.join(plotCuts)
 
+            if plotdef.overflow:
+                overflowMode = ROOT.Plot.kLastBin
+            else:
+                overflowMode = ROOT.Plot.kNoOverflow
+
             # nominal distribution
             plotter.addPlot(
                 hist,
@@ -96,7 +101,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 plotdef.applyBaseline,
                 plotdef.applyFullSel,
                 '',
-                plotdef.overflow
+                overflowMode
             )
 
             # systematic variations
@@ -146,7 +151,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         plotdef.applyBaseline,
                         plotdef.applyFullSel,
                         reweight,
-                        plotdef.overflow
+                        overflowMode
                     )
 
         # setup complete. Fill all plots in one go
@@ -284,7 +289,15 @@ def writeHist(hist):
 def formatHist(hist, plotdef):
     # Label the axes and normalize bin contents by width
     if plotdef.ndim() == 1:
-        for iX in range(1, hist.GetNbinsX() + 1):
+        # we decided to merge the overflow into last bin content
+        # if plotdef.overflow:
+        #     nbins = hist.GetNbinsX() - 1
+        # else:
+        #     nbins = hist.GetNbinsX()
+
+        nbins = hist.GetNbinsX()
+
+        for iX in range(1, nbins + 1):
             cont = hist.GetBinContent(iX)
             err = hist.GetBinError(iX)
             w = hist.GetXaxis().GetBinWidth(iX)

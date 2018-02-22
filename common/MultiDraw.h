@@ -81,10 +81,28 @@ protected:
   int printLevel_{0};
 };
 
+//! A wrapper class for TH1
+/*!
+ * The class is to be used within MultiDraw, and is instantiated by addPlot().
+ * Arguments:
+ *  TH1& hist               The actual histogram object (user is responsible to create it)
+ *  TTreeFormula& expr      Expression whose evaluated value gets filled to the plot
+ *  TTreeFormula* cuts      If provided and evaluates to 0, the plot is not filled
+ *  TTreeFormula* reweight  If provided, evalutaed and used as weight for filling the histogram
+ *  double overflowBinSize  If 0, overflow is not handled explicitly (i.e. TH1 fills the n+1-st bin)
+ *                          If >0, an overflow bin with size (original width)*overflowBinSize is created
+ *                          If <0, the ove
+ */
 class Plot : public ExprFiller {
 public:
+  enum OverflowMode {
+    kNoOverflowBin,
+    kDedicated,
+    kMergeLast
+  };
+
   Plot() {}
-  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr, bool overflow = false);
+  Plot(TH1& hist, TTreeFormula& expr, TTreeFormula* cuts = nullptr, TTreeFormula* reweight = nullptr, OverflowMode mode = kNoOverflowBin);
   Plot(Plot const&);
   ~Plot() {}
 
@@ -95,7 +113,7 @@ private:
   void doFill_(unsigned) override;
 
   TH1* hist_{nullptr};
-  bool overflow_{false};
+  OverflowMode overflowMode_{kNoOverflowBin};
 };
 
 class Tree : public ExprFiller {
@@ -173,7 +191,7 @@ public:
   /*!
    * Currently only 1D histograms can be used.
    */
-  void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "", bool overflow = false);
+  void addPlot(TH1* hist, char const* expr, char const* cuts = "", bool applyBaseline = true, bool applyFullSelection = false, char const* reweight = "", Plot::OverflowMode mode = Plot::kNoOverflowBin);
   //! Add a tree to fill.
   /*!
    * Use addTreeBranch to add branches.
