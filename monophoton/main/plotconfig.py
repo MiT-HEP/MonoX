@@ -184,9 +184,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale')) # temporary off until figure out how to apply
-            group.variations.append(Variation('EWKoverall_' + gname, reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape_' + gname, reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma_' + gname, reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         # Specific systematic variations
         # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.33))
@@ -283,9 +283,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         # config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         for gname in ['top', 'vvg']:
@@ -372,9 +372,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         for gname in ['top', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -472,9 +472,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         for gname in ['top', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -565,9 +565,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         for gname in ['top', 'gg', 'vvg']:
             config.findGroup(gname).variations.append(Variation('minorQCDscale', reweight = 0.033))
@@ -743,9 +743,9 @@ def getConfig(confName):
             group = config.findGroup(gname)
             group.variations.append(Variation('vgPDF', reweight = 'pdf'))
             group.variations.append(Variation('vgQCDscale', reweight = 'qcdscale'))
-            group.variations.append(Variation('EWKoverall', reweight = 'ewkstraight'))
-            group.variations.append(Variation('EWKshape', reweight = 'ewktwisted'))
-            group.variations.append(Variation('EWKgamma', reweight = 'ewkgamma'))
+            group.variations.append(Variation(gname + 'EWKoverall', reweight = 'ewkstraight'))
+            group.variations.append(Variation(gname + 'EWKshape', reweight = 'ewktwisted'))
+            group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
 #        Specific systematic variations
         # TODO use cuts

@@ -55,7 +55,7 @@ links = [
 ]
 
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
-wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWKgamma_zg', 'EWKgamma_wg', 'EWKoverall_zg', 'EWKoverall_wg', 'EWKshape_zg', 'EWKshape_wg']
+wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'zgEWKgamma', 'wgEWKgamma', 'zgEWKoverall', 'wgEWKoverall', 'zgEWKshape', 'wgEWKshape']
 gjIgnoreList = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'minorQCDScale']
 
 ignoredNuisances = {
@@ -104,7 +104,7 @@ wc.config = wc.WorkspaceConfig(
     plotsOutname = fitdir + '/ws_' + distribution + '_plots.root',
     cardname = fitdir + '/datacards/monoph_{signal}.dat',
     histname = distribution + '/{process}',
-    signalHistname = distribution + '/samples/{process}_{region}',
+    signalHistname = distribution + '/samples/{process}_monoph',
     regions = regions,
     bkgProcesses = ['efake', 'gjets', 'hfake', 'minor', 'vvg', 'wg', 'zg', 'gg', 'wjets', 'top', 'zjets', 'spike', 'halo'],
     signals = signals,
