@@ -89,9 +89,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             cut = ' && '.join(plotCuts)
 
             if plotdef.overflow:
-                overflowMode = ROOT.Plot.kLastBin
+                overflowMode = ROOT.Plot.kMergeLast
             else:
-                overflowMode = ROOT.Plot.kNoOverflow
+                overflowMode = ROOT.Plot.kNoOverflowBin
 
             # nominal distribution
             plotter.addPlot(
