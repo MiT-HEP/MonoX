@@ -218,10 +218,10 @@ ExprFiller::fill(std::vector<double> const& _eventWeights, std::vector<bool> con
 }
 
 
-Plot::Plot(TH1& _hist, TTreeFormula& _expr, TTreeFormula* _cuts/* = nullptr*/, TTreeFormula* _reweight/* = nullptr*/, bool _overflow/* = false*/) :
+Plot::Plot(TH1& _hist, TTreeFormula& _expr, TTreeFormula* _cuts/* = nullptr*/, TTreeFormula* _reweight/* = nullptr*/, OverflowMode _mode/* = kNoOverflowBin*/) :
   ExprFiller(_cuts, _reweight),
   hist_(&_hist),
-  overflow_(_overflow)
+  overflowMode_(_mode)
 {
   exprs_.push_back(&_expr);
 }
@@ -229,7 +229,7 @@ Plot::Plot(TH1& _hist, TTreeFormula& _expr, TTreeFormula* _cuts/* = nullptr*/, T
 Plot::Plot(Plot const& _orig) :
   ExprFiller(_orig),
   hist_(_orig.hist_),
-  overflow_(_orig.overflow_)
+  overflowMode_(_orig.overflowMode_)
 {
 }
 
@@ -239,9 +239,19 @@ Plot::doFill_(unsigned _iD)
   if (printLevel_ > 3)
     std::cout << "            Fill(" << exprs_[0]->EvalInstance(_iD) << "; " << entryWeight_ << ")" << std::endl;
 
-  double x = exprs_[0]->EvalInstance(_iD);
-  if (overflow_ && (x > hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX()))) {
-    x = hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX());
+  double x(exprs_[0]->EvalInstance(_iD));
+
+  switch (overflowMode_) {
+  case Plot::kNoOverflowBin:
+    break;
+  case Plot::kDedicated:
+    if (x > hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX()))
+      x = hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX());
+    break;
+  case Plot::kMergeLast:
+    if (x > hist_->GetXaxis()->GetBinUpEdge(hist_->GetNbinsX()))
+      x = hist_->GetXaxis()->GetBinLowEdge(hist_->GetNbinsX());
+    break;
   }
 
   hist_->Fill(x, entryWeight_);
@@ -464,7 +474,7 @@ MultiDraw::setReweight(char const* _expr, TObject const* _source/* = nullptr*/)
 }
 
 void
-MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/, bool _overflow/* = false*/)
+MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bool _applyBaseline/* = true*/, bool _applyFullSelection/* = false*/, char const* _reweight/* = ""*/, Plot::OverflowMode _overflowMode/* = Plot::kNoOverflow*/)
 {
   TTreeFormulaCached* exprFormula(getFormula_(_expr));
   if (exprFormula == nullptr) {
@@ -472,8 +482,8 @@ MultiDraw::addPlot(TH1* _hist, char const* _expr, char const* _cuts/* = ""*/, bo
     return;
   }
 
-  auto newPlot([_hist, _overflow, exprFormula](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
-      return new Plot(*_hist, *exprFormula, _cutsFormula, _reweightFormula, _overflow);
+  auto newPlot([_hist, _overflowMode, exprFormula](TTreeFormula* _cutsFormula, TTreeFormula* _reweightFormula)->ExprFiller* {
+      return new Plot(*_hist, *exprFormula, _cutsFormula, _reweightFormula, _overflowMode);
     });
 
   if (printLevel_ > 1) {
