@@ -119,10 +119,11 @@ class PlotDef(object):
                 nbins = self.binning[0]
                 arr = array.array('d', [self.binning[1] + (self.binning[2] - self.binning[1]) / nbins * i for i in range(nbins + 1)])
     
-            if self.overflow:
-                lastbinWidth = (arr[-1] - arr[0]) / 30.
-                arr += array.array('d', [self.binning[-1] + lastbinWidth])
-                nbins += 1
+            # we decided to merge the overflow into the last bin content
+            #if self.overflow:
+            #    lastbinWidth = (arr[-1] - arr[0]) / 30.
+            #    arr += array.array('d', [self.binning[-1] + lastbinWidth])
+            #    nbins += 1
     
             hist = ROOT.TH1D(hname, '', nbins, arr)
     
