@@ -41,7 +41,7 @@ baseSel = ' && '.join(baseSels.values())
 def getConfigGGH(confName):
     global baseSels
 
-    if confName == 'gghg' or confName == 'gghgBlind':
+    if confName == 'gghg' or confName == 'gghgNoFake' or confName == 'gghgBlind':
         config = PlotConfig('gghg')
 
         monophData = photonData
@@ -71,7 +71,8 @@ def getConfigGGH(confName):
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
+        if confName != 'gghgNoFake':
+            config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
 
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
         noMtPhoMet = config.baseline.replace(baseSels['mtPhoMet300'], '1')
@@ -146,7 +147,8 @@ def getConfigGGH(confName):
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        config.findGroup('fakemet').variations.append(Variation('fakemetShape', normalize = True, regions = ('fakeMet75', 'fakeMet25')))
+        if confName != 'gghgNoFake':
+            config.findGroup('fakemet').variations.append(Variation('fakemetShape', normalize = True, regions = ('fakeMet75', 'fakeMet25')))
 
     elif confName == 'gghgj':
         config = PlotConfig('gghg', photonData)

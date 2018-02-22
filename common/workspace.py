@@ -43,15 +43,15 @@ import ROOT
 
 from HiggsAnalysis.CombinedLimit.ModelTools import SafeWorkspaceImporter
 
-from workspace_config import WorkspaceConfig
-
 if len(sys.argv) == 2:
     configPath = sys.argv[1]
 else:
     print 'Using configuration ' + os.getcwd() + '/parameters.py'
     configPath = os.getcwd() + '/parameters.py'
 
-execfile(configPath)
+execfile(configPath, {'__file__': os.path.realpath(configPath)})
+
+from workspace_config import config
 
 ROOT.gSystem.Load('libRooFit.so')
 ROOT.gSystem.Load('libRooFitCore.so')
@@ -207,7 +207,11 @@ def fetchHistograms(config, sourcePlots, totals, hstore):
         for process in config.bkgProcesses + config.signals:
             sourceDir = openHistSource(config, process, region, sources)
 
-            histname = config.histname.format(process = process, region = region)
+            if process in config.signals and config.signalHistname:
+                histname = config.signalHistname.format(process = process, region = region)
+            else:
+                histname = config.histname.format(process = process, region = region)
+
             if '/' in histname:
                 # to automatically find all the variations, we need to do an "ls" of the directory
                 sourceDir = sourceDir.GetDirectory(os.path.dirname(histname))
@@ -272,7 +276,7 @@ if __name__ == '__main__':
 
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
-    x = fct('x[-1.e+10,1.e+10]')
+    x = fct('{xname}[-1.e+10,1.e+10]'.format(xname = config.xname))
 
     # binning
     h = sourcePlots[config.regions[0]]['data_obs']['nominal']
@@ -622,7 +626,7 @@ if __name__ == '__main__':
     wssource = ROOT.TFile.Open(config.outname)
     workspace = wssource.Get('wspace')
 
-    x = workspace.var('x')
+    x = workspace.var(config.xname)
 
     ## DATACARDS
     if config.cardname:

@@ -689,7 +689,8 @@ if __name__ == '__main__':
     
                 sspec.group.samples.append(sspec.sample)
 
-        if not args.asimov and not args.blind:
+        if not args.asimov:
+            # if args.asimov, we'll make the data_obs plot below
             groups.append(plotConfig.obs)
     
         for group in groups:
@@ -712,9 +713,9 @@ if __name__ == '__main__':
             writeHist(bkghistSyst)
 
             if args.asimov:
-                # generate the "observed" distribution from background total
-                obshist = plotdef.makeHist('data_obs', outDir = outDir)
+                asimov = bkghist.Clone('asimov')
 
+                # generate the "observed" distribution from background total
                 for varspec in args.asimov_variation:
                     # example: fakemet:fakemetShapeUp:5
                     words = varspec.split(':')
@@ -734,20 +735,20 @@ if __name__ == '__main__':
                         print 'Invalid variation specified for pseudo-data:', varspec
                         continue
 
-                    bkghist.Add(nominal, -1.)
-                    bkghist.Add(varhist, scale)
-
-                for iBin in xrange(1, bkghist.GetNbinsX() + 1):
-                    x = bkghist.GetXaxis().GetBinCenter(iBin)
-                    for _ in xrange(int(round(bkghist.GetBinContent(iBin)))):
-                        obshist.Fill(x)
+                    asimov.Add(nominal, -1.)
+                    asimov.Add(varhist, scale)
 
                 if args.asimov != 'background':
                     sighist = outDir.Get('samples/' + args.asimov + '_' + plotConfig.name)
-                    for iBin in xrange(1, sighist.GetNbinsX() + 1):
-                        x = sighist.GetXaxis().GetBinCenter(iBin)
-                        for _ in xrange(int(round(sighist.GetBinContent(iBin)))):
-                            obshist.Fill(x)
+                    asimov.Add(sighist)
+
+                # make data_obs here
+                obshist = plotdef.makeHist('data_obs', outDir = outDir)
+
+                for iBin in xrange(1, asimov.GetNbinsX() + 1):
+                    x = asimov.GetXaxis().GetBinCenter(iBin)
+                    for _ in xrange(int(round(asimov.GetBinContent(iBin)))):
+                        obshist.Fill(x)
 
                 writeHist(obshist)
 

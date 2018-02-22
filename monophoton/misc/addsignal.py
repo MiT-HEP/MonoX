@@ -2,11 +2,12 @@ import sys
 import ROOT
 
 signal = ['dph-nlo-125', 'dphv-nlo-125']
+targetname = 'dph-nlo-125'
 
 source = ROOT.TFile.Open(sys.argv[1])
-out = ROOT.TFile.Open('addsignal.root', 'recreate')
-
 dist = sys.argv[2]
+region = sys.argv[3]
+out = ROOT.TFile.Open(sys.argv[4], 'recreate')
 
 out.mkdir(dist)
 
@@ -22,24 +23,34 @@ for key in ROOT.gDirectory.GetListOfKeys():
 out.mkdir(dist + '/samples')
 
 source.cd(dist + '/samples')
+
+shists = {}
+for s in signal:
+    shists[s] = {}
+
 for key in ROOT.gDirectory.GetListOfKeys():
     name = key.GetName()
-    if name.startswith(signal[0]):
-        if name.endswith('_original'):
-            continue
-
-        name1 = name.replace(signal[0], signal[1])
-
-        out.cd(dist + '/samples')
-        hist = key.ReadObj()
-        hist.SetName(name.replace(signal[0], 'signal'))
-        hist.Add(source.Get(dist + '/samples/' + name1))
-        hist.Write()
-
-    elif name.startswith(signal[1]):
+    if name.endswith('_original'):
         continue
 
+    for s in signal:
+        sr = s + '_' + region
+        if name.startswith(sr):
+            suffix = name.replace(sr, '')
+            shists[s][suffix] = key.ReadObj()
+            break
     else:
         out.cd(dist + '/samples')
         hist = key.ReadObj()
         hist.Write()
+
+out.cd(dist + '/samples')
+s0 = signal[0]
+for suffix in shists[s0].keys():
+    base = shists[s0][suffix]
+    hist = base.Clone(targetname + '_' + region + suffix)
+
+    for s in signal[1:]:
+        hist.Add(shists[s][suffix])
+
+    hist.Write()

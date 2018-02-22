@@ -189,11 +189,11 @@ class Legend(object):
             except:
                 pass
 
-    def construct(self, order = []):
+    def construct(self, order = None):
         if not self._modified:
             return
 
-        if len(order) == 0:
+        if order is True or order is None:
             order = self.defaultOrder
 
         self.legend.Clear()
@@ -517,8 +517,8 @@ class SimpleCanvas(object):
                 else:
                     base.SetMinimum(0.)
             else:
-                if self.ylimits[0] == 0. and not logy:
-                    base.SetMinimum(0.)
+                if self.ylimits[0] <= 0. and not logy:
+                    base.SetMinimum(self.ylimits[0])
                 elif self.ylimits[0] > 0.:
                     base.SetMinimum(self.ylimits[0])
 
@@ -528,7 +528,7 @@ class SimpleCanvas(object):
             base.GetYaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('Y'))
 
             if len(self.legend.entries) != 0 and drawLegend:
-                self.legend.Draw()
+                self.legend.Draw(drawLegend)
 
         for obj in self._objects:
             obj.Draw('SAME')
