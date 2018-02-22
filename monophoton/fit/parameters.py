@@ -6,7 +6,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
-import datasets
+# import datasets
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 fitdir = workdir + '/fit'
@@ -14,13 +14,16 @@ distribution = 'phoPtHighMet'
 sr = 'monophHighPhi'
 
 snames = [
-    'add-3-4',
+    'dmvlo-1000-1',
 #    'dmvlo-*'
 ]
 
+signals = snames
+"""
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
+"""
 
 regions = [
     sr,
@@ -49,7 +52,7 @@ links = [
 ]
 
 wzIgnoreListExp = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'gec']
-wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWK']
+wzIgnoreListThe = ['vgPDF', 'vgQCDscale', 'EWKgamma_zg', 'EWKgamma_wg', 'EWKoverall_zg', 'EWKoverall_wg', 'EWKshape_zg', 'EWKshape_wg']
 gjIgnoreList = ['lumi', 'photonSF', 'pixelVetoSF', 'leptonVetoSF', 'minorQCDScale']
 
 ignoredNuisances = {
