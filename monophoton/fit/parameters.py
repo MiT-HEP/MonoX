@@ -1,15 +1,18 @@
 import os
 import sys
 
-import workspace_config as wc
-
 ## directories to include
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 if basedir not in sys.path:
     sys.path.append(basedir)
 
-# import datasets
+commondir = os.path.dirname(basedir) + '/common'
+if commondir not in sys.path:
+    sys.path.append(commondir)
+
+import workspace_config as wc
+import datasets
 
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 fitdir = workdir + '/fit'
@@ -21,12 +24,9 @@ snames = [
 #    'dmvlo-*'
 ]
 
-signals = snames
-"""
 signals = []
 for sname in snames:
     signals += [s.name for s in datasets.allsamples.getmany(sname)]
-"""
 
 regions = [
     sr,
@@ -110,7 +110,7 @@ wc.config = wc.WorkspaceConfig(
     signals = signals,
     xtitle = 'p_{T}^{#gamma} (GeV)',
     links = links,
-    staticBase = [('halo', 'monophLowPhi')],
+    staticBase = [('halo', 'monophHighPhi')],
     ignoredNuisances = ignoredNuisances,
     ratioCorrelations = ratioCorrelations,
     scaleNuisances = scaleNuisances

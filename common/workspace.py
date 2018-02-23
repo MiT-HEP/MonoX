@@ -487,7 +487,7 @@ if __name__ == '__main__':
 
                     if sample in config.staticBase:
                         print '      with a static shape'
-                        fct('mu_{sample}_scale[1.,0.,10.]'.format(sample = sampleName))
+                        fct('mu_{sample}_scale[1., 1.0e-6, 10.]'.format(sample = sampleName))
                         # bin mu is raw x norm
                         for ibin in range(1, nominal.GetNbinsX() + 1):
                             fct('rawmu_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
@@ -815,7 +815,7 @@ if __name__ == '__main__':
 
             bin1Name = '%s_bin1' % pdf.GetName()
 
-            if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name):
+            if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name) and not workspace.var('mu_' + pdf.GetName() + '_scale'):
                 samp, region = pdf.GetName().split('_')
                 sample = (samp, region)
                 sbase = linkSource(sample)

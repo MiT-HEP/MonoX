@@ -6,29 +6,45 @@ import os
 import re
 import math
 
-import parameters_ggh as parameters
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 
+commondir = os.path.dirname(basedir) + '/common'
+if commondir not in sys.path:
+    sys.path.append(commondir)
+
 from datasets import allsamples
 from plotstyle import RatioCanvas
-from main.plotconfig_ggh import getConfigGGH as getConfig
+import workspace_config as wc
+
+config = sys.argv[1]
+
+if config == 'monoph':
+    import parameters
+    from main.plotconfig import getConfig as getConfig
+elif config == 'vbf':
+    import parameters_vbf as parameters
+    from main.plotconfig_vbf import getConfigVBF as getConfig
+elif config == 'ggh':
+    import parameters_ggh as parameters
+    from main.plotconfig_ggh import getConfigGGH as getConfig
 
 import ROOT
 
-mlfit = ROOT.TFile.Open(sys.argv[1])
+mlfit = ROOT.TFile.Open(sys.argv[2])
 postfitDir = mlfit.Get('shapes_fit_b')
 sbfitDir = mlfit.Get('shapes_fit_s')
 
-workspace = ROOT.TFile.Open(parameters.outname).Get('wspace')
+workspace = ROOT.TFile.Open(wc.config.outname).Get('wspace')
 x = workspace.arg('x')
 
 for key in postfitDir.GetListOfKeys():
     region = key.GetName()
 
-    prefitFile = ROOT.TFile.Open(parameters.sourcedir + '/' + region + '.root')
+    print wc.config.sourcename, wc.config.histname, 
+
+    prefitFile = ROOT.TFile.Open(wc.config.sourcename.format(region = region))
     prefitDir = prefitFile.Get(parameters.distribution)
 
     prefitTotal = prefitDir.Get('bkgtotal_syst')
@@ -200,7 +216,7 @@ for key in postfitDir.GetListOfKeys():
     canvas.xtitle = 'M_{T}(#gamma, E_{T}^{miss}) (GeV)' # 'E_{T}^{#gamma} (GeV)'
     canvas.ytitle = 'Events / GeV'
 
-    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iSbfitUncRatio, iPreUncRatio, iPostUncRatio, iSbfitRatio, iPreRatio, iPostRatio], logy = False)
+    canvas.printWeb('monophoton/fit', region, hList = hList, rList = [iLine, iSbfitUncRatio, iPreUncRatio, iPostUncRatio, iSbfitRatio, iPreRatio, iPostRatio], logy = True)
     canvas.Clear()
 
     dataHist.Delete()
