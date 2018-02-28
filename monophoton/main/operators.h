@@ -1238,10 +1238,12 @@ class NNPDFVariation : public Modifier {
  public:
   NNPDFVariation(char const* name = "NNPDFVariation") : Modifier(name) {}
 
+  void setRescale(double scale) { rescale_ = scale; }
   void addBranches(TTree& skimTree) override;
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
+  double rescale_{1.};
   double weightUp_;
   double weightDown_;
 };
