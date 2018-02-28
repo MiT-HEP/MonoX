@@ -476,9 +476,7 @@ def zmumu(sample, rname):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
         addPUWeight(sample, selector)
-
-        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-            selector.addOperator(ROOT.NNPDFVariation())
+        addPDFVaraition(sample, selector)
 
     return selector
 
@@ -523,9 +521,7 @@ def elmu(sample, rname):
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
         addPUWeight(sample, selector)
-
-        if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-            selector.addOperator(ROOT.NNPDFVariation())
+        addPDFVariation(sample, selector)
 
     return selector
 
@@ -2444,7 +2440,16 @@ def addMuonVetoSFWeight(sample, selector):
 def addPDFVariation(sample, selector):
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         logger.info('Adding PDF variation for %s', sample.name)
-        selector.addOperator(ROOT.NNPDFVariation())
+        if 'znng' or 'zllg' in sample.name:
+            pdf = ROOT.NNPDFVariation()
+            pdf.setRescale(0.0420942143487 / 0.0769709934685)
+            selector.addOperator(pdf)
+        elif 'wnlg' in sample.name:
+            pdf = ROOT.NNPDFVariation()
+            pdf.setRescale(0.0453828335472 / 0.0933792628506)
+            selector.addOperator(pdf)
+        else:
+            selector.addOperator(ROOT.NNPDFVariation())
 
 def addKfactor(sample, selector):
     """

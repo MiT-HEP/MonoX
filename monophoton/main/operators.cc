@@ -3390,8 +3390,8 @@ NNPDFVariation::addBranches(TTree& _skimTree)
 void
 NNPDFVariation::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  weightUp_ = 1. + _event.genReweight.pdfDW;
-  weightDown_ = 1. - _event.genReweight.pdfDW;
+  weightUp_ = 1. + _event.genReweight.pdfDW * rescale_;
+  weightDown_ = 1. - _event.genReweight.pdfDW * rescale_;
 }
 
 //--------------------------------------------------------------------
