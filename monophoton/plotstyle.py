@@ -524,9 +524,6 @@ class SimpleCanvas(object):
 
                 base.SetMaximum(self.ylimits[1])
 
-            base.GetXaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
-            base.GetYaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('Y'))
-
             if len(self.legend.entries) != 0 and drawLegend:
                 self.legend.Draw(drawLegend)
 
@@ -895,10 +892,12 @@ class RatioCanvas(SimpleCanvas):
         base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists, drawLegend = drawLegend)
 
         if base:
-            base.GetYaxis().SetTitle('')
-            base.GetYaxis().SetLabelSize(0.)
+            base.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
             base.GetXaxis().SetTitle('')
             base.GetXaxis().SetLabelSize(0.)
+            base.GetYaxis().SetNdivisions(self.yaxis.GetNdiv())
+            base.GetYaxis().SetTitle('')
+            base.GetYaxis().SetLabelSize(0.)
     
             # will be overridden by self.ytitle
             self.yaxis.SetTitle(base.GetYaxis().GetTitle())
@@ -924,6 +923,7 @@ class RatioCanvas(SimpleCanvas):
             rframe = ROOT.TH1F('rframe', '', 1, rbase.GetXaxis().GetXmin(), rbase.GetXaxis().GetXmax())
             rframe.SetMinimum(self.rlimits[0])
             rframe.SetMaximum(self.rlimits[1])
+            rframe.GetYaxis().SetNdivisions(self.raxis.GetNdiv())
             self._temporaries.append(rframe)
 
             rframe.Draw()
@@ -1018,16 +1018,14 @@ class RatioCanvas(SimpleCanvas):
             rframe.SetTitle('')
             rframe.GetXaxis().SetTitle('')
             rframe.GetXaxis().SetLabelSize(0.)
-            rframe.GetXaxis().SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
+            rframe.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
             rframe.GetYaxis().SetTitle('')
             rframe.GetYaxis().SetLabelSize(0.)
-            rframe.GetYaxis().SetNdivisions(302)
+            rframe.GetYaxis().SetNdivisions(self.raxis.GetNdiv())
             rframe.GetYaxis().SetRangeUser(*self.rlimits)
 
             # will be overridden by self.xtitle
             self.xaxis.SetTitle(rbase.GetXaxis().GetTitle())
-            self.xaxis.SetNdivisions(ROOT.gStyle.GetNdivisions('X'))
-            self.yaxis.SetNdivisions(ROOT.gStyle.GetNdivisions('Y'))
 
             self.canvas.Update()
 
@@ -1080,12 +1078,14 @@ class RatioCanvas(SimpleCanvas):
             umin = self.rlimits[0]
             umax = self.rlimits[1]
 
+        opt = axis.GetOption()
         if log:
-            axis.SetOption('G')
+            if 'G' not in opt:
+                axis.SetOption(opt + 'G')
             axis.SetWmin(math.exp(2.302585092994 * umin))
             axis.SetWmax(math.exp(2.302585092994 * umax))
         else:
-            axis.SetOption('')
+            axis.SetOption(opt.replace('G', ''))
             axis.SetWmin(umin)
             axis.SetWmax(umax)
 
