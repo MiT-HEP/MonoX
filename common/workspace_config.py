@@ -12,6 +12,7 @@
   (cardname) - Name of the data card files. Wild card {signal} can be used as a placeholder for signal model name.
   (plotsOutname) - When given, a ROOT file with histograms visualizing the workspace content is created.
   (xtitle) - X axis title of the histograms.
+  (xunit) - Unit of the X axis variable.
  <physics>
   regions - List of signal and control region names. Replaces the {region} wildcard in the input definitions.
   bkgProcesses - Full list of background process names. Not all processes have to appear in every region.
@@ -57,6 +58,7 @@ class WorkspaceConfig(object):
         optional('plotsOutname')
         optional('xname', 'x')
         optional('xtitle')
+        optional('xunit')
 
         # physics
         mandatory('regions')

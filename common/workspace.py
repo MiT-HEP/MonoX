@@ -277,6 +277,8 @@ if __name__ == '__main__':
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
     x = fct('{xname}[-1.e+10,1.e+10]'.format(xname = config.xname))
+    x.SetTitle(config.xtitle)
+    x.setUnit(config.xunit)
 
     # binning
     h = sourcePlots[config.regions[0]]['data_obs']['nominal']
@@ -815,7 +817,7 @@ if __name__ == '__main__':
 
             bin1Name = '%s_bin1' % pdf.GetName()
 
-            if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name):
+            if not workspace.var('mu_' + bin1Name) and not workspace.var('raw_' + bin1Name) and not workspace.var('mu_' + pdf.GetName() + '_scale'):
                 samp, region = pdf.GetName().split('_')
                 sample = (samp, region)
                 sbase = linkSource(sample)
