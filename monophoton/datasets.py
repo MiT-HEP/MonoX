@@ -346,7 +346,7 @@ class SampleDefList(object):
                     # importing another list
                     path = matches.group(1)
                     if path[0] != '/':
-                        path = os.path.dirname(listpath) + '/' + path
+                        path = os.path.dirname(os.path.realpath(listpath)) + '/' + path
                     
                     self._load(path)
                     continue
