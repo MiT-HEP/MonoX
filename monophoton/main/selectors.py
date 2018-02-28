@@ -102,7 +102,7 @@ def vbfgSetting():
     selconf['photonIDTune'] = ROOT.idtune
     selconf['photonSF'] = (datadir + '/photon_id_sf16.root', 'EGamma_SF2D', [ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt], (0.988, .0134))
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_spring16')
+    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
     selconf['electronTFactorSource'] = ROOT.TF1('eproxyWeight', '0.0052 + 1.114 * TMath::Power(x + 122.84, -0.75)', 0., 6500.)
 
@@ -2012,7 +2012,8 @@ def ph75(sample, rname):
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'PhotonMt'
+        'PhotonMt',
+        'DijetSelection'
     ]
 
     for op in operators:
@@ -2028,6 +2029,11 @@ def ph75(sample, rname):
     leptonSel.setN(0, 0)
     leptonSel.setRequireMedium(False)
     leptonSel.setRequireTight(False)
+
+    dijetSel = selector.findOperator('DijetSelection')
+    dijetSel.setMinDEta(3.)
+    dijetSel.setMinMjj(500.)
+    dijetSel.setIgnoreDecision(True)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -2054,8 +2060,6 @@ def ph75(sample, rname):
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
     selector.findOperator('PhotonMetDPhi').setIgnoreDecision(True)
     selector.findOperator('JetMetDPhi').setIgnoreDecision(True)
-    selector.findOperator('Met').setIgnoreDecision(True)
-    selector.findOperator('PhotonPtOverMet').setIgnoreDecision(True)
 
     return selector
 
