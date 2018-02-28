@@ -189,7 +189,7 @@ def getConfig(confName):
             group.variations.append(Variation(gname + 'EWKgamma', reweight = 'ewkgamma'))
 
         # Specific systematic variations
-        # config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.33))
+        config.findGroup('spike').variations.append(Variation('spikeNorm', reweight = 0.33))
         haloCuts = (
             'metFilters.globalHalo16 && photons.mipEnergy[0] > 2.45',
             'metFilters.globalHalo16 && photons.mipEnergy[0] > 9.8'
