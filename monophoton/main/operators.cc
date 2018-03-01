@@ -2562,11 +2562,9 @@ PhotonFakeMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
   double py(0.);
 
   double fraction(0.);
-  TRandom3 rand;
 
-  if (fraction_ < 0.) {
-    fraction = rand.Uniform(1.);
-  }
+  if (fraction_ < 0.)
+    fraction = rand_.Uniform(0.25, 0.75);
   else
     fraction = fraction_;
 

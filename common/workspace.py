@@ -277,6 +277,8 @@ if __name__ == '__main__':
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
     x = fct('{xname}[-1.e+10,1.e+10]'.format(xname = config.xname))
+    x.SetTitle(config.xtitle)
+    x.setUnit(config.xunit)
 
     # binning
     h = sourcePlots[config.regions[0]]['data_obs']['nominal']

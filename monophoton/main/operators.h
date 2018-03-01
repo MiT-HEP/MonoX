@@ -1015,7 +1015,7 @@ class LeptonRecoil : public Modifier {
 
 class PhotonFakeMet : public Modifier {
  public:
-  PhotonFakeMet(char const* name = "PhotonFakeMet") : Modifier(name) {}
+  PhotonFakeMet(char const* name = "PhotonFakeMet") : Modifier(name), rand_(12345) {}
   void addBranches(TTree& skimTree) override;
 
   void setFraction(float frac) { fraction_ = frac; }
@@ -1028,6 +1028,7 @@ class PhotonFakeMet : public Modifier {
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   float fraction_{-1.};
+  TRandom3 rand_;
   MetVariations* metVar_{0};
 
   float realPhoPt_[NMAX_PARTICLES];

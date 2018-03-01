@@ -15,6 +15,7 @@ wc.config = wc.WorkspaceConfig(
     bkgProcesses = ['EM', 'VVV', 'ZZ', 'Zjets', 'WZ'],
     signals = ['dph-nlo-125'],
     xname = 'mtzh',
-    xtitle = 'm_{T}^{#gamma} (GeV)',
+    xtitle = 'm_{T}^{#gamma}',
+    xunit = 'GeV',
     scaleNuisances = ['lumi', 'photonSF', 'zh_triggerSF']
 )
