@@ -100,10 +100,10 @@ def vbfgSetting():
     ]
     ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
     selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (datadir + '/photon_id_sf16.root', 'EGamma_SF2D', [ROOT.IDSFWeight.kEta, ROOT.IDSFWeight.kPt], (0.988, .0134))
+    selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
-    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11', '-NHIso', 'NHIsoLoose', '-PhIso', 'PhIsoLoose']
+    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
     selconf['electronTFactorSource'] = ROOT.TF1('eproxyWeight', '0.0052 + 1.114 * TMath::Power(x + 122.84, -0.75)', 0., 6500.)
 
 datadir + '/efakepf_data_ptalt.root'
@@ -1818,15 +1818,20 @@ def vbfgHfake(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    # fake rate function obtained from hadron_fake/direct.py
-    hproxyWeight = ROOT.TF1('hproxyWeight', 'TMath::Exp(-0.0173 * x - 0.178)', 80., 600.)
+    filename, suffix = selconf['hadronTFactorSource']
 
-    weight = ROOT.PhotonPtWeight(hproxyWeight, 'vbfhtfactor')
-    selector.addOperator(weight)
+    hadproxyTightWeight = getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
+    hadproxyLooseWeight = getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)
+    hadproxyPurityUpWeight = getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
+    hadproxyPurityDownWeight = getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
+
+    modHfake(selector)
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
+    # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
+    # Proper cut applied at plotconfig as variations
+    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
     setupPhotonSelection(photonSel, veto = True)
 
     return selector
@@ -2440,11 +2445,11 @@ def addMuonVetoSFWeight(sample, selector):
 def addPDFVariation(sample, selector):
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
         logger.info('Adding PDF variation for %s', sample.name)
-        if 'znng' or 'zllg' in sample.name:
+        if 'znng' in sample.name or 'zllg' in sample.name:
             pdf = ROOT.NNPDFVariation()
             pdf.setRescale(0.0420942143487 / 0.0769709934685)
             selector.addOperator(pdf)
-        elif 'wnlg' in sample.name:
+        elif 'wnlg' in sample.name or 'wglo' in sample.name:
             pdf = ROOT.NNPDFVariation()
             pdf.setRescale(0.0453828335472 / 0.0933792628506)
             selector.addOperator(pdf)
