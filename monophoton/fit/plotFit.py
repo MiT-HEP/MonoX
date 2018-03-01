@@ -56,7 +56,10 @@ for key in postfitDir.GetListOfKeys():
     prefitRatio = prefitTotal.Clone('prefitRatio')
     prefitUncRatio = prefitTotal.Clone('prefitUncRatio')
 
-    postfitTotal = postfitDir.Get(region + '/total_background')
+    if bonly:
+        postfitTotal = postfitDir.Get(region + '/total_background')
+    else:
+        postfitTotal = postfitDir.Get(region + '/total')
     postfitUnc = postfitTotal.Clone('postfitUnc')
     postfitRatio = postfitTotal.Clone('postfitRatio')
     postfitUncRatio = postfitTotal.Clone('postfitUncRatio')
@@ -200,13 +203,32 @@ for key in postfitDir.GetListOfKeys():
         stackHist.Reset()
         
         groupHists = []
+        groupList = []
+
         for group in plotConfig.bkgGroups:
             ghist = postfitDir.Get(region + '/' + group.name).Clone()
+            ghist.SetTitle('')
             if len(groupHists):
                 ghist.Add(groupHists[-1])
             groupHists.append(ghist)
 
-        groupList = []
+        if not bonly:
+            try:
+                shist = postfitDir.Get(region + '/total_signal').Clone()
+                shist.SetTitle('')
+                if len(groupHists):
+                    shist.Add(groupHists[-1])
+                    
+                canvas.legend.add('signal', title = 'Signal', opt= 'F', fcolor = ROOT.kMagenta, fstyle = 3002)
+                canvas.legend.apply('signal', shist)
+
+                iS = canvas.addHistogram(shist)
+                groupList.append(iS)
+
+            except ReferenceError:
+                print region + ' region has no signal processes.'
+                pass
+
         for group, ghist in reversed(zip(plotConfig.bkgGroups, groupHists)):
             canvas.legend.add(group.name, title = group.title, opt= 'F', fcolor = group.color, fstyle = 1001)
             canvas.legend.apply(group.name, ghist)
