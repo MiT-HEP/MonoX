@@ -239,12 +239,11 @@ class MetFilters : public Cut {
  public:
   MetFilters(char const* name = "MetFilters") : Cut(name) {}
 
-  // 1->require pass, -1->require fail, 0->ignore
-  void setFilter(unsigned filter, int decision) { filterConfig_[filter] = decision; }
+  void allowHalo() { halo_ = true; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
-  int filterConfig_[6]{1, 1, 1, 1, 1, 1};
+  bool halo_{false};
 };
 
 class GenPhotonVeto : public Cut {

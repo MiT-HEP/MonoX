@@ -1222,7 +1222,7 @@ def halo(sample, rname):
     setupPhotonSelection(photonSel, changes = ['-MIP49', '-Sieie'])
     setupPhotonSelection(photonSel, veto = True)
 
-    selector.findOperator('MetFilters').setFilter(0, 0)
+    selector.findOperator('MetFilters').allowHalo()
 
     return selector
 

@@ -179,9 +179,17 @@ EventVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 bool
 MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
-  if (_event.metFilters.pass() && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons)
-    return true;
-  else
+  if (!_event.metFilters.hbhe && !_event.metFilters.hbheIso && !_event.metFilters.ecalDeadCell && !_event.metFilters.goodVertices && !_event.metFilters.badsc && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons && !_event.metFilters.badPFMuons && !_event.metFilters.badChargedHadrons) {
+    if (halo_) 
+      return true;
+    else {
+      if (!_event.metFilters.globalHalo16)
+	return true;
+      else
+	return false;
+    }
+  }
+  else 
     return false;
 }
 
