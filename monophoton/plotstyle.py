@@ -1143,12 +1143,14 @@ class DataMCCanvas(RatioCanvas):
 
             fillcolor = ROOT.gROOT.GetColor(color)
             if fillcolor and color != 0:
+                """
                 r = fillcolor.GetRed() * 0.8
                 g = fillcolor.GetGreen() * 0.8
                 b = fillcolor.GetBlue() * 0.8
                 color = ROOT.TColor.GetColor(r, g, b)
 
                 fillcolor = ROOT.gROOT.GetColor(color)
+                """
                 r = fillcolor.GetRed() * 0.8
                 g = fillcolor.GetGreen() * 0.8
                 b = fillcolor.GetBlue() * 0.8

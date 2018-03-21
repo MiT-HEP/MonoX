@@ -35,7 +35,7 @@ import ROOT
 
 mlfit = ROOT.TFile.Open(sys.argv[3])
 if bonly:
-    postfitDir = mlfit.Get('shapes_fit_b')
+    postfitDir = mlfit.Get('shapes_fit_b') # shapes_prefit
 else:
     postfitDir = mlfit.Get('shapes_fit_s')
 
@@ -286,6 +286,14 @@ for key in postfitDir.GetListOfKeys():
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.0)
+    canvas.ymin = 0.003
+    if 'monoph' in region:
+        canvas.ymax = 200.
+    elif 'mono' in region:
+        canvas.ymax = 20.
+    elif 'di' in region:
+        canvas.ymax = 5.
+
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
     else:
