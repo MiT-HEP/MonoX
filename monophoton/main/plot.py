@@ -438,7 +438,7 @@ def printCanvas(canvas, plotdef, plotConfig):
         addLinear = False
 
     canvas.ylimits = (plotdef.ymin, plotdef.ymax)
-    canvas.Update(logy = logy, ymax = plotdef.ymax)
+    canvas.Update(logy = logy)
 
     if plotdef.fullyBlinded():
         # remove ratio pad. Hack to use SimpleCanvas interface

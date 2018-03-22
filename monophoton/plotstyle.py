@@ -270,8 +270,6 @@ class SimpleCanvas(object):
         self.xlimits = (0., -1.)
         self.ylimits = (0., -1.)
 
-        self.minimum = -1.
-
         self.title = ''
         self.textside = 'left'
         self.lumi = lumi
@@ -400,8 +398,6 @@ class SimpleCanvas(object):
         self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
         self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
 
-        self.minimum = -1.
-
         if full:
             self.legend.Clear()
             self._logx = False
@@ -417,7 +413,7 @@ class SimpleCanvas(object):
 
         self._modified()
 
-    def Update(self, hList = None, logx = None, logy = None, ymax = -1., drawLegend = True):
+    def Update(self, hList = None, logx = None, logy = None, drawLegend = True):
         if logx is not None:
             self.canvas.SetLogx(logx)
             self.canvas.Update()
@@ -439,7 +435,7 @@ class SimpleCanvas(object):
         if hList is None:
             hList = range(len(self._histograms))
 
-        base = self._updateMainPad(self.canvas, hList, logx, logy, ymax, drawLegend = drawLegend)
+        base = self._updateMainPad(self.canvas, hList, logx, logy, drawLegend = drawLegend)
 
         if base:
             if self.xtitle:
@@ -451,7 +447,7 @@ class SimpleCanvas(object):
 
         self._needUpdate = False
 
-    def _updateMainPad(self, pad, hList, logx, logy, ymax, rooHists = None, drawLegend = True):
+    def _updateMainPad(self, pad, hList, logx, logy, rooHists = None, drawLegend = True):
         gPad = ROOT.gPad
 
         pad.cd()
@@ -476,10 +472,10 @@ class SimpleCanvas(object):
 
                 base.Draw(drawOpt)
 
-            if ymax > 0.:
-                base.SetMaximum(ymax)
-
             pad.Update()
+
+            maximum = base.GetMaximum()
+            minimum = base.GetMinimum()
     
             # draw other histograms
             for ih in hList[1:]:
@@ -497,11 +493,8 @@ class SimpleCanvas(object):
 
                     hist.Draw(drawOpt)
 
-                if ymax < 0. and hist.GetMaximum() > base.GetMaximum():
-                    if logy:
-                        base.SetMaximum(hist.GetMaximum() * 5.)
-                    else:
-                        base.SetMaximum(hist.GetMaximum() * 1.3)
+                maximum = max(maximum, hist.GetMaximum())
+                minimum = min(minimum, hist.GetMaximum())
 
             pad.Update()
 
@@ -511,19 +504,43 @@ class SimpleCanvas(object):
                 elif base.InheritsFrom(ROOT.TGraph.Class()):
                     base.GetXaxis().SetLimits(*self.xlimits)
 
-            if self.ylimits[1] < self.ylimits[0]:
-                if logy:
-                    if self.minimum > 0.:
-                        base.SetMinimum(self.minimum)
-                else:
-                    base.SetMinimum(0.)
-            else:
-                if self.ylimits[0] <= 0. and not logy:
-                    base.SetMinimum(self.ylimits[0])
-                elif self.ylimits[0] > 0.:
-                    base.SetMinimum(self.ylimits[0])
+            if self.ylimits[1] > self.ylimits[0]:
+                # y range specified - override
+                minimum, maximum = self.ylimits
 
-                base.SetMaximum(self.ylimits[1])
+            elif logy:
+                if minimum <= 0.:
+                    minimum = 1.e-5
+                else:
+                    minimum *= 0.2
+                maximum *= 5.
+
+            else:
+                minimum = min(minimum, 0.)
+                maximum *= 1.3
+
+            base.SetMinimum(minimum)
+            base.SetMaximum(maximum)
+
+            if base.InheritsFrom(ROOT.THStack.Class()) and base.GetHistogram():
+                # THStack has an absolutely retarded hard-coded weird override of minimum and maximum:
+                #   if (!fHistogram->TestBit(TH1::kIsZoomed)) {
+                #      if (nostack && fMaximum != -1111) fHistogram->SetMaximum(fMaximum);
+                #      else {
+                #         if (gPad->GetLogy())           fHistogram->SetMaximum(themax*(1+0.2*TMath::Log10(themax/themin)));
+                #         else                           fHistogram->SetMaximum((1+gStyle->GetHistTopMargin())*themax);
+                #      }
+                #      if (nostack && fMinimum != -1111) fHistogram->SetMinimum(fMinimum);
+                #      else {
+                #         if (gPad->GetLogy())           fHistogram->SetMinimum(themin/(1+0.5*TMath::Log10(themax/themin)));
+                #         else                           fHistogram->SetMinimum(themin);
+                #      }
+                #   }
+                #
+                # We hack our way through here by setting this kIsZoomed
+                base.GetHistogram().SetBit(ROOT.TH1.kIsZoomed)
+                base.GetHistogram().SetMinimum(minimum)
+                base.GetHistogram().SetMaximum(maximum)
 
             if len(self.legend.entries) != 0 and drawLegend:
                 self.legend.Draw(drawLegend)
@@ -536,6 +553,20 @@ class SimpleCanvas(object):
         gPad.cd()
 
         return base
+
+    def _fixTHStack(self, **options):
+        if 'hList' in options:
+            hList = options['hList']
+        else:
+            hList = range(len(self._histograms))
+
+        if len(hList) == 0:
+            return
+
+        base = self._histograms[hList[0]]
+
+        if base.InheritsFrom(ROOT.THStack.Class()) and base.GetHistogram():
+            base.GetHistogram().SetBit(ROOT.TH1.kIsZoomed, False)
 
     def SetLogx(self, logx):
         self._logx = logx
@@ -589,6 +620,8 @@ class SimpleCanvas(object):
 
         self.canvas.Print(targetDir + '/' + name + '.pdf', 'pdf')
         self.canvas.Print(targetDir + '/' + name + '.png', 'png')
+
+        self._fixTHStack(**options)
 
         if self.selection is not None:
             selFile = open(targetDir + '/' + name + '.txt', 'w')
@@ -864,7 +897,7 @@ class RatioCanvas(SimpleCanvas):
         self.raxis.SetWmin(self.rlimits[0])
         self.raxis.SetWmax(self.rlimits[1])
 
-    def Update(self, hList = None, rList = None, logx = None, logy = None, ymax = -1., drawLegend = True):
+    def Update(self, hList = None, rList = None, logx = None, logy = None, drawLegend = True):
         if not self._needUpdate:
             if logx is not None:
                 self._updateAxis('x', logx)
@@ -891,7 +924,7 @@ class RatioCanvas(SimpleCanvas):
         if hList is None:
             hList = range(len(self._histograms))
 
-        base = self._updateMainPad(self.plotPad, hList, logx, logy, ymax, rooHists, drawLegend = drawLegend)
+        base = self._updateMainPad(self.plotPad, hList, logx, logy, rooHists, drawLegend = drawLegend)
 
         if base:
             base.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
@@ -1183,7 +1216,7 @@ class DataMCCanvas(RatioCanvas):
 
         return idx
 
-    def Update(self, logx = None, logy = None, ymax = -1., drawLegend = True):
+    def Update(self, logx = None, logy = None, drawLegend = True):
         if not self._needUpdate:
             if logx is not None:
                 self._updateAxis('x', logx)
@@ -1240,7 +1273,7 @@ class DataMCCanvas(RatioCanvas):
 
             self.legend.construct(legendOrder)
 
-            RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, ymax = ymax, drawLegend = drawLegend)
+            RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, drawLegend = drawLegend)
 
             self._histograms.pop()
             self._histograms.pop()
