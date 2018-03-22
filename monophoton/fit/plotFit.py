@@ -35,7 +35,7 @@ import ROOT
 
 mlfit = ROOT.TFile.Open(sys.argv[3])
 if bonly:
-    postfitDir = mlfit.Get('shapes_fit_b')
+    postfitDir = mlfit.Get('shapes_fit_b') # shapes_prefit
 else:
     postfitDir = mlfit.Get('shapes_fit_s')
 
@@ -43,6 +43,37 @@ SIMPLE = False
 
 workspace = ROOT.TFile.Open(wc.config.outname).Get('wspace')
 x = workspace.arg('x')
+
+def printRegionHeader(name, hist):
+    nbins = hist.GetNbinsX()
+    tstr = r'\begin{tabular}{ |'
+    hstr = r'\multicolumn{' + str(nbins) + r'}{ |c| }{Bin-by-bin yields for ' + name + r' region} \\'
+    pstr = '%15s' % r'E_{T}^{\gamma}'
+    
+    for iBin in range(1, nbins + 1):
+        tstr += 'c|'
+        pstr += ' & %19s' % ( '[%4.0f, %4.0f]' % (hist.GetBinLowEdge(iBin), hist.GetBinLowEdge(iBin+1)))
+
+    tstr += ' }'
+    pstr += r' \\' # \n'
+
+    print tstr
+    print r'\hline' 
+    print hstr
+    print r'\hline' 
+    print pstr
+    print r'\hline' 
+
+def printBinByBin(name, hist):
+    pstr = '%15s' % name
+    
+    for iBin in range(1, hist.GetNbinsX() + 1):
+        width = hist.GetBinWidth(iBin)
+        pstr += ' & $%6.2f \\pm %5.2f $' % (width * hist.GetBinContent(iBin), width * hist.GetBinError(iBin))
+    
+    pstr += r' \\' # \n'
+
+    print pstr
 
 for key in postfitDir.GetListOfKeys():
     region = key.GetName()
@@ -137,14 +168,14 @@ for key in postfitDir.GetListOfKeys():
     else:
         postfitSub = None
 
-    print region
     plotConfig = getConfig(region)
-    print plotConfig
     
     lumi = 0.
     for sample in plotConfig.obs.samples:
         lumi += sample.lumi / plotConfig.prescales[sample]
     
+    if not SIMPLE:
+        printRegionHeader(region, prefitTotal)
     
     canvas = RatioCanvas(lumi = lumi, name = region)
     canvas.legend.setPosition(0.4, 0.6, 0.9, 0.9)
@@ -208,6 +239,9 @@ for key in postfitDir.GetListOfKeys():
         for group in plotConfig.bkgGroups:
             ghist = postfitDir.Get(region + '/' + group.name).Clone()
             ghist.SetTitle('')
+
+            printBinByBin(group.name, ghist)
+
             if len(groupHists):
                 ghist.Add(groupHists[-1])
             groupHists.append(ghist)
@@ -216,10 +250,13 @@ for key in postfitDir.GetListOfKeys():
             try:
                 shist = postfitDir.Get(region + '/total_signal').Clone()
                 shist.SetTitle('')
+
+                printBinByBin('signal', shist)
+
                 if len(groupHists):
                     shist.Add(groupHists[-1])
                     
-                canvas.legend.add('signal', title = 'Signal', opt= 'F', fcolor = ROOT.kMagenta, fstyle = 3002)
+                canvas.legend.add('signal', title = 'Signal', opt= 'F', fcolor = ROOT.kBlack, fstyle = 3002)
                 canvas.legend.apply('signal', shist)
 
                 iS = canvas.addHistogram(shist)
@@ -238,10 +275,25 @@ for key in postfitDir.GetListOfKeys():
 
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
+        print r'\hline' 
+        printBinByBin('total', postfitTotal)
+        print r'\hline' 
+        printBinByBin('data', dataHist)
+        print r'\hline'
+        print r'\end{tabular}'
+
     else:
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.0)
+    canvas.ymin = 0.003
+    if 'monoph' in region:
+        canvas.ymax = 200.
+    elif 'mono' in region:
+        canvas.ymax = 20.
+    elif 'di' in region:
+        canvas.ymax = 5.
+
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
     else:
