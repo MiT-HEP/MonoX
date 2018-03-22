@@ -254,6 +254,7 @@ class SimpleCanvas(object):
             self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
         self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
         self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
+        self.canvas.SetTicky(2)
 
         self._histograms = []
         self._objects = []
@@ -840,6 +841,7 @@ class RatioCanvas(SimpleCanvas):
         self.plotPad.SetMargin(SimpleCanvas.XMIN, 1. - SimpleCanvas.XMAX, RatioCanvas.PLOT_YMIN, 1. - SimpleCanvas.YMAX) # lrbt
         self.plotPad.SetLogx(self._logx)
         self.plotPad.SetLogy(self._logy)
+        self.plotPad.SetTicky(2)
         
         self.ratioPad = self.canvas.cd(2)
         self.ratioPad.SetPad(SimpleCanvas.XMIN, RatioCanvas.RATIO_YMIN, SimpleCanvas.XMAX, RatioCanvas.RATIO_YMAX)
