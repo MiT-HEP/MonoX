@@ -647,6 +647,7 @@ def vbfgBase(sample, rname):
         jetDPhi.setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
+        trigeff = ROOT.PhotonPtWeight(ROOT.TF1('trigeff_nominal', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.), 'trigeff')
         selector.addOperator(ROOT.ConstantWeight(0.967, 'triggereff'))
 
         addPUWeight(sample, selector)
@@ -1994,6 +1995,9 @@ def ph75(sample, rname):
     hltph75 = ROOT.HLTFilter('HLT_Photon75')
     hltph75.setIgnoreDecision(True)
     selector.addOperator(hltph75)
+    hltph75vbf = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    hltph75vbf.setIgnoreDecision(True)
+    selector.addOperator(hltph75vbf)
 
     operators = [
         'MetFilters',
