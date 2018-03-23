@@ -286,13 +286,12 @@ for key in postfitDir.GetListOfKeys():
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.0)
-    canvas.ymin = 0.003
     if 'monoph' in region:
-        canvas.ymax = 200.
+        canvas.ylimits = (0.0003, 200.)
     elif 'mono' in region:
-        canvas.ymax = 20.
+        canvas.ylimits = (0.0003, 20.)
     elif 'di' in region:
-        canvas.ymax = 5.
+        canvas.ylimits = (0.0003, 5.)
 
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
@@ -306,7 +305,7 @@ for key in postfitDir.GetListOfKeys():
     else:
         outname = 'splusb_' + region
 
-    canvas.printWeb('monophoton/fit', outname, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
+    canvas.printWeb('EXO16053/fit', outname, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
     canvas.Clear()
 
     dataHist.Delete()
