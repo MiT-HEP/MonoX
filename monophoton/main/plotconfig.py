@@ -166,7 +166,7 @@ def getConfig(confName):
             group.variations.append(Variation('photonSF', reweight = 'photonSF'))
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            # group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
             group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
             
 
@@ -271,7 +271,7 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.02)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            # group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
             group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
@@ -360,7 +360,7 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.04)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            # group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
             group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
@@ -460,7 +460,7 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('muonSF', reweight = 0.01)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            # group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
             group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
@@ -553,7 +553,7 @@ def getConfig(confName):
             group.variations.append(Variation('pixelVetoSF', reweight = 'pixelVetoSF'))
             group.variations.append(Variation('electronSF', reweight = 0.02)) # apply flat for now
             group.variations.append(Variation('leptonVetoSF', reweight = 0.02))
-            group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
+            # group.variations.append(Variation('muonVetoSF', reweight = 'MuonVetoSF'))
             group.variations.append(Variation('electronVetoSF', reweight = 'ElectronVetoSF'))
 
             if group.name in ['vvg']:
