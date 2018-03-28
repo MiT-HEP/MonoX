@@ -19,7 +19,7 @@ from plotstyle import RatioCanvas
 import workspace_config as wc
 
 config = sys.argv[1]
-bonly = bool(int(sys.argv[2]))
+pdir = sys.argv[2]
 
 if config == 'monoph':
     import parameters
@@ -34,10 +34,15 @@ elif config == 'ggh':
 import ROOT
 
 mlfit = ROOT.TFile.Open(sys.argv[3])
-if bonly:
-    postfitDir = mlfit.Get('shapes_fit_b') # shapes_prefit
-else:
+if pdir == 'p':
+    postfitDir = mlfit.Get('shapes_prefit')
+elif pdir == 'b':
+    postfitDir = mlfit.Get('shapes_fit_b') 
+elif pdir == 's':
     postfitDir = mlfit.Get('shapes_fit_s')
+else:
+    print 'Please choose prefit (p), b-only (b), or s+b (s) directory to use for plotting.'
+    sys.exit(0)
 
 SIMPLE = False
 
@@ -46,16 +51,24 @@ x = workspace.arg('x')
 
 def printRegionHeader(name, hist):
     nbins = hist.GetNbinsX()
-    tstr = r'\begin{tabular}{ |'
-    hstr = r'\multicolumn{' + str(nbins) + r'}{ |c| }{Bin-by-bin yields for ' + name + r' region} \\'
-    pstr = '%15s' % r'E_{T}^{\gamma}'
+
+    if pdir == 'p':
+        fit = 'pre-fit'
+    elif pdir == 'b':
+        fit = 'background-only post-fit'
+    elif pdir == 's':
+        fit = 'signal-plus-background post-fit'
+    
+    tstr = '\\begin{table} \n\\begin{center} \n\\begin{tabular}{ |c|'
+    hstr = r'\multicolumn{' + str(nbins+1) + r'}{ |c| }{Estimated ' + fit + ' bin-by-bin yields for ' + name + r' region} \\'
+    pstr = '%15s' % r'$E_{T}^{\gamma}$'
     
     for iBin in range(1, nbins + 1):
         tstr += 'c|'
         pstr += ' & %19s' % ( '[%4.0f, %4.0f]' % (hist.GetBinLowEdge(iBin), hist.GetBinLowEdge(iBin+1)))
 
     tstr += ' }'
-    pstr += r' \\' # \n'
+    pstr += r' \\'
 
     print tstr
     print r'\hline' 
@@ -64,6 +77,32 @@ def printRegionHeader(name, hist):
     print pstr
     print r'\hline' 
 
+def printRegionFooter(name, lumi, thist, dhist):
+    if pdir == 'p':
+        fitl = 'pre-fit'
+        fits = 'prefit'
+    elif pdir == 'b':
+        fitl = 'background-only post-fit'
+        fits = 'bonly'
+    elif pdir == 's':
+        fitl = 'signal-plus-background post-fit'
+        fits = 'splusb'
+        
+    cstr = r'\caption{Estimated ' + fitl + ' bin-by-bin yields in the ' + name + ' region.}'
+    lstr = r'\label{tab:' + fits + '_binbybin_' + name + '}'
+ 
+    print r'\hline' 
+    printBinByBin('total', thist)
+    print r'\hline' 
+    printBinByBin('data', dhist)
+    print r'\hline'
+    print r'\end{tabular}'
+    print r'\end{center}'
+    print cstr
+    print lstr
+    print r'\end{table}'
+    print ''
+
 def printBinByBin(name, hist):
     pstr = '%15s' % name
     
@@ -71,7 +110,7 @@ def printBinByBin(name, hist):
         width = hist.GetBinWidth(iBin)
         pstr += ' & $%6.2f \\pm %5.2f $' % (width * hist.GetBinContent(iBin), width * hist.GetBinError(iBin))
     
-    pstr += r' \\' # \n'
+    pstr += r' \\'
 
     print pstr
 
@@ -87,10 +126,10 @@ for key in postfitDir.GetListOfKeys():
     prefitRatio = prefitTotal.Clone('prefitRatio')
     prefitUncRatio = prefitTotal.Clone('prefitUncRatio')
 
-    if bonly:
-        postfitTotal = postfitDir.Get(region + '/total_background')
-    else:
+    if pdir == 's':
         postfitTotal = postfitDir.Get(region + '/total')
+    else:
+        postfitTotal = postfitDir.Get(region + '/total_background')
     postfitUnc = postfitTotal.Clone('postfitUnc')
     postfitRatio = postfitTotal.Clone('postfitRatio')
     postfitUncRatio = postfitTotal.Clone('postfitUncRatio')
@@ -183,10 +222,11 @@ for key in postfitDir.GetListOfKeys():
     canvas.legend.add('prefit', title = 'prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
     if postfitSub and SIMPLE:
         canvas.legend.add('subdom', title = 'postfit subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
-    if bonly:
-        canvas.legend.add('postfit', title = 'b-only postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
-    else:
+    if pdir == 's':
         canvas.legend.add('postfit', title = 's+b postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+    else:
+        canvas.legend.add('postfit', title = 'b-only postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+
 
     obs.SetTitle('')
     prefitTotal.SetTitle('')
@@ -246,7 +286,7 @@ for key in postfitDir.GetListOfKeys():
                 ghist.Add(groupHists[-1])
             groupHists.append(ghist)
 
-        if not bonly:
+        if pdir == 's':
             try:
                 shist = postfitDir.Get(region + '/total_signal').Clone()
                 shist.SetTitle('')
@@ -275,24 +315,18 @@ for key in postfitDir.GetListOfKeys():
 
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
-        print r'\hline' 
-        printBinByBin('total', postfitTotal)
-        print r'\hline' 
-        printBinByBin('data', dataHist)
-        print r'\hline'
-        print r'\end{tabular}'
+        printRegionFooter(region, lumi, postfitTotal, dataHist)
 
     else:
         hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.0)
-    canvas.ymin = 0.003
     if 'monoph' in region:
-        canvas.ymax = 200.
+        canvas.ylimits = (0.0003, 200.)
     elif 'mono' in region:
-        canvas.ymax = 20.
+        canvas.ylimits = (0.0003, 20.)
     elif 'di' in region:
-        canvas.ymax = 5.
+        canvas.ylimits = (0.0003, 5.)
 
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
@@ -301,9 +335,11 @@ for key in postfitDir.GetListOfKeys():
     canvas.ytitle = 'Events / GeV'
     canvas.rtitle = 'Data / Pred.'
 
-    if bonly:
+    if pdir == 'p':
+        outname = 'prefit_' + region
+    elif pdir == 'b':
         outname = 'bonly_' + region
-    else:
+    elif pdir == 's':
         outname = 'splusb_' + region
 
     canvas.printWeb('monophoton/fit', outname, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
