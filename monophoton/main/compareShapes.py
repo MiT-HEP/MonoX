@@ -29,7 +29,7 @@ from datasets import allsamples
 import config
 from main.plotconfig import getConfig
 
-monophConfig = getConfig('nosel')
+monophConfig = getConfig('monoph')
 source = r.TFile.Open(args.input)
 
 colors = [r.kBlack, r.kRed, r.kBlue]
@@ -38,12 +38,14 @@ lumi = 0.
 for sName in monophConfig.obs.samples:
     lumi += allsamples[sName.name].lumi
 
-def getHist(name, syst = ''):
+def getHist(name, syst = '', split = ''):
     if syst:
-        return source.Get(variable + '/samples/' + name + '_' + syst)
-        
+        path = variable + split + '/' + name + '_' + syst # /samples
     else:
-        return source.Get(variable + '/samples/' + name + '_signalRaw')
+        path = variable + split + '/' + name # /samples
+
+    print path
+    return source.Get(path)
 
 rcanvas = RatioCanvas(lumi = lumi, name = 'raw')
 scanvas = RatioCanvas(lumi = lumi, name = 'norm')
@@ -51,7 +53,7 @@ scanvas = RatioCanvas(lumi = lumi, name = 'norm')
 if args.outdir is None:
     args.outdir = '_'.join(args.samples)
 
-plotDir = 'monophoton/compareShapes/' + args.input.rstrip('.root') + '/' + args.outdir
+plotDir = 'monophoton/compareShapes/' + args.input.split('/')[-1].rstrip('.root') + '/' + args.outdir
 
 for variable in args.variable:
     xtitle = monophConfig.getPlot(variable).title
@@ -68,9 +70,11 @@ for variable in args.variable:
     scanvas.xtitle = xtitle
     scanvas.ytitle = 'A.U.'
     
-    for iS, sample in enumerate(args.samples):
+    # for iS, sample in enumerate(args.samples): # for between sample comparisons
+    for iS, sample in enumerate(['LowPhoPt', 'HighPhoPt']): # for within sample comparisons
         print 'Getting', sample
-        hist = getHist(sample)
+        # hist = getHist(sample) # for between sample comparisons
+        hist = getHist(args.samples[0], split = sample) # for within sample comparisons
         
         if not hist:
             print "Hist doesn't exist for", sample
@@ -83,13 +87,13 @@ for variable in args.variable:
 
         rcanvas.legend.add(sample, title = sample, mcolor = colors[iS], lcolor = colors[iS], lwidth = 2)
         rcanvas.legend.apply(sample, hist)
-        rID = rcanvas.addHistogram(hist, drawOpt = 'L')
+        rID = rcanvas.addHistogram(hist, drawOpt = 'HIST')
 
         if hist.Integral():
             hist.Scale( 1. / hist.Integral() )
         scanvas.legend.add(sample, title = sample, mcolor = colors[iS], lcolor = colors[iS], lwidth = 2)
         scanvas.legend.apply(sample, hist)
-        sID = scanvas.addHistogram(hist, drawOpt = 'L')
+        sID = scanvas.addHistogram(hist, drawOpt = 'HIST')
 
         print rID, sID
         
