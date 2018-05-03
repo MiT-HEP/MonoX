@@ -84,8 +84,8 @@ def monophotonSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
-    selconf['electronTFactorSource'] = (0.0303, 0.0022)
-
+    selconf['electronTFactorSource'] = (0.0303, 0.0726) # need to provide relative uncertinaty, absolute is 0.0022
+ 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
 

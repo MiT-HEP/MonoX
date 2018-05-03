@@ -55,12 +55,13 @@ def getConfigGGH(confName):
                 config.addObs(sname)
 
         config.baseline = baseSel 
+        config.fullSelection = ''
 
         config.addSig('dph', 'Dark Photon', samples = ['dph-*'], scale = 0.1)
         config.addSig('dphv', 'Dark Photon (VBF)', samples = ['dphv-*'], scale = 0.1)
 
         config.addSigPoint('dph-nlo-125', 'H_{125}(#gamma, #gamma_{D})', color = ROOT.kCyan)
-        config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D}) (VBF)', color = ROOT.kGreen)
+        # config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D}) (VBF)', color = ROOT.kGreen)
 
         config.addBkg('gg', '#gamma#gamma', samples = gg, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
@@ -69,7 +70,7 @@ def getConfigGGH(confName):
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'gghHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         if confName != 'gghgNoFake':
             config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)

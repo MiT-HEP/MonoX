@@ -29,8 +29,8 @@ from datasets import allsamples
 import config
 from main.plotconfig import getConfig
 
-monophConfig = getConfig('monoph')
-source = r.TFile.Open(args.input)
+monophConfig = getConfig(args.input)
+source = r.TFile.Open(config.histDir + '/plots/' + args.input + '.root')
 
 variable = args.variable
 xtitle = monophConfig.getPlot(variable).title
@@ -76,7 +76,7 @@ pprint(nuisances)
 rcanvas = RatioCanvas(lumi = lumi)
 
 for syst, procs in nuisances.items():
-    plotDir = 'monophoton/shapeSysts/' + variable + '/' + syst
+    plotDir = 'monophoton/shapeSysts/' + '/' + args.input
     for proc in processes:
         if proc in procs:
             rcanvas.Clear()
@@ -95,7 +95,7 @@ for syst, procs in nuisances.items():
             nomId = rcanvas.addHistogram(nominal, drawOpt = 'L')
 
             if not var:
-                rcanvas.rlimits = (0.8, 1.2)
+                rcanvas.rlimits = (0.95, 1.05)
                 for iB in range(1, up.GetNbinsX()+1):
                     if nominal.GetBinContent(iB):
                         binRatioUp = up.GetBinContent(iB) / nominal.GetBinContent(iB)
@@ -110,6 +110,9 @@ for syst, procs in nuisances.items():
 
                     elif binRatioUp > 1.2 or binRatioDown < 0.8:
                         rcanvas.rlimits = (0.45, 1.55)
+
+                    elif binRatioUp > 1.05 or binRatioDown < 0.95:
+                        rcanvas.rlimits = (0.8, 1.2)
                     
 
                 up.GetXaxis().SetTitle('E_{T}^{#gamma} (GeV)')
@@ -122,7 +125,7 @@ for syst, procs in nuisances.items():
                 rcanvas.legend.apply('down', down)
                 downId = rcanvas.addHistogram(down, drawOpt = 'L')
 
-                rcanvas.printWeb(plotDir, proc, hList = [upId, downId, nomId], rList = [nomId, upId, downId])
+                rcanvas.printWeb(plotDir + '/' + proc, syst, hList = [upId, downId, nomId], rList = [nomId, upId, downId])
 
             else:
                 var.GetXaxis().SetTitle('E_{T}^{#gamma} (GeV)')
@@ -130,4 +133,4 @@ for syst, procs in nuisances.items():
                 rcanvas.legend.apply('var', var)
                 varId = rcanvas.addHistogram(var, drawOpt = 'L')
 
-                rcanvas.printWeb(plotDir, proc, hList = [varId, nomId], rList = [nomId, varId])
+                rcanvas.printWeb(plotDir + '/' + proc, syst, hList = [varId, nomId], rList = [nomId, varId])
