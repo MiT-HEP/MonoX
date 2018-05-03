@@ -4,6 +4,7 @@ import sys
 import os
 import array
 import math
+import random
 import collections
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -230,7 +231,10 @@ if ADDFIT:
         result.SetBinError(ibin, 1.e+6)
         ibin += 1
 
-    power = ROOT.TF1('power', '[0] + [1] * TMath::Power(x - [2], [3])', result.GetXaxis().GetXmin(), result.GetXaxis().GetXmax())
+    xmin = result.GetXaxis().GetXmin()
+    xmax = result.GetXaxis().GetXmax()
+
+    power = ROOT.TF1('power', '[0] + [1] * TMath::Power(x - [2], [3])', xmin, xmax)
     power.SetParameters(0.01, 1., 10., -1.)
     power.SetParLimits(0, 0.005, 0.03)
     power.SetParLimits(1, 0.01, 3.)
@@ -238,6 +242,9 @@ if ADDFIT:
     power.SetParLimits(3, -5., 0.)
     result.Fit(power)
     canvas.addObject(power)
+
+    outputFile.cd()
+    power.Write(PRODUCT + '_fit')
 
     text = 'f = %.4f + %.3f#times(p_{T} ' % (power.GetParameter(0), power.GetParameter(1))
     if power.GetParameter(2) >= 0.:
@@ -251,6 +258,79 @@ if ADDFIT:
     for ibin, (cont, err) in contents.items():
         result.SetBinContent(ibin, cont)
         result.SetBinError(ibin, err)
+
+    # Throw toys and get uncertainties
+    # draw one normal parameter for total systematic (assume full correlation across bins)
+    # draw one normal parameter per bin for statistical
+    # 68% percentile on both sides become the up & down variations
+
+    original = tuple(power.GetParameter(i) for i in range(power.GetNpar()))
+
+    ntoys = 200
+    npx = 100
+
+    variations = []
+    for _ in range(npx):
+        variations.append([])
+
+    power.SetNpx(npx)
+
+    for _ in range(ntoys):
+        toy = result.Clone('toy')
+        toy.Reset()
+
+        psyst = random.gauss(0., 1.)
+
+        for iBin in range(result.GetNbinsX()):
+            stat = staterrs[iBin]
+            syst = systerrs[iBin]
+
+            systShift = syst * psyst
+            statShift = stat * random.gauss(0., 1.)
+
+            toy.SetBinContent(iBin + 1, result.GetBinContent(iBin + 1) + systShift + statShift)
+            toy.SetBinError(iBin + 1, math.sqrt(stat * stat + syst * syst))
+
+        # power is cloned in addObject above - we can modify its parameters
+        toy.Fit(power)
+
+        gr = ROOT.TGraph(power)
+        for ix in range(npx):
+            variations[ix].append(gr.GetY()[ix])
+
+    gup = ROOT.TGraph(npx)
+    gdown = ROOT.TGraph(npx)
+
+    power.SetParameters(*original)
+
+    for ix, var in enumerate(variations):
+        x = (power.GetXmax() - power.GetXmin()) / npx * ix + power.GetXmin()
+        ynom = power.Eval(x)
+        
+        var.sort()
+        iy = 0
+        while iy < ntoys and var[iy] < ynom:
+            iy += 1
+
+        up = var[int((ntoys - iy) * 0.68 + iy)]
+        down = var[int(iy * 0.32)]
+
+        gup.SetPoint(ix, x, up)
+        gdown.SetPoint(ix, x, down)
+
+    gup.SetLineStyle(ROOT.kDashed)
+    gup.SetLineColor(power.GetLineColor())
+    gup.SetLineWidth(power.GetLineWidth())
+    canvas.addHistogram(gup, drawOpt = 'CL')
+
+    gdown.SetLineStyle(ROOT.kDashed)
+    gdown.SetLineColor(power.GetLineColor())
+    gdown.SetLineWidth(power.GetLineWidth())
+    canvas.addHistogram(gdown, drawOpt = 'CL')
+
+    outputFile.cd()
+    gup.Write(PRODUCT + '_fitUp')
+    gdown.Write(PRODUCT + '_fitDown')
 
 canvas.xtitle = binningTitle
 canvas.printWeb(outputName, PRODUCT + '_' + dataType + '_' + binningName, logy = False)
