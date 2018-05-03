@@ -242,6 +242,9 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                 downhist = plotdef.makeHist(group.name + '_' + variation.name + 'Down', outDir = outDir)
     
                 for sample in group.samples:
+                    if sample.data and plotdef.mcOnly:
+                        continue
+
                     suphist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Up')
                     sdownhist = outDir.Get('samples/' + sample.name + '_' + region + '_' + variation.name + 'Down')
                     uphist.Add(suphist)
@@ -252,8 +255,10 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     # in the fringe case where sample variation has SumWeight of 0, the sample-level normalization
                     # does not work, leading to sum of SumWeights of variation samples not being equal to nominal
                     # total. We therefore re-normalize the variation at group level here.
-                    uphist.Scale(ghist.GetSumOfWeights() / uphist.GetSumOfWeights())
-                    downhist.Scale(ghist.GetSumOfWeights() / downhist.GetSumOfWeights())
+                    if uphist.GetSumOfWeights() > 0.:
+                        uphist.Scale(ghist.GetSumOfWeights() / uphist.GetSumOfWeights())
+                    if downhist.GetSumOfWeights() > 0.:
+                        downhist.Scale(ghist.GetSumOfWeights() / downhist.GetSumOfWeights())
 
                 writeHist(uphist)
                 writeHist(downhist)
