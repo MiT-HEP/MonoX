@@ -1,3 +1,4 @@
+
 import os
 import sys
 sys.dont_write_bytecode = True
@@ -74,7 +75,7 @@ if args.cutflow is None:
         ('PhotonSelection',),
     ]
 
-    if args.region == 'monoph':
+    if args.region in ['monoph', 'efake']:
         cutflow += [
             ('Met',),
             ('PhotonMetDPhi',),

@@ -86,7 +86,7 @@ def monophotonSetting():
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
     selconf['electronTFactor'] = 0.0303
-    selconf['electronTFactorUnc'] = 0.0022
+    selconf['electronTFactorUnc'] = 0.0726
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -134,7 +134,8 @@ def gghSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt2.root/frate'
+    selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
+    selconf['electronTFactorUnc'] = 'frate'
 
 ## utility functions
 
@@ -1010,7 +1011,7 @@ def efake(sample, rname):
 
     selector = monophotonBase(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!EVeto'])
 
     return selector
 
@@ -1331,7 +1332,7 @@ def monoelEfake(sample, rname):
     selector = monoel(sample, rname, selcls = ROOT.ZeeEventSelector)
     selector.findOperator('LeptonSelection').setStrictEl(False)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!EVeto'])
 
     return selector
 
@@ -1463,7 +1464,7 @@ def monomuHfake(sample, rname):
 def monomuEfake(sample, rname):
     selector = monomu(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!EVeto'])
 
     return selector
 
@@ -1812,7 +1813,7 @@ def vbfgEfake(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -1932,7 +1933,7 @@ def vbfzeeEfake(sample, rname):
 
     selector = vbfzee(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -2165,7 +2166,7 @@ def gghEfake(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -2226,7 +2227,7 @@ def gghe(sample, rname, selcls = None):
 def ggheEfake(sample, rname):
     selector = gghe(sample, rname, selcls = ROOT.ZeeEventSelector)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -2256,7 +2257,7 @@ def gghm(sample, rname, selcls = None):
 def gghmEfake(sample, rname):
     selector = gghm(sample, rname)
 
-    modEfake(selector)
+    modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -2632,7 +2633,7 @@ def modEfake(selector, selections = []):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '-ChargedPFVeto', '!CSafeVeto'])
+    setupPhotonSelection(photonSel, changes = selections + ['-EVeto', '-ChargedPFVeto'])
     setupPhotonSelection(photonSel, veto = True)
 
 
