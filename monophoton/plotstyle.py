@@ -224,17 +224,27 @@ class Legend(object):
         return getattr(self.legend, name)
 
 
-class Histogram(object):
-    def __init__(self, histogram, drawOpt, useRooHist = False):
-        self.histogram = histogram
+class Drawable(object):
+    def __init__(self, obj, drawOpt):
+        self.obj = obj
         self.drawOpt = drawOpt
-        self.useRooHist = useRooHist
 
     def __getattr__(self, attr):
-        return getattr(self.histogram, attr)
+        return getattr(self.obj, attr)
 
     def Clone(self, name = ''):
-        clone = self.histogram.Clone(name)
+        clone = self.obj.Clone(name)
+        return Drawable(clone, self.drawOpt)
+
+
+class Histogram(Drawable):
+    def __init__(self, histogram, drawOpt, useRooHist = False):
+        Drawable.__init__(self, histogram, drawOpt)
+
+        self.useRooHist = useRooHist
+
+    def Clone(self, name = ''):
+        clone = self.obj.Clone(name)
         return Histogram(clone, self.drawOpt, self.useRooHist)
 
 
@@ -254,7 +264,7 @@ class SimpleCanvas(object):
             self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
         self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
         self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
-        self.canvas.SetTicky(2)
+        self.canvas.SetTicky(1)
 
         self._histograms = []
         self._objects = []
@@ -354,18 +364,21 @@ class SimpleCanvas(object):
         return idx
 
 
-    def addObject(self, obj, clone = True):
+    def addObject(self, obj, clone = True, name = None, drawOpt = None):
         if clone:
-            self._objects.append(obj.Clone())
+            if name is None:
+                self._objects.append(Drawable(obj.Clone(), drawOpt))
+            else:
+                self._objects.append(Drawable(obj.Clone(name), drawOpt))
         else:
-            self._objects.append(obj)
+            self._objects.append(Drawable(obj, drawOpt))
 
     def addLine(self, x1, y1, x2, y2, color = ROOT.kBlack, width = 1, style = ROOT.kSolid, cls = ROOT.TLine):
         line = cls(x1, y1, x2, y2)
         line.SetLineColor(color)
         line.SetLineWidth(width)
         line.SetLineStyle(style)
-        self._objects.append(line)
+        self._objects.append(Drawable(line, None))
 
         self._modified()
 
@@ -374,7 +387,7 @@ class SimpleCanvas(object):
     def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
         pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size, ndc = ndc)
         pave.AddText(text)
-        self._objects.append(pave)
+        self._objects.append(Drawable(pave, None))
 
         return pave
 
@@ -460,7 +473,7 @@ class SimpleCanvas(object):
             # draw base
             base = self._histograms[hList[0]]
             if base.useRooHist:
-                graph = ROOT.RooHist(base.histogram)
+                graph = ROOT.RooHist(base.obj)
                 self._temporaries.append(graph)
                 if rooHists is not None:
                     rooHists[base] = graph
@@ -481,7 +494,7 @@ class SimpleCanvas(object):
             for ih in hList[1:]:
                 hist = self._histograms[ih]
                 if hist.useRooHist:
-                    graph = ROOT.RooHist(hist.histogram)
+                    graph = ROOT.RooHist(hist.obj)
                     self._temporaries.append(graph)
                     if rooHists is not None:
                         rooHists[hist] = graph
@@ -546,7 +559,10 @@ class SimpleCanvas(object):
                 self.legend.Draw(drawLegend)
 
         for obj in self._objects:
-            obj.Draw('SAME')
+            if obj.drawOpt is None:
+                obj.obj.Draw('SAME')
+            else:
+                obj.obj.Draw(obj.drawOpt + ' SAME')
 
         self.drawText()
 
@@ -1158,7 +1174,7 @@ class DataMCCanvas(RatioCanvas):
             self._obs = self.addHistogram(obs, drawOpt, asymErr = asymErr)
 
             self.legend.add('obs', title = title, opt = 'LP', color = color, mstyle = 8, msize = 0.8)
-            self.legend.apply('obs', self._histograms[self._obs].histogram)
+            self.legend.apply('obs', self._histograms[self._obs].obj)
 
         else:
             self.addHistogram(obs, idx = self._obs)
@@ -1174,7 +1190,7 @@ class DataMCCanvas(RatioCanvas):
             # a new background
             self._bkgs.append(idx)
 
-            bkgHist = self._histograms[idx].histogram
+            bkgHist = self._histograms[idx].obj
 
             fillcolor = ROOT.gROOT.GetColor(color)
             if fillcolor and color != 0:
@@ -1210,7 +1226,7 @@ class DataMCCanvas(RatioCanvas):
             self._sigs.append(idx)
 
             self.legend.add('sig%d' % idx, title = title, opt = 'L', color = color, lwidth = 4, lstyle = ROOT.kSolid, fstyle = 0)
-            self.legend.apply('sig%d' % idx, self._histograms[idx].histogram)
+            self.legend.apply('sig%d' % idx, self._histograms[idx].obj)
 
         self._modified()
 
@@ -1235,8 +1251,8 @@ class DataMCCanvas(RatioCanvas):
 
             for iBkg in self._bkgs[1:]:
                 bkg = self._histograms[iBkg]
-                borderHist.Add(bkg.histogram)
-                uncertHist.Add(bkg.histogram)
+                borderHist.Add(bkg.obj)
+                uncertHist.Add(bkg.obj)
         
             borderHist.SetLineWidth(2)
             borderHist.SetLineColor(self.borderColor)
