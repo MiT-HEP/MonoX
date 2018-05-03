@@ -82,6 +82,10 @@ def nuisance(nuis, up, down = None):
     else:
         a1 = up
 
+    if a1 < -1.:
+        # can't be used for log-normal as is
+        a1 = -1. + 1.e-5
+
     if not workspace.arg(nuis):
         fct('{nuis}[0,-5,5]'.format(nuis = nuis))
         nuisances.append(nuis)
@@ -482,26 +486,29 @@ if __name__ == '__main__':
 
                     ratio.Delete()
 
-                elif isLinkSource(sample):
+                elif isLinkSource(sample) and sample not in config.staticBase:
                     print '    this sample is a base of some other sample'
                     # each bin must be described by a free-floating RooRealVar unless this is a fixed base
                     # uncertainties are all casted on tfactors
 
-                    if sample in config.staticBase:
-                        print '      with a static shape'
+                    for ibin in range(1, nominal.GetNbinsX() + 1):
+                        bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
+                        bins.add(bin)
+
+                else:
+                    if isLinkSource(sample) and sample in config.staticBase:
+                        print '    this sample is a static base of some other sample'
+
+                        ## FIX THIS 
                         fct('mu_{sample}_scale[1., 1.0e-6, 10.]'.format(sample = sampleName))
                         # bin mu is raw x norm
                         for ibin in range(1, nominal.GetNbinsX() + 1):
                             fct('rawmu_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
                             bin = fct('prod::mu_{sample}_bin{bin}(rawmu_{sample}_bin{bin},mu_{sample}_scale)'.format(sample = sampleName, bin = ibin))
                             bins.add(bin)
-                    else:
-                        for ibin in range(1, nominal.GetNbinsX() + 1):
-                            bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
-                            bins.add(bin)
 
-                else:
-                    print '    this sample does not participate in constraints'
+                    else:
+                        print '    this sample does not participate in constraints'
 
                     for ibin in range(1, nominal.GetNbinsX() + 1):
                         binName = sampleName + '_bin{0}'.format(ibin)
