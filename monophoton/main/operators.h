@@ -1132,10 +1132,11 @@ class PhotonPtWeight : public Modifier {
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
 
-  double _calcWeight(TObject* source, double pt, int var = 0);
+  double calcWeight_(TObject* source, double pt, int var = 0);
 
   TObject* nominal_;
   double weight_;
+  bool usingErrors_{false};
   std::map<TString, TObject*> variations_;
   std::map<TString, double*> varWeights_;
   unsigned photonType_{kReco};

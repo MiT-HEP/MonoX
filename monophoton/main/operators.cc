@@ -9,6 +9,7 @@
 
 #include "TH1.h"
 #include "TF1.h"
+#include "TGraph.h"
 
 #include <iostream>
 #include <functional>
@@ -2916,6 +2917,8 @@ PhotonPtWeight::addVariation(char const* _tag, TObject* _corr)
 void
 PhotonPtWeight::useErrors(bool _b)
 {
+  usingErrors_ = true;
+
   TString tag(name_ + "Up");
   if (varWeights_.count(tag) != 0) {
     delete varWeights_[tag];
@@ -2975,16 +2978,18 @@ PhotonPtWeight::computeWeight(panda::EventMonophoton const& _event, panda::Event
     return;
   }
 
-  double weight(_calcWeight(nominal_, maxPt));
+  double weight(calcWeight_(nominal_, maxPt));
   weight_ = weight;
 
   for (auto& var : varWeights_) {
-    if (var.first == name_ + "Up") // using errors
-      *var.second = _calcWeight(nominal_, maxPt, 1) / weight;
-    else if (var.first == name_ + "Down") // using errors
-      *var.second = _calcWeight(nominal_, maxPt, -1) / weight;
+    if (usingErrors_) {
+      if (var.first == name_ + "Up")
+        *var.second = calcWeight_(nominal_, maxPt, 1) / weight;
+      else if (var.first == name_ + "Down")
+        *var.second = calcWeight_(nominal_, maxPt, -1) / weight;
+    }
     else // other variations
-      *var.second = _calcWeight(variations_[var.first], maxPt) / weight;
+      *var.second = calcWeight_(variations_[var.first], maxPt) / weight;
   }
 }
 
@@ -2996,7 +3001,7 @@ PhotonPtWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophot
 }
 
 double
-PhotonPtWeight::_calcWeight(TObject* source, double pt, int var/* = 0*/)
+PhotonPtWeight::calcWeight_(TObject* source, double pt, int var/* = 0*/)
 {
   if (source->InheritsFrom(TH1::Class())) {
     TH1* hist(static_cast<TH1*>(source));
@@ -3023,6 +3028,16 @@ PhotonPtWeight::_calcWeight(TObject* source, double pt, int var/* = 0*/)
       pt = func->GetXmax();
 
     return func->Eval(pt);
+  }
+  else if (source->InheritsFrom(TGraph::Class())) {
+    TGraph* graph(static_cast<TGraph*>(source));
+
+    if (pt < graph->GetX()[0])
+      pt = graph->GetX()[0];
+    if (pt > graph->GetX()[graph->GetN() - 1])
+      pt = graph->GetX()[graph->GetN() - 1];
+
+    return graph->Eval(pt);
   }
   else
     return 0.;
@@ -3332,8 +3347,8 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
   double pt(_outEvent.photons[0].scRawPt);
   double eta(_outEvent.photons[0].eta());
 
-  weight_ = _calcWeight(nominal_, pt);
-  noIsoT_ = _calcWeight(noIsoTFactor_, pt);
+  weight_ = calcWeight_(nominal_, pt);
+  noIsoT_ = calcWeight_(noIsoTFactor_, pt);
 
   if (_event.vertices.size() <= 1) {
     isoPVProb_ = 1.;
@@ -3365,7 +3380,7 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
 
   rc_ = 0.;
   if (rcProb_)
-    rc_ = _calcWeight(rcProb_, eta);
+    rc_ = calcWeight_(rcProb_, eta);
 
   double t(isoPVProb_ * weight_ + (1. - noIsoPVProb_) * noIsoT_ * rc_);
 
@@ -3374,11 +3389,11 @@ VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::Ev
   for (auto& var : varWeights_) {
     double isoT(0.);
     if (var.first == name_ + "Up")
-      isoT = _calcWeight(nominal_, pt, 1);
+      isoT = calcWeight_(nominal_, pt, 1);
     else if (var.first == name_ + "Down")
-      isoT = _calcWeight(nominal_, pt, -1);
+      isoT = calcWeight_(nominal_, pt, -1);
     else
-      isoT = _calcWeight(variations_[var.first], pt);
+      isoT = calcWeight_(variations_[var.first], pt);
 
     *var.second = (isoPVProb_ * isoT + (1. - noIsoPVProb_) * noIsoT_ * rc_) / t;
   }

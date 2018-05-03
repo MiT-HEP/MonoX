@@ -56,7 +56,8 @@ selconf = {
     'photonSF':('', '', [], (1., 0.)), # filename, histname, varlist, pixelveto SF and uncertainty
     'puweightSource': ('', ''), # gROOT directory name, file name
     'hadronTFactorSource': ('', ''), # file name, suffix
-    'electronTFactorSource': '',
+    'electronTFactor': '',
+    'electronTFactorUnc': '',
     'hadronProxyDef': []
 }
 ROOT.gROOT.ProcessLine("int idtune;")
@@ -84,7 +85,8 @@ def monophotonSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
-    selconf['electronTFactorSource'] = (0.0303, 0.0022)
+    selconf['electronTFactor'] = 0.0303
+    selconf['electronTFactorUnc'] = 0.0022
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -104,7 +106,8 @@ def vbfgSetting():
     selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactorSource'] = ROOT.TF1('eproxyWeight', '0.0052 + 1.114 * TMath::Power(x + 122.84, -0.75)', 0., 6500.)
+    selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
+    selconf['electronTFactorUnc'] = 'frate_fit'
 
 datadir + '/efakepf_data_ptalt.root'
 
@@ -131,7 +134,7 @@ def gghSetting():
     selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
     selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt2.root'
+    selconf['electronTFactorSource'] = datadir + '/efakepf_data_ptalt2.root/frate'
 
 ## utility functions
 
@@ -258,6 +261,7 @@ def monophotonBase(sample, rname, selcls = None):
     leptonSel.setN(0, 0)
     leptonSel.setRequireMedium(False)
     leptonSel.setRequireTight(False)
+    leptonSel.setIgnoreDecision(True)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')
@@ -647,8 +651,8 @@ def vbfgBase(sample, rname):
         jetDPhi.setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        trigeff = ROOT.PhotonPtWeight(ROOT.TF1('trigeff_nominal', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.), 'trigeff')
-        selector.addOperator(ROOT.ConstantWeight(0.967, 'triggereff'))
+        selector.addOperator(ROOT.PhotonPtWeight(ROOT.TF1('trigeff_ph_nominal', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.), 'trigeff_ph'))
+        selector.addOperator(ROOT.ConstantWeight(0.964, 'triggereff_vbf'))
 
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
@@ -1828,6 +1832,13 @@ def vbfgHfake(sample, rname):
 
     modHfake(selector)
 
+    weight = selector.findOperator('hadProxyWeight')
+
+    weight.addVariation('proxyDefUp', hadproxyTightWeight)
+    weight.addVariation('proxyDefDown', hadproxyLooseWeight)
+    weight.addVariation('purityUp', hadproxyPurityUpWeight)
+    weight.addVariation('purityDown', hadproxyPurityDownWeight)
+
     photonSel = selector.findOperator('PhotonSelection')
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
@@ -2581,19 +2592,30 @@ def modHfake(selector):
 def modEfake(selector, selections = []):
     """Append PhotonPtWeight with eproxyWeight and set up the photon selections."""
 
-    x = selconf['electronTFactorSource']
+    nom = selconf['electronTFactor']
+    unc = selconf['electronTFactorUnc']
 
-    if type(x) is str:
-        filename = x
-        logger.info('Adding electron fake rate from ' + filename)
+    if type(nom) is str:
+        # nom = file.root/obj
+        filename = nom[:nom.find('.root') + 5]
+        objname = nom[nom.find('.root') + 6:]
+        logger.info('Adding electron fake rate from %s/%s', filename, objname)
     
-        eproxyWeight = getFromFile(filename, 'frate')
+        eproxyWeight = getFromFile(filename, objname)
         weight = ROOT.PhotonPtWeight(eproxyWeight, 'egfakerate')
-        weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
         selector.addOperator(weight)
+
+        if unc:
+            if type(unc) is bool:
+                weight.useErrors(True) # use errors of eleproxyWeight as syst. variation
+            else:
+                up = getFromFile(filename, unc + 'Up')
+                weight.addVariation('egfakerateUp', up)
+                down = getFromFile(filename, unc + 'Down')
+                weight.addVariation('egfakerateDown', down)
     
-    elif type(x) is tuple:
-        (frate, unc) = x
+    elif type(nom) is float:
+        frate = nom
         logger.info('Adding numeric electron fake rate %f +- %f', frate, unc)
 
         weight = ROOT.ConstantWeight(frate, 'egfakerate')
@@ -2602,10 +2624,10 @@ def modEfake(selector, selections = []):
         selector.addOperator(weight)
 
     else:
-        logger.info('Adding electron fake rate from TF1 ' + x.GetTitle())
+        logger.info('Adding electron fake rate from TF1 ' + nom.GetTitle())
 
         # type is TF1
-        weight = ROOT.PhotonPtWeight(x, 'egfakerate')
+        weight = ROOT.PhotonPtWeight(nom, 'egfakerate')
         selector.addOperator(weight)
 
     photonSel = selector.findOperator('PhotonSelection')
