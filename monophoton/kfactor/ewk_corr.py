@@ -25,7 +25,17 @@ basedir = os.path.dirname(thisdir)
 
 MAKESOURCE = False
 
-outFile = ROOT.TFile.Open(basedir + '/data/ewk_corr_new.root', 'recreate' if MAKESOURCE else 'update')
+center = 500
+
+#outFile = ROOT.TFile.Open(basedir + '/data/ewk_corr.root', 'recreate' if MAKESOURCE else 'update')
+outFile = ROOT.TFile.Open(basedir + '/data/ewk_corr_%d.root' % center, 'recreate')
+origFile = ROOT.TFile.Open(basedir + '/data/ewk_corr.root')
+
+outFile.mkdir('source')
+origFile.cd('source')
+for key in ROOT.gDirectory.GetListOfKeys():
+    outFile.cd('source')
+    key.ReadObj().Write()
 
 nnloBinning = [175., 190., 250., 400., 700., 1000.]
 
@@ -133,7 +143,7 @@ for fs in ['wm', 'wp', 'z']:
             nnlos.append(float(words[1]) * 1.e-3 * 3.)
 
     ptrange = (175., 1000.)
-    center = (ptrange[0] + ptrange[1]) * 0.5
+#    center = (ptrange[0] + ptrange[1]) * 0.5
     halfwidth = (ptrange[1] - ptrange[0]) * 0.5
 
     for ix in range(1, hqq.GetNbinsX() + 1):
