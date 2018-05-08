@@ -78,6 +78,7 @@ plotdefs.append(ptdef)
 vsamples = []
 asamples = []
 
+count = 0
 for pname in os.listdir(args.gridDir):
     (_, _, spin, dm, med) = pname.split('-')[0].split('_')
     dm = dm.strip('Mx')
@@ -89,6 +90,15 @@ for pname in os.listdir(args.gridDir):
     elif spin == 'AV':
         sname = 'dmagen-%s-%s'.format(med, dm)
         asamples.append(sname)
+
+    ## if keep using plotconfig need to an entry per point to allsamples
+    ## need to grab xsec from bhawna's file and number of events (assume 50k for now)
+    ## need to override weight function in multidraw as it assumes there is a weight branch
+    ## probably need to extract the actual plotting step from fillPlots()
+
+    count = count + 1
+    if count > 10:
+        break
     
 plotConfig.addSig('dmvgen', 'DM V', samples = vsamples)
 plotConfig.addSig('dmagen', 'DM A', samples = asamples)    
