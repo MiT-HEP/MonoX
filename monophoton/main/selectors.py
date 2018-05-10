@@ -58,7 +58,8 @@ selconf = {
     'hadronTFactorSource': ('', ''), # file name, suffix
     'electronTFactor': '',
     'electronTFactorUnc': '',
-    'hadronProxyDef': []
+    'hadronProxyDef': [],
+    'ewkCorrSource': ''
 }
 ROOT.gROOT.ProcessLine("int idtune;")
 
@@ -87,6 +88,7 @@ def monophotonSetting():
     selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
     selconf['electronTFactor'] = 0.0303
     selconf['electronTFactorUnc'] = 0.0726
+    selconf['ewkCorrSource'] = 'ewk_corr.root'
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -108,6 +110,7 @@ def vbfgSetting():
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
     selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
     selconf['electronTFactorUnc'] = 'frate_fit'
+    selconf['ewkCorrSource'] = 'ewk_corr.root'
 
 datadir + '/efakepf_data_ptalt.root'
 
@@ -136,7 +139,14 @@ def gghSetting():
     selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
     selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
     selconf['electronTFactorUnc'] = 'frate'
+    selconf['ewkCorrSource'] = 'ewk_corr.root'
 
+def monophEWKSetting(inflection):
+    monophotonSetting()
+    logger.info('Changing EWK inflection point to ' + str(int(inflection)))
+    
+    selconf['ewkCorrSource'] = 'ewk_corr_' + str(int(inflection)) + '.root'
+    
 ## utility functions
 
 def setupPhotonSelection(operator, veto = False, changes = []):
@@ -2344,6 +2354,256 @@ def gghmm(sample, rname):
 
     return selector
 
+def monoph250(sample, rname):
+    """
+    EWK shape inflection point at 250 GeV
+    """
+    
+    selector = monoph(sample, rname)
+    monophEWKSetting(250)
+
+    return selector
+
+def monoph300(sample, rname):
+    """
+    EWK shape inflection point at 300 GeV
+    """
+    
+    selector = monoph(sample, rname)
+    monophEWKSetting(300)
+
+    return selector
+
+def monoph400(sample, rname):
+    """
+    EWK shape inflection point at 400 GeV
+    """
+    
+    selector = monoph(sample, rname)
+    monophEWKSetting(400)
+
+    return selector
+
+def monoph500(sample, rname):
+    """
+    EWK shape inflection point at 500 GeV
+    """
+    
+    selector = monoph(sample, rname)
+    monophEWKSetting(500)
+
+    return selector
+
+def monoph600(sample, rname):
+    """
+    EWK shape inflection point at 600 GeV
+    """
+    
+    selector = monoph(sample, rname)
+    monophEWKSetting(600)
+
+    return selector
+
+def dimu250(sample, rname):
+    """
+    EWK shape inflection point at 250 GeV
+    """
+    
+    selector = dimu(sample, rname)
+    monophEWKSetting(250)
+
+    return selector
+
+def dimu300(sample, rname):
+    """
+    EWK shape inflection point at 300 GeV
+    """
+    
+    selector = dimu(sample, rname)
+    monophEWKSetting(300)
+
+    return selector
+
+def dimu400(sample, rname):
+    """
+    EWK shape inflection point at 400 GeV
+    """
+    
+    selector = dimu(sample, rname)
+    monophEWKSetting(400)
+
+    return selector
+
+def dimu500(sample, rname):
+    """
+    EWK shape inflection point at 500 GeV
+    """
+    
+    selector = dimu(sample, rname)
+    monophEWKSetting(500)
+
+    return selector
+
+def dimu600(sample, rname):
+    """
+    EWK shape inflection point at 600 GeV
+    """
+    
+    selector = dimu(sample, rname)
+    monophEWKSetting(600)
+
+    return selector
+
+def diel250(sample, rname):
+    """
+    EWK shape inflection point at 250 GeV
+    """
+    
+    selector = diel(sample, rname)
+    monophEWKSetting(250)
+
+    return selector
+
+def diel300(sample, rname):
+    """
+    EWK shape inflection point at 300 GeV
+    """
+    
+    selector = diel(sample, rname)
+    monophEWKSetting(300)
+
+    return selector
+
+def diel400(sample, rname):
+    """
+    EWK shape inflection point at 400 GeV
+    """
+    
+    selector = diel(sample, rname)
+    monophEWKSetting(400)
+
+    return selector
+
+def diel500(sample, rname):
+    """
+    EWK shape inflection point at 500 GeV
+    """
+    
+    selector = diel(sample, rname)
+    monophEWKSetting(500)
+
+    return selector
+
+def diel600(sample, rname):
+    """
+    EWK shape inflection point at 600 GeV
+    """
+    
+    selector = diel(sample, rname)
+    monophEWKSetting(600)
+
+    return selector
+
+def monomu250(sample, rname):
+    """
+    EWK shape inflection point at 250 GeV
+    """
+    
+    selector = monomu(sample, rname)
+    monophEWKSetting(250)
+
+    return selector
+
+def monomu300(sample, rname):
+    """
+    EWK shape inflection point at 300 GeV
+    """
+    
+    selector = monomu(sample, rname)
+    monophEWKSetting(300)
+
+    return selector
+
+def monomu400(sample, rname):
+    """
+    EWK shape inflection point at 400 GeV
+    """
+    
+    selector = monomu(sample, rname)
+    monophEWKSetting(400)
+
+    return selector
+
+def monomu500(sample, rname):
+    """
+    EWK shape inflection point at 500 GeV
+    """
+    
+    selector = monomu(sample, rname)
+    monophEWKSetting(500)
+
+    return selector
+
+def monomu600(sample, rname):
+    """
+    EWK shape inflection point at 600 GeV
+    """
+    
+    selector = monomu(sample, rname)
+    monophEWKSetting(600)
+
+    return selector
+
+def monoel250(sample, rname):
+    """
+    EWK shape inflection point at 250 GeV
+    """
+    
+    selector = monoel(sample, rname)
+    monophEWKSetting(250)
+
+    return selector
+
+def monoel300(sample, rname):
+    """
+    EWK shape inflection point at 300 GeV
+    """
+    
+    selector = monoel(sample, rname)
+    monophEWKSetting(300)
+
+    return selector
+
+def monoel400(sample, rname):
+    """
+    EWK shape inflection point at 400 GeV
+    """
+    
+    selector = monoel(sample, rname)
+    monophEWKSetting(400)
+
+    return selector
+
+def monoel500(sample, rname):
+    """
+    EWK shape inflection point at 500 GeV
+    """
+    
+    selector = monoel(sample, rname)
+    monophEWKSetting(500)
+
+    return selector
+
+def monoel600(sample, rname):
+    """
+    EWK shape inflection point at 600 GeV
+    """
+    
+    selector = monoel(sample, rname)
+    monophEWKSetting(600)
+
+    return selector
+
 ######################
 # SELECTOR MODIFIERS #
 ######################
@@ -2480,6 +2740,7 @@ def addKfactor(sample, selector):
     if sample.name in ['znng-130-o', 'zllg-130-o', 'zllg-300-o', 'wnlg-130-o', 'wnlg-130-p']:
         sname = sample.name.replace('-p', '-o').replace('zllg', 'znng').replace('300-o', '130-o')
 
+        print selector
         addQCDKfactor(sample, sname, selector)
         addEWKKfactor(sample, sname, selector)
 
@@ -2514,15 +2775,18 @@ def addQCDKfactor(sample, sname, selector):
     selector.addOperator(qcd)
 
 def addEWKKfactor(sample, sname, selector):
+    corrFile = selconf['ewkCorrSource']
+    print corrFile
+
     if sname.startswith('znng'):
         logger.info('applying ewk %s', sample.name)
 
-        corr = getFromFile(datadir + '/ewk_corr.root', sname, newname = sname + '_ewkcorr')
+        corr = getFromFile(datadir + '/' + corrFile, sname, newname = sname + '_ewkcorr')
         ewk = ROOT.PhotonPtWeight(corr, 'EWKNLOCorrection')
         ewk.setPhotonType(ROOT.PhotonPtWeight.kParton)
 
         for variation in ['straightUp', 'straightDown', 'twistedUp', 'twistedDown', 'gammaUp', 'gammaDown']:
-            vcorr = getFromFile(datadir + '/ewk_corr.root', sname + '_' + variation)
+            vcorr = getFromFile(datadir + '/' + corrFile, sname + '_' + variation)
             if vcorr:
                 logger.info('applying ewk var %s %s', variation, sample.name)
                 ewk.addVariation('ewk' + variation, vcorr)
@@ -2533,15 +2797,15 @@ def addEWKKfactor(sample, sname, selector):
         logger.info('applying ewk %s', sample.name)
 
         suffix = '_p'
-        corrp = getFromFile(datadir + '/ewk_corr.root', sname + suffix, newname = sname + suffix + '_ewkcorr')
+        corrp = getFromFile(datadir + '/' + corrFile, sname + suffix, newname = sname + suffix + '_ewkcorr')
         suffix = '_m'
-        corrm = getFromFile(datadir + '/ewk_corr.root', sname + suffix, newname = sname + suffix + '_ewkcorr')
+        corrm = getFromFile(datadir + '/' + corrFile, sname + suffix, newname = sname + suffix + '_ewkcorr')
 
         ewk = ROOT.PhotonPtWeightSigned(corrp, corrm, 'EWKNLOCorrection')
 
         for variation in ['straightUp', 'straightDown', 'twistedUp', 'twistedDown', 'gammaUp', 'gammaDown']:
-            vcorrp = getFromFile(datadir + '/ewk_corr.root', sname + '_p_' + variation)
-            vcorrm = getFromFile(datadir + '/ewk_corr.root', sname + '_m_' + variation)
+            vcorrp = getFromFile(datadir + '/' + corrFile, sname + '_p_' + variation)
+            vcorrm = getFromFile(datadir + '/' + corrFile, sname + '_m_' + variation)
             ewk.addVariation('ewk' + variation, vcorrp, vcorrm)
 
         selector.addOperator(ewk)

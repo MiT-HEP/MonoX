@@ -63,6 +63,10 @@ mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm', 'gghe', 'gghm']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu', 'gghee', 'gghmm']
 
+mc_ewk = [ 'monoph250', 'monoph300', 'monoph400', 'monoph500', 'monoph600']
+mc_ewk_lep = ['monomu250', 'monomu300', 'monomu400', 'monomu500', 'monomu600', 'monoel250', 'monoel300', 'monoel400', 'monoel500', 'monoel600']
+mc_ewk_dilep = ['dimu250', 'dimu300', 'dimu400', 'dimu500', 'dimu600', 'diel250', 'diel300', 'diel400', 'diel500', 'diel600']
+
 mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet', ('gghg', s.gghgNoE), 'gghe', 'gghm'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = [
@@ -72,8 +76,8 @@ allSelectors_byPattern = [
     ('sel-16*', data_sel),
     ('sel-17*', data_sel),
     # MC
-    ('znng', mc_sig),
-    ('znng-130', applyMod(mc_sig, s.addKfactor)),
+    ('znng', mc_sig + mc_ewk),
+    ('znng-130', applyMod(mc_sig + mc_ewk, s.addKfactor)),
     ('zllg', mc_sig + mc_lep + mc_dilep + ['vbfzee']),
     ('zllg-130', mc_sig + mc_lep + mc_dilep),
     ('wnlg', mc_sig + mc_lep),
@@ -81,12 +85,12 @@ allSelectors_byPattern = [
     ('wglo', applyMod(mc_cand + mc_lep + [tpegLowPt, tpmgLowPt, 'vbfgWHadCtrl', 'vbfzee'], s.addKfactor)),
     ('wglo-{130,500}', applyMod(mc_cand + mc_lep, s.addKfactor)),
     ('znng-40-o', applyMod(mc_sig, s.ptTruncator(maximum = 130.))),
-    ('znng-130-o', applyMod(mc_sig + ['monophNoLVeto', 'trivialShower'], s.addKfactor)),
-    ('zllg-130-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor, s.ptTruncator(maximum = 300.))),
-    ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep, s.addKfactor)),
+    ('znng-130-o', applyMod(mc_sig + mc_ewk + ['monophNoLVeto', 'trivialShower'], s.addKfactor)),
+    ('zllg-130-o', applyMod(mc_sig + mc_lep + mc_dilep + mc_ewk + mc_ewk_lep + mc_ewk_dilep, s.addKfactor, s.ptTruncator(maximum = 300.))),
+    ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep + mc_ewk + mc_ewk_lep +mc_ewk_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
-    ('wnlg-130-o', applyMod(mc_sig + mc_lep, s.addKfactor)),
-    ('wnlg-130-p', applyMod(mc_sig + mc_lep, s.addKfactor)),
+    ('wnlg-130-o', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
+    ('wnlg-130-p', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
     ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['halo', 'monoel', 'vbfem', 'ph75', 'gjets325'], s.addKfactor)),
     ('gje-*', applyMod(['monoph'], s.addKfactor)),
     ('gjn*', mc_qcd + mc_cand + ['monoel', 'vbfem']),
