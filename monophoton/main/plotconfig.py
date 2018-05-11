@@ -58,7 +58,7 @@ def getConfig(confName):
         else:
             vgRegion = config.name
 
-        config.fullSelection = '' # photons.scRawPt[0] > 600.'
+        config.fullSelection = 'muons.size == 0 && electrons.size == 0' # photons.scRawPt[0] > 600.'
 
         if 'LowPhi' in confName:
             config.baseline = baseSel + ' && (TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) < 0.5)'.format(halfpi = math.pi * 0.5)
@@ -231,7 +231,7 @@ def getConfig(confName):
             vgRegion = config.name
 
         config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && dimu.oppSign && dimu.mass[0] > 60. && dimu.mass[0] < 120.'  # met is the recoil (Operator LeptonRecoil)
-        config.fullSelection = ''
+        config.fullSelection = 'muons.size == 2 && electrons.size == 0'
 
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
         config.addBkg('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
@@ -324,7 +324,7 @@ def getConfig(confName):
             vgRegion = config.name
 
         config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && diel.oppSign && diel.mass[0] > 60. && diel.mass[0] < 120.' # met is the recoil (Operator LeptonRecoil)
-        config.fullSelection = ''
+        config.fullSelection = 'muons.size == 0 && electrons.size == 2'
 
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
         config.addBkg('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
@@ -421,7 +421,7 @@ def getConfig(confName):
             vgRegion = config.name
 
         config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && ' + mt + ' < 160.' # met is the recoil, mt cut to synch with monoel region
-        config.fullSelection = ''
+        config.fullSelection = 'muons.size == 1 && electrons.size == 0'
 
 #        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'monoelEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)) # zero contribution
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -526,7 +526,7 @@ def getConfig(confName):
             vgRegion = config.name
 
         config.baseline = baseSel.replace('minJetDPhi', 'realMinJetDPhi') + ' && ' + mt + ' < 160. && t1Met.realMet > 50.' # met is the recoil, real MET cut to reject QCD, mt cut to reject QCD
-        config.fullSelection = ''
+        config.fullSelection = 'muons.size == 0 && electrons.size == 1'
 
 #        config.addBkg('qcd', 'QCD+#gammajets', samples = photonData, region = 'monoelQCD', color = ROOT.TColor.GetColor(0x44, 0xff, 0x99), norm = 25.)
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))

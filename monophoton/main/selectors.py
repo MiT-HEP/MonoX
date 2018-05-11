@@ -272,7 +272,7 @@ def monophotonBase(sample, rname, selcls = None):
     leptonSel.setN(0, 0)
     leptonSel.setRequireMedium(False)
     leptonSel.setRequireTight(False)
-    leptonSel.setIgnoreDecision(True)
+    # leptonSel.setIgnoreDecision(True)
 
     if not sample.data:
         metVar = selector.findOperator('MetVariations')

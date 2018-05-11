@@ -87,7 +87,7 @@ allSelectors_byPattern = [
     ('znng-40-o', applyMod(mc_sig, s.ptTruncator(maximum = 130.))),
     ('znng-130-o', applyMod(mc_sig + mc_ewk + ['monophNoLVeto', 'trivialShower'], s.addKfactor)),
     ('zllg-130-o', applyMod(mc_sig + mc_lep + mc_dilep + mc_ewk + mc_ewk_lep + mc_ewk_dilep, s.addKfactor, s.ptTruncator(maximum = 300.))),
-    ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep + mc_ewk + mc_ewk_lep +mc_ewk_dilep, s.addKfactor)),
+    ('zllg-300-o', applyMod(mc_sig + mc_lep + mc_dilep + mc_ewk + mc_ewk_lep + mc_ewk_dilep, s.addKfactor)),
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
     ('wnlg-130-p', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
