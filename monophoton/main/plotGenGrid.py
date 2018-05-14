@@ -30,6 +30,9 @@ from main.plotconfig_vbf import getConfigVBF
 from main.plotconfig_ggh import getConfigGGH
 import config
 import utils
+# from main.plot import makePlotter, writeHist, cleanHist
+import main.plot
+import collections
 
 ##################################
 ## PARSE COMMAND-LINE ARGUMENTS ##
@@ -65,111 +68,143 @@ else:
 ## SET UP FROM PLOTCONFIG ##
 ############################
 
+ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
+
 fullLumi = plotConfig.fullLumi()
 effLumi = plotConfig.effLumi()
 
-plotdefs = []
+if 'HighPhi' in args.config:
+    phiWeight = (math.pi - 1.) / math.pi
+elif 'LowPhi' in args.config:
+    phiWeight = 1. / math.pi
+else:
+    phiWeight = 1.
 
+plotConfig.baseline = 'gammaPt > 130. && met > 170.'
+plotConfig.fullSelection = ''
+
+plotdefs = []
 ptdef = plotConfig.getPlot('phoPtHighMet')
 ptdef.expr = 'gammaPt'
-ptdef.baseline = 'gammaPt > 130. && met > 170.'
 plotdefs.append(ptdef)
 
 vsamples = []
 asamples = []
 
-count = 0
-for pname in os.listdir(args.gridDir):
-    (_, _, spin, dm, med) = pname.split('-')[0].split('_')
-    dm = dm.strip('Mx')
-    med = med.strip('Mv')
-
-    if spin == 'V':
-        sname = 'dmvgen-%s-%s'.format(med, dm)
-        vsamples.append(sname)
-    elif spin == 'AV':
-        sname = 'dmagen-%s-%s'.format(med, dm)
-        asamples.append(sname)
+#######################
+## LOOP OVER SAMPLES ##
+#######################
 
     ## if keep using plotconfig need to an entry per point to allsamples
     ## need to grab xsec from bhawna's file and number of events (assume 50k for now)
     ## need to override weight function in multidraw as it assumes there is a weight branch
     ## probably need to extract the actual plotting step from fillPlots()
 
-    count = count + 1
-    if count > 10:
-        break
+count = 0
+for pname in os.listdir(args.gridDir):
+    try:
+        (_, _, spin, dm, med) = pname.split('-')[0].split('_')
+    except:
+        continue
+    dm = dm.strip('Mx')
+    med = med.strip('Mv')
+
+    if spin == 'V':
+        sname = 'dmvgen-' + med + '-' + dm
+        vsamples.append(sname)
+        group = plotConfig.findGroup('dmvlo')
+        xsecFile = open(args.gridDir + '/xsec_V_interpolated.txt', 'r')
+
+    elif spin == 'AV':
+        sname = 'dmagen-' + med + '-' + dm
+        asamples.append(sname)
+        group = plotConfig.findGroup('dmalo')
+        xsecFile = open(args.gridDir + '/xsec_AV_interpolated.txt', 'r')
+
+    xsec = None
+    while True:
+        line = xsecFile.readline()
+        if dm + ',' + med in line:
+            xsec = float(xsecFile.readline())
+            break
+        if not line:
+            break
     
-plotConfig.addSig('dmvgen', 'DM V', samples = vsamples)
-plotConfig.addSig('dmagen', 'DM A', samples = asamples)    
+    xsecWeight = xsec / 50000. ### hard code 50K events for now
+    sample = group.samples[0]
+    sourceName = args.gridDir + '/' + pname + '/merged.root'
+    dname = sname + '_' + args.config
+    print '   ', dname, '(%s)' % sourceName
 
-groups = [plotConfig.findGroup('dmvgen'), plotConfig.findGroup('dmagen')]
+    if not os.path.exists(sourceName):
+        sys.stderr.write('File ' + sourceName + ' does not exist.\n')
+        raise RuntimeError('InvalidSource')
 
-#####################################
-## FILL HISTOGRAMS FROM SKIM TREES ##
-#####################################
+    plotter = main.plot.makePlotter(sourceName, plotConfig, group, sample, fullLumi, args.printLevel)
+    plotter.setWeightBranch('')
 
-# if not args.replot:
-ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
+    histograms = collections.OrderedDict() # {(sample, plotdef, variation, direction): histogram}
+    for plotdef in plotdefs:
+        if not histFile.GetDirectory(plotdef.name):
+            sys.stderr.write('File ' + args.histFile + ' does not contain phoPtHighMet.\n')
+            raise RuntimeError('InvalidSource')
 
-print 'Filling plots for %s..' % plotConfig.name
+        outDir = histFile.GetDirectory(plotdef.name + '/samples')
+        if not outDir:
+            outDir = outFile.GetDirectory(plotdef.name).mkdir('samples')
 
-# for data-driven background estimates under presence of prescales
-# multiply the yields by postscale
-postscale = effLumi / fullLumi
+        # clean up
+        for key in outDir.GetListOfKeys():
+            if dname in key.GetName():
+                outDir.Delete(key.GetName() + ';*')
 
-for group in groups:
-    print ' ', group.name
+        hist = plotdef.makeHist(dname, outDir = outDir)
+        histograms[(sample, plotdef, None, None)] = hist
 
-    fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir)
+        plotCuts = []
 
-# Save a background total histogram (for display purpose) for each plotdef
-for plotdef in plotdefs:
-    outDir = histFile.GetDirectory(plotdef.name)
+        if plotdef.cut.strip():
+            plotCuts.append('(' + plotdef.cut.strip() + ')')
 
-    if args.asimov:
-        asimov = bkghist.Clone('asimov')
+        if group.cut.strip():
+            plotCuts.append('(' + group.cut.strip() + ')' )
 
-        # generate the "observed" distribution from background total
-        for varspec in args.asimov_variation:
-            # example: fakemet:fakemetShapeUp:5
-            words = varspec.split(':')
-            gname, varname = words[:2]
-            if len(words) > 2:
-                scale = float(words[2])
-            else:
-                scale = 1.
+        cut = ' && '.join(plotCuts)
 
-            nominal = outDir.Get(gname)
-            if varname:
-                varhist = outDir.Get(gname + '_' + varname)
-            else:
-                varhist = nominal
+        if plotdef.overflow:
+            overflowMode = ROOT.Plot.kMergeLast
+        else:
+            overflowMode = ROOT.Plot.kNoOverflowBin
 
-            if not nominal or not varhist:
-                print 'Invalid variation specified for pseudo-data:', varspec
-                continue
+        # nominal distribution
+        plotter.addPlot(
+            hist,
+            plotdef.formExpression(),
+            cut.strip(),
+            plotdef.applyBaseline,
+            plotdef.applyFullSel,
+            '',
+            overflowMode
+        )
 
-            asimov.Add(nominal, -1.)
-            asimov.Add(varhist, scale)
+    # setup complete. Fill all plots in one go
+    if plotter.numObjs() != 0:
+        plotter.fillPlots()
 
-        if args.asimov != 'background':
-            sighist = outDir.Get('samples/' + args.asimov + '_' + plotConfig.name)
-            asimov.Add(sighist)
+    for (sample, plotdef, variation, _), hist in histograms.items():
+        # ad-hoc scaling
+        hist.Scale(xsecWeight)
 
-        # make data_obs here
-        obshist = plotdef.makeHist('data_obs', outDir = outDir)
+        # zero out negative bins 
+        hist, horig = main.plot.cleanHist(hist)
 
-        for iBin in xrange(1, asimov.GetNbinsX() + 1):
-            x = asimov.GetXaxis().GetBinCenter(iBin)
-            for _ in xrange(int(round(asimov.GetBinContent(iBin)))):
-                obshist.Fill(x)
+        # save histograms
+        main.plot.writeHist(hist)
+        if horig is not None:
+            horig.SetDirectory(hist.GetDirectory())
+            main.plot.writeHist(horig)
 
-        writeHist(obshist)
-
-if args.histFile:
-    # close and reopen the output file
-    histFile.Close()
-    histFile = ROOT.TFile.Open(args.histFile)
-
-# closes if not args.replot
+    # count = count + 1
+    # if count > 10:
+    #     break
+    
