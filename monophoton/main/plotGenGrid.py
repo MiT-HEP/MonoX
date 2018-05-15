@@ -2,6 +2,7 @@
 
 import os
 import sys
+import math
 
 from argparse import ArgumentParser
 
@@ -30,7 +31,6 @@ from main.plotconfig_vbf import getConfigVBF
 from main.plotconfig_ggh import getConfigGGH
 import config
 import utils
-# from main.plot import makePlotter, writeHist, cleanHist
 import main.plot
 import collections
 
@@ -125,13 +125,40 @@ for pname in os.listdir(args.gridDir):
     while True:
         line = xsecFile.readline()
         if dm + ',' + med in line:
-            xsec = float(xsecFile.readline())
+            xsec = xsecFile.readline()
+            xsec = float(xsec)
             break
         if not line:
             break
     
-    xsecWeight = xsec / 50000. ### hard code 50K events for now
-    sample = group.samples[0]
+    sample = None
+    samp = None
+    mindist = 1.0e12
+    minmed = 1.0e12
+    mindm = 1.0e12
+    for s in group.samples:
+        try:
+            (_, smed, sdm) = s.name.split('-')
+        except:
+            continue
+
+        distance = (2*float(sdm) - 2*float(dm))**2 + (float(smed) - float(med))**2
+
+        if distance < mindist:
+            mindist = distance 
+            sample = s
+
+        mdist = (float(smed) - float(med))**2
+        ddist = (2*float(sdm) - 2*float(dm))**2
+        
+        if mdist <= minmed and ddist <= mindm:
+            minmed = mdist
+            mindm = ddist
+            samp = s
+
+    print sample.name
+    print samp.name
+        
     sourceName = args.gridDir + '/' + pname + '/merged.root'
     dname = sname + '_' + args.config
     print '   ', dname, '(%s)' % sourceName
@@ -190,6 +217,7 @@ for pname in os.listdir(args.gridDir):
     # setup complete. Fill all plots in one go
     if plotter.numObjs() != 0:
         plotter.fillPlots()
+        xsecWeight = xsec / plotter.getTotalEvents()
 
     for (sample, plotdef, variation, _), hist in histograms.items():
         # ad-hoc scaling
@@ -204,7 +232,7 @@ for pname in os.listdir(args.gridDir):
             horig.SetDirectory(hist.GetDirectory())
             main.plot.writeHist(horig)
 
-    # count = count + 1
+    count = count + 1
     # if count > 10:
     #     break
     
