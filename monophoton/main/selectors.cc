@@ -143,7 +143,7 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   // Add a prepareFill line below any time a collection branch is added
   panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "npv", "rho", "vertices", "pfCandidates"}};
   if (_isMC)
-    blist += {"partons", "genParticles", "genVertex"};
+    blist += {"partons", "genParticles", "genVertex", "genMet"};
   else
     blist += {"metFilters"};
 

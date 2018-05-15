@@ -157,7 +157,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   };
 
   if (!isData)
-    branchList += {"npvTrue", "genReweight", "genVertex", "partons"};
+    branchList += {"npvTrue", "genReweight", "genVertex", "partons", "genMet"};
 
   if (compatibilityMode_)
     branchList += {"!eventNumber", "!electrons.triggerMatch", "!muons.triggerMatch", "!photons.triggerMatch"};
