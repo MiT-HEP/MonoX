@@ -286,6 +286,8 @@ def monophotonBase(sample, rname, selcls = None):
 
         selector.findOperator('PhotonJetDPhi').setMetVariations(metVar)
 
+        selector.addOperator(ROOT.PartonKinematics())
+        
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
         addPUWeight(sample, selector)

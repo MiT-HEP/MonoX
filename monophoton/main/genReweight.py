@@ -24,6 +24,7 @@ plotConfig = getConfig(region)
 
 lumi = plotConfig.fullLumi()
 samples = plotConfig.findGroup('dmvlo').samples + plotConfig.findGroup('dmalo').samples
+nloSamples = [s.name for s in plotConfig.findGroup('dmvh').samples + plotConfig.findGroup('dmah').samples]
 
 ptdef = plotConfig.getPlot('phoPtHighMet')
 xbins = array.array('d', [130] + ptdef.binning)
@@ -41,7 +42,7 @@ if ptdef.cut.strip():
 
 recoSel = ' && '.join(cuts)
 
-cuts.append('(partons.pdgid == 22) && (partons.pt_ > 170.)') #  && genMet.pt > 130.)')
+cuts.append('(genPhoton.pt > 170. && genMet.pt > 130.)')
 
 genSel = ' && '.join(cuts)
 
@@ -49,7 +50,7 @@ weight = '(weight * ' + str(lumi) + ')'
 genSelString = weight + ' * ' + genSel
 recoSelString = weight + ' * ' + recoSel
 
-expr = ptdef.expr + ':partons.pt_' 
+expr = ptdef.expr + ':genPhoton.pt' 
 
 print expr
 print genSelString
@@ -74,8 +75,22 @@ for sample in samples:
     outFile.cd()
     hist.Write()
 
+for sample in samples:
+    nloname = sample.name.replace('lo', 'h')
+    if nloname not in nloSamples:
+        continue
+
+    sourceName = utils.getSkimPath(sample.name, region, config.skimDir, '')
+    dname = sample.name + '_' + region
+
+    print '   ', dname, '(%s)' % sourceName
+    
+    if not os.path.exists(sourceName):
+        sys.stderr.write('File ' + sourceName + ' does not exist.\n')
+        raise RuntimeError('InvalidSource')
+
     nloSourceName = utils.getSkimPath(sample.name.replace('lo', 'h'), region, config.skimDir, '')
-    sname = sample.name.replace('lo', 'h') + '_' + region
+    sname = nloname + '_' + region
 
     print '   ', sname, '(%s)' % nloSourceName
 
@@ -83,18 +98,25 @@ for sample in samples:
         sys.stderr.write('File ' + nloSourceName + ' does not exist.\n')
         raise RuntimeError('InvalidSource')
 
+
+    source = ROOT.TFile.Open(sourceName)
+    events = source.Get('events')
+
     nloSource = ROOT.TFile.Open(nloSourceName)
     nloEvents = nloSource.Get('events')
-    loHist = ROOT.TH1D(sample.name, len(ybins)-1, ybins)
-    nloHist = ROOT.TH1D(sname, len(ybins)-1, ybins)
+
+    loHist = ROOT.TH1D(sample.name, sample.name, len(ybins)-1, ybins)
+    nloHist = ROOT.TH1D(nloname, nloname, len(ybins)-1, ybins)
+    hist = ROOT.TH1D(sname, sname, len(ybins)-1, ybins)
 
     events.Draw(ptdef.expr + '>>' + sample.name, recoSelString)
-    nloEvents.Draw(ptdef.expr + '>>' + sname, recoSelString)
+    nloEvents.Draw(ptdef.expr + '>>' + nloname, recoSelString)
 
-    nloHist.Divide(loHist)
+    hist.Divide(nloHist, loHist)
 
     outFile.cd()
     loHist.Write()
     nloHist.Write()
+    hist.Write()
 
 outFile.Close()
