@@ -57,7 +57,7 @@ def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
     return pave
 
 
-def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., vmin = 0., vmax = 1., ndiv = 205, font = 42, titleSize = 0.048, log = False, blank = True):
+def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., vmin = 0., vmax = 1., ndiv = 205, font = 42, titleSize = 0.048, log = False, blank = True, opposite = False):
     if axis == 'X':
         args = (xmin, y, xmax, y, vmin, vmax, ndiv)
     elif axis == 'Y':
@@ -70,6 +70,11 @@ def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., v
         options += 'G'
     if blank:
         options += 'B'
+    if opposite:
+        if axis == 'X':
+            options += '-'
+        else:
+            options += '+'
 
     args = tuple(list(args) + [options])
 
@@ -77,10 +82,11 @@ def makeAxis(axis, xmin = 0., xmax = 1., x = 0., ymin = 0., ymax = 1., y = 0., v
 
     gaxis.SetLabelFont(font)
     gaxis.SetTitleFont(font)
-    gaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset(axis) * 0.048 / titleSize)
+    if titleSize > 0.:
+        gaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset(axis) * 0.048 / titleSize)
     gaxis.SetTitleSize(titleSize)
     gaxis.SetLabelSize(0.875 * titleSize)
-    gaxis.SetTickLength(0.)
+    gaxis.SetTickLength(0.03)
     gaxis.SetGridLength(0.)
 
     return gaxis
@@ -238,14 +244,15 @@ class Drawable(object):
 
 
 class Histogram(Drawable):
-    def __init__(self, histogram, drawOpt, useRooHist = False):
+    def __init__(self, histogram, drawOpt, useRooHist = False, binWidthNormalized = True):
         Drawable.__init__(self, histogram, drawOpt)
 
         self.useRooHist = useRooHist
+        self.binWidthNormalized = binWidthNormalized
 
     def Clone(self, name = ''):
         clone = self.obj.Clone(name)
-        return Histogram(clone, self.drawOpt, self.useRooHist)
+        return Histogram(clone, self.drawOpt, self.useRooHist, self.binWidthNormalized)
 
 
 class SimpleCanvas(object):
@@ -317,7 +324,7 @@ class SimpleCanvas(object):
 
         self._temporaries = []
 
-    def addHistogram(self, hist, drawOpt = None, idx = -1, clone = True, asymErr = False):
+    def addHistogram(self, hist, drawOpt = None, idx = -1, clone = True, asymErr = False, binWidthNormalized = True):
         """
         Any object with the following methods can be added as a "histogram":
         Draw, Get/SetMaximum/Minimum, GetX/Yaxis()
@@ -343,9 +350,9 @@ class SimpleCanvas(object):
             # new histogram
             if clone:
                 self._hStore.cd()
-                self._histograms.append(Histogram(hist.Clone(), drawOpt.upper(), useRooHist = asymErr))
+                self._histograms.append(Histogram(hist.Clone(), drawOpt.upper(), useRooHist = asymErr, binWidthNormalized = binWidthNormalized))
             else:
-                self._histograms.append(Histogram(hist, drawOpt.upper(), useRooHist = asymErr))
+                self._histograms.append(Histogram(hist, drawOpt.upper(), useRooHist = asymErr, binWidthNormalized = binWidthNormalized))
 
             newHist = self._histograms[-1]
             try:
@@ -472,42 +479,17 @@ class SimpleCanvas(object):
         if len(hList) > 0:
             # draw base
             base = self._histograms[hList[0]]
-            if base.useRooHist:
-                graph = ROOT.RooHist(base.obj)
-                self._temporaries.append(graph)
-                if rooHists is not None:
-                    rooHists[base] = graph
-                graph.Draw('A' + base.drawOpt)
-            else:
-                drawOpt = base.drawOpt
-                if base.InheritsFrom(ROOT.TGraph.Class()):
-                    drawOpt += 'A'
-
-                base.Draw(drawOpt)
+            maximum, minimum = self._drawHist(base, True, rooHists)
 
             pad.Update()
-
-            maximum = base.GetMaximum()
-            minimum = base.GetMinimum()
-    
+   
             # draw other histograms
             for ih in hList[1:]:
                 hist = self._histograms[ih]
-                if hist.useRooHist:
-                    graph = ROOT.RooHist(hist.obj)
-                    self._temporaries.append(graph)
-                    if rooHists is not None:
-                        rooHists[hist] = graph
-                    graph.Draw(hist.drawOpt)
-                else:
-                    drawOpt = hist.drawOpt
-                    if hist.InheritsFrom(ROOT.TH1.Class()) or hist.InheritsFrom(ROOT.TF1.Class()):
-                        drawOpt += ' SAME'
+                hmax, hmin = self._drawHist(hist, False, rooHists)
 
-                    hist.Draw(drawOpt)
-
-                maximum = max(maximum, hist.GetMaximum())
-                minimum = min(minimum, hist.GetMaximum())
+                maximum = max(maximum, hmax)
+                minimum = min(minimum, hmin)
 
             pad.Update()
 
@@ -569,6 +551,43 @@ class SimpleCanvas(object):
         gPad.cd()
 
         return base
+
+    def _drawHist(self, hist, first, rooHists):
+        if hist.useRooHist:
+            print hist.obj.GetName(), hist.obj.IsA().GetName()
+            if hist.binWidthNormalized:
+                tmp = hist.obj.Clone('tmp')
+                for iX in range(1, tmp.GetNbinsX() + 1):
+                    w = tmp.GetXaxis().GetBinWidth(iX)
+                    tmp.SetBinContent(iX, tmp.GetBinContent(iX) * w)
+                    tmp.SetBinError(iX, tmp.GetBinError(iX) * w)
+        
+                graph = ROOT.RooHist(tmp, 1.)
+                tmp.Delete()
+            else:
+                graph = ROOT.RooHist(hist.obj)
+
+            self._temporaries.append(graph)
+
+            if rooHists is not None:
+                rooHists[hist] = graph
+
+            drawOpt = hist.drawOpt
+            if first:
+                drawOpt += 'A'
+                
+            graph.Draw(drawOpt)
+
+        else:
+            drawOpt = hist.drawOpt
+            if first and hist.obj.InheritsFrom(ROOT.TGraph.Class()):
+                drawOpt += 'A'
+            elif not first and (hist.InheritsFrom(ROOT.TH1.Class()) or hist.InheritsFrom(ROOT.TF1.Class())):
+                drawOpt += ' SAME'
+
+            hist.obj.Draw(drawOpt)
+
+        return hist.obj.GetMaximum(), hist.obj.GetMinimum()
 
     def _fixTHStack(self, **options):
         if 'hList' in options:
@@ -869,9 +888,16 @@ class RatioCanvas(SimpleCanvas):
         self.xaxis = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMIN)
         self.xaxis.SetTitleOffset(self.xaxis.GetTitleOffset() * 1.1)
 
+        self.xaxism = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.PLOT_YMIN, titleSize = 0.)
+
         self.yaxis = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMIN, vmin = 0.1, vmax = 1., log = True)
+        self.yaxisr = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMAX, vmin = 0.1, vmax = 1., titleSize = 0., log = True, opposite = True)
 
         self.raxis = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMIN, vmax = 2., titleSize = 0.036)
+        self.raxisr = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMAX, vmax = 2., titleSize = 0., opposite = True)
+        self.raxis.SetTickLength(0.09)
+        self.raxisr.SetTickLength(0.09)
+
         self.rtitle = 'data / MC'
 
         self.rlimits = (0., 2.)
@@ -890,12 +916,12 @@ class RatioCanvas(SimpleCanvas):
         self.plotPad.SetMargin(SimpleCanvas.XMIN, 1. - SimpleCanvas.XMAX, RatioCanvas.PLOT_YMIN, 1. - SimpleCanvas.YMAX) # lrbt
         self.plotPad.SetLogx(self._logx)
         self.plotPad.SetLogy(self._logy)
-        self.plotPad.SetTicky(2)
+#        self.plotPad.SetTicky(2)
         
         self.ratioPad = self.canvas.cd(2)
         self.ratioPad.SetPad(SimpleCanvas.XMIN, RatioCanvas.RATIO_YMIN, SimpleCanvas.XMAX, RatioCanvas.RATIO_YMAX)
         self.ratioPad.SetMargin(0., 0., 0., 0.)
-        self.ratioPad.SetTickx(1)
+#        self.ratioPad.SetTickx(1)
 
     def cd(self):
         self.plotPad.cd()
@@ -906,12 +932,15 @@ class RatioCanvas(SimpleCanvas):
         if full:
             self.legend.Clear()
 
-        self.xaxis.SetWmin(0.)
-        self.xaxis.SetWmax(1.)
-        self.yaxis.SetWmin(0.1)
-        self.yaxis.SetWmax(1.)
-        self.raxis.SetWmin(self.rlimits[0])
-        self.raxis.SetWmax(self.rlimits[1])
+        for axis in [self.xaxis, self.xaxism]:
+            axis.SetWmin(0.)
+            axis.SetWmax(1.)
+        for axis in [self.yaxis, self.yaxisr]:
+            axis.SetWmin(0.1)
+            axis.SetWmax(1.)
+        for axis in [self.raxis, self.raxisr]:
+            axis.SetWmin(self.rlimits[0])
+            axis.SetWmax(self.rlimits[1])
 
     def Update(self, hList = None, rList = None, logx = None, logy = None, drawLegend = True):
         if not self._needUpdate:
@@ -943,9 +972,12 @@ class RatioCanvas(SimpleCanvas):
         base = self._updateMainPad(self.plotPad, hList, logx, logy, rooHists, drawLegend = drawLegend)
 
         if base:
+            base.SetTickLength(0., 'X')
+            base.SetTickLength(0., 'Y')
             base.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
             base.GetXaxis().SetTitle('')
             base.GetXaxis().SetLabelSize(0.)
+            base.GetXaxis().SetTickSize(0.)
             base.GetYaxis().SetNdivisions(self.yaxis.GetNdiv())
             base.GetYaxis().SetTitle('')
             base.GetYaxis().SetLabelSize(0.)
@@ -1003,6 +1035,9 @@ class RatioCanvas(SimpleCanvas):
                 ratio.SetTitle('')
 
                 self._temporaries.append(ratio)
+
+                print obj.IsA().GetName(), obj.GetName(), obj.GetBinContent(6), obj.GetBinError(6)
+                print ratio.GetName(), ratio.GetBinContent(6), ratio.GetBinError(6)
 
                 if ratio.InheritsFrom(ROOT.TGraph.Class()):
                     ratio.Draw(hist.drawOpt + 'Z')
@@ -1067,6 +1102,8 @@ class RatioCanvas(SimpleCanvas):
                             bar.Draw()
 
             rframe.SetTitle('')
+            rframe.SetTickLength(0., 'X')
+            rframe.SetTickLength(0., 'Y')
             rframe.GetXaxis().SetTitle('')
             rframe.GetXaxis().SetLabelSize(0.)
             rframe.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
@@ -1117,30 +1154,31 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.Update()
 
         if ax == 'x':
-            axis = self.xaxis
+            axes = [self.xaxis, self.xaxism]
             umin = self.plotPad.GetUxmin()
             umax = self.plotPad.GetUxmax()
         elif ax == 'y':
-            axis = self.yaxis
+            axes = [self.yaxis, self.yaxisr]
             umin = self.plotPad.GetUymin()
             umax = self.plotPad.GetUymax()
         elif ax == 'r':
-            axis = self.raxis
+            axes = [self.raxis, self.raxisr]
             umin = self.rlimits[0]
             umax = self.rlimits[1]
 
-        opt = axis.GetOption()
-        if log:
-            if 'G' not in opt:
-                axis.SetOption(opt + 'G')
-            axis.SetWmin(math.exp(2.302585092994 * umin))
-            axis.SetWmax(math.exp(2.302585092994 * umax))
-        else:
-            axis.SetOption(opt.replace('G', ''))
-            axis.SetWmin(umin)
-            axis.SetWmax(umax)
-
-        axis.Draw()
+        for axis in axes:
+            opt = axis.GetOption()
+            if log:
+                if 'G' not in opt:
+                    axis.SetOption(opt + 'G')
+                axis.SetWmin(math.exp(2.302585092994 * umin))
+                axis.SetWmax(math.exp(2.302585092994 * umax))
+            else:
+                axis.SetOption(opt.replace('G', ''))
+                axis.SetWmin(umin)
+                axis.SetWmax(umax)
+    
+            axis.Draw()
         self.canvas.Update()
 
 
