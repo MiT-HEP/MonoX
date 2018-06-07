@@ -32,6 +32,7 @@ elif config == 'ggh':
     from main.plotconfig_ggh import getConfigGGH as getConfig
 
 import ROOT
+ROOT.gROOT.SetBatch(True)
 
 mlfit = ROOT.TFile.Open(sys.argv[3])
 if pdir == 'p':
@@ -123,7 +124,8 @@ for key in postfitDir.GetListOfKeys():
     prefitTotal = prefitDir.Get('bkgtotal_syst')
     prefitTotal.Scale(1., 'width')
     prefitUnc = prefitTotal.Clone('prefitUnc')
-    prefitRatio = prefitTotal.Clone('prefitRatio')
+    prefitRatio = ROOT.TGraphAsymmErrors(prefitTotal.GetNbinsX())
+    prefitRatio.SetName('prefitRatio')
     prefitUncRatio = prefitTotal.Clone('prefitUncRatio')
 
     if pdir == 's':
@@ -131,7 +133,8 @@ for key in postfitDir.GetListOfKeys():
     else:
         postfitTotal = postfitDir.Get(region + '/total_background')
     postfitUnc = postfitTotal.Clone('postfitUnc')
-    postfitRatio = postfitTotal.Clone('postfitRatio')
+    postfitRatio = ROOT.TGraphAsymmErrors(postfitTotal.GetNbinsX())
+    postfitRatio.SetName('postfitRatio')
     postfitUncRatio = postfitTotal.Clone('postfitUncRatio')
 
     dataHist = postfitTotal.Clone("dataHist")
@@ -155,27 +158,38 @@ for key in postfitDir.GetListOfKeys():
 
     dataHist.Scale(1., 'width')
 
-    for iBin in range(1, prefitRatio.GetNbinsX()+1):
+    for iBin in range(1, dataHist.GetNbinsX()+1):
         data = dataHist.GetBinContent(iBin)
-        if data == 0:
-            data = 1
+#        if data == 0:
+#            data = 1
         dataerr = dataHist.GetBinError(iBin)
-        if dataerr == 0:
-            dataerr = 1
+#        if dataerr == 0:
+#            dataerr = 1
+        dataerrUp = obs.GetErrorYhigh(iBin - 1)
+        dataerrDown = obs.GetErrorYlow(iBin - 1)
 
-        prefitcontent = prefitUncRatio.GetBinContent(iBin)
-        prefiterror = prefitUncRatio.GetBinError(iBin)
-        prefitRatio.SetBinContent(iBin, data**2 / prefitcontent)
-        prefitRatio.SetBinError(iBin, dataerr * data / prefitcontent) 
-        prefitUncRatio.SetBinError(iBin, data * prefiterror / prefitcontent)
-        prefitUncRatio.SetBinContent(iBin, data)
+        x = dataHist.GetXaxis().GetBinCenter(iBin)
+        w = dataHist.GetXaxis().GetBinWidth(iBin)
+        eylow = obs.GetErrorYlow(iBin - 1)
+        eyhigh = obs.GetErrorYhigh(iBin - 1)
 
-        postfitcontent = postfitUncRatio.GetBinContent(iBin)
-        postfiterror = postfitUncRatio.GetBinError(iBin)
-        postfitRatio.SetBinContent(iBin, data**2 / postfitcontent)
-        postfitRatio.SetBinError(iBin, dataerr * data / postfitcontent) 
-        postfitUncRatio.SetBinError(iBin, data * postfiterror / postfitcontent)
-        postfitUncRatio.SetBinContent(iBin, data)
+        prefitcontent = prefitTotal.GetBinContent(iBin)
+        prefiterror = prefitTotal.GetBinError(iBin)
+        prefitscale = data / prefitcontent
+
+        prefitRatio.SetPoint(iBin - 1, x, data * prefitscale)
+        prefitRatio.SetPointError(iBin - 1, w * 0.5, w * 0.5, eylow * prefitscale, eyhigh * prefitscale)
+        prefitUncRatio.SetBinContent(iBin, prefitcontent * prefitscale)
+        prefitUncRatio.SetBinError(iBin, prefiterror * prefitscale)
+
+        postfitcontent = postfitTotal.GetBinContent(iBin)
+        postfiterror = postfitTotal.GetBinError(iBin)
+        postfitscale = data / postfitcontent
+
+        postfitRatio.SetPoint(iBin - 1, x, data * postfitscale)
+        postfitRatio.SetPointError(iBin - 1, w * 0.5, w * 0.5, eylow * postfitscale, eyhigh * postfitscale)
+        postfitUncRatio.SetBinContent(iBin, postfitcontent * postfitscale)
+        postfitUncRatio.SetBinError(iBin, postfiterror * postfitscale)
 
     floatNames = []
 
@@ -217,16 +231,16 @@ for key in postfitDir.GetListOfKeys():
         printRegionHeader(region, prefitTotal)
     
     canvas = RatioCanvas(lumi = lumi, name = region)
-    canvas.legend.setPosition(0.4, 0.6, 0.9, 0.9)
-    canvas.legend.add('obs', title = 'data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
-    canvas.legend.add('prefit', title = 'prefit total', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
+    canvas.legend.ncolumns = 1
+    canvas.legend.add('obs', title = 'Data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
+    canvas.legend.add('prefit', title = 'Pre-fit', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
     if postfitSub and SIMPLE:
-        canvas.legend.add('subdom', title = 'postfit subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
-    if pdir == 's':
-        canvas.legend.add('postfit', title = 's+b postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
-    else:
-        canvas.legend.add('postfit', title = 'b-only postfit total', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+        canvas.legend.add('subdom', title = 'Subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
 
+    if pdir == 's':
+        canvas.legend.add('postfit', title = 'Signal+background fit', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+    else:
+        canvas.legend.add('postfit', title = 'Background-only fit', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
 
     obs.SetTitle('')
     prefitTotal.SetTitle('')
@@ -235,6 +249,7 @@ for key in postfitDir.GetListOfKeys():
         postfitSub.SetTitle('')
 
     canvas.legend.apply('obs', obs)
+    canvas.legend.apply('obs', dataHist)
     canvas.legend.apply('prefit', prefitTotal, opt = 'L')
     canvas.legend.apply('prefit', prefitUnc, opt = 'F')
     canvas.legend.apply('prefit', prefitRatio, opt = 'LP')
@@ -261,15 +276,18 @@ for key in postfitDir.GetListOfKeys():
 
     iLine = canvas.addHistogram(dataHist, drawOpt = 'HIST')
     iPreUncRatio = canvas.addHistogram(prefitUncRatio, drawOpt = 'E2')
-    iPreRatio = canvas.addHistogram(prefitRatio, drawOpt = 'LP')
+    iPreRatio = canvas.addHistogram(prefitRatio, drawOpt = 'EP')
     iPostUncRatio = canvas.addHistogram(postfitUncRatio, drawOpt = 'E2')
-    iPostRatio = canvas.addHistogram(postfitRatio, drawOpt = 'LP')
+    iPostRatio = canvas.addHistogram(postfitRatio, drawOpt = 'EP')
 
-    if postfitSub and SIMPLE:
-        iSub = canvas.addHistogram(postfitSub)
-        hList = [iSub, iPreUnc, iPre, iPostUnc, iPost, iObs]
+    if SIMPLE:
+        if postfitSub:
+            iSub = canvas.addHistogram(postfitSub)
+            hList = [iSub, iPreUnc, iPre, iPostUnc, iPost, iObs]
+        else:
+            hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
-    elif not SIMPLE:
+    else:
         stackHist = postfitTotal.Clone('stack')
         stackHist.Reset()
         
@@ -283,7 +301,9 @@ for key in postfitDir.GetListOfKeys():
             printBinByBin(group.name, ghist)
 
             if len(groupHists):
+                # we just overlay bunch of histograms instead of using THStack
                 ghist.Add(groupHists[-1])
+
             groupHists.append(ghist)
 
         if pdir == 's':
@@ -306,9 +326,49 @@ for key in postfitDir.GetListOfKeys():
                 print region + ' region has no signal processes.'
                 pass
 
+        # merge groups
+        # component groups must be adjacently defined in plotconfig
+        groupMerge = []
+
+        if config == 'monoph':
+            if 'monoph' in region:
+                groupMerge = [
+                    ('other', ('vvg', 'top', 'gg', 'wjets', 'gjets'), 'Other SM', ROOT.TColor.GetColor(0xff, 0xbb, 0x55)),
+                    ('noncol', ('halo', 'spike'), 'Non-collision', ROOT.TColor.GetColor(0xaa, 0xaa, 0xaa))
+                ]
+            elif 'mono' in region:
+                groupMerge = [
+                    ('other', ('zg', 'vvg', 'gg'), 'Other SM', ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+                ]
+            elif 'di' in region:
+                groupMerge = [
+                    ('ttvv', ('vvg', 'top'), 't#bar{t}#gamma/VV#gamma', ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
+                ]
+
+        added = set()
+
         for group, ghist in reversed(zip(plotConfig.bkgGroups, groupHists)):
-            canvas.legend.add(group.name, title = group.title, opt= 'F', fcolor = group.color, fstyle = 1001)
-            canvas.legend.apply(group.name, ghist)
+            for aggrName, groups, title, color in groupMerge:
+                if group.name in groups:
+                    name = aggrName
+                    title = title
+                    color = color
+                    break
+            else:
+                name = group.name
+                title = group.title
+                color = group.color
+                if name == 'hfake':
+                    title = 'Hadron fakes'
+
+            # just to filter out merged groups that are already added (we only use the first = all merged histogram)
+            if name in added:
+                continue
+
+            added.add(name)
+
+            canvas.legend.add(name, title = title, opt= 'F', fcolor = color, fstyle = 1001)
+            canvas.legend.apply(name, ghist)
 
             iG = canvas.addHistogram(ghist)
             groupList.append(iG)
@@ -317,16 +377,15 @@ for key in postfitDir.GetListOfKeys():
 
         printRegionFooter(region, lumi, postfitTotal, dataHist)
 
-    else:
-        hList = [iPreUnc, iPre, iPostUnc, iPost, iObs]
-
-    canvas.rlimits = (0.0, 2.0)
+    canvas.rlimits = (0.0, 2.5)
     if 'monoph' in region:
         canvas.ylimits = (0.0003, 200.)
     elif 'mono' in region:
         canvas.ylimits = (0.0003, 20.)
     elif 'di' in region:
         canvas.ylimits = (0.0003, 5.)
+
+    canvas.legend.setPosition(0.65, 0.92 - 0.04 * len(canvas.legend.entries), 0.9, 0.92)
 
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
@@ -342,7 +401,39 @@ for key in postfitDir.GetListOfKeys():
     elif pdir == 's':
         outname = 'splusb_' + region
 
-    canvas.printWeb('monophoton/fit', outname, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
+    canvas.Update(hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
+
+    zeroBins = []
+    for iBin in range(1, dataHist.GetNbinsX() + 1):
+        if dataHist.GetBinContent(iBin) == 0.:
+            zeroBins.append(iBin)
+
+    if len(zeroBins) != 0:
+        # OK we need to manually edit the ratio histograms after all the acrobat of making inverted ratios..
+        for prim in canvas.ratioPad.GetListOfPrimitives():
+            name = prim.GetName().replace('ratio_', '')
+            if name not in ['prefitUncRatio', 'postfitUncRatio', 'prefitRatio', 'postfitRatio']:
+                continue
+
+            if 'prefit' in name:
+                orig = prefitTotal
+            else:
+                orig = postfitTotal
+
+            for iBin in zeroBins:
+                scale = 1. / orig.GetBinContent(iBin)
+
+                if 'Unc' in name:
+                    # prim is a TH1
+                    prim.SetBinContent(iBin, 1.)
+                    prim.SetBinError(iBin, orig.GetBinError(iBin) * scale)
+                else:
+                    # prim is a TGraphAsymmErrors
+                    prim.SetPoint(iBin - 1, prim.GetX()[iBin - 1], 0.)
+                    prim.SetPointEYhigh(iBin - 1, obs.GetErrorYhigh(iBin - 1) * scale)
+
+    canvas.printWeb('EXO16053/fit', outname, hList = hList, rList = [iLine, iPreUncRatio, iPostUncRatio, iPreRatio, iPostRatio], logy = True)
+
     canvas.Clear()
 
     dataHist.Delete()

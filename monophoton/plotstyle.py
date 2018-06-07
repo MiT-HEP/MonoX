@@ -554,7 +554,6 @@ class SimpleCanvas(object):
 
     def _drawHist(self, hist, first, rooHists):
         if hist.useRooHist:
-            print hist.obj.GetName(), hist.obj.IsA().GetName()
             if hist.binWidthNormalized:
                 tmp = hist.obj.Clone('tmp')
                 for iX in range(1, tmp.GetNbinsX() + 1):
@@ -916,12 +915,10 @@ class RatioCanvas(SimpleCanvas):
         self.plotPad.SetMargin(SimpleCanvas.XMIN, 1. - SimpleCanvas.XMAX, RatioCanvas.PLOT_YMIN, 1. - SimpleCanvas.YMAX) # lrbt
         self.plotPad.SetLogx(self._logx)
         self.plotPad.SetLogy(self._logy)
-#        self.plotPad.SetTicky(2)
         
         self.ratioPad = self.canvas.cd(2)
         self.ratioPad.SetPad(SimpleCanvas.XMIN, RatioCanvas.RATIO_YMIN, SimpleCanvas.XMAX, RatioCanvas.RATIO_YMAX)
         self.ratioPad.SetMargin(0., 0., 0., 0.)
-#        self.ratioPad.SetTickx(1)
 
     def cd(self):
         self.plotPad.cd()
@@ -1035,9 +1032,6 @@ class RatioCanvas(SimpleCanvas):
                 ratio.SetTitle('')
 
                 self._temporaries.append(ratio)
-
-                print obj.IsA().GetName(), obj.GetName(), obj.GetBinContent(6), obj.GetBinError(6)
-                print ratio.GetName(), ratio.GetBinContent(6), ratio.GetBinError(6)
 
                 if ratio.InheritsFrom(ROOT.TGraph.Class()):
                     ratio.Draw(hist.drawOpt + 'Z')
