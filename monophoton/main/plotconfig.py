@@ -97,7 +97,7 @@ def getConfig(confName):
         config.addBkg('gg', '#gamma#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x55, 0xbb, 0x66))
         config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
-        config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff), cut = hfakeSels)
+        config.addBkg('hfake', 'Hadron fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
