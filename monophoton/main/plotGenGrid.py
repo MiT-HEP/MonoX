@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 argParser = ArgumentParser(description = 'plot NLO and reco k-factor reweighted distributions from gen level files.')
 argParser.add_argument('config', metavar = 'CONFIG', help = 'Plot onfig name.')
 argParser.add_argument('--hist-file', '-o', metavar = 'PATH', dest = 'histFile', default = '', help = 'Histogram output file.')
+argParser.add_argument('--weight-file', '-w', metavar = 'PATH', dest = 'weightFile', default = '../data/genReweight.root', help = 'File with reweight histograms.')
 argParser.add_argument('--grid-dir', '-g', metavar = 'PATH', dest = 'gridDir', default = '/home/ballen/hadoop/monophoton/gengrid', help = 'Location of directories for gen grid.')
 argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
 argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir} to save images. Use "-" for no output.')
@@ -53,16 +54,13 @@ if plotConfig is None:
     print 'Unknown configuration', args.config
     sys.exit(1)
 
-if args.histFile:
-    if args.replot:
-        histFile = ROOT.TFile.Open(args.histFile)
-    else:
-        histFile = ROOT.TFile.Open(args.histFile, 'update')
-
+if args.replot:
+    histFile = ROOT.TFile.Open(args.histFile)
 else:
-    if args.replot:
-        print '--replot requires a --hist-file.'
-        sys.exit(1)
+    histFile = ROOT.TFile.Open(args.histFile, 'update')
+    weightFile = ROOT.TFile.Open(args.weightFile)
+
+
 
 ############################
 ## SET UP FROM PLOTCONFIG ##
@@ -106,19 +104,25 @@ for pname in os.listdir(args.gridDir):
         (_, _, spin, dm, med) = pname.split('-')[0].split('_')
     except:
         continue
+
     dm = dm.strip('Mx')
     med = med.strip('Mv')
+
+    if float(med) != 1800.:
+        continue
 
     if spin == 'V':
         sname = 'dmvgen-' + med + '-' + dm
         vsamples.append(sname)
         group = plotConfig.findGroup('dmvlo')
+        nloGroup = plotConfig.findGroup('dmvh')
         xsecFile = open(args.gridDir + '/xsec_V_interpolated.txt', 'r')
 
     elif spin == 'AV':
         sname = 'dmagen-' + med + '-' + dm
         asamples.append(sname)
         group = plotConfig.findGroup('dmalo')
+        nloGroup = plotConfig.findGroup('dmah')
         xsecFile = open(args.gridDir + '/xsec_AV_interpolated.txt', 'r')
 
     xsec = None
@@ -132,10 +136,9 @@ for pname in os.listdir(args.gridDir):
             break
     
     sample = None
-    samp = None
+    nloSample = None
     mindist = 1.0e12
-    minmed = 1.0e12
-    mindm = 1.0e12
+    nlodist = 1.0e12
     for s in group.samples:
         try:
             (_, smed, sdm) = s.name.split('-')
@@ -144,24 +147,24 @@ for pname in os.listdir(args.gridDir):
 
         distance = (2*float(sdm) - 2*float(dm))**2 + (float(smed) - float(med))**2
 
-        if distance < mindist:
+        print '%20s, %20f' % (s.name, distance)
+
+        if distance <= mindist:
             mindist = distance 
             sample = s
 
-        mdist = (float(smed) - float(med))**2
-        ddist = (2*float(sdm) - 2*float(dm))**2
-        
-        if mdist <= minmed and ddist <= mindm:
-            minmed = mdist
-            mindm = ddist
-            samp = s
+        if not s.name.replace('lo', 'h') in [r.name for r in nloGroup.samples]:
+            continue
 
-    print sample.name
-    print samp.name
+        if distance <= nlodist:
+            nlodist = distance 
+            nloSample = s
         
     sourceName = args.gridDir + '/' + pname + '/merged.root'
     dname = sname + '_' + args.config
     print '   ', dname, '(%s)' % sourceName
+    print '   using %20s for reco reweight' % sample.name
+    print '   using %20s for nlo  reweight' % nloSample.name
 
     if not os.path.exists(sourceName):
         sys.stderr.write('File ' + sourceName + ' does not exist.\n')
