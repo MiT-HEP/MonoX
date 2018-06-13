@@ -83,8 +83,8 @@ def getConfig(confName):
         # config.addSig('dph', 'DPH', samples = ['dph-*'])
 
         config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
-        config.addSigPoint('dmvlo-1000-1', 'DMV 1000 LO', color = ROOT.kBlue)
-        config.addSigPoint('dmvh-1000-1', 'DMV 1000 NLO', color = ROOT.kMagenta)
+        # config.addSigPoint('dmvlo-1000-1', 'DMV 1000 LO', color = ROOT.kBlue)
+        config.addSigPoint('dmvh-1000-1', 'DMV 1000', color = ROOT.kBlue)
         # config.addSigPoint('dmvp-1000-1', 'DMV1000', color = ROOT.kCyan)
         # config.addSigPoint('dph-1000', 'DPH1000', color = ROOT.kCyan)
 
@@ -92,11 +92,14 @@ def getConfig(confName):
 
         config.addBkg('halo', 'Beam halo', samples = monophData, region = 'halo', color = ROOT.TColor.GetColor(0x55, 0x55, 0x55), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', scale = 1. / 3000.)
         config.addBkg('spike', 'Spikes', samples = monophData, region = 'offtimeIso', color = ROOT.TColor.GetColor(0xaa, 0xaa, 0xaa), norm = spikeNorm) # 8.9
-        config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
-        config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
-        config.addBkg('gg', '#gamma#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
-        config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x55, 0xbb, 0x66))
-        config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
+        if 'Merged' in confName:
+            config.addBkg('minor', 'Other SM', samples = ['ttg', 'tg', 'ww', 'wz', 'zz'] + minor + wlnun + gj, color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
+        else:
+            config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
+            config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
+            config.addBkg('gg', '#gamma#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+            config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x55, 0xbb, 0x66))
+            config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
         config.addBkg('hfake', 'Hadron fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff), cut = hfakeSels)
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
