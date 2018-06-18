@@ -14,8 +14,8 @@ ROOT.gROOT.SetBatch(True)
 sourceDir = sys.argv[1]
 originalName = sys.argv[2]
 
-# Original injection in plot.py is 0.05 times sigma_SM
-originalMu = 0.05
+# Original injection in plot.py is 0.1 times sigma_SM
+originalMu = 0.1
 signal = 'dph-nlo-125'
 region = 'gghg'
 

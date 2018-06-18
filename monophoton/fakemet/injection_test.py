@@ -13,7 +13,7 @@ import ROOT
 
 targSourceName = sys.argv[1] # fakeMetRandom hist file
 sourceName = sys.argv[2] # gghg hist file
-signalStrength = float(sys.argv[3]) # signal scale
+sigScale = float(sys.argv[3]) # signal scale
 fakeNorm = float(sys.argv[4]) # fakeMet norm
 outputName = sys.argv[5] # output file
 
@@ -51,7 +51,7 @@ for key in samples.GetListOfKeys():
     hist = key.ReadObj()
 
     if name.startswith(signal):
-        hist.Scale(signalStrength)
+        hist.Scale(sigScale)
 
     if name == signal + '_' + region:
         signalHist = hist

@@ -41,7 +41,7 @@ baseSel = ' && '.join(baseSels.values())
 def getConfigGGH(confName):
     global baseSels
 
-    if confName == 'gghg' or confName == 'gghgNoFake' or confName == 'gghgBlind':
+    if confName == 'gghg' or confName == 'gghgNoFake' or confName == 'gghgBlind' or 'gghgFakeRandom':
         config = PlotConfig('gghg')
 
         monophData = photonData
@@ -61,7 +61,7 @@ def getConfigGGH(confName):
         config.addSig('dphv', 'Dark Photon (VBF)', samples = ['dphv-*'], scale = 0.1)
 
         config.addSigPoint('dph-nlo-125', 'H_{125}(#gamma, #gamma_{D})', color = ROOT.kCyan)
-        # config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D}) (VBF)', color = ROOT.kGreen)
+        config.addSigPoint('dphv-nlo-125', 'H_{125}(#gamma, #gamma_{D}) (VBF)', color = ROOT.kGreen)
 
         config.addBkg('gg', '#gamma#gamma', samples = gg, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
@@ -72,7 +72,9 @@ def getConfigGGH(confName):
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        if confName != 'gghgNoFake':
+        if confName == 'gghgFakeRandom':
+            config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMetRandom', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
+        elif confName != 'gghgNoFake':
             config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
 
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
@@ -148,7 +150,7 @@ def getConfigGGH(confName):
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        if confName != 'gghgNoFake':
+        if confName != 'gghgNoFake' and confName != 'gghgFakeRandom':
             config.findGroup('fakemet').variations.append(Variation('fakemetShape', normalize = True, regions = ('fakeMet75', 'fakeMet25')))
 
     elif confName == 'gghgj':
