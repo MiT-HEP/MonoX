@@ -652,8 +652,21 @@ def vbfgBase(sample, rname):
         jetDPhi.setMetVariations(metVar)
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
-        selector.addOperator(ROOT.PhotonPtWeight(ROOT.TF1('trigeff_ph_nominal', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.), 'trigeff_ph'))
-        selector.addOperator(ROOT.ConstantWeight(0.964, 'triggereff_vbf'))
+
+        # nominal 9.76182e-01 + 1.03735e-04 * x  -> has 43499 entries in efficiency.root ptwide_pass histogram
+        # alt 9.82825e-01 + 1.37474e-05 * x  -> 29315 entries
+        # taking the sqrt(N)-weighted average for nominal
+        triggersf_photon = ROOT.PhotonPtWeight(ROOT.TF1('trigsf_ph_nominal', '0.9792 + 6.317e-05 * x', 80., 1000.), 'trigeff_ph')
+        # single photon measurement
+        triggersf_photon.addVariation("trigsf_photonUp", ROOT.TF1('trigeff_ph_up', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.))
+        # symmetric reflection of Down about nominal
+        triggersf_photon.addVariation("trigsf_photonDown", ROOT.TF1('trigeff_ph_down', '0.9822 + 2.260e-05 * x', 80., 1000.))
+
+        selector.addOperator(triggersf_photon)
+
+        triggersf_vbf = ROOT.DEtajjWeight(ROOT.TF1('trigsf_vbf_nominal', '1.00989e+00 - 1.04419e-02 * x', 3., 10.), 'trigeff_vbf')
+        triggersf_vbf.setDijetSelection(dijetSel)
+        selector.addOperator(triggersf_vbf)
 
         addPUWeight(sample, selector)
         addPDFVariation(sample, selector)
@@ -956,6 +969,19 @@ def monophNoLVeto(sample, rname):
     selector = monoph(sample, rname)
 
     selector.findOperator('LeptonSelection').setIgnoreDecision(True)
+
+    return selector
+
+def monophNoGSFix(sample, rname):
+    """
+    Full monophoton selection using originalPt / pt * scRawPt
+    """
+
+    selector = monoph(sample, rname)
+
+    # replaces outPhoton.scRawPt with originalPt / pt * scRawPt
+    # all downstream operators should be using outPhoton
+    selector.findOperator('PhotonSelection').setUseOriginalPt(True)
 
     return selector
 
