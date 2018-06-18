@@ -842,6 +842,8 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
   delete fullResults;
   delete weightF;
 
+  totalEvents_ = iEntry;
+
   if (printLevel_ >= 0) {
     std::cout << "\r      " << iEntry << " events";
     std::cout << std::endl;

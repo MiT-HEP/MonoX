@@ -7,7 +7,10 @@ import math
 import re
 import collections
 
+import ROOT
+
 def makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel):
+    global ROOT
     plotter = ROOT.MultiDraw()
     plotter.addInputPath(sourceName)
 
@@ -181,23 +184,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             nominal = histograms[(sample, plotdef, None, None)]
             hist.Scale(nominal.GetSumOfWeights() / hist.GetSumOfWeights())
 
-        # zero out negative bins (save the original as _orig)
-        horig = None
-        for iX in range(1, hist.GetNbinsX() + 1):
-            if hist.GetBinContent(iX) < 0.:
-                if horig is None:
-                    # print '      Adjusting bin contents of', plotdef.name, hist.GetName(), 'to be non-negative'
-                    horig = hist.Clone(hist.GetName() + '_original')
-
-                hist.SetBinContent(iX, 0.)
-                hist.SetBinError(iX, 0.)
-
-            elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
-                if horig is None:
-                    # print '      Adjusting bin errors of', plotdef.name, hist.GetName(), 'to be non-negative'
-                    horig = hist.Clone(hist.GetName() + '_original')
-
-                hist.SetBinError(iX, hist.GetBinContent(iX))
+        # zero out negative bins
+        hist, horig = cleanHist(hist)
 
         writeHist(hist)
 
@@ -277,9 +265,31 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             writeHist(ghistSyst)
 
 
+# zero out negative bins (save the original as _orig)
+def cleanHist(hist):
+    horig = None
+    for iX in range(1, hist.GetNbinsX() + 1):
+        if hist.GetBinContent(iX) < 0.:
+            if horig is None:
+                # print '      Adjusting bin contents of', plotdef.name, hist.GetName(), 'to be non-negative'
+                horig = hist.Clone(hist.GetName() + '_original')
+
+            hist.SetBinContent(iX, 0.)
+            hist.SetBinError(iX, 0.)
+
+        elif hist.GetBinContent(iX) - hist.GetBinError(iX) < 0.:
+            if horig is None:
+                # print '      Adjusting bin errors of', plotdef.name, hist.GetName(), 'to be non-negative'
+                horig = hist.Clone(hist.GetName() + '_original')
+
+            hist.SetBinError(iX, hist.GetBinContent(iX))
+
+    return hist, horig
+
 # python deletes histograms when variables are overwritten unless someone references the object
 objectstore = []
 def writeHist(hist):
+    global ROOT
     if not hist.GetDirectory() or not hist.GetDirectory().GetFile():
         # we don't have a persistent storage
         objectstore.append(hist)

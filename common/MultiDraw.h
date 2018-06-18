@@ -204,6 +204,7 @@ public:
   void fillPlots(long nEntries = -1, long firstEntry = 0);
 
   void setPrintLevel(int l) { printLevel_ = l; }
+  long getTotalEvents() { return totalEvents_; }
 
   unsigned numObjs() const { return unconditional_.size() + postBase_.size() + postFull_.size(); }
 
@@ -230,6 +231,7 @@ private:
   std::map<TString, TTreeFormulaCached*> library_;
 
   int printLevel_{0};
+  long totalEvents_{0};
 };
 
 #endif

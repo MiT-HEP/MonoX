@@ -262,6 +262,23 @@ class GenPhotonVeto : public Cut {
   double minPartonDR2_{0.5 * 0.5}; // minimum dR wrt any parton of the gen photon to be vetoed
 };
 
+class PartonKinematics : public Modifier {
+  /* Save parton level photon and met kinematics. */
+ public:
+  PartonKinematics(char const* name = "PartonKinematics") : Modifier(name) {}
+  
+  void addBranches(TTree& skimTree) override;
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+  
+  float phoPt_{-1.};
+  float phoEta_{-1.};
+  float phoPhi_{-1.};
+  
+  float metPt_{-1.};
+  float metPhi_{-1.};
+};
+
 class PartonFlavor : public Cut {
   /* Select events with specified parton ids */
  public:

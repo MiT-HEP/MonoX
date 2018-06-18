@@ -229,6 +229,53 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton
 }
 
 //--------------------------------------------------------------------
+// PartonKinematics
+//--------------------------------------------------------------------
+void
+PartonKinematics::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("genPhoton.pt", &phoPt_, "genPhoton.pt/F");
+  _skimTree.Branch("genPhoton.eta", &phoEta_, "genPhoton.eta/F");
+  _skimTree.Branch("genPhoton.phi", &phoPhi_, "genPhoton.phi/F");
+
+  _skimTree.Branch("genMet.pt", &metPt_, "genMet.pt/F");
+  _skimTree.Branch("genMet.phi", &metPhi_, "genMet.phi/F");
+}
+
+void
+PartonKinematics::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  phoPt_ = -1;
+  phoEta_ = -1;
+  phoPhi_ = -1;
+
+  metPt_ = -1;
+  metPhi_ = -1;
+
+  long absid(0.);
+  double mpx(0.);
+  double mpy(0.);
+
+  for (auto& parton : _event.partons) {
+    absid = std::abs(parton.pdgid);
+    if (absid == 22 && parton.pt() > phoPt_) {
+      phoPt_ = parton.pt();
+      phoEta_ = parton.eta();
+      phoPhi_ = parton.phi();
+    }
+    
+    else if (absid == 12 || absid == 14 || absid == 16 || absid == 51 || absid == 52 || absid == 53 || absid == 1000012 || absid == 2000012 || absid == 3000012) {
+      mpx += parton.pt() * std::cos(parton.phi());
+      mpy += parton.pt() * std::sin(parton.phi());
+    }
+  }
+
+  metPt_ = std::sqrt(mpx * mpx + mpy * mpy);
+  metPhi_ = std::atan2(mpy, mpx);
+}
+
+
+//--------------------------------------------------------------------
 // PartonFlavor
 //--------------------------------------------------------------------
 

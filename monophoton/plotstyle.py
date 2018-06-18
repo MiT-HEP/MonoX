@@ -969,8 +969,17 @@ class RatioCanvas(SimpleCanvas):
         base = self._updateMainPad(self.plotPad, hList, logx, logy, rooHists, drawLegend = drawLegend)
 
         if base:
-            base.SetTickLength(0., 'X')
-            base.SetTickLength(0., 'Y')
+            try:
+                base.SetTickLength(0., 'X')
+                base.SetTickLength(0., 'Y')
+            except AttributeError:
+                # either a THStack or TGraph or something else
+                try:
+                    base.GetHistogram().SetTickLength(0., 'X')
+                    base.GetHistogram().SetTickLength(0., 'Y')
+                except AttributeError:
+                    # OK I give up
+                    pass
             base.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
             base.GetXaxis().SetTitle('')
             base.GetXaxis().SetLabelSize(0.)

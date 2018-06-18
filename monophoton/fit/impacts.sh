@@ -10,12 +10,12 @@ text2workspace.py ${datacard} -m 125 -o ${outname}.root --channel-masks
 if [ ${asimov} == 1 ]
 then
     echo "\n  Generating asimov data for impact study. \n"
-    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} -t -1 --doInitialFit  
-    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} -t -1 --doFits --parallel 24
+    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --allPars --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} -t -1 --doInitialFit  
+    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --allPars --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} -t -1 --doFits --parallel 24
 else
     echo "\n  Using provided data for impact study. \n"
-    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} --doInitialFit 
-    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} --doFits --parallel 24 
+    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --allPars --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} --doInitialFit 
+    combineTool.py -M Impacts -d ${outname}.root -m 125 --robustFit 1 --allPars --setParameterRanges r=-5.0,5.0 --expectSignal=${signal} --doFits --parallel 24 
 fi
 
 combineTool.py -M Impacts -d ${outname}.root -m 125 -o impacts.json_${outname}

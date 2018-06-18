@@ -37,12 +37,12 @@ ROOT.gROOT.SetBatch(True)
 mlfit = ROOT.TFile.Open(sys.argv[3])
 if pdir == 'p':
     postfitDir = mlfit.Get('shapes_prefit')
-elif pdir == 'b':
+elif pdir == 'b' or pdir == 'c':
     postfitDir = mlfit.Get('shapes_fit_b') 
 elif pdir == 's':
     postfitDir = mlfit.Get('shapes_fit_s')
 else:
-    print 'Please choose prefit (p), b-only (b), or s+b (s) directory to use for plotting.'
+    print 'Please choose prefit (p), CR-only (c), b-only (b), or s+b (s) directory to use for plotting.'
     sys.exit(0)
 
 SIMPLE = False
@@ -55,6 +55,8 @@ def printRegionHeader(name, hist):
 
     if pdir == 'p':
         fit = 'pre-fit'
+    elif pdir == 'c':
+        fit = 'CR-only post-fit'
     elif pdir == 'b':
         fit = 'background-only post-fit'
     elif pdir == 's':
@@ -82,6 +84,9 @@ def printRegionFooter(name, lumi, thist, dhist):
     if pdir == 'p':
         fitl = 'pre-fit'
         fits = 'prefit'
+    elif pdir == 'c':
+        fitl = 'CR-only post-fit'
+        fits = 'CRonly'
     elif pdir == 'b':
         fitl = 'background-only post-fit'
         fits = 'bonly'
@@ -230,17 +235,20 @@ for key in postfitDir.GetListOfKeys():
     if not SIMPLE:
         printRegionHeader(region, prefitTotal)
     
+    if pdir == 's':
+        pftitle = 'Signal+background fit'
+    elif pdir == 'c':
+        pftitle = 'CR-only fit'
+    else:
+        pftitle = 'Background-only fit'
+
     canvas = RatioCanvas(lumi = lumi, name = region)
     canvas.legend.ncolumns = 1
     canvas.legend.add('obs', title = 'Data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
     canvas.legend.add('prefit', title = 'Pre-fit', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
     if postfitSub and SIMPLE:
         canvas.legend.add('subdom', title = 'Subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
-
-    if pdir == 's':
-        canvas.legend.add('postfit', title = 'Signal+background fit', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
-    else:
-        canvas.legend.add('postfit', title = 'Background-only fit', opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
+    canvas.legend.add('postfit', title = pftitle, opt = 'LF', color = ROOT.kBlue, lstyle = ROOT.kSolid, lwidth = 2, fstyle = 3005, mstyle = 8, msize = 0.8)
 
     obs.SetTitle('')
     prefitTotal.SetTitle('')
@@ -326,6 +334,8 @@ for key in postfitDir.GetListOfKeys():
                 print region + ' region has no signal processes.'
                 pass
 
+        printRegionFooter(region, lumi, postfitTotal, dataHist)
+
         # merge groups
         # component groups must be adjacently defined in plotconfig
         groupMerge = []
@@ -373,9 +383,9 @@ for key in postfitDir.GetListOfKeys():
             iG = canvas.addHistogram(ghist)
             groupList.append(iG)
 
-        hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
+            # print name, ghist.Integral()
 
-        printRegionFooter(region, lumi, postfitTotal, dataHist)
+        hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.5)
     if 'monoph' in region:
@@ -396,6 +406,8 @@ for key in postfitDir.GetListOfKeys():
 
     if pdir == 'p':
         outname = 'prefit_' + region
+    elif pdir == 'c':
+        outname = 'CRonly_' + region 
     elif pdir == 'b':
         outname = 'bonly_' + region
     elif pdir == 's':
