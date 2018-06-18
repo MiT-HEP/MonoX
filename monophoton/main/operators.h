@@ -58,6 +58,7 @@
 //     MetVariations *
 //     ConstantWeight *
 //     PhotonPtWeight *
+//     DEtajjWeight *
 //     IDSFWeight *
 //     NPVWeight
 //     VtxAdjustedJetProxyWeight *
@@ -343,13 +344,14 @@ class PhotonSelection : public Cut {
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
 
   void setIncludeLowPt(bool i) { includeLowPt_ = i; }
+  void setUseOriginalPt(bool b) { useOriginalPt_ = b; }
 
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setMaxPt(double maxPt) { maxPt_ = maxPt; }
   void setIDTune(panda::XPhoton::IDTune t) { idTune_ = t; }
   void setWP(unsigned wp) { wp_ = wp; }
   void setN(unsigned n) { nPhotons_ = n; }
-  double ptVariation(panda::XPhoton const&, bool up);
+  double ptVariation(panda::XPhoton const&, double shift);
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -364,6 +366,8 @@ class PhotonSelection : public Cut {
   float ptVarDown_[NMAX_PARTICLES];
 
   bool includeLowPt_{false};
+  // specific to 03Feb2017 re-miniaod: scale output pt values to original / GS-fixed
+  bool useOriginalPt_{false};
 
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
@@ -653,6 +657,11 @@ class DijetSelection : public Cut {
 
   void addBranches(TTree& skimTree) override;
   void addInputBranch(panda::utils::BranchList&) override;
+
+  unsigned getNDijet() const { return nDijet_; }
+  unsigned getNDijetPassing() const { return nDijetPassing_; }
+  double getDEtajj(unsigned i) const { return dEtajj_[i]; }
+  double getDEtajjPassing(unsigned i) const { return dEtajjPassing_[i]; }
   
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
@@ -1167,6 +1176,22 @@ class PhotonPtWeightSigned : public Modifier {
   PhotonPtWeight* operators_[nSigns];
   double weight_;
   std::map<TString, double*> varWeights_;
+};
+
+class DEtajjWeight : public Modifier {
+ public:
+  DEtajjWeight(TF1* formula, char const* name = "DEtajjWeight");
+  ~DEtajjWeight() {}
+
+  void addBranches(TTree& skimTree) override;
+  void setDijetSelection(DijetSelection const* sel) { dijet_ = sel; }
+
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+
+  TF1* formula_;
+  DijetSelection const* dijet_;
+  double weight_;
 };
 
 class IDSFWeight : public Modifier {

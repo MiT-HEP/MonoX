@@ -442,12 +442,13 @@ PhotonSelection::removeVeto(unsigned _s1, unsigned _s2/* = nSelections*/, unsign
 }
 
 double
-PhotonSelection::ptVariation(panda::XPhoton const& _photon, bool up)
+PhotonSelection::ptVariation(panda::XPhoton const& _photon, double _shift)
 {
-  if (up)
-    return _photon.scRawPt * 1.015;
-  else
-    return _photon.scRawPt * 0.985;
+  double scRawPt(_photon.scRawPt);
+  if (useOriginalPt_)
+    scRawPt *= _photon.originalPt / _photon.pt();
+
+  return scRawPt * (1. + 0.015 * _shift);
 }
 
 bool
@@ -476,10 +477,10 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     bool passPt(false);
     if (vetoes_.size() == 0) {
       // veto is not set -> this is a simple photon selection. Pass if upward variation is above the threshold.
-      passPt = (ptVariation(photon, true) > minPt_);
+      passPt = (ptVariation(photon, 1.) > minPt_);
     }
     else {
-      passPt = (photon.scRawPt > minPt_);
+      passPt = (ptVariation(photon, 0.) > minPt_);
     }
 
     // We continue in both cases below because photons are not necessarily sorted by scRawPt
@@ -507,11 +508,18 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     else if (selection > 0) {
       // if includeLowPt = true, here we push back soft photons passing the ID
       if (vetoes_.size() == 0) {
-        ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, true);
-        ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, false);
+        ptVarUp_[_outEvent.photons.size()] = ptVariation(photon, 1.);
+        ptVarDown_[_outEvent.photons.size()] = ptVariation(photon, -1.);
       }
       chargedPFVeto_[_outEvent.photons.size()] = cutRes_[ChargedPFVeto][_outEvent.photons.size()];
       _outEvent.photons.push_back(photon);
+
+      if (useOriginalPt_) {
+        auto& outPhoton(_outEvent.photons.back());
+        double scale(photon.originalPt / photon.pt());
+        outPhoton.setPtEtaPhiM(photon.pt() * scale, photon.eta(), photon.phi(), 0.);
+        outPhoton.scRawPt *= scale;
+      }
     }
   }
 
@@ -531,7 +539,7 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
 {
   BitMask cutres;
   // Ashim's retuned ID GJets_CWIso (https://indico.cern.ch/event/629088/contributions/2603837/attachments/1464422/2279061/80X_PhotonID_EfficiencyStudy_23-05-2017.pdf)
-  cutres[Pt] = _photon.scRawPt > minPt_;
+  cutres[Pt] = ptVariation(_photon, 0.) > minPt_;
   cutres[IsBarrel] = _photon.isEB;
   cutres[HOverE] = _photon.passHOverE(wp_, idTune_);
   cutres[Sieie] = _photon.passSieie(wp_, idTune_);
@@ -560,7 +568,7 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
     }
   }
   // cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795); // ICHEP region
-  cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * _photon.scRawPt) < 0.95;
+  cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * ptVariation(_photon, 0.)) < 0.95;
   cutres[Sieie08] = (_photon.sieie < 0.008);
   cutres[Sieie12] = (_photon.sieie < 0.012);
   cutres[Sieie15] = (_photon.sieie < 0.015);
@@ -582,7 +590,7 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
     if (dr > 0.1)
       continue;
 
-    double relPt(cand->pt() / _photon.scRawPt);
+    double relPt(cand->pt() / ptVariation(_photon, 0.));
     if (relPt > 0.6) {
       cutres[ChargedPFVeto] = false;
       break;
@@ -2802,10 +2810,10 @@ MetVariations::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
     nominal.SetMagPhi(photon.scRawPt, photon.phi());
 
     TVector2 photonUp;
-    photonUp.SetMagPhi(photonSel_->ptVariation(photon, true), photon.phi());
+    photonUp.SetMagPhi(photonSel_->ptVariation(photon, 1.), photon.phi());
 
     TVector2 photonDown;
-    photonDown.SetMagPhi(photonSel_->ptVariation(photon, false), photon.phi());
+    photonDown.SetMagPhi(photonSel_->ptVariation(photon, -1.), photon.phi());
 
     TVector2 shiftUp(metV + nominal - photonUp);
     TVector2 shiftDown(metV + nominal - photonDown);
@@ -3139,6 +3147,31 @@ PhotonPtWeightSigned::apply(panda::EventMonophoton const& _event, panda::EventMo
     *var.second = op->getVariation(var.first);
 }
 
+//--------------------------------------------------------------------
+// DEtajjWeight
+//--------------------------------------------------------------------
+
+DEtajjWeight::DEtajjWeight(TF1* _formula, char const* name/* = "DEtajjWeight"*/) :
+  Modifier(name),
+  formula_(_formula)
+{}
+
+void
+DEtajjWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+}
+
+void
+DEtajjWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (dijet_->getNDijetPassing() == 0) {
+    weight_ = 1.;
+    return;
+  }
+
+  weight_ = formula_->Eval(dijet_->getDEtajjPassing(0));
+}
 
 //--------------------------------------------------------------------
 // IDSFWeight
