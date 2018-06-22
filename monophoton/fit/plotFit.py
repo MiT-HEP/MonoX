@@ -68,7 +68,7 @@ def printRegionHeader(name, hist):
     
     for iBin in range(1, nbins + 1):
         tstr += 'c|'
-        pstr += ' & %19s' % ( '[%4.0f, %4.0f]' % (hist.GetBinLowEdge(iBin), hist.GetBinLowEdge(iBin+1)))
+        pstr += ' & %19s' % ( '[%3.0f, %4.0f]' % (hist.GetBinLowEdge(iBin), hist.GetBinLowEdge(iBin+1)))
 
     tstr += ' }'
     pstr += r' \\'
@@ -314,18 +314,18 @@ for key in postfitDir.GetListOfKeys():
 
             groupHists.append(ghist)
 
+
         if pdir == 's':
             try:
                 shist = postfitDir.Get(region + '/total_signal').Clone()
-                shist.SetTitle('')
+                canvas.legend.add('signal', title = 'Signal', opt = 'F', fcolor = ROOT.kBlack, fstyle = 3002)
 
                 printBinByBin('signal', shist)
+                canvas.legend.apply('signal', shist)
+                shist.SetTitle('')
 
                 if len(groupHists):
                     shist.Add(groupHists[-1])
-                    
-                canvas.legend.add('signal', title = 'Signal', opt= 'F', fcolor = ROOT.kBlack, fstyle = 3002)
-                canvas.legend.apply('signal', shist)
 
                 iS = canvas.addHistogram(shist)
                 groupList.append(iS)
@@ -385,6 +385,21 @@ for key in postfitDir.GetListOfKeys():
 
             # print name, ghist.Integral()
 
+        if pdir != 's':
+            try:
+                shist = mlfit.Get('shapes_prefit').Get(region + '/total_signal').Clone()
+                canvas.legend.add('signal', title = 'Signal', opt = 'L', color = ROOT.kMagenta, lstyle = ROOT.kSolid, lwidth = 3)
+
+                canvas.legend.apply('signal', shist)
+                shist.SetTitle('')
+
+                iS = canvas.addHistogram(shist)
+                groupList.append(iS)
+            
+            except ReferenceError:
+                print region + ' region has no signal processes.'
+                pass
+
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.5)
@@ -421,7 +436,7 @@ for key in postfitDir.GetListOfKeys():
             zeroBins.append(iBin)
 
     if len(zeroBins) != 0:
-        # OK we need to manually edit the ratio histograms after all the acrobat of making inverted ratios..
+        # OK we need to manually edit the ratio histograms after all the acrobat of makxoing inverted ratios..
         for prim in canvas.ratioPad.GetListOfPrimitives():
             name = prim.GetName().replace('ratio_', '')
             if name not in ['prefitUncRatio', 'postfitUncRatio', 'prefitRatio', 'postfitRatio']:

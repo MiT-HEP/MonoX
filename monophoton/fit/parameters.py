@@ -17,10 +17,11 @@ import datasets
 workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
 fitdir = workdir + '/fit'
 distribution = 'phoPtHighMet'
-sr = 'monophHighPhi'
+sr = 'vertical'
 
 snames = [
-    'dmvlo-1000-1',
+    'dmvh-1000-1',
+#     'add-3-8',
 #    'dmvlo-*'
 ]
 
@@ -30,7 +31,7 @@ for sname in snames:
 
 regions = [
     sr,
-    'monophLowPhi',
+    'horizontal',
     'monoel',
     'monomu',
     'diel',
@@ -45,9 +46,9 @@ links = [
     (('zg', 'monoel'), ('zg', sr)),
     (('zg', 'monomu'), ('zg', sr)),
     (('wg', sr), ('zg', sr)),
-    (('zg', 'monophLowPhi'), ('zg', sr)),
-    (('wg', 'monophLowPhi'), ('wg', sr)),
-    (('halo', 'monophLowPhi'), ('halo', sr)),
+    (('zg', 'horizontal'), ('zg', sr)),
+    (('wg', 'horizontal'), ('wg', sr)),
+    (('halo', 'horizontal'), ('halo', sr)),
 #     (('gg', 'diph'), ('zg', sr)),
 #    (('gjets', 'lowdphi'), ('gjets', sr)),
 #    (('zg', 'lowdphi'), ('zg', sr)),
@@ -65,18 +66,18 @@ ignoredNuisances = {
     ('wg', 'monomu'): wzIgnoreListExp + wzIgnoreListThe,
     ('zg', 'monoel'): wzIgnoreListExp + wzIgnoreListThe,
     ('zg', 'monomu'): wzIgnoreListExp + wzIgnoreListThe,
-    ('zg', 'monophLowPhi'): wzIgnoreListExp + wzIgnoreListThe,
-    ('wg', 'monophLowPhi'): wzIgnoreListExp + wzIgnoreListThe,
-    ('halo', 'monophLowPhi'): ['haloNorm'],
-    ('zg', 'monophHighPhi'): wzIgnoreListExp,
-    ('wg', 'monophHighPhi'): wzIgnoreListExp,
-    ('halo', 'monophHighPhi'): ['haloNorm'],
+    ('zg', 'horizontal'): wzIgnoreListExp + wzIgnoreListThe,
+    ('wg', 'horizontal'): wzIgnoreListExp + wzIgnoreListThe,
+    ('halo', 'horizontal'): ['haloNorm'],
+    ('zg', sr): wzIgnoreListExp,
+    ('wg', sr): wzIgnoreListExp,
+    ('halo', sr): ['haloNorm'],
 #     ('gg', 'diph'): wzIgnoreListExp,
 #    ('zg', 'lowdphi'): wzIgnoreListExp + wzIgnoreListThe,
 #    ('wg', 'lowdphi'): wzIgnoreListExp + wzIgnoreListThe,
 #    ('gjets', 'lowdphi'): gjIgnoreList,
-#    ('gjets', 'monophLowPhi'): gjIgnoreList,
-#    ('gjets', 'monophHighPhi'): gjIgnoreList,
+#    ('gjets', 'horizontal'): gjIgnoreList,
+#    ('gjets', sr): gjIgnoreList,
 }
 
 ratioCorrelations = {
@@ -112,7 +113,7 @@ wc.config = wc.WorkspaceConfig(
     xtitle = 'p_{T}^{#gamma}',
     xunit = 'GeV',
     links = links,
-    staticBase = [('halo', 'monophHighPhi')],
+    staticBase = [('halo', sr)],
     ignoredNuisances = ignoredNuisances,
     ratioCorrelations = ratioCorrelations,
     scaleNuisances = scaleNuisances

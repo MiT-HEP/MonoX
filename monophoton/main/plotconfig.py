@@ -109,6 +109,8 @@ def getConfig(confName):
         noDPhiJet = config.baseline.replace(baseSels['minJetDPhi0.5'], '1')
 
         # config.addPlot('fitTemplate', 'E_{T}^{#gamma}', fitTemplateExpression, fitTemplateBinning, unit = 'GeV', applyFullSel = True, overflow = False, sensitive = True)
+        config.addPlot('cutcount', 'events', '0.5', [0., 1.], overflow = True, applyFullSel = True, sensitive = True)
+        config.addPlot('cutcountHighPt', 'events', '0.5', [0., 1.], cut = 'photons.scRawPt[0] > 400.', overflow = True, applyFullSel = True, sensitive = True)
         config.addPlot('recoil', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True, sensitive = True)
         # config.addPlot('recoilScan', 'E_{T}^{miss}', 't1Met.pt', [175. + 25. * x for x in range(14)], unit = 'GeV', overflow = True, sensitive = True)
         config.addPlot('mtPhoMet', 'M_{T#gamma}', mtPhoMet, mtPhoMetBinning, unit = 'GeV', overflow = True, sensitive = True)
