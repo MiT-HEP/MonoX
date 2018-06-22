@@ -149,4 +149,4 @@ dph-1000-80      "Dark Photon (M=80 GeV)"            0.1845           67195     
 dph-nlo-125      "Dark Photon"                       48.58            586182     6.43654432174e+07    pandaf/004   DarkPhoton_ggH_amcatnlo-pythia8_M-125+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb
 hbb-nlo-125      "H(bb)"                             48.58            586182     6.43654432174e+07    pandaf/004   GluGluHToBB_M125_13TeV_amcatnloFXFX_pythia8+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM
 ### Dark Photon VBF NLO Signal MC
-dphv-nlo-125     "Dark Photon"                       3.748            4361482    1.63042112618e+07    pandaf/004   DarkPhoton_VBF_powheg_M-125+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: ggH 0.1845 pb
+dphv-nlo-125     "Dark Photon"                       3.748            4361482    1.63042112618e+07    pandaf/004   DarkPhoton_VBF_powheg_M-125+RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1+MINIAODSIM # from Higgs twikis: VBF 3.748 pb

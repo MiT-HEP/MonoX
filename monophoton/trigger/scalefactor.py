@@ -4,6 +4,7 @@
 import sys
 import os
 import ROOT
+ROOT.gROOT.SetBatch(True)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -13,7 +14,14 @@ import config
 
 from trigger.confs import measurements, confs, fitconfs
 
-oname, mname1, mname2 = sys.argv[1:]
+oname, mname1, mname2 = sys.argv[1:4]
+if len(sys.argv) > 4:
+    fit_targ = sys.argv[4]
+    formula = sys.argv[5]
+    fit_range = tuple(map(float, sys.argv[6].split(',')))
+    params = tuple(map(float, sys.argv[7].split(',')))
+else:
+    fit_targ = None
 
 outName = 'trigger'
 outDir = config.histDir + '/trigger'
@@ -36,6 +44,10 @@ for tname, (_, _, title, variables) in confs[oname].items():
         nbase = numerSource.Get(tname + '/' + vname + '_base')
         dpass = denomSource.Get(tname + '/' + vname + '_pass')
         dbase = denomSource.Get(tname + '/' + vname + '_base')
+        
+        if not npass or not nbase or not dpass or not dbase:
+            print tname, vname, 'not in source'
+            continue
     
         sf = ROOT.TGraphErrors(npass.GetNbinsX())
 
@@ -82,6 +94,15 @@ for tname, (_, _, title, variables) in confs[oname].items():
             sf.SetMarkerStyle(8)
         
         canvas.addHistogram(sf, drawOpt = 'EP')
+
+        if tname + '_' + vname == fit_targ:
+            func = ROOT.TF1('fitfunc', formula, *fit_range)
+            if len(params) > 1:
+                func.SetParameters(*params)
+            else:
+                func.SetParameter(0, params[0])
+            sf.Fit(func, "", "", *fit_range)
+            canvas.addHistogram(func, drawOpt = '')
         
         canvas.xtitle = vtitle
         canvas.ylimits = (0.8, 1.2)

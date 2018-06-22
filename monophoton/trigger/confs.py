@@ -11,14 +11,19 @@ def getEnum(cls, name):
 measurements = {
     ('photon', 'sel'): ('sel-16*-m', 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
     ('photon', 'selBCD'): (['sel-16b-m', 'sel-16c-m', 'sel-16d-m'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6 && runNumber < 276525', 'probes'), # for photon75
-    ('photon', 'dy'): (['dy-50*'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120.', 'probes'),
+    ('photon', 'dy'): (['dy-50@', 'dy-50-*'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
     ('photon', 'elmu'): (['smu-16*-m'], 'elmu', 'photons.mediumX[][2]', 'photons'),
     ('photon', 'elmuBCD'): (['smu-16b-m', 'smu-16c-m', 'smu-16d-m'], 'elmu', 'photons.mediumX[][2]', 'photons'),
     ('photon', 'ph75'): (['sph-16b-m', 'sph-16c-m', 'sph-16d-m'], 'ph75', 'photons.medium && HLT_Photon50 && runNumber < 276525', 'photons'),
+    ('photon', 'ph75h'): (['sph-16b-m', 'sph-16c-m', 'sph-16d-m'], 'ph75', 'photons.medium && HLT_Photon75 && runNumber < 276525', 'photons'),
+    ('photon', 'mcph75'): (['gj04-*'], 'ph75', 'photons.medium && HLT_Photon50', 'photons'),
     ('electron', 'sel'): ('sel-16*-m', 'tp2e', 'probes.tight && tp.mass > 60. && tp.mass < 120.', 'probes'),
     ('muon', 'smu'): ('smu-16*', 'tp2m', 'probes.tight && tp.mass > 60. && tp.mass < 120.', 'probes'),
     ('vbf', 'selBCD'): (['sel-16b-m', 'sel-16c-m', 'sel-16d-m'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0 && runNumber < 276525' % getEnum('Electron', 'fEl75EBR9IsoPh'), ''),
-    ('vbf', 'dy'): (['dy-50*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), '')
+    ('vbf', 'ph75h'): (['sph-16b-m', 'sph-16c-m', 'sph-16d-m'], 'ph75', 'photons.triggerMatch[][%d] && dijet.size > 0 && runNumber < 276525' % getEnum('Photon', 'fPh75EBR9Iso'), ''),
+    ('vbf', 'dy'): (['dy-50@*', 'dy-50-*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), ''),
+    ('vbf', 'mcph75h'): (['gj04-*'], 'ph75', 'photons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Photon', 'fPh75EBR9Iso'), ''),
+    ('vbf', 'wlnu'): (['wlnu-*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), '')
 }
 
 confs = {
@@ -68,7 +73,7 @@ confs = {
         })
     },
     'vbf': {
-        'vbf': ('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF', 'Sum$(electrons.triggerMatch[][%d]) != 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), 'VBF filter', {
+        'vbf': ('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF', '', 'VBF filter', {
             'dEtajj': ('|#Delta#eta_{jj}|', 'Max$(TMath::Abs(dijet.dEtajj * (dijet.mjj > 800.)))', 'Sum$(dijet.mjj > 500) != 0', (50, 0., 5.)),
             'mjj': ('m_{jj} (GeV)', 'Max$(TMath::Abs(dijet.mjj * (TMath::Abs(dijet.dEtajj) > 3.2)))', 'Sum$(TMath::Abs(dijet.dEtajj) > 3.2) != 0', (50, 0., 1000.))
         })

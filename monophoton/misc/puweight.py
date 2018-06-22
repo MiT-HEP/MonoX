@@ -6,96 +6,60 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 from datasets import allsamples
-from plotstyle import RatioCanvas
 import config
-
-RECREATE = False
 
 mcConfs = [
     ('2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU', 'PUSpring16'),
     ('2016_25ns_Moriond17MC_PoissonOOTPU', 'PUMoriond17')
 ]
 
-if RECREATE:
-    dataSource = ROOT.TFile.Open(sys.argv[2])
-    if not dataSource:
-        sys.exit(1)
+dataSource = ROOT.TFile.Open(sys.argv[2])
+if not dataSource:
+    sys.exit(1)
 
-    outputFile = ROOT.TFile.Open(sys.argv[1], 'recreate')
+outputFile = ROOT.TFile.Open(sys.argv[1], 'recreate')
+
+dataDist = dataSource.Get('pileup').Clone('data')
+dataDist.Sumw2()
+dataDist.Scale(1. / dataDist.GetSumOfWeights())
+
+dataDist.Write()
+
+for mcScenario, scenarioName in mcConfs:
+    # not the most proper way to import a module from a string, but who cares
+    exec('from SimGeneral.MixingModule.mix_' + mcScenario + '_cfi import mix')
+    npvs = mix.input.nbPileupEvents.probFunctionVariable.value() # list of integers
+    probs = mix.input.nbPileupEvents.probValue.value() # list of integers
     
-    dataDist = dataSource.Get('pileup').Clone('data')
-    dataDist.Sumw2()
-    dataDist.Scale(1. / dataDist.GetSumOfWeights())
+    mcProb = dict(zip(npvs, probs))
     
-    dataDist.Write()
+    mcDist = ROOT.TH1D(scenarioName, '', dataDist.GetNbinsX(), 0., dataDist.GetXaxis().GetXmax())
+    mcDist.Sumw2()
     
-    for mcScenario, scenarioName in mcConfs:
-        # not the most proper way to import a module from a string, but who cares
-        exec('from SimGeneral.MixingModule.mix_' + mcScenario + '_cfi import mix')
-        npvs = mix.input.nbPileupEvents.probFunctionVariable.value() # list of integers
-        probs = mix.input.nbPileupEvents.probValue.value() # list of integers
-        
-        mcProb = dict(zip(npvs, probs))
-        
-        mcDist = ROOT.TH1D(scenarioName, '', dataDist.GetNbinsX(), 0., dataDist.GetXaxis().GetXmax())
-        mcDist.Sumw2()
-        
-        for bin in range(1, mcDist.GetNbinsX() + 1):
-            npv = int(mcDist.GetXaxis().GetBinCenter(bin))
-            try:
-                mcDist.SetBinContent(bin, mcProb[npv])
-            except KeyError:
-                pass
-        
-        mcDist.Scale(1. / mcDist.GetSumOfWeights())
-        
-        for bin in range(1, mcDist.GetNbinsX() + 1):
-            mcDist.SetBinError(bin, 0.)
+    for bin in range(1, mcDist.GetNbinsX() + 1):
+        npv = int(mcDist.GetXaxis().GetBinCenter(bin))
+        try:
+            mcDist.SetBinContent(bin, mcProb[npv])
+        except KeyError:
+            pass
     
-        mcDist.Write()
+    mcDist.Scale(1. / mcDist.GetSumOfWeights())
     
-        puweight = dataDist.Clone('puweight_' + scenarioName)
-        
-        puweight.Divide(mcDist)
-        
-        for bin in range(1, puweight.GetNbinsX() + 1):
-            puweight.SetBinError(bin, 0.)
-            # HACK
-            if puweight.GetBinContent(bin) > 4.:
-                puweight.SetBinContent(bin, 4.)
-        
-        puweight.Write()
+    for bin in range(1, mcDist.GetNbinsX() + 1):
+        mcDist.SetBinError(bin, 0.)
 
-else:
-    outputFile = ROOT.TFile.Open(sys.argv[1])
+    mcDist.Write()
 
-    dataDist = outputFile.Get('data')
-
-
-canvas = RatioCanvas('ratio')
-canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
-canvas.legend.add('data', 'Data', opt = 'LF', color = ROOT.kRed, fstyle = 3003, lwidth = 2)
-canvas.legend.add('mc', '', opt = 'LF', color = ROOT.kBlue, fstyle = 3003, lwidth = 2)
-
-canvas.legend.apply('data', dataDist)
-
-dataClone = dataDist.Clone('points')
-dataClone.SetFillStyle(0)
-dataClone.SetMarkerStyle(1)
-dataClone.SetMarkerColor(ROOT.kBlack)
-dataClone.SetLineWidth(2)
-dataClone.SetLineColor(ROOT.kBlack)
-
-for _, scenarioName in mcConfs:
-    mcDist = outputFile.Get(scenarioName)
-    canvas.legend.entries['mc'].SetLabel(scenarioName)
-    canvas.legend.apply('mc', mcDist)
-
-    imc = canvas.addHistogram(mcDist)
-    idata = canvas.addHistogram(dataDist)
-    iclone = canvas.addHistogram(dataClone, drawOpt = 'P')
-
-    canvas.printWeb('puweight', scenarioName, logy = False, hList = [imc, idata], rList = [imc, iclone])
-    canvas.Clear()
+    puweight = dataDist.Clone('puweight_' + scenarioName)
+    
+    puweight.Divide(mcDist)
+    
+    for bin in range(1, puweight.GetNbinsX() + 1):
+        puweight.SetBinError(bin, 0.)
+        # HACK
+        if puweight.GetBinContent(bin) > 4.:
+            puweight.SetBinContent(bin, 4.)
+    
+    puweight.Write()
 
 outputFile.Close()
