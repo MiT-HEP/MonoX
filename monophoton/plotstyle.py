@@ -670,6 +670,9 @@ class TwoDimCanvas(SimpleCanvas):
     def __init__(self, name = 'cTwoDim', title = 'TwoDim', lumi = -1., sim = False, cms = True, xmax = None):
         SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, xmax = xmax)
 
+        ROOT.gStyle.SetTitleOffset(200., 'X')
+        ROOT.gStyle.SetTitleOffset(2.6, 'Y')
+
         self.canvas.SetCanvasSize(1000, 1000)
 
         self._logy = False
@@ -733,6 +736,9 @@ class TwoDimCanvas(SimpleCanvas):
                 base.GetYaxis().SetTitle(self.ytitle)
             if self.ztitle:
                 base.GetZaxis().SetTitle(self.ztitle)
+
+            base.GetXaxis().SetTitleOffset(1.3)
+            base.GetYaxis().SetTitleOffset(2.3)
 
         self.canvas.Update()
 
