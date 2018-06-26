@@ -8,7 +8,7 @@ import ROOT
 basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(basedir)
 
-from plotstyle import SimpleCanvas
+from plotstyle import TwoDimCanvas
 
 ROOT.gROOT.SetBatch(True)
 
@@ -23,17 +23,17 @@ covar.SetTitle('')
 # covar.SetLogz(True)
 text = covar.Clone('total_covar_text')
 
-canvas = SimpleCanvas(lumi = 35900., xmax = 0.90)
+canvas = TwoDimCanvas(lumi = 35900., xmax = 0.85)
 
 ROOT.gStyle.SetPaintTextFormat("7.2e");
 ROOT.gStyle.SetTextSize(0.05)
 
 canvas.addHistogram(covar, drawOpt = 'colz text')
 
-# canvas.zlimits = (0., 1.)
+canvas.zlimits = (1.0e-6, 0.5)
 canvas.xtitle = 'Bin name'
 canvas.ytitle = 'Bin name'
 
 # canvas.SetLogz(True)
 
-canvas.printWeb('EXO16053/fit/', 'signal_covar', logy = False)
+canvas.printWeb('EXO16053/fit/', 'signal_covar', logz = True)

@@ -662,6 +662,163 @@ class SimpleCanvas(object):
             selFile.write(self.selection + ' \n')
             selFile.close()
 
+class TwoDimCanvas(SimpleCanvas):
+    """
+    2D version of SimpleCanvas
+    """
+
+    def __init__(self, name = 'cTwoDim', title = 'TwoDim', lumi = -1., sim = False, cms = True, xmax = None):
+        SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, xmax = xmax)
+
+        self.canvas.SetCanvasSize(1000, 1000)
+
+        self._logy = False
+        self._logz = True
+        self.ztitle = ''
+        self.zlimits = (0., -1.)
+
+        if cms:
+            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX + 0.01, 0.3, SimpleCanvas.YMAX + 0.06, align = 11, font = 62)
+        else:
+            self.cmsPave = None
+
+        self._modified()
+    
+    def Clear(self, full = False, xmax = None):
+        SimpleCanvas.Clear(self, full = full, xmax = PLOT_XMAX)
+        
+        self.canvas.SetCanvasSize(1000, 1000)
+
+        if full:
+            self._logy = False
+            self._logz = True
+
+        self._modified()
+
+    def Update(self, hList = None, logx = None, logy = None, logz = None, drawLegend = True):
+        if logx is not None:
+            self.canvas.SetLogx(logx)
+            self.canvas.Update()
+
+        if logy is not None:
+            self.canvas.SetLogy(logy)
+            self.canvas.Update()
+
+        if logz is not None:
+            self.canvas.SetLogz(logz)
+            self.canvas.Update()
+
+        if not self._needUpdate:
+            return
+
+        if logx is None:
+            logx = self._logx
+
+        if logy is None:
+            logy = self._logy
+
+        if logz is None:
+            logy = self._logz
+
+        # list of histograms to draw
+        if hList is None:
+            hList = range(len(self._histograms))
+
+        base = self._updateMainPad(self.canvas, hList, logx, logy, logz, drawLegend = drawLegend)
+
+        if base:
+            if self.xtitle:
+                base.GetXaxis().SetTitle(self.xtitle)
+            if self.ytitle:
+                base.GetYaxis().SetTitle(self.ytitle)
+            if self.ztitle:
+                base.GetZaxis().SetTitle(self.ztitle)
+
+        self.canvas.Update()
+
+        self._needUpdate = False
+
+    def _updateMainPad(self, pad, hList, logx, logy, logz, rooHists = None, drawLegend = True):
+        gPad = ROOT.gPad
+
+        pad.cd()
+        pad.SetLogx(logx)
+        pad.SetLogy(logy)
+        pad.SetLogz(logz)
+
+        base = None
+
+        if len(hList) > 0:
+            # draw base
+            base = self._histograms[hList[0]]
+            maximum, minimum = self._drawHist(base, True, rooHists)
+
+            pad.Update()
+   
+            # draw other histograms
+            for ih in hList[1:]:
+                hist = self._histograms[ih]
+                hmax, hmin = self._drawHist(hist, False, rooHists)
+
+                maximum = max(maximum, hmax)
+                minimum = min(minimum, hmin)
+
+            pad.Update()
+
+            if self.xlimits[1] > self.xlimits[0]:
+                if base.InheritsFrom(ROOT.TH1.Class()):
+                    base.GetXaxis().SetRangeUser(self.xlimits[0], self.xlimits[1])
+                elif base.InheritsFrom(ROOT.TGraph.Class()):
+                    base.GetXaxis().SetLimits(*self.xlimits)
+
+            if self.ylimits[1] > self.ylimits[0]:
+                if base.InheritsFrom(ROOT.TH1.Class()):
+                    base.GetYaxis().SetRangeUser(self.ylimits[0], self.ylimits[1])
+                elif base.InheritsFrom(ROOT.TGraph.Class()):
+                    base.GetYaxis().SetLimits(*self.ylimits)
+
+            if self.zlimits[1] > self.zlimits[0]:
+                # z range specified - override
+                minimum, maximum = self.zlimits
+
+            elif logz:
+                if minimum <= 0.:
+                    minimum = 1.e-6
+                else:
+                    minimum *= 0.2
+                maximum *= 5.
+
+            else:
+                minimum = min(minimum, 0.)
+                maximum *= 1.3
+
+            base.SetMinimum(minimum)
+            base.SetMaximum(maximum)
+
+            if base.InheritsFrom(ROOT.THStack.Class()) and base.GetHistogram():
+                base.GetHistogram().SetBit(ROOT.TH1.kIsZoomed)
+                base.GetHistogram().SetMinimum(minimum)
+                base.GetHistogram().SetMaximum(maximum)
+
+            if len(self.legend.entries) != 0 and drawLegend:
+                self.legend.Draw(drawLegend)
+
+        for obj in self._objects:
+            if obj.drawOpt is None:
+                obj.obj.Draw('SAME')
+            else:
+                obj.obj.Draw(obj.drawOpt + ' SAME')
+
+        self.drawText()
+
+        gPad.cd()
+
+        return base
+
+    def SetLogz(self, logz):
+        self._logz = logz
+        self._modified()
+
 class Normalizer(object):
     """
     Helper class for normalizing histograms and graphs against histograms, graphs, or functions.
