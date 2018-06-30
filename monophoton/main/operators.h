@@ -963,8 +963,12 @@ class PhotonJetDPhi : public Modifier {
 class CopyMet : public Modifier {
  public:
   CopyMet(char const* name = "CopyMet") : Modifier(name) {}
+
+  void setUseGSFix(bool b) { useGSFix_ = b; }
  protected:
-  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override { outEvent.t1Met = event.t1Met; }
+  void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
+
+  bool useGSFix_{true};
 };
 
 class CopySuperClusters : public Modifier {

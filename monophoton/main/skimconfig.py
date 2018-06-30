@@ -41,7 +41,8 @@ data_sph = [
     'gghg', 'gghEfake', 'gghHfake', 
     'gghe', 'ggheEfake', 'ggheHfake', 'gghm', 'gghmEfake', 'gghmHfake', 
     'gghee', 'gghmm',
-    'fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75'
+    'fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75',
+    'monophNoGSFix', 'gghgNoGSFix'
 ]
 
 data_smu = [

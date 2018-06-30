@@ -153,7 +153,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     "chsAK4Jets",
     "!chsAK4Jets.constituents_",
     "pfMet",
-    "metFilters"
+    "metFilters",
+    "metMuOnlyFix"
   };
 
   if (!isData)

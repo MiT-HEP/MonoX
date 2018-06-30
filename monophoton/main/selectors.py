@@ -252,10 +252,10 @@ def monophotonBase(sample, rname, selcls = None):
         operators.append('MetVariations')
         
     operators += [
+        'Met',
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'Met',
         'PhotonPtOverMet',
         'PhotonMt'
     ]
@@ -778,10 +778,10 @@ def gghgBase(sample, rname, selcls = None):
         operators.append('MetVariations')
         
     operators += [
+        'Met',
         'PhotonMetDPhi',
         'JetMetDPhi',
         'PhotonJetDPhi',
-        'Met',
         'PhotonPtOverMet',
         'PhotonMt'
     ]
@@ -994,6 +994,9 @@ def monophNoGSFix(sample, rname):
     # replaces outPhoton.scRawPt with originalPt / pt * scRawPt
     # all downstream operators should be using outPhoton
     selector.findOperator('PhotonSelection').setUseOriginalPt(True)
+
+    # copy metMuOnlyFix instead of t1Met
+    selector.findOperator('CopyMet').setUseGSFix(False)
 
     return selector
 
@@ -2143,6 +2146,22 @@ def gghgNoE(sample, rname):
     setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     addIDSFWeight(sample, selector)
+
+    return selector
+
+def gghgNoGSFix(sample, rname):
+    """
+    Full monophoton selection using originalPt / pt * scRawPt
+    """
+
+    selector = gghg(sample, rname)
+
+    # replaces outPhoton.scRawPt with originalPt / pt * scRawPt
+    # all downstream operators should be using outPhoton
+    selector.findOperator('PhotonSelection').setUseOriginalPt(True)
+
+    # copy metMuOnlyFix instead of t1Met
+    selector.findOperator('CopyMet').setUseGSFix(False)
 
     return selector
 

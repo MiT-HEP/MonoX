@@ -2328,6 +2328,20 @@ PhotonJetDPhi::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
 }
 
 //--------------------------------------------------------------------
+// CopyMet
+//--------------------------------------------------------------------
+
+void
+CopyMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+{
+  if (useGSFix_) {
+    _outEvent.t1Met = _event.t1Met;
+  }
+  else {
+    _outEvent.t1Met = _event.metMuOnlyFix;
+  }
+}
+//--------------------------------------------------------------------
 // CopySuperClusters
 //--------------------------------------------------------------------
 
