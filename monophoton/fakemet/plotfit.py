@@ -81,4 +81,4 @@ canvas.addHistogram(fakeTrue, drawOpt = 'HIST')
 canvas.addHistogram(sigTrue, drawOpt = 'HIST')
 canvas.addHistogram(data, drawOpt = 'EP')
 
-canvas.printWeb('monophoton/fakemet/fits', name, logy = False)
+canvas.printWeb('monophoton/fakemet', name, logy = False)

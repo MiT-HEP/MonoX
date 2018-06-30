@@ -41,7 +41,7 @@ baseSel = ' && '.join(baseSels.values())
 def getConfigGGH(confName):
     global baseSels
 
-    if confName == 'gghg' or confName == 'gghgNoFake' or confName == 'gghgBlind' or 'gghgFakeRandom':
+    if 'gghg' in confName and confName not in ['gghgj', 'gghgg']:
         config = PlotConfig('gghg')
 
         monophData = photonData
@@ -70,10 +70,12 @@ def getConfigGGH(confName):
         config.addBkg('hfake', 'Hadronic fakes', samples = monophData, region = 'gghHfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff), cut = hfakeSels)
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma, Z#rightarrowll+#gamma', samples = ['znng-130-o', 'zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
-        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
+        config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-o'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'gghEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         if confName == 'gghgFakeRandom':
             config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMetRandom', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
+        elif confName == 'gghgNoGSFix':
+            config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = monophData, region = 'gghgNoGSFix', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
         elif confName != 'gghgNoFake':
             config.addBkg('fakemet', 'Fake E_{T}^{miss}', samples = gj04, region = 'fakeMet50', color = ROOT.TColor.GetColor(0x66, 0x66, 0x66), norm = 5.)
 
@@ -81,7 +83,7 @@ def getConfigGGH(confName):
         noMtPhoMet = config.baseline.replace(baseSels['mtPhoMet300'], '1')
         noMet = config.baseline.replace(baseSels['met150'], '1')
         
-        config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True, ymax = 5.4)
+        config.addPlot('mtPhoMet', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', sensitive = True) # , ymax = 5.4)
         # config.addPlot('mtPhoMetUp', 'M_{T#gamma}', mtPhoMetUp, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
         # config.addPlot('mtPhoMetDown', 'M_{T#gamma}', mtPhoMetDown, mtBinning, unit = 'GeV', sensitive = True, ymax = 5.1)
         config.addPlot('mtPhoMetDPhiCut', 'M_{T#gamma}', 'photons.mt[0]', mtBinning, unit = 'GeV', cut = 't1Met.photonDPhi > 0.5', sensitive = True)
@@ -150,7 +152,7 @@ def getConfigGGH(confName):
         config.findGroup('hfake').variations.append(Variation('hfakeTfactor', reweight = 'proxyDef', cuts = proxyDefCuts))
         config.findGroup('hfake').variations.append(Variation('purity', reweight = 'purity'))
         config.findGroup('efake').variations.append(Variation('egfakerate', reweight = 'egfakerate'))
-        if confName != 'gghgNoFake' and confName != 'gghgFakeRandom':
+        if confName not in ['gghgNoFake', 'gghgFakeRandom', 'gghgNoGSFix']:
             config.findGroup('fakemet').variations.append(Variation('fakemetShape', normalize = True, regions = ('fakeMet75', 'fakeMet25')))
 
     elif confName == 'gghgj':
