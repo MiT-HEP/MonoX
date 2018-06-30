@@ -38,7 +38,7 @@ baseSel = ' && '.join(baseSels.values())
 def getConfig(confName):
     global baseSels
 
-    if 'monoph' in confName:
+    if 'monoph' in confName or 'horizontal' in confName or 'vertical' in confName:
         config = PlotConfig('monoph')
 
         monophData = photonData
@@ -60,10 +60,10 @@ def getConfig(confName):
 
         config.fullSelection = 'muons.size == 0 && electrons.size == 0' # photons.scRawPt[0] > 600.'
 
-        if 'LowPhi' in confName:
+        if 'LowPhi' in confName or 'horizontal' in confName:
             config.baseline = baseSel + ' && (TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) < 0.5)'.format(halfpi = math.pi * 0.5)
             phiFactor = 1. / math.pi
-        elif 'HighPhi' in confName:
+        elif 'HighPhi' in confName or 'vertical' in confName:
             config.baseline = baseSel + ' && (TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - {halfpi})) - {halfpi}) > 0.5)'.format(halfpi = math.pi * 0.5)
             phiFactor = (math.pi - 1.) / math.pi
         else:
@@ -78,11 +78,11 @@ def getConfig(confName):
         config.addSig('dmalo', 'DM A LO', samples = ['dmalo-*'])
         config.addSig('dmvh', 'DM V NLO', samples = ['dmvh-*'])
         config.addSig('dmah', 'DM A NLO', samples = ['dmah-*'])
-        config.addSig('add', 'ADD', samples = ['add-*'])
+        # config.addSig('add', 'ADD', samples = ['add-*'])
         # config.addSig('dmvp', 'DM V', samples = ['dmvp-*'])
         # config.addSig('dph', 'DPH', samples = ['dph-*'])
 
-        config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
+        # config.addSigPoint('add-3-8', '#scale[0.7]{ADD +8d M_{D} = 3 TeV}', color = ROOT.kRed)
         # config.addSigPoint('dmvlo-1000-1', 'DMV 1000 LO', color = ROOT.kBlue)
         config.addSigPoint('dmvh-1000-1', 'DMV 1000', color = ROOT.kBlue)
         # config.addSigPoint('dmvp-1000-1', 'DMV1000', color = ROOT.kCyan)

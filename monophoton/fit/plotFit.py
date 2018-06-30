@@ -34,7 +34,11 @@ elif config == 'ggh':
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-mlfit = ROOT.TFile.Open(sys.argv[3])
+if pdir = 'c':
+    mlfit = ROOT.TFile.Open(sys.argv[3] + '_CRonly')
+else:
+    mlfit = ROOT.TFile.Open(sys.argv[3] + '_full')
+
 if pdir == 'p':
     postfitDir = mlfit.Get('shapes_prefit')
 elif pdir == 'b' or pdir == 'c':
@@ -341,7 +345,7 @@ for key in postfitDir.GetListOfKeys():
         groupMerge = []
 
         if config == 'monoph':
-            if 'monoph' in region:
+            if 'monoph' in region or 'horizontal' in region or 'vertical' in region:
                 groupMerge = [
                     ('other', ('vvg', 'top', 'gg', 'wjets', 'gjets'), 'Other SM', ROOT.TColor.GetColor(0xff, 0xbb, 0x55)),
                     ('noncol', ('halo', 'spike'), 'Non-collision', ROOT.TColor.GetColor(0xaa, 0xaa, 0xaa))
@@ -403,7 +407,7 @@ for key in postfitDir.GetListOfKeys():
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
     canvas.rlimits = (0.0, 2.5)
-    if 'monoph' in region:
+    if 'monoph' in region or 'horizontal' in region or 'vertical' in region:
         canvas.ylimits = (0.0003, 200.)
     elif 'mono' in region:
         canvas.ylimits = (0.0003, 20.)
