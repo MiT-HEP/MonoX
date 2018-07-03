@@ -22,7 +22,7 @@ covar.SetMarkerSize(0.7)
 
 text = covar.Clone('total_covar_text')
 
-canvas = TwoDimCanvas(lumi = 35900., xmax = 0.85)
+canvas = TwoDimCanvas(lumi = 35900., xmax = 0.85, prelim = False)
 
 ROOT.gStyle.SetPaintTextFormat("7.2e");
 

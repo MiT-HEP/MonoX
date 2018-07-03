@@ -262,7 +262,7 @@ class SimpleCanvas(object):
     YMIN = 0.12
     YMAX = 0.92
 
-    def __init__(self, name = 'cSimple', title = 'simple', lumi = -1., sim = False, cms = True, xmax = None):
+    def __init__(self, name = 'cSimple', title = 'simple', lumi = -1., sim = False, cms = True, prelim = True, xmax = None):
         self.canvas = ROOT.TCanvas(name, title, 600, 600)
         self.canvas.SetTopMargin(1. - SimpleCanvas.YMAX)
         if xmax is not None:
@@ -301,6 +301,8 @@ class SimpleCanvas(object):
             self.cmsPave = None
 
         self.sim = sim
+
+        self.prelim = prelim
 
         gDirectory = ROOT.gDirectory
         ROOT.gROOT.cd()
@@ -629,8 +631,10 @@ class SimpleCanvas(object):
 
             if self.sim:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Simulation}}')
-            else:
+            elif self.prelim:
                 self.cmsPave.AddText('#splitline{CMS}{#font[52]{Preliminary}}')
+            else:
+                self.cmsPave.AddText('#splitline{CMS}{#font[52]{  }}')
     
             self.cmsPave.Draw()
 
@@ -667,8 +671,8 @@ class TwoDimCanvas(SimpleCanvas):
     2D version of SimpleCanvas
     """
 
-    def __init__(self, name = 'cTwoDim', title = 'TwoDim', lumi = -1., sim = False, cms = True, xmax = None):
-        SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, xmax = xmax)
+    def __init__(self, name = 'cTwoDim', title = 'TwoDim', lumi = -1., sim = False, cms = True, prelim = True, xmax = None):
+        SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, prelim = prelim, xmax = xmax)
 
         ROOT.gStyle.SetTitleOffset(200., 'X')
         ROOT.gStyle.SetTitleOffset(2.6, 'Y')
@@ -1042,8 +1046,8 @@ class RatioCanvas(SimpleCanvas):
     RATIO_YMIN = 0.1
     RATIO_YMAX = 0.29
 
-    def __init__(self, name = 'cRatio', title = 'Ratio', lumi = -1., sim = False, cms = True):
-        SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms)
+    def __init__(self, name = 'cRatio', title = 'Ratio', lumi = -1., sim = False, cms = True, prelim = True):
+        SimpleCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, prelim = prelim)
 
         self.canvas.SetCanvasSize(600, 680)
 
@@ -1350,8 +1354,8 @@ class RatioCanvas(SimpleCanvas):
 
 class DataMCCanvas(RatioCanvas):
 
-    def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1., sim = False, cms = True):
-        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms)
+    def __init__(self, name = 'cDataMC', title = 'Data / MC', lumi = -1., sim = False, cms = True, prelim = True):
+        RatioCanvas.__init__(self, name = name, title = title, lumi = lumi, sim = sim, cms = cms, prelim = prelim)
 
         self._obs = -1
         self._bkgs = []

@@ -34,9 +34,11 @@ elif config == 'ggh':
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-if pdir = 'c':
+if pdir == 'c':
+    print 'CR only'
     mlfit = ROOT.TFile.Open(sys.argv[3] + '_CRonly')
 else:
+    print 'full'
     mlfit = ROOT.TFile.Open(sys.argv[3] + '_full')
 
 if pdir == 'p':
@@ -126,6 +128,9 @@ def printBinByBin(name, hist):
 
 for key in postfitDir.GetListOfKeys():
     region = key.GetName()
+
+    if 'total' in region:
+        continue
 
     prefitFile = ROOT.TFile.Open(wc.config.sourcename.format(region = region))
     prefitDir = prefitFile.Get(parameters.distribution)
@@ -246,7 +251,7 @@ for key in postfitDir.GetListOfKeys():
     else:
         pftitle = 'Background-only fit'
 
-    canvas = RatioCanvas(lumi = lumi, name = region)
+    canvas = RatioCanvas(lumi = lumi, name = region, prelim = False)
     canvas.legend.ncolumns = 1
     canvas.legend.add('obs', title = 'Data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
     canvas.legend.add('prefit', title = 'Pre-fit', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
