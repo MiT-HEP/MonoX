@@ -26,9 +26,15 @@
  sample_mmg.root for use by efake_fit.py.
 
  2. Fit
+ Templates for the fits are made using efake_template.py. The MC fits must be
+ performed before making the data templates since some of the background templates
+ rely on the MC results.
  Fits with the nominal and alternative models are performed in efake_fit.py:
 
-  efake_fit.py (data|mc) (binning)
+  efake_template.py mc (binning)
+  efake_fit.py mc (binning)
+  efake_template.py data (binning)
+  efake_fit.py data (binning)
 
  runs a fit for the Z yield estimates. Fits with the nominal, altsig, and altbkg
  models are run on each bin of the (binning). Results are saved into a RooDataSet
@@ -65,9 +71,20 @@
   done
   ~/bin/condor-run efake_tpsyst.py -e "data $binning" -a syst_args.txt
 
- The output of toy generation should be combined:
-  hadd tpsyst_data_(binning).root tpsyst_data_*_{nominal,altsig,altbkg}_${binning}_*.root
+  You can also use makeSystArgs.sh to generate the text file with all the job parameters.
+
+ The output of toy generation should be combined (you will need to switch to the output directory first):
+  hadd tpsyst_data_(binning).root (binning)/tpsyst_data_*_{nominal,altsig,altbkg}_${binning}_*.root
+  hadd tpsyst_mc_(binning).root (binning)/tpsyst_mc_*_{nominal,altsig,altbkg}_${binning}_*.root
 
  4. Finalize
- efake_compute.py takes this ROOT file as an input and makes the fake rate graph.
+  efake_compute.py takes this ROOT file as an input and makes the fake rate graph.
+  efake_compute.py (data|mc) (binning)
+
+ 5. Scale Factors
+  Repeat steps 2), 3), and 4) but with 'eff' as the product instead of of 'frate' (you can set this in efake_conf.py).
+  All four confs (pass, fail, ee, eg) can be combined into a single tpsyst_*.root file.
+  Step 4) will produce files with the efficiencies in MC and data.
+  Finally run sf_compute.py (binning) to produce the final set of scale factors.
+  
  

@@ -4,7 +4,7 @@ binning=$1
 seed=1001
 for bin in $(python efake_conf.py $binning)
 do
-    for conf in pass fail
+    for conf in ee eg # pass fail
     do
 	for type in nominal altsig altbkg
 	do

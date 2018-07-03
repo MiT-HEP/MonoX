@@ -7,8 +7,8 @@ roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 PRODUCT = 'frate'
 # PRODUCT = 'eff'
 
-#analysis = 'monophoton'
-analysis = 'darkphoton'
+analysis = 'monophoton'
+# analysis = 'darkphoton'
 
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
 if analysis == 'monophoton':
@@ -22,7 +22,7 @@ else:
 
 fitBinningT = (120, 60., 120.)
 
-dataSource = 'sel' # sph or sel or smu
+dataSource = 'sph' # sph or sel or smu
 if dataSource == 'sph':
     if PRODUCT == 'eff':
         tpconfs = ['pass', 'fail']
