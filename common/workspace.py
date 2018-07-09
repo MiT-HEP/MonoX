@@ -490,7 +490,7 @@ if __name__ == '__main__':
                     if sample in config.staticBase:
                         print '    this sample is a static base of some other sample'
     
-                        fct('mu_{sample}_scale[1., 1.0e-6, 10.]'.format(sample = sampleName))
+                        fct('mu_{sample}_scale[1., 1.0e-6, 1.0e6.]'.format(sample = sampleName))
                         # bin mu is raw x norm
                         for ibin in range(1, nominal.GetNbinsX() + 1):
                             fct('rawmu_{sample}_bin{bin}[{val}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin)))
@@ -503,7 +503,7 @@ if __name__ == '__main__':
                         # uncertainties are all casted on tfactors
     
                         for ibin in range(1, nominal.GetNbinsX() + 1):
-                            bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 10.))
+                            bin = fct('mu_{sample}_bin{bin}[{val},0.,{max}]'.format(sample = sampleName, bin = ibin, val = nominal.GetBinContent(ibin), max = nominal.GetMaximum() * 1.0e6))
                             bins.add(bin)
 
                 else:
@@ -586,7 +586,7 @@ if __name__ == '__main__':
                 if sample[0] in config.floatProcesses:
                     print '      normalization is floated'
                     normName = 'rawnorm'
-                    fct('mod_{sample}_norm[1.,0.,100.]'.format(sample = sampleName))
+                    fct('mod_{sample}_norm[1.,0.,1.0e6]'.format(sample = sampleName))
 
                 elif len(normModifiers) > 0:
                     normName = 'rawnorm'

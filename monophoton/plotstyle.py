@@ -692,7 +692,7 @@ class TwoDimCanvas(SimpleCanvas):
         self._modified()
     
     def Clear(self, full = False, xmax = None):
-        SimpleCanvas.Clear(self, full = full, xmax = PLOT_XMAX)
+        SimpleCanvas.Clear(self, full = full, xmax = xmax)
         
         self.canvas.SetCanvasSize(1000, 1000)
 

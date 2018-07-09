@@ -5,7 +5,7 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
 sys.path.append(basedir)
 import config
-from plotstyle import SimpleCanvas
+from plotstyle import SimpleCanvas, DataMCCanvas
 
 import ROOT
 
@@ -22,7 +22,7 @@ dist = 'mtPhoMet'
 signal = 'dph-nlo-125'
 region = 'gghg'
 
-canvas = SimpleCanvas()
+canvas = DataMCCanvas()
 
 source = ROOT.TFile.Open(fitDiagnostics)
 
@@ -38,47 +38,24 @@ bkgTrue = plotsSource.Get(dist + '/bkgtotal')
 fakeTrue = plotsSource.Get(dist + '/fakemet')
 sigTrue = plotsSource.Get(dist + '/samples/' + signal + '_' + region)
 
-bkg.SetFillColor(ROOT.kGray)
-bkg.SetLineColor(ROOT.kGray)
-bkg.SetLineWidth(2)
+canvas.legend.setPosition(0.4, 0.6, 0.9, 0.9)
 
-fake.SetFillColor(ROOT.kRed)
-fake.SetLineColor(ROOT.kRed)
-fake.SetLineWidth(2)
-
-sig.SetLineColor(ROOT.kBlue)
-sig.SetLineStyle(ROOT.kDashed)
-sig.SetLineWidth(2)
-
-stack = ROOT.THStack('stack', '')
-stack.Add(bkg)
-stack.Add(fake)
-stack.Add(sig)
+canvas.addStacked(bkg, title = 'SM Bkgd.', color = ROOT.kGray, drawOpt = 'HIST')
+canvas.addStacked(fake, title = 'Fake E_{T}^{miss}', color = ROOT.kRed, drawOpt = 'HIST')
+canvas.addStacked(sig, title = 'H(125)', color = ROOT.kBlue, drawOpt = 'HIST')
 
 bkgTrue.Scale(1., 'width')
-bkgTrue.SetLineColor(ROOT.kGreen + 2)
-bkgTrue.SetLineWidth(2)
-
 fakeTrue.Scale(fakeNorm / fakeTrue.GetSumOfWeights(), 'width')
-fakeTrue.SetLineColor(ROOT.kRed + 2)
-fakeTrue.SetLineWidth(2)
-
 sigTrue.Scale(sigScale, 'width')
-sigTrue.SetLineColor(ROOT.kBlue + 2)
-sigTrue.SetLineWidth(2)
 
-data.SetMarkerStyle(8)
-data.SetLineColor(ROOT.kBlack)
-data.SetLineWidth(1)
+canvas.addSignal(bkgTrue, title = 'True SM Bkgd.', color = ROOT.kGreen + 2, drawOpt = 'HIST')
+canvas.addSignal(fakeTrue, title = 'True Fake E_{T}^{miss}', color = ROOT.kRed + 2, drawOpt = 'HIST')
+canvas.addSignal(sigTrue, title = 'True H(125)', color = ROOT.kBlue + 2, drawOpt = 'HIST')
+
+canvas.addObs(data, drawOpt = 'EP')
 
 canvas.title = '#sigma#timesBR = %.2f, N_{fake} = %.0f' % (originalMu * sigScale, fakeNorm)
 canvas.xtitle = 'm_{T} (GeV)'
 canvas.ytitle = 'Events / GeV'
-
-canvas.addHistogram(stack, drawOpt = 'HIST')
-canvas.addHistogram(bkgTrue, drawOpt = 'HIST')
-canvas.addHistogram(fakeTrue, drawOpt = 'HIST')
-canvas.addHistogram(sigTrue, drawOpt = 'HIST')
-canvas.addHistogram(data, drawOpt = 'EP')
 
 canvas.printWeb('monophoton/fakemet', name, logy = False)

@@ -1,34 +1,32 @@
 #!/bin/bash
 
-# edit parameters_ggh.py to point sourcename = injection.root and outname = 'workspace.root' cardname = 'datacard.dat'
+# edit parameters_fakemet.py to point sourcename = injection.root and outname = 'workspace.root' cardname = 'datacard.dat'
 
-THISDIR=$(cd $(dirname $0); pwd)
-
-SIGS="$1"
-FAKEN="$2"
+SOURCE="$1"
+SIGS="$2"
+FAKEN="$3"
 IJOB=$3
-SOURCE=$4
 
 HIST=/data/t3home000/$USER/monophoton
+FAKEMET=$MONOPHOTON/fakemet
 
-rm -f norms.dat
+rm -f $THISDIR/norms.dat
 
-for sigs in $SIGS
+echo $HIST
+echo $FAKEMET
+echo $PWD
+
+i=0
+while [ $i -lt 20 ]
 do
-  for faken in $FAKEN
-  do
-    i=0
-    while [ $i -lt 20 ]
-    do
-      python $THISDIR/injection_test.py $HIST/plots/${SOURCE}.root $HIST/plots/gghg.root $sigs $faken injection.root
-      python $THISDIR/../fit/workspace.py $THISDIR/../fit/parameters_ggh.py
-      combine datacard.dat -M FitDiagnostics --saveNormalizations --saveShapes
-      mkdir -p $HIST/fakemet/fits_${sigs}_${faken}_${IJOB}
-      python $THISDIR/plotfit.py fitDiagnostics.root $HIST/plots/${SOURCE}.root fits_${sigs}_${faken}_${IJOB}/${i} $sigs $faken
-      [ $? -eq 0 ] || continue
-      echo $sigs $faken $(python $THISDIR/fetch_norm.py $PWD/fitDiagnostics.root) >> norms.dat
-      i=$(($i+1))
-    done
-    mv norms.dat $HIST/fakemet/norms_${sigs}_${faken}_${IJOB}.dat
-  done
+    python $FAKEMET/injection_test.py $HIST/plots/gghg${SOURCE}.root $HIST/plots/gghg.root $SIGS $FAKEN $PWD/injection.root
+    python $FAKEMET/../fit/workspace.py $FAKEMET/../fit/parameters_fakemet.py
+    combine $PWD/datacard.dat -M FitDiagnostics --saveNormalizations --saveShapes --saveWithUncertainties
+    mkdir -p $HIST/fakemet/${SOURCE}/fits_${SIGS}_${FAKEN}_${IJOB}
+    python $FAKEMET/plotfit.py fitDiagnostics.root $HIST/plots/gghg${SOURCE}.root ${SOURCE}/fits_${SIGS}_${FAKEN}_${IJOB}/${i} $SIGS $FAKEN
+    [ $? -eq 0 ] || continue
+    echo $SIGS $FAKEMET $(python $FAKEMET/fetch_norm.py $PWD/fitDiagnostics.root) >> $PWD/norms.dat
+    i=$(($i+1))
 done
+mv $PWD/norms.dat $HIST/fakemet/${SOURCE}/norms_${SIGS}_${FAKEN}_${IJOB}.dat
+

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -f syst_args.txt
+
 binning=$1
 seed=1001
 for bin in $(python efake_conf.py $binning)
@@ -17,3 +19,6 @@ do
 	done
     done
 done
+
+~/bin/condor-run efake_tpsyst.py -e "data $binning" -a syst_args.txt
+~/bin/condor-run efake_tpsyst.py -e "mc $binning" -a syst_args.txt

@@ -6,10 +6,9 @@ fitdir = workdir + '/fit'
 distribution = 'mtPhoMet'
 
 wc.config = wc.WorkspaceConfig(
-    sourcename = workdir + '/plots/gghgNoFake_background_combined.root',
-    outname = fitdir + '/ws_gghg_' + distribution + '.root',
-    plotsOutname = fitdir + '/ws_gghg_' + distribution + '_plots.root',    
-    cardname = fitdir + '/datacards/gghg_{signal}.dat',
+    sourcename = 'injection.root',
+    outname = 'workspace.root',
+    cardname = 'datacard.dat',
     histname = distribution + '/{process}',
     signalHistname = distribution + '/samples/{process}_{region}',
     regions = ['gghg'],

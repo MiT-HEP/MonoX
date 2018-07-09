@@ -8,10 +8,11 @@ import config
 from plotstyle import SimpleCanvas
 
 import ROOT
+import math
 
 ROOT.gROOT.SetBatch(True)
 
-sourceDir = sys.argv[1]
+sourceName = sys.argv[1]
 originalName = sys.argv[2]
 
 # Original injection in plot.py is 0.1 times sigma_SM
@@ -26,6 +27,7 @@ original.Close()
 data = {}
 fakens = []
 
+sourceDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/fakemet/' + sourceName
 for fname in os.listdir(sourceDir):
     if not fname.startswith('norms'):
         continue
@@ -60,7 +62,7 @@ fakens.sort()
 outputFile = ROOT.TFile.Open(config.histDir + '/fakemet/injection_results.root', 'recreate')
 
 canvas = SimpleCanvas()
-canvas.legend.setPosition(0.8, 0.7, 0.9, 0.9)
+canvas.legend.setPosition(0.6, 0.6, 0.9, 0.9)
 canvas.legend.SetFillStyle(1001)
 canvas.legend.SetBorderSize(1)
 
@@ -82,17 +84,19 @@ for sigs in data.keys():
 
         for ip, point in enumerate(points):
             try:
-                sig, fake = point
+                sig, esig, fake, efake = point
             except:
                 print point
                 raise
 
-            x = fake / float(faken)
-            y = sig / sign
+            x = (fake - float(faken)) / efake
+            y = (sig  - sign) / esig
+            """
             if x > 2.:
                 x = 2.
             if y > 2.:
                 y = 2.
+            """
 
             graph.SetPoint(ip, x, y)
 
@@ -106,16 +110,16 @@ for sigs in data.keys():
         canvas.legend.apply('n%s' % faken, graph)
         canvas.addHistogram(graph, drawOpt = 'P')
 
-    canvas.addLine(0., 1., 2., 1., style = ROOT.kDashed)
-    canvas.addLine(1., 0., 1., 2., style = ROOT.kDashed)
-    canvas.xlimits = (0., 2.)
-    canvas.ylimits = (0., 2.)
+    canvas.addLine(-5., 0., 5., 0., style = ROOT.kDashed)
+    canvas.addLine(0., -5., 0., 5., style = ROOT.kDashed)
+    canvas.xlimits = (-5., 5.)
+    canvas.ylimits = (-5., 5.)
 
     canvas.title = '#sigma#timesBR = %.2f' % mu
-    canvas.xtitle = 'Fake E_{T}^{miss} extracted / injected'
-    canvas.ytitle = 'Signal extracted / injected'
+    canvas.xtitle = '(N_{extracted}^{fake} - N_{injected}^{fake})/#sigma_{extracted}^{fake}'
+    canvas.ytitle = '(N_{extracted}^{signal} - N_{injected}^{signal})/#sigma_{extracted}^{signal}'
     
-    canvas.printWeb('monophoton/fakemet', sigs, logy = False)
+    canvas.printWeb('monophoton/fakemet', sourceName + '_' + sigs, logy = False)
     canvas.Clear()
 
 outputFile.Close()
