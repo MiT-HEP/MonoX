@@ -72,7 +72,7 @@
   ~/bin/condor-run efake_tpsyst.py -e "data $binning" -a syst_args.txt
   ~/bin/condor-run efake_tpsyst.py -e "data $binning" -a syst_args.txt
 
-  You can also use makeSystArgs.sh to generate the text file with all the job parameters.
+  You can also use submit.sh to generate the text file and submit jobs all at once.
 
  The output of toy generation should be combined (you will need to switch to the output directory first):
   hadd tpsyst_data_(binning).root (binning)/tpsyst_data_*.root
