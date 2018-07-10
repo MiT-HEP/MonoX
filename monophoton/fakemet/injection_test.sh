@@ -25,7 +25,7 @@ do
     mkdir -p $HIST/fakemet/${SOURCE}/fits_${SIGS}_${FAKEN}_${IJOB}
     python $FAKEMET/plotfit.py fitDiagnostics.root $HIST/plots/gghg${SOURCE}.root ${SOURCE}/fits_${SIGS}_${FAKEN}_${IJOB}/${i} $SIGS $FAKEN
     [ $? -eq 0 ] || continue
-    echo $SIGS $FAKEMET $(python $FAKEMET/fetch_norm.py $PWD/fitDiagnostics.root) >> $PWD/norms.dat
+    echo $SIGS $FAKEN $(python $FAKEMET/fetch_norm.py $PWD/fitDiagnostics.root) >> $PWD/norms.dat
     i=$(($i+1))
 done
 mv $PWD/norms.dat $HIST/fakemet/${SOURCE}/norms_${SIGS}_${FAKEN}_${IJOB}.dat

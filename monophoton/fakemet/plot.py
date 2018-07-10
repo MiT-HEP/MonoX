@@ -89,14 +89,36 @@ for sigs in data.keys():
                 print point
                 raise
 
-            x = (fake - float(faken)) / efake
-            y = (sig  - sign) / esig
-            """
-            if x > 2.:
-                x = 2.
-            if y > 2.:
-                y = 2.
-            """
+            if efake == 0:
+                if fake == 0:
+                    if float(faken) == 0:
+                        x = 0.
+                    else:
+                        x = (fake - float(faken)) / math.sqrt(float(faken))
+                else:
+                    x = (fake - float(faken)) / math.sqrt(fake)
+            else:
+                x = (fake - float(faken)) / efake
+
+            if esig == 0:
+                if sig == 0:
+                    if float(sign) == 0:
+                        y = 0.
+                    else:
+                        y = (sig - float(sign)) / math.sqrt(float(sign))
+                else:
+                    y = (sig - float(sign)) / math.sqrt(sig)
+            else:
+                y = (sig  - sign) / esig
+            
+            if x > 5.:
+                x = 5.
+            if x < -5.:
+                x = -5.
+            if y > 5.:
+                y = 5.
+            if y < -5.:
+                y = -5.
 
             graph.SetPoint(ip, x, y)
 
