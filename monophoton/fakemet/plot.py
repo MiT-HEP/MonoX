@@ -138,8 +138,8 @@ for sigs in data.keys():
     canvas.ylimits = (-5., 5.)
 
     canvas.title = '#sigma#timesBR = %.2f' % mu
-    canvas.xtitle = '(N_{extracted}^{fake} - N_{injected}^{fake})/#sigma_{extracted}^{fake}'
-    canvas.ytitle = '(N_{extracted}^{signal} - N_{injected}^{signal})/#sigma_{extracted}^{signal}'
+    canvas.xtitle = 'Fake E_{T}^{miss}: (N_{fit} - N_{true})/#sigma_{fit}'
+    canvas.ytitle = 'Signal: (N_{fit} - N_{true})/#sigma_{fit}'
     
     canvas.printWeb('monophoton/fakemet', sourceName + '_' + sigs, logy = False)
     canvas.Clear()

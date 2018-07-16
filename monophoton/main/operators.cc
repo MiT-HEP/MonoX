@@ -492,8 +492,15 @@ double
 PhotonSelection::ptVariation(panda::XPhoton const& _photon, double _shift)
 {
   double scRawPt(_photon.scRawPt);
-  if (useOriginalPt_)
-    scRawPt *= _photon.originalPt / _photon.pt();
+  if (useOriginalPt_) {
+    double deltaPt = ((_photon.originalPt - _photon.pt()) / _photon.pt());
+
+    if (TMath::Abs(deltaPt) < 0.2) 
+      scRawPt = 0.0; // don't keep events that weren't affected by the gain switch issue
+    else {
+      scRawPt *= _photon.originalPt / _photon.pt();
+    }
+  }
 
   return scRawPt * (1. + 0.015 * _shift);
 }
