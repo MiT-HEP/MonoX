@@ -1,0 +1,16 @@
+### Data 2017
+sph-17b          "SinglePhoton (2017B)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017B-31Mar2018-v1+MINIAOD
+sph-17c          "SinglePhoton (2017C)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017C-31Mar2018-v1+MINIAOD
+sph-17d          "SinglePhoton (2017D)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017D-31Mar2018-v1+MINIAOD
+sph-17e          "SinglePhoton (2017E)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017E-31Mar2018-v1+MINIAOD
+sph-17f          "SinglePhoton (2017F)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017F-31Mar2018-v1+MINIAOD
+sel-17b          "SingleElectron (2017B)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017B-31Mar2018-v1+MINIAOD
+sel-17c          "SingleElectron (2017C)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017C-31Mar2018-v1+MINIAOD
+sel-17d          "SingleElectron (2017D)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017D-31Mar2018-v1+MINIAOD
+sel-17e          "SingleElectron (2017E)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017E-31Mar2018-v1+MINIAOD
+sel-17f          "SingleElectron (2017F)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017F-31Mar2018-v1+MINIAOD
+smu-17b          "SingleMuon (2017B)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017B-31Mar2018-v1+MINIAOD
+smu-17c          "SingleMuon (2017C)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017C-31Mar2018-v1+MINIAOD
+smu-17d          "SingleMuon (2017D)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017D-31Mar2018-v1+MINIAOD
+smu-17e          "SingleMuon (2017E)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017E-31Mar2018-v1+MINIAOD
+smu-17f          "SingleMuon (2017F)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017F-31Mar2018-v1+MINIAOD

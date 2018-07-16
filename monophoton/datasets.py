@@ -5,8 +5,9 @@ import os
 import math
 import fnmatch
 import subprocess
+import config
 
-defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets.csv'
+defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets' + config.year + '.csv'
 catalogDir = '/home/cmsprod/catalog/t2mit'
 
 def expandBrace(pattern):

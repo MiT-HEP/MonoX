@@ -71,12 +71,14 @@ mc_ewk_dilep = ['dimu250', 'dimu300', 'dimu400', 'dimu500', 'dimu600', 'diel250'
 mc_wlnu = ['wenu', 'zmmJets', 'zeeJets', 'monoelVertex', 'monomuVertex', 'vbfe', 'vbfm'] + applyMod([('monoph', s.monophNoE), 'monomu', 'monoel', 'emjet', ('gghg', s.gghgNoE), 'gghe', 'gghm'], s.addGenPhotonVeto)
 
 allSelectors_byPattern = [
-    # Data 2016
-    ('sph-16*', data_sph),
-    ('smu-16*', data_smu),
-    ('sel-16*', data_sel),
-    ('sel-17*', data_sel),
+    # Data
+    ('sph-' + config.year + '*', data_sph),
+    ('smu-' + config.year + '*', data_smu),
+    ('sel-' + config.year + '*', data_sel),
+]
+
     # MC
+"""
     ('znng', mc_sig + mc_ewk),
     ('znng-130', applyMod(mc_sig + mc_ewk, s.addKfactor)),
     ('zllg', mc_sig + mc_lep + mc_dilep + ['vbfzee']),
@@ -118,7 +120,7 @@ allSelectors_byPattern = [
     ('dm*', mc_sig),
     ('dph*', mc_sig),
     ('hbb-nlo-125', mc_sig)
-]
+"""
 
 allSelectors = {}
 for pat, sels in allSelectors_byPattern:
