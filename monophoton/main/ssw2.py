@@ -6,6 +6,9 @@ import subprocess
 import collections
 
 from batch import BatchManager
+# from hashlib import md5hash
+from time import time
+import requests
 
 ## load condor-run
 sys.path.append('/home/yiiyama/lib')
@@ -14,6 +17,50 @@ from condor_run import CondorRun
 logger = None
 
 padd = os.environ['CMSSW_BASE'] + '/bin/' + os.environ['SCRAM_ARCH'] + '/padd'
+
+HOST = ''
+
+def create_payload(done = False):
+    payload = {}
+
+    if done:
+        payload['timestamp'] = int(time()),
+    else:
+        payload['starttime'] = int(time()),
+
+    
+    payload['task'] = taskname + '_' + os.environ['USER']
+    payload['job_id'] = job_id
+    payload['args'] = [md5hash(x) for x in []]
+    payload['host'] = hostname
+
+    return payload
+
+def report_start():
+    for _ in xrange(5):
+        try:
+            payload = create_payload(done = False)
+            r = requests.post(HOST + '/condor/start', json = payload)
+
+            if r.status_code == 200:
+                return
+            else:
+                sleep(10)
+        except requests.ConnectionError:
+            print "couldn't report start @", int(time())
+
+def report_done():
+    while True:
+        try:
+            payload = create_payload(done = True)
+            r = requests.post(HOST + '/condor/done', json = payload)
+            
+            if r.status_code == 200:
+                return
+            else:
+                sleep(10)
+        except requests.ConnectionError:
+            print "couldn't report done @", int(time())
 
 class SkimSlimWeight(object):
 
