@@ -273,11 +273,22 @@ class SampleDef(object):
     def download(self, filesets = []):
         self._readCatalogs()
 
-        proc = subprocess.Popen(
-            ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample'] + self.datasetNames,
-            stdout = subprocess.PIPE, stderr = subprocess.PIPE
-        )
-        print proc.communicate()[0].strip()
+        for dataset in self.datasetNames:
+            check = subprocess.Popen(
+                ['missingFiles.py', '--book', self.book, '--dataset', dataset],
+                stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                )
+            print check.communicate()[0].strip()
+            rc = check.returncode
+
+            if rc > 0:
+                proc = subprocess.Popen(
+                    ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
+                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                    )
+                print proc.communicate()[0].strip()
+            else:
+                print sample.book + '/' + dataset + ' is already on disk at T3.'
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
