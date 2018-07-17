@@ -1,16 +1,27 @@
 ### Data 2017
-sph-17b          "SinglePhoton (2017B)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017B-31Mar2018-v1+MINIAOD
-sph-17c          "SinglePhoton (2017C)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017C-31Mar2018-v1+MINIAOD
-sph-17d          "SinglePhoton (2017D)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017D-31Mar2018-v1+MINIAOD
-sph-17e          "SinglePhoton (2017E)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017E-31Mar2018-v1+MINIAOD
-sph-17f          "SinglePhoton (2017F)"              1.0              1          -                    pandaf/010   SinglePhoton+Run2017F-31Mar2018-v1+MINIAOD
-sel-17b          "SingleElectron (2017B)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017B-31Mar2018-v1+MINIAOD
-sel-17c          "SingleElectron (2017C)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017C-31Mar2018-v1+MINIAOD
-sel-17d          "SingleElectron (2017D)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017D-31Mar2018-v1+MINIAOD
-sel-17e          "SingleElectron (2017E)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017E-31Mar2018-v1+MINIAOD
-sel-17f          "SingleElectron (2017F)"            1.0              1          -                    pandaf/010   SingleElectron+Run2017F-31Mar2018-v1+MINIAOD
-smu-17b          "SingleMuon (2017B)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017B-31Mar2018-v1+MINIAOD
-smu-17c          "SingleMuon (2017C)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017C-31Mar2018-v1+MINIAOD
-smu-17d          "SingleMuon (2017D)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017D-31Mar2018-v1+MINIAOD
-smu-17e          "SingleMuon (2017E)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017E-31Mar2018-v1+MINIAOD
-smu-17f          "SingleMuon (2017F)"                1.0              1          -                    pandaf/010   SingleMuon+Run2017F-31Mar2018-v1+MINIAOD
+sph-17b          "SinglePhoton (2017B)"              1.0              15709862   -                    pandaf/010   SinglePhoton+Run2017B-31Mar2018-v1+MINIAOD
+sph-17c          "SinglePhoton (2017C)"              1.0              42182948   -                    pandaf/010   SinglePhoton+Run2017C-31Mar2018-v1+MINIAOD
+sph-17d          "SinglePhoton (2017D)"              1.0              9753462    -                    pandaf/010   SinglePhoton+Run2017D-31Mar2018-v1+MINIAOD
+sph-17e          "SinglePhoton (2017E)"              1.0              18893957   -                    pandaf/010   SinglePhoton+Run2017E-31Mar2018-v1+MINIAOD
+sph-17f          "SinglePhoton (2017F)"              1.0              29783015   -                    pandaf/010   SinglePhoton+Run2017F-31Mar2018-v1+MINIAOD
+sel-17b          "SingleElectron (2017B)"            1.0              60537490   -                    pandaf/010   SingleElectron+Run2017B-31Mar2018-v1+MINIAOD
+sel-17c          "SingleElectron (2017C)"            1.0              136637888  -                    pandaf/010   SingleElectron+Run2017C-31Mar2018-v1+MINIAOD
+sel-17d          "SingleElectron (2017D)"            1.0              51526710   -                    pandaf/010   SingleElectron+Run2017D-31Mar2018-v1+MINIAOD
+sel-17e          "SingleElectron (2017E)"            1.0              102121689  -                    pandaf/010   SingleElectron+Run2017E-31Mar2018-v1+MINIAOD
+sel-17f          "SingleElectron (2017F)"            1.0              128467223  -                    pandaf/010   SingleElectron+Run2017F-31Mar2018-v1+MINIAOD
+smu-17b          "SingleMuon (2017B)"                1.0              136300266  -                    pandaf/010   SingleMuon+Run2017B-31Mar2018-v1+MINIAOD
+smu-17c          "SingleMuon (2017C)"                1.0              165551950  -                    pandaf/010   SingleMuon+Run2017C-31Mar2018-v1+MINIAOD
+smu-17d          "SingleMuon (2017D)"                1.0              70361660   -                    pandaf/010   SingleMuon+Run2017D-31Mar2018-v1+MINIAOD
+smu-17e          "SingleMuon (2017E)"                1.0              154630534  -                    pandaf/010   SingleMuon+Run2017E-31Mar2018-v1+MINIAOD
+smu-17f          "SingleMuon (2017F)"                1.0              242135500  -                    pandaf/010   SingleMuon+Run2017F-31Mar2018-v1+MINIAOD
+### MC
+dy-50            "Z#rightarrowll"                    6025             49144274   49144274.0           pandaf/010   DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017RECOSIMstep_12Apr2018_94X_mc2017_realistic_v14{,_ext1}-v1+MINIAODSIM # not GenXSecAnalyzer. GenXAnalyzer value is 4.975e+03
+dy-50@           "Z#rightarrowll"                    4975             49144274   49144274.0           pandaf/010   DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017RECOSIMstep_12Apr2018_94X_mc2017_realistic_v14{,_ext1}-v1+MINIAODSIM # not GenXSecAnalyzer # needs to be truncated
+dy-50-100        "Z#rightarrowll"                    148.4            10607207   10607207.0           pandaf/010   DYJetsToLL_M-50_HT-100to200_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-200        "Z#rightarrowll"                    40.78            9653731    9653731.0            pandaf/010   DYJetsToLL_M-50_HT-200to400_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-400        "Z#rightarrowll"                    5.689            10008776   10008776.0           pandaf/010   DYJetsToLL_M-50_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-600        "Z#rightarrowll"                    1.353            8292957    8292957.0            pandaf/010   DYJetsToLL_M-50_HT-600to800_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-800        "Z#rightarrowll"                    0.6253           2668730    2668730.0            pandaf/010   DYJetsToLL_M-50_HT-800to1200_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-1200       "Z#rightarrowll"                    0.1520           596079     596079.0             pandaf/010   DYJetsToLL_M-50_HT-1200to2500_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+dy-50-2500       "Z#rightarrowll"                    3.784e-03        399492     399492.0             pandaf/010   DYJetsToLL_M-50_HT-2500toInf_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
+tt               "t#bar{t}"                          831.8            76850468   76850468.0           pandaf/010   TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM # not GenXSecAnalyzer

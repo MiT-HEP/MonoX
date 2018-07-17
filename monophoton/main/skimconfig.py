@@ -75,9 +75,13 @@ allSelectors_byPattern = [
     ('sph-' + config.year + '*', data_sph),
     ('smu-' + config.year + '*', data_smu),
     ('sel-' + config.year + '*', data_sel),
+    # MC
+    ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('dy-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
+    ('dy-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
 ]
 
-    # MC
 """
     ('znng', mc_sig + mc_ewk),
     ('znng-130', applyMod(mc_sig + mc_ewk, s.addKfactor)),
@@ -109,11 +113,9 @@ allSelectors_byPattern = [
     ('wlnu{,n}-*', mc_wlnu),
     ('w{m,p}lnuewk', mc_wlnu),
     ('znn{,n}-*', mc_cand),
-    ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
-    ('dy-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
     ('dyn-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('dyn-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.genBosonPtTruncator(maximum = 50.))),
-    ('dy{,n}-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
+    ('dyn-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('zewk', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('qcd-*', mc_cand + mc_qcd + mc_dilep + mc_lep),
     ('add-*', mc_sig),

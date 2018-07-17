@@ -1,6 +1,6 @@
 import os
 
-year = '16'
+year = '17'
 
 # location of skim output from ssw2
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton' + year + '/skim'
