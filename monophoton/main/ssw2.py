@@ -169,8 +169,8 @@ class SkimSlimWeight(object):
             ROOT.TIMEOUT = SkimSlimWeight.config['openTimeout']
            
         # temporary - backward compatibility issue 004 -> 005/006/007
-        if self.sample.book != 'pandaf/004':
-            skimmer.setCompatibilityMode(True)
+        # if self.sample.book != 'pandaf/004':
+        #    skimmer.setCompatibilityMode(True)
 
         # can eventually think of submitting jobs separately for different preskims
         bypreskim = collections.defaultdict(list)

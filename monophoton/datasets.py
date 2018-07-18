@@ -270,23 +270,91 @@ class SampleDef(object):
                 print 'sumw2 is zero'
                 return 0.
 
+    def makeFilename(self, dataset, line):
+        f = line.split("/")
+        
+        if len(f) > 2:
+            filename = '/'.join(f[-2:])
+        else:
+            filename = dataset + '/' + line
+
+        return filename
+
+    def checkT2(self, dataset):
+        filesT2 = set()
+
+        listT2 = subprocess.Popen(
+            ['gfal-ls', 'gsiftp://se01.cmsaf.mit.edu:2811/cms/store/user/paus/' + self.book + '/' + dataset],
+            stdout = subprocess.PIPE, stderr = subprocess.PIPE
+            )
+        rawT2 = listT2.communicate()[0].strip()
+
+        for line in rawT2.split("\n"):
+            if not '.root' in line:
+                continue
+
+            filename = self.makeFilename(dataset, line)
+            filesT2.add(filename)
+
+        return filesT2
+
+    def checkT3(self, dataset):
+        filesT3 = set()
+
+        listT3 = subprocess.Popen(
+            ['ls', '/mnt/hadoop/cms/store/user/paus/' + self.book + '/' + dataset, '|',  'grep', 'root'],
+            stdout = subprocess.PIPE, stderr = subprocess.PIPE
+            )
+        rawT3 = listT3.communicate()[0].strip()
+
+        for line in rawT3.split("\n"):
+            if not '.root' in line:
+                continue
+
+            filename = self.makeFilename(dataset, line)
+            path = '/mnt/hadoop/cms/store/user/paus/'+ self.book + '/' + filename
+            if os.stat(path).st_size == 0:
+                # os.remove(path) ## need permission
+                continue
+
+            filesT3.add(filename)
+
+        return filesT3
+
     def download(self, filesets = []):
         self._readCatalogs()
 
-        for dataset in self.datasetNames:
-            check = subprocess.Popen(
-                ['missingFiles.py', '--book', self.book, '--dataset', dataset],
-                stdout = subprocess.PIPE, stderr = subprocess.PIPE
-                )
-            missingFiles = check.communicate()[0].strip()
-            rc = check.returncode
+        for dataset in self.datasetNames:                
+            filesT3 = self.checkT3(dataset)
+            filesT2 = self.checkT2(dataset)
 
-            if rc > 0:
+            nTotal = 0
+            nMissing = 0
+            missingFiles = set()
+            for fileT2 in filesT2:
+                if fileT2 in filesT3:
+                    nTotal += 1
+                else:
+                    missingFiles.add(fileT2)
+                    nMissing +=1
+
+            if nMissing == nTotal:
+                print 'No files present on T3. Requesting entire dataset.'
                 proc = subprocess.Popen(
                     ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
                     stdout = subprocess.PIPE, stderr = subprocess.PIPE
                     )
                 print proc.communicate()[0].strip()
+
+            elif nMissing > 0:
+                print 'Files partially available on T3. Requesting missing or corrupted blocks.'
+                ### eventually replace with block level requests
+                proc = subprocess.Popen(
+                    ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
+                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                    )
+                print proc.communicate()[0].strip()
+
             else:
                 print self.book + '/' + dataset + ' is already on disk at T3.'
 
