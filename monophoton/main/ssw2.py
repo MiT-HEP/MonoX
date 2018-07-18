@@ -226,12 +226,20 @@ class SkimSlimWeight(object):
 
     def executeMerge(self):
         inDir = SkimSlimWeight.config['skimDir'] + '/' + self.sample.name
+	#removes corrupted file
+	if (self.sample.name == 'dy-50-100'):
+	    self.filesets.remove('0010_ext1')
+	    self.filesets.remove('0042_ext1')
 
         for rname in self.selectors:
             for fileset in self.filesets:
                 fname = inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root'
-		if not SkimSlimWeight.config['skipExisting']:
-	            if not os.path.exists(fname) or os.stat(fname).st_size == 0:
+	        if ( (not os.path.exists(fname)) or (os.stat(fname).st_size == 0) ):
+		    print fileset
+                    if SkimSlimWeight.config['skipMissing']:
+			print 'Removing fileset ' + fileset + ' in order to complete merge.'
+			self.filesets.remove(fileset)
+		    else:
                     	raise RuntimeError('Missing input file', fname)
         
             outNameBase = self.sample.name + '_' + rname
@@ -394,6 +402,7 @@ if __name__ == '__main__':
     for key in dir(args):
         if not key.startswith('_'):
             SkimSlimWeight.config[key] = getattr(args, key)
+	    print key, SkimSlimWeight.config[key]
 
     for key in dir(config):
         if not key.startswith('_'):
