@@ -198,27 +198,48 @@ class SampleDef(object):
 
         error = False
         for dataset in self.datasetNames:
-            for fileset, basenames in self._basenames[dataset].items():
-                for basename in basenames:
-                    path = self._directories[dataset] + '/' + basename
-                    source = ROOT.TFile.Open(path)
-                    if not source:
-                        error = True
-                        continue
+            if 'amcatnlo' in dataset or 'Sherpa' in dataset:
+                for fileset, basenames in self._basenames[dataset].items():
+                    for basename in basenames:
+                        path = self._directories[dataset] + '/' + basename
+                        source = ROOT.TFile.Open(path)
+                        if not source:
+                            error = True
+                            continue
 
-                    try:
-                        counter = source.Get('eventcounter')
-                        self.nevents += counter.GetBinContent(1)
-                        if not self.data:
-                            sumw = source.Get('hSumW')
-                            self.sumw += sumw.GetBinContent(1)
-                            self._sumw2 += math.pow(sumw.GetBinError(1), 2.)
+                        try:
+                            counter = source.Get('eventcounter')
+                            self.nevents += counter.GetBinContent(1)
+                            if not self.data:
+                                sumw = source.Get('hSumW')
+                                self.sumw += sumw.GetBinContent(1)
+                                self._sumw2 += math.pow(sumw.GetBinError(1), 2.)
 
-                    except:
-                        print path, 'corrupt'
-                        error = True
+                        except:
+                            print path, 'corrupt'
+                            error = True
 
-                    source.Close()
+                        source.Close()
+            else:
+                check = subprocess.Popen(
+                    ['numberOfEvents.py', '--book', self.book, '--dataset', dataset],
+                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
+                    )
+                eventsout = check.communicate()[0].strip()
+                rc = check.returncode
+
+                if rc > 0:
+                    print 'numberOfEvents.py failed for ' + self.book + '/' + dataset
+                    error = True
+                else:
+                    for line in eventsout.split('\n'):
+                        if 'Total number of events:' not in line:
+                            continue
+
+                        nevents = int(line.strip().split(" ")[-1])
+                        self.nevents += nevents
+                        self.sumw += nevents
+                        self._sumw2 += math.pow(nevents, 2.)
 
         if error:
             raise RuntimeError('Corrupt input')
