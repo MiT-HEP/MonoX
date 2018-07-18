@@ -278,7 +278,7 @@ class SampleDef(object):
                 ['missingFiles.py', '--book', self.book, '--dataset', dataset],
                 stdout = subprocess.PIPE, stderr = subprocess.PIPE
                 )
-            print check.communicate()[0].strip()
+            missingFiles = check.communicate()[0].strip()
             rc = check.returncode
 
             if rc > 0:
@@ -288,7 +288,7 @@ class SampleDef(object):
                     )
                 print proc.communicate()[0].strip()
             else:
-                print sample.book + '/' + dataset + ' is already on disk at T3.'
+                print self.book + '/' + dataset + ' is already on disk at T3.'
 
     def filesets(self, datasetNames = []):
         self._readCatalogs()
