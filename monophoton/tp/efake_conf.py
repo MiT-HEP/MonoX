@@ -1,14 +1,14 @@
 import os
 
-outputName = 'efake_pixelpf'
+outputName = 'efake17_pixelpf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
 roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
 
 PRODUCT = 'frate'
 # PRODUCT = 'eff'
 
-analysis = 'monophoton'
-# analysis = 'darkphoton'
+# analysis = 'monophoton'
+analysis = 'darkphoton'
 
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
 if analysis == 'monophoton':

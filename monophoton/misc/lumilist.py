@@ -81,6 +81,7 @@ if not args.list:
     alumi = array.array('I', [0])
 
     for sample in allsamples.getmany(args.snames):
+        print sample.name
         for path in sample.files():
             source = ROOT.TFile.Open(path)
 
@@ -106,7 +107,12 @@ if not args.list:
                 run = arun[0]
                 lumi = alumi[0]
 
-                if len(mask) != 0 and run not in mask or lumi not in mask[run]:
+                c1 = (len(mask) != 0)
+                c2 = (run not in mask)
+                c3 = (lumi not in mask[run])
+                condition = c1 and (c2 and c3)
+
+                if condition:
                     continue
 
                 allLumis[run].add(lumi)
@@ -137,7 +143,8 @@ else:
     shutil.copyfile(args.list, '_lumis_tmp.txt')
 
 if not args.noCalc:
-    normtag = '/afs/cern.ch/user/l/lumipro/public/normtag_file/normtag_DATACERT.json'
+    # normtag = '/afs/cern.ch/user/l/lumipro/public/normtag_file/normtag_DATACERT.json'
+    normtag = '/cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json'
     print 'Normtag is', normtag
 
     sshOpts = ['-oGSSAPIDelegateCredentials=yes', '-oGSSAPITrustDns=yes']
