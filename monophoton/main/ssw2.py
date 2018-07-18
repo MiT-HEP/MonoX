@@ -230,8 +230,9 @@ class SkimSlimWeight(object):
         for rname in self.selectors:
             for fileset in self.filesets:
                 fname = inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root'
-                if not os.path.exists(fname) or os.stat(fname).st_size == 0:
-                    raise RuntimeError('Missing input file', fname)
+		if not SkimSlimWeight.config['skipExisting']:
+	            if not os.path.exists(fname) or os.stat(fname).st_size == 0:
+                    	raise RuntimeError('Missing input file', fname)
         
             outNameBase = self.sample.name + '_' + rname
             outName = outNameBase + '.root'
