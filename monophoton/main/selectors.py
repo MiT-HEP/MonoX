@@ -80,15 +80,27 @@ def monophotonSetting():
         'NoisyRegion',
         'R9Unity'
     ]
-    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
-    selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
-    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
-    selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
-    selconf['electronTFactor'] = 0.0303
-    selconf['electronTFactorUnc'] = 0.0726
-    selconf['ewkCorrSource'] = 'ewk_corr.root'
+    if config.year == '16':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
+        selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
+        selconf['electronTFactor'] = 0.0303
+        selconf['electronTFactorUnc'] = 0.0726
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
+    
+    elif config.year == '17':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
+        selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
+        selconf['electronTFactor'] = 0.0303
+        selconf['electronTFactorUnc'] = 0.0726
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
 
 def vbfgSetting():
     logger.info('Applying vbfg setting.')
@@ -102,15 +114,27 @@ def vbfgSetting():
         'EVeto',
         'ChargedPFVeto'
     ]
-    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
-    selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
-    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
-    selconf['electronTFactorUnc'] = 'frate_fit'
-    selconf['ewkCorrSource'] = 'ewk_corr.root'
+    if config.year == '16':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
+        selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+        selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
+        selconf['electronTFactorUnc'] = 'frate_fit'
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
+
+    elif config.year == '17':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
+        selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+        selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
+        selconf['electronTFactorUnc'] = 'frate_fit'
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
 
 datadir + '/efakepf_data_ptalt.root'
 
@@ -125,21 +149,29 @@ def gghSetting():
         'CHIso',
         'EVeto',
         'ChargedPFVeto',
-        # 'MIP49',
-        # 'Time',
-        # 'SieieNonzero',
-        # 'SipipNonzero',
         'NoisyRegion'
     ]
-    ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
-    selconf['photonIDTune'] = ROOT.idtune
-    selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
-    selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
-    selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-    selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
-    selconf['electronTFactorUnc'] = 'frate'
-    selconf['ewkCorrSource'] = 'ewk_corr.root'
+    if config.year == '16':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
+        selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+        selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
+        selconf['electronTFactorUnc'] = 'frate'
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
+
+    elif config.year == '17':
+        ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+        selconf['photonIDTune'] = ROOT.idtune
+        selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
+        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+        selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
+        selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+        selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
+        selconf['electronTFactorUnc'] = 'frate'
+        selconf['ewkCorrSource'] = 'ewk_corr.root'
 
 def monophEWKSetting(inflection):
     monophotonSetting()
@@ -597,7 +629,7 @@ def tagprobeBase(sample, rname):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        addPUWeight(sample, selector)
+        # addPUWeight(sample, selector)
 
     return selector
 

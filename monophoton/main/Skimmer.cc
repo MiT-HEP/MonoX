@@ -290,10 +290,12 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       debugFile << std::endl;
       skimmedEvent.t1Met.print(debugFile, 2);
       // debugFile << std::endl;
+      /*
       skimmedEvent.metMuOnlyFix.print(debugFile, 2);
       debugFile << std::endl;
       skimmedEvent.metNoFix.print(debugFile, 2);
       debugFile << std::endl;
+      */
       debugFile << ">>>>> Event " << iEntry << " done!!! <<<<<" << std::endl << std::endl;
     }
 
