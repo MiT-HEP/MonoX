@@ -1404,7 +1404,8 @@ class TPLeptonPhoton : public TPCut {
   void setMinTagPt(double d) { minTagPt_ = d; }
   void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
   void setProbeTriggerMatch(bool b) { probeTriggerMatch_ = b; }
-  
+  void setYear(int y) { year_ = y; }
+
  protected:
   bool pass(panda::EventMonophoton&, panda::EventTP&) override;
 
@@ -1415,6 +1416,7 @@ class TPLeptonPhoton : public TPCut {
   bool probeTriggerMatch_{false};
   double chargedPFDR_{0.1};
   double chargedPFRelPt_{0.6};
+  int year_{16};
 
   bool chargedPFVeto_[NMAX_PARTICLES];
   bool hasCollinearL_[NMAX_PARTICLES];
@@ -1430,6 +1432,7 @@ class TPDilepton : public TPCut {
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
   void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
+  void setYear(int y) { year_ = y; }
   
  protected:
   bool pass(panda::EventMonophoton&, panda::EventTP&) override;
@@ -1438,6 +1441,7 @@ class TPDilepton : public TPCut {
   double minProbePt_{15.};
   double minTagPt_{30.};
   bool tagTriggerMatch_{false};
+  int year_{16};
 
   int probeGenId_[NMAX_PARTICLES];
 };

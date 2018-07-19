@@ -1672,6 +1672,7 @@ def tpeg(sample, rname):
     tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     if sample.data:
         tp.setProbeTriggerMatch(True)
+        tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
@@ -1693,6 +1694,7 @@ def tpmg(sample, rname):
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     if sample.data:
         tp.setProbeTriggerMatch(True)
+        tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
@@ -1718,6 +1720,7 @@ def tpegLowPt(sample, rname):
     if sample.data:
         tp.setMinTagPt(30.)
         tp.setTagTriggerMatch(True)
+        tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
@@ -1743,6 +1746,7 @@ def tpmgLowPt(sample, rname):
     if sample.data:
         tp.setMinTagPt(30.)
         tp.setTagTriggerMatch(True)
+        tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
@@ -1767,6 +1771,8 @@ def tpmmg(sample, rname):
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
+    tp.setYear(int(config.year))
+
     selector.addOperator(tp)
 
     # for lepton veto efficiency measurement; just write electron and muon sizes
@@ -1795,6 +1801,8 @@ def tp2e(sample, rname):
     tp.setMinProbePt(25.)
     tp.setMinTagPt(35.)
     tp.setTagTriggerMatch(True)
+    tp.setYear(int(config.year))
+
     selector.addOperator(tp)
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2E))
@@ -1818,6 +1826,8 @@ def tp2m(sample, rname):
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
     tp.setTagTriggerMatch(True)
+    tp.setYear(int(config.year))
+
     selector.addOperator(tp)
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2M))

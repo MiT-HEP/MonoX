@@ -3863,9 +3863,17 @@ TPLeptonPhoton::pass(panda::EventMonophoton& _inEvent, panda::EventTP& _outEvent
     if (!photon.isEB || photon.scRawPt < minProbePt_)
       continue;
 
-    if (probeTriggerMatch_ && !_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Photon165_HE10"))) 
+    if (probeTriggerMatch_) {
       // if (!photon.triggerMatch[panda::Photon::fPh165HE10])
-      continue;
+      if (year_ == 16) {
+	if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Photon165_HE10")))
+	  continue;
+      }
+      else if (year_ == 17) {
+	if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Photon200")))
+	  continue;
+      }
+    }
 
     bool chargedPFMatch(false);
 
@@ -3896,15 +3904,31 @@ TPLeptonPhoton::pass(panda::EventMonophoton& _inEvent, panda::EventTP& _outEvent
 
       if (eventType_ == kTPEG || eventType_ == kTPEEG) {
         auto& electron(static_cast<panda::Electron const&>(lepton));
-        if (tagTriggerMatch_ && !_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele27_WPTight_Gsf")))
+        if (tagTriggerMatch_) {
 	  // !electron.triggerMatch[panda::Electron::fEl27Tight])
-          continue;
+	  if (year_ == 16) {
+	    if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele27_WPTight_Gsf")))
+	      continue;
+	  }
+	  else if (year_ == 17) {
+	    if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele35_WPTight_Gsf")))
+	      continue;
+	  }
+	}
       }
       else {
         auto& muon(static_cast<panda::Muon const&>(lepton));
-        if (tagTriggerMatch_ && !(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoTkMu24"))))
+        if (tagTriggerMatch_) {
 	  // !(muon.triggerMatch[panda::Muon::fIsoMu24] || muon.triggerMatch[panda::Muon::fIsoTkMu24]))
-          continue;
+	  if (year_ == 16) {
+	    if (!(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoTkMu24"))))
+	      continue;
+	  }
+	  else if (year_ == 17) {
+	    if (!(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu27"))))
+	      continue;
+	  }
+	}
 
         if (muon.combIso() / muon.pt() > 0.15)
           continue;
@@ -4068,14 +4092,26 @@ TPDilepton::pass(panda::EventMonophoton& _inEvent, panda::EventTP& _outEvent)
     if (tagTriggerMatch_) {
       if (eventType_ == kTP2E) {
         // if (!static_cast<panda::Electron const&>(tag).triggerMatch[panda::Electron::fEl27Tight])
-	if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele27_WPTight_Gsf")))
-          continue;
+	if (year_ == 16) {
+	  if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele27_WPTight_Gsf")))
+	    continue;
+	}
+	else if (year_ == 17) {
+	  if (!_inEvent.triggerFired(_inEvent.registerTrigger("HLT_Ele35_WPTight_Gsf")))
+	    continue;
+	}
       }
       else {
         auto& muon(static_cast<panda::Muon const&>(tag));
         // if (!(muon.triggerMatch[panda::Muon::fIsoMu24] || muon.triggerMatch[panda::Muon::fIsoTkMu24]))
-	if (!(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoTkMu24"))))
-          continue;
+	if (year_ == 16) {
+	    if (!(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoTkMu24"))))
+	      continue;
+	  }
+	  else if (year_ == 17) {
+	    if (!(_inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu24")) || _inEvent.triggerFired(_inEvent.registerTrigger("HLT_IsoMu27"))))
+	      continue;
+	  }
       }
 
       for (auto& probe : *leptons) {
