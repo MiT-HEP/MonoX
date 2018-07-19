@@ -10,19 +10,24 @@ PRODUCT = 'frate'
 # analysis = 'monophoton'
 analysis = 'darkphoton'
 
+dataSource = 'sph' # sph or sel or smu
+if dataSource == 'sph':
+    monophSel = 'probes.scRawPt > 175.'
+elif dataSource == 'sel':
+    monophSel = 'probes.scRawPt > 25. && probes.scRawPt < 175.'
+
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
 if analysis == 'monophoton':
     itune = 2
     vetoCut = 'probes.pixelVeto'
-    monophSel = 'probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
+    monophSel += ' && probes.mediumX[][%d] && probes.mipEnergy < 4.9 && TMath::Abs(probes.time) < 3. && probes.sieie > 0.001 && probes.sipip > 0.001' % itune
 else:
     itune = 1
     vetoCut = 'probes.pixelVeto && probes.chargedPFVeto'
-    monophSel = 'probes.mediumX[][%d]' % itune
+    monophSel += ' && probes.mediumX[][%d]' % itune
 
 fitBinningT = (120, 60., 120.)
 
-dataSource = 'sph' # sph or sel or smu
 if dataSource == 'sph':
     if PRODUCT == 'eff':
         tpconfs = ['pass', 'fail']
