@@ -401,7 +401,6 @@ if __name__ == '__main__':
     for key in dir(args):
         if not key.startswith('_'):
             SkimSlimWeight.config[key] = getattr(args, key)
-	    print key, SkimSlimWeight.config[key]
 
     for key in dir(config):
         if not key.startswith('_'):
