@@ -196,7 +196,7 @@ class SkimSlimWeight(object):
             raise RuntimeError('invalid configuration')
 
         if self.sample.data:
-            lumilist = '../data/lumis' + config.year + '_plain.txt'
+            lumilist = basedir + '/data/lumis' + config.year + '_plain.txt'
             logger.info('Good lumi filter: %s', lumilist)
             skimmer.setGoodLumiFilter(makeGoodLumiFilter(lumilist))
 
