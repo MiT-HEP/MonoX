@@ -195,9 +195,10 @@ class SkimSlimWeight(object):
 
             raise RuntimeError('invalid configuration')
 
-        if self.sample.data and SkimSlimWeight.config['json']:
-            logger.info('Good lumi filter: %s', SkimSlimWeight.config['json'])
-            skimmer.setGoodLumiFilter(makeGoodLumiFilter(SkimSlimWeight.config['json']))
+        if self.sample.data:
+            lumilist = '../data/lumis' + config.year + '_plain.txt'
+            logger.info('Good lumi filter: %s', lumilist)
+            skimmer.setGoodLumiFilter(makeGoodLumiFilter(lumilist))
 
         paths = {} # {filset: list of paths}
     
@@ -390,7 +391,6 @@ if __name__ == '__main__':
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
     argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-    argParser.add_argument('--json', '-j', metavar = 'PATH', dest = 'json', default = '/cvmfs/cvmfs.cmsaf.mit.edu/hidsk0001/cmsprod/cms/json/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt', help = 'Good lumi list to apply.')
     argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '', help = 'Source file catalog.')
     argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')

@@ -1667,7 +1667,10 @@ def tpeg(sample, rname):
     selector.setOutEventType(ROOT.kTPEG)
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        if config.year == '16':
+            selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        elif config.year == '17':
+            selector.addOperator(ROOT.HLTFilter('HLT_Photon200'))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     if sample.data:
@@ -1689,7 +1692,10 @@ def tpmg(sample, rname):
     selector.setOutEventType(ROOT.kTPMG)
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        if config.year == '16':
+            selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        elif config.year == '17':
+            selector.addOperator(ROOT.HLTFilter('HLT_Photon200'))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     if sample.data:
@@ -1698,7 +1704,7 @@ def tpmg(sample, rname):
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
+    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMG))
 
     return selector
 
