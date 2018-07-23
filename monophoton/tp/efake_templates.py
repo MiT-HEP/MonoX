@@ -125,11 +125,11 @@ if dataType == 'data':
 
     else:
         if dataSource == 'sph':
-            egSamp = 'phdata'
-            mgSamp = 'phdata'
+            egSamp = 'phdata' + config.year
+            mgSamp = 'phdata' + config.year
         elif dataSource == 'sel':
-            egSamp = 'eldata'
-            mgSamp = 'mudata'
+            egSamp = 'eldata' + config.year
+            mgSamp = 'mudata' + config.year
     
         for sname in skimConfig[egSamp][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
@@ -138,8 +138,9 @@ if dataType == 'data':
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
         if dataSource == 'sph' and analysis == 'monophoton':
-            egPlotter.setBaseSelection('probes.triggerMatch[][8]') # 8 = fPh165HE10
-            mgPlotter.setBaseSelection('probes.triggerMatch[][8]')
+            pass
+            # egPlotter.setBaseSelection('probes.triggerMatch[][8]') # 8 = fPh165HE10
+            # mgPlotter.setBaseSelection('probes.triggerMatch[][8]')
         elif dataSource == 'sel':
             egPlotter.setBaseSelection('tags.pt_ > 40.')
             mgPlotter.setBaseSelection('tags.pt_ > 40.')

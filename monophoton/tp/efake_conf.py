@@ -1,4 +1,5 @@
 import os
+import config
 
 outputName = 'efake17_pixelpf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
@@ -50,16 +51,19 @@ elif dataSource == 'smu':
 dy50 = ['dy-50@', 'dy-50-100', 'dy-50-200', 'dy-50-400', 'dy-50-600', 'dy-50-800', 'dy-50-1200', 'dy-50-2500']
 # dy50 = ['dyn-50@', 'dyn-50-50', 'dyn-50-100', 'dyn-50-250', 'dyn-50-400', 'dyn-50-650']
 skimConfig = {
-    'phdata': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
-    'eldata': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
-#    'mudata': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
-    'mudata': (['smu-16c-m'], ['kME']),
+    'phdata16': (['sph-16b-m', 'sph-16c-m', 'sph-16d-m', 'sph-16e-m', 'sph-16f-m', 'sph-16g-m', 'sph-16h-m'], ['kEG', 'kMG']),
+    'eldata16': (['sel-16b-m', 'sel-16c-m', 'sel-16d-m', 'sel-16e-m', 'sel-16f-m', 'sel-16g-m', 'sel-16h-m'], ['kEG']),
+    'mudata16': (['smu-16b-m', 'smu-16c-m', 'smu-16d-m', 'smu-16e-m', 'smu-16f-m', 'smu-16g-m', 'smu-16h-m'], ['kMG']),
+    # 'mudata': (['smu-16c-m'], ['kME']),
+    'phdata17': (['sph-17b', 'sph-17c', 'sph-17d', 'sph-17e', 'sph-17f'], ['kEG', 'kMG']),
+    'eldata17': (['sel-17b', 'sel-17c', 'sel-17d', 'sel-17e', 'sel-17f'], ['kEG']),
+    'mudata17': (['smu-17b', 'smu-17c', 'smu-17d', 'smu-17e', 'smu-17f'], ['kMG']),
     'mc': (dy50 + ['wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcmu': (dy50, ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])
 }
 
-lumiSamples = skimConfig['phdata'][0]
+lumiSamples = skimConfig['phdata'+config.year][0]
 
 def getBinning(binningName):
     if binningName == 'inclusive':
