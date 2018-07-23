@@ -63,6 +63,20 @@ selconf = {
 }
 ROOT.gROOT.ProcessLine("int idtune;")
 
+if config.year == '16':
+    selconf['sphTrigger'] = 'HLT_Photon165_HE10'
+    selconf['vbfTrigger'] = 'HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'
+    selconf['vbfCtrlTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM'
+    selconf['selTrigger'] = 'HLT_Ele27_WPTight_Gsf'
+    selconf['smuTrigger'] = 'HLT_IsoMu24_OR_HLT_IsoTkMu24'
+
+elif config.year == '17':
+    selconf['sphTrigger'] = 'HLT_Photon200'
+    selconf['vbfTrigger'] = 'HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'
+    selconf['vbfCtrlTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM'
+    selconf['selTrigger'] = 'HLT_Ele35_WPTight_Gsf'
+    selconf['smuTrigger'] = 'HLT_IsoMu24_OR_HLT_IsoMu27'
+
 def monophotonSetting():
     logger.info('Applying monophoton setting.')
 
@@ -267,7 +281,7 @@ def monophotonBase(sample, rname, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     operators = [
         'MetFilters',
@@ -392,7 +406,7 @@ def leptonBase(sample, rname, flavor, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
     else:
         partons = ROOT.PartonFlavor()
         if flavor == ROOT.lElectron:
@@ -538,7 +552,7 @@ def elmu(sample, rname):
 
     selector = ROOT.EventSelector(rname)
 
-    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     selector.setPreskim('muons.size > 0 && electrons.size > 0')
 
@@ -644,7 +658,7 @@ def vbfgBase(sample, rname):
 
     selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
 
-    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'))
+    selector.addOperator(ROOT.HLTFilter(selconf['vbfTrigger']))
 
     operators = [
         'MetFilters',
@@ -737,7 +751,7 @@ def vbflBase(sample, rname):
 
     selector.setPreskim('Sum$(chsAK4Jets.pt_ > 50.) > 1')
 
-    trig = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    trig = ROOT.HLTFilter(selconf['vbfTrigger'])
     trig.setIgnoreDecision(True)
     selector.addOperator(trig)
 
@@ -792,7 +806,7 @@ def gghgBase(sample, rname, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     operators = [
         'MetFilters',
@@ -882,7 +896,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
     else:
         partons = ROOT.PartonFlavor()
         if flavor == ROOT.lElectron:
@@ -1257,7 +1271,7 @@ def dijet(sample, rname):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     photonSel = ROOT.PhotonSelection()
     
@@ -1504,8 +1518,8 @@ def monomuLowPt(sample, rname, selcls = None):
     mtCut.setIgnoreDecision(True)
     selector.addOperator(mtCut)
 
-    selector.removeOperator('HLT_Photon165_HE10')
-    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    selector.removeOperator(selconf['sphTrigger'])
+    selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
     photons = selector.findOperator('PhotonSelection')
     photons.setMinPt(10.)
 
@@ -1623,7 +1637,7 @@ def zeeJets(sample, rname):
 
     selector = TagAndProbeBase(sample, rname)
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'), 0)
+        selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.cElectrons)
@@ -1644,7 +1658,7 @@ def zmmJets(sample, rname):
 
     selector = TagAndProbeBase(sample, rname)
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu20_OR_HLT_IsoTkMu20'), 0)
+        selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']), 0)
 
     tnp = selector.findOperator('TagAndProbePairZ')
     tnp.setTagSpecies(ROOT.cMuons)
@@ -1667,10 +1681,7 @@ def tpeg(sample, rname):
     selector.setOutEventType(ROOT.kTPEG)
 
     if sample.data:
-        if config.year == '16':
-            selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
-        elif config.year == '17':
-            selector.addOperator(ROOT.HLTFilter('HLT_Photon200'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     if sample.data:
@@ -1692,10 +1703,7 @@ def tpmg(sample, rname):
     selector.setOutEventType(ROOT.kTPMG)
 
     if sample.data:
-        if config.year == '16':
-            selector.addOperator(ROOT.HLTFilter('HLT_Photon165_HE10'))
-        elif config.year == '17':
-            selector.addOperator(ROOT.HLTFilter('HLT_Photon200'))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     if sample.data:
@@ -1719,7 +1727,7 @@ def tpegLowPt(sample, rname):
     selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+        selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
     tp.setMinProbePt(25.)
@@ -1745,7 +1753,7 @@ def tpmgLowPt(sample, rname):
     selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+        selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
     tp.setMinProbePt(25.)
@@ -1771,7 +1779,7 @@ def tpmmg(sample, rname):
     selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+        selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMMG)
     tp.setMinProbePt(25.)
@@ -1801,7 +1809,7 @@ def tp2e(sample, rname):
     selector.setPreskim('electrons.size > 1')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+        selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
     tp = ROOT.TPDilepton(ROOT.kTP2E)
     tp.setMinProbePt(25.)
@@ -1826,7 +1834,7 @@ def tp2m(sample, rname):
     selector.setPreskim('muons.size > 1')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+        selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     tp = ROOT.TPDilepton(ROOT.kTP2M)
     tp.setMinProbePt(25.)
@@ -1874,8 +1882,8 @@ def vbfgCtrl(sample, rname):
 
     selector.setPreskim('superClusters.rawPt > 80.')
 
-    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
-    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+    selector.removeOperator(selconf['vbfTrigger'])
+    selector.addOperator(ROOT.HLTFilter(selconf['vbfCtrlTrigger']))
 
     dijetSel = selector.findOperator('DijetSelection')
     dijetSel.setMinDEta(0.)
@@ -1947,8 +1955,8 @@ def vbfgHfakeCtrl(sample, rname):
 
     selector.setPreskim('superClusters.rawPt > 80.')
 
-    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
-    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+    selector.removeOperator(selconf['vbfTrigger'])
+    selector.addOperator(ROOT.HLTFilter(selconf['vbfCtrlTrigger']))
 
     selector.findOperator('DijetSelection').setIgnoreDecision(True)
 
@@ -1974,8 +1982,8 @@ def vbfgWHadCtrl(sample, rname):
 
     selector.setPreskim('superClusters.rawPt > 80.')
 
-    selector.removeOperator('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
-    selector.addOperator(ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_IsoM'))
+    selector.removeOperator(selconf['vbfTrigger'])
+    selector.addOperator(ROOT.HLTFilter(selconf['vbfCtrlTrigger']))
 
     selector.findOperator('DijetSelection').setIgnoreDecision(True)
 
@@ -2033,7 +2041,7 @@ def vbfe(sample, rname):
 
     selector = vbflBase(sample, rname)
 
-    selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+    selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(1, 0)
@@ -2047,7 +2055,7 @@ def vbfm(sample, rname):
 
     selector = vbflBase(sample, rname)
 
-    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 1)
@@ -2061,7 +2069,7 @@ def vbfee(sample, rname):
 
     selector = vbflBase(sample, rname)
 
-    selector.addOperator(ROOT.HLTFilter('HLT_Ele27_WPTight_Gsf'))
+    selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(2, 0)
@@ -2075,7 +2083,7 @@ def vbfmm(sample, rname):
 
     selector = vbflBase(sample, rname)
 
-    selector.addOperator(ROOT.HLTFilter('HLT_IsoMu24_OR_HLT_IsoTkMu24'))
+    selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 2)
@@ -2096,7 +2104,7 @@ def ph75(sample, rname):
     hltph75 = ROOT.HLTFilter('HLT_Photon75')
     hltph75.setIgnoreDecision(True)
     selector.addOperator(hltph75)
-    hltph75vbf = ROOT.HLTFilter('HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF')
+    hltph75vbf = ROOT.HLTFilter(selconf['vbfTrigger'])
     hltph75vbf.setIgnoreDecision(True)
     selector.addOperator(hltph75vbf)
 
