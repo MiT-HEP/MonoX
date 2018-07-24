@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <algorithm>
 
 /*
   TFormula has no foolproof mechanism to signal a failure of expression compilation.

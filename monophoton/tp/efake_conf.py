@@ -3,7 +3,7 @@ import config
 
 outputName = 'efake17_pixelpf'
 outputDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton/' + outputName 
-roofitDictsDir = '/home/yiiyama/cms/studies/RooFit'
+roofitDictsDir = '/home/ballen/cms/cmssw/010/CMSSW_9_4_4/src/RooFit'
 
 PRODUCT = 'frate'
 # PRODUCT = 'eff'
