@@ -31,7 +31,7 @@ qcdMc = ['qcd-200', 'qcd-300', 'qcd-500', 'qcd-700', 'qcd-1000', 'qcd-1000', 'qc
 
 sphLumi = sum(allsamples[s].lumi for s in sphData)
 
-lowpt = True
+lowpt = False
 
 ### Various load-time operations ###
 

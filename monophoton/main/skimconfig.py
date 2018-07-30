@@ -80,9 +80,6 @@ allSelectors_byPattern = [
     ('dy-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
     ('dy-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
-]
-
-"""
     ('znng', mc_sig + mc_ewk),
     ('znng-130', applyMod(mc_sig + mc_ewk, s.addKfactor)),
     ('zllg', mc_sig + mc_lep + mc_dilep + ['vbfzee']),
@@ -107,7 +104,6 @@ allSelectors_byPattern = [
     ('ww', mc_cand + mc_lep + mc_dilep),
     ('wz', mc_cand + mc_lep + mc_dilep),
     ('zz', mc_cand + mc_lep + mc_dilep),
-    ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
     ('st*', mc_lep),
     ('wlnu', applyMod(mc_wlnu, s.htTruncator(maximum = 70.))),
     ('wlnu{,n}-*', mc_wlnu),
@@ -122,7 +118,8 @@ allSelectors_byPattern = [
     ('dm*', mc_sig),
     ('dph*', mc_sig),
     ('hbb-nlo-125', mc_sig)
-"""
+]
+
 
 allSelectors = {}
 for pat, sels in allSelectors_byPattern:

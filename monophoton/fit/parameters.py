@@ -13,8 +13,9 @@ if commondir not in sys.path:
 
 import workspace_config as wc
 import datasets
+import config
 
-workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton'
+workdir = '/data/t3home000/' + os.environ['USER'] + '/monophoton' + config.year
 fitdir = workdir + '/fit'
 distribution = 'phoPtHighMet'
 sr = 'vertical'

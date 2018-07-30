@@ -353,7 +353,7 @@ for key in postfitDir.GetListOfKeys():
             if 'monoph' in region or 'horizontal' in region or 'vertical' in region:
                 groupMerge = [
                     ('other', ('vvg', 'top', 'gg', 'wjets', 'gjets'), 'Other SM', ROOT.TColor.GetColor(0xff, 0xbb, 0x55)),
-                    ('noncol', ('halo', 'spike'), 'Non-collision', ROOT.TColor.GetColor(0xaa, 0xaa, 0xaa))
+                    ('noncol', ('halo', 'spike'), 'Noncollision', ROOT.TColor.GetColor(0xaa, 0xaa, 0xaa))
                 ]
             elif 'mono' in region:
                 groupMerge = [
@@ -377,8 +377,6 @@ for key in postfitDir.GetListOfKeys():
                 name = group.name
                 title = group.title
                 color = group.color
-                if name == 'hfake':
-                    title = 'Hadron fakes'
 
             # just to filter out merged groups that are already added (we only use the first = all merged histogram)
             if name in added:

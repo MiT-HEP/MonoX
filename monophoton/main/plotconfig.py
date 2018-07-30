@@ -100,8 +100,8 @@ def getConfig(confName):
             config.addBkg('gg', '#gamma#gamma', samples = minor, color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
             config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0x55, 0xbb, 0x66))
             config.addBkg('gjets', '#gamma + jets', samples = gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , altbaseline = lowDPhiJet, scale = 0.147)
-        config.addBkg('hfake', 'Hadron fakes', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff), cut = hfakeSels)
-        config.addBkg('efake', 'Electron fakes', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+        config.addBkg('hfake', 'Misid. hadrons', samples = monophData, region = 'hfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff), cut = hfakeSels)
+        config.addBkg('efake', 'Misid. electrons', samples = monophData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
@@ -240,7 +240,7 @@ def getConfig(confName):
 
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
         config.addBkg('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'dimuHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
         noDPhiPhoton = config.baseline.replace(baseSels['photonDPhi0.5'], '1')
@@ -333,7 +333,7 @@ def getConfig(confName):
 
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
         config.addBkg('top', 't#bar{t}#gamma', samples = ['ttg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'dielHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
         noDPhiPhoton = config.baseline.replace(baseSels['photonDPhi0.5'], '1')
@@ -431,7 +431,7 @@ def getConfig(confName):
 #        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'monoelEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99)) # zero contribution
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'monomuHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
 
@@ -537,8 +537,8 @@ def getConfig(confName):
         config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xcc, 0x88, 0x44))
         config.addBkg('gg', '#gamma#gamma', samples = ['gg-40', 'gg-80'], color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
-        config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'monoelEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
+        config.addBkg('efake', 'Misid. electrons', samples = photonData, region = 'monoelEfake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'monoelHfake', color = ROOT.TColor.GetColor(0x55, 0x66, 0xff))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0xff, 0xbb, 0x55))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130-p'], region = vgRegion, color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
 
@@ -629,7 +629,7 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
 #        config.addBkg('halo', 'Beam halo', samples = photonData, region = 'haloMETLoose', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -648,7 +648,7 @@ def getConfig(confName):
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
 #        config.addBkg('qcd', 'QCD', samples = qcd, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('multiboson', 'multiboson', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
@@ -721,7 +721,7 @@ def getConfig(confName):
         config.addBkg('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), cut = 'metFilters.globalHalo16 && photons.mipEnergy[0] > 4.9', norm = 8.75 * config.effLumi() / 12900.)
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130-o'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -811,7 +811,7 @@ def getConfig(confName):
         config.addBkg('minor', '#gamma#gamma, Z#rightarrowll+#gamma', samples = minor, color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc)) # , scale = 1.5)
 
         config.addPlot('met', 'E_{T}^{miss}', 't1Met.pt', combinedFitPtBinning, unit = 'GeV', overflow = True)
@@ -986,7 +986,7 @@ def getConfig(confName):
         config.addBkg('vvg', 'VV#gamma', samples = ['ww', 'wz', 'zz'], color = ROOT.TColor.GetColor(0xff, 0x44, 0x99))
         config.addBkg('spike', 'Spikes', samples = photonDataICHEP, region = 'offtime', color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff), norm = 30.5 * 12.9 / 36.4)
 #        config.addBkg('halo', 'Beam halo', samples = photonData, region = 'halo', color = ROOT.TColor.GetColor(0xff, 0x99, 0x33), norm = 15.) # norm set here
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonDataICHEP, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonDataICHEP, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('efake', 'Electron fakes', samples = photonDataICHEP, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('wg', 'W#rightarrowl#nu+#gamma', samples = ['wnlg-130'], color = ROOT.TColor.GetColor(0x99, 0xee, 0xff))
         config.addBkg('zg', 'Z#rightarrow#nu#nu+#gamma', samples = ['znng-130'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
@@ -1027,7 +1027,7 @@ def getConfig(confName):
         #config.addBkg('zg', 'Z#rightarrowll+#gamma', samples = ['zllg-130-o', 'zllg-300-o'], color = ROOT.TColor.GetColor(0x22, 0x22, 0x22))
         # config.addBkg('wjets', 'W(#mu,#tau) + jets', samples = wlnun, color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
         # config.addBkg('top', 't#bar{t}#gamma/t#gamma', samples = ['ttg', 'tg'], color = ROOT.TColor.GetColor(0x55, 0x44, 0xff))
-        config.addBkg('hfake', 'Hadronic fakes', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
+        config.addBkg('hfake', 'Misid. hadrons', samples = photonData, region = 'hfake', color = ROOT.TColor.GetColor(0xbb, 0xaa, 0xff))
         config.addBkg('gjets', '#gamma + jets', samples = gj04, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))
         config.addBkg('efake', 'Electron fakes', samples = photonData, region = 'efake', color = ROOT.TColor.GetColor(0xff, 0xee, 0x99))
         config.addBkg('gg', '#gamma#gamma', samples = ['gg-40', 'gg-80'], color = ROOT.TColor.GetColor(0xbb, 0x66, 0xff))
