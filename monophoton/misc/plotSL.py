@@ -20,6 +20,12 @@ covar = inFile.Get('shapes_fit_b').Get('total_covar')
 covar.SetTitle('')
 covar.SetMarkerSize(0.7)
 
+for iX in range(1, covar.GetNbinsX() + 1):
+    for iY in range(1, covar.GetNbinsY() + 1):
+        if iY > iX:
+            covar.SetBinContent(iX, iY, 0.)
+            covar.SetBinError(iX, iY, 0.)
+
 text = covar.Clone('total_covar_text')
 
 canvas = TwoDimCanvas(lumi = 35900., xmax = 0.85, prelim = False)

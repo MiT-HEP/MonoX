@@ -120,7 +120,7 @@ def printBinByBin(name, hist):
     
     for iBin in range(1, hist.GetNbinsX() + 1):
         width = hist.GetBinWidth(iBin)
-        pstr += ' & $%6.2f \\pm %5.2f $' % (width * hist.GetBinContent(iBin), width * hist.GetBinError(iBin))
+        pstr += ' & $%6.1f \\pm %5.1f $' % (width * hist.GetBinContent(iBin), width * hist.GetBinError(iBin))
     
     pstr += r' \\'
 
@@ -323,7 +323,6 @@ for key in postfitDir.GetListOfKeys():
 
             groupHists.append(ghist)
 
-
         if pdir == 's':
             try:
                 shist = postfitDir.Get(region + '/total_signal').Clone()
@@ -342,8 +341,6 @@ for key in postfitDir.GetListOfKeys():
             except ReferenceError:
                 print region + ' region has no signal processes.'
                 pass
-
-        printRegionFooter(region, lumi, postfitTotal, dataHist)
 
         # merge groups
         # component groups must be adjacently defined in plotconfig
@@ -408,6 +405,8 @@ for key in postfitDir.GetListOfKeys():
                 pass
 
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
+
+    printRegionFooter(region, lumi, postfitTotal, dataHist)
 
     canvas.rlimits = (0.0, 2.5)
     if 'monoph' in region or 'horizontal' in region or 'vertical' in region:

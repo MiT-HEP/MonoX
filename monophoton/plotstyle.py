@@ -685,7 +685,7 @@ class TwoDimCanvas(SimpleCanvas):
         self.zlimits = (0., -1.)
 
         if cms:
-            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX + 0.01, 0.3, SimpleCanvas.YMAX + 0.06, align = 11, font = 62)
+            self.cmsPave = makeText(0.18, SimpleCanvas.YMAX - 0.12, 0.3, SimpleCanvas.YMAX - 0.01, align = 11, font = 62)
         else:
             self.cmsPave = None
 
