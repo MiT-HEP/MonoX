@@ -268,7 +268,7 @@ for bin, _ in fitBins:
         ### set up bkg templates
         altbkgModel = None
         nombkgModel = None
-        if conf in ['pass', 'fail']:
+        if conf: #  in ['pass', 'fail']:
             altbkgModel = work.factory('Polynomial::altbkgModel_{suffix}(mass, a_1[0.1, 0., 1.])'.format(suffix = suffix))
             addToWS(altbkgModel)
 
