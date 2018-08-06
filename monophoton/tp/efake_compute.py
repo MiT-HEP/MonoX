@@ -165,14 +165,14 @@ for iBin, (bin, _) in enumerate(fitBins):
 
     # re-evaluate shift uncertainties for ratios (cancels uncertainty if shape is correlated)
     sig = (1. + sigshift[meas[1]]) / (1. + sigshift[meas[0]])
-    bkg = (1. + bkgshift[meas[1]]) / (1. + sigshift[meas[0]])
+    bkg = (1. + bkgshift[meas[1]]) / (1. + bkgshift[meas[0]])
     syst2 = math.pow(max(abs(sig - 1.), abs(bkg - 1.)), 2.)
 
-    result.SetBinError(iBin + 1, ratio * math.sqrt(stat2 + syst2))
-    resultStatOnly.SetBinError(iBin + 1, ratio * math.sqrt(stat2))
+    result.SetBinError(iBin + 1, central * math.sqrt(stat2 + syst2))
+    resultStatOnly.SetBinError(iBin + 1, central * math.sqrt(stat2))
 
-    staterrs.append(ratio * math.sqrt(stat2))
-    systerrs.append(ratio * math.sqrt(syst2))
+    staterrs.append(central * math.sqrt(stat2))
+    systerrs.append(central * math.sqrt(syst2))
 
     if dataType == 'mc':
         larger = trueYields[meas[0]].GetBinContent(iBin + 1) # ee or pass
