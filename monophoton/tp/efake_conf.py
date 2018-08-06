@@ -12,9 +12,9 @@ PRODUCT = 'frate'
 analysis = 'darkphoton'
 
 dataSource = 'sph' # sph or sel or smu
-if dataSource == 'sph':
+if 'sph' in dataSource:
     monophSel = 'probes.scRawPt > 175.'
-elif dataSource == 'sel':
+elif 'sel' in dataSource:
     monophSel = 'probes.scRawPt > 25. && probes.scRawPt < 175.'
 
 # panda::XPhoton::IDTune { 0 : S15, 1 : S16, 2 : GJCWiso, 3 : ZGCWIso }
@@ -29,17 +29,17 @@ else:
 
 fitBinningT = (120, 60., 120.)
 
-if dataSource == 'sph':
+if 'sph' in dataSource:
     if PRODUCT == 'eff':
         tpconfs = ['pass', 'fail']
     else:
         tpconfs = ['ee', 'eg']
-elif dataSource == 'sel':
+elif 'sel' in dataSource:
     if PRODUCT == 'eff':
         tpconfs = ['pass', 'fail']
     else:
         tpconfs = ['ee', 'eg']
-elif dataSource == 'smu':
+elif 'smu' in dataSource:
     if PRODUCT == 'eff':
         tpconfs = ['passiso', 'failiso']
     else:
@@ -58,6 +58,12 @@ skimConfig = {
     'phdata17': (['sph-17b', 'sph-17c', 'sph-17d', 'sph-17e', 'sph-17f'], ['kEG', 'kMG']),
     'eldata17': (['sel-17b', 'sel-17c', 'sel-17d', 'sel-17e', 'sel-17f'], ['kEG']),
     'mudata17': (['smu-17b', 'smu-17c', 'smu-17d', 'smu-17e', 'smu-17f'], ['kMG']),
+    'phdata17BCD': (['sph-17b', 'sph-17c', 'sph-17d'], ['kEG', 'kMG']),
+    'eldata17BCD': (['sel-17b', 'sel-17c', 'sel-17d'], ['kEG']),
+    'mudata17BCD': (['smu-17b', 'smu-17c', 'smu-17d'], ['kMG']),
+    'phdata17EF': (['sph-17e', 'sph-17f'], ['kEG', 'kMG']),
+    'eldata17EF': (['sel-17e', 'sel-17f'], ['kEG']),
+    'mudata17EF': (['smu-17e', 'smu-17f'], ['kMG']),
     'mc': (dy50 + ['wglo', 'tt'], ['kEG', 'kMG', 'kMMG']),
     'mcmu': (dy50, ['kEG', 'kMG', 'kMMG']),
     'mcgg': (['gg-80'], ['kEG'])

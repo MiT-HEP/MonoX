@@ -54,12 +54,14 @@ outputFile = ROOT.TFile.Open(outputDir + '/' + PRODUCT + '_' + dataType + '_' + 
 
 yields = dict((m, ROOT.TH1D(m, '', len(binning) - 1, array.array('d', binning))) for m in meas)
 result = ROOT.TH1D(PRODUCT, '', len(binning) - 1, array.array('d', binning))
+resultStatOnly = result.Clone(PRODUCT + 'StatOnly')
+
 if dataType == 'mc':
     trueYields = dict((m, ROOT.TH1D(m + '_truth', '', len(binning) - 1, array.array('d', binning))) for m in meas)
     trueResult = ROOT.TH1D(PRODUCT + '_truth', '', len(binning) - 1, array.array('d', binning))
 
 if binLabels:
-    allhistograms = yields.values() + [result]
+    allhistograms = yields.values() + [result, resultStatOnly]
     if dataType == 'mc':
         allhistograms.extend(trueYields.values())
         allhistograms.append(trueResult)
@@ -159,6 +161,7 @@ for iBin, (bin, _) in enumerate(fitBins):
         central = 1. / (1. + ratio)
 
     result.SetBinContent(iBin + 1, central)
+    resultStatOnly.SetBinContent(iBin + 1, central)
 
     # re-evaluate shift uncertainties for ratios (cancels uncertainty if shape is correlated)
     sig = (1. + sigshift[meas[1]]) / (1. + sigshift[meas[0]])
@@ -166,6 +169,7 @@ for iBin, (bin, _) in enumerate(fitBins):
     syst2 = math.pow(max(abs(sig - 1.), abs(bkg - 1.)), 2.)
 
     result.SetBinError(iBin + 1, ratio * math.sqrt(stat2 + syst2))
+    resultStatOnly.SetBinError(iBin + 1, ratio * math.sqrt(stat2))
 
     staterrs.append(ratio * math.sqrt(stat2))
     systerrs.append(ratio * math.sqrt(syst2))
@@ -186,6 +190,7 @@ for iBin, (bin, _) in enumerate(fitBins):
 
 outputFile.cd()
 result.Write()
+resultStatOnly.Write()
 yields[meas[0]].Write()
 yields[meas[1]].Write()
 if dataType == 'mc':
@@ -202,9 +207,8 @@ canvas = SimpleCanvas(lumi = lumi, sim = (dataType == 'mc'))
 canvas.SetGrid(False, True)
 canvas.legend.setPosition(0.7, 0.8, 0.9, 0.9)
 if PRODUCT == 'frate':
-    result.SetMaximum(0.05)
-    canvas.legend.add(PRODUCT, 'R_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-    canvas.ylimits = (0., 0.05)
+    canvas.legend.add(PRODUCT, 'R_{e}', opt = 'LFP', mcolor = ROOT.kBlack, lcolor = ROOT.kBlack, fcolor = ROOT.kGrey, mstyle = 8)
+    canvas.ylimits = (0., 0.1)
 else:
     canvas.legend.add(PRODUCT, '#epsilon_{e}', opt = 'LP', color = ROOT.kBlack, mstyle = 8)
     canvas.ylimits = (0.75, 1.)
@@ -215,7 +219,10 @@ if dataType == 'mc':
     canvas.addHistogram(trueResult, drawOpt = 'EP')
 
 canvas.legend.apply(PRODUCT, result)
+canvas.legend.apply(PRODUCT, resultStatOnly)
 canvas.addHistogram(result, drawOpt = 'EP')
+canvas.addHistogram(resultStatOnly, drawOpt = 'E4')
+
 
 
 if ADDFIT:

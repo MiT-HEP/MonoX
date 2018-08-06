@@ -115,7 +115,7 @@ if dataType == 'data':
     mgPlotter.setWeightBranch('')
 
     # target samples
-    if dataSource == 'smu':
+    if 'smu' in dataSource:
         for sname in skimConfig['mudata'][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
@@ -123,25 +123,32 @@ if dataType == 'data':
         egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
         mgPlotter.setBaseSelection('tags.pt_ > 50.')
 
-    else:
-        if dataSource == 'sph':
+    else:   
+        if 'sph' in dataSource:
             egSamp = 'phdata' + config.year
             mgSamp = 'phdata' + config.year
-        elif dataSource == 'sel':
+        elif 'sel' in dataSource:
             egSamp = 'eldata' + config.year
             mgSamp = 'mudata' + config.year
-    
+
+        if 'BCD' in dataSource:
+            egSamp += 'BCD'
+            mgSamp += 'BCD'
+        elif 'EF' in dataSource:
+            egSamp += 'EF'
+            mgSamp += 'EF'
+
         for sname in skimConfig[egSamp][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
     
         for sname in skimConfig[mgSamp][0]:
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-        if dataSource == 'sph' and analysis == 'monophoton':
+        if 'sph' in dataSource and analysis == 'monophoton':
             pass
             # egPlotter.setBaseSelection('probes.triggerMatch[][8]') # 8 = fPh165HE10
             # mgPlotter.setBaseSelection('probes.triggerMatch[][8]')
-        elif dataSource == 'sel':
+        elif 'sel' in dataSource:
             egPlotter.setBaseSelection('tags.pt_ > 40.')
             mgPlotter.setBaseSelection('tags.pt_ > 40.')
 
@@ -155,7 +162,7 @@ else:
     egPlotter.setConstantWeight(lumi)
     mgPlotter.setConstantWeight(lumi)
 
-    if dataSource == 'smu':
+    if 'smu' in dataSource:
         for sname in skimConfig['mcmu'][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
@@ -171,10 +178,10 @@ else:
         egPlotter.setReweight('tags.pt_', eleTrigEff)
         mgPlotter.setReweight('tags.pt_', muTrigEff)
 
-    if dataSource == 'sel':
+    if 'sel' in dataSource:
         egPlotter.setBaseSelection('tags.pt_ > 40.')
         mgPlotter.setBaseSelection('tags.pt_ > 40.')
-    elif dataSource == 'smu':
+    elif 'smu' in dataSource:
         egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
         mgPlotter.setBaseSelection('tags.pt_ > 50.')
 
@@ -189,7 +196,7 @@ for bin, fitCut in fitBins:
     if dataType == 'mc':
         hsig = template.Clone('sig_' + bin)
         objects.append(hsig)
-        if dataSource == 'sel':
+        if 'sel' in dataSource:
             egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && TMath::Abs(probes.matchedGenId) == 11 && sample == 1')
         else:
             egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && sample == 1')
