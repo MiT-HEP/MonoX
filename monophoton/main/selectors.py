@@ -72,7 +72,7 @@ if config.year == '16':
 
 elif config.year == '17':
     selconf['sphTrigger'] = 'HLT_Photon200'
-    selconf['vbfTrigger'] = 'HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'
+    selconf['vbfTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3'
     selconf['vbfCtrlTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM'
     selconf['selTrigger'] = 'HLT_Ele35_WPTight_Gsf'
     selconf['smuTrigger'] = 'HLT_IsoMu24_OR_HLT_IsoMu27'

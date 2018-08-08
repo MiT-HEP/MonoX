@@ -276,7 +276,7 @@ class SkimSlimWeight(object):
         inDir = SkimSlimWeight.config['skimDir'] + '/' + self.sample.name
 
         for rname in self.selectors:
-            for fileset in self.filesets:
+            for fileset in list(self.filesets):
                 fname = inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root'
 	        if ( (not os.path.exists(fname)) or (os.stat(fname).st_size == 0) ):
                     if SkimSlimWeight.config['skipMissing']:

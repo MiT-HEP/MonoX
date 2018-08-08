@@ -76,6 +76,7 @@ allSelectors_byPattern = [
     ('smu-' + config.year + '*', data_smu),
     ('sel-' + config.year + '*', data_sel),
     # MC
+    ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['halo', 'monoel', 'vbfem', 'ph75', 'gjets325'], s.addKfactor)),
     ('dy-50', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('dy-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
     ('dy-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
@@ -98,7 +99,6 @@ allSelectors_byPattern = [
     ('wnlg-40-o', mc_sig + mc_lep),
     ('wnlg-130-o', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
     ('wnlg-130-p', applyMod(mc_sig + mc_lep + mc_ewk + mc_ewk_lep, s.addKfactor)),
-    ('gj{,04}-*', applyMod(mc_qcd + mc_cand + ['halo', 'monoel', 'vbfem', 'ph75', 'gjets325'], s.addKfactor)),
     ('gje-*', applyMod(['monoph'], s.addKfactor)),
     ('gjn*', mc_qcd + mc_cand + ['monoel', 'vbfem']),
     ('gg-*', mc_cand + mc_lep + mc_dilep),
