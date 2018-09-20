@@ -639,7 +639,7 @@ class SimpleCanvas(object):
             self.cmsPave.Draw()
 
             if self.lumi > 0.:
-                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., align = 32)
+                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., align = 33)
                 self._temporaries.append(lumiPave)
 
                 if self.lumi > 1000.:
@@ -1054,7 +1054,10 @@ class RatioCanvas(SimpleCanvas):
         self.xaxis = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMIN)
         self.xaxis.SetTitleOffset(self.xaxis.GetTitleOffset() * 1.1)
 
+        self.xaxist = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMAX, titleSize = 0., opposite = True)
+
         self.xaxism = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.PLOT_YMIN, titleSize = 0.)
+        self.xaxismt = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.PLOT_YMAX, titleSize = 0., opposite = True)
 
         self.yaxis = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMIN, vmin = 0.1, vmax = 1., log = True)
         self.yaxisr = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMAX, vmin = 0.1, vmax = 1., titleSize = 0., log = True, opposite = True)
@@ -1096,7 +1099,7 @@ class RatioCanvas(SimpleCanvas):
         if full:
             self.legend.Clear()
 
-        for axis in [self.xaxis, self.xaxism]:
+        for axis in [self.xaxis, self.xaxist, self.xaxism, self.xaxismt]:
             axis.SetWmin(0.)
             axis.SetWmax(1.)
         for axis in [self.yaxis, self.yaxisr]:
@@ -1324,7 +1327,7 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.Update()
 
         if ax == 'x':
-            axes = [self.xaxis, self.xaxism]
+            axes = [self.xaxis, self.xaxist, self.xaxism, self.xaxismt]
             umin = self.plotPad.GetUxmin()
             umax = self.plotPad.GetUxmax()
         elif ax == 'y':
