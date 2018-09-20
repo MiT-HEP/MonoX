@@ -10,7 +10,8 @@ import config
 
 mcConfs = [
     ('2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU', 'PUSpring16'),
-    ('2016_25ns_Moriond17MC_PoissonOOTPU', 'PUMoriond17')
+    ('2016_25ns_Moriond17MC_PoissonOOTPU', 'PUMoriond17'),
+    ('2017_25ns_WinterMC_PUScenarioV1_PoissonOOTPU', 'PU2017')
 ]
 
 dataSource = ROOT.TFile.Open(sys.argv[2])

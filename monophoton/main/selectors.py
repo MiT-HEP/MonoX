@@ -94,11 +94,12 @@ def monophotonSetting():
         'NoisyRegion',
         'R9Unity'
     ]
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup' + config.year + '.root')
+
     if config.year == '16':
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
         selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
         selconf['electronTFactor'] = 0.0303
@@ -109,7 +110,6 @@ def monophotonSetting():
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (1.002, 0.007, [ROOT.IDSFWeight.kPt], (0.984, .009)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso')
         selconf['hadronProxyDef'] = ['!CHIsoMax', '+CHIsoMax11']
         selconf['electronTFactor'] = 0.0303
@@ -128,11 +128,12 @@ def vbfgSetting():
         'EVeto',
         'ChargedPFVeto'
     ]
+    selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup' + config.year + '_vbf75.root')
+
     if config.year == '16':
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
         selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
         selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
@@ -143,7 +144,6 @@ def vbfgSetting():
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_vbf75', datadir + '/pileup_vbf75.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16')
         selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
         selconf['electronTFactor'] = datadir + '/efakepf_data_lowpt.root/frate_fit'
@@ -165,11 +165,12 @@ def gghSetting():
         'ChargedPFVeto',
         'NoisyRegion'
     ]
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup' + config.year + '.root')
+
     if config.year == '16':
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
         selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
         selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
@@ -180,7 +181,6 @@ def gghSetting():
         ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
         selconf['photonIDTune'] = ROOT.idtune
         selconf['photonSF'] = (0.995, 0.008, [ROOT.IDSFWeight.kPt], (0.993, .006)) # , ROOT.IDSFWeight.nVariables)
-        selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
         selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
         selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
         selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
@@ -635,7 +635,7 @@ def tagprobeBase(sample, rname):
     Base for selectors skimming tag & probe input trees.
     """
 
-    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup.root')
+    selconf['puweightSource'] = ('puweight_fulllumi', datadir + '/pileup' + config.year + '.root')
 
     selector = ROOT.TagAndProbeSelector(rname)
 
@@ -643,7 +643,7 @@ def tagprobeBase(sample, rname):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        # addPUWeight(sample, selector)
+        addPUWeight(sample, selector)
 
     return selector
 

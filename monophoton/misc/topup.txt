@@ -5,7 +5,7 @@
   datasets.py recalculate <samples> --save
 
 . Compute the data pileup distribution and construct the PU weights
-  pileupCalc.py -i data/lumis_plain.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 69200 --maxPileupBin 100 --numPileupBins 100 dataPileup.root
+  pileupCalc.py -i data/lumis_plain.txt --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions${YEAR}/13TeV/PileUp/pileup_latest.txt --calcMode true --minBiasXsec 69200 --maxPileupBin 100 --numPileupBins 100 dataPileup.root
   misc/puweight.py $PWD/data/pileup.root dataPileup.root 
 
 . Run the trigger efficiency measurement and update the L1 fit parameters in selectors.py
@@ -25,26 +25,26 @@
   purity/plotPurity.py
   (sph, gj; emjet), (sph, dy-50-*; tpeg)
 
-(.) Run the photon purity measurement for no-ICH case (medium-pixel-noICH). Generate the vertex scores templates.
-  chiso/scores.py
-  (sph; dimuAllPhoton, dielAllPhoton, monomuAllPhoton)
+# (.) Run the photon purity measurement for no-ICH case (medium-pixel-noICH). Generate the vertex scores templates.
+#   chiso/scores.py
+#   (sph; dimuAllPhoton, dielAllPhoton, monomuAllPhoton)
 
-(.) Measure the random-cone isolation probability
+# (.) Measure the random-cone isolation probability
 
 . Run the hadron transfer factor measurement.
   hadron_fake/hadronTFactor.py
   (sph; emjet)
 
-. Run method 1 and 2 of the gamma + jets background estimation.
+# . Run method 1 and 2 of the gamma + jets background estimation.
 
 . Run the sph skims
 
-. Run the halo phi fit (for display)
-  halo/phidistributions.py for plots
-  halo/phifit.py for actual fits
+# . Run the halo phi fit (for display)
+#   halo/phidistributions.py for plots
+#   halo/phifit.py for actual fits
 
-. Run method 3 of gamma + jets background estimation.
-  gjets/smearfit.py
+# . Run method 3 of gamma + jets background estimation.
+#   gjets/smearfit.py
 
 . Run all MC monoph skims (if PU reweighting changed)
 
@@ -56,8 +56,9 @@
   main/plot.py monoph -o $HISTDIR/plots/monoph.root --allsignal
 
 . Make data cards
-  main/datacard.py {model} monoph_met.root
-  for model in ; do python datacard.py $model monoph_met.root; done
+  fit/workspace.py parameters.py
+  # main/datacard.py {model} monoph_met.root
+  # for model in ; do python datacard.py $model monoph_met.root; done
 
 . Run combine
   scratch/runCombine.sh {point}
