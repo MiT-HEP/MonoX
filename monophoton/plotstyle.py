@@ -11,8 +11,8 @@ ROOT.gStyle.SetLabelSize(0.05, 'X')
 ROOT.gStyle.SetLabelSize(0.05, 'Y')
 ROOT.gStyle.SetTitleSize(0.05, 'X')
 ROOT.gStyle.SetTitleSize(0.05, 'Y')
-ROOT.gStyle.SetTitleOffset(0.84, 'X')
-ROOT.gStyle.SetTitleOffset(1.3, 'Y')
+ROOT.gStyle.SetTitleOffset(1.2, 'X')
+ROOT.gStyle.SetTitleOffset(1.5, 'Y')
 ROOT.gStyle.SetNdivisions(208, 'X')
 ROOT.gStyle.SetFillStyle(0)
 
@@ -419,6 +419,7 @@ class SimpleCanvas(object):
             self.canvas.SetRightMargin(1. - SimpleCanvas.XMAX)
         self.canvas.SetBottomMargin(SimpleCanvas.YMIN)
         self.canvas.SetLeftMargin(SimpleCanvas.XMIN)
+        self.canvas.SetTicky(1)
 
         if full:
             self.legend.Clear()
@@ -462,8 +463,10 @@ class SimpleCanvas(object):
         if base:
             if self.xtitle:
                 base.GetXaxis().SetTitle(self.xtitle)
+                base.GetXaxis().SetTitleOffset(ROOT.gStyle.GetTitleOffset('X') * 0.048 / ROOT.gStyle.GetTitleSize('X'))
             if self.ytitle:
                 base.GetYaxis().SetTitle(self.ytitle)
+                base.GetYaxis().SetTitleOffset(ROOT.gStyle.GetTitleOffset('Y'))
 
         self.canvas.Update()
 
@@ -1052,7 +1055,7 @@ class RatioCanvas(SimpleCanvas):
         self.canvas.SetCanvasSize(600, 680)
 
         self.xaxis = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMIN)
-        self.xaxis.SetTitleOffset(self.xaxis.GetTitleOffset() * 1.1)
+        self.xaxis.SetTitleOffset(ROOT.gStyle.GetTitleOffset('X') * 0.8)
 
         self.xaxist = makeAxis('X', xmin = SimpleCanvas.XMIN, xmax = SimpleCanvas.XMAX, y = RatioCanvas.RATIO_YMAX, titleSize = 0., opposite = True)
 

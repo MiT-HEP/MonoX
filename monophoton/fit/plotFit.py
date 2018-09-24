@@ -245,11 +245,11 @@ for key in postfitDir.GetListOfKeys():
         printRegionHeader(region, prefitTotal)
     
     if pdir == 's':
-        pftitle = 'Signal+background fit'
+        pftitle = 'Sig.+bkgd. fit'
     elif pdir == 'c':
         pftitle = 'CR-only fit'
     else:
-        pftitle = 'Background-only fit'
+        pftitle = 'Bkgd. fit'
 
     canvas = RatioCanvas(lumi = lumi, name = region, prelim = False)
     canvas.legend.ncolumns = 1
@@ -383,6 +383,9 @@ for key in postfitDir.GetListOfKeys():
 
             added.add(name)
 
+            if 'Hadronic' in title:
+                title = title.replace('Hadronic', 'Hadron')
+
             canvas.legend.add(name, title = title, opt= 'F', fcolor = color, fstyle = 1001)
             canvas.legend.apply(name, ghist)
 
@@ -439,15 +442,18 @@ for key in postfitDir.GetListOfKeys():
             rlabel = 'ee#gamma'
 
     canvas.cmsPave.SetTextSize(0.04)
-    canvas.addText(rlabel, 0.185, 0.82, 0.35, 0.86, size = 0.035, align = 12)
+    canvas.addText(rlabel, 0.185, 0.82, 0.35, 0.86, size = 0.04, align = 12)
 
-    resultLegend.setPosition(0.35, 0.88 - 0.04 * len(resultLegend.entries), 0.9, 0.88)
-    canvas.legend.setPosition(0.7, 0.88 - 0.04 * len(canvas.legend.entries), 0.9, 0.88)
+    resultLegend.setPosition(0.4, 0.88 - 0.04 * len(resultLegend.entries), 0.63, 0.88)
+    canvas.legend.setPosition(0.63, 0.88 - 0.04 * len(canvas.legend.entries), 0.9, 0.88)
+
+    resultLegend.SetTextSize(0.04)
+    canvas.legend.SetTextSize(0.04)
 
     if config == 'monoph':
-        canvas.xtitle = 'E_{T}^{#gamma} (GeV)'
+        canvas.xtitle = 'E_{T}^{#gamma} [GeV]'
     else:
-        canvas.xtitle = 'M_{T}(#gamma, E_{T}^{miss}) (GeV)'
+        canvas.xtitle = 'M_{T}(#gamma, E_{T}^{miss}) [GeV]'
     canvas.ytitle = 'Events / GeV'
     canvas.rtitle = 'Data / Pred.'
 
