@@ -18,10 +18,16 @@ inFile = ROOT.TFile.Open(inName)
 
 covar = inFile.Get('shapes_fit_b').Get('total_covar')
 covar.SetTitle('')
-covar.SetMarkerSize(0.7)
+covar.SetMarkerSize(0.85)
 
 for iX in range(1, covar.GetNbinsX() + 1):
+    xlabel = covar.GetXaxis().GetBinLabel(iX).replace("_", " ")
+    covar.GetXaxis().SetBinLabel(iX, xlabel)
     for iY in range(1, covar.GetNbinsY() + 1):
+        if iX == 1:
+            ylabel = covar.GetYaxis().GetBinLabel(iY).replace("_", " ")
+            covar.GetYaxis().SetBinLabel(iY, ylabel)
+
         if iY > iX:
             covar.SetBinContent(iX, iY, 0.)
             covar.SetBinError(iX, iY, 0.)
@@ -30,12 +36,13 @@ text = covar.Clone('total_covar_text')
 
 canvas = TwoDimCanvas(lumi = 35900., xmax = 0.85, prelim = False)
 
-ROOT.gStyle.SetPaintTextFormat("7.2e");
+ROOT.gStyle.SetPaintTextFormat("7.1e");
 
 canvas.addHistogram(covar, drawOpt = 'colz text')
 
 canvas.zlimits = (1.0e-7, 1.0)
-canvas.xtitle = 'Bin name'
-canvas.ytitle = 'Bin name'
+canvas.xtitle = 'Bin label'
+canvas.ytitle = 'Bin label'
+canvas.ztitle = 'Covariance'
 
 canvas.printWeb('EXO16053/fit/', 'signal_covar', logz = True)

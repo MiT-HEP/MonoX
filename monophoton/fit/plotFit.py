@@ -253,7 +253,7 @@ for key in postfitDir.GetListOfKeys():
 
     canvas = RatioCanvas(lumi = lumi, name = region, prelim = False)
     canvas.legend.ncolumns = 1
-    canvas.legend.add('obs', title = 'Data', opt = 'LP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
+    canvas.legend.add('obs', title = 'Data', opt = 'ELP', color = ROOT.kBlack, mstyle = 8, msize = 0.8)
     canvas.legend.add('prefit', title = 'Pre-fit', opt = 'LF', color = ROOT.kRed, lstyle = ROOT.kDashed, lwidth = 2, fstyle = 3004, mstyle = 8, msize = 0.8)
     if postfitSub and SIMPLE:
         canvas.legend.add('subdom', title = 'Subdominant', opt = 'F', fcolor = ROOT.kGray, fstyle = 1001)
@@ -314,8 +314,6 @@ for key in postfitDir.GetListOfKeys():
         for group in plotConfig.bkgGroups:
             ghist = postfitDir.Get(region + '/' + group.name).Clone()
             ghist.SetTitle('')
-
-            printBinByBin(group.name, ghist)
 
             if len(groupHists):
                 # we just overlay bunch of histograms instead of using THStack
@@ -387,6 +385,19 @@ for key in postfitDir.GetListOfKeys():
             iG = canvas.addHistogram(ghist)
             groupList.append(iG)
 
+        for iG in groupList:
+            ghist = canvas._histograms[iG].obj.Clone()
+
+            if iG+1 == len(canvas._histograms):
+                printBinByBin(ghist.GetName(), ghist)
+                continue
+
+            shist = canvas._histograms[iG+1].obj.Clone()
+
+            ghist.Add(shist, -1.)
+            printBinByBin(ghist.GetName(), ghist)
+
+        printRegionFooter(region, lumi, postfitTotal, dataHist)
             # print name, ghist.Integral()
 
         if pdir != 's':
@@ -406,17 +417,25 @@ for key in postfitDir.GetListOfKeys():
 
         hList = groupList + [iPreUnc, iPre, iPostUnc, iPost, iObs]
 
-    printRegionFooter(region, lumi, postfitTotal, dataHist)
-
     canvas.rlimits = (0.0, 2.5)
     if 'monoph' in region or 'horizontal' in region or 'vertical' in region:
         canvas.ylimits = (0.0003, 200.)
+        rlabel = region
     elif 'mono' in region:
         canvas.ylimits = (0.0003, 20.)
+        if 'mu' in region:
+            rlabel = '#mu#gamma'
+        elif 'el' in region:
+            rlabel = 'e#gamma'
     elif 'di' in region:
         canvas.ylimits = (0.0003, 5.)
+        if 'mu' in region:
+            rlabel = '#mu#mu#gamma'
+        elif 'el' in region:
+            rlabel = 'ee#gamma'
 
-    canvas.legend.setPosition(0.65, 0.92 - 0.04 * len(canvas.legend.entries), 0.9, 0.92)
+    canvas.addText(rlabel, 0.3, 0.8625, 0.5, 0.9, size = 0.07)
+    canvas.legend.setPosition(0.555, 0.92 - 0.04 * len(canvas.legend.entries), 0.9, 0.92)
 
     if config == 'monoph':
         canvas.xtitle = 'E_{T}^{#gamma} (GeV)'

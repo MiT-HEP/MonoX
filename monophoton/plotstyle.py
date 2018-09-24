@@ -109,7 +109,7 @@ class Legend(object):
         self.legend = ROOT.TLegend(x1, y1, x2, y2)
         self.legend.SetFillStyle(0)
         self.legend.SetBorderSize(0)
-        self.legend.SetTextSize(0.025)
+        self.legend.SetTextSize(0.0375)
         self.legend.SetTextFont(42)
         self.legend.SetTextAlign(12)
 
@@ -639,7 +639,7 @@ class SimpleCanvas(object):
             self.cmsPave.Draw()
 
             if self.lumi > 0.:
-                lumiPave = makeText(0.6, SimpleCanvas.YMAX, SimpleCanvas.XMAX, 1., align = 32)
+                lumiPave = makeText(0.6, SimpleCanvas.YMAX - 0.025, SimpleCanvas.XMAX - 0.1, 1., align = 32)
                 self._temporaries.append(lumiPave)
 
                 if self.lumi > 1000.:
@@ -743,6 +743,7 @@ class TwoDimCanvas(SimpleCanvas):
 
             base.GetXaxis().SetTitleOffset(1.3)
             base.GetYaxis().SetTitleOffset(2.3)
+            base.GetZaxis().SetTitleOffset(1.45)
 
         self.canvas.Update()
 
