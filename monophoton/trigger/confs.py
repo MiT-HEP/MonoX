@@ -8,7 +8,7 @@ def getEnum(cls, name):
     ROOT.gROOT.ProcessLine('val = panda::' + cls + '::TriggerObject::' + name + ';')
     return ROOT.val
 
-measurements = {
+measurements16 = {
     ('photon', 'sel'): ('sel-16*-m', 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
     ('photon', 'selBCD'): (['sel-16b-m', 'sel-16c-m', 'sel-16d-m'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6 && runNumber < 276525', 'probes'), # for photon75
     ('photon', 'dy'): (['dy-50@', 'dy-50-*'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
@@ -25,6 +25,23 @@ measurements = {
     ('vbf', 'mcph75h'): (['gj04-*'], 'ph75', 'photons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Photon', 'fPh75EBR9Iso'), ''),
     ('vbf', 'wlnu'): (['wlnu-*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), '')
 }
+
+measurements17 = {
+    ('photon', 'sel'): ('sel-17*', 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
+    ('photon', 'dy'): (['dy-50@', 'dy-50-*'], 'tpeg', 'probes.medium && !probes.pixelVeto && tp.mass > 60. && tp.mass < 120. && TMath::Abs(TVector2::Phi_mpi_pi(probes.phi_ - tags.phi_)) > 0.6', 'probes'),
+    ('photon', 'elmu'): (['smu-17*'], 'elmu', 'photons.mediumX[][2]', 'photons'),
+    ('photon', 'ph75'): (['sph-17b', 'sph-17c', 'sph-17d'], 'ph75', 'photons.medium && HLT_Photon50 && runNumber < 276525', 'photons'),
+    ('photon', 'ph75h'): (['sph-17b', 'sph-17c', 'sph-17d'], 'ph75', 'photons.medium && HLT_Photon75 && runNumber < 276525', 'photons'),
+    ('photon', 'mcph75'): (['gj04-*'], 'ph75', 'photons.medium && HLT_Photon50', 'photons'),
+    ('electron', 'sel'): ('sel-17*', 'tp2e', 'probes.tight && tp.mass > 60. && tp.mass < 120.', 'probes'),
+    ('muon', 'smu'): ('smu-17*', 'tp2m', 'probes.tight && tp.mass > 60. && tp.mass < 120.', 'probes'),
+    ('vbf', 'ph75h'): (['sph-17b', 'sph-17c', 'sph-17d'], 'ph75', 'photons.triggerMatch[][%d] && dijet.size > 0 && runNumber < 276525' % getEnum('Photon', 'fPh75EBR9Iso'), ''),
+    ('vbf', 'dy'): (['dy-50@*', 'dy-50-*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), ''),
+    ('vbf', 'mcph75h'): (['gj04-*'], 'ph75', 'photons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Photon', 'fPh75EBR9Iso'), ''),
+    ('vbf', 'wlnu'): (['wlnu-*'], 'vbfe', 'electrons.triggerMatch[][%d] && dijet.size > 0' % getEnum('Electron', 'fEl75EBR9IsoPh'), '')
+}
+
+measurements = measurements17
 
 confs = {
     'photon': {
