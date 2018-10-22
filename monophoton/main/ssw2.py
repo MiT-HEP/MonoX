@@ -4,6 +4,7 @@ import sys
 import os
 import subprocess
 import collections
+import importlib
 
 from batch import BatchManager
 # from hashlib import md5hash
@@ -175,12 +176,7 @@ class SkimSlimWeight(object):
         # can eventually think of submitting jobs separately for different preskims
         bypreskim = collections.defaultdict(list)
         for rname, selgen in self.selectors.items():
-            if type(selgen) is tuple: # has modifiers
-                selector = selgen[0](self.sample, rname)
-                for mod in selgen[1:]:
-                    mod(self.sample, selector)
-            else:
-                selector = selgen(self.sample, rname)
+            selector = selgen(self.sample, rname)
 
             selector.setUseTimers(SkimSlimWeight.config['timer'])
             skimmer.addSelector(selector)
@@ -196,9 +192,9 @@ class SkimSlimWeight(object):
             raise RuntimeError('invalid configuration')
 
         if self.sample.data:
-            lumilist = basedir + '/data/lumis' + config.year + '_plain.txt'
-            logger.info('Good lumi filter: %s', lumilist)
-            skimmer.setGoodLumiFilter(makeGoodLumiFilter(lumilist))
+            # lumilist set globally in CONFIGDIR/params.py
+            logger.info('Good lumi filter: %s', params.lumilist)
+            skimmer.setGoodLumiFilter(makeGoodLumiFilter(params.lumilist))
 
         paths = {} # {filset: list of paths}
     
@@ -315,7 +311,7 @@ class SSWBatchManager(BatchManager):
 
     def submitMerge(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
-        submitter.requirements = 'OpSysAndVer == "SL6" && UidDomain == "mit.edu"'
+        submitter.requirements = 'UidDomain == "mit.edu"'
 
         arguments = []
 
@@ -343,7 +339,7 @@ class SSWBatchManager(BatchManager):
 
     def submitSkim(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
-        submitter.requirements = 'OpSysAndVer == "SL6" && UidDomain == "mit.edu"'
+        submitter.requirements = 'UidDomain == "mit.edu"'
 
         argTemplate = '%s -f %s'
     
@@ -352,6 +348,13 @@ class SSWBatchManager(BatchManager):
 
         if args.readRemote:
             argTemplate += ' -R'
+            try:
+                x509Proxy = os.environ['X509_USER_PROXY']
+            except KeyError:
+                x509Proxy = '/tmp/x509up_u%d' % os.getuid()
+
+            submitter.aux_input.append(x509Proxy)
+            submitter.env['X509_USER_PROXY'] = os.path.basename(x509Proxy)
 
         if self.catalogDir:
             argTemplate += ' -c ' + self.catalogDir
@@ -422,14 +425,25 @@ if __name__ == '__main__':
             logger.error('Cannot use batch mode with individual files.')
             sys.exit(1)
 
+    if args.readRemote:
+        try:
+            x509Proxy = os.environ['X509_USER_PROXY']
+        except KeyError:
+            x509Proxy = '/tmp/x509up_u%d' % os.getuid()
+
+        if not os.path.exists(x509Proxy):
+            raise RuntimeError('X509 proxy file does not exist')
+
     ## directories to include
     thisdir = os.path.dirname(os.path.realpath(__file__))
     basedir = os.path.dirname(thisdir)
     monoxdir = os.path.dirname(basedir)
     
-    ## import the monophoton config
-    sys.path.append(basedir)
+    ## import the global config
     import config
+
+    ## source the analysis config
+    params = importlib.import_module('configs.' + config.config + '.params')
 
     ## set up logger
     printLevel = getattr(logging, args.printLevel.upper())
@@ -454,66 +468,97 @@ if __name__ == '__main__':
     if args.catalog:
         datasets.catalogDir = args.catalog
 
-    from main.skimconfig import allSelectors
+    skimconfig = importlib.import_module('configs.' + config.config + '.skimconfig')
+
+    allselectors = {}
+    for pat, sels in skimconfig.skimconfig:
+        samples = datasets.allsamples.getmany(pat)
+        for sample in samples:
+            if sample in allselectors:
+                raise RuntimeError('Duplicate skim config for ' + sample.name)
+
+            # sels = [(name, selection function), ...]
+            allselectors[sample] = dict(sels)
+
+    ## filter out the selectors
 
     # list of (sample, {rname: selgen})
     sampleList = []
     
-    ## get the list of sample objects according to args.snames
-    if 'all' in args.snames:
-        spatterns = allSelectors.keys()
-        samples = datasets.allsamples.getmany(spatterns)
-        sampleList = [(sample, dict()) for sample in samples]
-    elif 'bkgd' in args.snames:
-        spatterns = allSelectors.keys() + ['!add*', '!dm*', '!dph*']
-        samples = datasets.allsamples.getmany(spatterns)
-        sampleList = [(sample, dict()) for sample in samples]
-    else:
-        for ss in args.snames:
-            # ss can be given in format sname=selector1,selector2,.. or sname_region
-            if '=' in ss:
-                spattern, rn = ss.split('=')
-                rnames = rn.split(',')
-            elif '_' in ss:
-                spattern = ss.split('_')[0]
-                rnames = [ss.split('_')[1]]
-            else:
-                spattern = ss
-                rnames = []
+    for ss in args.snames:
+        # ss can be given in format sname=selector1,selector2,.. or sname_region
+        if '=' in ss:
+            spattern, rn = ss.split('=')
+            rnames = rn.split(',')
+        elif '_' in ss:
+            spattern = ss.split('_')[0]
+            rnames = [ss.split('_')[1]]
+        else:
+            spattern = ss
+            rnames = []
 
-            samples = datasets.allsamples.getmany(spattern)
-            for sample in samples:
-                selectors = {}
+        samples = datasets.allsamples.getmany(spattern)
+        for sample in samples:
+            selectors = {}
 
-                if len(rnames) == 0:
-                    # fill in the selectors for samples with no selector specification
-                    if args.selnames is not None and len(args.selnames) != 0:
-                        for sel in args.selnames:
-                            selectors[sel] = allSelectors[sample][sel]
-                    else:
-                        selectors.update(allSelectors[sample])
-
-                else:
-                    for rname in rnames:
+            if len(rnames) == 0:
+                # fill in the selectors for samples with no selector specification
+                if args.selnames is not None and len(args.selnames) != 0:
+                    for sel in args.selnames:
                         try:
-                            selectors[rname] = allSelectors[sample][rname]
+                            selectors[sel] = allselectors[sample][sel]
                         except KeyError:
-                            print 'Selector', sample.name, rname, 'not defined'
+                            print 'Selector', sample.name, sel, 'not defined'
                             raise
 
-                sampleList.append((sample, selectors))
+                else:
+                    selectors.update(allselectors[sample])
+
+            else:
+                for rname in rnames:
+                    try:
+                        selectors[rname] = allselectors[sample][rname]
+                    except KeyError:
+                        print 'Selector', sample.name, rname, 'not defined'
+                        raise
+
+            sampleList.append((sample, selectors))
 
     if args.list:
         if args.selnames is not None:
             for sample, selectors in sampleList:
                 print sample.name + ' (' + ' '.join(selectors.keys()) + ')'
         else:
-            print ' '.join(sorted(s.name for s, r in sampleList))
+            print ' '.join(sorted(s.name for s, _ in sampleList))
 
         sys.exit(0)
 
     ## compile and load the Skimmer
     import ROOT
+
+    ROOT.gSystem.Load(config.libobjs)
+    ROOT.gSystem.Load('libfastjet.so')
+
+    # if the objects library is compiled with CLING dictionaries, ROOT must load the
+    # full library first before compiling the macros.
+    try:
+        e = ROOT.panda.Event
+    except AttributeError:
+        pass
+
+    ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
+    try:
+        o = ROOT.Operator
+    except:
+        logger.error("Couldn't compile operators.cc. Quitting.")
+        sys.exit(1)
+
+    ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
+    try:
+        o = ROOT.EventSelectorBase
+    except:
+        logger.error("Couldn't compile selectors.cc. Quitting.")
+        sys.exit(1)
     
     ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
     ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')

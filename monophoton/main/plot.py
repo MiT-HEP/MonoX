@@ -6,6 +6,7 @@ import os
 import math
 import re
 import collections
+import importlib
 
 import ROOT
 
@@ -568,16 +569,11 @@ if __name__ == '__main__':
     import ROOT
     ROOT.gROOT.SetBatch(True)
 
-    thisdir = os.path.dirname(os.path.realpath(__file__))
-    basedir = os.path.dirname(thisdir)
-    sys.path.append(basedir)
-
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
-    from main.plotconfig import getConfig
-    from main.plotconfig_vbf import getConfigVBF
-    from main.plotconfig_ggh import getConfigGGH
     import config
     import utils
+
+    pc = importlib.import_module('configs.' + config.config + '.plotconfig')
 
     ##################################
     ## PARSE COMMAND-LINE ARGUMENTS ##
@@ -589,14 +585,7 @@ if __name__ == '__main__':
         args.skimDir = config.skimDir
         localSkimDir = config.localSkimDir
 
-    plotConfig = getConfig(args.config)
-    if plotConfig is None:
-        plotConfig = getConfigVBF(args.config)
-    if plotConfig is None:
-        plotConfig = getConfigGGH(args.config)
-    if plotConfig is None:
-        print 'Unknown configuration', args.config
-        sys.exit(1)
+    plotConfig = pc.getConfig(args.config)
 
     if args.listSamples:
         print 'Obs:', ' '.join('%s_%s' % (s.name, plotConfig.name) for s in plotConfig.obs.samples)
@@ -698,6 +687,9 @@ if __name__ == '__main__':
     #####################################
 
     if not args.replot:
+        thisdir = os.path.dirname(os.path.realpath(__file__))
+        basedir = os.path.dirname(thisdir)
+
         ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
     
         print 'Filling plots for %s..' % plotConfig.name
@@ -811,7 +803,7 @@ if __name__ == '__main__':
         else:
             plotDir = args.plotDir
     else:
-        plotDir = 'monophoton/' + args.config
+        plotDir = config.config + '/' + args.config
 
     if plotDir and args.clearDir:
         for plot in os.listdir(WEBDIR + '/' + plotDir):

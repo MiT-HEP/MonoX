@@ -1,15 +1,15 @@
 import os
 
-year = '17'
+config = 'Monophoton2016'
 
 # location of skim output from ssw2
-skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/monophoton' + year + '/skim'
+skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/' + config + '/skim'
 
 # optionally copy to a local disk to speed up
-localSkimDir = '/local/' + os.environ['USER'] + '/monophoton' + year + '/skim'
+localSkimDir = '/local/' + os.environ['USER'] + '/' + config + '/skim'
 
 # where the various output plots and text files
-histDir = '/data/t3home000/' + os.environ['USER'] + '/monophoton' + year
+histDir = '/data/t3home000/' + os.environ['USER'] + '/' + config
 
 # panda library
 libobjs = 'libPandaTreeObjects.so'
