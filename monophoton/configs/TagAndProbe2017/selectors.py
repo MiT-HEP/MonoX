@@ -15,14 +15,14 @@ import ROOT
 ## Selector-dependent configurations
 
 selconf = {
-    'sphTrigger': 'HLT_Photon165_HE10',
-    'selTrigger': 'HLT_Ele27_WPTight_Gsf',
-    'smuTrigger': 'HLT_IsoMu24_OR_HLT_IsoTkMu24'
+    'sphTrigger': 'HLT_Photon200',
+    'selTrigger': 'HLT_Ele35_WPTight_Gsf',
+    'smuTrigger': 'HLT_IsoMu27'
 }
 
 ## Common modifiers
 
-execfile(thisdir + '/../2016Common/selectors_common.py')
+execfile(thisdir + '/../2017Common/selectors_common.py')
 
 ## Specific modifier
 
