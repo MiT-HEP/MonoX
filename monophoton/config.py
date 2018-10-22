@@ -1,6 +1,6 @@
 import os
 
-config = 'Monophoton2016'
+config = 'VBFHDarkPhoton2016'
 
 # location of skim output from ssw2
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/' + config + '/skim'

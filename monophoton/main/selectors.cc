@@ -21,6 +21,9 @@ EventSelectorBase::~EventSelectorBase()
 void
 EventSelectorBase::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
+  if (!dynamic_cast<MonophotonOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+    throw std::runtime_error(TString::Format("Cannot add operator %s to EventSelector", _op->name()).Data());
+
   if (_idx >= operators_.size())
     operators_.push_back(_op);
   else
@@ -94,7 +97,8 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _
     op->addInputBranch(_blist);
     op->addBranches(*skimOut_);
     op->initialize(_inEvent);
-    op->registerCut(*cutsOut_);
+    if (dynamic_cast<Cut*>(op))
+      static_cast<Cut*>(op)->registerCut(*cutsOut_);
   }
 
   if (printLevel_ > 0)
@@ -414,6 +418,18 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 #include "PandaTree/Objects/interface/EventTPMMG.h"
 #include "PandaTree/Objects/interface/EventTP2E.h"
 #include "PandaTree/Objects/interface/EventTP2M.h"
+
+void
+TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
+{
+  if (!dynamic_cast<TPOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+    throw std::runtime_error(TString::Format("Cannot add operator %s to TagAndProbeSelector", _op->name()).Data());
+
+  if (_idx >= operators_.size())
+    operators_.push_back(_op);
+  else
+    operators_.insert(operators_.begin() + _idx, _op);
+}
 
 void
 TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)

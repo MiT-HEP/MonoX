@@ -60,7 +60,8 @@ data_sel = [
 
 mc_cand = ['monoph', 'emjet', 'vbfg', 'vbfgCtrl', 'vbfgLJCtrl', 'gghg']
 mc_qcd = ['hfake', 'fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75']
-mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
+#mc_sig = ['monoph', 'emjet', 'vbfg', 'signalRaw', 'gghg']
+mc_sig = ['monoph', 'emjet', 'signalRaw', 'gghg']
 mc_lep = ['monomu', 'monoel', 'vbfe', 'vbfm', 'gghe', 'gghm']
 mc_dilep = ['dimu', 'dimuAllPhoton', 'diel', 'zmmJets', 'zeeJets', 'dielVertex', 'dimuVertex', 'tpmmg', 'vbfee', 'vbfmm', 'zmumu', 'gghee', 'gghmm']
 
@@ -81,6 +82,7 @@ allSelectors_byPattern = [
     ('dy-50@', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto, s.htTruncator(maximum = 100.))),
     ('dy-50-*', applyMod(mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m'], s.addGenPhotonVeto)),
     ('tt', mc_cand + mc_lep + mc_dilep + [tpegLowPt, tpmgLowPt, 'tp2e', 'tp2m']),
+    ('dph*', mc_sig)
 ]
 
 """

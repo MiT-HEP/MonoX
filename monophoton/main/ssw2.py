@@ -468,10 +468,22 @@ if __name__ == '__main__':
     if args.catalog:
         datasets.catalogDir = args.catalog
 
+    ## load ROOT and panda before they are possibly used by selectors.py
+    import ROOT
+
+    ROOT.gSystem.Load(config.libobjs)
+
+    # if the objects library is compiled with CLING dictionaries, ROOT must load the
+    # full library first before compiling the macros.
+    try:
+        e = ROOT.panda.Event
+    except AttributeError:
+        pass
+
     skimconfig = importlib.import_module('configs.' + config.config + '.skimconfig')
 
     allselectors = {}
-    for pat, sels in skimconfig.skimconfig:
+    for pat, sels in skimconfig.skimconfig.items():
         samples = datasets.allsamples.getmany(pat)
         for sample in samples:
             if sample in allselectors:
@@ -534,17 +546,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     ## compile and load the Skimmer
-    import ROOT
-
-    ROOT.gSystem.Load(config.libobjs)
     ROOT.gSystem.Load('libfastjet.so')
-
-    # if the objects library is compiled with CLING dictionaries, ROOT must load the
-    # full library first before compiling the macros.
-    try:
-        e = ROOT.panda.Event
-    except AttributeError:
-        pass
 
     ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
     try:

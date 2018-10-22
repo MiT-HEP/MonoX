@@ -21,7 +21,7 @@ public:
   EventSelectorBase(char const* name) : name_(name) {}
   virtual ~EventSelectorBase();
 
-  void addOperator(Operator*, unsigned idx = -1);
+  virtual void addOperator(Operator*, unsigned idx = -1);
   unsigned size() const { return operators_.size(); }
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;
@@ -162,6 +162,8 @@ class TagAndProbeSelector : public EventSelectorBase {
 public:
   TagAndProbeSelector(char const* name) : EventSelectorBase(name) {}
   ~TagAndProbeSelector() {}
+
+  void addOperator(Operator*, unsigned idx = -1) override;
 
   void setOutEventType(TPEventType t) { outType_ = t; }
   void selectEvent(panda::EventMonophoton&) override;

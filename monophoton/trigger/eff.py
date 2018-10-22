@@ -31,7 +31,7 @@ if len(sys.argv) > 1:
 else:
     omnames = measurements.keys()
 
-outName = 'trigger'
+outName = 'trigger' + config.year
 outDir = config.histDir + '/trigger'
 
 if not REPLOT:
@@ -42,6 +42,11 @@ if not REPLOT:
         print oname, mname
 
         snames, region, basesel, colname = measurements[(oname, mname)]
+
+        try:
+            os.makedirs(outDir)
+        except OSError:
+            pass
 
         outputFile = ROOT.TFile.Open(outDir + '/trigger_efficiency_%s_%s.root' % (oname, mname), 'recreate')
 

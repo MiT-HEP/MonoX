@@ -1677,20 +1677,31 @@ def tpeg(sample, rname):
     Electron + photon tag & probe run on SinglePhoton dataset.
     """
 
+    evtType = ROOT.kTPEG
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTPEG)
+    selector.setOutEventType(evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
-    tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
+    tp = ROOT.TPLeptonPhoton(evtType)
     if sample.data:
-        tp.setProbeTriggerMatch(True)
         tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGNonIsoOrWithJetAndTau')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200')
+    trig.addTriggerFilter('hltEG200HEFilter')
+    selector.addOperator(trig)
 
     return selector
 
@@ -1699,20 +1710,31 @@ def tpmg(sample, rname):
     Muon + photon tag & probe run on SinglePhoton dataset.
     """
 
+    evtType = ROOT.kTPMG
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTPMG)
+    selector.setOutEventType(evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
-    tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
+    tp = ROOT.TPLeptonPhoton(evtType)
     if sample.data:
-        tp.setProbeTriggerMatch(True)
         tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMG))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGNonIsoOrWithJetAndTau')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200')
+    trig.addTriggerFilter('hltEG200HEFilter')
+    selector.addOperator(trig)
 
     return selector
 
@@ -1721,24 +1743,63 @@ def tpegLowPt(sample, rname):
     Electron + photon tag & probe run on SingleElectron dataset or MC.
     """
 
+    evtType = ROOT.kTPEG
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTPEG)
+    selector.setOutEventType(evtType)
 
     selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
-    tp = ROOT.TPLeptonPhoton(ROOT.kTPEG)
+    tp = ROOT.TPLeptonPhoton(evtType)
     tp.setMinProbePt(25.)
     if sample.data:
         tp.setMinTagPt(30.)
-        tp.setTagTriggerMatch(True)
         tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPEG))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
+    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele32')
+    trig.addTriggerFilter('hltEle32L1DoubleEGWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGor')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35')
+    trig.addTriggerFilter('hltEle35noerWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+    
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGNonIsoOrWithJetAndTau')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200')
+    trig.addTriggerFilter('hltEG200HEFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon75L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEG40')
+    trig.addTriggerFilter('hltL1sSingleEG40to50')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon75')
+    trig.addTriggerFilter('hltEG75R9Id90HE10IsoMTrackIsoFilter')
+    trig.addTriggerFilter('hltEG75R9Id90HE10IsoMEBOnlyTrackIsoFilter')
+    selector.addOperator(trig)
 
     return selector
 
@@ -1747,24 +1808,51 @@ def tpmgLowPt(sample, rname):
     Muon + photon tag & probe run on SingleMuon dataset or MC.
     """
 
+    evtType = ROOT.kTPMG
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTPMG)
+    selector.setOutEventType(evtType)
 
     selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
-    tp = ROOT.TPLeptonPhoton(ROOT.kTPMG)
+    tp = ROOT.TPLeptonPhoton(evtType)
     tp.setMinProbePt(25.)
     if sample.data:
         tp.setMinTagPt(30.)
-        tp.setTagTriggerMatch(True)
         tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMG))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+#    tag = ROOT.TPTriggerMatch.kTag
+#
+#    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
+#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+#    selector.addOperator(trig)
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGNonIsoOrWithJetAndTau')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon200')
+    trig.addTriggerFilter('hltEG200HEFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon75L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEG40')
+    trig.addTriggerFilter('hltL1sSingleEG40to50')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'photon75')
+    trig.addTriggerFilter('hltEG75R9Id90HE10IsoMTrackIsoFilter')
+    trig.addTriggerFilter('hltEG75R9Id90HE10IsoMEBOnlyTrackIsoFilter')
+    selector.addOperator(trig)
 
     return selector
 
@@ -1784,7 +1872,6 @@ def tpmmg(sample, rname):
     tp = ROOT.TPLeptonPhoton(ROOT.kTPMMG)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
-    tp.setTagTriggerMatch(True)
     tp.setYear(int(config.year))
 
     selector.addOperator(tp)
@@ -1796,6 +1883,12 @@ def tpmmg(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMMG))
 
+#    tag = ROOT.TPTriggerMatch.kTag
+#
+#    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
+#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+#    selector.addOperator(trig)
+
     return selector
 
 def tp2e(sample, rname):
@@ -1803,15 +1896,17 @@ def tp2e(sample, rname):
     Dielectron T&P.
     """
 
+    evtType = ROOT.kTP2E
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTP2E)
+    selector.setOutEventType(evtType)
 
     selector.setPreskim('electrons.size > 1')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
-    tp = ROOT.TPDilepton(ROOT.kTP2E)
+    tp = ROOT.TPDilepton(evtType)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(35.)
     tp.setTagTriggerMatch(True)
@@ -1819,7 +1914,43 @@ def tp2e(sample, rname):
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2E))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
+    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele32')
+    trig.addTriggerFilter('hltEle32L1DoubleEGWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGor')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35')
+    trig.addTriggerFilter('hltEle35noerWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele27')
+    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele32')
+    trig.addTriggerFilter('hltEle32L1DoubleEGWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele35L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGor')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele35')
+    trig.addTriggerFilter('hltEle35noerWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
 
     return selector
 
@@ -1839,12 +1970,17 @@ def tp2m(sample, rname):
     tp = ROOT.TPDilepton(ROOT.kTP2M)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
-    tp.setTagTriggerMatch(True)
     tp.setYear(int(config.year))
 
     selector.addOperator(tp)
 
     selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2M))
+
+#    prb = ROOT.TPTriggerMatch.kProbe
+#
+#    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele27')
+#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+#    selector.addOperator(trig)
 
     return selector
 

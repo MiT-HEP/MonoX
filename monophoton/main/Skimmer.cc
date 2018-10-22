@@ -181,7 +181,8 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   }
 
   // if the selectors register triggers, make sure the information is passed to the actual input event
-  event.run = skimmedEvent.run;
+  static_cast<panda::EventBase&>(event).operator=(skimmedEvent);
+  skimmedEvent.triggerObjects.setIgnoreMissing(true);
 
   if (goodLumiFilter_)
     *stream << "Applying good lumi filter." << std::endl;
