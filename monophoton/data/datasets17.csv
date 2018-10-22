@@ -33,3 +33,5 @@ dy-50-800        "Z#rightarrowll"                    0.6253           3089861   
 dy-50-1200       "Z#rightarrowll"                    0.1520           625517     625517.0             pandaf/012   DYJetsToLL_M-50_HT-1200to2500_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
 dy-50-2500       "Z#rightarrowll"                    3.784e-03        404986     404986.0             pandaf/012   DYJetsToLL_M-50_HT-2500toInf_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM
 tt               "t#bar{t}"                          831.8            153390295  3.16850245599e+11    pandaf/012   TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM # not GenXSecAnalyzer
+### Dark photon ggH
+dph-125          "Dark Photon"                       43.92            1229100    1229100.0            pandaf/012   GluGluHToGDarkG_M-125_13TeV_powheg_pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM

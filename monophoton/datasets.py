@@ -1,10 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import re
 import os
 import math
 import fnmatch
 import subprocess
+
 import config
 
 defaultList = os.path.dirname(os.path.realpath(__file__)) + '/data/datasets' + config.year + '.csv'
@@ -221,22 +222,12 @@ class SampleDef(object):
 
                         source.Close()
             else:
-                check = subprocess.Popen(
-                    ['numberOfEvents.py', '--book', self.book, '--dataset', dataset],
-                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
-                    )
-                eventsout = check.communicate()[0].strip()
-                rc = check.returncode
-
-                if rc > 0:
-                    print 'numberOfEvents.py failed for ' + self.book + '/' + dataset
-                    error = True
-                else:
-                    for line in eventsout.split('\n'):
-                        if 'Total number of events:' not in line:
-                            continue
-
-                        nevents = int(line.strip().split(" ")[-1])
+                # Originally we were reading the ROOT files to get the actual event count
+                # If we want to instead rely on numbers from production, we can simply
+                # read the catalog
+                with open(catalogDir + '/' + self.book + '/' + dataset + '/Files') as fileList:
+                    for line in fileList:
+                        nevents = int(line.strip().split()[2])
                         self.nevents += nevents
                         self.sumw += nevents
                         self._sumw2 += math.pow(nevents, 2.)
@@ -291,16 +282,6 @@ class SampleDef(object):
                 print 'sumw2 is zero'
                 return 0.
 
-    def makeFilename(self, dataset, line):
-        f = line.split("/")
-        
-        if len(f) > 2:
-            filename = '/'.join(f[-2:])
-        else:
-            filename = dataset + '/' + line
-
-        return filename
-
     def checkT2(self, dataset):
         filesT2 = set()
 
@@ -314,7 +295,7 @@ class SampleDef(object):
             if not '.root' in line:
                 continue
 
-            filename = self.makeFilename(dataset, line)
+            filename = dataset + '/' + os.path.basename(line)
             filesT2.add(filename)
 
         return filesT2
@@ -322,30 +303,25 @@ class SampleDef(object):
     def checkT3(self, dataset):
         filesT3 = set()
 
-        listT3 = subprocess.Popen(
-            ['ls', '/mnt/hadoop/cms/store/user/paus/' + self.book + '/' + dataset, '|',  'grep', 'root'],
-            stdout = subprocess.PIPE, stderr = subprocess.PIPE
-            )
-        rawT3 = listT3.communicate()[0].strip()
-
-        for line in rawT3.split("\n"):
-            if not '.root' in line:
+        for fname in os.listdir(self._directories[dataset] + '/' + self.book + '/' + dataset):
+            if not fname.endswith('.root'):
                 continue
 
-            filename = self.makeFilename(dataset, line)
-            path = '/mnt/hadoop/cms/store/user/paus/'+ self.book + '/' + filename
+            path = self._directories[dataset] + '/' + self.book + '/' + dataset + '/' + fname
             if os.stat(path).st_size == 0:
-                # os.remove(path) ## need permission
                 continue
 
-            filesT3.add(filename)
+            filesT3.add(dataset + '/' + fname)
 
         return filesT3
 
     def download(self, filesets = []):
         self._readCatalogs()
 
-        for dataset in self.datasetNames:                
+        for dataset in self.datasetNames:
+            if not self._downloadable[dataset]:
+                continue
+
             filesT3 = self.checkT3(dataset)
             filesT2 = self.checkT2(dataset)
 
