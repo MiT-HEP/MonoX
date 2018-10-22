@@ -38,13 +38,7 @@ class MakeSelectors(object):
             if type(sel) is str:
                 entry = (sel, getattr(self.selectors, sel))
             else:
-                name = sel[0]
-                if type(sel[1]) is str:
-                    fct = getattr(self.selectors, sel[1])
-                else:
-                    fct = sel[1]
-
-                entry = (sel, fct)
+                entry = sel
 
             for mod in mods:
                 entry = (entry[0], ApplyModifier(entry[1], mod))
@@ -91,17 +85,17 @@ def getFromFile(path, name, newname = ''):
 ######################
 
 def addPUWeight(sample, selector):
-    pudirName, pufileName = params.pureweight
+    pufileName = params.pureweight
 
-    pudir = ROOT.gROOT.GetDirectory(pudirName)
+    pudir = ROOT.gROOT.GetDirectory('puweight')
 
     if not pudir:
-        pudir = ROOT.gROOT.mkdir(pudirName)
+        pudir = ROOT.gROOT.mkdir('puweight')
         logger.info('Loading PU weights from %s', pufileName)
         f = ROOT.TFile.Open(pufileName)
         for k in f.GetListOfKeys():
             if k.GetName().startswith('puweight_'):
-                logger.info('Saving PU weights %s into ROOT/%s', k.GetName(), pudirName)
+                logger.info('Saving PU weights %s into ROOT/%s', k.GetName(), 'puweight')
                 pudir.cd()
                 obj = k.ReadObj().Clone(k.GetName().replace('puweight_', ''))
                 _garbage.append(obj)
@@ -110,7 +104,7 @@ def addPUWeight(sample, selector):
 
     for hist in pudir.GetList():
         if hist.GetName() in sample.fullname:
-            logger.info('Using PU weights %s/%s for %s', pudirName, hist.GetName(), sample.name)
+            logger.info('Using PU weights %s/%s for %s', 'puweight', hist.GetName(), sample.name)
             selector.addOperator(ROOT.PUWeight(hist))
             break
     else:
