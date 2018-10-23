@@ -6,6 +6,7 @@ import re
 import json
 import shutil
 import array
+import importlib
 from argparse import ArgumentParser
 
 argParser = ArgumentParser(description = 'Calculate integrated luminosity from Bambu output')
@@ -13,8 +14,8 @@ argParser.add_argument('snames', nargs = '*', help = 'Sample names.')
 argParser.add_argument('--list', '-l', metavar = 'PATH', dest = 'list', default = '', help = 'Supply a good lumi list and skip lumi extraction from Bambu files.')
 argParser.add_argument('--mask', '-m', metavar = 'PATH', dest = 'mask', default = '', help = 'Good lumi list to apply.')
 argParser.add_argument('--no-calc', '-N', action = 'store_true', dest = 'noCalc', help = 'Just write the json file and quit.')
-argParser.add_argument('--save', '-S', action = 'store_true', dest = 'save', help = 'Save the json file to data/lumis.txt.')
-argParser.add_argument('--save-plain', '-P', action = 'store_true', dest = 'savePlain', help = 'Also save just the list of lumis (i.e. CMS-standard JSON).')
+argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'save', default = '', help = 'Save the json file to data/lumis.txt.')
+argParser.add_argument('--save-plain', '-P', action = 'store_true', dest = 'savePlain', help = 'Also save just the list of lumis (i.e. CMS-standard JSON) as `params.lumilist`.')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -34,12 +35,10 @@ if not args.noCalc:
         print 'kinit -A -f <user>@CERN.CH'
         sys.exit(1)
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-monoxdir = os.path.dirname(basedir)
-sys.path.append(basedir)
 from datasets import allsamples
 import config
+
+params = importlib.import_module('configs.' + config.config + '.params')
 
 import ROOT
 
@@ -64,8 +63,8 @@ def listOfRanges(lumis):
 
     return ranges
 
-mask = collections.defaultdict(set)
 if args.mask:
+    mask = collections.defaultdict(set)
     with open(args.mask) as source:
         for run, ranges in json.load(source).items():
             for begin, end in ranges:
@@ -107,12 +106,7 @@ if not args.list:
                 run = arun[0]
                 lumi = alumi[0]
 
-                c1 = (len(mask) != 0)
-                c2 = (run not in mask)
-                c3 = (lumi not in mask[run])
-                condition = c1 and (c2 and c3)
-
-                if condition:
+                if args.mask and run not in mask or lumi not in mask[run]:
                     continue
 
                 allLumis[run].add(lumi)
@@ -138,7 +132,10 @@ else:
     with open(args.list) as source:
         for run, ranges in json.load(source).items():
             for begin, end in ranges:
-                allLumis[int(run)] |= set(range(begin, end + 1)) & mask[int(run)]
+                runlumis = set(range(begin, end + 1))
+                if args.mask:
+                    runlumis &= mask[int(run)]
+                allLumis[int(run)] |= runlumis
 
     shutil.copyfile(args.list, '_lumis_tmp.txt')
 
@@ -155,7 +152,7 @@ if not args.noCalc:
     proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.1.7/bin:$PATH;brilcalc lumi -b "STABLE BEAMS" --normtag ' + normtag + ' -i _lumis_tmp.txt;echo brilcalc version is `brilcalc --version`'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 
 if args.noCalc or args.savePlain:
-    os.rename('_lumis_tmp.txt', basedir + '/data/lumis_plain.txt')
+    os.rename('_lumis_tmp.txt', params.lumilist)
     if args.noCalc:
         sys.exit(0)
 
@@ -205,5 +202,5 @@ if args.save:
 
         blocks.append(text)
     
-    with open(basedir + '/data/lumis.txt', 'w') as out:
+    with open(args.save, 'w') as out:
         out.write('{\n' + ',\n'.join(blocks) + '\n}\n')
