@@ -52,8 +52,6 @@ def zmumu(sample, rname):
     """
     selector = ROOT.EventSelector(rname)
 
-    selector.setPreskim('muons.size > 1')
-
     selector.addOperator(ROOT.MetFilters())
 
     leptons = ROOT.LeptonSelection()
@@ -264,8 +262,6 @@ def tpegLowPt(sample, rname):
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(evtType)
 
-    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
-
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
@@ -328,8 +324,6 @@ def tpmgLowPt(sample, rname):
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(evtType)
 
-    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
-
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
@@ -378,8 +372,6 @@ def tpmmg(sample, rname):
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTPMMG)
 
-    selector.setPreskim('Sum$(superClusters.rawPt > 25.) != 0')
-
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
@@ -414,15 +406,12 @@ def tp2e(sample, rname):
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(evtType)
 
-    selector.setPreskim('electrons.size > 1')
-
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
 
     tp = ROOT.TPDilepton(evtType)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(35.)
-    tp.setTagTriggerMatch(True)
 
     selector.addOperator(tp)
 
@@ -473,8 +462,6 @@ def tp2m(sample, rname):
 
     selector = tagprobeBase(sample, rname)
     selector.setOutEventType(ROOT.kTP2M)
-
-    selector.setPreskim('muons.size > 1')
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
