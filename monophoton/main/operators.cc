@@ -278,6 +278,7 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 void
 TriggerMatch::initialize(panda::EventMonophoton& _event)
 {
+  _event.run.setLoadTrigger(true);
   for (auto& name : filterNames_)
     _event.registerTriggerObjects(name);
 }
@@ -3952,22 +3953,6 @@ PUWeight::apply(panda::EventMonophoton const& _event, panda::EventBase& _outEven
 // TPLeptonPhoton
 //--------------------------------------------------------------------
 
-void 
-TPLeptonPhoton::initialize(panda::EventMonophoton& _event)
-{
-  if (year_ == 16) {
-    sphToken_ = _event.registerTrigger("HLT_Photon165_HE10");
-    selToken_ = _event.registerTrigger("HLT_Ele27_WPTight_Gsf");
-    smuToken_ = _event.registerTrigger("HLT_IsoMu24");
-      //_inEvent.registerTrigger("HLT_IsoTkMu24")
-  }
-  else if (year_ == 17) {
-    sphToken_ = _event.registerTrigger("HLT_Photon200");
-    selToken_ = _event.registerTrigger("HLT_Ele35_WPTight_Gsf");
-    smuToken_ = _event.registerTrigger("HLT_IsoMu27");
-  }
-}
-
 void
 TPLeptonPhoton::addBranches(TTree& _skimTree)
 {
@@ -4053,7 +4038,7 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
           if (&looseLepton == &lepton)
             continue;
 
-          if (!looseLepton.loose)
+          if (!looseLepton.loose || looseLepton.pt() < 2.)
             continue;
 
           // we do need to allow loose leptons pretty close to the photon
@@ -4169,20 +4154,6 @@ TPLeptonPhoton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _ou
 //--------------------------------------------------------------------
 // TPDilepton
 //--------------------------------------------------------------------
-
-void 
-TPDilepton::initialize(panda::EventMonophoton& _event)
-{
-  if (year_ == 16) {
-    selToken_ = _event.registerTrigger("HLT_Ele27_WPTight_Gsf");
-    smuToken_ = _event.registerTrigger("HLT_IsoMu24");
-      //_inEvent.registerTrigger("HLT_IsoTkMu24")
-  }
-  else if (year_ == 17) {
-    selToken_ = _event.registerTrigger("HLT_Ele35_WPTight_Gsf");
-    smuToken_ = _event.registerTrigger("HLT_IsoMu27");
-  }
-}
 
 void
 TPDilepton::addBranches(TTree& _skimTree)
@@ -4391,6 +4362,7 @@ TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTP& _outE
 void
 TPTriggerMatch::initialize(panda::EventMonophoton& _event)
 {
+  _event.run.setLoadTrigger(true);
   for (auto& name : filterNames_)
     _event.registerTriggerObjects(name);
 }
@@ -4420,17 +4392,22 @@ TPTriggerMatch::apply(panda::EventMonophoton const& _event, panda::EventTP& _out
   bool any(false);
   std::vector<std::pair<HLTObjectVector const*, double>> filterObjects;
   for (auto& name : filterNames_) {
+    //    std::cout << "Looking for objects for filter " << name << std::endl;
     auto& objects(_event.triggerObjects.filterObjects(name));
+    if (objects.size() != 0)
+      any = true;
+
+    //    std::cout << "Found: size " << objects.size() << std::endl;
     double dR(name.Index("hltL1s") == 0 ? 0.3 : 0.15);
     filterObjects.emplace_back(&objects, dR);
-    if (filterObjects.back().first->size() != 0)
-      any = true;
   }
 
   if (!any)
     return;
 
   auto& candidates(candidate_ == kProbe ? *getProbes(_outEvent) : *getTags(_outEvent));
+
+  //  std::cout << "now match against candidates: size " << candidates.size() << std::endl;
 
   for (unsigned iP(0); iP != candidates.size(); ++iP) {
     auto& cand(candidates[iP]);

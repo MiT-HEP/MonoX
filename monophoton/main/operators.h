@@ -1453,30 +1453,19 @@ class TPLeptonPhoton : public TPCut {
  public:
   TPLeptonPhoton(TPEventType t, char const* name = "TPLeptonPhoton") : TPCut(t, name) {}
 
-  void initialize(panda::EventMonophoton&) override;
   void addBranches(TTree& skimTree) override;
   void addInputBranch(panda::utils::BranchList&) override;
 
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
-  void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
-  void setProbeTriggerMatch(bool b) { probeTriggerMatch_ = b; }
-  void setYear(int y) { year_ = y; }
 
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
 
   double minProbePt_{175.};
   double minTagPt_{15.};
-  bool tagTriggerMatch_{false};
-  bool probeTriggerMatch_{false};
   double chargedPFDR_{0.1};
   double chargedPFRelPt_{0.6};
-
-  int year_{16};
-  int sphToken_{};
-  int selToken_{};
-  int smuToken_{};
 
   bool chargedPFVeto_[NMAX_PARTICLES];
   bool hasCollinearL_[NMAX_PARTICLES];
@@ -1487,24 +1476,16 @@ class TPDilepton : public TPCut {
  public:
   TPDilepton(TPEventType t, char const* name = "TPDilepton") : TPCut(t, name) {}
 
-  void initialize(panda::EventMonophoton&) override;
   void addBranches(TTree& skimTree) override;
 
   void setMinProbePt(double d) { minProbePt_ = d; }
   void setMinTagPt(double d) { minTagPt_ = d; }
-  void setTagTriggerMatch(bool b) { tagTriggerMatch_ = b; }
-  void setYear(int y) { year_ = y; }
-  
+
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
 
   double minProbePt_{15.};
   double minTagPt_{30.};
-  bool tagTriggerMatch_{false};
-
-  int year_{16};
-  int selToken_{};
-  int smuToken_{};
 
   int probeGenId_[NMAX_PARTICLES];
 };

@@ -252,7 +252,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
         break;
     }
     catch (std::exception& _ex) {
-      *stream << "Error while processing " << mainInput.GetCurrentFile()->GetName() << std::endl;
+      *stream << "Error while reading " << mainInput.GetCurrentFile()->GetName() << std::endl;
       throw;
     }
 
@@ -260,6 +260,9 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       continue;
 
     if (mainTreeNumber != mainInput.GetTreeNumber()) {
+      if (printLevel_ > 0 && printLevel_ <= INFO)
+        *stream << "Opened a new file " << mainInput.GetCurrentFile()->GetName() << std::endl;
+
       mainTreeNumber = mainInput.GetTreeNumber();
       // invalidate output event run number so it gets updated in prepareEvent
       skimmedEvent.run.runNumber = 0;
@@ -300,8 +303,16 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       debugFile << ">>>>> Event " << iEntry << " done!!! <<<<<" << std::endl << std::endl;
     }
 
-    for (auto* sel : selectors_)
-      sel->selectEvent(skimmedEvent);
+    try {
+      for (auto* sel : selectors_)
+        sel->selectEvent(skimmedEvent);
+    }
+    catch (std::exception& ex) {
+      *stream << "Error while processing event " << event.runNumber << ":" << event.lumiNumber << ":" << event.eventNumber;
+      *stream << " in file " << mainInput.GetCurrentFile()->GetName() << std::endl;
+      *stream << ex.what() << std::endl;
+      throw;
+    }
   }
 
   delete preselection;

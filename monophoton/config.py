@@ -1,6 +1,6 @@
 import os
 
-config = 'VBFHDarkPhoton2016'
+config = 'TagAndProbe2017'
 
 # location of skim output from ssw2
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/' + config + '/skim'
@@ -11,5 +11,11 @@ localSkimDir = '/local/' + os.environ['USER'] + '/' + config + '/skim'
 # where the various output plots and text files
 histDir = '/data/t3home000/' + os.environ['USER'] + '/' + config
 
+# subdirectory of cmsplots.php
+plotDir = config
+
 # panda library
 libobjs = 'libPandaTreeObjects.so'
+
+# MultiDraw library
+libmultidraw = '/home/yiiyama/cms/tools/multidraw/libmultidraw.so'
