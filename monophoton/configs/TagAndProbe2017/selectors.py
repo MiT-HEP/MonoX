@@ -5,8 +5,6 @@ import config
 import main.skimutils as su
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-datadir = basedir + '/data'
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +56,7 @@ def zmumu(sample, rname):
     leptons.setN(0, 2)
     leptons.setStrictMu(False)
     leptons.setRequireTight(False)
+    leptons.setRequireMedium(False)
     selector.addOperator(leptons)
 
     # LeptonVertex loads pfCandidates - turning it off for speedup
@@ -84,7 +83,7 @@ def zmumu(sample, rname):
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        addPUWeight(sample, selector)
+        su.addPUWeight(sample, selector)
         addPDFVaraition(sample, selector)
 
     return selector
@@ -115,7 +114,7 @@ def TagAndProbeBase(sample, rname):
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
 
-        addPUWeight(sample, selector)
+        su.addPUWeight(sample, selector)
 
     selector.findOperator('LeptonSelection').setN(0, 0)
 
@@ -140,7 +139,7 @@ def tagprobeBase(sample, rname):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        addPUWeight(sample, selector)
+        su.addPUWeight(sample, selector)
 
     return selector
 
@@ -336,11 +335,15 @@ def tpmgLowPt(sample, rname):
 
     selector.addOperator(ROOT.TPJetCleaning(evtType))
 
-#    tag = ROOT.TPTriggerMatch.kTag
-#
-#    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
-#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
-#    selector.addOperator(trig)
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
 
     prb = ROOT.TPTriggerMatch.kProbe
 
@@ -369,30 +372,36 @@ def tpmmg(sample, rname):
     Dimuon + photon tag & probe.
     """
 
+    evtType = ROOT.kTPMMG
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTPMMG)
+    selector.setOutEventType(evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
-    tp = ROOT.TPLeptonPhoton(ROOT.kTPMMG)
+    tp = ROOT.TPLeptonPhoton(evtType)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
 
     selector.addOperator(tp)
 
     # for lepton veto efficiency measurement; just write electron and muon sizes
-    veto = ROOT.TPLeptonVeto(ROOT.kTPMMG)
+    veto = ROOT.TPLeptonVeto(evtType)
     veto.setIgnoreDecision(True)
     selector.addOperator(veto)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTPMMG))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
 
-#    tag = ROOT.TPTriggerMatch.kTag
-#
-#    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
-#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
-#    selector.addOperator(trig)
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
 
     return selector
 
@@ -460,24 +469,40 @@ def tp2m(sample, rname):
     Dimuon T&P.
     """
 
+    evtType = ROOT.kTP2M
+
     selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(ROOT.kTP2M)
+    selector.setOutEventType(evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
 
-    tp = ROOT.TPDilepton(ROOT.kTP2M)
+    tp = ROOT.TPDilepton(evtType)
     tp.setMinProbePt(25.)
     tp.setMinTagPt(30.)
 
     selector.addOperator(tp)
 
-    selector.addOperator(ROOT.TPJetCleaning(ROOT.kTP2M))
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
 
-#    prb = ROOT.TPTriggerMatch.kProbe
-#
-#    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele27')
-#    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
-#    selector.addOperator(trig)
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
 
     return selector
