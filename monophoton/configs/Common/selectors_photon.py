@@ -131,20 +131,6 @@ def addMuonVetoSFWeight(sample, selector):
     idsf.setVariable(ROOT.IDSFWeight.kAbsEta, ROOT.IDSFWeight.kPt)
     selector.addOperator(idsf)
 
-def addPDFVariation(sample, selector):
-    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
-        logger.info('Adding PDF variation for %s', sample.name)
-        if 'znng' in sample.name or 'zllg' in sample.name:
-            pdf = ROOT.NNPDFVariation()
-            pdf.setRescale(0.0420942143487 / 0.0769709934685)
-            selector.addOperator(pdf)
-        elif 'wnlg' in sample.name or 'wglo' in sample.name:
-            pdf = ROOT.NNPDFVariation()
-            pdf.setRescale(0.0453828335472 / 0.0933792628506)
-            selector.addOperator(pdf)
-        else:
-            selector.addOperator(ROOT.NNPDFVariation())
-
 def addKfactor(sample, selector):
     """
     Apply the k-factor corrections.
@@ -222,13 +208,6 @@ def addEWKKfactor(sample, sname, selector):
             ewk.addVariation('ewk' + variation, vcorrp, vcorrm)
 
         selector.addOperator(ewk)
-
-def addGenPhotonVeto(sample, selector):
-    veto = ROOT.GenPhotonVeto()
-    veto.setMinPt(130.)
-    veto.setMinPartonDR(0.5)
-
-    selector.addOperator(veto, 0)
 
 def modHfake(selector):
     """Append PhotonPtWeight with hadProxyWeight and set up the photon selections."""

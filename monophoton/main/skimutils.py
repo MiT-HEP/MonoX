@@ -1,11 +1,6 @@
-import importlib
 import logging
 
-import config
-
 logger = logging.getLogger(__name__)
-
-params = importlib.import_module('configs.' + config.config + '.params')
 
 ######################
 ## Selector control ##
@@ -79,71 +74,3 @@ def getFromFile(path, name, newname = ''):
     _garbage.append(obj)
 
     return obj
-
-######################
-## Common modifiers ##
-######################
-
-def addPUWeight(sample, selector):
-    pufileName = params.pureweight
-
-    pudir = ROOT.gROOT.GetDirectory('puweight')
-
-    if not pudir:
-        pudir = ROOT.gROOT.mkdir('puweight')
-        logger.info('Loading PU weights from %s', pufileName)
-        f = ROOT.TFile.Open(pufileName)
-        for k in f.GetListOfKeys():
-            if k.GetName().startswith('puweight_'):
-                logger.info('Saving PU weights %s into ROOT/%s', k.GetName(), 'puweight')
-                pudir.cd()
-                obj = k.ReadObj().Clone(k.GetName().replace('puweight_', ''))
-                _garbage.append(obj)
-        
-        f.Close()
-
-    for hist in pudir.GetList():
-        if hist.GetName() in sample.fullname:
-            logger.info('Using PU weights %s/%s for %s', 'puweight', hist.GetName(), sample.name)
-            selector.addOperator(ROOT.PUWeight(hist))
-            break
-    else:
-        raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
-
-################################
-## Common modifier generators ##
-################################
-
-def ptTruncator(minimum = 0., maximum = -1.):
-    def addPtCut(sample, selector):
-        truncator = ROOT.PhotonPtTruncator()
-        truncator.setPtMin(minimum)
-        if maximum > 0.:
-            truncator.setPtMax(maximum)
-
-        selector.addOperator(truncator, 0)
-
-    return addPtCut
-
-def htTruncator(minimum = 0., maximum = -1.):
-    def addHtCut(sample, selector):
-        truncator = ROOT.HtTruncator()
-        truncator.setHtMin(minimum)
-        if maximum > 0.:
-            truncator.setHtMax(maximum)
-
-        selector.addOperator(truncator, 0)
-
-    return addHtCut
-
-def genBosonPtTruncator(minimum = 0., maximum = -1.):
-    def addGenBosonPtCut(sample, selector):
-        truncator = ROOT.GenBosonPtTruncator()
-        truncator.setPtMin(minimum)
-        if maximum > 0.:
-            truncator.setPtMax(maximum)
-
-        selector.addOperator(truncator, 0)
-
-    return addGenBosonPtCut
-
