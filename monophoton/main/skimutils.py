@@ -12,7 +12,9 @@ class ApplyModifier(object):
         self.modifier = modifier
 
     def __call__(self, sample, rname):
-        return self.modifier(self.selector(sample, rname))
+        selector = self.selector(sample, rname)
+        self.modifier(sample, selector)
+        return selector
 
 class MakeSelectors(object):
     """
