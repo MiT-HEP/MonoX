@@ -1520,7 +1520,7 @@ class TPJetCleaning : public TPModifier {
  protected:
   void apply(panda::EventMonophoton const&, panda::EventTP&) override;
 
-  double minPt_{0.};
+  double minPt_{30.};
 };
 
 class TPTriggerMatch : public TPModifier {

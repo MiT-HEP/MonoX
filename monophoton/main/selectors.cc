@@ -145,7 +145,7 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
   // Branches to be directly copied from the input tree
   // Add a prepareFill line below any time a collection branch is added
-  panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "npv", "rho", "vertices", "pfCandidates"}};
+  panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "npv", "rho", "vertices"}};
   if (_isMC)
     blist += {"partons", "genParticles", "genVertex"}; // , "genMet"};
   else
@@ -164,7 +164,7 @@ void
 EventSelector::prepareFill_(panda::EventMonophoton& _inEvent)
 {
   _inEvent.vertices.prepareFill(*skimOut_);
-  _inEvent.pfCandidates.prepareFill(*skimOut_);
+  // _inEvent.pfCandidates.prepareFill(*skimOut_);
   _inEvent.partons.prepareFill(*skimOut_);
   _inEvent.genParticles.prepareFill(*skimOut_);
 }
