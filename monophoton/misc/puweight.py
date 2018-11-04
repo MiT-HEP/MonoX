@@ -1,12 +1,7 @@
 import sys
 import os
+import importlib
 import ROOT
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-sys.path.append(basedir)
-from datasets import allsamples
-import config
 
 mcConfs = [
     ('2016_25ns_SpringMC_PUScenarioV1_PoissonOOTPU', 'PUSpring16'),
@@ -27,8 +22,7 @@ dataDist.Scale(1. / dataDist.GetSumOfWeights())
 dataDist.Write()
 
 for mcScenario, scenarioName in mcConfs:
-    # not the most proper way to import a module from a string, but who cares
-    exec('from SimGeneral.MixingModule.mix_' + mcScenario + '_cfi import mix')
+    mix = importlib.import_module('SimGeneral.MixingModule.mix_' + mcScenario + '_cfi').mix
     npvs = mix.input.nbPileupEvents.probFunctionVariable.value() # list of integers
     probs = mix.input.nbPileupEvents.probValue.value() # list of integers
     
