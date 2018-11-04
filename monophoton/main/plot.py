@@ -10,10 +10,31 @@ import importlib
 
 import ROOT
 
-def makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel):
-    global ROOT
-    plotter = ROOT.MultiDraw()
-    plotter.addInputPath(sourceName)
+def makePlotter(plotConfig, group, sample, region, sourceDir, altSourceDir, lumi, printLevel, inputMux):
+    plotter = ROOT.multidraw.MultiDraw()
+    plotter.setInputMultiplexing(inputMux)
+    plotter.setAbortOnReadError(True)
+
+    sourceName = utils.getSkimPath(sample.name, region, sourceDir, altSourceDir)
+
+    if os.path.exists(sourceName):
+        plotter.addInputPath(sourceName)
+    else:
+        sourceNames = utils.getSkimPaths(sample.name, region, sourceDir, altSourceDir)
+
+        if len(sourceNames) == 0:
+            sys.stderr.write('File ' + sourceName + ' does not exist.\n')
+            raise RuntimeError('InvalidSource')
+        elif len(sourceNames) != len(sample.fileSets()):
+            sys.stderr.write('Not enough skim files for %s_%s.\n' % (sample.name, region))
+            raise RuntimeError('InvalidSource')
+
+        for nm in sourceNames:
+            plotter.addInputPath(nm)
+
+    # group-wide cut set as base filter
+    if group.cut.strip():
+        plotter.setFilter(group.cut.strip())
 
     cuts = []
     if plotConfig.baseline.strip():
@@ -23,13 +44,22 @@ def makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel):
             cuts.append('(' + plotConfig.baseline.strip() + ')')
 
     baseSel = ' && '.join(cuts)
+    if plotConfig.fullSelection.strip():
+        cuts.append(plotConfig.fullSelection.strip())
+    fullSel = ' && '.join(cuts)
 
     if printLevel > 0:
         print '      Baseline selection:', baseSel
-        print '      Full selection:', plotConfig.fullSelection.strip()
+        print '      Full selection:', fullSel
 
-    plotter.setBaseSelection(baseSel)
-    plotter.setFullSelection(plotConfig.fullSelection.strip())
+    if baseSel:
+        plotter.addCut('baseline', baseSel)
+
+    if fullSel:
+        plotter.addCut('fullSelection', fullSel)
+
+    for name, expr in plotConfig.cuts:
+        plotter.addCut(name, expr)
 
     if not sample.data:
         plotter.setConstantWeight(lumi)
@@ -42,7 +72,7 @@ def makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel):
     return plotter
     
 
-def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0, altSourceDir = ''):
+def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postscale = 1., printLevel = 0, altSourceDir = '', inputMux = 1):
     if group.region:
         region = group.region
     else:
@@ -52,17 +82,11 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
 
     # run the Plotter for each sample
     for sample in group.samples:
-        sourceName = utils.getSkimPath(sample.name, region, sourceDir, altSourceDir)
-
         dname = sample.name + '_' + region
 
-        print '   ', dname, '(%s)' % sourceName
+        print '   ', dname
 
-        if not os.path.exists(sourceName):
-            sys.stderr.write('File ' + sourceName + ' does not exist.\n')
-            raise RuntimeError('InvalidSource')
-
-        plotter = makePlotter(sourceName, plotConfig, group, sample, lumi, printLevel)
+        plotter = makePlotter(plotConfig, group, sample, region, sourceDir, altSourceDir, lumi, printLevel, inputMux)
         varPlotters = {} # additional plotters for variations of sample type
 
         for plotdef in plotdefs:
@@ -82,28 +106,16 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
             if sample.data and plotdef.mcOnly:
                 continue
 
-            plotCuts = []
-
-            if plotdef.cut.strip():
-                plotCuts.append('(' + plotdef.cut.strip() + ')')
-
-            if group.cut.strip():
-                plotCuts.append('(' + group.cut.strip() + ')' )
-
-            cut = ' && '.join(plotCuts)
-
             if plotdef.overflow:
-                overflowMode = ROOT.Plot.kMergeLast
+                overflowMode = ROOT.multidraw.Plot1DFiller.kMergeLast
             else:
-                overflowMode = ROOT.Plot.kNoOverflowBin
+                overflowMode = ROOT.multidraw.Plot1DFiller.kDefault
 
             # nominal distribution
             plotter.addPlot(
                 hist,
                 plotdef.formExpression(),
-                cut.strip(),
-                plotdef.applyBaseline,
-                plotdef.applyFullSel,
+                plotdef.cutName,
                 '',
                 overflowMode
             )
@@ -121,17 +133,8 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     else:
                         reweight = ''
 
-                    plotCuts = []
                     if variation.cuts is not None:
-                        # variation cuts override the plotdef cut
-                        plotCuts.append('(' + variation.cuts[iv].strip() + ')')
-                    elif group.cut.strip():
-                        plotCuts.append('(' + group.cut.strip() + ')')
-
-                    if plotdef.cut.strip():
-                        plotCuts.append('(' + plotdef.cut.strip() + ')')
-
-                    cut = ' && '.join(plotCuts)
+                        reweight = ' && '.join(['(%s)' % s for s in (reweight, variation.cuts.strip())])
 
                     if variation.replacements is not None:
                         expr = plotdef.formExpression(variation.replacements[iv])
@@ -142,8 +145,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         try:
                             varPlotter = varPlotters[hist.GetName()]
                         except KeyError:
-                            varSourceName = utils.getSkimPath(sample.name, variation.regions[iv], sourceDir, altSourceDir)
-                            varPlotter = makePlotter(varSourceName, plotConfig, group, sample, lumi, printLevel)
+                            varPlotter = makePlotter(plotConfig, group, sample, variation.regions[iv], sourceDir, altSourceDir, lumi, printLevel, inputMux)
                             varPlotters[hist.GetName()] = varPlotter
                     else:
                         varPlotter = plotter
@@ -151,20 +153,18 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                     varPlotter.addPlot(
                         hist,
                         expr,
-                        cut.strip(),
-                        plotdef.applyBaseline,
-                        plotdef.applyFullSel,
+                        plotdef.cutName,
                         reweight,
                         overflowMode
                     )
 
         # setup complete. Fill all plots in one go
         if plotter.numObjs() != 0:
-            plotter.fillPlots()
+            plotter.execute()
 
         for varname, varPlotter in varPlotters.items():
             if varPlotter.numObjs() != 0:
-                varPlotter.fillPlots()
+                varPlotter.execute()
 
     if group.norm >= 0.:
         normalization = sum(hist.GetBinContent(1) for (_, plotdef, variation, direction), hist in histograms.items() if plotdef.name == 'count' and variation is None)
@@ -342,7 +342,14 @@ def printCounts(counters, plotConfig):
     bkgTotal = 0.
     bkgTotalErr2 = 0.
 
-    print 'Yields for ' + ' && '.join([plotConfig.baseline, plotConfig.fullSelection])
+    selection = plotConfig.baseline
+    if plotConfig.fullSelection:
+        if selection:
+            selection += ' && ' + plotConfig.fullSelection
+        else:
+            selection = plotConfig.fullSelection
+
+    print 'Yields for ' + selection
 
     for group in reversed(plotConfig.bkgGroups):
         counter = counters[group.name]
@@ -444,7 +451,7 @@ def printCanvas(canvas, plotdef, plotConfig):
     canvas.xtitle = plotdef.xtitle()
     canvas.ytitle = plotdef.ytitle(binNorm = True)
 
-    canvas.selection = plotdef.formSelection(plotConfig)
+    canvas.selection = plotdef.cutName
 
     if plotdef.logy is None:
         logy = True
@@ -559,9 +566,10 @@ if __name__ == '__main__':
     argParser.add_argument('--list-samples', '-L', action = 'store_true', dest = 'listSamples', help = 'List the samples in the given plot config and exit.')
     argParser.add_argument('--plot', '-p', metavar = 'NAME', dest = 'plots', nargs = '+', default = [], help = 'Limit plotting to specified set of plots.')
     argParser.add_argument('--plot-dir', '-d', metavar = 'PATH', dest = 'plotDir', default = '', help = 'Specify a directory under {webdir} to save images. Use "-" for no output.')
-    argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', default = 0, help = 'Verbosity of the script.')
+    argParser.add_argument('--print-level', '-m', metavar = 'LEVEL', dest = 'printLevel', type = int, default = 0, help = 'Verbosity of the script.')
     argParser.add_argument('--replot', '-P', action = 'store_true', dest = 'replot', default = '', help = 'Do not fill histograms. Need --hist-file.')
     argParser.add_argument('--skim-dir', '-i', metavar = 'PATH', dest = 'skimDir', help = 'Input skim directory.')
+    argParser.add_argument('--multiplex', '-j', metavar = 'N', dest = 'inputMux', type = int, default = 1, help = 'Run MultiDraw with input multiplexing.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -687,10 +695,7 @@ if __name__ == '__main__':
     #####################################
 
     if not args.replot:
-        thisdir = os.path.dirname(os.path.realpath(__file__))
-        basedir = os.path.dirname(thisdir)
-
-        ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
+        ROOT.gSystem.Load(config.libmultidraw)
     
         print 'Filling plots for %s..' % plotConfig.name
 
@@ -716,7 +721,7 @@ if __name__ == '__main__':
         for group in groups:
             print ' ', group.name
 
-            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir)
+            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir, inputMux = args.inputMux)
    
         # Save a background total histogram (for display purpose) for each plotdef
         for plotdef in plotdefs:

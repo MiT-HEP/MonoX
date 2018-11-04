@@ -44,14 +44,12 @@ class SampleSpec(object):
 
 
 class PlotDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cut = '', applyBaseline = True, applyFullSel = False, blind = None, sensitive = False, overflow = False, mcOnly = False, logy = None, ymax = -1., ymin = 0.):
+    def __init__(self, name, title, expr, binning, unit = '', cutName = 'baseline', blind = None, sensitive = False, overflow = False, mcOnly = False, logy = None, ymax = -1., ymin = 0.):
         self.name = name
         self.title = title
         self.unit = unit
         self.expr = expr # expression to plot
-        self.cut = cut # additional cuts if any (applied to all samples)
-        self.applyBaseline = applyBaseline # True -> fill only when PlotConfig baseline cut is satisfied
-        self.applyFullSel = applyFullSel # True -> fill only when PlotConfig full cut is satisfied
+        self.cutName = cutName # Name of the cut the plot belongs to
         self.binning = binning
         self.blind = blind # 'full' or a range in 2-tuple. Always takes effect if set.
         self.sensitive = sensitive # whether to add signal distributions + prescale observed
@@ -62,7 +60,7 @@ class PlotDef(object):
         self.ymin = ymin
 
     def clone(self, name, **keywords):
-        for vname in ['title', 'unit', 'expr', 'cut', 'applyBaseline', 'applyFullSel', 'binning', 'blind', 'overflow', 'logy', 'ymax', 'sensitive']:
+        for vname in ['title', 'unit', 'expr', 'cutName', 'binning', 'blind', 'overflow', 'logy', 'ymax', 'sensitive']:
             if vname not in keywords:
                 keywords[vname] = copy.copy(getattr(self, vname))
 
@@ -193,32 +191,6 @@ class PlotDef(object):
         else:
             return self.title[1]
 
-    def formSelection(self, plotConfig, prescale = 1, replacements = []):
-        cuts = []
-        if self.applyBaseline:
-            cuts.append(plotConfig.baseline)
-    
-        if self.cut:
-            cuts.append(self.cut)
-    
-        if self.applyFullSel:
-            cuts.append(plotConfig.fullSelection)
-    
-        if prescale > 1 and self.blind is None:
-            cuts.append('event % {prescale} == 0'.format(prescale = prescale))
-
-        if len(cuts) != 0:
-            selection = ' && '.join(['(%s)' % c for c in cuts if c != ''])
-        else:
-            selection = ''
-
-        for repl in replacements:
-            # replace the variable names given in repl = ('original', 'new')
-            # enclose the original variable name with characters that would not be a part of the variable
-            selection = re.sub(r'([^_a-zA-Z]?)' + repl[0] + r'([^_0-9a-zA-Z]?)', r'\1' + repl[1] + r'\2', selection)
-            
-        return selection
-
     def formExpression(self, replacements = None):
         if self.ndim() == 1:
             expr = self.expr
@@ -239,17 +211,18 @@ class PlotDef(object):
 class PlotConfig(object):
     def __init__(self, name, obsSamples = []):
         self.name = name # name serves as the default region selection (e.g. monoph)
-        self.baseline = '1'
+        self.baseline = ''
         self.fullSelection = ''
         self.obs = GroupSpec('data_obs', 'Observed', samples = allsamples.getmany(obsSamples))
         self.prescales = dict([(s, 1) for s in self.obs.samples])
         self.sigGroups = []
         self.signalPoints = []
         self.bkgGroups = []
+        self.cuts = []
         self.plots = []
         self.treeMaker = ''
 
-        self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), applyFullSel = True))
+        self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), cutName = 'fullSelection'))
 
     def addObs(self, sname, prescale = 1):
         sample = allsamples[sname]
@@ -284,6 +257,15 @@ class PlotConfig(object):
                 kwd['samples'] = allsamples.getmany(kwd['samples'])
             
         self.bkgGroups.append(GroupSpec(*args, **kwd))
+
+    def addCut(self, name, expr, applyBaseline = True):
+        if name in ('baseline', 'fullSelection'):
+            raise RuntimeError('Cut name ' + name + ' is reserved')
+
+        if applyBaseline and self.baseline:
+            expr = '(%s) && (%s)' % (self.baseline, expr)
+
+        self.cuts.append((name, expr))
 
     def addPlot(self, *args, **kwd):
         self.plots.append(PlotDef(*args, **kwd))
