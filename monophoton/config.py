@@ -2,6 +2,9 @@ import os
 
 config = 'TagAndProbe2017'
 
+# this installation
+baseDir = os.path.dirname(os.path.realpath(__file__))
+
 # location of skim output from ssw2
 skimDir = '/mnt/hadoop/scratch/' + os.environ['USER'] + '/' + config + '/skim'
 

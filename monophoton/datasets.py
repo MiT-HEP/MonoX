@@ -303,6 +303,9 @@ class SampleDef(object):
     def checkT3(self, dataset):
         filesT3 = set()
 
+        if not os.path.isdir(self._directories[dataset]):
+            return filesT3
+
         for fname in os.listdir(self._directories[dataset]):
             if not fname.endswith('.root'):
                 continue
