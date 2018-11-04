@@ -1,4 +1,18 @@
 import fnmatch
+import ROOT
+
+selconf = {
+    'photonFullSelection': []
+    'photonIDTune': -1,
+    'photonWP': 1,
+    'photonSF': None,
+    'hadronTFactorSource': None,
+    'electronTFactor': '',
+    'electronTFactorUnc': 'frate',
+    'hadronProxyDef': ['!CHIso', '+CHIso11'],
+    'ewkCorrSource': '',
+    'sphTrigger': ''
+}
 
 #######################
 ## UTILITY FUNCTIONS ##

@@ -1,10 +1,9 @@
 import os
 import math
+import importlib
 
 from main.plotutil import *
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-execfile(thisdir + '/../2016Common/plotconfig_common.py')
+import configs.common.plotconfig_2017 as common
 
 import ROOT
 
@@ -44,7 +43,6 @@ def getConfig(confName):
 #            if plot.name not in ['met']:
 #                config.plots.append(plot.clone(plot.name + 'HighMet', applyFullSel = True))
 
-
     elif confName == 'zeeJets':
 
         config = PlotConfig('zeeJets', electronData)
@@ -79,6 +77,20 @@ def getConfig(confName):
         for plot in list(config.plots):
             if plot.name not in ['met']:
                 config.plots.append(plot.clone(plot.name + 'HighMet', applyFullSel = True))
+
+    elif confName == 'zmumu':
+        config = PlotConfig('zmumu', common.muonData)
+
+        config.baseline = 'muons.tight[0] && muons.tight[1]'
+        config.fullSelection = ''
+        config.addCut('highMet', 't1Met.pt > 100.')
+
+        config.addBkg('dy', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
+
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.), logy = False)
+        config.addPlot('rho', '#rho', 'rho', (20, 0., 40.), logy = False)
+        config.addPlot('nVertexHighMet', 'N_{vertex}', 'npv', (20, 0., 40.), cutName = 'highMet', logy = False)
+        config.addPlot('rhoHighMet', '#rho', 'rho', (20, 0., 40.), cutName = 'highMet', logy = False)
 
     else:
         raise RuntimeError('Unknown configuration ' + confName)

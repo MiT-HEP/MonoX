@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 import ROOT
 
+## Common modifiers
+
+import configs.common.selectors_gen as sg
+import configs.common.selectors_photon as sp
+
 ## Selector-dependent configurations
 
 logger.info('Applying ggh setting.')
@@ -22,31 +27,25 @@ logger.info('Applying ggh setting.')
 ROOT.gROOT.ProcessLine("int idtune;")
 ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
 
-selconf = {
-    'photonFullSelection': [
-        'HOverE',
-        'Sieie',
-        'NHIso',
-        'PhIso',
-        'CHIso',
-        'EVeto',
-        'ChargedPFVeto',
-        'NoisyRegion'
-    ],
-    'photonIDTune': ROOT.idtune,
-    'photonWP': 1,
-    'photonSF': (0.995, 0.008, ['kPt'], (0.993, .006)),
-    'hadronTFactorSource': (datadir + '/hadronTFactor_Spring16.root', '_Spring16'),
-    'electronTFactor': datadir + '/efakepf_data_ptalt2.root/frate',
-    'electronTFactorUnc': 'frate',
-    'hadronProxyDef': ['!CHIso', '+CHIso11'],
-    'ewkCorrSource': 'ewk_corr.root',
-    'sphTrigger': 'HLT_Photon165_HE10'
-}
-
-## Common modifiers
-
-execfile(thisdir + '/../2016Common/selectors_common.py')
+sp.selconf['photonFullSelection'] = [
+    'HOverE',
+    'Sieie',
+    'NHIso',
+    'PhIso',
+    'CHIso',
+    'EVeto',
+    'ChargedPFVeto',
+    'NoisyRegion'
+]
+sp.selconf['photonIDTune'] = ROOT.idtune
+sp.selconf['photonWP'] = 1
+sp.selconf['photonSF'] = (0.995, 0.008, ['kPt'], (0.993, .006))
+sp.selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
+sp.selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
+sp.selconf['electronTFactorUnc'] = 'frate'
+sp.selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+sp.selconf['ewkCorrSource'] = 'ewk_corr.root'
+sp.selconf['sphTrigger'] = 'HLT_Photon165_HE10'
 
 ##################
 # BASE SELECTORS #
@@ -67,7 +66,7 @@ def gghgBase(sample, rname, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
+        selector.addOperator(ROOT.HLTFilter(sp.selconf['sphTrigger']))
 
     operators = [
         'MetFilters',
@@ -98,8 +97,8 @@ def gghgBase(sample, rname, selcls = None):
 
     photonSel = selector.findOperator('PhotonSelection')
     photonSel.setMinPt(175.)
-    photonSel.setIDTune(selconf['photonIDTune'])
-    photonSel.setWP(selconf['photonWP'])
+    photonSel.setIDTune(sp.selconf['photonIDTune'])
+    photonSel.setWP(sp.selconf['photonWP'])
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 0)
@@ -125,8 +124,8 @@ def gghgBase(sample, rname, selcls = None):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -155,7 +154,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
     selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
+        selector.addOperator(ROOT.HLTFilter(sp.selconf['sphTrigger']))
     else:
         partons = ROOT.PartonFlavor()
         if flavor == ROOT.lElectron:
@@ -197,8 +196,8 @@ def gghlBase(sample, rname, flavor, selcls = None):
     jetDPhi.setMetSource(ROOT.kInMet)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setIDTune(selconf['photonIDTune'])
-    photonSel.setWP(selconf['photonWP'])
+    photonSel.setIDTune(sp.selconf['photonIDTune'])
+    photonSel.setWP(sp.selconf['photonWP'])
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setRequireMedium(False)
@@ -208,7 +207,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
     dijetSel.setMinMjj(500.)
     dijetSel.setIgnoreDecision(True)
 
-    setupPhotonSelection(photonSel)
+    sp.setupPhotonSelection(photonSel)
 
     selector.findOperator('LeptonRecoil').setFlavor(flavor)
 
@@ -226,14 +225,14 @@ def gghlBase(sample, rname, flavor, selcls = None):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addIDSFWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
         if flavor == ROOT.lElectron:
-            addElectronIDSFWeight(sample, selector)
+            sp.addElectronIDSFWeight(sample, selector)
         else:
-            addMuonIDSFWeight(sample, selector)
+            sp.addMuonIDSFWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -257,10 +256,10 @@ def gghg(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     if not sample.data:
-        addIDSFWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
 
     return selector
 
@@ -272,9 +271,9 @@ def gghgNoE(sample, rname):
     selector = gghgBase(sample, rname, selcls = ROOT.PartonSelector)
     selector.setRejectedPdgId(11)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
-    addIDSFWeight(sample, selector)
+    sp.addIDSFWeight(sample, selector)
 
     return selector
 
@@ -352,7 +351,7 @@ def gghEfake(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    modEfake(selector, selections = ['!CSafeVeto'])
+    sp.modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -363,14 +362,14 @@ def gghHfake(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    filename, suffix = selconf['hadronTFactorSource']
+    filename, suffix = sp.selconf['hadronTFactorSource']
 
     hadproxyTightWeight = su.getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
     hadproxyLooseWeight = su.getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)
     hadproxyPurityUpWeight = su.getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
     hadproxyPurityDownWeight = su.getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
 
-    modHfake(selector)
+    sp.modHfake(selector)
 
     weight = selector.findOperator('hadProxyWeight')
 
@@ -383,8 +382,8 @@ def gghHfake(sample, rname):
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
-    setupPhotonSelection(photonSel, veto = True)
+    sp.setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    sp.setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
@@ -413,14 +412,14 @@ def gghe(sample, rname, selcls = None):
 def ggheEfake(sample, rname):
     selector = gghe(sample, rname, selcls = ROOT.ZeeEventSelector)
 
-    modEfake(selector, selections = ['!CSafeVeto'])
+    sp.modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
 def ggheHfake(sample, rname):
     selector = gghe(sample, rname)
 
-    modHfake(selector)
+    sp.modHfake(selector)
 
     return selector
 
@@ -443,14 +442,14 @@ def gghm(sample, rname, selcls = None):
 def gghmEfake(sample, rname):
     selector = gghm(sample, rname)
 
-    modEfake(selector, selections = ['!CSafeVeto'])
+    sp.modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
 def gghmHfake(sample, rname):
     selector = gghm(sample, rname)
 
-    modHfake(selector)
+    sp.modHfake(selector)
 
     return selector
 

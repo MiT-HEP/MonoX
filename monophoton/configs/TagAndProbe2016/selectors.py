@@ -1,13 +1,6 @@
 import os
 import logging
 
-import config
-import main.skimutils as su
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-datadir = basedir + '/data'
-
 logger = logging.getLogger(__name__)
 
 import ROOT
@@ -22,7 +15,7 @@ selconf = {
 
 ## Common modifiers
 
-execfile(thisdir + '/../2016Common/selectors_common.py')
+import configs.common.selectors_gen as sg
 
 ## Specific modifier
 
@@ -86,8 +79,8 @@ def zmumu(sample, rname):
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        addPUWeight(sample, selector)
-        addPDFVaraition(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sg.addPDFVaraition(sample, selector)
 
     return selector
 
@@ -117,7 +110,7 @@ def TagAndProbeBase(sample, rname):
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
 
-        addPUWeight(sample, selector)
+        sg.addPUWeight(sample, selector)
 
     selector.findOperator('LeptonSelection').setN(0, 0)
 
@@ -142,7 +135,7 @@ def tagprobeBase(sample, rname):
 
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw))
-        addPUWeight(sample, selector)
+        sg.addPUWeight(sample, selector)
 
     return selector
 

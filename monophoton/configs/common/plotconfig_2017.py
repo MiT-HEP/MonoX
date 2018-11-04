@@ -1,15 +1,3 @@
-import sys
-import os
-import math
-
-import config as globalConf
-
-argv = list(sys.argv)
-sys.argv = []
-import ROOT
-black = ROOT.kBlack # need to load something from ROOT to actually import
-sys.argv = argv
-
 photonData = ['sph-17b', 'sph-17c', 'sph-17d', 'sph-17e', 'sph-17f']
 muonData = ['smu-17b', 'smu-17c', 'smu-17d', 'smu-17e', 'smu-17f']
 electronData = ['sel-17b', 'sel-17c', 'sel-17d', 'sel-17e', 'sel-17f']
@@ -28,8 +16,3 @@ minor = gg + ['zllg-130-o', 'zllg-300-o']
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi_[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.pt * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi_[0] - t1Met.phi)))'
-fitTemplateExpression = '( ( (photons.scRawPt[0] - 210.) * (photons.scRawPt[0] < 1000.) + 800. * (photons.scRawPt[0] > 1000.) ) * TMath::Sign(1, TMath::Abs(TMath::Abs(TVector2::Phi_mpi_pi(TVector2::Phi_mpi_pi(photons.phi_[0] + 0.005) - 1.570796)) - 1.570796) - 0.5) )'
-
-
-
-

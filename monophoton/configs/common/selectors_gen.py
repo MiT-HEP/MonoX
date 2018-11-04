@@ -1,12 +1,18 @@
+import os
 import importlib
+import logging
+import ROOT
 
 import config
+
+logger = logging.getLogger(__name__)
 
 params = importlib.import_module('configs.' + config.config + '.params')
 
 ###############
 ## Modifiers ##
 ###############
+_garbage = []
 
 def addPDFVariation(sample, selector):
     if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
@@ -30,30 +36,69 @@ def addGenPhotonVeto(sample, selector):
     selector.addOperator(veto, 0)
 
 def addPUWeight(sample, selector):
-    pufileName = params.pureweight
-
     pudir = ROOT.gROOT.GetDirectory('puweight')
 
     if not pudir:
         pudir = ROOT.gROOT.mkdir('puweight')
-        logger.info('Loading PU weights from %s', pufileName)
-        f = ROOT.TFile.Open(pufileName)
+
+        f = ROOT.TFile.Open(params.pureweight)
         for k in f.GetListOfKeys():
             if k.GetName().startswith('puweight_'):
                 logger.info('Saving PU weights %s into ROOT/%s', k.GetName(), 'puweight')
                 pudir.cd()
                 obj = k.ReadObj().Clone(k.GetName().replace('puweight_', ''))
                 _garbage.append(obj)
-        
+
+        pudir.cd()
+        hdata = f.Get('data').Clone('data')
+        _garbage.append(hdata)
+
         f.Close()
 
-    for hist in pudir.GetList():
-        if hist.GetName() in sample.fullname:
-            logger.info('Using PU weights %s/%s for %s', 'puweight', hist.GetName(), sample.name)
-            selector.addOperator(ROOT.PUWeight(hist))
-            break
+    # Check if we have the sample-specific PU profile here
+    hist = pudir.Get(sample.name)
+
+    if not hist:
+        # Saved in file?
+        pudir.cd()
+        hist = pudir.Get('data').Clone(sample.name)
+        mcHist = None
+
+        for dataset in sample.datasetNames:
+            if os.path.exists(params.basedir + '/data/pileup/' + dataset + '.root'):
+                f = ROOT.TFile.Open(params.basedir + '/data/pileup/' + dataset + '.root')
+                h = f.Get('hNPVTrue')
+                if mcHist is None:
+                    pudir.cd()
+                    mcHist = h.Clone(sample.name)
+                else:
+                    mcHist.Add(h)
+    
+                f.Close()
+                
+            elif mcHist is not None:
+                raise RuntimeError('Part of sample ' + sample.name + ' has dataset-specific PU profile but not all')
+
+        if mcHist is None:
+            hist.Delete()
+            hist = None
+        else:
+            mcHist.Scale(1. / mcHist.GetSumOfWeights())
+            hist.Divide(mcHist)
+            mcHist.Delete()
+
+    if hist is not None:
+        logger.info('Sample-specific PU distribution found for %s', sample.name)
     else:
-        raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
+        for hist in pudir.GetList():
+            if hist.GetName() in sample.fullname:
+                logger.info('Using PU weights %s/%s for %s', 'puweight', hist.GetName(), sample.name)
+                break
+        else:
+            raise RuntimeError('Pileup profile for ' + sample.name + ' not defined')
+
+    selector.addOperator(ROOT.PUWeight(hist))
+
 
 #########################
 ## Modifier generators ##
