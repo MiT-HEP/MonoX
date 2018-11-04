@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import subprocess
@@ -13,9 +15,10 @@ argParser = ArgumentParser(description = 'Calculate integrated luminosity from B
 argParser.add_argument('snames', nargs = '*', help = 'Sample names.')
 argParser.add_argument('--list', '-l', metavar = 'PATH', dest = 'list', default = '', help = 'Supply a good lumi list and skip lumi extraction from Bambu files.')
 argParser.add_argument('--mask', '-m', metavar = 'PATH', dest = 'mask', default = '', help = 'Good lumi list to apply.')
+argParser.add_argument('--hlt', '-t', metavar = 'TRIGGER', dest = 'hlt', default = '', help = 'Compute the integrated luminosity for a specific trigger.')
 argParser.add_argument('--no-calc', '-N', action = 'store_true', dest = 'noCalc', help = 'Just write the json file and quit.')
-argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'save', default = '', help = 'Save the json file to data/lumis.txt.')
-argParser.add_argument('--save-plain', '-P', action = 'store_true', dest = 'savePlain', help = 'Also save just the list of lumis (i.e. CMS-standard JSON) as `params.lumilist`.')
+argParser.add_argument('--save', '-o', metavar = 'PATH', dest = 'save', default = '', help = 'Save the json file to PATH.')
+argParser.add_argument('--save-plain', '-p', metavar = 'PATH', dest = 'savePlain', default = '', help = 'Also save just the list of lumis (i.e. CMS-standard JSON).')
 
 args = argParser.parse_args()
 sys.argv = []
@@ -148,23 +151,34 @@ if not args.noCalc:
     
     proc = subprocess.Popen(['scp'] + sshOpts + ['_lumis_tmp.txt', 'lxplus.cern.ch:./_lumis_tmp.txt'])
     proc.communicate()
+
+    if args.hlt:
+        hltopt = ' --hltpath "%s"' % args.hlt
+    else:
+        hltopt = ''
+
+    cmd = ['ssh'] + sshOpts
+    cmd.append('lxplus.cern.ch')
+    cmd.append('export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.1.7/bin:$PATH;brilcalc lumi -b "STABLE BEAMS" --normtag %s -i _lumis_tmp.txt %s;echo brilcalc version is `brilcalc --version`' % (normtag, hltopt))
     
-    proc = subprocess.Popen(['ssh'] + sshOpts + ['lxplus.cern.ch', 'export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.1.7/bin:$PATH;brilcalc lumi -b "STABLE BEAMS" --normtag ' + normtag + ' -i _lumis_tmp.txt;echo brilcalc version is `brilcalc --version`'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
 
-if args.noCalc or args.savePlain:
-    os.rename('_lumis_tmp.txt', params.lumilist)
-    if args.noCalc:
-        sys.exit(0)
+    out = proc.communicate()[0]
+    print out
 
-else:
-    os.remove('_lumis_tmp.txt')
+if args.savePlain:
+    shutil.copyfile('_lumis_tmp.txt', args.savePlain)
 
-out = proc.communicate()[0]
-print out
+os.remove('_lumis_tmp.txt')
+
+if args.noCalc:
+    sys.exit(0)
 
 integrated = {}
 
 for line in out.split('\n'):
+    #  if not HLT:        run:fill             time   nls    ncms   deliv  record
+    #  if HLT:            run:fill             time   ncms   path   deliv  record
     matches = re.match('\| +([0-9]+):[0-9]+ +\|[^|]+\|[^|]+\|[^|]+\|[^|]+\| +([0-9.]+) +\|', line)
     if not matches:
         continue
