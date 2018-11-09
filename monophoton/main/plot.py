@@ -25,7 +25,7 @@ def makePlotter(plotConfig, group, sample, region, sourceDir, altSourceDir, lumi
         if len(sourceNames) == 0:
             sys.stderr.write('File ' + sourceName + ' does not exist.\n')
             raise RuntimeError('InvalidSource')
-        elif len(sourceNames) != len(sample.fileSets()):
+        elif len(sourceNames) != len(sample.filesets()):
             sys.stderr.write('Not enough skim files for %s_%s.\n' % (sample.name, region))
             raise RuntimeError('InvalidSource')
 

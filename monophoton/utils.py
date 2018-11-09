@@ -19,20 +19,19 @@ def getSkimPaths(sample, skim, primary = config.skimDir, alternative = config.lo
         altDir = os.path.join(alternative, sample)
         if os.path.isdir(altDir):
             for fname in os.listdir(altDir):
-                if fname.startswith(sample) and fname.endswith(skim + '.root'):
+                if fname.startswith(sample) and fname.endswith('_' + skim + '.root'):
                     altName = os.path.join(altDir, fname)
                     paths[fname] = (altName, os.stat(altName).st_mtime)
 
     primDir = os.path.join(primary, sample)
-    if os.path.isdir(primDir):
-        for fname in os.listdir(primDir):
-            if fname.startswith(sample) and fname.endswith(skim + '.root'):
-                primName = os.path.join(primDir, fname)
-                if fname in paths:
-                    mtime = os.stat(primName).st_mtime
-                    if mtime > paths[fname][1]:
-                        paths[fname] = (primName, mtime)
-                else:
+    for fname in os.listdir(primDir):
+        if fname.startswith(sample) and fname.endswith('_' + skim + '.root'):
+            primName = os.path.join(primDir, fname)
+            mtime = os.stat(primName).st_mtime
+            if fname in paths:
+                if mtime > paths[fname][1]:
                     paths[fname] = (primName, mtime)
+            else:
+                paths[fname] = (primName, mtime)
 
     return [p[0] for p in paths.itervalues()]
