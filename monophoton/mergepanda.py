@@ -39,7 +39,10 @@ if not os.path.isdir(args.logdir):
 if args.edm:
     keynames = set(['MetaData', 'ParameterSets', 'Parentage', 'Events', 'LuminosityBlocks', 'Runs'])
 else:
-    keynames = set(['ElectronTriggerObject', 'MuonTriggerObject', 'PhotonTriggerObject', 'RecoilCategory', 'events', 'runs', 'lumiSummary', 'hlt', 'hNPVReco', 'hNPVTrue', 'hSumW', 'eventcounter'])
+    # version <= 011
+    #keynames = set(['ElectronTriggerObject', 'MuonTriggerObject', 'PhotonTriggerObject', 'RecoilCategory', 'events', 'runs', 'lumiSummary', 'hlt', 'hNPVReco', 'hNPVTrue', 'hSumW', 'eventcounter'])
+    # version 012
+    keynames = set(['RecoilCategory', 'events', 'runs', 'lumiSummary', 'hlt', 'hNPVReco', 'hNPVTrue', 'hSumW', 'eventcounter'])
 
 def rm(infile, path = ''):
     if not path:
@@ -227,9 +230,6 @@ class SynchDB(object):
 iout = 0
 
 while True:
-    if iout == args.nout:
-        break
-
     while True:
         outbase = ''.join(random.sample(string.hexdigits, 16)) + '.root'
         outname = args.outdir + '/' + outbase
@@ -358,3 +358,6 @@ while True:
             os.unlink('/tmp/' + outbase)
 
     iout += 1
+
+    if iout == args.nout:
+        break
