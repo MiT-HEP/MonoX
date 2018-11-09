@@ -90,7 +90,7 @@ def braceContract(strings):
 
 
 class SampleDef(object):
-    def __init__(self, name, title = '', book = '', fullname = '', additionalDatasets = [], crosssection = 0., nevents = 0, sumw = 0., lumi = 0., data = False, comments = '', custom = {}):
+    def __init__(self, name, title = '', book = '', fullname = '', additionalDatasets = [], crosssection = 0., nevents = 0, sumw = 0., lumi = 0., generator = '', comments = '', custom = {}):
         self.name = name
         self.title = title
         self.book = book
@@ -102,7 +102,8 @@ class SampleDef(object):
         else:
             self.sumw = sumw
         self.lumi = lumi
-        self.data = data
+        self.generator = generator
+        self.data = (generator == 'lhc')
         self.comments = comments
         self.custom = custom
 
@@ -122,7 +123,7 @@ class SampleDef(object):
     def clone(self):
         return SampleDef(self.name, title = self.title, book = self.book, fullname = self.fullname,
             additionalDatasets = self.datasetNames, crosssection = self.crosssection, nevents = self.nevents,
-            sumw = self.sumw, lumi = self.lumi, data = self.data, comments = self.comments, custom = dict(self.custom.items()))
+            sumw = self.sumw, lumi = self.lumi, generator = self.generator, comments = self.comments, custom = dict(self.custom.items()))
 
     def addDataset(self, name):
         if name in self.datasetNames:
@@ -149,7 +150,7 @@ class SampleDef(object):
         print 'sumw =', self.sumw
         if self.lumi > 0. or effectiveLumi:
             print 'lumi =', self.effectiveLumi(), 'pb'
-        print 'data =', self.data
+        print 'generator =', self.generator
         print 'comments = "' + self.comments + '"'
         print 'filesets =', self.filesets()
 
@@ -183,8 +184,8 @@ class SampleDef(object):
         else:
             comments = ''
             
-        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.book, fullnames, comments)
-        return '%-16s %-35s %-16s %-10d %-20s %-12s %s%s' % lineTuple
+        lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.generator, self.book, fullnames, comments)
+        return '%-16s %-35s %-16s %-10d %-20s %-12s %-12s %s%s' % lineTuple
 
     def _updateSumw(self):
         if self._sumw2 > 0.:
@@ -199,7 +200,7 @@ class SampleDef(object):
 
         error = False
         for dataset in self.datasetNames:
-            if 'amcatnlo' in dataset or 'Sherpa' in dataset:
+            if self.generator in ('amcatnlo', 'sherpa'):
                 for fileset, basenames in self._basenames[dataset].items():
                     for basename in basenames:
                         path = self._directories[dataset] + '/' + basename
@@ -435,14 +436,14 @@ class SampleDefList(object):
                     
                     self._load(path)
                     continue
-        
-                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line)
+                #                   name       title    xsec           nevt       sumw           generator  book       fullnames        comments
+                matches = re.match('([^\s]+)\s+"(.*)"\s+([0-9e.+-]+)\s+([0-9]+)\s+([0-9e.+-]+)\s+([^\s]+)\s+([^\s]+)\s+((?:[^\s#]+\s*)+)(#.*|)$', line)
                 if not matches:
                     print 'Ill-formed line in ' + listpath
                     print line
                     continue
         
-                name, title, crosssection, nevents, sumw, book, fullnames, comments = [matches.group(i) for i in range(1, 9)]
+                name, title, crosssection, nevents, sumw, generator, book, fullnames, comments = [matches.group(i) for i in range(1, 10)]
                 fullnames = fullnames.split()
 
                 self._sample_source[listpath].add(name)
@@ -452,10 +453,10 @@ class SampleDefList(object):
                         fullnames.remove(pattern)
                         fullnames.extend(expandBrace(pattern))
 
-                kwd = {'title': title, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
+                kwd = {'title': title, 'generator': generator, 'book': book, 'fullname': fullnames[0], 'additionalDatasets': fullnames[1:], 'nevents': int(nevents), 'comments': comments.lstrip(' #')}
 
                 if sumw == '-':
-                    kwd.update({'lumi': float(crosssection), 'data': True})
+                    kwd.update({'lumi': float(crosssection)})
                 else:
                     kwd.update({'crosssection': float(crosssection), 'sumw': float(sumw)})
 
