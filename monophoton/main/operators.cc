@@ -747,21 +747,11 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
   cutres[Time] = (std::abs(_photon.time) < 3.);
   cutres[SieieNonzero] = (_photon.sieie > 0.001);
   cutres[SipipNonzero] = (_photon.sipip > 0.001);
-  double noisyRegions[][4] = { // etaMin, etaMax, phiMin, phiMax // ieta, iphi // D=pi/180, {D*(ieta-1), D*(ieta+1), D*(iphi-11), D*(iphi-10)}
-    {-0.419, -0.401, 2.269, 2.286}, // -24, 141
-    {0.052, 0.070, 0.524, 0.541}, // 4, 41
-    {0.070, 0.087, 0.524, 0.541}, // 5, 41
-    {0.000, 0.017, 1.222, 1.239}, // 1, 81
-    {0.052, 0.070, 0.175, 0.192}  // 4, 21
-  };
-  cutres[NoisyRegion] = true;
-  for (auto& range : noisyRegions) {
-    if (_photon.scEta > range[0] && _photon.scEta < range[1] && _photon.phi() > range[2] && _photon.phi() < range[3]) {
-      cutres[NoisyRegion] = false;
-      break;
-    }
-  }
-  // cutres[NoisyRegion] = !(_photon.eta() > 0. && _photon.eta() < 0.15 && _photon.phi() > 0.527580 && _photon.phi() < 0.541795); // ICHEP region
+  // If running over panda <= 011, need to compute eta ranges as floating point
+  // Bound by   etamin      etamax      phimin       phimax
+  // D=pi/180, {D*(ieta-1), D*(ieta+1), D*(iphi-11), D*(iphi-10)}
+  unsigned subdet(_photon.isEB ? 0 : (_photon.eta() < 0. ? 1 : 2));
+  cutres[NoisyRegion] = (noiseMap_.count(std::make_tuple(subdet, _photon.ix, _photon.iy)) == 0);
   cutres[E2E995] = (_photon.emax + _photon.e2nd) / (_photon.r9 * ptVariation(_photon, 0.)) < 0.95;
   cutres[Sieie08] = (_photon.sieie < 0.008);
   cutres[Sieie12] = (_photon.sieie < 0.012);

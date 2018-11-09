@@ -5,7 +5,6 @@ import logging
 import fnmatch
 
 import config
-import main.skimutils as su
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(thisdir)
@@ -35,6 +34,7 @@ selconf = {
     ],
     'photonIDTune': ROOT.idtune,
     'photonWP': 1,
+    'ecalNoiseMap': [],
     'photonSF': (0.995, 0.008, ['kPt'], (0.993, .006)),
     'hadronTFactorSource': (datadir + '/hadronTFactor_Spring16.root', '_Spring16'),
     'electronTFactor': datadir + '/efakepf_data_ptalt2.root/frate',
@@ -44,9 +44,18 @@ selconf = {
     'sphTrigger': 'HLT_Photon165_HE10'
 }
 
+selconf['ecalNoiseMap'] = [
+    (0, -24, 141),
+    (0, 4, 41),
+    (0, 5, 41),
+    (0, 1, 81),
+    (0, 4, 21)
+]
+
 ## Common modifiers
 
-execfile(thisdir + '/../2016Common/selectors_common.py')
+import configs.common.selectors_photon as sp
+import configs.common.selectors_gen as sg
 
 ##################
 # BASE SELECTORS #
@@ -125,8 +134,8 @@ def gghgBase(sample, rname, selcls = None):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        ag.addPUWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -208,7 +217,7 @@ def gghlBase(sample, rname, flavor, selcls = None):
     dijetSel.setMinMjj(500.)
     dijetSel.setIgnoreDecision(True)
 
-    setupPhotonSelection(photonSel)
+    sp.setupPhotonSelection(photonSel)
 
     selector.findOperator('LeptonRecoil').setFlavor(flavor)
 
@@ -226,14 +235,14 @@ def gghlBase(sample, rname, flavor, selcls = None):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addIDSFWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        ag.addPUWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
         if flavor == ROOT.lElectron:
-            addElectronIDSFWeight(sample, selector)
+            sp.addElectronIDSFWeight(sample, selector)
         else:
-            addMuonIDSFWeight(sample, selector)
+            sp.addMuonIDSFWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
@@ -257,10 +266,10 @@ def gghg(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     if not sample.data:
-        addIDSFWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
 
     return selector
 
@@ -272,9 +281,9 @@ def gghgNoE(sample, rname):
     selector = gghgBase(sample, rname, selcls = ROOT.PartonSelector)
     selector.setRejectedPdgId(11)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
-    addIDSFWeight(sample, selector)
+    sp.addIDSFWeight(sample, selector)
 
     return selector
 
@@ -383,8 +392,8 @@ def gghHfake(sample, rname):
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
-    setupPhotonSelection(photonSel, veto = True)
+    sp.setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    sp.setupPhotonSelection(photonSel, veto = True)
 
     return selector
 

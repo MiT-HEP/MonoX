@@ -1,6 +1,6 @@
 import os
 
-config = 'TagAndProbe2017'
+config = 'GGHDarkPhoton2017'
 
 # this installation
 baseDir = os.path.dirname(os.path.realpath(__file__))

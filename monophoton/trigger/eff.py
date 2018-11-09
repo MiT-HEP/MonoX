@@ -53,6 +53,7 @@ if not REPLOT:
         # fill the histograms
         plotter = ROOT.multidraw.MultiDraw()
         plotter.setWeightBranch('')
+        plotter.setInputMultiplexing(4)
     
         for sample in allsamples.getmany(snames):
             plotter.addInputPath(utils.getSkimPath(sample.name, region))

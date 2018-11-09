@@ -9,11 +9,11 @@ import ROOT
 
 ## Selector-dependent configurations
 
-selconf = {
-    'sphTrigger': 'HLT_Photon200',
-    'selTrigger': 'HLT_Ele35_WPTight_Gsf',
-    'smuTrigger': 'HLT_IsoMu27'
-}
+from configs.common.selconf import selconf
+
+selconf['sphTrigger'] = 'HLT_Photon200'
+selconf['selTrigger'] = 'HLT_Ele35_WPTight_Gsf'
+selconf['smuTrigger'] = 'HLT_IsoMu27'
 
 ## Common modifiers
 

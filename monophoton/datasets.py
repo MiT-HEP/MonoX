@@ -203,7 +203,12 @@ class SampleDef(object):
                 for fileset, basenames in self._basenames[dataset].items():
                     for basename in basenames:
                         path = self._directories[dataset] + '/' + basename
-                        source = ROOT.TFile.Open(path)
+                        if os.path.exists(path):
+                            source = ROOT.TFile.Open(path)
+                        else:
+                            path = path.replace('/mnt/hadoop/cms', 'root://xrootd.cmsaf.mit.edu/')
+                            source = ROOT.TFile.Open(path)
+
                         if not source:
                             error = True
                             continue

@@ -416,6 +416,8 @@ class PhotonSelection : public MonophotonCut {
   void resetVeto() { vetoes_.clear(); }
   void removeVeto(unsigned, unsigned = nSelections, unsigned = nSelections);
 
+  void addNoiseMask(unsigned subdet, int ix, int iy) { noiseMap_.emplace(subdet, ix, iy); }
+
   void setIncludeLowPt(bool i) { includeLowPt_ = i; }
   // void setUseOriginalPt(bool b) { useOriginalPt_ = b; }
 
@@ -430,9 +432,9 @@ class PhotonSelection : public MonophotonCut {
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   int selectPhoton(panda::XPhoton const&, unsigned idx);
 
-  double minPt_{175.};
+  double minPt_{220.};
   double maxPt_{6500.};
-  panda::XPhoton::IDTune idTune_{panda::XPhoton::kGJetsCWIso};
+  panda::XPhoton::IDTune idTune_{panda::XPhoton::kFall17};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
   unsigned nPhotons_{1}; // required number of photons
   float ptVarUp_[NMAX_PARTICLES];
@@ -445,6 +447,8 @@ class PhotonSelection : public MonophotonCut {
   std::vector<SelectionMask> selections_;
   std::vector<SelectionMask> vetoes_;
   bool cutRes_[nSelections][NMAX_PARTICLES];
+
+  std::set<std::tuple<unsigned, int, int>> noiseMap_; // subdet(0:EB, 1:EE-, 2:EE+), ix, iy
 
   unsigned size_{0};
   bool nominalResult_{false};

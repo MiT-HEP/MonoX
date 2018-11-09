@@ -7,27 +7,24 @@ import fnmatch
 import config
 import main.skimutils as su
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-datadir = basedir + '/data'
-
 logger = logging.getLogger(__name__)
 
+datadir = config.baseDir + '/data'
+
 import ROOT
-
-## Common modifiers
-
-import configs.common.selectors_gen as sg
-import configs.common.selectors_photon as sp
+ROOT.gSystem.Load(config.libobjs)
+e = ROOT.panda.Event
 
 ## Selector-dependent configurations
+
+from configs.common.selconf import selconf
 
 logger.info('Applying ggh setting.')
 
 ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kFall17;")
 
-sp.selconf['photonFullSelection'] = [
+selconf['photonFullSelection'] = [
     'HOverE',
     'Sieie',
     'NHIso',
@@ -37,15 +34,28 @@ sp.selconf['photonFullSelection'] = [
     'ChargedPFVeto',
     'NoisyRegion'
 ]
-sp.selconf['photonIDTune'] = ROOT.idtune
-sp.selconf['photonWP'] = 1
-sp.selconf['photonSF'] = (0.995, 0.008, ['kPt'], (0.993, .006))
-sp.selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
-sp.selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
-sp.selconf['electronTFactorUnc'] = 'frate'
-sp.selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
-sp.selconf['ewkCorrSource'] = 'ewk_corr.root'
-sp.selconf['sphTrigger'] = 'HLT_Photon165_HE10'
+selconf['photonIDTune'] = ROOT.idtune
+selconf['photonWP'] = 1
+selconf['photonSF'] = (0.995, 0.008, ['kPt'], (0.993, .006))
+selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')
+selconf['electronTFactor'] = datadir + '/efakepf_data_ptalt2.root/frate'
+selconf['electronTFactorUnc'] = ''
+selconf['hadronProxyDef'] = ['!CHIso', '+CHIso11']
+selconf['ewkCorrSource'] = 'ewk_corr.root'
+selconf['sphTrigger'] = 'HLT_Photon200'
+selconf['ecalNoiseMap'] = [
+    (0, -52, 196),
+    (0, 55, 67),
+    (0, 58, 74),
+    (0, 72, 67),
+    (0, 73, 299),
+    (0, 79, 67)
+]
+
+## Common modifiers
+
+import configs.common.selectors_gen as sg
+import configs.common.selectors_photon as sp
 
 ##################
 # BASE SELECTORS #
@@ -63,10 +73,10 @@ def gghgBase(sample, rname, selcls = None):
     else:
         selector = selcls(rname)
 
-    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+    selector.setPreskim('superClusters.rawPt > 210. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter(sp.selconf['sphTrigger']))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
 
     operators = [
         'MetFilters',
@@ -96,9 +106,9 @@ def gghgBase(sample, rname, selcls = None):
         selector.addOperator(getattr(ROOT, op)())
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setMinPt(175.)
-    photonSel.setIDTune(sp.selconf['photonIDTune'])
-    photonSel.setWP(sp.selconf['photonWP'])
+    photonSel.setMinPt(220.)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 0)
@@ -151,10 +161,10 @@ def gghlBase(sample, rname, flavor, selcls = None):
     else:
         selector = selcls(rname)
 
-    selector.setPreskim('superClusters.rawPt > 165. && TMath::Abs(superClusters.eta) < 1.4442')
+    selector.setPreskim('superClusters.rawPt > 210. && TMath::Abs(superClusters.eta) < 1.4442')
 
     if sample.data:
-        selector.addOperator(ROOT.HLTFilter(sp.selconf['sphTrigger']))
+        selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
     else:
         partons = ROOT.PartonFlavor()
         if flavor == ROOT.lElectron:
@@ -196,8 +206,9 @@ def gghlBase(sample, rname, flavor, selcls = None):
     jetDPhi.setMetSource(ROOT.kInMet)
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setIDTune(sp.selconf['photonIDTune'])
-    photonSel.setWP(sp.selconf['photonWP'])
+    photonSel.setMinPt(220.)
+    photonSel.setIDTune(selconf['photonIDTune'])
+    photonSel.setWP(selconf['photonWP'])
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setRequireMedium(False)
@@ -277,22 +288,6 @@ def gghgNoE(sample, rname):
 
     return selector
 
-def gghgNoGSFix(sample, rname):
-    """
-    Full monophoton selection using originalPt / pt * scRawPt
-    """
-
-    selector = gghg(sample, rname)
-
-    # replaces outPhoton.scRawPt with originalPt / pt * scRawPt
-    # all downstream operators should be using outPhoton
-    selector.findOperator('PhotonSelection').setUseOriginalPt(True)
-
-    # copy metMuOnlyFix instead of t1Met
-    selector.findOperator('CopyMet').setUseGSFix(False)
-
-    return selector
-
 def fakeMetRandom(sample, rname):
     """
     Full monophoton selection with a random fraction of photon energy lost to MET.
@@ -362,7 +357,7 @@ def gghHfake(sample, rname):
 
     selector = gghgBase(sample, rname)
 
-    filename, suffix = sp.selconf['hadronTFactorSource']
+    filename, suffix = selconf['hadronTFactorSource']
 
     hadproxyTightWeight = su.getFromFile(filename, 'tfactTight', 'tfactTight' + suffix)
     hadproxyLooseWeight = su.getFromFile(filename, 'tfactLoose', 'tfactLoose' + suffix)

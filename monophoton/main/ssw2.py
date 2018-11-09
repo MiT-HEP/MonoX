@@ -403,7 +403,7 @@ if __name__ == '__main__':
     argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
     argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
     argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
-    argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '*', default = None, help = 'Selectors to process. With --list, print the selectors configured with the samples.')
+    argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '*', default = [], help = 'Selectors to process. With --list, print the selectors configured with the samples.')
     argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = 'WARNING', help = 'Override config.printLevel.')
     argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
     argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
@@ -515,18 +515,22 @@ if __name__ == '__main__':
         for sample in samples:
             selectors = {}
 
+            if sample not in allselectors:
+                raise RuntimeError('Sample ' + sample.name + ' not defined in skimconfig')
+
             if len(rnames) == 0:
                 # fill in the selectors for samples with no selector specification
-                if args.selnames is not None and len(args.selnames) != 0:
-                    for sel in args.selnames:
+                if len(args.selnames) != 0:
+                    for rname in args.selnames:
                         try:
-                            selectors[sel] = allselectors[sample][sel]
+                            selectors[rname] = allselectors[sample][rname]
                         except KeyError:
                             print 'Selector', sample.name, sel, 'not defined'
                             raise
 
                 else:
-                    selectors.update(allselectors[sample])
+                    for rname, selector in allselectors[sample].iteritems():
+                        selectors[rname] = selector
 
             else:
                 for rname in rnames:
@@ -539,7 +543,7 @@ if __name__ == '__main__':
             sampleList.append((sample, selectors))
 
     if args.list:
-        if args.selnames is not None:
+        if len(args.selnames) != 0:
             for sample, selectors in sampleList:
                 print sample.name + ' (' + ' '.join(selectors.keys()) + ')'
         else:

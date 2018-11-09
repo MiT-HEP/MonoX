@@ -1,18 +1,11 @@
 import fnmatch
+import logging
 import ROOT
 
-selconf = {
-    'photonFullSelection': []
-    'photonIDTune': -1,
-    'photonWP': 1,
-    'photonSF': None,
-    'hadronTFactorSource': None,
-    'electronTFactor': '',
-    'electronTFactorUnc': 'frate',
-    'hadronProxyDef': ['!CHIso', '+CHIso11'],
-    'ewkCorrSource': '',
-    'sphTrigger': ''
-}
+import main.skimutils as su
+from configs.common.selconf import selconf
+
+logger = logging.getLogger(__name__)
 
 #######################
 ## UTILITY FUNCTIONS ##
@@ -55,6 +48,9 @@ def setupPhotonSelection(operator, veto = False, changes = []):
                 operator.addSelection(False, getattr(ROOT.PhotonSelection, sel[1:]))
             else:
                 operator.addSelection(True, getattr(ROOT.PhotonSelection, sel))
+
+    for subdet, ix, iy in selconf['ecalNoiseMap']:
+        operator.addNoiseMask(subdet, ix, iy)
 
 ######################
 # SELECTOR MODIFIERS #
