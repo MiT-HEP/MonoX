@@ -87,10 +87,10 @@ def getConfig(confName):
 
         config.addBkg('dy', 'Z+jets', samples = ['dy-50'], color = ROOT.TColor.GetColor(0x99, 0xff, 0xaa))
 
-        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.), logy = False)
-        config.addPlot('rho', '#rho', 'rho', (20, 0., 40.), logy = False)
-        config.addPlot('nVertexHighMet', 'N_{vertex}', 'npv', (20, 0., 40.), cutName = 'highMet', logy = False)
-        config.addPlot('rhoHighMet', '#rho', 'rho', (20, 0., 40.), cutName = 'highMet', logy = False)
+        config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 80.), logy = False)
+        config.addPlot('rho', '#rho', 'rho', (20, 0., 80.), logy = False)
+        config.addPlot('nVertexHighMet', 'N_{vertex}', 'npv', (20, 0., 80.), cutName = 'highMet', logy = False)
+        config.addPlot('rhoHighMet', '#rho', 'rho', (20, 0., 80.), cutName = 'highMet', logy = False)
 
     else:
         raise RuntimeError('Unknown configuration ' + confName)

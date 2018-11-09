@@ -61,6 +61,7 @@ def addPUWeight(sample, selector):
     if not hist:
         # Saved in file?
         pudir.cd()
+        # Grab the data histogram and divide by the sample distribution later
         hist = pudir.Get('data').Clone(sample.name)
         mcHist = None
 
