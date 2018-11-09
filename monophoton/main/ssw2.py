@@ -164,6 +164,7 @@ class SkimSlimWeight(object):
     
         skimmer.setPrintEvery(SkimSlimWeight.config['printEvery'])
         skimmer.setPrintLevel(SkimSlimWeight.config['printLevel'])
+        skimmer.setNThreads(SkimSlimWeight.config['nThreads'])
         skimmer.setSkipMissingFiles(SkimSlimWeight.config['skipMissing'])
 
         if SkimSlimWeight.config['openTimeout'] is not None:
@@ -409,6 +410,7 @@ if __name__ == '__main__':
     argParser.add_argument('--read-remote', '-R', action = 'store_true', dest = 'readRemote', help = 'Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
     argParser.add_argument('--resubmit', '-S', action = 'store_true', dest = 'autoResubmit', help = '(Without no-wait option) Automatically release held jobs.')
     argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
+    argParser.add_argument('--num-threads', '-j', metavar = 'N', dest = 'nThreads', type = int, default = 1, help = 'Number of threads to use. Each selector is run in a separate thread.')
     argParser.add_argument('--open-timeout', '-m', metavar = 'SECONDS', dest = 'openTimeout', type = int, help = 'Timeout for opening input files. Open is attempted every 30 seconds.')
     argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area. Sets --filesets to 0000 by default.')
     

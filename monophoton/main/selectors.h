@@ -11,6 +11,7 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include <mutex>
 
 typedef std::chrono::high_resolution_clock Clock;
 
@@ -41,6 +42,8 @@ public:
   void setOwnOperators(bool b) { ownOperators_ = b; }
   void setUseTimers(bool b) { useTimers_ = b; }
   void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
+
+  static std::mutex mutex;
 
 protected:
   virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}

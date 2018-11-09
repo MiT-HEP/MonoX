@@ -10,6 +10,8 @@
 // EventSelectorBase
 //--------------------------------------------------------------------
 
+std::mutex EventSelectorBase::mutex;
+
 EventSelectorBase::~EventSelectorBase()
 {
   if (ownOperators_) {
@@ -147,7 +149,7 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   // Add a prepareFill line below any time a collection branch is added
   panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "npv", "rho", "vertices"}};
   if (_isMC)
-    blist += {"partons", "genParticles", "genVertex"}; // , "genMet"};
+    blist += {"npvTrue", "partons", "genParticles", "genVertex"}; // , "genMet"};
   else
     blist += {"metFilters"};
 
@@ -195,16 +197,23 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
       timers_[iO] += Clock::now() - start;
   }
 
+  cutsOut_->Fill();
+
   if (pass) {
     // IMPORTATNT
     // We link these skimOut branches to the input event. Need to refresh the addresses in case
     // collections are resized.
+
+    // It would be clearer / more elegant to factor this operation out to a serial part, have
+    // selectEvent take an EventMonophoton const& as an argument, and return pass, but cases
+    // like ZeeEventSelector doesn't allow an easy factorization.
+
+    std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
+
     prepareFill_(_event);
 
     outEvent_.fill(*skimOut_);
   }
-
-  cutsOut_->Fill();
 }
 
 //--------------------------------------------------------------------
@@ -275,13 +284,15 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
         ++iOPair;
       }
 
+      cutsOut_->Fill();
+
       if (pass) {
+        std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
+
         prepareFill_(_event);
           
         outEvent_.fill(*skimOut_);
       }
-
-      cutsOut_->Fill();
     }
   }
   else {
@@ -304,13 +315,15 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
       ++iO;
     }
 
+    cutsOut_->Fill();
+
     if (pass) {
+      std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
+
       prepareFill_(_event);
           
       outEvent_.fill(*skimOut_);
     }
-
-    cutsOut_->Fill();
   }
 }
 
@@ -506,8 +519,10 @@ TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
       timers_[iO] += Clock::now() - start;
   }
 
-  if (pass)
-    outEvent_->fill(*skimOut_);
-
   cutsOut_->Fill();
+
+  if (pass) {
+    std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
+    outEvent_->fill(*skimOut_);
+  }
 }
