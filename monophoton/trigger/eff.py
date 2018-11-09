@@ -4,6 +4,7 @@
 import os
 import sys
 import array
+import importlib
 
 import ROOT
 ROOT.gROOT.SetBatch(True)
@@ -14,7 +15,10 @@ from plotstyle import SimpleCanvas
 import config
 import utils
 
-from trigger.confs import measurements, confs, fitconfs
+tconf = importlib.import_module('configs.' + config.config + '.trigger')
+measurements = tconf.measurements
+confs = tconf.confs
+fitconfs = tconf.fitconfs
 
 ROOT.gStyle.SetNdivisions(510, 'X')
 ROOT.gSystem.Load(config.libmultidraw)
