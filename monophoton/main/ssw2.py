@@ -436,13 +436,14 @@ if __name__ == '__main__':
         if not os.path.exists(x509Proxy):
             raise RuntimeError('X509 proxy file does not exist')
 
-    ## directories to include
-    thisdir = os.path.dirname(os.path.realpath(__file__))
-    basedir = os.path.dirname(thisdir)
-    monoxdir = os.path.dirname(basedir)
-    
+        if not x509Proxy.startswith('/'):
+            os.environ['X509_USER_PROXY'] = os.path.realpath(x509Proxy)
+
     ## import the global config
     import config
+
+    ## directories to include
+    monoxdir = os.path.dirname(config.baseDir)
 
     ## source the analysis config
     params = importlib.import_module('configs.' + config.config + '.params')
@@ -554,14 +555,14 @@ if __name__ == '__main__':
     ## compile and load the Skimmer
     ROOT.gSystem.Load('libfastjet.so')
 
-    ROOT.gROOT.LoadMacro(thisdir + '/operators.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/operators.cc+')
     try:
         o = ROOT.Operator
     except:
         logger.error("Couldn't compile operators.cc. Quitting.")
         sys.exit(1)
 
-    ROOT.gROOT.LoadMacro(thisdir + '/selectors.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/selectors.cc+')
     try:
         o = ROOT.EventSelectorBase
     except:
@@ -569,7 +570,7 @@ if __name__ == '__main__':
         sys.exit(1)
     
     ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
-    ROOT.gROOT.LoadMacro(thisdir + '/Skimmer.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/Skimmer.cc+')
     
     try:
         s = ROOT.Skimmer
