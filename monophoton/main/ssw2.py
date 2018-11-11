@@ -308,7 +308,6 @@ class SSWBatchManager(BatchManager):
         BatchManager.__init__(self, 'ssw2')
 
         self.ssws = ssws # list of SlimSkimWeight objects to manage
-        self.catalogDir = ''
 
     def submitMerge(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
@@ -330,8 +329,6 @@ class SSWBatchManager(BatchManager):
                     pass
     
         argTemplate = '-M %s -s %s'
-        if self.catalogDir:
-            argTemplate += ' -c ' + self.catalogDir
 
         submitter.job_args = [argTemplate % arg for arg in arguments]
         submitter.job_names = ['%s_%s' % arg for arg in arguments]
@@ -356,9 +353,6 @@ class SSWBatchManager(BatchManager):
 
             submitter.aux_input.append(x509Proxy)
             submitter.env['X509_USER_PROXY'] = os.path.basename(x509Proxy)
-
-        if self.catalogDir:
-            argTemplate += ' -c ' + self.catalogDir
 
         if args.openTimeout is not None:
             argTemplate += ' -m ' + str(args.openTimeout)
@@ -395,7 +389,6 @@ if __name__ == '__main__':
     argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
     argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
     argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-    argParser.add_argument('--catalog', '-c', metavar = 'PATH', dest = 'catalog', default = '', help = 'Source file catalog.')
     argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
     argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
     argParser.add_argument('--first-entry', '-t', metavar = 'ENTRY', dest = 'firstEntry', type = int, default = 0, help = 'First entry number to process.')
@@ -468,8 +461,6 @@ if __name__ == '__main__':
 
     ## set up samples and selectors
     import datasets
-    if args.catalog:
-        datasets.catalogDir = args.catalog
 
     ## load ROOT and panda before they are possibly used by selectors.py
     import ROOT
@@ -619,8 +610,6 @@ if __name__ == '__main__':
         print 'Submitting jobs.'
        
         batchManager = SSWBatchManager(ssws)
-        if args.catalog:
-            batchManager.catalogDir = args.catalog
 
         if args.merge:
             batchManager.submitMerge(args)
