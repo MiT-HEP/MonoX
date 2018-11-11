@@ -200,7 +200,7 @@ class SampleDef(object):
 
         error = False
         for dataset in self.datasetNames:
-            if self.generator in ('amcatnlo', 'sherpa'):
+            if self.generator in ('amcatnlo', 'sherpa', 'powheg'):
                 for fileset, basenames in self._basenames[dataset].items():
                     for basename in basenames:
                         path = self._directories[dataset] + '/' + basename
