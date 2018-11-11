@@ -2,10 +2,13 @@ import fnmatch
 import logging
 import ROOT
 
+import config
 import main.skimutils as su
 from configs.common.selconf import selconf
 
 logger = logging.getLogger(__name__)
+
+datadir = config.baseDir + '/data'
 
 #######################
 ## UTILITY FUNCTIONS ##

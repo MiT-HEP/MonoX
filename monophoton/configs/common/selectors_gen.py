@@ -15,7 +15,7 @@ params = importlib.import_module('configs.' + config.config + '.params')
 _garbage = []
 
 def addPDFVariation(sample, selector):
-    if 'amcatnlo' in sample.fullname or 'madgraph' in sample.fullname: # ouh la la..
+    if sample.generator in ('mg5', 'amcatnlo'):
         logger.info('Adding PDF variation for %s', sample.name)
         if 'znng' in sample.name or 'zllg' in sample.name:
             pdf = ROOT.NNPDFVariation()
