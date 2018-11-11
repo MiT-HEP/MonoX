@@ -453,7 +453,7 @@ class SampleDefList(object):
                     print line
                     continue
         
-                name, title, crosssection, nevents, sumw, generator, catalog, book, fullnames, comments = [matches.group(i) for i in range(1, 10)]
+                name, title, crosssection, nevents, sumw, generator, catalog, book, fullnames, comments = [matches.group(i) for i in range(1, 11)]
                 fullnames = fullnames.split()
 
                 self._sample_source[listpath].add(name)
