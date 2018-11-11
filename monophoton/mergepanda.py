@@ -249,11 +249,16 @@ while True:
             db.connect()
     
             if os.path.exists(inpath) and os.stat(inpath).st_mtime < time.time() - 300:
-                db.execute('SELECT COUNT(*) FROM `inputs` WHERE `path` = %s', inpath)
-                if db.cursor.fetchall()[0][0] == 0:
-                    db.execute('INSERT INTO `inputs` VALUES (%s, %s)', inpath, outname)
-                    do_open = True
-    
+                db.execute('SELECT COUNT(*) FROM `logs` WHERE `path` = %s', inpath)
+                if db.cursor.fetchall()[0][0] != 0:
+                    print inpath, 'appears in the log table.'
+                    rm(None, inpath)
+                else:
+                    db.execute('SELECT COUNT(*) FROM `inputs` WHERE `path` = %s', inpath)
+                    if db.cursor.fetchall()[0][0] == 0:
+                        db.execute('INSERT INTO `inputs` VALUES (%s, %s)', inpath, outname)
+                        do_open = True
+   
             db.close()
     
             if not do_open:
