@@ -14,7 +14,8 @@ data_sph = [
 
 mc_cand = ['gghg']
 mc_qcd = ['fakeMetRandom', 'fakeMet25', 'fakeMet50', 'fakeMet75']
-mc_sig = ['signalRaw', 'gghg']
+#mc_sig = ['signalRaw', 'gghg']
+mc_sig = ['gghg']
 mc_lep = ['gghe', 'gghm']
 mc_dilep = ['gghee', 'gghmm']
 
@@ -29,16 +30,16 @@ skimconfig = {
 #    'dyn-50@': makeSel(makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto), sg.genBosonPtTruncator(maximum = 50.)),
 #    'dyn-50-*': makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto),
 #    'tt': makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto),
-#    'ttg': makeSel(mc_cand + mc_lep + mc_dilep),
+    'ttg': makeSel(mc_cand + mc_lep + mc_dilep),
 #    'tg': makeSel(mc_cand + mc_lep),
-#    'znng-130-o': makeSel(mc_sig, sp.addKfactor),
-#    'zllg-130-o': makeSel(makeSel(mc_sig + mc_lep + mc_dilep, sp.addKfactor), sg.ptTruncator(maximum = 300.)),
-#    'zllg-300-o': makeSel(mc_sig + mc_lep + mc_dilep, sp.addKfactor),
-#    'wnlg-130-o': makeSel(mc_sig + mc_lep, sp.addKfactor),
-#    'wnlg-130-p': makeSel(mc_sig + mc_lep, sp.addKfactor),
+    'znng-130-o': makeSel(mc_cand, sp.addKfactor),
+    'zllg-130-o': makeSel(makeSel(mc_cand + mc_lep + mc_dilep, sp.addKfactor), sg.ptTruncator(maximum = 300.)),
+    'zllg-300-o': makeSel(mc_cand + mc_lep + mc_dilep, sp.addKfactor),
+    'wnlg-130-o': makeSel(mc_cand + mc_lep, sp.addKfactor),
+#    'wnlg-130-p': makeSel(mc_cand + mc_lep, sp.addKfactor),
 #    'ww': makeSel(mc_cand + mc_lep + mc_dilep),
 #    'wz': makeSel(mc_cand + mc_lep + mc_dilep),
 #    'zz': makeSel(mc_cand + mc_lep + mc_dilep),
 #    # Signal MC
-#    'dph*': makeSel(mc_sig)
+    'dph*': makeSel(mc_sig)
 }

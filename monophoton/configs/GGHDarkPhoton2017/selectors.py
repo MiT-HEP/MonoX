@@ -511,7 +511,7 @@ def gghmm(sample, rname):
     selector.addOperator(dimuSign)
 
     if not sample.data:
-        muonLooseSF = su.getFromFile(datadir + '/muo_muon_looseid_2016.root', 'Loose_ScaleFactor') # x: abs eta, y: pt
+        muonLooseSF = su.getFromFile(datadir + '/muo_muon_idsf_2016.root', 'Loose_ScaleFactor') # x: abs eta, y: pt
         muonTrackSF = su.getFromFile(datadir + '/muonpog_muon_tracking_SF_ichep.root', 'htrack2') # x: npv
 
         idsf = selector.findOperator('MuonSF')

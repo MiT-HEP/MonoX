@@ -1,21 +1,10 @@
-import os
-import sys
 import array
 import copy
 import re
-from pprint import pprint
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-sys.path.append(basedir)
+import collections
+import ROOT
 
 from datasets import allsamples
-
-argv = list(sys.argv)
-sys.argv = []
-import ROOT
-black = ROOT.kBlack # need to load something from ROOT to actually import
-sys.argv = argv
 
 class GroupSpec(object):
     def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, altbaseline = '', cut = '', scale = 1., norm = -1.):
@@ -31,6 +20,8 @@ class GroupSpec(object):
         self.norm = norm # use to normalize histograms post-fill. Set to the expected number of events after full selection
         self.variations = []
 
+    def addVariation(self, name, **kwd):
+        self.variations.append(Variation(name, **kwd))
 
 class SampleSpec(object):
     # use for signal point spec
@@ -209,25 +200,27 @@ class PlotDef(object):
 
 
 class PlotConfig(object):
-    def __init__(self, name, obsSamples = []):
-        self.name = name # name serves as the default region selection (e.g. monoph)
+    def __init__(self):
+        self.name = '' # name serves as the default region selection (e.g. monoph)
         self.baseline = ''
         self.fullSelection = ''
-        self.obs = GroupSpec('data_obs', 'Observed', samples = allsamples.getmany(obsSamples))
-        self.prescales = dict([(s, 1) for s in self.obs.samples])
+        self.obs = GroupSpec('data_obs', 'Observed')
+        self.prescales = {}
         self.sigGroups = []
         self.signalPoints = []
         self.bkgGroups = []
-        self.cuts = []
+        self.cuts = {}
+        self.aliases = collections.OrderedDict()
         self.plots = []
         self.treeMaker = ''
 
         self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), cutName = 'fullSelection'))
 
-    def addObs(self, sname, prescale = 1):
-        sample = allsamples[sname]
-        self.obs.samples.append(sample)
-        self.prescales[sample] = prescale
+    def addObs(self, snames, prescale = 1):
+        samples = allsamples.getmany(snames)
+        for sample in samples:
+            self.obs.samples.append(sample)
+            self.prescales[sample] = prescale
 
     def addSig(self, *args, **kwd):
         if len(args) > 2:
@@ -257,15 +250,6 @@ class PlotConfig(object):
                 kwd['samples'] = allsamples.getmany(kwd['samples'])
             
         self.bkgGroups.append(GroupSpec(*args, **kwd))
-
-    def addCut(self, name, expr, applyBaseline = True):
-        if name in ('baseline', 'fullSelection'):
-            raise RuntimeError('Cut name ' + name + ' is reserved')
-
-        if applyBaseline and self.baseline:
-            expr = '(%s) && (%s)' % (self.baseline, expr)
-
-        self.cuts.append((name, expr))
 
     def addPlot(self, *args, **kwd):
         self.plots.append(PlotDef(*args, **kwd))
@@ -322,3 +306,8 @@ class Variation(object):
         #  single float -> scale up and down uniformly.
         #  string -> use branches 'reweight_%sUp' & 'reweight_%sDown'. Output suffix _{name}Up & _{name}Down
         self.reweight = reweight
+
+
+# Variables to be set by plotconfig.py
+confName = ''
+plotConfig = PlotConfig()

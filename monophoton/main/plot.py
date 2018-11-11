@@ -32,20 +32,26 @@ def makePlotter(plotConfig, group, sample, region, sourceDir, altSourceDir, lumi
         for nm in sourceNames:
             plotter.addInputPath(nm)
 
+    # define expression aliases
+    for name, expr in plotConfig.aliases.iteritems():
+        plotter.addVariable(name, expr)
+
     # group-wide cut set as base filter
     if group.cut.strip():
         plotter.setFilter(group.cut.strip())
 
     cuts = []
-    if plotConfig.baseline.strip():
-        if group.altbaseline.strip():
-            cuts.append('(' + group.altbaseline.strip() + ')')
-        else:
-            cuts.append('(' + plotConfig.baseline.strip() + ')')
+
+    if group.altbaseline.strip():
+        cuts.append('(' + group.altbaseline.strip() + ')')
+    elif plotConfig.baseline.strip():
+        cuts.append('(' + plotConfig.baseline.strip() + ')')
 
     baseSel = ' && '.join(cuts)
+
     if plotConfig.fullSelection.strip():
         cuts.append(plotConfig.fullSelection.strip())
+
     fullSel = ' && '.join(cuts)
 
     if printLevel > 0:
@@ -53,12 +59,14 @@ def makePlotter(plotConfig, group, sample, region, sourceDir, altSourceDir, lumi
         print '      Full selection:', fullSel
 
     if baseSel:
-        plotter.addCut('baseline', baseSel)
+        plotter.addVariable('__baseline__', baseSel)
+        plotter.addCut('baseline', '__baseline__')
 
     if fullSel:
+        plotter.addVariable('__fullSelection__', fullSel)
         plotter.addCut('fullSelection', fullSel)
 
-    for name, expr in plotConfig.cuts:
+    for name, expr in plotConfig.cuts.iteritems():
         plotter.addCut(name, expr)
 
     if not sample.data:
@@ -134,7 +142,7 @@ def fillPlots(plotConfig, group, plotdefs, sourceDir, outFile, lumi = 0., postsc
                         reweight = ''
 
                     if variation.cuts is not None:
-                        reweight = ' && '.join(['(%s)' % s for s in (reweight, variation.cuts.strip())])
+                        reweight = ' && '.join(['(%s)' % s for s in (reweight, variation.cuts[iv].strip())])
 
                     if variation.replacements is not None:
                         expr = plotdef.formExpression(variation.replacements[iv])
@@ -580,8 +588,11 @@ if __name__ == '__main__':
     from plotstyle import WEBDIR, SimpleCanvas, DataMCCanvas
     import config
     import utils
+    import main.plotutil as plotutil
+    plotutil.confName = args.config
 
-    pc = importlib.import_module('configs.' + config.config + '.plotconfig')
+    # Fill plotConfig parameters based on plotutil.confName
+    importlib.import_module('configs.' + config.config + '.plotconfig')
 
     ##################################
     ## PARSE COMMAND-LINE ARGUMENTS ##
@@ -593,7 +604,7 @@ if __name__ == '__main__':
         args.skimDir = config.skimDir
         localSkimDir = config.localSkimDir
 
-    plotConfig = pc.getConfig(args.config)
+    plotConfig = plotutil.plotConfig
 
     if args.listSamples:
         print 'Obs:', ' '.join('%s_%s' % (s.name, plotConfig.name) for s in plotConfig.obs.samples)
