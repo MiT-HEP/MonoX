@@ -120,7 +120,7 @@ def writepanda(inpaths, outfname):
         chain.Add(inpath)
 
     output.cd()
-    events = chain.CloneTree()
+    events = chain.CopyTree('TMath::Finite(weight)')
     events.Write()
     chain = None
 
@@ -312,7 +312,7 @@ while True:
         if len(inpaths) == 0:
             break
 
-        elif len(inpaths) < args.nmerge / 2:
+        elif len(inpaths) < args.nmerge:
             print 'Too few files to merge. Sleeping for 5 minutes.'
             time.sleep(300)
             iout += 1
