@@ -26,6 +26,7 @@ skimconfig = {
     'sph-17*': makeSel(data_sph),
 #    # MC
     'gj{,04}-*': makeSel(mc_qcd + mc_cand, sp.addKfactor),
+    'gju': makeSel(mc_qcd + mc_cand),
 #    'dyn-50': makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto),
 #    'dyn-50@': makeSel(makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto), sg.genBosonPtTruncator(maximum = 50.)),
 #    'dyn-50-*': makeSel(mc_cand + mc_lep + mc_dilep, sg.addGenPhotonVeto),
@@ -37,9 +38,11 @@ skimconfig = {
     'zllg-300-o': makeSel(mc_cand + mc_lep + mc_dilep, sp.addKfactor),
     'wnlg-130-o': makeSel(mc_cand + mc_lep, sp.addKfactor),
 #    'wnlg-130-p': makeSel(mc_cand + mc_lep, sp.addKfactor),
-#    'ww': makeSel(mc_cand + mc_lep + mc_dilep),
-#    'wz': makeSel(mc_cand + mc_lep + mc_dilep),
-#    'zz': makeSel(mc_cand + mc_lep + mc_dilep),
+    'ww': makeSel(mc_cand + mc_lep + mc_dilep),
+    'wz': makeSel(mc_cand + mc_lep + mc_dilep),
+    'zz': makeSel(mc_cand + mc_lep + mc_dilep),
+    'wwg': makeSel(mc_cand + mc_lep + mc_dilep),
+    'wzg': makeSel(mc_cand + mc_lep + mc_dilep),
 #    # Signal MC
     'dph*': makeSel(mc_sig)
 }

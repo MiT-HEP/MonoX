@@ -150,7 +150,6 @@ def gghgBase(sample, rname, selcls = None):
 
 def gghlBase(sample, rname, flavor, selcls = None):
     """
-    For low MT case.
     Base for n-lepton + photon selection.
     For MC, we could use PartonSelector, but for interest of clarity and comparing cut flow
     with the other groups, we let events with all flavors pass.
@@ -385,6 +384,28 @@ def gghHfake(sample, rname):
 def gghe(sample, rname, selcls = None):
     """
     GGH + single electron.
+    """
+
+    selector = gghlBase(sample, rname, ROOT.lElectron, selcls = selcls)
+    selector.findOperator('LeptonSelection').setN(1, 0)
+
+    mtCut = ROOT.LeptonMt()
+    mtCut.setFlavor(ROOT.lElectron)
+    mtCut.setMax(160.)
+    mtCut.setIgnoreDecision(True)
+    selector.addOperator(mtCut)
+
+    metCut = ROOT.Met('RealMetCut')
+    metCut.setMetSource(ROOT.kInMet)
+    metCut.setThreshold(50.)
+    metCut.setIgnoreDecision(True)
+    selector.addOperator(metCut)
+
+    return selector
+
+def ggheLowPt(sample, rname, selcls = None):
+    """
+    GGH + single electron starting from single electron trigger.
     """
 
     selector = gghlBase(sample, rname, ROOT.lElectron, selcls = selcls)
