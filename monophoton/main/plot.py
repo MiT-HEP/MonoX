@@ -448,7 +448,7 @@ def printChi2(stack, plotdef, plotConfig, precision = '.2f'):
     print 'Chi2 for plot ' + plotdef.name + ': ' + str(chi2 / (nBins - 1))
 
 
-def printCanvas(canvas, plotdef, plotConfig):
+def printCanvas(canvas, plotdef, plotConfig, plotDir):
     """
     Print the canvas content as pdf and png.
     """
@@ -818,6 +818,8 @@ if __name__ == '__main__':
             plotDir = ''
         else:
             plotDir = args.plotDir
+            if plotDir.startswith(plotstyle.WEBDIR):
+                plotDir = plotDir.replace(plotstyle.WEBDIR, '')
     else:
         plotDir = config.config + '/' + args.config
 
@@ -915,4 +917,4 @@ if __name__ == '__main__':
             if args.asimov:
                 plotdef.name += args.asimov.capitalize()
 
-            printCanvas(canvas, plotdef, plotConfig)
+            printCanvas(canvas, plotdef, plotConfig, plotDir)
