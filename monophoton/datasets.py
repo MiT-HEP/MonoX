@@ -185,7 +185,7 @@ class SampleDef(object):
             comments = ''
             
         lineTuple = (self.name, title, xsecstr, self.nevents, sumwstr, self.generator, self.catalog[0], self.book, fullnames, comments)
-        return '%-16s %-35s %-16s %-10d %-20s %-12s %-9s %-12s %s%s' % lineTuple
+        return '%-16s %-35s %-16s %-10d %-20s %-9s %-8s %-12s %s%s' % lineTuple
 
     def _updateSumw(self):
         if self._sumw2 > 0.:
