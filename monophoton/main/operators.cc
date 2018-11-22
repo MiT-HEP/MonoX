@@ -35,6 +35,20 @@ CutMixin::cutExpr(TString const& name) const
 }
 
 bool
+Cut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  result_ = pass(_event, _outEvent);
+  return ignoreDecision_ || result_;
+}
+
+bool
+Modifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+{
+  apply(_event, _outEvent);
+  return true;
+}
+
+bool
 MonophotonCut::monophexec(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   result_ = pass(_event, _outEvent);
@@ -161,11 +175,11 @@ HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 
   pass_ = false;
 
-  for (unsigned iT(0); iT != tokens_.size(); ++iT) {
-    auto& token(tokens_[iT]);
-
-    if (_event.triggerFired(token))
+  for (auto& token : tokens_) {
+    if (_event.triggerFired(token)) {
       pass_ = true;
+      break;
+    }
   }
   
   return pass_;
