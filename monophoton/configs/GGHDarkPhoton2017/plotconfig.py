@@ -784,11 +784,11 @@ elif pu.confName.startswith('gghgLowPt'):
 elif pu.confName.startswith('ewkg'):
     config.name = 'gghgLowPt'
 
-    for sname in common.photonData:
-        if type(sname) == tuple:
-            config.addObs(*sname)
-        else:
-            config.addObs(sname)
+    #for sname in common.photonData:
+    #    if type(sname) == tuple:
+    #        config.addObs(*sname)
+    #    else:
+    #        config.addObs(sname)
 
     config.baseline = 'photons.scRawPt[0] > 75. && photons.tight[0]'
     if pu.confName.endswith('VBFTrig'):
@@ -808,18 +808,26 @@ elif pu.confName.startswith('ewkg'):
 
     config.cuts['leadJets'] = 'jet50[0] && jet50[1]'
     config.cuts['mjj500'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 500.'
+    config.cuts['mjj1000'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 1000.'
+    config.cuts['mjj500PhoPt200'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 500. && photons.scRawPt[0] > 200.'
+    config.cuts['phoPt200'] = '__baseline__[0] && photons.scRawPt[0] > 200.'
 
     config.addBkg('gjetslo', '#gamma + jets', samples = common.gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), reweight = '1./weight_QCDCorrection')#, scale = 'data')
     config.addBkg('gjets', '#gamma + jets', samples = ['gju'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))#, scale = 'data')
 
     config.addPlot('phoPt', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (50, 0., 500.), unit = 'GeV', overflow = True)
+    config.addPlot('phoPtTwoJets', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (50, 0., 500.), unit = 'GeV', cutName = 'leadJets', overflow = True)
     config.addPlot('phoPtMjj500', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (50, 0., 500.), unit = 'GeV', cutName = 'mjj500', overflow = True)
+    config.addPlot('phoPtMjj1000', 'E_{T}^{#gamma}', 'photons.scRawPt[0]', (50, 0., 500.), unit = 'GeV', cutName = 'mjj1000', overflow = True)
     config.addPlot('phoEta', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5))
+    config.addPlot('phoEtaTwoJets', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5), cutName = 'leadJets')
+    config.addPlot('phoEtaMjj500', '#eta^{#gamma}', 'photons.eta_[0]', (20, -1.5, 1.5), cutName = 'mjj500')
     config.addPlot('phoPhi', '#phi^{#gamma}', 'photons.phi_[0]', (20, -math.pi, math.pi))
     config.addPlot('nphotons', 'N_{#gamma}', 'photons.size', (4, 0., 4.))
     config.addPlot('dPhiPhoJetMin', 'min#Delta#phi(#gamma, j)', 'photons.minJetDPhi[0]', (14, 0., math.pi))
     config.addPlot('dPhiJetJet', '#Delta#phi(j1, j2)', 'dphijj', (14, 0., math.pi))
     config.addPlot('njets', 'N_{jet}', 'njets50', (6, 0., 6.))
+    config.addPlot('njetsPhoPt200', 'N_{jet}', 'njets50', (6, 0., 6.), cutName = 'phoPt200')
     config.addPlot('njetsHighPt', 'N_{jet} (p_{T} > 100 GeV)', 'Sum$(jets.pt_ > 100.)', (10, 0., 10.))
     config.addPlot('jetPt', 'p_{T}^{jet}', 'jets.pt_', (40, 0., 500.), unit = 'GeV', overflow = True)
     config.addPlot('jet1Pt', 'p_{T}^{jet1}', 'jets.pt_[0]', (40, 0., 500.), unit = 'GeV', cutName = 'leadJets', overflow = True)
@@ -834,6 +842,10 @@ elif pu.confName.startswith('ewkg'):
     config.addPlot('sipip', '#sigma_{i#phi i#phi}', 'photons.sipip[0]', (40, 0., 0.020))
     config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
     config.addPlot('htGen', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 6 || partons.pdgid == 21))', (200, 0., 2000.), overflow = True, mcOnly = True)
+    config.addPlot('countTwoJets', '', '0.5', (1, 0., 1.), cutName = 'leadJets')
+    config.addPlot('countMjj500', '', '0.5', (1, 0., 1.), cutName = 'mjj500')
+    config.addPlot('countMjj1000', '', '0.5', (1, 0., 1.), cutName = 'mjj1000')
+    config.addPlot('countMjj500PhoPt200', '', '0.5', (1, 0., 1.), cutName = 'mjj500PhoPt200')
 
     # Standard MC systematic variations
     for group in config.bkgGroups + config.sigGroups:
