@@ -428,6 +428,7 @@ class PhotonSelection : public MonophotonCut {
 
   double minPt_{220.};
   double maxPt_{6500.};
+  bool ebOnly_{true};
   panda::XPhoton::IDTune idTune_{panda::XPhoton::kFall17};
   unsigned wp_{0}; // 0 -> loose, 1 -> medium
   unsigned nPhotons_{1}; // required number of photons

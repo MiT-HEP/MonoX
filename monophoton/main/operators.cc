@@ -678,7 +678,7 @@ PhotonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
     auto& photon(_event.photons[iP]);
 
-    if (!photon.isEB)
+    if (ebOnly_ && !photon.isEB)
       continue;
 
     bool passPt(false);
