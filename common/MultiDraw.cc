@@ -7,6 +7,7 @@
 #include "TError.h"
 #include "TLeafF.h"
 #include "TLeafD.h"
+#include "TEntryList.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -599,7 +600,7 @@ MultiDraw::deleteFormula_(TTreeFormulaCached* _formula)
 }
 
 void
-MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
+MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/, char const* _filter/* = nullptr*/)
 {
   float* weightF(nullptr);
   double weight(1.);
@@ -639,13 +640,25 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
   else if (printLevel_ >= 4)
     printEvery = 1;
 
-  long iEntry(_firstEntry);
-  long iEntryMax(_firstEntry + _nEntries);
-  long iLocalEntry(0);
+  if (_filter != nullptr && std::strlen(_filter) != 0) {
+    tree_.Draw(">>elist", _filter, "entrylist");
+    auto* elist(static_cast<TEntryList*>(gDirectory->Get("elist")));
+    tree_.SetEntryList(elist);
+  }
+
+  long long iEntry(_firstEntry);
+  long long iEntryMax(_firstEntry + _nEntries);
   int treeNumber(-1);
   unsigned passBase(0);
   unsigned passFull(0);
-  while (iEntry != iEntryMax && (iLocalEntry = tree_.LoadTree(iEntry++)) >= 0) {
+  while (iEntry != iEntryMax) {
+    long long iEntryFiltered(tree_.GetEntryNumber(iEntry++));
+    if (iEntryFiltered < 0)
+      break;
+    long long iLocalEntry(tree_.LoadTree(iEntryFiltered));
+    if (iLocalEntry < 0)
+      break;
+
     if (printLevel_ >= 0 && iEntry % printEvery == 1) {
       std::cout << "\r      " << iEntry << " events";
       if (printLevel_ > 2)
@@ -837,6 +850,12 @@ MultiDraw::fillPlots(long _nEntries/* = -1*/, long _firstEntry/* = 0*/)
 
       plot->fill(eventWeights, fullResults);
     }
+  }
+
+  if (tree_.GetEntryList() != nullptr) {
+    auto* elist(tree_.GetEntryList());
+    tree_.SetEntryList(nullptr);
+    delete elist;
   }
 
   delete baseResults;
