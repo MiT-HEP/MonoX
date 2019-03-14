@@ -201,7 +201,7 @@ public:
   void addTreeBranch(TTree* tree, char const* bname, char const* expr);
 
   //! Run and fill the plots and trees.
-  void fillPlots(long nEntries = -1, long firstEntry = 0);
+  void fillPlots(long nEntries = -1, long firstEntry = 0, char const* filter = nullptr);
 
   void setPrintLevel(int l) { printLevel_ = l; }
   long getTotalEvents() { return totalEvents_; }

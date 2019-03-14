@@ -3,7 +3,7 @@ import sys
 import math
 import ROOT
 
-WEBDIR = os.environ['HOME'] + '/public_html/cmsplots'
+WEBDIR = os.environ['HOME'] + '/www/plots'
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetTextFont(42)
@@ -16,7 +16,7 @@ ROOT.gStyle.SetTitleOffset(1.5, 'Y')
 ROOT.gStyle.SetNdivisions(208, 'X')
 ROOT.gStyle.SetFillStyle(0)
 
-def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
+def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035, angle = 0., ndc = True):
     if type(align) is str:
         al = 0
         if 'left' in align:
@@ -49,6 +49,7 @@ def makeText(x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
 
     pave.SetTextAlign(align)
     pave.SetTextSize(size)
+    pave.SetTextAngle(angle)
     pave.SetFillStyle(0)
     pave.SetBorderSize(0)
     pave.SetMargin(0.)
@@ -393,8 +394,8 @@ class SimpleCanvas(object):
 
         return line
 
-    def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035, ndc = True):
-        pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size, ndc = ndc)
+    def addText(self, text, x1, y1, x2, y2, align = 22, font = 42, size = 0.035, angle = 0., ndc = True):
+        pave = makeText(x1, y1, x2, y2, align = align, font = font, size = size, angle = angle, ndc = ndc)
         pave.AddText(text)
         self._objects.append(Drawable(pave, None))
 
@@ -838,7 +839,7 @@ class Normalizer(object):
     See the RatioCanvas docstring for details.
     """
 
-    def __init__(self, normObj, errtype):
+    def __init__(self, normObj, errtype, allowNaN = False):
         if not normObj.InheritsFrom(ROOT.TH1.Class()) and \
                 not normObj.InheritsFrom(ROOT.TGraph.Class()) and \
                 not normObj.InheritsFrom(ROOT.TF1.Class()):
@@ -846,6 +847,7 @@ class Normalizer(object):
 
         self._normObj = normObj
         self._errtype = errtype
+        self._allowNaN = allowNaN
 
     def normalize(self, obj, name):
         if obj.InheritsFrom(ROOT.TH1.Class()):
@@ -918,7 +920,10 @@ class Normalizer(object):
                 if norm != 0.:
                     scale = 1. / norm
                 else:
-                    scale = 0.
+                    if self._allowNaN:
+                        scale = float('nan')
+                    else:
+                        scale = 0.
 
                 targ.SetBinContent(iX, targ.GetBinContent(iX) * scale)
 
@@ -965,7 +970,10 @@ class Normalizer(object):
                 if norm != 0.:
                     scale = 1. / norm
                 else:
-                    scale = 0.
+                    if self._allowNaN:
+                        scale = float('nan')
+                    else:
+                        scale = 0.
 
                 targ.SetPoint(iP, x, targ.GetY()[iP] * scale)
 
@@ -985,7 +993,7 @@ class Normalizer(object):
                         y = targ.GetY()[iP]
                         if sym:
                             nrerr = obj.GetErrorY(iP) / obj.GetY()[iP]
-                            targ.SetPointError(iP, y * math.sqrt(nrerr * nrerr + drerr * drerr))
+                            targ.SetPointError(iP, targ.GetErrorX(iP), y * math.sqrt(nrerr * nrerr + drerr * drerr))
                         else:
                             nrerrup = obj.GetErrorYhigh(iP) / obj.GetY()[iP]
                             nrerrdown = obj.GetErrorYlow(iP) / obj.GetY()[iP]
@@ -1001,13 +1009,13 @@ class Normalizer(object):
                         down = 0.
 
                     if sym:
-                        targ.SetPointError(iP, (up + down) * 0.5)
+                        targ.SetPointError(iP, targ.GetErrorX(iP), (up + down) * 0.5)
                     else:
                         targ.SetPointEYlow(iP, down)
                         targ.SetPointEYhigh(iP, up)
 
         elif obj.InheritsFrom(ROOT.TF1.Class()):
-            raise RuntimeError('Not implemented')
+            raise NotImplementedError('Normalization with TF1')
 
         else:
             raise RuntimeError('Cannot normalize ' + str(obj))
@@ -1065,8 +1073,8 @@ class RatioCanvas(SimpleCanvas):
         self.yaxis = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMIN, vmin = 0.1, vmax = 1., log = True)
         self.yaxisr = makeAxis('Y', ymin = RatioCanvas.PLOT_YMIN, ymax = RatioCanvas.PLOT_YMAX, x = SimpleCanvas.XMAX, vmin = 0.1, vmax = 1., titleSize = 0., log = True, opposite = True)
 
-        self.raxis = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMIN, vmax = 2., titleSize = 0.036)
-        self.raxisr = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMAX, vmax = 2., titleSize = 0., opposite = True)
+        self.raxis = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMIN, vmax = 2., titleSize = 0.036, ndiv = 210)
+        self.raxisr = makeAxis('Y', ymin = RatioCanvas.RATIO_YMIN, ymax = RatioCanvas.RATIO_YMAX, x = SimpleCanvas.XMAX, vmax = 2., titleSize = 0., ndiv = 210, opposite = True)
         self.raxis.SetTickLength(0.09)
         self.raxisr.SetTickLength(0.09)
 
@@ -1075,6 +1083,9 @@ class RatioCanvas(SimpleCanvas):
         self.rlimits = (0., 2.)
 
         self.rerr = 'norm'
+
+        # indicate bins with zero base in the ratio pad
+        self.showZeroBase = False
 
         self._makePads()
 
@@ -1092,6 +1103,7 @@ class RatioCanvas(SimpleCanvas):
         self.ratioPad = self.canvas.cd(2)
         self.ratioPad.SetPad(SimpleCanvas.XMIN, RatioCanvas.RATIO_YMIN, SimpleCanvas.XMAX, RatioCanvas.RATIO_YMAX)
         self.ratioPad.SetMargin(0., 0., 0., 0.)
+        self.ratioPad.SetGridy(True)
 
     def cd(self):
         self.plotPad.cd()
@@ -1153,6 +1165,7 @@ class RatioCanvas(SimpleCanvas):
                 except AttributeError:
                     # OK I give up
                     pass
+
             base.GetXaxis().SetNdivisions(self.xaxis.GetNdiv())
             base.GetXaxis().SetTitle('')
             base.GetXaxis().SetLabelSize(0.)
@@ -1180,7 +1193,7 @@ class RatioCanvas(SimpleCanvas):
             rbase.SetMinimum()
             self._temporaries.append(rbase)
 
-            normalizer = Normalizer(rbase, self.rerr)
+            normalizer = Normalizer(rbase, self.rerr, allowNaN = self.showZeroBase)
 
             rframe = ROOT.TH1F('rframe', '', 1, rbase.GetXaxis().GetXmin(), rbase.GetXaxis().GetXmax())
             rframe.SetMinimum(self.rlimits[0])
@@ -1216,12 +1229,63 @@ class RatioCanvas(SimpleCanvas):
                 self._temporaries.append(ratio)
 
                 if ratio.InheritsFrom(ROOT.TGraph.Class()):
+                    if self.showZeroBase:
+                        # there can be NaNs
+                        zeroBaseBins = []
+                        for iP in range(ratio.GetN()):
+                            y = ratio.GetY()[iP]
+                            if not (y >= 0. or y < 0.):
+                                zeroBaseBins.append(iP + 1)
+                                ratio.SetPoint(iP, ratio.GetX()[iP], 0.)
+                                try:
+                                    ratio.SetPointError(iP, ratio.GetErrorX(iP), 0.)
+                                except TypeError: # TGraphAsymmErrors
+                                    ratio.SetPointEYlow(iP, 0.)
+                                    ratio.SetPointEYhigh(iP, 0.)
+
                     ratio.Draw(hist.drawOpt + 'Z')
                 else:
                     ratio.Draw(hist.drawOpt + ' SAME')
 
+                    if self.showZeroBase:
+                        # there can be NaNs
+                        zeroBaseBins = []
+                        for iX in range(1, ratio.GetNbinsX() + 1):
+                            cont = ratio.GetBinContent(iX)
+                            if not (cont >= 0. or cont < 0.):
+                                zeroBaseBins.append(iX)
+                                ratio.SetBinContent(iX, 0.)
+                                ratio.SetBinError(iX, 0.)
+
+                if self.showZeroBase:
+                    # add red hatches to bins with zero bases
+                    box = ROOT.TBox(0., self.rlimits[0], 0., self.rlimits[1])
+                    box.SetFillColor(ROOT.kRed)
+                    box.SetFillStyle(3003)
+                    box.SetLineWidth(0)
+
+                    if rbase.InheritsFrom(ROOT.TH1.Class()):
+                        for iX in zeroBaseBins:
+                            xmin = rbase.GetXaxis().GetBinLowEdge(iX)
+                            xmax = rbase.GetXaxis().GetBinUpEdge(iX)
+                            self._temporaries.append(box.DrawBox(xmin, self.rlimits[0], xmax, self.rlimits[1]))
+                    else:
+                        sys.stderr.write('showZeroBase: cannot identify proper bin boundaries because the ratio base is not a histogram\n')
+                        for iX in zeroBaseBins:
+                            if iX == 1:
+                                xmin = rbase.GetXaxis().GetXmin()
+                            else:
+                                xmin = (rbase.GetX()[iX - 2] + rbase.GetX()[iX - 1]) * 0.5
+
+                            if iX == rbase.GetN():
+                                xmax = rbase.GetXaxis().GetXmax()
+                            else:
+                                xmax = (rbase.GetX()[iX - 1] + rbase.GetX()[iX]) * 0.5
+
+                            self._temporaries.append(box.DrawBox(xmin, self.rlimits[0], xmax, self.rlimits[1]))
+
                 if 'P' in hist.drawOpt or ratio.InheritsFrom(ROOT.TGraph.Class()):
-                    # draw arrows and error bars for over and undershoots
+                    # draw arrows and error bars for over- and undershoots
                     rmed = (self.rlimits[0] + self.rlimits[1]) * 0.5
                     extrema = []
 
@@ -1372,6 +1436,8 @@ class DataMCCanvas(RatioCanvas):
 
         self.borderColor = ROOT.kBlack
 
+        self.zeroNegativeBase = False
+
     def Clear(self, full = False):
         RatioCanvas.Clear(self, full = full)
 
@@ -1408,12 +1474,13 @@ class DataMCCanvas(RatioCanvas):
 
             fillcolor = ROOT.gROOT.GetColor(color)
             if fillcolor and color != 0:
+                #lcolor = ROOT.TColor.GetColorDark(fillcolor.GetNumber())
                 """
                 r = fillcolor.GetRed() * 0.8
                 g = fillcolor.GetGreen() * 0.8
                 b = fillcolor.GetBlue() * 0.8
                 color = ROOT.TColor.GetColor(r, g, b)
-
+                
                 fillcolor = ROOT.gROOT.GetColor(color)
                 """
                 r = fillcolor.GetRed() * 0.8
@@ -1423,7 +1490,7 @@ class DataMCCanvas(RatioCanvas):
             else:
                 lcolor = color
 
-            self.legend.add('bkg%d' % idx, title = title, opt = 'LF', fcolor = color, mcolor = lcolor, lcolor = lcolor, fstyle = style, lwidth = 2, lstyle = ROOT.kSolid)
+            self.legend.add('bkg%d' % idx, title = title, opt = 'LF', fcolor = (-1 if style == 0 else color), mcolor = lcolor, lcolor = lcolor, fstyle = style, lwidth = 2, lstyle = ROOT.kSolid)
             self.legend.apply('bkg%d' % idx, bkgHist)
 
             self._stack.Add(bkgHist)
@@ -1459,21 +1526,47 @@ class DataMCCanvas(RatioCanvas):
         if len(self._bkgs) != 0:
             first = self._histograms[self._bkgs[0]]
 
+            if self.zeroNegativeBase:
+                for iX in range(1, first.GetNbinsX() + 1):
+                    cont = 0.
+                    for iBkg in self._bkgs:
+                        cont += self._histograms[iBkg].GetBinContent(iX)
+
+                    if cont < 0.:
+                        for iBkg in self._bkgs:
+                            self._histograms[iBkg].SetBinContent(iX, 0.)
+
+                        for h in self._stack.GetHists():
+                            h.SetBinContent(iX, 0.)
+
+            hList = [0]
+            rList = []
+
+            if self.borderColor >= 0:
+                self._hStore.cd()
+                borderHist = first.Clone('border')
+                for iBkg in self._bkgs[1:]:
+                    bkg = self._histograms[iBkg]
+                    borderHist.Add(bkg.obj)
+
+                borderHist.SetLineWidth(2)
+                borderHist.SetLineColor(self.borderColor)
+                borderHist.SetMarkerSize(0)
+                borderHist.SetMarkerStyle(0)
+                borderHist.SetMarkerColor(self.borderColor)
+                borderHist.SetFillStyle(0)
+
+                self.addHistogram(borderHist, drawOpt = 'HIST', clone = False)
+                iBorder = len(self._histograms) - 1
+                hList.append(iBorder)
+                rList.append(iBorder)
+
             self._hStore.cd()
-            borderHist = first.Clone('border')
             uncertHist = first.Clone('uncert')
 
             for iBkg in self._bkgs[1:]:
                 bkg = self._histograms[iBkg]
-                borderHist.Add(bkg.obj)
                 uncertHist.Add(bkg.obj)
-        
-            borderHist.SetLineWidth(2)
-            borderHist.SetLineColor(self.borderColor)
-            borderHist.SetMarkerSize(0)
-            borderHist.SetMarkerStyle(0)
-            borderHist.SetMarkerColor(self.borderColor)
-            borderHist.SetFillStyle(0)
 
             uncertHist.SetFillStyle(3003)
             uncertHist.SetFillColor(ROOT.kGray + 2)
@@ -1482,20 +1575,21 @@ class DataMCCanvas(RatioCanvas):
             uncertHist.SetMarkerColor(ROOT.kGray + 2)
             uncertHist.SetLineWidth(0)
 
-            self.addHistogram(borderHist, drawOpt = 'HIST', clone = False)
-            iBorder = len(self._histograms) - 1
             self.addHistogram(uncertHist, drawOpt = 'E2', clone = False)
             iUncert = len(self._histograms) - 1
+            hList.append(iUncert)
+            rList.append(iUncert)
 
-            # addHistogram calls _modified which clears temporaries - this line has to come after above
-            self._temporaries += [borderHist, uncertHist]
+            # addHistogram calls _modified which clears temporaries - these lines have to come after above
+            if self.borderColor >= 0:
+                self._temporaries.append(borderHist)
+            self._temporaries.append(uncertHist)
 
-            hList = [0, iBorder, iUncert] + self._sigs
-            rList = [iBorder, iUncert]
+            hList += self._sigs
             if self._obs != -1:
                 hList.append(self._obs)                
                 rList.append(self._obs)
-
+                
             legendOrder = []
             if self._obs != -1:
                 legendOrder.append('obs')
@@ -1505,7 +1599,8 @@ class DataMCCanvas(RatioCanvas):
 
             RatioCanvas.Update(self, hList = hList, rList = rList, logx = logx, logy = logy, drawLegend = drawLegend)
 
-            self._histograms.pop()
+            if self.borderColor >= 0:
+                self._histograms.pop()
             self._histograms.pop()
 
         gDirectory.cd()
