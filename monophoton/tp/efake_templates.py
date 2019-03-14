@@ -5,19 +5,23 @@ import os
 import array
 import math
 import shutil
+import importlib
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-sys.path.append(basedir)
 import config
 import utils
 from datasets import allsamples
-from tp.efake_conf import skimConfig, lumiSamples, outputDir, roofitDictsDir, getBinning, itune, vetoCut, fitBinningT, dataSource, tpconfs, monophSel, analysis
 
-dataType = sys.argv[1] # "data" or "mc"
-binningName = sys.argv[2] # see efake_conf
+target = sys.argv[1] # 'monoph', 'gghg', 'vbfg', etc. see efake.py
+dataType = sys.argv[2] # "data" or "mc"
+binningName = sys.argv[3] # see tpconf.py
 
-fitBins = getBinning(binningName)[2]
+efake_conf = importlib.import_module('configs.' + config.config + '.efake')
+sampleGroups = efake_conf.sampleGroups
+fitBinningT = efake_conf.fitBinningT
+
+outputDir, dataSource, probeSel, vetoCut, labels = efake_conf.mmtConf(target)
+
+fitBins = efake_conf.getBinning(binningName)[2]
 
 lumi = sum(allsamples[s].lumi for s in lumiSamples)
 
@@ -27,8 +31,8 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 
 ROOT.gSystem.Load('libRooFit.so')
-ROOT.gROOT.LoadMacro(basedir + '/../common/MultiDraw.cc+')
-ROOT.gSystem.Load(roofitDictsDir + '/libCommonRooFit.so') # defines KeysShape
+ROOT.gSystem.Load(config.libmultidraw)
+ROOT.gSystem.Load(config.libroofit) # defines KeysShape
 
 ### Files ###
 
@@ -104,8 +108,8 @@ print 'Finished common setup.'
 print 'Starting template preparation.'
 
 # templates setup
-egPlotter = ROOT.MultiDraw()
-mgPlotter = ROOT.MultiDraw()
+egPlotter = ROOT.multidraw.MultiDraw()
+mgPlotter = ROOT.multidraw.MultiDraw()
 
 # egPlotter.setPrintLevel(2)
 # mgPlotter.setPrintLevel(2)
@@ -116,44 +120,40 @@ if dataType == 'data':
 
     # target samples
     if 'smu' in dataSource:
-        for sname in skimConfig['mudata'][0]:
+        for sname in sampleGroups[dataSource][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
 
-        egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
-        mgPlotter.setBaseSelection('tags.pt_ > 50.')
+        egPlotter.setFilter('tags.pt_ > 50. && probes.loose')
+        mgPlotter.setFilter('tags.pt_ > 50.')
 
     else:   
         if 'sph' in dataSource:
-            egSamp = 'phdata' + config.year
-            mgSamp = 'phdata' + config.year
+            egSamp = dataSource
+            mgSamp = dataSource
         elif 'sel' in dataSource:
-            egSamp = 'eldata' + config.year
-            mgSamp = 'mudata' + config.year
+            egSamp = dataSource
+            mgSamp = dataSource.replace('sel', 'smu')
 
-        if 'BCD' in dataSource:
-            egSamp += 'BCD'
-            mgSamp += 'BCD'
-        elif 'EF' in dataSource:
-            egSamp += 'EF'
-            mgSamp += 'EF'
-
-        for sname in skimConfig[egSamp][0]:
+        for sname in sampleGroups[egSamp][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
     
-        for sname in skimConfig[mgSamp][0]:
+        for sname in sampleGroups[mgSamp][0]:
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
-        if 'sph' in dataSource and analysis == 'monophoton':
+        if 'sph' in dataSource and target == 'monoph':
             pass
             # egPlotter.setBaseSelection('probes.triggerMatch[][8]') # 8 = fPh165HE10
             # mgPlotter.setBaseSelection('probes.triggerMatch[][8]')
         elif 'sel' in dataSource:
-            egPlotter.setBaseSelection('tags.pt_ > 40.')
-            mgPlotter.setBaseSelection('tags.pt_ > 40.')
+            egPlotter.setFilter('tags.pt_ > 40.')
+            mgPlotter.setFilter('tags.pt_ > 40.')
 
 else:
-    trigsource = ROOT.TFile.Open(basedir + '/data/trigger_efficiency.root')
+    # TODO FROM HERE
+
+    trigsource = ROOT.TFile.Open(config.baseDir + '/data/trigger_efficiency.root')
+    # TODO GET FROM CONF
     eleTrigEff = trigsource.Get('electron_sel/leppt/el27_eff')
     muTrigEff = trigsource.Get('muon_smu/leppt/mu24ortrk24_eff')
     if not eleTrigEff or not muTrigEff:
@@ -163,7 +163,7 @@ else:
     mgPlotter.setConstantWeight(lumi)
 
     if 'smu' in dataSource:
-        for sname in skimConfig['mcmu'][0]:
+        for sname in sampleGroups['mcmu'][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tp2m'))
 
@@ -171,7 +171,7 @@ else:
         mgPlotter.setReweight('tags.pt_', muTrigEff)
 
     else:
-        for sname in skimConfig['mc'][0]:
+        for sname in sampleGroups['mc'][0]:
             egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
             mgPlotter.addInputPath(utils.getSkimPath(sname, 'tpmg'))
 
@@ -185,7 +185,7 @@ else:
         egPlotter.setBaseSelection('tags.pt_ > 50. && probes.loose')
         mgPlotter.setBaseSelection('tags.pt_ > 50.')
 
-#    for sname in skimConfig['mcgg'][0]:
+#    for sname in sampleGroups['mcgg'][0]:
 #        egPlotter.addInputPath(utils.getSkimPath(sname, 'tpeg'))
 
 objects = []
@@ -201,7 +201,7 @@ for bin, fitCut in fitBins:
         else:
             egPlotter.addPlot(hsig, 'tp.mass', fitCut + ' && sample == 1')
 
-    for conf in tpconfs:
+    for conf in labels:
         suffix = conf + '_' + bin
 
         htarg = template.Clone('target_' + suffix)
@@ -221,10 +221,10 @@ for bin, fitCut in fitBins:
             cut = ('probes.mediumX[][{itune}] && {vetoCut} && ({fitCut})').format(itune = itune, vetoCut = vetoCut, fitCut = fitCut)
             bkgcut = cut + ' && !probes.hasCollinearL'
         elif conf == 'pass':
-            cut = '({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            cut = '({probeSel}) && ({fitCut})'.format(probeSel = probeSel, fitCut = fitCut)
             bkgcut = 'probes.sieie > 0.012 && probes.chIsoX[][{itune}] > 3. && {fitCut}'.format(itune = itune, fitCut = fitCut)
         elif conf == 'fail':
-            cut = '!({monophSel}) && ({fitCut})'.format(monophSel = monophSel, fitCut = fitCut)
+            cut = '!({probeSel}) && ({fitCut})'.format(probeSel = probeSel, fitCut = fitCut)
             bkgcut = 'probes.sieie > 0.012 && probes.chIsoX[][{itune}] > 3. && {fitCut}'.format(itune = itune, fitCut = fitCut)
         elif conf == 'passiso':
             cut = '({iso}) && ({fitCut})'.format(iso = '(probes.chIso + TMath::Max(probes.nhIso + probes.phIso - 0.5 * probes.puIso, 0.)) / probes.pt_ < 0.25', fitCut = fitCut)

@@ -784,12 +784,6 @@ elif pu.confName.startswith('gghgLowPt'):
 elif pu.confName.startswith('ewkg'):
     config.name = 'gghgLowPt'
 
-    #for sname in common.photonData:
-    #    if type(sname) == tuple:
-    #        config.addObs(*sname)
-    #    else:
-    #        config.addObs(sname)
-
     config.baseline = 'photons.scRawPt[0] > 75. && photons.tight[0]'
     if pu.confName.endswith('VBFTrig'):
         config.baseline += ' && photons.r9[0] > 0.9 && detajj[0] > 3.'
@@ -806,11 +800,12 @@ elif pu.confName.startswith('ewkg'):
     config.aliases['mjsq2'] = 'jets.mass_[1] * jets.mass_[1]'
     config.aliases['mjj12'] = 'TMath::Sqrt(mjsq1[0] + mjsq2[0] + 2. * TMath::Sqrt((pj1[0] * pj1[0] + mjsq1[0]) * (pj2[0] * pj2[0] + mjsq2[0])) - 2. * jets.pt_[0] * jets.pt_[1] * TMath::Cos(dphijj[0]) - 2. * pzj1[0] * pzj2[0])'
 
-    config.cuts['leadJets'] = 'jet50[0] && jet50[1]'
+    config.cuts['leadJets'] = '__baseline__[0] && jet50[0] && jet50[1]'
     config.cuts['mjj500'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 500.'
     config.cuts['mjj1000'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 1000.'
     config.cuts['mjj500PhoPt200'] = '__baseline__[0] && jet50[0] && jet50[1] && mjj12[0] > 500. && photons.scRawPt[0] > 200.'
     config.cuts['phoPt200'] = '__baseline__[0] && photons.scRawPt[0] > 200.'
+    config.cuts['leadJetsPhoPt200'] = '__baseline__[0] && jet50[0] && jet50[1] && photons.scRawPt[0] > 200.'
 
     config.addBkg('gjetslo', '#gamma + jets', samples = common.gj, color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc), reweight = '1./weight_QCDCorrection')#, scale = 'data')
     config.addBkg('gjets', '#gamma + jets', samples = ['gju'], color = ROOT.TColor.GetColor(0xff, 0xaa, 0xcc))#, scale = 'data')
@@ -834,7 +829,8 @@ elif pu.confName.startswith('ewkg'):
     config.addPlot('jet2Pt', 'p_{T}^{jet2}', 'jets.pt_[1]', (40, 0., 500.), unit = 'GeV', cutName = 'leadJets', overflow = True)
     config.addPlot('detajj', '#Delta#eta^{jj}', 'detajj', (10, 0., 8.), cutName = 'leadJets')
     config.addPlot('detajjMjj500', '#Delta#eta^{jj}', 'detajj', (10, 0., 8.), cutName = 'mjj500')
-    config.addPlot('mjj', 'm^{jj}', 'mjj12', (20, 500., 3500.), unit = 'GeV', cutName = 'leadJets', overflow = True)
+    config.addPlot('mjj', 'm^{jj}', 'mjj12', (20, 0., 4000.), unit = 'GeV', cutName = 'leadJets', overflow = True)
+    config.addPlot('mjjPhoPt200', 'm^{jj}', 'mjj12', (20, 0., 4000.), unit = 'GeV', cutName = 'leadJetsPhoPt200', overflow = True)
     config.addPlot('phoPtOverJetPt', 'E_{T}^{#gamma}/p_{T}^{jet}', 'photons.scRawPt[0] / jets.pt_[0]', (30, 0., 3.))
     config.addPlot('metSignif', 'E_{T}^{miss} Significance', 't1Met.pt / TMath::Sqrt(t1Met.sumETRaw)', (15, 0., 30.))
     config.addPlot('nVertex', 'N_{vertex}', 'npv', (20, 0., 40.))
@@ -843,6 +839,7 @@ elif pu.confName.startswith('ewkg'):
     config.addPlot('r9', 'r9', 'photons.r9[0]', (25, 0.7, 1.2))
     config.addPlot('htGen', 'H_{T}^{gen}', 'Sum$(partons.pt_ * (TMath::Abs(partons.pdgid) < 6 || partons.pdgid == 21))', (200, 0., 2000.), overflow = True, mcOnly = True)
     config.addPlot('countTwoJets', '', '0.5', (1, 0., 1.), cutName = 'leadJets')
+    config.addPlot('countTwoJetsPhoPt200', '', '0.5', (1, 0., 1.), cutName = 'leadJetsPhoPt200')
     config.addPlot('countMjj500', '', '0.5', (1, 0., 1.), cutName = 'mjj500')
     config.addPlot('countMjj1000', '', '0.5', (1, 0., 1.), cutName = 'mjj1000')
     config.addPlot('countMjj500PhoPt200', '', '0.5', (1, 0., 1.), cutName = 'mjj500PhoPt200')

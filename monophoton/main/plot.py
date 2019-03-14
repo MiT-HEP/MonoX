@@ -742,7 +742,10 @@ if __name__ == '__main__':
 
         # for data-driven background estimates under presence of prescales
         # multiply the yields by postscale
-        postscale = effLumi / fullLumi
+        if fullLumi != 0.:
+            postscale = effLumi / fullLumi
+        else:
+            postscale = 1.
     
         groups = list(plotConfig.bkgGroups)
         if args.allSignal:
@@ -897,7 +900,10 @@ if __name__ == '__main__':
             canvas.lumi = effLumi
             # for data-driven background estimates under presence of prescales
             # multiply the yields by 1/postscale
-            postscale = fullLumi / effLumi
+            if effLumi != 0.:
+                postscale = fullLumi / effLumi
+            else:
+                postscale = 1.
         else:
             canvas.lumi = fullLumi
             postscale = 1.

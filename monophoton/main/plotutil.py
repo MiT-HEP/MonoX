@@ -216,6 +216,7 @@ class PlotConfig(object):
         self.aliases = collections.OrderedDict()
         self.plots = []
         self.treeMaker = ''
+        self.lumi = 1. # if obs.samples is empty, use this value
 
         self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), cutName = 'fullSelection'))
 
@@ -278,10 +279,16 @@ class PlotConfig(object):
         return next(g for g in self.sigGroups + self.bkgGroups if g.name == name)
 
     def fullLumi(self):
-        return sum(s.lumi for s in self.obs.samples)
+        if len(self.obs.samples) != 0:
+            return sum(s.lumi for s in self.obs.samples)
+        else:
+            return self.lumi
 
     def effLumi(self):
-        return sum(s.lumi / self.prescales[s] for s in self.obs.samples)
+        if len(self.obs.samples) != 0:
+            return sum(s.lumi / self.prescales[s] for s in self.obs.samples)
+        else:
+            return self.lumi
 
 
 class Variation(object):
