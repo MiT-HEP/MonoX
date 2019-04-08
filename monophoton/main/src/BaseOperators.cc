@@ -584,33 +584,6 @@ ConstantWeight::addBranches(TTree& _skimTree)
 }
 
 //--------------------------------------------------------------------
-// DEtajjWeight
-//--------------------------------------------------------------------
-
-DEtajjWeight::DEtajjWeight(TF1* _formula, char const* name/* = "DEtajjWeight"*/) :
-  Modifier(name),
-  formula_(_formula)
-{}
-
-void
-DEtajjWeight::addBranches(TTree& _skimTree)
-{
-  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
-}
-
-void
-DEtajjWeight::apply(panda::EventMonophoton const& _event, panda::EventBase&)
-{
-  if (dijet_->getNDijetPassing() == 0) {
-    weight_ = 1.;
-    return;
-  }
-
-  weight_ = formula_->Eval(dijet_->getDEtajjPassing(0));
-}
-
-
-//--------------------------------------------------------------------
 // NPVWeight
 //--------------------------------------------------------------------
 

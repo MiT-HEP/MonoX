@@ -2,6 +2,7 @@
 #define MonophotonOperator_h
 
 #include "Operator.h"
+#include "BaseOperators.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -513,7 +514,6 @@ class ZJetBackToBack: public MonophotonCut {
   float minJetPt_{30.};
   float dPhiMin_{2.5};
   TagAndProbePairZ* tnp_{0};
-
 };
 
 //--------------------------------------------------------------------
@@ -889,16 +889,6 @@ class IDSFWeight : public MonophotonModifier {
   double weightDown_{1.};
 };
 
-class NPVWeight : public Modifier {
- // DEPRECATED - USE PUWeight
- public:
-  NPVWeight(TH1* factors, char const* name = "NPVWeight") : Modifier(name), factors_(factors) {}
- protected:
-  void apply(panda::EventMonophoton const&, panda::EventBase&) override;
-
-  TH1* factors_;
-};
-
 class VtxAdjustedJetProxyWeight : public PhotonPtWeight {
  public:
   VtxAdjustedJetProxyWeight(TH1* isoTFactor, TH2* isoVScore, TH1* noIsoTFactor, TH2* noIsoVScore, char const* name = "VtxAdjustedJetProxyWeight");
@@ -988,7 +978,7 @@ class PhotonRecoil : public MonophotonModifier {
 
   void addBranches(TTree& skimTree) override;
  protected:
-  void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   float realMet_;
   float realPhi_;
@@ -1000,6 +990,22 @@ class PhotonRecoil : public MonophotonModifier {
   float realPhiUnclUp_;
   float realMetUnclDown_;
   float realPhiUnclDown_;
+};
+
+class DEtajjWeight : public MonophotonModifier {
+ public:
+  DEtajjWeight(TF1* formula, char const* name = "DEtajjWeight");
+  ~DEtajjWeight() {}
+
+  void addBranches(TTree& skimTree) override;
+  void setDijetSelection(DijetSelection const* sel) { dijet_ = sel; }
+
+ protected:
+  void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+
+  TF1* formula_;
+  DijetSelection const* dijet_;
+  double weight_;
 };
 
 #endif

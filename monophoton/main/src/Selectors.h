@@ -2,6 +2,7 @@
 #define Selectors_h
 
 #include "SelectorBase.h"
+#include "BaseOperators.h"
 
 #include "TF1.h"
 

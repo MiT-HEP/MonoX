@@ -6,6 +6,8 @@
 #include "fastjet/Selector.hh"
 #include "fastjet/GhostedAreaSpec.hh"
 
+#include "TGraph.h"
+
 //--------------------------------------------------------------------
 // Base
 //--------------------------------------------------------------------
@@ -3218,4 +3220,30 @@ PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton
     *outRecoils[iM] = std::sqrt(mex * mex + mey * mey);
     *outRecoilPhis[iM] = std::atan2(mey, mex);
   } 
+}
+
+//--------------------------------------------------------------------
+// DEtajjWeight
+//--------------------------------------------------------------------
+
+DEtajjWeight::DEtajjWeight(TF1* _formula, char const* name/* = "DEtajjWeight"*/) :
+  MonophotonModifier(name),
+  formula_(_formula)
+{}
+
+void
+DEtajjWeight::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
+}
+
+void
+DEtajjWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+{
+  if (dijet_->getNDijetPassing() == 0) {
+    weight_ = 1.;
+    return;
+  }
+
+  weight_ = formula_->Eval(dijet_->getDEtajjPassing(0));
 }

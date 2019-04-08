@@ -3,6 +3,8 @@
 
 #include "Operator.h"
 
+#include "TF1.h"
+
 class BaseOperator : public Operator 
 {
  public:
@@ -251,22 +253,6 @@ class ConstantWeight : public Modifier {
   double weight_;
   double weightUp_{-1.};
   double weightDown_{-1.};
-};
-
-class DEtajjWeight : public Modifier {
- public:
-  DEtajjWeight(TF1* formula, char const* name = "DEtajjWeight");
-  ~DEtajjWeight() {}
-
-  void addBranches(TTree& skimTree) override;
-  void setDijetSelection(DijetSelection const* sel) { dijet_ = sel; }
-
- protected:
-  void apply(panda::EventMonophoton const&, panda::EventBase&) override;
-
-  TF1* formula_;
-  DijetSelection const* dijet_;
-  double weight_;
 };
 
 class NNPDFVariation : public Modifier {
