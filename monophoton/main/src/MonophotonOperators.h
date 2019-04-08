@@ -1,8 +1,8 @@
 #ifndef MonophotonOperator_h
 #define MonophotonOperator_h
 
-#include "Operator.h"
-#include "BaseOperators.h"
+#include "base/Operator.h"
+#include "base/BaseOperators.h"
 
 #include "TH1.h"
 #include "TH2.h"

@@ -11,6 +11,7 @@ public:
   EventSelector(char const* name) : EventSelectorBase(name) {}
   ~EventSelector() {}
 
+  void addOperator(Operator*, unsigned idx = -1) override;
   void selectEvent(panda::EventMonophoton&) override;
 
   char const* className() const override { return "EventSelector"; }

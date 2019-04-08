@@ -3,7 +3,7 @@
 
 #include "PandaTree/Objects/interface/EventMonophoton.h"
 
-#include "logging.h"
+#include "../logging.h"
 
 #include <iostream>
 

@@ -9,6 +9,18 @@
 //--------------------------------------------------------------------
 
 void
+EventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
+{
+  if (!dynamic_cast<MonophotonOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+    throw std::runtime_error(TString::Format("Cannot add operator %s to EventSelector", _op->name()).Data());
+
+  if (_idx >= operators_.size())
+    operators_.push_back(_op);
+  else
+    operators_.insert(operators_.begin() + _idx, _op);
+}
+
+void
 EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 {
   // Branches to be directly copied from the input tree

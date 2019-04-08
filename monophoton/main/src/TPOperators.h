@@ -1,7 +1,7 @@
 #ifndef TPOperator_h
 #define TPOperator_h
 
-#include "Operator.h"
+#include "base/Operator.h"
 
 #include "PandaTree/Objects/interface/EventTP.h"
 

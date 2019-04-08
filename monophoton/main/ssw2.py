@@ -548,29 +548,20 @@ if __name__ == '__main__':
     ## compile and load the Skimmer
     ROOT.gSystem.Load('libfastjet.so')
 
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/operators.cc+')
-    try:
-        o = ROOT.Operator
-    except:
-        logger.error("Couldn't compile operators.cc. Quitting.")
-        sys.exit(1)
-
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/selectors.cc+')
-    try:
-        o = ROOT.EventSelectorBase
-    except:
-        logger.error("Couldn't compile selectors.cc. Quitting.")
-        sys.exit(1)
-    
     ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/Skimmer.cc+')
-    
-    try:
-        s = ROOT.Skimmer
-    except:
-        logger.error("Couldn't compile Skimmer.cc. Quitting.")
-        sys.exit(1)
-    
+
+    for fname in os.listdir(config.baseDir + '/main/src/base'):
+        if fname.endswith('.cc'):
+            if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/base/' + fname + '+') != 0:
+                logger.error("Couldn't compile " + fname + ". Quitting.")
+                sys.exit(1)
+
+    for fname in os.listdir(config.baseDir + '/main/src'):
+        if fname.endswith('.cc'):
+            if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/' + fname + '+') != 0:
+                logger.error("Couldn't compile " + fname + ". Quitting.")
+                sys.exit(1)
+
     if args.compileOnly:
         sys.exit(0)
 

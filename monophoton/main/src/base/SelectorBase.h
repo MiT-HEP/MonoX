@@ -19,7 +19,7 @@ public:
   EventSelectorBase(char const* name) : name_(name) {}
   virtual ~EventSelectorBase();
 
-  virtual void addOperator(Operator*, unsigned idx = -1);
+  virtual void addOperator(Operator*, unsigned idx = -1) = 0;
   unsigned size() const { return operators_.size(); }
   Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
   Operator* findOperator(char const* name) const;

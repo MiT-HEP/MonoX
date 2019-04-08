@@ -1,7 +1,7 @@
 #ifndef TagAndProbeSelectors_h
 #define TagAndProbeSelectors_h
 
-#include "SelectorBase.h"
+#include "base/SelectorBase.h"
 #include "TPOperators.h"
 
 class TagAndProbeSelector : public EventSelectorBase {

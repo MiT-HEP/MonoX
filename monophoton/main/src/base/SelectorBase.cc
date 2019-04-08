@@ -1,5 +1,7 @@
 #include "SelectorBase.h"
 
+#include "BaseOperators.h"
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TSystem.h"
@@ -18,18 +20,6 @@ EventSelectorBase::~EventSelectorBase()
     for (auto* op : operators_)
       delete op;
   }
-}
-
-void
-EventSelectorBase::addOperator(Operator* _op, unsigned _idx/* = -1*/)
-{
-  if (!dynamic_cast<MonophotonOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
-    throw std::runtime_error(TString::Format("Cannot add operator %s to EventSelector", _op->name()).Data());
-
-  if (_idx >= operators_.size())
-    operators_.push_back(_op);
-  else
-    operators_.insert(operators_.begin() + _idx, _op);
 }
 
 Operator*
