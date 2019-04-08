@@ -1,4 +1,23 @@
-#include "Operators.h"
+#ifndef TPOperator_h
+#define TPOperator_h
+
+#include "Operator.h"
+
+#include "PandaTree/Objects/interface/EventTP.h"
+
+#include <vector>
+
+enum TPEventType {
+  kTPEG,
+  kTPEEG,
+  kTPMG,
+  kTPMMG,
+  kTP2E,
+  kTP2M,
+  kTPEM,
+  kTPME,
+  nOutTypes
+};
 
 class TPOperator : public Operator {
  public:
@@ -163,3 +182,5 @@ class TPTriggerMatch : public TPModifier {
   std::vector<TString> filterNames_{};
   bool matchResults_[NMAX_PARTICLES];
 };
+
+#endif

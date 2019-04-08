@@ -1,4 +1,7 @@
-#include "Operators.h"
+#ifndef BaseOperator_h
+#define BaseOperator_h
+
+#include "Operator.h"
 
 class BaseOperator : public Operator 
 {
@@ -303,3 +306,5 @@ class PUWeight : public Modifier {
   TH1* factors_;
   double weight_;
 };
+
+#endif

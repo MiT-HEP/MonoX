@@ -1,71 +1,9 @@
-#ifndef selectors_h
-#define selectors_h
+#ifndef Selectors_h
+#define Selectors_h
 
-#include "TTree.h"
-#include "TFile.h"
-#include "TString.h"
+#include "SelectorBase.h"
+
 #include "TF1.h"
-
-#include "operators.h"
-
-#include <vector>
-#include <chrono>
-#include <iostream>
-#include <mutex>
-
-typedef std::chrono::high_resolution_clock Clock;
-
-class Operator;
-
-class EventSelectorBase {
-public:
-  EventSelectorBase(char const* name) : name_(name) {}
-  virtual ~EventSelectorBase();
-
-  virtual void addOperator(Operator*, unsigned idx = -1);
-  unsigned size() const { return operators_.size(); }
-  Operator* getOperator(unsigned iO) const { return operators_.at(iO); }
-  Operator* findOperator(char const* name) const;
-  unsigned index(char const* name) const;
-  void removeOperator(char const* name);
-
-  void initialize(char const* outputPath, panda::EventMonophoton& inEvent, panda::utils::BranchList& blist, bool isMC);
-  void finalize();
-  virtual void selectEvent(panda::EventMonophoton&) = 0;
-
-  TString const& name() const { return name_; }
-  virtual char const* className() const = 0;
-
-  void setPreskim(char const* s) { preskim_ = s; }
-  char const* getPreskim() const { return preskim_.Data(); }
-
-  void setOwnOperators(bool b) { ownOperators_ = b; }
-  void setUseTimers(bool b) { useTimers_ = b; }
-  void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
-
-  static std::mutex mutex;
-
-protected:
-  virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}
-  virtual void addOutput_(TFile*& outputFile) {}
-
-  TString name_;
-  TTree* skimOut_{0};
-  TTree* cutsOut_{0};
-
-  std::vector<Operator*> operators_;
-  bool ownOperators_{true};
-
-  double inWeight_{1.};
-
-  bool useTimers_{false};
-  std::vector<Clock::duration> timers_;
-
-  TString preskim_{""};
-
-  unsigned printLevel_{0};
-  std::ostream* stream_{&std::cout};
-};
 
 class EventSelector : public EventSelectorBase {
 public:
@@ -159,28 +97,6 @@ class SmearingSelector : public EventSelector {
  protected:
   unsigned nSamples_{1};
   TF1* func_{0};
-};
-
-class TagAndProbeSelector : public EventSelectorBase {
-public:
-  TagAndProbeSelector(char const* name) : EventSelectorBase(name) {}
-  ~TagAndProbeSelector() {}
-
-  void addOperator(Operator*, unsigned idx = -1) override;
-
-  void setOutEventType(TPEventType t) { outType_ = t; }
-  void selectEvent(panda::EventMonophoton&) override;
-
-  char const* className() const override { return "TagAndProbeSelector"; }
-
-  void setSampleId(unsigned id) { sampleId_ = id; }
-
- protected:
-  void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) override;
-
-  TPEventType outType_{nOutTypes};
-  panda::EventTP* outEvent_{0};
-  unsigned sampleId_; // outEvent_.sample gets reset at the beginning of each event
 };
 
 #endif

@@ -1,32 +1,11 @@
-#ifndef operators_h
-#define operators_h
+#ifndef Operator_h
+#define Operator_h
 
 #include "PandaTree/Objects/interface/EventMonophoton.h"
-#include "PandaTree/Objects/interface/EventTP.h"
-
-#include "TH1.h"
-#include "TH2.h"
-#include "TF1.h"
-#include "TRandom3.h"
-
-#include "TDirectory.h"
 
 #include "logging.h"
 
-#include "fastjet/JetDefinition.hh"
-
-#include <bitset>
-#include <map>
-#include <vector>
-#include <utility>
 #include <iostream>
-#include <functional>
-
-enum LeptonFlavor {
-  lElectron,
-  lMuon,
-  nLeptonFlavors
-};
 
 enum Collection {
   cPhotons,
@@ -34,23 +13,6 @@ enum Collection {
   cMuons,
   cTaus,
   nCollections
-};
-
-enum MetSource {
-  kInMet,
-  kOutMet
-};
-
-enum TPEventType {
-  kTPEG,
-  kTPEEG,
-  kTPMG,
-  kTPMMG,
-  kTP2E,
-  kTP2M,
-  kTPEM,
-  kTPME,
-  nOutTypes
 };
 
 const UInt_t NMAX_PARTICLES = 128;
@@ -86,7 +48,12 @@ class CutMixin {
  public:
   CutMixin(char const* name) : cutName_(name), result_(false), ignoreDecision_(false) {}
 
-  TString cutExpr(TString const& name) const;
+  TString cutExpr(TString const& name) const {
+    if (ignoreDecision_)
+      return TString::Format("(%s)", name.Data());
+    else
+      return TString::Format("[%s]", name.Data());
+  }
 
   void setIgnoreDecision(bool b) { ignoreDecision_ = b; }
 

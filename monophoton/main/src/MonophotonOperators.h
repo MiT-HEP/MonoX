@@ -1,4 +1,33 @@
-#include "Operators.h"
+#ifndef MonophotonOperator_h
+#define MonophotonOperator_h
+
+#include "Operator.h"
+
+#include "TH1.h"
+#include "TH2.h"
+#include "TF1.h"
+#include "TRandom3.h"
+
+#include "TDirectory.h"
+
+#include "fastjet/JetDefinition.hh"
+
+#include <bitset>
+#include <map>
+#include <vector>
+#include <utility>
+#include <functional>
+
+enum LeptonFlavor {
+  lElectron,
+  lMuon,
+  nLeptonFlavors
+};
+
+enum MetSource {
+  kInMet,
+  kOutMet
+};
 
 class MonophotonOperator : public Operator {
  public:
@@ -972,3 +1001,5 @@ class PhotonRecoil : public MonophotonModifier {
   float realMetUnclDown_;
   float realPhiUnclDown_;
 };
+
+#endif
