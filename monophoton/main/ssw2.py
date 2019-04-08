@@ -312,6 +312,7 @@ class SSWBatchManager(BatchManager):
     def submitMerge(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
         submitter.requirements = 'UidDomain == "mit.edu"'
+        submitter.required_os = 'rhel6'
 
         arguments = []
 
@@ -338,6 +339,7 @@ class SSWBatchManager(BatchManager):
     def submitSkim(self, args):
         submitter = CondorRun(os.path.realpath(__file__))
         submitter.requirements = 'UidDomain == "mit.edu"'
+        submitter.required_os = 'rhel6'
 
         argTemplate = '%s -f %s'
     
@@ -517,7 +519,7 @@ if __name__ == '__main__':
                         try:
                             selectors[rname] = allselectors[sample][rname]
                         except KeyError:
-                            print 'Selector', sample.name, sel, 'not defined'
+                            print 'Selector', sample.name, rname, 'not defined'
                             raise
 
                 else:
@@ -546,14 +548,14 @@ if __name__ == '__main__':
     ## compile and load the Skimmer
     ROOT.gSystem.Load('libfastjet.so')
 
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/operators.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/operators.cc+')
     try:
         o = ROOT.Operator
     except:
         logger.error("Couldn't compile operators.cc. Quitting.")
         sys.exit(1)
 
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/selectors.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/selectors.cc+')
     try:
         o = ROOT.EventSelectorBase
     except:
@@ -561,7 +563,7 @@ if __name__ == '__main__':
         sys.exit(1)
     
     ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
-    ROOT.gROOT.LoadMacro(config.baseDir + '/main/Skimmer.cc+')
+    ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/Skimmer.cc+')
     
     try:
         s = ROOT.Skimmer

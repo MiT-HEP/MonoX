@@ -1,6 +1,6 @@
 #include "selectors.h"
 #include "logging.h"
-#include "../misc/photon_extra.h"
+#include "photon_extra.h"
 
 #include "TString.h"
 #include "TFile.h"
