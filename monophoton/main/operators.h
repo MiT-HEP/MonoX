@@ -20,6 +20,7 @@
 #include <vector>
 #include <utility>
 #include <iostream>
+#include <functional>
 
 //--------------------------------------------------------------------
 // Operator catalog
@@ -101,6 +102,8 @@ enum TPEventType {
   kTPMMG,
   kTP2E,
   kTP2M,
+  kTPEM,
+  kTPME,
   nOutTypes
 };
 
@@ -613,11 +616,26 @@ class LeptonSelection : public MonophotonCut {
   ~LeptonSelection();
   void addBranches(TTree& skimTree) override;
 
+  enum OutMuonType {
+    kMuJustLoose,
+    kMuTrigger16Safe,
+    kMuTrigger17Safe
+  };
+
+  enum OutElectronType {
+    kElJustLoose,
+    kElTrigger16Safe,
+    kElTrigger17Safe
+  };
+
   void setN(unsigned nEl, unsigned nMu) { nEl_ = nEl; nMu_ = nMu; }
   void setStrictMu(bool doStrict) { strictMu_ = doStrict; }
   void setStrictEl(bool doStrict) { strictEl_ = doStrict; }
   void setRequireMedium(bool require, unsigned btof = false) { requireMedium_ = require; mediumBtoF_ = btof; }
   void setRequireTight(bool require) { requireTight_ = require; }
+  void setRequireHWWTight(bool require) { requireHWWTight_ = require; }
+  void setOutMuonType(OutMuonType type) { outMuonType_ = type; }
+  void setOutElectronType(OutElectronType type) { outElectronType_ = type; }
   panda::MuonCollection* getFailingMuons() { return failingMuons_; }
   panda::ElectronCollection* getFailingElectrons() {return failingElectrons_; }
 
@@ -629,8 +647,14 @@ class LeptonSelection : public MonophotonCut {
   bool requireMedium_{true};
   bool mediumBtoF_{false};
   bool requireTight_{true};
+  bool requireHWWTight_{false};
+  OutMuonType outMuonType_{kMuJustLoose};
+  OutElectronType outElectronType_{kElJustLoose};
   unsigned nEl_{0};
   unsigned nMu_{0};
+
+  double minPtMu_{30.};
+  double minPtEl_{30.};
 
   panda::MuonCollection* failingMuons_{0};
   panda::ElectronCollection* failingElectrons_{0};
@@ -760,9 +784,9 @@ class DijetSelection : public MonophotonCut {
   double detajjReweight_;
 };
 
-class PhotonPtTruncator : public Cut {
+class GenPhotonPtTruncator : public Cut {
  public:
-  PhotonPtTruncator(char const* name = "PhotonPtTruncator") : Cut(name) {}
+  GenPhotonPtTruncator(char const* name = "GenPhotonPtTruncator") : Cut(name) {}
 
   void setPtMin(double min) { min_ = min; }
   void setPtMax(double max) { max_ = max; }
@@ -773,9 +797,9 @@ class PhotonPtTruncator : public Cut {
   double max_{500.};
 };
 
-class HtTruncator : public Cut {
+class GenHtTruncator : public Cut {
  public:
-  HtTruncator(char const* name = "HtTruncator") : Cut(name) {}
+  GenHtTruncator(char const* name = "GenHtTruncator") : Cut(name) {}
 
   void addBranches(TTree& skimTree) override;
 
@@ -959,7 +983,6 @@ class ExtraPhotons : public MonophotonModifier {
   
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 };
-
 
 class JetCleaning : public MonophotonModifier {
   // For photons, only clean overlap with the leading
@@ -1474,6 +1497,24 @@ class TPLeptonPhoton : public TPCut {
 class TPDilepton : public TPCut {
  public:
   TPDilepton(TPEventType t, char const* name = "TPDilepton") : TPCut(t, name) {}
+
+  void addBranches(TTree& skimTree) override;
+
+  void setMinProbePt(double d) { minProbePt_ = d; }
+  void setMinTagPt(double d) { minTagPt_ = d; }
+
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
+
+  double minProbePt_{15.};
+  double minTagPt_{30.};
+
+  int probeGenId_[NMAX_PARTICLES];
+};
+
+class TPOFLepton : public TPCut {
+ public:
+  TPOFLepton(TPEventType t, char const* name = "TPOFLepton") : TPCut(t, name) {}
 
   void addBranches(TTree& skimTree) override;
 

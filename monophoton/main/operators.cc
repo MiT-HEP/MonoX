@@ -6,6 +6,8 @@
 #include "PandaTree/Objects/interface/EventTPMMG.h"
 #include "PandaTree/Objects/interface/EventTP2E.h"
 #include "PandaTree/Objects/interface/EventTP2M.h"
+#include "PandaTree/Objects/interface/EventTPEM.h"
+#include "PandaTree/Objects/interface/EventTPME.h"
 
 #include "TH1.h"
 #include "TF1.h"
@@ -89,6 +91,10 @@ TPOperator::getTags(panda::EventTP& _outEvent) const
     return &static_cast<panda::EventTP2E&>(_outEvent).tags;
   case kTP2M:
     return &static_cast<panda::EventTP2M&>(_outEvent).tags;
+  case kTPEM:
+    return &static_cast<panda::EventTPEM&>(_outEvent).tags;
+  case kTPME:
+    return &static_cast<panda::EventTPME&>(_outEvent).tags;
   default:
     throw std::runtime_error("Incompatible event type in getTag");
   }
@@ -108,6 +114,10 @@ TPOperator::getProbes(panda::EventTP& _outEvent) const
     return &static_cast<panda::EventTP2E&>(_outEvent).probes;
   case kTP2M:
     return &static_cast<panda::EventTP2M&>(_outEvent).probes;
+  case kTPEM:
+    return &static_cast<panda::EventTPEM&>(_outEvent).probes;
+  case kTPME:
+    return &static_cast<panda::EventTPME&>(_outEvent).probes;
   default:
     throw std::runtime_error("Incompatible event type in getProbe");
   }
@@ -1395,6 +1405,7 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 {
   bool foundMedium(false);
   bool foundTight(false);
+  bool foundHWWTight(false);
   unsigned nLooseIsoMuons(0);
 
   failingMuons_->clear();
@@ -1426,15 +1437,34 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (overlap)
       continue;
 
-    if (nMu_ != 0 && muon.pt() > 30.) {
-      if (muon.tight && muon.combIso() / muon.pt() < 0.15)
+    if (nMu_ != 0 && muon.pt() > minPtMu_) {
+      if (requireTight_ && muon.tight && muon.combIso() / muon.pt() < 0.15)
         foundTight = true;
       // if ((mediumBtoF_ && muon.mediumBtoF) || (!mediumBtoF_ && muon.medium))
-      if (muon.medium)
+      if (requireMedium_ && muon.medium)
         foundMedium = true;
+      if (requireHWWTight_ && muon.tight && std::abs(muon.dz) < 0.1 && muon.combIso() / muon.pt() < 0.15) {
+        if (muon.pt() < 20.)
+          foundHWWTight = std::abs(muon.dxy) < 0.01;
+        else
+          foundHWWTight = std::abs(muon.dxy) < 0.02;
+      }
+    }
+
+    bool pass(false);
+    switch (outMuonType_) {
+    case kMuJustLoose:
+      pass = muon.loose;
+      break;
+    case kMuTrigger16Safe:
+      // not implemented
+      break;
+    case kMuTrigger17Safe:
+      pass = muon.pf && muon.nMatched >= 2 && std::abs(muon.dxy) < 0.2 && std::abs(muon.dz) < 0.5 && muon.combIso() / muon.pt() < 0.4;
+      break;
     }
     
-    if (muon.loose) {
+    if (pass) {
       _outEvent.muons.push_back(muon);
       if ((muon.combIso() / muon.pt()) < 0.25)
         ++nLooseIsoMuons;
@@ -1468,14 +1498,38 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
     if (overlap)
       continue;
 
-    if (nEl_ != 0 && electron.pt() > 30.) {
-      if (electron.tight)
+    if (nEl_ != 0 && electron.pt() > minPtEl_) {
+      if (requireTight_ && electron.tight)
         foundTight = true;
-      if (electron.medium)
+      if (requireMedium_ && electron.medium)
         foundMedium = true;
+      if (requireHWWTight_ && electron.mvaIsoWP90 && electron.conversionVeto) {
+        if (std::abs(electron.eta()) < 1.479)
+          foundHWWTight = std::abs(electron.dxy) < 0.05 && std::abs(electron.dz) < 0.1;
+        else 
+          foundHWWTight = std::abs(electron.dxy) < 0.1 && std::abs(electron.dz) < 0.2;
+      }
     }
 
-    if (electron.loose)
+    bool pass(false);
+    switch (outElectronType_) {
+    case kElJustLoose:
+      pass = electron.loose;
+      break;
+    case kElTrigger16Safe:
+      // not implemented
+      break;
+    case kElTrigger17Safe:
+      if (electron.veto) {
+        if (std::abs(electron.eta()) < 1.479)
+          pass = std::abs(electron.dxy) < 0.05 && std::abs(electron.dz) < 0.1;
+        else
+          pass = electron.sieie < 0.03 && std::abs(1. / electron.ecalE - 1. / electron.trackP) < 0.014 && std::abs(electron.dxy) < 0.1 && std::abs(electron.dz) < 0.2;
+      }
+      break;
+    }
+
+    if (pass)
       _outEvent.electrons.push_back(electron);
     else if (electron.matchedGen.idx() != -1)
       failingElectrons_->push_back(electron);
@@ -1487,14 +1541,19 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
   if (requireMedium_ && !foundMedium)
     return false;
 
-  if (strictMu_ && strictEl_)
-    return _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
-  else if (strictMu_ && !strictEl_)
-    return _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() == nMu_ && nLooseIsoMuons == nMu_;
-  else if (!strictMu_ && strictEl_)
-    return _outEvent.electrons.size() == nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
-  else
-    return _outEvent.electrons.size() >= nEl_ && _outEvent.muons.size() >= nMu_ && nLooseIsoMuons >= nMu_;
+  if (requireHWWTight_ && !foundHWWTight)
+    return false;
+
+  if (_outEvent.electrons.size() < nEl_ || _outEvent.muons.size() < nMu_ || nLooseIsoMuons < nMu_)
+    return false;
+
+  if (strictMu_ && (_outEvent.muons.size() != nMu_ || nLooseIsoMuons != nMu_))
+    return false;
+
+  if (strictEl_ && _outEvent.electrons.size() != nEl_)
+    return false;
+
+  return true;
 }
 
 //--------------------------------------------------------------------
@@ -1718,11 +1777,11 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 }
 
 //--------------------------------------------------------------------
-// PhotonPtTruncator
+// GenPhotonPtTruncator
 //--------------------------------------------------------------------
 
 bool
-PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenPhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 {
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
     auto& parton(_event.partons[iP]);
@@ -1735,17 +1794,17 @@ PhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 }
 
 //--------------------------------------------------------------------
-// HtTruncator
+// GenHtTruncator
 //--------------------------------------------------------------------
 
 void
-HtTruncator::addBranches(TTree& _skimTree)
+GenHtTruncator::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("genHt", &ht_, "genHt/F");
 }
 
 bool
-HtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenHtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 {
   ht_ = 0.; // ht is an additive quantity; need to start with 0.
   for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
@@ -4224,6 +4283,74 @@ TPDilepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEve
 }
 
 //--------------------------------------------------------------------
+// TPOFLepton
+//--------------------------------------------------------------------
+
+void
+TPOFLepton::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("probes.matchedGenId", probeGenId_, "matchedGenId[probes.size]/I");
+}
+
+bool
+TPOFLepton::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outEvent)
+{
+  panda::LeptonCollection const* tags(0);
+  panda::LeptonCollection const* probes(0);
+  double tagMaxEta(0.);
+  double probeMaxEta(0.);
+  switch (eventType_) {
+  case kTPEM:
+    tags = &_inEvent.electrons;
+    probes = &_inEvent.muons;
+    tagMaxEta = 2.5;
+    probeMaxEta = 2.4;
+    break;
+  case kTPME:
+    tags = &_inEvent.muons;
+    probes = &_inEvent.electrons;
+    tagMaxEta = 2.4;
+    probeMaxEta = 2.5;
+    break;
+  default:
+    throw runtime_error("Incompatible event type in TPOFLepton");
+  }
+
+  for (auto& tag : *tags) {
+    if (!tag.tight || tag.pt() < minTagPt_ || std::abs(tag.eta()) > tagMaxEta)
+      continue;
+
+    if (eventType_ == kTPME && tag.combIso() / tag.pt() > 0.15)
+      continue;
+
+    for (auto& probe : *probes) {
+      double mll((tag.p4() + probe.p4()).M());
+
+      auto& tp(_outEvent.tp.create_back());
+      tp.mass = mll;
+
+      if (eventType_ == kTPEM) {
+        auto& outEvent(static_cast<panda::EventTPEM&>(_outEvent));
+        outEvent.tags.push_back(static_cast<panda::Electron const&>(tag));
+        outEvent.probes.push_back(static_cast<panda::Muon const&>(probe));
+      }
+      else {
+        auto& outEvent(static_cast<panda::EventTPME&>(_outEvent));
+        outEvent.tags.push_back(static_cast<panda::Muon const&>(tag));
+        outEvent.probes.push_back(static_cast<panda::Electron const&>(probe));
+      }
+
+      if(probe.matchedGen.isValid())
+        probeGenId_[_outEvent.tp.size() - 1] = probe.matchedGen->pdgid;
+      else
+        probeGenId_[_outEvent.tp.size() - 1] = 0;
+    }
+  }
+  
+  return _outEvent.tp.size() != 0;
+}
+
+//--------------------------------------------------------------------
 // TPLeptonVeto
 //--------------------------------------------------------------------
 
@@ -4323,12 +4450,18 @@ TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTP& _outE
 {
   std::vector<std::pair<panda::ParticleCollection const*, bool>> cols;
   bool leadingProbeOnly(false);
-  if (eventType_ == kTPEEG || eventType_ == kTPMMG) {
-    leadingProbeOnly = true;
+  switch (eventType_) {
+  case kTPEEG:
+  case kTPMMG:
     cols.emplace_back(getLooseTags(_outEvent), false);
-  }
-  else if (eventType_ == kTPEG || eventType_ == kTPMG)
+    //fallthrough
+  case kTPEG:
+  case kTPMG:
     leadingProbeOnly = true;
+    break;
+  default:
+    break;
+  }
 
   cols.emplace_back(getTags(_outEvent), false);
   cols.emplace_back(getProbes(_outEvent), leadingProbeOnly);

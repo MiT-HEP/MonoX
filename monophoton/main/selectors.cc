@@ -431,6 +431,8 @@ SmearingSelector::selectEvent(panda::EventMonophoton& _event)
 #include "PandaTree/Objects/interface/EventTPMMG.h"
 #include "PandaTree/Objects/interface/EventTP2E.h"
 #include "PandaTree/Objects/interface/EventTP2M.h"
+#include "PandaTree/Objects/interface/EventTPEM.h"
+#include "PandaTree/Objects/interface/EventTPME.h"
 
 void
 TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
@@ -465,6 +467,12 @@ TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
     break;
   case kTP2M:
     outEvent_ = new panda::EventTP2M;
+    break;
+  case kTPEM:
+    outEvent_ = new panda::EventTPEM;
+    break;
+  case kTPME:
+    outEvent_ = new panda::EventTPME;
     break;
   default:
     throw std::runtime_error("Out event type not set");
