@@ -503,3 +503,171 @@ def tp2m(sample, rname):
     selector.addOperator(trig)
 
     return selector
+
+def tpem(sample, rname):
+    """
+    e-mu T&P.
+    """
+
+    evtType = ROOT.kTPEM
+
+    selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(evtType)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
+
+    tp = ROOT.TPOFLepton(evtType)
+    tp.setMinProbePt(5.)
+    tp.setMinTagPt(35.)
+
+    selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele27')
+    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele32')
+    trig.addTriggerFilter('hltEle32L1DoubleEGWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGor')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'ele35')
+    trig.addTriggerFilter('hltEle35noerWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu12ele23L1Seed')
+    trig.addTriggerFilter('hltL1sMu5EG23IorMu5IsoEG20IorMu7EG23IorMu7IsoEG20IorMuIso7EG23')
+    selector.addOperator(trig)
+
+    # uncomment at next skim production
+    #trig = ROOT.TPTriggerMatch(evtType, tag, 'mu12ele23')
+    #trig.addTriggerFilter('hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter')
+    #selector.addOperator(trig)
+
+    #trig = ROOT.TPTriggerMatch(evtType, tag, 'mu23ele12L1Seed')
+    #trig.addTriggerFilter('hltL1sMu23EG10IorMu20EG17')
+    #selector.addOperator(trig)
+
+    #trig = ROOT.TPTriggerMatch(evtType, tag, 'mu23ele12')
+    #trig.addTriggerFilter('hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter')
+    #selector.addOperator(trig)
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu12ele23L1Seed')
+    trig.addTriggerFilter('hltL1sMu5EG23IorMu5IsoEG20IorMu7EG23IorMu7IsoEG20IorMuIso7EG23')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu12ele23')
+    trig.addTriggerFilter('hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered12')
+    selector.addOperator(trig)
+
+    # uncomment at next skim production
+    #trig = ROOT.TPTriggerMatch(evtType, prb, 'mu23ele12L1Seed')
+    #trig.addTriggerFilter('hltL1sMu23EG10IorMu20EG17')
+    #selector.addOperator(trig)
+    #
+    #trig = ROOT.TPTriggerMatch(evtType, prb, 'mu23ele12')
+    #trig.addTriggerFilter('hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered23')
+    #selector.addOperator(trig)
+
+    return selector
+
+def tpme(sample, rname):
+    """
+    mu-e T&P.
+    """
+
+    evtType = ROOT.kTPME
+
+    selector = tagprobeBase(sample, rname)
+    selector.setOutEventType(evtType)
+
+    if sample.data:
+        selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
+
+    tp = ROOT.TPOFLepton(evtType)
+    tp.setMinProbePt(5.)
+    tp.setMinTagPt(35.)
+
+    selector.addOperator(tp)
+
+    selector.addOperator(ROOT.TPJetCleaning(evtType))
+
+    tag = ROOT.TPTriggerMatch.kTag
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27')
+    trig.addTriggerFilter('hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu27L1Seed')
+    trig.addTriggerFilter('hltL1sSingleMu22or25')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu12ele23L1Seed')
+    trig.addTriggerFilter('hltL1sMu5EG23IorMu5IsoEG20IorMu7EG23IorMu7IsoEG20IorMuIso7EG23')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu12ele23')
+    trig.addTriggerFilter('hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered12')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu23ele12L1Seed')
+    trig.addTriggerFilter('hltL1sMu23EG10IorMu20EG17')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, tag, 'mu23ele12')
+    trig.addTriggerFilter('hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered23')
+    selector.addOperator(trig)
+
+    prb = ROOT.TPTriggerMatch.kProbe
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele27')
+    trig.addTriggerFilter('hltEle27WPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele32')
+    trig.addTriggerFilter('hltEle32L1DoubleEGWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele35L1Seed')
+    trig.addTriggerFilter('hltL1sSingleEGor')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'ele35')
+    trig.addTriggerFilter('hltEle35noerWPTightGsfTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu12ele23L1Seed')
+    trig.addTriggerFilter('hltL1sMu5EG23IorMu5IsoEG20IorMu7EG23IorMu7IsoEG20IorMuIso7EG23')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu12ele23')
+    trig.addTriggerFilter('hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu23ele12L1Seed')
+    trig.addTriggerFilter('hltL1sMu23EG10IorMu20EG17')
+    selector.addOperator(trig)
+
+    trig = ROOT.TPTriggerMatch(evtType, prb, 'mu23ele12')
+    trig.addTriggerFilter('hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter')
+    selector.addOperator(trig)
+
+    return selector

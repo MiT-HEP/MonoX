@@ -1,52 +1,53 @@
-import os
 import logging
 
 import config
 import main.skimutils as su
 
-thisdir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(thisdir)
-datadir = basedir + '/data'
-
 logger = logging.getLogger(__name__)
 
+datadir = config.baseDir + '/data'
+
 import ROOT
+ROOT.gSystem.Load(config.libobjs)
+e = ROOT.panda.Event
+
 
 ## Selector-dependent configurations
+
+from configs.common.selconf import selconf
 
 logger.info('Applying vbfg setting.')
 
 ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
+ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kFall17;")
 
-selconf = {
-    'photonFullSelection': [
-        'HOverE',
-        'Sieie',
-        'NHIso',
-        'PhIso',
-        'CHIso',
-        'EVeto',
-        'ChargedPFVeto'
-    ],
-    'photonIDTune': ROOT.idtune,
-    'photonWP': 1,
-    'photonSF': (0.995, 0.008, ['kPt'], (0.993, .006)),
-    'hadronTFactorSource': (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16'), # file name, suffix
-    'electronTFactor': datadir + '/efakepf_data_lowpt.root/frate_fit',
-    'electronTFactorUnc': 'frate_fit',
-    'hadronProxyDef': ['!CHIso', '+CHIso11'],
-    'ewkCorrSource': 'ewk_corr.root'
-}
+selconf['photonFullSelection'] = [
+    'HOverE',
+    'Sieie',
+    'NHIso',
+    'PhIso',
+    'CHIso',
+    'EVeto',
+    #'ChargedPFVeto'
+]
+selconf['photonIDTune'] =  ROOT.idtune
+selconf['photonWP'] =  1
+selconf['photonSF'] =  (0.995, 0.008, ['kPt'], (0.993, .006))
+selconf['hadronTFactorSource'] =  (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16') # file name, suffix
+selconf['electronTFactor'] =  datadir + '/efakepf_data_lowpt.root/frate_fit'
+selconf['electronTFactorUnc'] =  'frate_fit'
+selconf['hadronProxyDef'] =  ['!CHIso', '+CHIso11']
+selconf['ewkCorrSource'] =  'ewk_corr.root'
 
-selconf['vbfTrigger'] = 'HLT_Photon75_R9Id90_HE10_Iso40_EBOnly_VBF'
+selconf['vbfTrigger'] = 'HLT_Photon50_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3_PFMET50_OR_HLT_Photon75_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3'
 selconf['vbfCtrlTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM'
 selconf['selTrigger'] = 'HLT_Ele27_WPTight_Gsf'
 selconf['smuTrigger'] = 'HLT_IsoMu24_OR_HLT_IsoTkMu24'
 
 ## Common modifiers
 
-execfile(thisdir + '/../2016Common/selectors_common.py')
+import configs.common.selectors_gen as sg
+import configs.common.selectors_photon as sp
 
 ##################
 # BASE SELECTORS #
@@ -59,9 +60,9 @@ def vbfgBase(sample, rname):
 
     selector = ROOT.EventSelector(rname)
 
-    selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
+    #selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
 
-    selector.addOperator(ROOT.HLTFilter(selconf['vbfTrigger']))
+    #selector.addOperator(ROOT.HLTFilter(selconf['vbfTrigger']))
 
     operators = [
         'MetFilters',
@@ -129,11 +130,11 @@ def vbfgBase(sample, rname):
         triggersf_vbf.setDijetSelection(dijetSel)
         selector.addOperator(triggersf_vbf)
 
-        su.addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
-        addElectronVetoSFWeight(sample, selector)
-        addMuonVetoSFWeight(sample, selector)        
+        sp.addElectronVetoSFWeight(sample, selector)
+        sp.addMuonVetoSFWeight(sample, selector)        
 
         selector.addOperator(ROOT.AddGenJets())
 
@@ -182,8 +183,8 @@ def vbflBase(sample, rname):
     if not sample.data:
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
     selector.findOperator('BjetVeto').setIgnoreDecision(True)
     selector.findOperator('JetCleaning').setCleanAgainst(ROOT.cTaus, False)
@@ -203,7 +204,7 @@ def vbfg(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     if not sample.data:
         digenjetSel = ROOT.DijetSelection('DigenjetSelection')
@@ -212,7 +213,7 @@ def vbfg(sample, rname):
         digenjetSel.setJetType(ROOT.DijetSelection.jGen)
         selector.addOperator(digenjetSel)
 
-        addIDSFWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
 
 #        if sample.name.startswith('gj'):
 #            dijetSel = selector.findOperator('DijetSelection')
@@ -258,7 +259,7 @@ def vbfgEfake(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    modEfake(selector, selections = ['!CSafeVeto'])
+    sp.modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -276,7 +277,7 @@ def vbfgHfake(sample, rname):
     hadproxyPurityUpWeight = su.getFromFile(filename, 'tfactNomPurityUp', 'tfactNomPurityUp' + suffix)
     hadproxyPurityDownWeight = su.getFromFile(filename, 'tfactNomPurityDown', 'tfactNomPurityDown' + suffix)
 
-    modHfake(selector)
+    sp.modHfake(selector)
 
     weight = selector.findOperator('hadProxyWeight')
 
@@ -289,8 +290,8 @@ def vbfgHfake(sample, rname):
 
     # Need to keep the cuts looser than nominal to accommodate proxyDefUp & Down
     # Proper cut applied at plotconfig as variations
-    setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
-    setupPhotonSelection(photonSel, veto = True)
+    sp.setupPhotonSelection(photonSel, changes = ['!CHIso', '+CHIso11', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose'])
+    sp.setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
@@ -316,8 +317,8 @@ def vbfgHfakeCtrl(sample, rname):
 
     photonSel = selector.findOperator('PhotonSelection')
 
-    setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
-    setupPhotonSelection(photonSel, veto = True)
+    sp.setupPhotonSelection(photonSel, changes = selconf['hadronProxyDef'])
+    sp.setupPhotonSelection(photonSel, veto = True)
 
     return selector
 
@@ -347,10 +348,10 @@ def vbfem(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'), changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'), changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
 
     if not sample.data:
-        addIDSFWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
 
     return selector
 
@@ -361,10 +362,10 @@ def vbfzee(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
-    setupPhotonSelection(selector.findOperator('PhotonSelection'))
+    sp.setupPhotonSelection(selector.findOperator('PhotonSelection'))
 
     if not sample.data:
-        addIDSFWeight(sample, selector)
+        sp.addIDSFWeight(sample, selector)
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(1, 0)
@@ -378,7 +379,7 @@ def vbfzeeEfake(sample, rname):
 
     selector = vbfzee(sample, rname)
 
-    modEfake(selector, selections = ['!CSafeVeto'])
+    sp.modEfake(selector, selections = ['!CSafeVeto'])
 
     return selector
 
@@ -485,7 +486,7 @@ def ph75(sample, rname):
     photonSel.setMinPt(50.)
     photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setWP(selconf['photonWP'])
-    setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
+    sp.setupPhotonSelection(photonSel, changes = ['-Sieie', '-CHIso', '+Sieie15', '+CHIso11'])
 
     leptonSel = selector.findOperator('LeptonSelection')
     leptonSel.setN(0, 0)
@@ -511,11 +512,11 @@ def ph75(sample, rname):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        su.addPUWeight(sample, selector)
-        addPDFVariation(sample, selector)
+        sg.addPUWeight(sample, selector)
+        sg.addPDFVariation(sample, selector)
 
-        addElectronVetoSFWeight(sample, selector)
-        addMuonVetoSFWeight(sample, selector)
+        sp.addElectronVetoSFWeight(sample, selector)
+        sp.addMuonVetoSFWeight(sample, selector)
 
     selector.findOperator('TauVeto').setIgnoreDecision(True)
     selector.findOperator('BjetVeto').setIgnoreDecision(True)

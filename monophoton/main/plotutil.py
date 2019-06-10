@@ -7,10 +7,10 @@ import ROOT
 from datasets import allsamples
 
 class GroupSpec(object):
-    def __init__(self, name, title, samples = [], region = '', count = 0., color = ROOT.kBlack, altbaseline = '', cut = '', scale = 1., reweight = '', norm = -1.):
+    def __init__(self, name, title, samples=[], region='', count=0., color=ROOT.kBlack, altbaseline='', cut='', scale=1., reweight='', norm=-1.):
         self.name = name
         self.title = title
-        self.samples = samples
+        self.samples = list(samples)
         self.region = region
         self.count = count
         self.color = color
@@ -28,7 +28,7 @@ class GroupSpec(object):
 class SampleSpec(object):
     # use for signal point spec
 
-    def __init__(self, name, title, group, color = ROOT.kBlack):
+    def __init__(self, name, title, group, color=ROOT.kBlack):
         self.name = name
         self.sample = allsamples[self.name]
         self.title = title
@@ -37,7 +37,7 @@ class SampleSpec(object):
 
 
 class PlotDef(object):
-    def __init__(self, name, title, expr, binning, unit = '', cutName = 'baseline', reweight = '', blind = None, sensitive = False, overflow = False, mcOnly = False, logy = None, ymax = -1., ymin = 0.):
+    def __init__(self, name, title, expr, binning, unit='', cutName='baseline', reweight='', blind=None, sensitive=False, overflow=False, mcOnly=False, logy=None, ymax=-1., ymin=0., rmax=2., rmin=0.):
         self.name = name
         self.title = title
         self.unit = unit
@@ -52,6 +52,8 @@ class PlotDef(object):
         self.logy = logy
         self.ymax = ymax
         self.ymin = ymin
+        self.rmax = rmax
+        self.rmin = rmin
 
     def clone(self, name, **keywords):
         for vname in ['title', 'unit', 'expr', 'cutName', 'binning', 'blind', 'overflow', 'logy', 'ymax', 'sensitive']:
@@ -89,7 +91,7 @@ class PlotDef(object):
         xlow, xhigh = self.xlimits()
         return self.blind[0] <= xlow and self.blind[1] >= xhigh
 
-    def makeHist(self, hname, outDir = None):
+    def makeHist(self, hname, outDir=None):
         """
         Make an empty histogram from the specifications.
         """
@@ -147,7 +149,7 @@ class PlotDef(object):
         hist.Sumw2()
         return hist
 
-    def makeTree(self, tname, outDir = None):
+    def makeTree(self, tname, outDir=None):
         outDir.cd()
         tree = ROOT.TTree(tname, '')
 
@@ -172,7 +174,7 @@ class PlotDef(object):
         else:
             return self.title[0]
 
-    def ytitle(self, binNorm = True):
+    def ytitle(self, binNorm=True):
         if self.ndim() == 1:
             title = 'Events'
             if binNorm and self.binWidth(1) != 1.:
@@ -185,7 +187,7 @@ class PlotDef(object):
         else:
             return self.title[1]
 
-    def formExpression(self, replacements = None):
+    def formExpression(self, replacements=None):
         if self.ndim() == 1:
             expr = self.expr
         elif self.ndim() == 2:
@@ -218,9 +220,9 @@ class PlotConfig(object):
         self.treeMaker = ''
         self.lumi = 1. # if obs.samples is empty, use this value
 
-        self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), cutName = 'fullSelection'))
+        self.plots.append(PlotDef('count', '', '0.5', (1, 0., 1.), cutName='fullSelection'))
 
-    def addObs(self, snames, prescale = 1):
+    def addObs(self, snames, prescale=1):
         samples = allsamples.getmany(snames)
         for sample in samples:
             self.obs.samples.append(sample)
@@ -231,6 +233,9 @@ class PlotConfig(object):
             args = args[0:2] + (allsamples.getmany(args[2]),) + args[3:]
         elif 'samples' in kwd:
             kwd['samples'] = allsamples.getmany(kwd['samples'])
+
+        if len(args) < 4 and 'region' not in kwd:
+            kwd['region'] = self.obs.region
 
         self.sigGroups.append(GroupSpec(*args, **kwd))
 
@@ -248,10 +253,10 @@ class PlotConfig(object):
         if len(args) > 2:
             args = args[0:2] + allsamples.getmany(args[2]) + args[3:]
         elif 'samples' in kwd:
-            if type(kwd['samples'][0]) == tuple:
-                kwd['samples'] = [ allsamples.get(sname) for (sname, _) in kwd['samples'] ]
-            else:
-                kwd['samples'] = allsamples.getmany(kwd['samples'])
+            kwd['samples'] = allsamples.getmany(kwd['samples'])
+
+        if len(args) < 4 and 'region' not in kwd:
+            kwd['region'] = self.obs.region
             
         self.bkgGroups.append(GroupSpec(*args, **kwd))
 
@@ -261,7 +266,7 @@ class PlotConfig(object):
     def getPlot(self, name):
         return next(plot for plot in self.plots if plot.name == name)
 
-    def getPlots(self, names = []):
+    def getPlots(self, names=[]):
         # reverse so that count comes at last
 
         if len(names) != 0:
@@ -298,7 +303,7 @@ class Variation(object):
     Alternatively reweight can be specified as a string or a value. See comments below.
     """
 
-    def __init__(self, name, normalize = False, cuts = None, replacements = None, regions = None, reweight = None):
+    def __init__(self, name, normalize=False, cuts=None, replacements=None, regions=None, reweight=None):
         self.name = name
         # normalize:
         #  set integral of the variation to the integral of nominal

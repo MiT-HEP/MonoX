@@ -328,7 +328,7 @@ class SampleDef(object):
             if os.stat(path).st_size == 0:
                 continue
 
-            filesT3.add(dataset + '/' + fname)
+            filesT3.add(path)
 
         return filesT3
 
@@ -340,29 +340,19 @@ class SampleDef(object):
                 continue
 
             filesT3 = self.checkT3(dataset)
-            filesT2 = self.checkT2(dataset)
+            #filesT2 = self.checkT2(dataset)
+            
+            filesCatalog = set(self.files(filesets = self._basenames[dataset].keys()))
+            
+            nTotal = len(filesCatalog)
+            nMissing = len(filesCatalog - filesT3)
 
-            nTotal = 0
-            nMissing = 0
-            missingFiles = set()
-            for fileT2 in filesT2:
-                if fileT2 in filesT3:
-                    nTotal += 1
+            if nMissing > 0:
+                if nMissing == nTotal:
+                    print 'No files present on T3. Requesting entire dataset.'
                 else:
-                    missingFiles.add(fileT2)
-                    nMissing +=1
+                    print 'Files partially available on T3 (%d/%d). Requesting missing or corrupted blocks.' % (len(filesT3), nTotal)
 
-            if nMissing == nTotal:
-                print 'No files present on T3. Requesting entire dataset.'
-                proc = subprocess.Popen(
-                    ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
-                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
-                    )
-                print proc.communicate()[0].strip()
-
-            elif nMissing > 0:
-                print 'Files partially available on T3. Requesting missing or corrupted blocks.'
-                ### eventually replace with block level requests
                 proc = subprocess.Popen(
                     ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
                     stdout = subprocess.PIPE, stderr = subprocess.PIPE

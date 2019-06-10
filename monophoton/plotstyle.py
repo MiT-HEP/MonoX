@@ -3,7 +3,7 @@ import sys
 import math
 import ROOT
 
-WEBDIR = os.environ['HOME'] + '/www/plots'
+WEBDIR = os.environ['HOME'] + '/public_html/cmsplots'
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetTextFont(42)
@@ -729,7 +729,7 @@ class TwoDimCanvas(SimpleCanvas):
             logy = self._logy
 
         if logz is None:
-            logy = self._logz
+            logz = self._logz
 
         # list of histograms to draw
         if hList is None:
@@ -1586,6 +1586,7 @@ class DataMCCanvas(RatioCanvas):
             self._temporaries.append(uncertHist)
 
             hList += self._sigs
+            rList += self._sigs
             if self._obs != -1:
                 hList.append(self._obs)                
                 rList.append(self._obs)

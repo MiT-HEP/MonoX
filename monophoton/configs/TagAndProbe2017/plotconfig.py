@@ -1,6 +1,5 @@
 import os
 import math
-import importlib
 
 import main.plotutil as pu
 import configs.common.plotconfig_2017 as common

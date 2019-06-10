@@ -550,24 +550,40 @@ if __name__ == '__main__':
 
     ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
 
-    for fname in os.listdir(config.baseDir + '/main/src/base'):
-        if fname.endswith('.cc'):
-            if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/base/' + fname + '+') != 0:
-                logger.error("Couldn't compile " + fname + ". Quitting.")
-                sys.exit(1)
+    try:
+        mtime = os.stat(config.baseDir + '/main/src/libmonophoton.cc').st_mtime
+    except:
+        mtime = -1
 
     for fname in os.listdir(config.baseDir + '/main/src'):
-        if fname.endswith('.cc'):
-            if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/' + fname + '+') != 0:
-                logger.error("Couldn't compile " + fname + ". Quitting.")
-                sys.exit(1)
+        if fname == 'libmonophoton.cc' or (not fname.endswith('.cc') and not fname.endswith('.h')):
+            continue
+        if os.stat(config.baseDir + '/main/src/' + fname).st_mtime > mtime:
+            mtime = -1
+            break
 
-    if args.compileOnly:
-        sys.exit(0)
+    if mtime < 0:
+        with open(config.baseDir + '/main/src/libmonophoton.cc', 'w') as allsrc:
+            for fname in os.listdir(config.baseDir + '/main/src'):
+                if fname == 'libmonophoton.cc' or not fname.endswith('.cc'):
+                    continue
+                with open(config.baseDir + '/main/src/' + fname) as src:
+                    allsrc.write(src.read())
+
+        if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/libmonophoton.cc+') != 0:
+            logger.error("Couldn't compile source. Quitting.")
+            sys.exit(1)
+    else:
+        if ROOT.gSystem.Load(config.baseDir + '/main/src/libmonophoton_cc.so') != 0:
+            logger.error("Couldn't load libmonophoton. Quitting.")
+            sys.exit(1)
 
     ## load good lumi filter
     sys.path.append(monoxdir + '/common')
     from goodlumi import makeGoodLumiFilter
+
+    if args.compileOnly:
+        sys.exit(0)
 
     ## construct and run SkimSlimWeight objects
     ssws = []

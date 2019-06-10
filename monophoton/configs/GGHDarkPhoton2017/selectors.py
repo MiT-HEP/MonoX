@@ -1,8 +1,4 @@
-import sys
-import os
-import array
 import logging
-import fnmatch
 
 import config
 import main.skimutils as su

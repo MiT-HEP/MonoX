@@ -17,3 +17,19 @@ minor = gg + ['zllg-130-o', 'zllg-300-o']
 
 dPhiPhoMet = 'TVector2::Phi_mpi_pi(photons.phi_[0] - t1Met.phi)'
 mtPhoMet = 'TMath::Sqrt(2. * t1Met.pt * photons.scRawPt[0] * (1. - TMath::Cos(photons.phi_[0] - t1Met.phi)))'
+
+vbfTriggerLumi = {
+    'sph-17b': 0.,
+    'sph-17c': 0.,
+    'sph-17d': 0.,
+    'sph-17e': 0.,
+    'sph-17f': 0.
+}
+
+ph75TriggerLumi = {
+    'sph-17b': 86.48728,
+    'sph-17c': 394.488579,
+    'sph-17d': 145.481762,
+    'sph-17e': 228.682741,
+    'sph-17f': 471.875004
+}

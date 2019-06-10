@@ -485,6 +485,7 @@ def printCanvas(canvas, plotdef, plotConfig, plotDir):
         addLinear = False
 
     canvas.ylimits = (plotdef.ymin, plotdef.ymax)
+    canvas.rlimits = (plotdef.rmin, plotdef.rmax)
     canvas.Update(logy = logy)
 
     if plotdef.fullyBlinded():
@@ -765,7 +766,7 @@ if __name__ == '__main__':
         for group in groups:
             print ' ', group.name
 
-            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi = effLumi, postscale = postscale, printLevel = args.printLevel, altSourceDir = localSkimDir, inputMux = args.inputMux)
+            fillPlots(plotConfig, group, plotdefs, args.skimDir, histFile, lumi=effLumi, postscale=postscale, printLevel=args.printLevel, altSourceDir=localSkimDir, inputMux=args.inputMux)
    
         # Save a background total histogram (for display purpose) for each plotdef
         for plotdef in plotdefs:

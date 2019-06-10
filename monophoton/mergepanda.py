@@ -18,9 +18,9 @@ from argparse import ArgumentParser
 argParser = ArgumentParser(description = 'Plot and count')
 argParser.add_argument('indir', metavar = 'PATH', help = 'Input directory name.')
 argParser.add_argument('outdir', metavar = 'PATH', help = 'Output directory name.')
+argParser.add_argument('--search-subdir', '-S', action = 'store_true', dest = 'searchSubdir', help = 'Merge files in the subdirectories of input directory.')
 argParser.add_argument('--post', '-t', metavar = 'PATH', dest = 'postdir', default = '', help = 'Post-process directory name.')
 argParser.add_argument('--garbage', '-g', metavar = 'PATH', dest = 'garbagedir', default = '', help = 'Garbage directory name.')
-argParser.add_argument('--log', '-l', metavar = 'PATH', dest = 'logdir', default = '/tmp/mergepanda_log', help = 'Directory for merge logs.')
 argParser.add_argument('--num-merge', '-n', metavar = 'N', dest = 'nmerge', type = int, default = 50, help = 'Number of input files per output.')
 argParser.add_argument('--num-out', '-o', metavar = 'N', dest = 'nout', type = int, default = 0, help = 'Number of output files to make. 0 = continue until all input are consumed.')
 argParser.add_argument('--edm', '-E', action = 'store_true', dest = 'edm', help = 'Merge EDM input using cmsRun merge.py.')
@@ -29,12 +29,9 @@ args = argParser.parse_args()
 sys.argv = []
 
 import ROOT
-
-if not os.path.isdir(args.logdir):
-    try:
-        os.makedirs(args.logdir)
-    except OSError:
-        pass
+ROOT.gSystem.Load('libPandaTreeObjects.so')
+sys.path.append(os.getenv('CMSSW_BASE') + '/src/PandaTree/Utils/scripts')
+from padd import padd
 
 if args.edm:
     keynames = set(['MetaData', 'ParameterSets', 'Parentage', 'Events', 'LuminosityBlocks', 'Runs'])
@@ -91,75 +88,49 @@ def opensanitize(path):
 
     return infile, inevents
 
-def distinct(events1, events2):
-    if events1.GetEntries() != events2.GetEntries():
-        return True
+def isdistinct(infile, inevents, postdir):
+    fname = os.path.basename(infile.GetName())
+    dname = postdir + '/' + fname.replace('.root', '')
+    pnames = []
+    if os.path.isdir(dname):
+        for pname in os.listdir(dname):
+            pnames.append(dname + '/' + pname)
 
-    if args.edm:
-        events1.Draw('recoGenParticles_prunedGenParticles__PAT.product().pdgId()', '', 'goff')
-        events2.Draw('recoGenParticles_prunedGenParticles__PAT.product().pdgId()', '', 'goff')
+    elif os.path.exists(postdir + '/' + fname):
+        pnames.append(postdir + '/' + fname)
 
-        result = events1.GetV1()[3] != events2.GetV1()[3] or events1.GetV1()[10] != events2.GetV1()[10] or events1.GetV1()[15] != events2.GetV1()[15]
+    for pname in pnames:
+        pstuff = opensanitize(pname)
+        if not pstuff:
+            continue
+    
+        pfile, pevents = pstuff
+    
+        if inevents.GetEntries() != pevents.GetEntries():
+            continue
+    
+        if args.edm:
+            inevents.Draw('recoGenParticles_prunedGenParticles__PAT.product().pdgId()', '', 'goff')
+            pevents.Draw('recoGenParticles_prunedGenParticles__PAT.product().pdgId()', '', 'goff')
+    
+            result = inevents.GetV1()[3] != pevents.GetV1()[3] or inevents.GetV1()[10] != pevents.GetV1()[10] or inevents.GetV1()[15] != pevents.GetV1()[15]
+    
+        else:
+            inevents.Draw('genParticles.size', '', 'goff')
+            pevents.Draw('genParticles.size', '', 'goff')
+    
+            result = inevents.GetV1()[0] != pevents.GetV1()[0]
 
-    else:
-        events1.Draw('genParticles.size', '', 'goff')
-        events2.Draw('genParticles.size', '', 'goff')
+        pfile.Close()
+    
+        if not result:
+            print inevents.GetCurrentFile().GetName(), 'and', pevents.GetCurrentFile().GetName(), 'may be identical'
+            return False
 
-        result = events1.GetV1()[0] != events2.GetV1()[0]
-
-    if not result:
-        print events1.GetCurrentFile().GetName(), 'and', events2.GetCurrentFile().GetName(), 'may be identical'
-
-    return result
+    return True
 
 def writepanda(inpaths, outfname):
-    output = ROOT.TFile.Open(outfname, 'recreate')
-
-    chain = ROOT.TChain('events')
-    for inpath in inpaths:
-        chain.Add(inpath)
-
-    output.cd()
-    events = chain.CopyTree('TMath::Finite(weight)')
-    events.Write()
-    chain = None
-
-    chain = ROOT.TChain('lumiSummary')
-    for inpath in inpaths:
-        chain.Add(inpath)
-
-    output.cd()
-    lumiSummary = chain.CloneTree()
-    lumiSummary.Write()
-    chain = None
-
-    hists_to_merge = {}
-
-    for inpath in inpaths:
-        source = ROOT.TFile.Open(inpath)
-
-        for key in source.GetListOfKeys():
-            if key.GetClassName() == 'TH1D':
-                try:
-                    source.cd()
-                    hists_to_merge[key.GetName()].Add(key.ReadObj())
-                except KeyError:
-                    output.cd()
-                    hists_to_merge[key.GetName()] = key.ReadObj().Clone()
-
-            elif key.GetClassName() == 'TTree' and inpath == inpaths[0]:
-                output.cd()
-                key.ReadObj().CloneTree().Write()
-
-        source.Close()
-
-    output.cd()
-    events.Write()
-    lumiSummary.Write()
-    for hist in hists_to_merge.itervalues():
-        hist.Write()
-
-    output.Close()
+    padd(outfname, inpaths, 'TMath::Finite(weight)')
 
     source = ROOT.TFile.Open(outfname)
     if not source:
@@ -227,6 +198,25 @@ class SynchDB(object):
             self.dbconn = None
 
 
+def find_recursive(path, maxn=0):
+    fulllist = []
+
+    for fname in os.listdir(path):
+        inpath = path + '/' + fname
+        if fname.endswith('.root'):
+            fulllist.append(inpath)
+        elif os.path.isdir(inpath):
+            fulllist.extend(find_recursive(inpath))
+
+        if maxn > 0 and len(fulllist) >= maxn:
+            return fulllist, False
+
+    if maxn > 0:
+        return fulllist, True
+    else:
+        return fulllist
+
+
 iout = 0
 
 while True:
@@ -239,11 +229,11 @@ while True:
     db = SynchDB()
 
     try:
+        allin, exhausted = find_recursive(args.indir, args.nmerge + 10)
+
         inpaths = []
         unused = []
-        for fname in os.listdir(args.indir):
-            inpath = args.indir + '/' + fname
-
+        for inpath in allin:
             do_open = False
     
             db.connect()
@@ -271,35 +261,10 @@ while True:
 
             infile, inevents = instuff
     
-            if args.postdir:
-                dname = args.postdir + '/' + fname.replace('.root', '')
-                pnames = []
-                if os.path.isdir(dname):
-                    for pname in os.listdir(dname):
-                        pnames.append(dname + '/' + pname)
-
-                elif os.path.exists(args.postdir + '/' + fname):
-                    pnames.append(args.postdir + '/' + fname)
-
-                isdistinct = True
-
-                for pname in pnames:
-                    pstuff = opensanitize(pname)
-                    if not pstuff:
-                        continue
-
-                    pfile, pevents = pstuff
-
-                    if not distinct(inevents, pevents):
-                        isdistinct = False
-                        rm(infile)
-
-                    pfile.Close()
-                    if not isdistinct:
-                        break
-
-                if not isdistinct:
-                    continue
+            if args.postdir and not isdistinct(infile, inevents, args.postdir):
+                rm(infile)
+                unused.append(inpath)
+                continue
 
             infile.Close()
     
@@ -308,11 +273,18 @@ while True:
     
             if len(inpaths) == args.nmerge:
                 break
+
+        for path in unused:
+            db.execute('DELETE FROM `inputs` WHERE `path` = %s', path)
     
         if len(inpaths) == 0:
             break
 
         elif len(inpaths) < args.nmerge:
+            if not exhausted:
+                # too many files went into unused
+                continue
+                
             print 'Too few files to merge. Sleeping for 5 minutes.'
             time.sleep(300)
             iout += 1
@@ -347,9 +319,7 @@ while True:
                 else:
                     os.unlink(inpath)
 
-            for path in unused:
-                db.execute('DELETE FROM `inputs` WHERE `path` = %s', path)
-    
+   
             db.execute('INSERT INTO `logs` SELECT * FROM `inputs` WHERE `outpath` = %s', outname)
             db.close()
 

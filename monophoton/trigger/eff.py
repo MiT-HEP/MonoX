@@ -11,7 +11,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 from datasets import allsamples
-from plotstyle import SimpleCanvas
+import plotstyle
 import config
 import utils
 
@@ -53,7 +53,7 @@ if not REPLOT:
         # fill the histograms
         plotter = ROOT.multidraw.MultiDraw()
         plotter.setWeightBranch('')
-        plotter.setInputMultiplexing(4)
+        #plotter.setInputMultiplexing(4)
     
         for sample in allsamples.getmany(snames):
             plotter.addInputPath(utils.getSkimPath(sample.name, region))
@@ -62,6 +62,7 @@ if not REPLOT:
     
         # make an empty histogram for each (trigger, variable) combination
         histograms = []
+        cuts = {'': ''}
 
         for tname, (passdef, commonsel, title, variables) in confs[oname].items():
             if len(omname) > 2 and tname != omname[2]:
@@ -73,35 +74,71 @@ if not REPLOT:
             commonsel = commonsel.format(col = colname)
 
             for vname, (vtitle, vexpr, denomdef, binning) in variables.items():
-                vexpr = vexpr.format(col = colname)
                 denomdef = denomdef.format(col = colname)
 
-                if type(binning) is tuple:
-                    template = ROOT.TH1D('template', ';' + vtitle, *binning)
-                else:
-                    template = ROOT.TH1D('template', ';' + vtitle, len(binning) - 1, array.array('d', binning))
-    
                 trigDir.cd()
-                hpass = template.Clone(vname + '_pass')
-                hbase = template.Clone(vname + '_base')
+                if type(vexpr) is str:
+                    vexpr = vexpr.format(col = colname)
+                    title = ';' + vtitle
+                    
+                    cls = ROOT.TH1D
+                    if type(binning) is tuple:
+                        args = binning
+                    else:
+                        args = (len(binning) - 1, array.array('d', binning))
+                else:
+                    xvexpr = vexpr[0].format(col = colname)
+                    yvexpr = vexpr[1].format(col = colname)
+                    title = ';'.join(('',) + vtitle)
+                    
+                    cls = ROOT.TH2D
+                    args = tuple()
+                    for bng in binning:
+                        if type(bng) is tuple:
+                            args += bng
+                        else:
+                            args += (len(bng) - 1, array.array('d', bng))
+
+                hpass = cls(vname + '_pass', ';' + title, *args)
+                hbase = cls(vname + '_base', ';' + title, *args)
+    
                 histograms.extend([hpass, hbase])
     
-                sels = []
+                # need basesel here because MultiDraw filter applies only at the event level
+                # whereas we need to filter individual collection elements
+                sels = [basesel]
                 if commonsel:
                     sels.append(commonsel)
                 if denomdef:
                     sels.append(denomdef)
 
-                if len(sels):
+                cut = ' && '.join(sels)
+                try:
+                    cutName = cuts[cut]
+                except:
                     cutName = tname + '_' + vname
+                    cuts[cut] = cutName
                     plotter.addCut(cutName, ' && '.join(sels))
+
+                if hbase.GetDimension() == 1:
+                    plotter.addPlot(hbase, vexpr, cutName)
                 else:
-                    cutName = ''
-    
-                plotter.addPlot(hbase, vexpr, cutName)
-                plotter.addPlot(hpass, vexpr, cutName, passdef)
-    
-                template.Delete()
+                    plotter.addPlot2D(hbase, xvexpr, yvexpr, cutName)
+
+                sels.append(passdef)
+
+                cut = ' && '.join(sels)
+                try:
+                    cutName = cuts[cut]
+                except:
+                    cutName = tname + '_' + vname + '_pass'
+                    cuts[cut] = cutName
+                    plotter.addCut(cutName, ' && '.join(sels))
+
+                if hpass.GetDimension() == 1:
+                    plotter.addPlot(hpass, vexpr, cutName)
+                else:
+                    plotter.addPlot2D(hpass, xvexpr, yvexpr, cutName)
     
         plotter.execute()
     
@@ -110,17 +147,25 @@ if not REPLOT:
             if len(omname) > 2 and tname != omname[2]:
                 continue
 
+            tdir = outputFile.GetDirectory(tname)
+
             print ' ', tname
-            for vname in variables:
+            for vname, (_, vexpr, _, _) in variables.items():
                 print '   ', vname
 
-                hpass = outputFile.Get(tname + '/' + vname + '_pass')
-                hbase = outputFile.Get(tname + '/' + vname + '_base')
-                eff = ROOT.TGraphAsymmErrors(hpass, hbase)
-                outputFile.GetDirectory(tname).cd()
+                tdir.cd()
+                hpass = tdir.Get(vname + '_pass')
+                hbase = tdir.Get(vname + '_base')
                 hpass.Write()
                 hbase.Write()
-                eff.Write(vname + '_eff')
+                
+                if type(vexpr) is str:
+                    eff = ROOT.TGraphAsymmErrors(hpass, hbase)
+                    eff.Write(vname + '_eff')
+                else:
+                    eff = hpass.Clone(vname + '_eff')
+                    eff.Divide(hbase)
+                    eff.Write()
 
         outputFile.Close()
     
@@ -134,8 +179,9 @@ if FITEFFICIENCY:
     ROOT.gSystem.Load('/home/yiiyama/cms/studies/fittools/libFitTools.so')
     fitter = ROOT.EfficiencyFitter.singleton()
 
-canvas = SimpleCanvas()
+canvas = plotstyle.SimpleCanvas()
 canvas.legend.setPosition(0.7, 0.3, 0.9, 0.5)
+canvas2d = plotstyle.TwoDimCanvas()
 
 for omname in omnames:
     oname = omname[0]
@@ -156,42 +202,55 @@ for omname in omnames:
 
         trigDir = source.GetDirectory(tname)
 
-        for vname, (vtitle, _, _, binning) in variables.items():
+        for vname, (vtitle, vexpr, _, binning) in variables.items():
             print '   ', vname
 
             eff = trigDir.Get(vname + '_eff')
 
-            canvas.Clear()
-            canvas.SetGrid()
-            
-            canvas.legend.Clear()
-            if title:
-                canvas.legend.add('eff', title = title, opt = 'LP', color = ROOT.kBlack, mstyle = 8)
-                canvas.legend.apply('eff', eff)
-            else:
-                eff.SetMarkerColor(ROOT.kBlack)
-                eff.SetMarkerStyle(8)
-          
-            canvas.addHistogram(eff, drawOpt = 'EP', clone = False)
-            
-            canvas.xtitle = vtitle
-            canvas.ylimits = (0., 1.1)
-            
-            canvas.Update()
-            
-            if type(binning) is tuple:
-                eff.GetXaxis().SetLimits(binning[1], binning[2])
-                eff.GetXaxis().SetRangeUser(binning[1], binning[2])
-            else:
-                eff.GetXaxis().SetLimits(binning[0], binning[-1])
-                eff.GetXaxis().SetRangeUser(binning[0], binning[-1])
-            
-            eff.GetYaxis().SetRangeUser(0., 1.2)
+            if type(vexpr) is str:
+                canvas.Clear()
+                canvas.SetGrid()
 
-#            if tname == 'sph165abs' and vname.startswith('pt'):
-#                canvas.addLine(175., canvas.ylimits[0], 175., canvas.ylimits[1], color = ROOT.kRed, width = 2, style = ROOT.kDashed)
-            
-            canvas.printWeb(outName, oname + '_' + mname + '_' + tname + '_' + vname, logy = False)
+                canvas.legend.Clear()
+                if title:
+                    canvas.legend.add('eff', title = title, opt = 'LP', color = ROOT.kBlack, mstyle = 8)
+                    canvas.legend.apply('eff', eff)
+                else:
+                    eff.SetMarkerColor(ROOT.kBlack)
+                    eff.SetMarkerStyle(8)
+
+                canvas.addHistogram(eff, drawOpt = 'EP', clone = False)
+                
+                canvas.xtitle = vtitle
+                canvas.ylimits = (0., 1.1)
+                
+                canvas.Update()
+                
+                if type(binning) is tuple:
+                    eff.GetXaxis().SetLimits(binning[1], binning[2])
+                    eff.GetXaxis().SetRangeUser(binning[1], binning[2])
+                else:
+                    eff.GetXaxis().SetLimits(binning[0], binning[-1])
+                    eff.GetXaxis().SetRangeUser(binning[0], binning[-1])
+                
+                eff.GetYaxis().SetRangeUser(0., 1.2)
+    
+                canvas.printWeb(outName + '/' + oname + '_' + mname, tname + '_' + vname, logy = False)
+
+            else:
+                canvas2d.Clear()
+
+                canvas2d.addHistogram(eff, drawOpt = 'COLZ', clone = False)
+                
+                canvas.xtitle = vtitle[0]
+                canvas.ytitle = vtitle[1]
+                canvas.zlimits = (0., 1.)
+                
+                canvas2d.Update()
+                
+                eff.GetZaxis().SetRangeUser(0., 1.)
+    
+                canvas2d.printWeb(outName + '/' + oname + '_' + mname, tname + '_' + vname, logy = False, logz = False)
 
     source.Close()
 
