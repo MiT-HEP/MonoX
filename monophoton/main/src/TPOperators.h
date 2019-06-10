@@ -1,7 +1,7 @@
 #ifndef TPOperator_h
 #define TPOperator_h
 
-#include "base/Operator.h"
+#include "Operator.h"
 
 #include "PandaTree/Objects/interface/EventTP.h"
 
@@ -138,6 +138,31 @@ class TPLeptonVeto : public TPCut {
   bool vetoMuons_{true};
   unsigned nElectrons_;
   unsigned nMuons_;
+};
+
+class TagAndProbePairZ : public TPCut {
+ public:
+  TagAndProbePairZ(char const* name = "TagAndProbePairZ");
+  ~TagAndProbePairZ();
+  void addBranches(TTree& skimTree) override;
+  void setTagSpecies(Collection species) { tagSpecies_ = species; }
+  void setProbeSpecies(Collection species) { probeSpecies_ = species; }
+
+  unsigned getNUniqueZ() const { return nUniqueZ_; }
+  float getPhiZ(unsigned idx) const { return tp_[idx].phi(); }
+  
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
+
+  Collection tagSpecies_{nCollections};
+  Collection probeSpecies_{nCollections};
+
+  panda::ParticleCollection* tags_{0};
+  panda::ParticleCollection* probes_{0};
+  panda::ParticleMCollection tp_;
+  bool zOppSign_{0};
+
+  unsigned nUniqueZ_{0};
 };
 
 //--------------------------------------------------------------------

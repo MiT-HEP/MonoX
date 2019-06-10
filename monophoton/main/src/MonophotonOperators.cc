@@ -551,6 +551,47 @@ TauVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _out
 }
 
 //--------------------------------------------------------------------
+// EcalCrackVeto
+//--------------------------------------------------------------------
+
+void
+EcalCrackVeto::addBranches(TTree& _skimTree)
+{
+  _skimTree.Branch("ecalCrackVeto", &ecalCrackVeto_, "ecalCrackVeto/O");
+}
+
+bool
+EcalCrackVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+{
+  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
+    auto& photon(_event.photons[iP]);
+
+    if (photon.scRawPt < minPt_)
+      continue;
+
+    if (std::abs(photon.eta()) > 1.4 && std::abs(photon.eta()) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+  
+  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
+    auto& jet(_event.jets[iJ]);
+
+    if (jet.pt() < minPt_)
+      continue;
+
+    if (std::abs(jet.eta()) > 1.4 && std::abs(jet.eta()) < 1.6) {
+      ecalCrackVeto_ = false;
+      return false;
+    }
+  }
+
+  ecalCrackVeto_ = true;
+  return true;
+}
+
+//--------------------------------------------------------------------
 // LeptonMt
 //--------------------------------------------------------------------
 
@@ -1456,6 +1497,27 @@ ZJetBackToBack::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
       return true;
   }
   return false;
+}
+
+//--------------------------------------------------------------------
+// MetFilters
+//--------------------------------------------------------------------
+
+bool
+MetFilters::pass(panda::EventBase const& _event, panda::EventBase&)
+{
+  if (!_event.metFilters.hbhe && !_event.metFilters.hbheIso && !_event.metFilters.ecalDeadCell && !_event.metFilters.goodVertices && !_event.metFilters.badsc && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons && !_event.metFilters.badPFMuons && !_event.metFilters.badChargedHadrons) {
+    if (halo_) 
+      return true;
+    else {
+      if (!_event.metFilters.globalHalo16)
+	return true;
+      else
+	return false;
+    }
+  }
+  else 
+    return false;
 }
 
 //--------------------------------------------------------------------

@@ -1,6 +1,8 @@
 #ifndef SelectorBase_h
 #define SelectorBase_h
 
+#include "PandaTree/Objects/interface/EventBase.h"
+
 #include "Operator.h"
 
 #include "TTree.h"
@@ -26,9 +28,9 @@ public:
   unsigned index(char const* name) const;
   void removeOperator(char const* name);
 
-  void initialize(char const* outputPath, panda::EventMonophoton& inEvent, panda::utils::BranchList& blist, bool isMC);
+  void initialize(char const* outputPath, panda::EventBase& inEvent, panda::utils::BranchList& blist, bool isMC);
   void finalize();
-  virtual void selectEvent(panda::EventMonophoton&) = 0;
+  virtual void selectEvent(panda::EventBase&) = 0;
 
   TString const& name() const { return name_; }
   virtual char const* className() const = 0;
@@ -43,7 +45,7 @@ public:
   static std::mutex mutex;
 
 protected:
-  virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}
+  virtual void setupSkim_(panda::EventBase& inEvent, bool isMC) {}
   virtual void addOutput_(TFile*& outputFile) {}
 
   TString name_;

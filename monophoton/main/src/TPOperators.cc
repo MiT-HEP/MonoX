@@ -516,6 +516,171 @@ TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outE
 }
 
 //--------------------------------------------------------------------
+// TagAndProbePairZ
+//--------------------------------------------------------------------
+
+TagAndProbePairZ::TagAndProbePairZ(char const* name) :
+  Cut(name),
+  tp_("tp")
+{
+}
+
+TagAndProbePairZ::~TagAndProbePairZ()
+{
+  delete tags_;
+  delete probes_;
+}
+
+void
+TagAndProbePairZ::addBranches(TTree& _skimTree)
+{
+  switch (tagSpecies_) {
+  case cMuons:
+    tags_ = new panda::MuonCollection("tag");
+    break;
+  case cElectrons:
+    tags_ = new panda::ElectronCollection("tag");
+    break;
+  case cPhotons:
+    tags_ = new panda::XPhotonCollection("tag");
+    break;
+  default:
+    throw runtime_error("Invalid tag species");
+  }
+
+  switch (probeSpecies_) {
+  case cMuons:
+    probes_ = new panda::MuonCollection("probe");
+    break;
+  case cElectrons:
+    probes_ = new panda::ElectronCollection("probe");
+    break;
+  case cPhotons:
+    probes_ = new panda::XPhotonCollection("probe");
+    break;
+  default:
+    throw runtime_error("Invalid tag species");
+  }
+
+  tp_.book(_skimTree);
+  _skimTree.Branch("tp.oppSign", &zOppSign_, "tp.oppSign/O");
+
+  tags_->book(_skimTree);
+  probes_->book(_skimTree);
+}
+
+bool
+TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventTP&)
+{
+  panda::LeptonCollection const* inTags(0);
+  panda::LeptonCollection const* inProbes(0);
+  TLorentzVector tnpPair(0., 0., 0., 0.);
+
+  // OK, object-orientation and virtual methods cannot quite solve the problem at hand (push back the objects with full info).
+  // We will cheat.
+  std::function<void(panda::Particle const&)> push_back_tag;
+  std::function<void(panda::Particle const&)> push_back_probe;
+
+  switch (tagSpecies_) {
+  case cMuons:
+    inTags = &_event.muons;
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
+    };
+    break;
+  case cElectrons:
+    inTags = &_event.electrons;
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
+    };
+    break;
+  case cPhotons:
+    // inTags = &_event.photons;
+    push_back_tag = [this](panda::Particle const& tag) {
+      static_cast<panda::XPhotonCollection*>(this->tags_)->push_back(static_cast<panda::XPhoton const&>(tag));
+    };
+    break;
+  default:
+    throw runtime_error("Invalid tag species");
+  }
+  
+  switch (probeSpecies_) {
+  case cMuons:
+    inProbes = &_event.muons;
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
+    };
+    break;
+  case cElectrons:
+    inProbes = &_event.electrons;
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
+    };
+    break;
+  case cPhotons:
+    // inProbes = &_event.photons; 
+    push_back_probe = [this](panda::Particle const& probe) {
+      static_cast<panda::XPhotonCollection*>(this->probes_)->push_back(static_cast<panda::XPhoton const&>(probe));
+    };
+    break;
+  default:
+    throw runtime_error("Invalid tag species");
+  }
+
+  tp_.clear();
+  tags_->clear();
+  probes_->clear();
+  nUniqueZ_ = 0;
+
+  for (unsigned iT(0); iT != inTags->size(); ++iT) {
+    auto& tag = inTags->at(iT);
+    
+    if ( !(tag.tight && tag.pt() > 30.))
+      continue;
+    
+    for (unsigned iP(0); iP != inProbes->size(); ++iP) {
+      auto& probe = inProbes->at(iP);
+      
+      if ( !(probe.loose && probe.pt() > 20.))
+	continue;
+
+      // don't want the same object in case the tag and probe collections are the same
+      // currently going with dR < 0.3, maybe change?
+      if (tag.dR2(probe) < 0.09 ) 
+	continue;
+
+      tnpPair = (tag.p4() + probe.p4());
+      double mass(tnpPair.M());
+      // tighter mass range was just so I could use cutresult to debug, switched backed
+      if ( !(mass > 60. && mass < 120.))
+	continue;
+
+      push_back_tag(tag);
+      push_back_probe(probe);
+
+      // cannot push back here; resize and use the last element
+      tp_.resize(tp_.size() + 1);
+      auto& z(tp_.back());
+      z.setPtEtaPhiM(tnpPair.Pt(), tnpPair.Eta(), tnpPair.Phi(), tnpPair.M());
+      zOppSign_ = ( (tag.charge == probe.charge) ? 0 : 1);
+
+      // check if other tag-probe pairs match this pair
+      unsigned iZ(0);
+      for (; iZ != tp_.size() - 1; ++iZ) {
+        if ((tag.dR2(tags_->at(iZ)) < 0.09 && probe.dR2(probes_->at(iZ)) < 0.09) ||
+            (tag.dR2(probes_->at(iZ)) < 0.09 && probe.dR2(tags_->at(iZ)) < 0.09))
+          break;
+      }
+      // if not, increment unique Z counter
+      if (iZ == tp_.size() -1)
+        ++nUniqueZ_;
+    }
+  }
+
+  return tp_.size() != 0;
+}
+
+//--------------------------------------------------------------------
 // TPJetCleaning
 //--------------------------------------------------------------------
 

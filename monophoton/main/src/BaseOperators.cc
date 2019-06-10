@@ -13,14 +13,14 @@
 //--------------------------------------------------------------------
 
 bool
-Cut::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+Cut::exec(panda::EventBase const& _event, panda::EventBase& _outEvent)
 {
   result_ = pass(_event, _outEvent);
   return ignoreDecision_ || result_;
 }
 
 bool
-Modifier::exec(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+Modifier::exec(panda::EventBase const& _event, panda::EventBase& _outEvent)
 {
   apply(_event, _outEvent);
   return true;
@@ -42,7 +42,7 @@ HLTFilter::~HLTFilter()
 }
 
 void
-HLTFilter::initialize(panda::EventMonophoton& _event)
+HLTFilter::initialize(panda::EventBase& _event)
 {
   Ssiz_t pos(0);
   TString path;
@@ -66,7 +66,7 @@ HLTFilter::addBranches(TTree& _skimTree)
 }
 
 bool
-HLTFilter::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+HLTFilter::pass(panda::EventBase const& _event, panda::EventBase&)
 {
   // make sure a trigger menu exists; will return a human readable error if not
   _event.run.triggerMenu();
@@ -113,7 +113,7 @@ EventVeto::addEvent(unsigned run, unsigned lumi, unsigned event)
 }
 
 bool
-EventVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+EventVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 {
   auto rItr(list_.find(_event.runNumber));
   if (rItr == list_.end())
@@ -128,35 +128,17 @@ EventVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 }
 
 //--------------------------------------------------------------------
-// MetFilters
-//--------------------------------------------------------------------
-
-bool
-MetFilters::pass(panda::EventMonophoton const& _event, panda::EventBase&)
-{
-  if (!_event.metFilters.hbhe && !_event.metFilters.hbheIso && !_event.metFilters.ecalDeadCell && !_event.metFilters.goodVertices && !_event.metFilters.badsc && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons && !_event.metFilters.badPFMuons && !_event.metFilters.badChargedHadrons) {
-    if (halo_) 
-      return true;
-    else {
-      if (!_event.metFilters.globalHalo16)
-	return true;
-      else
-	return false;
-    }
-  }
-  else 
-    return false;
-}
-
-//--------------------------------------------------------------------
 // GenPhotonVeto
 //--------------------------------------------------------------------
 
 bool
-GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenPhotonVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  for (unsigned iG(0); iG != _event.genParticles.size(); ++iG) {
-    auto& part(_event.genParticles[iG]);
+  auto& genParticles(*_event.genParticleCollection());
+  auto& partons(*_event.partonCollection());
+  
+  for (unsigned iG(0); iG != genParticles.size(); ++iG) {
+    auto& part(genParticles[iG]);
 
     if (!part.finalState)
       continue;
@@ -168,12 +150,12 @@ GenPhotonVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
       continue;
 
     unsigned iP(0);
-    for (; iP != _event.partons.size(); ++iP) {
-      auto& parton(_event.partons[iP]);
+    for (; iP != partons.size(); ++iP) {
+      auto& parton(partons[iP]);
       if (parton.dR2(part) < minPartonDR2_)
         break;
     }
-    if (iP != _event.partons.size())
+    if (iP != partons.size())
       continue;
 
     return false;
@@ -198,7 +180,7 @@ PartonKinematics::addBranches(TTree& _skimTree)
 }
 
 void
-PartonKinematics::apply(panda::EventMonophoton const& _event, panda::EventBase&)
+PartonKinematics::apply(panda::EventBase const& _event, panda::EventBase&)
 {
   phoPt_ = -1;
   phoEta_ = -1;
@@ -211,7 +193,9 @@ PartonKinematics::apply(panda::EventMonophoton const& _event, panda::EventBase&)
   double mpx(0.);
   double mpy(0.);
 
-  for (auto& parton : _event.partons) {
+  auto& partons(*_event.partonCollection());
+
+  for (auto& parton : partons) {
     absid = std::abs(parton.pdgid);
     if (absid == 22 && parton.pt() > phoPt_) {
       phoPt_ = parton.pt();
@@ -235,12 +219,14 @@ PartonKinematics::apply(panda::EventMonophoton const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 
 bool
-PartonFlavor::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+PartonFlavor::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  if (_event.partons.size() == 0)
+  auto& partons(*_event.partonCollection());
+  
+  if (partons.size() == 0)
     return false;
 
-  for (auto& parton : _event.partons) {
+  for (auto& parton : partons) {
     unsigned absId(std::abs(parton.pdgid));
     if (absId == rejectedId_)
       return false;
@@ -258,10 +244,12 @@ PartonFlavor::pass(panda::EventMonophoton const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 
 bool
-GenPhotonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenPhotonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
-    auto& parton(_event.partons[iP]);
+  auto& partons(*_event.partonCollection());
+  
+  for (unsigned iP(0); iP != partons.size(); ++iP) {
+    auto& parton(partons[iP]);
 
     if (parton.pdgid == 22 && (parton.pt() < min_ || parton.pt() > max_))
       return false;
@@ -281,11 +269,13 @@ GenHtTruncator::addBranches(TTree& _skimTree)
 }
 
 bool
-GenHtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenHtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
+  auto& partons(*_event.partonCollection());
+  
   ht_ = 0.; // ht is an additive quantity; need to start with 0.
-  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
-    auto& parton(_event.partons[iP]);
+  for (unsigned iP(0); iP != partons.size(); ++iP) {
+    auto& parton(partons[iP]);
 
     if ( !(parton.pdgid == 21 || std::abs(parton.pdgid) < 6))
       continue;
@@ -310,13 +300,16 @@ GenBosonPtTruncator::addBranches(TTree& _skimTree)
 }
 
 bool
-GenBosonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenBosonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
   pt_ = -1.;
   unsigned nLep = 0;
   TLorentzVector genBoson(0., 0., 0., 0.);
-  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
-    auto& parton(_event.partons[iP]);
+
+  auto& partons(*_event.partonCollection());
+  
+  for (unsigned iP(0); iP != partons.size(); ++iP) {
+    auto& parton(partons[iP]);
 
     // don't run on diboson samples for now
     if (nLep > 2)
@@ -343,10 +336,12 @@ GenBosonPtTruncator::pass(panda::EventMonophoton const& _event, panda::EventBase
 //--------------------------------------------------------------------
 
 bool
-GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventBase&)
+GenParticleSelection::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  for (unsigned iP(0); iP != _event.genParticles.size(); ++iP) {
-    auto& part(_event.genParticles[iP]);
+  auto& genParticles(*_event.genParticleCollection());
+  
+  for (unsigned iP(0); iP != genParticles.size(); ++iP) {
+    auto& part(genParticles[iP]);
 
     if (std::abs(part.pdgid) != pdgId_)
       continue;
@@ -364,212 +359,6 @@ GenParticleSelection::pass(panda::EventMonophoton const& _event, panda::EventBas
 }
 
 //--------------------------------------------------------------------
-// EcalCrackVeto
-//--------------------------------------------------------------------
-
-void
-EcalCrackVeto::addBranches(TTree& _skimTree)
-{
-  _skimTree.Branch("ecalCrackVeto", &ecalCrackVeto_, "ecalCrackVeto/O");
-}
-
-bool
-EcalCrackVeto::pass(panda::EventMonophoton const& _event, panda::EventBase&)
-{
-  for (unsigned iP(0); iP != _event.photons.size(); ++iP) {
-    auto& photon(_event.photons[iP]);
-
-    if (photon.scRawPt < minPt_)
-      continue;
-
-    if (std::abs(photon.eta()) > 1.4 && std::abs(photon.eta()) < 1.6) {
-      ecalCrackVeto_ = false;
-      return false;
-    }
-  }
-  
-  for (unsigned iJ(0); iJ != _event.jets.size(); ++iJ) {
-    auto& jet(_event.jets[iJ]);
-
-    if (jet.pt() < minPt_)
-      continue;
-
-    if (std::abs(jet.eta()) > 1.4 && std::abs(jet.eta()) < 1.6) {
-      ecalCrackVeto_ = false;
-      return false;
-    }
-  }
-
-  ecalCrackVeto_ = true;
-  return true;
-}
-
-//--------------------------------------------------------------------
-// TagAndProbePairZ
-//--------------------------------------------------------------------
-
-TagAndProbePairZ::TagAndProbePairZ(char const* name) :
-  Cut(name),
-  tp_("tp")
-{
-}
-
-TagAndProbePairZ::~TagAndProbePairZ()
-{
-  delete tags_;
-  delete probes_;
-}
-
-void
-TagAndProbePairZ::addBranches(TTree& _skimTree)
-{
-  switch (tagSpecies_) {
-  case cMuons:
-    tags_ = new panda::MuonCollection("tag");
-    break;
-  case cElectrons:
-    tags_ = new panda::ElectronCollection("tag");
-    break;
-  case cPhotons:
-    tags_ = new panda::XPhotonCollection("tag");
-    break;
-  default:
-    throw runtime_error("Invalid tag species");
-  }
-
-  switch (probeSpecies_) {
-  case cMuons:
-    probes_ = new panda::MuonCollection("probe");
-    break;
-  case cElectrons:
-    probes_ = new panda::ElectronCollection("probe");
-    break;
-  case cPhotons:
-    probes_ = new panda::XPhotonCollection("probe");
-    break;
-  default:
-    throw runtime_error("Invalid tag species");
-  }
-
-  tp_.book(_skimTree);
-  _skimTree.Branch("tp.oppSign", &zOppSign_, "tp.oppSign/O");
-
-  tags_->book(_skimTree);
-  probes_->book(_skimTree);
-}
-
-bool
-TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventBase&)
-{
-  panda::LeptonCollection const* inTags(0);
-  panda::LeptonCollection const* inProbes(0);
-  TLorentzVector tnpPair(0., 0., 0., 0.);
-
-  // OK, object-orientation and virtual methods cannot quite solve the problem at hand (push back the objects with full info).
-  // We will cheat.
-  std::function<void(panda::Particle const&)> push_back_tag;
-  std::function<void(panda::Particle const&)> push_back_probe;
-
-  switch (tagSpecies_) {
-  case cMuons:
-    inTags = &_event.muons;
-    push_back_tag = [this](panda::Particle const& tag) {
-      static_cast<panda::MuonCollection*>(this->tags_)->push_back(static_cast<panda::Muon const&>(tag));
-    };
-    break;
-  case cElectrons:
-    inTags = &_event.electrons;
-    push_back_tag = [this](panda::Particle const& tag) {
-      static_cast<panda::ElectronCollection*>(this->tags_)->push_back(static_cast<panda::Electron const&>(tag));
-    };
-    break;
-  case cPhotons:
-    // inTags = &_event.photons;
-    push_back_tag = [this](panda::Particle const& tag) {
-      static_cast<panda::XPhotonCollection*>(this->tags_)->push_back(static_cast<panda::XPhoton const&>(tag));
-    };
-    break;
-  default:
-    throw runtime_error("Invalid tag species");
-  }
-  
-  switch (probeSpecies_) {
-  case cMuons:
-    inProbes = &_event.muons;
-    push_back_probe = [this](panda::Particle const& probe) {
-      static_cast<panda::MuonCollection*>(this->probes_)->push_back(static_cast<panda::Muon const&>(probe));
-    };
-    break;
-  case cElectrons:
-    inProbes = &_event.electrons;
-    push_back_probe = [this](panda::Particle const& probe) {
-      static_cast<panda::ElectronCollection*>(this->probes_)->push_back(static_cast<panda::Electron const&>(probe));
-    };
-    break;
-  case cPhotons:
-    // inProbes = &_event.photons; 
-    push_back_probe = [this](panda::Particle const& probe) {
-      static_cast<panda::XPhotonCollection*>(this->probes_)->push_back(static_cast<panda::XPhoton const&>(probe));
-    };
-    break;
-  default:
-    throw runtime_error("Invalid tag species");
-  }
-
-  tp_.clear();
-  tags_->clear();
-  probes_->clear();
-  nUniqueZ_ = 0;
-
-  for (unsigned iT(0); iT != inTags->size(); ++iT) {
-    auto& tag = inTags->at(iT);
-    
-    if ( !(tag.tight && tag.pt() > 30.))
-      continue;
-    
-    for (unsigned iP(0); iP != inProbes->size(); ++iP) {
-      auto& probe = inProbes->at(iP);
-      
-      if ( !(probe.loose && probe.pt() > 20.))
-	continue;
-
-      // don't want the same object in case the tag and probe collections are the same
-      // currently going with dR < 0.3, maybe change?
-      if (tag.dR2(probe) < 0.09 ) 
-	continue;
-
-      tnpPair = (tag.p4() + probe.p4());
-      double mass(tnpPair.M());
-      // tighter mass range was just so I could use cutresult to debug, switched backed
-      if ( !(mass > 60. && mass < 120.))
-	continue;
-
-      push_back_tag(tag);
-      push_back_probe(probe);
-
-      // cannot push back here; resize and use the last element
-      tp_.resize(tp_.size() + 1);
-      auto& z(tp_.back());
-      z.setPtEtaPhiM(tnpPair.Pt(), tnpPair.Eta(), tnpPair.Phi(), tnpPair.M());
-      zOppSign_ = ( (tag.charge == probe.charge) ? 0 : 1);
-
-      // check if other tag-probe pairs match this pair
-      unsigned iZ(0);
-      for (; iZ != tp_.size() - 1; ++iZ) {
-        if ((tag.dR2(tags_->at(iZ)) < 0.09 && probe.dR2(probes_->at(iZ)) < 0.09) ||
-            (tag.dR2(probes_->at(iZ)) < 0.09 && probe.dR2(tags_->at(iZ)) < 0.09))
-          break;
-      }
-      // if not, increment unique Z counter
-      if (iZ == tp_.size() -1)
-        ++nUniqueZ_;
-    }
-  }
-
-  return tp_.size() != 0;
-}
-
-//--------------------------------------------------------------------
 // ConstantWeight
 //--------------------------------------------------------------------
 
@@ -584,22 +373,6 @@ ConstantWeight::addBranches(TTree& _skimTree)
 }
 
 //--------------------------------------------------------------------
-// NPVWeight
-//--------------------------------------------------------------------
-
-void
-NPVWeight::apply(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
-{
-  int iX(factors_->FindFixBin(_event.npv));
-  if (iX == 0)
-    iX = 1;
-  if (iX > factors_->GetNbinsX())
-    iX = factors_->GetNbinsX();
-
-  _outEvent.weight *= factors_->GetBinContent(iX);
-}
-
-//--------------------------------------------------------------------
 // NNPDFVariation
 //--------------------------------------------------------------------
 
@@ -611,7 +384,7 @@ NNPDFVariation::addBranches(TTree& _skimTree)
 }
 
 void
-NNPDFVariation::apply(panda::EventMonophoton const& _event, panda::EventBase&)
+NNPDFVariation::apply(panda::EventBase const& _event, panda::EventBase&)
 {
   // need to implement new version of pdf weights
   weightUp_ = 1.; // + _event.genReweight.pdfDW * rescale_;
@@ -629,15 +402,17 @@ GJetsDR::addBranches(TTree& _skimTree)
 }
 
 void
-GJetsDR::apply(panda::EventMonophoton const& _event, panda::EventBase&)
+GJetsDR::apply(panda::EventBase const& _event, panda::EventBase&)
 {
   minDR_ = -1.;
 
-  for (auto& photon : _event.partons) {
+  auto& partons(*_event.partonCollection());
+
+  for (auto& photon : partons) {
     if (std::abs(photon.pdgid) != 22)
       continue;
 
-    for (auto& parton : _event.partons) {
+    for (auto& parton : partons) {
       if (&parton == &photon)
         continue;
 
@@ -663,7 +438,7 @@ PUWeight::addBranches(TTree& _skimTree)
 }
 
 void
-PUWeight::apply(panda::EventMonophoton const& _event, panda::EventBase& _outEvent)
+PUWeight::apply(panda::EventBase const& _event, panda::EventBase& _outEvent)
 {
   int iX(factors_->FindFixBin(_event.npvTrue));
   if (iX == 0)

@@ -1,9 +1,9 @@
 #ifndef Operator_h
 #define Operator_h
 
-#include "PandaTree/Objects/interface/EventMonophoton.h"
+#include "PandaTree/Objects/interface/EventBase.h"
 
-#include "../logging.h"
+#include "logging.h"
 
 #include <iostream>
 
@@ -29,11 +29,11 @@ class Operator {
   char const* name() const { return name_.Data(); }
   virtual TString expr() const { return name_; }
 
-  virtual bool exec(panda::EventMonophoton const&, panda::EventBase&) = 0;
+  virtual bool exec(panda::EventBase const&, panda::EventBase&) = 0;
 
   virtual void addInputBranch(panda::utils::BranchList&) {}
   virtual void addBranches(TTree& skimTree) {}
-  virtual void initialize(panda::EventMonophoton&) {}
+  virtual void initialize(panda::EventBase&) {}
 
   void setPrintLevel(unsigned l) { printLevel_ = l; }
   void setOutputStream(std::ostream& st) { stream_ = &st; }

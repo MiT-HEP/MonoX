@@ -26,7 +26,7 @@ TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 }
 
 void
-TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
+TagAndProbeSelector::setupSkim_(panda::EventTP& _inEvent, bool _isMC)
 {
   switch (outType_) {
   case kTPEG:
@@ -74,7 +74,7 @@ TagAndProbeSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 }
 
 void
-TagAndProbeSelector::selectEvent(panda::EventMonophoton& _event)
+TagAndProbeSelector::selectEvent(panda::EventTP& _event)
 {
   outEvent_->init();
 

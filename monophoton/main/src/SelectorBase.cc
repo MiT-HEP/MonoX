@@ -57,7 +57,7 @@ EventSelectorBase::removeOperator(char const* _name)
 }
 
 void
-EventSelectorBase::initialize(char const* _outputPath, panda::EventMonophoton& _inEvent, panda::utils::BranchList& _blist, bool _isMC)
+EventSelectorBase::initialize(char const* _outputPath, panda::EventBase& _inEvent, panda::utils::BranchList& _blist, bool _isMC)
 {
   if (printLevel_ > 0)
     *stream_ << "Initializing " << className() << "::" << name() << std::endl;

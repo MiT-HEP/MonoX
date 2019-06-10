@@ -1,8 +1,8 @@
 #ifndef MonophotonOperator_h
 #define MonophotonOperator_h
 
-#include "base/Operator.h"
-#include "base/BaseOperators.h"
+#include "Operator.h"
+#include "BaseOperators.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -34,8 +34,8 @@ class MonophotonOperator : public Operator {
  public:
   MonophotonOperator(char const* name) : Operator(name) {}
 
-  bool exec(panda::EventMonophoton const& inEvent, panda::EventBase& outEvent) final {
-    return monophexec(inEvent, static_cast<panda::EventMonophoton&>(outEvent));
+  bool exec(panda::EventBase const& inEvent, panda::EventBase& outEvent) final {
+    return monophexec(static_cast<panda::EventMonophoton const&>(inEvent), static_cast<panda::EventMonophoton&>(outEvent));
   }
 
  protected:
@@ -175,6 +175,19 @@ class TauVeto : public MonophotonCut {
   TauVeto(char const* name = "TauVeto") : MonophotonCut(name) {}
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+};
+
+class EcalCrackVeto : public MonophotonCut {
+ public:
+  EcalCrackVeto(char const* name = "EcalCrackVeto") : Cut(name) {}
+  void addBranches(TTree& skimTree) override;
+  void setMinPt(double minPt) { minPt_ = minPt; }
+
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
+  
+  double minPt_{30.};
+  Bool_t ecalCrackVeto_{true};
 };
 
 class LeptonMt : public MonophotonCut {
@@ -514,6 +527,17 @@ class ZJetBackToBack: public MonophotonCut {
   float minJetPt_{30.};
   float dPhiMin_{2.5};
   TagAndProbePairZ* tnp_{0};
+};
+
+class MetFilters : public Cut {
+ public:
+  MetFilters(char const* name = "MetFilters") : Cut(name) {}
+
+  void allowHalo() { halo_ = true; }
+ protected:
+  bool pass(panda::EventMonophoton const&, panda::EventBase&) override;
+
+  bool halo_{false};
 };
 
 //--------------------------------------------------------------------

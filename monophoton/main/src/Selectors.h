@@ -1,14 +1,28 @@
 #ifndef Selectors_h
 #define Selectors_h
 
+#include "PandaTree/Objects/interface/EventMonophoton.h"
+
 #include "SelectorBase.h"
-#include "BaseOperators.h"
 
 #include "TF1.h"
 
-class EventSelector : public EventSelectorBase {
+class MonophotonEventSelectorBase : public EventSelectorBase {
 public:
-  EventSelector(char const* name) : EventSelectorBase(name) {}
+  MonophotonEventSelectorBase(char const* name) : EventSelectorBase(name) {}
+  ~MonophotonEventSelectorBase() {}
+
+  void selectEvent(panda::EventBase& event) final { selectEvent(static_cast<panda::EventMonophoton&>(event)); }
+  virtual void selectEvent(panda::EventMonophoton&) = 0;
+
+protected:
+  void setupSkim_(panda::EventBase& inEvent, bool isMC) final { setupSkim_(static_cast<panda::EventMonophoton&>(inEvent), isMC); }
+  virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}
+};
+
+class EventSelector : public MonophotonEventSelectorBase {
+public:
+  EventSelector(char const* name) : MonophotonEventSelectorBase(name) {}
   ~EventSelector() {}
 
   void addOperator(Operator*, unsigned idx = -1) override;
