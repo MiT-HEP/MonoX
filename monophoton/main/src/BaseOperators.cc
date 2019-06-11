@@ -135,7 +135,6 @@ bool
 GenPhotonVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 {
   auto& genParticles(*_event.genParticleCollection());
-  auto& partons(*_event.partonCollection());
   
   for (unsigned iG(0); iG != genParticles.size(); ++iG) {
     auto& part(genParticles[iG]);
@@ -150,12 +149,12 @@ GenPhotonVeto::pass(panda::EventBase const& _event, panda::EventBase&)
       continue;
 
     unsigned iP(0);
-    for (; iP != partons.size(); ++iP) {
-      auto& parton(partons[iP]);
+    for (; iP != _event.partons.size(); ++iP) {
+      auto& parton(_event.partons[iP]);
       if (parton.dR2(part) < minPartonDR2_)
         break;
     }
-    if (iP != partons.size())
+    if (iP != _event.partons.size())
       continue;
 
     return false;
@@ -193,9 +192,7 @@ PartonKinematics::apply(panda::EventBase const& _event, panda::EventBase&)
   double mpx(0.);
   double mpy(0.);
 
-  auto& partons(*_event.partonCollection());
-
-  for (auto& parton : partons) {
+  for (auto& parton : _event.partons) {
     absid = std::abs(parton.pdgid);
     if (absid == 22 && parton.pt() > phoPt_) {
       phoPt_ = parton.pt();
@@ -221,12 +218,10 @@ PartonKinematics::apply(panda::EventBase const& _event, panda::EventBase&)
 bool
 PartonFlavor::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  auto& partons(*_event.partonCollection());
-  
-  if (partons.size() == 0)
+  if (_event.partons.size() == 0)
     return false;
 
-  for (auto& parton : partons) {
+  for (auto& parton : _event.partons) {
     unsigned absId(std::abs(parton.pdgid));
     if (absId == rejectedId_)
       return false;
@@ -246,10 +241,8 @@ PartonFlavor::pass(panda::EventBase const& _event, panda::EventBase&)
 bool
 GenPhotonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  auto& partons(*_event.partonCollection());
-  
-  for (unsigned iP(0); iP != partons.size(); ++iP) {
-    auto& parton(partons[iP]);
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
 
     if (parton.pdgid == 22 && (parton.pt() < min_ || parton.pt() > max_))
       return false;
@@ -271,11 +264,9 @@ GenHtTruncator::addBranches(TTree& _skimTree)
 bool
 GenHtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
-  auto& partons(*_event.partonCollection());
-  
   ht_ = 0.; // ht is an additive quantity; need to start with 0.
-  for (unsigned iP(0); iP != partons.size(); ++iP) {
-    auto& parton(partons[iP]);
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
 
     if ( !(parton.pdgid == 21 || std::abs(parton.pdgid) < 6))
       continue;
@@ -306,10 +297,8 @@ GenBosonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
   unsigned nLep = 0;
   TLorentzVector genBoson(0., 0., 0., 0.);
 
-  auto& partons(*_event.partonCollection());
-  
-  for (unsigned iP(0); iP != partons.size(); ++iP) {
-    auto& parton(partons[iP]);
+  for (unsigned iP(0); iP != _event.partons.size(); ++iP) {
+    auto& parton(_event.partons[iP]);
 
     // don't run on diboson samples for now
     if (nLep > 2)
@@ -406,13 +395,11 @@ GJetsDR::apply(panda::EventBase const& _event, panda::EventBase&)
 {
   minDR_ = -1.;
 
-  auto& partons(*_event.partonCollection());
-
-  for (auto& photon : partons) {
+  for (auto& photon : _event.partons) {
     if (std::abs(photon.pdgid) != 22)
       continue;
 
-    for (auto& parton : partons) {
+    for (auto& parton : _event.partons) {
       if (&parton == &photon)
         continue;
 
