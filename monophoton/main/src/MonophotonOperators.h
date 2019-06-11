@@ -2,7 +2,6 @@
 #define MonophotonOperator_h
 
 #include "Operator.h"
-#include "BaseOperators.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -12,6 +11,8 @@
 #include "TDirectory.h"
 
 #include "fastjet/JetDefinition.hh"
+
+#include "PandaTree/Objects/interface/EventMonophoton.h"
 
 #include <bitset>
 #include <map>
