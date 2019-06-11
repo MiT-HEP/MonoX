@@ -1,19 +1,13 @@
-#ifndef BaseOperator_h
-#define BaseOperator_h
+#ifndef CommonOperator_h
+#define CommonOperator_h
 
 #include "Operator.h"
 
 #include "TF1.h"
 
-class BaseOperator : public Operator 
-{
+class Cut : public Operator, public CutMixin {
  public:
-  BaseOperator(char const* name) : Operator(name) {}
-};
-
-class Cut : public BaseOperator, public CutMixin {
- public:
-  Cut(char const* name) : BaseOperator(name), CutMixin(name) {}
+  Cut(char const* name) : Operator(name), CutMixin(name) {}
 
   TString expr() const override { return cutExpr(name_); }
 
@@ -23,9 +17,9 @@ class Cut : public BaseOperator, public CutMixin {
   virtual bool pass(panda::EventBase const&, panda::EventBase&) = 0;
 };
 
-class Modifier : public BaseOperator {
+class Modifier : public Operator {
  public:
-  Modifier(char const* name) : BaseOperator(name) {}
+  Modifier(char const* name) : Operator(name) {}
 
   bool exec(panda::EventBase const& inEvent, panda::EventBase& outEvent) final;
 
