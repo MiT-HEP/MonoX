@@ -5,9 +5,15 @@
 
 #include "TF1.h"
 
-class Cut : public Operator, public CutMixin {
+class CommonOperator : public Operator 
+{
  public:
-  Cut(char const* name) : Operator(name), CutMixin(name) {}
+  CommonOperator(char const* name) : Operator(name) {}
+};
+
+class Cut : public CommonOperator, public CutMixin {
+ public:
+  Cut(char const* name) : CommonOperator(name), CutMixin(name) {}
 
   TString expr() const override { return cutExpr(name_); }
 
@@ -17,9 +23,9 @@ class Cut : public Operator, public CutMixin {
   virtual bool pass(panda::EventBase const&, panda::EventBase&) = 0;
 };
 
-class Modifier : public Operator {
+class Modifier : public CommonOperator {
  public:
-  Modifier(char const* name) : Operator(name) {}
+  Modifier(char const* name) : CommonOperator(name) {}
 
   bool exec(panda::EventBase const& inEvent, panda::EventBase& outEvent) final;
 

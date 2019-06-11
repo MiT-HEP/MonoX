@@ -30,7 +30,7 @@ public:
 
   void initialize(char const* outputPath, panda::EventBase& inEvent, panda::utils::BranchList& blist, bool isMC);
   void finalize();
-  virtual void selectEvent(panda::EventBase&) = 0;
+  virtual void selectEvent() = 0;
 
   TString const& name() const { return name_; }
   virtual char const* className() const = 0;
@@ -42,10 +42,19 @@ public:
   void setUseTimers(bool b) { useTimers_ = b; }
   void setPrintLevel(unsigned l, std::ostream* st = 0) { printLevel_ = l; if (st) stream_ = st; }
 
+  enum InputEventType {
+    kEvent,
+    kEventMonophoton,
+    kEventTP,
+    nInputEventTypes
+  };
+  virtual InputEventType inputEventType() const = 0;
+
   static std::mutex mutex;
 
 protected:
-  virtual void setupSkim_(panda::EventBase& inEvent, bool isMC) {}
+  virtual void setInEvent_(panda::EventBase& inEvent) = 0;
+  virtual void setupSkim_(bool isMC) {}
   virtual void addOutput_(TFile*& outputFile) {}
 
   TString name_;

@@ -31,7 +31,7 @@ MonophotonModifier::monophexec(panda::EventMonophoton const& _event, panda::Even
 //--------------------------------------------------------------------
 
 void
-TriggerMatch::initialize(panda::EventMonophoton& _event)
+TriggerMatch::monophinitialize(panda::EventMonophoton& _event)
 {
   _event.run.setLoadTrigger(true);
   for (auto& name : filterNames_)
@@ -178,7 +178,7 @@ PhotonSelection::selToString(PhotonSelection::SelectionMask _mask)
 }
 
 void
-PhotonSelection::initialize(panda::EventMonophoton&)
+PhotonSelection::monophinitialize(panda::EventMonophoton&)
 {
   if (printLevel_ > 0 && printLevel_ <= INFO) {
     if (selections_.size() != 0) {
@@ -1478,33 +1478,11 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 }
 
 //--------------------------------------------------------------------
-// ZJetBackToBack
-//--------------------------------------------------------------------
-
-bool
-ZJetBackToBack::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
-{
-  if (tnp_->getNUniqueZ() != 1)
-    return false;
-
-  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
-    auto& jet( _outEvent.jets[iJ]);
-
-    if ( jet.pt() < minJetPt_)
-      continue;
-
-    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi() - tnp_->getPhiZ(0))) > dPhiMin_ )
-      return true;
-  }
-  return false;
-}
-
-//--------------------------------------------------------------------
 // MetFilters
 //--------------------------------------------------------------------
 
 bool
-MetFilters::pass(panda::EventBase const& _event, panda::EventBase&)
+MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
   if (!_event.metFilters.hbhe && !_event.metFilters.hbheIso && !_event.metFilters.ecalDeadCell && !_event.metFilters.goodVertices && !_event.metFilters.badsc && !_event.metFilters.badMuons && !_event.metFilters.duplicateMuons && !_event.metFilters.badPFMuons && !_event.metFilters.badChargedHadrons) {
     if (halo_) 
@@ -1735,7 +1713,7 @@ JetCleaning::JetCleaning(char const* _name/* = "JetCleaning"*/) :
 }
 
 void
-JetCleaning::initialize(panda::EventMonophoton&)
+JetCleaning::monophinitialize(panda::EventMonophoton&)
 {
   if (printLevel_ > 0 && printLevel_ <= INFO) {
     *stream_ << "Jet cleaning " << name_ << " removes overlaps with ";

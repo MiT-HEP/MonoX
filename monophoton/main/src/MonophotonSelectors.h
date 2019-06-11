@@ -12,12 +12,12 @@ public:
   MonophotonEventSelectorBase(char const* name) : EventSelectorBase(name) {}
   ~MonophotonEventSelectorBase() {}
 
-  void selectEvent(panda::EventBase& event) final { selectEvent(static_cast<panda::EventMonophoton&>(event)); }
-  virtual void selectEvent(panda::EventMonophoton&) = 0;
+  InputEventType inputEventType() const override { return kEventMonophoton; }
 
-protected:
-  void setupSkim_(panda::EventBase& inEvent, bool isMC) final { setupSkim_(static_cast<panda::EventMonophoton&>(inEvent), isMC); }
-  virtual void setupSkim_(panda::EventMonophoton& inEvent, bool isMC) {}
+ protected:
+  void setInEvent_(panda::EventBase& inEvent) override { inEvent_ = static_cast<panda::EventMonophoton*>(&inEvent); }
+
+  panda::EventMonophoton* inEvent_{nullptr};
 };
 
 class EventSelector : public MonophotonEventSelectorBase {
@@ -26,15 +26,15 @@ public:
   ~EventSelector() {}
 
   void addOperator(Operator*, unsigned idx = -1) override;
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent() override;
 
   char const* className() const override { return "EventSelector"; }
 
   void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
 
  protected:
-  void setupSkim_(panda::EventMonophoton& event, bool isMC) override;
-  void prepareFill_(panda::EventMonophoton&);
+  void setupSkim_(bool isMC) override;
+  void prepareFill_();
 
   panda::EventMonophoton outEvent_;
 
@@ -48,12 +48,12 @@ class ZeeEventSelector : public EventSelector {
   ZeeEventSelector(char const* name) : EventSelector(name) {}
   ~ZeeEventSelector() {}
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent() override;
 
   char const* className() const override { return "ZeeEventSelector"; }
 
  protected:
-  void setupSkim_(panda::EventMonophoton& event, bool isMC) override;
+  void setupSkim_(bool isMC) override;
 
   std::vector<Operator*>::iterator leptonSelection_;
 };
@@ -65,7 +65,7 @@ class PartonSelector : public EventSelector {
   PartonSelector(char const* name);
   ~PartonSelector();
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent() override;
 
   char const* className() const override { return "PartonSelector"; }
 
@@ -103,7 +103,7 @@ class SmearingSelector : public EventSelector {
   SmearingSelector(char const* name) : EventSelector(name) {}
   ~SmearingSelector() {}
 
-  void selectEvent(panda::EventMonophoton&) override;
+  void selectEvent() override;
 
   char const* className() const override { return "SmearingSelector"; }
 

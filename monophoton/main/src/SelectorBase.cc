@@ -1,6 +1,6 @@
 #include "SelectorBase.h"
 
-#include "BaseOperators.h"
+#include "Operator.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -73,7 +73,9 @@ EventSelectorBase::initialize(char const* _outputPath, panda::EventBase& _inEven
   cutsOut_->Branch("lumiNumber", &_inEvent.lumiNumber, "lumiNumber/i");
   cutsOut_->Branch("eventNumber", &_inEvent.eventNumber, "eventNumber/i");
 
-  setupSkim_(_inEvent, _isMC);
+  setInEvent_(_inEvent);
+
+  setupSkim_(_isMC);
 
   if (printLevel_ > 0 && printLevel_ <= INFO) {
     *stream_ << "Operators for selector " << name() << std::endl;

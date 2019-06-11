@@ -1,6 +1,7 @@
-#include "Selectors.h"
+#include "MonophotonSelectors.h"
 
 #include "MonophotonOperators.h"
+#include "CommonOperators.h"
 
 #include "TSystem.h"
 
@@ -11,7 +12,7 @@
 void
 EventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
-  if (!dynamic_cast<MonophotonOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+  if (!dynamic_cast<MonophotonOperator*>(_op) && !dynamic_cast<CommonOperator*>(_op))
     throw std::runtime_error(TString::Format("Cannot add operator %s to EventSelector", _op->name()).Data());
 
   if (_idx >= operators_.size())
@@ -21,7 +22,7 @@ EventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 }
 
 void
-EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
+EventSelector::setupSkim_(bool _isMC)
 {
   // Branches to be directly copied from the input tree
   // Add a prepareFill line below any time a collection branch is added
@@ -31,7 +32,7 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   else
     blist += {"metFilters"};
 
-  _inEvent.book(*skimOut_, blist);
+  inEvent_->book(*skimOut_, blist);
 
   blist = {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"};
   if (_isMC)
@@ -41,23 +42,23 @@ EventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 }
 
 void
-EventSelector::prepareFill_(panda::EventMonophoton& _inEvent)
+EventSelector::prepareFill_()
 {
-  _inEvent.vertices.prepareFill(*skimOut_);
-  // _inEvent.pfCandidates.prepareFill(*skimOut_);
-  _inEvent.partons.prepareFill(*skimOut_);
-  _inEvent.genParticles.prepareFill(*skimOut_);
+  inEvent_->vertices.prepareFill(*skimOut_);
+  // inEvent_->pfCandidates.prepareFill(*skimOut_);
+  inEvent_->partons.prepareFill(*skimOut_);
+  inEvent_->genParticles.prepareFill(*skimOut_);
 }
 
 void
-EventSelector::selectEvent(panda::EventMonophoton& _event)
+EventSelector::selectEvent()
 {
-  if (blindPrescale_ > 1 && _event.runNumber >= blindMinRun_ && _event.eventNumber % blindPrescale_ != 0)
+  if (blindPrescale_ > 1 && inEvent_->runNumber >= blindMinRun_ && inEvent_->eventNumber % blindPrescale_ != 0)
     return;
 
   outEvent_.init();
-  inWeight_ = _event.weight;
-  outEvent_.weight = _event.weight;
+  inWeight_ = inEvent_->weight;
+  outEvent_.weight = inEvent_->weight;
 
   Clock::time_point start;
 
@@ -68,7 +69,7 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, outEvent_))
+    if (!op.exec(*inEvent_, outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -88,7 +89,7 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
 
     std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
 
-    prepareFill_(_event);
+    prepareFill_();
 
     outEvent_.fill(*skimOut_);
   }
@@ -99,9 +100,9 @@ EventSelector::selectEvent(panda::EventMonophoton& _event)
 //--------------------------------------------------------------------
 
 void
-ZeeEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
+ZeeEventSelector::setupSkim_(bool _isMC)
 {
-  EventSelector::setupSkim_(_inEvent, _isMC);
+  EventSelector::setupSkim_(_isMC);
 
   for (leptonSelection_ = operators_.begin(); leptonSelection_ != operators_.end(); ++leptonSelection_) {
     if (dynamic_cast<LeptonSelection*>(*leptonSelection_))
@@ -110,11 +111,11 @@ ZeeEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 }
 
 void
-ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
+ZeeEventSelector::selectEvent()
 {
   outEvent_.init();
-  inWeight_ = _event.weight;
-  outEvent_.weight = _event.weight;
+  inWeight_ = inEvent_->weight;
+  outEvent_.weight = inEvent_->weight;
 
   Clock::time_point start;
 
@@ -126,7 +127,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, outEvent_))
+    if (!op.exec(*inEvent_, outEvent_))
       passUpToLS = false;
 
     if (useTimers_)
@@ -153,7 +154,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
         if (useTimers_)
           start = Clock::now();
 
-        if (!op.exec(_event, outEvent_))
+        if (!op.exec(*inEvent_, outEvent_))
           pass = false;
 
         if (useTimers_)
@@ -167,7 +168,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
       if (pass) {
         std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
 
-        prepareFill_(_event);
+        prepareFill_();
           
         outEvent_.fill(*skimOut_);
       }
@@ -184,7 +185,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
       if (useTimers_)
         start = Clock::now();
 
-      if (!op.exec(_event, outEvent_))
+      if (!op.exec(*inEvent_, outEvent_))
         pass = false;
 
       if (useTimers_)
@@ -198,7 +199,7 @@ ZeeEventSelector::selectEvent(panda::EventMonophoton& _event)
     if (pass) {
       std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
 
-      prepareFill_(_event);
+      prepareFill_();
           
       outEvent_.fill(*skimOut_);
     }
@@ -226,12 +227,12 @@ PartonSelector::~PartonSelector()
 }
 
 void
-PartonSelector::selectEvent(panda::EventMonophoton& _event)
+PartonSelector::selectEvent()
 {
-  if (!flavor_->exec(_event, outEvent_))
+  if (!flavor_->exec(*inEvent_, outEvent_))
     return;
 
-  EventSelector::selectEvent(_event);
+  EventSelector::selectEvent();
 }
 
 //--------------------------------------------------------------------
@@ -282,19 +283,19 @@ NormalizingSelector::addOutput_(TFile*& _outputFile)
 //--------------------------------------------------------------------
 
 void
-SmearingSelector::selectEvent(panda::EventMonophoton& _event)
+SmearingSelector::selectEvent()
 {
   if (!func_)
     return;
 
   // smearing the MET only - total pT will be inconsistent
-  double originalMet(_event.t1Met.pt);
+  double originalMet(inEvent_->t1Met.pt);
 
-  _event.weight /= nSamples_;
+  inEvent_->weight /= nSamples_;
 
   for (unsigned iS(0); iS != nSamples_; ++iS) {
-    _event.t1Met.pt = originalMet + func_->GetRandom();
+    inEvent_->t1Met.pt = originalMet + func_->GetRandom();
   
-    EventSelector::selectEvent(_event);
+    EventSelector::selectEvent();
   }
 }

@@ -14,6 +14,10 @@
 
 #include "GoodLumiFilter.h"
 
+#include "PandaTree/Objects/interface/Event.h"
+#include "PandaTree/Objects/interface/EventMonophoton.h"
+#include "PandaTree/Objects/interface/EventTP.h"
+
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -26,6 +30,9 @@
 typedef std::chrono::steady_clock SClock;
 
 unsigned TIMEOUT(300);
+
+void prepareEvent(panda::Event const&, panda::EventMonophoton&, bool isData);
+void prepareEvent(panda::Event const&, panda::EventTP&, bool isData);
 
 class Skimmer {
 public:
@@ -40,7 +47,6 @@ public:
   void setSkipMissingFiles(bool b) { skipMissingFiles_ = b; }
   void setPrintEvery(unsigned i) { printEvery_ = i; }
   void run(char const* outputDir, char const* sampleName, bool isData, long nEntries = -1, long firstEntry = 0);
-  void prepareEvent(panda::Event const&, panda::EventMonophoton&, panda::GenParticleCollection const* = 0);
   void setPrintLevel(unsigned l) { printLevel_ = l; }
   void setNThreads(unsigned n) { nThreads_ = n; }
   void setCompatibilityMode(bool r) { compatibilityMode_ = r; }
@@ -49,7 +55,7 @@ private:
   std::vector<TString> paths_{};
   std::vector<EventSelectorBase*> selectors_{};
   bool ownSelectors_{true};
-  GoodLumiFilter* goodLumiFilter_{};
+  GoodLumiFilter* goodLumiFilter_{nullptr};
   bool skipMissingFiles_{false};
   unsigned printEvery_{10000};
   unsigned printLevel_{0};
@@ -134,9 +140,6 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   }
 
   panda::Event event;
-  panda::GenParticleCollection genParticles("genParticles");
-  genParticles.data.parentContainer_ = &genParticles;
-  panda::EventMonophoton skimmedEvent;
 
   // will get updated by individual operators
   panda::utils::BranchList branchList = {
@@ -164,7 +167,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
   };
 
   if (!isData)
-    branchList += {"npvTrue", "genReweight", "genVertex", "partons"}; //  , "genMet"};
+    branchList += {"npvTrue", "genParticles", "genReweight", "genVertex", "partons"}; //  , "genMet"};
 
   if (compatibilityMode_)
     branchList += {"!eventNumber", "!electrons.triggerMatch", "!muons.triggerMatch", "!photons.triggerMatch"};
@@ -183,12 +186,40 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   TString commonSelection(selectors_[0]->getPreskim());
 
+  panda::EventBase* alternativeEvents[EventSelectorBase::nInputEventTypes]{};
+  std::function<void()> alternativeEventFactory[EventSelectorBase::nInputEventTypes]{};
+  std::function<void()> prepareAlternativeEvent[EventSelectorBase::nInputEventTypes]{};
+  alternativeEventFactory[EventSelectorBase::kEventMonophoton] = [&alternativeEvents]() {
+    alternativeEvents[EventSelectorBase::kEventMonophoton] = new panda::EventMonophoton();
+  };
+  alternativeEventFactory[EventSelectorBase::kEventTP] = [&alternativeEvents]() {
+    alternativeEvents[EventSelectorBase::kEventTP] = new panda::EventTP();
+  };
+  prepareAlternativeEvent[EventSelectorBase::kEventMonophoton] = [&event, &alternativeEvents, isData]() {
+    prepareEvent(event, static_cast<panda::EventMonophoton&>(*alternativeEvents[EventSelectorBase::kEventMonophoton]), isData);
+  };
+  prepareAlternativeEvent[EventSelectorBase::kEventTP] = [&event, &alternativeEvents, isData]() {
+    prepareEvent(event, static_cast<panda::EventTP&>(*alternativeEvents[EventSelectorBase::kEventTP]), isData);
+  };
+
   int iSel(0);
   for (auto* sel : selectors_) {
     sel->setPrintLevel(printLevel_, stream);
 
+    panda::EventBase* inEvent{nullptr};
+
+    auto eventType(sel->inputEventType());
+    if (eventType == EventSelectorBase::kEvent)
+      inEvent = &event;
+    else {
+      if (alternativeEvents[eventType] == nullptr)
+        alternativeEventFactory[eventType]();
+
+      inEvent = alternativeEvents[eventType];
+    }
+
     TString outputPath(outputDir + "/" + sampleName + "_" + sel->name() + ".root");
-    sel->initialize(outputPath, skimmedEvent, branchList, !isData);
+    sel->initialize(outputPath, *inEvent, branchList, !isData);
 
     if (TString(sel->getPreskim()) != commonSelection) {
       // this case is filtered out by ssw2.py
@@ -196,7 +227,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     }
 
     if (nThreads_ > 1) {
-      threads.emplace_back([this, sel, &skimmedEvent, &mutex, &cv, &activate, &nActive, iSel]() {
+      threads.emplace_back([this, sel, &mutex, &cv, &activate, &nActive, iSel]() {
           std::unique_lock<std::mutex> lock(mutex);
 
           while (true) {
@@ -218,7 +249,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
             //          std::cout << "notified and unlocked " << iSel << std::endl;
 
-            sel->selectEvent(skimmedEvent);
+            sel->selectEvent();
 
             //          std::cout << "event selected " << iSel << std::endl;
 
@@ -234,25 +265,27 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
     ++iSel;
   }
 
-  // if the selectors register triggers, make sure the information is passed to the actual input event
-  static_cast<panda::EventBase&>(event).operator=(skimmedEvent);
-  skimmedEvent.triggerObjects.setIgnoreMissing(true);
+  for (auto* alt : alternativeEvents) {
+    // if the selectors register triggers, make sure the information is passed to the actual input event
+    if (alt == nullptr)
+      continue;
+    static_cast<panda::EventBase&>(event).operator=(*alt);
+    alt->triggerObjects.setIgnoreMissing(true);
+  }
 
-  if (goodLumiFilter_)
+  if (goodLumiFilter_ != nullptr)
     *stream << "Applying good lumi filter." << std::endl;
 
   TChain preInput("events");
   TChain mainInput("events");
-  TChain genInput("events");
   int mainTreeNumber(-1);
 
   for (auto& path : paths_) {
     preInput.Add(path);
     mainInput.Add(path);
-    genInput.Add(path);
   }
 
-  TTreeFormula* preselection(0);
+  TTreeFormula* preselection{nullptr};
   int preTreeNumber(-1);
   if (commonSelection != "") {
     *stream << "Applying baseline selection \"" << commonSelection << "\"" << std::endl;
@@ -262,14 +295,15 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 
   event.setStatus(mainInput, branchList);
   event.setAddress(mainInput, {"*"}, false);
-
-  genInput.SetBranchStatus("*", false);
-  genParticles.setAddress(genInput);
-
-  event.electrons.data.matchedGenContainer_ = &genParticles;
-  event.muons.data.matchedGenContainer_ = &genParticles;
-  event.taus.data.matchedGenContainer_ = &genParticles;
-  event.photons.data.matchedGenContainer_ = &genParticles;
+  UInt_t runNumber{};
+  UInt_t lumiNumber{};
+  TBranch* bRunNumber{nullptr};
+  TBranch* bLumiNumber{nullptr};
+  if (goodLumiFilter_ != nullptr) {
+    // this "steals" the branch address from event
+    preInput.SetBranchAddress("runNumber", &runNumber);
+    preInput.SetBranchAddress("lumiNumber", &lumiNumber);
+  }
 
   auto now(SClock::now());
   auto start(now);
@@ -282,23 +316,38 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       *stream << " " << iEntry << " (took " << std::chrono::duration_cast<std::chrono::milliseconds>(now - past).count() / 1000. << " s)" << std::endl;
     }
 
-    if (preselection) {
+    if (preselection != nullptr || goodLumiFilter_ != nullptr) {
       if (preInput.LoadTree(_firstEntry + iEntry - 1) < 0)
         break;
 
       if (preTreeNumber != preInput.GetTreeNumber()) {
         preTreeNumber = preInput.GetTreeNumber();
-        preselection->UpdateFormulaLeaves();
+        if (preselection != nullptr)
+          preselection->UpdateFormulaLeaves();
+
+        if (goodLumiFilter_ != nullptr) {
+          bRunNumber = preInput.GetBranch("runNumber");
+          bLumiNumber = preInput.GetBranch("lumiNumber");
+        }
       }
 
-      int nD(preselection->GetNdata());
-      int iD(0);
-      for (; iD != nD; ++iD) {
-        if (preselection->EvalInstance(iD) != 0.)
-          break;
+      if (preselection != nullptr) {
+        int nD(preselection->GetNdata());
+        int iD(0);
+        for (; iD != nD; ++iD) {
+          if (preselection->EvalInstance(iD) != 0.)
+            break;
+        }
+        if (iD == nD)
+          continue;
       }
-      if (iD == nD)
-        continue;
+
+      if (goodLumiFilter_ != nullptr) {
+        bRunNumber->GetEntry(_firstEntry + iEntry - 1);
+        bLumiNumber->GetEntry(_firstEntry + iEntry - 1);
+        if (!goodLumiFilter_->isGoodLumi(runNumber, lumiNumber))
+          continue;
+      }
     }
 
     try {
@@ -310,48 +359,52 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       throw;
     }
 
-    if (goodLumiFilter_ && !goodLumiFilter_->isGoodLumi(event.runNumber, event.lumiNumber))
-      continue;
+    if (goodLumiFilter_ != nullptr) {
+      event.runNumber = runNumber;
+      event.lumiNumber = lumiNumber;
+    }
 
     if (mainTreeNumber != mainInput.GetTreeNumber()) {
       if (printLevel_ > 0 && printLevel_ <= INFO)
         *stream << "Opened a new file " << mainInput.GetCurrentFile()->GetName() << std::endl;
 
       mainTreeNumber = mainInput.GetTreeNumber();
+
       // invalidate output event run number so it gets updated in prepareEvent
-      skimmedEvent.run.runNumber = 0;
+      for (auto* alt : alternativeEvents) {
+        if (alt != nullptr)
+          alt->run.runNumber = 0;
+      }
     }
 
-    if (!event.isData) {
-      genParticles.getEntry(genInput, _firstEntry + iEntry - 1);
-      prepareEvent(event, skimmedEvent, &genParticles);
+    for (unsigned iA(0); iA != EventSelectorBase::nInputEventTypes; ++iA) {
+      if (alternativeEvents[iA] != nullptr)
+        prepareAlternativeEvent[iA]();
     }
-    else
-      prepareEvent(event, skimmedEvent);
 
     if (printLevel_ > 0 && printLevel_ <= INFO) {
       debugFile << std::endl << ">>>>> Printing event " << iEntry <<" !!! <<<<<" << std::endl;
-      debugFile << skimmedEvent.runNumber << ":" << skimmedEvent.lumiNumber << ":" << skimmedEvent.eventNumber << std::endl;
-      skimmedEvent.print(debugFile, 2);
+      debugFile << event.runNumber << ":" << event.lumiNumber << ":" << event.eventNumber << std::endl;
+      event.print(debugFile, 2);
       debugFile << std::endl;
-      skimmedEvent.photons.print(debugFile, 2);
-      // debugFile << "photons.size() = " << skimmedEvent.photons.size() << std::endl;
+      event.photons.print(debugFile, 2);
+      // debugFile << "photons.size() = " << event.photons.size() << std::endl;
       debugFile << std::endl;
-      skimmedEvent.muons.print(debugFile, 2);
-      // debugFile << "muons.size() = " << skimmedEvent.muons.size() << std::endl;
+      event.muons.print(debugFile, 2);
+      // debugFile << "muons.size() = " << event.muons.size() << std::endl;
       debugFile << std::endl;
-      skimmedEvent.electrons.print(debugFile, 2);
-      // debugFile << "electrons.size() = " << skimmedEvent.electrons.size() << std::endl;
+      event.electrons.print(debugFile, 2);
+      // debugFile << "electrons.size() = " << event.electrons.size() << std::endl;
       debugFile << std::endl;
-      skimmedEvent.jets.print(debugFile, 2);
-      // debugFile << "jets.size() = " << skimmedEvent.jets.size() << std::endl;
+      event.chsAK4Jets.print(debugFile, 2);
+      // debugFile << "jets.size() = " << event.jets.size() << std::endl;
       debugFile << std::endl;
-      skimmedEvent.t1Met.print(debugFile, 2);
+      event.pfMet.print(debugFile, 2);
       // debugFile << std::endl;
       /*
-      skimmedEvent.metMuOnlyFix.print(debugFile, 2);
+      event.metMuOnlyFix.print(debugFile, 2);
       debugFile << std::endl;
-      skimmedEvent.metNoFix.print(debugFile, 2);
+      event.metNoFix.print(debugFile, 2);
       debugFile << std::endl;
       */
       debugFile << ">>>>> Event " << iEntry << " done!!! <<<<<" << std::endl << std::endl;
@@ -367,7 +420,7 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
       }
       else {
         for (auto* sel : selectors_)
-          sel->selectEvent(skimmedEvent);
+          sel->selectEvent();
       }
     }
     catch (std::exception& ex) {
@@ -406,21 +459,24 @@ Skimmer::run(char const* _outputDir, char const* _sampleName, bool isData, long 
 }
 
 void
-Skimmer::prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent, panda::GenParticleCollection const* _genParticles/* = 0*/)
+prepareEvent(panda::Event const& _event, panda::EventMonophoton& _outEvent, bool _isData)
 {
   // copy most of the event content
   _outEvent.copy(_event);
 
-  if (_genParticles)
-    _outEvent.copyGenParticles(*_genParticles);
-
   if (_outEvent.run.runNumber != _event.run.runNumber)
     _outEvent.run = _event.run;
 
-  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh) {
-    if (_genParticles)
-      panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho, &_outEvent.genParticles);
-    else
-      panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho);
-  }
+  for (unsigned iPh(0); iPh != _event.photons.size(); ++iPh)
+    panda::photon_extra(_outEvent.photons[iPh], _event.photons[iPh], _event.rho, _isData ? nullptr : &_outEvent.genParticles);
+}
+
+void
+prepareEvent(panda::Event const& _event, panda::EventTP& _outEvent, bool _isData)
+{
+  // copy most of the event content
+  static_cast<panda::EventBase&>(_outEvent).operator=(_event);
+
+  if (_outEvent.run.runNumber != _event.run.runNumber)
+    _outEvent.run = _event.run;
 }

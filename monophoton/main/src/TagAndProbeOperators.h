@@ -23,8 +23,11 @@ class TPOperator : public Operator {
  public:
   TPOperator(TPEventType t, char const* name) : Operator(name), eventType_(t) {}
 
-  bool exec(panda::EventMonophoton const& inEvent, panda::EventBase& outEvent) final {
-    return tpexec(inEvent, static_cast<panda::EventTP&>(outEvent));
+  void initialize(panda::EventBase& event) final {
+    tpinitialize(static_cast<panda::EventMonophoton&>(event));
+  }
+  bool exec(panda::EventBase const& inEvent, panda::EventBase& outEvent) final {
+    return tpexec(static_cast<panda::EventMonophoton const&>(inEvent), static_cast<panda::EventTP&>(outEvent));
   }
 
   panda::ParticleCollection* getLooseTags(panda::EventTP&) const;
@@ -32,6 +35,7 @@ class TPOperator : public Operator {
   panda::ParticleCollection* getProbes(panda::EventTP&) const;
 
  protected:
+  virtual void tpinitialize(panda::EventMonophoton&) {}
   virtual bool tpexec(panda::EventMonophoton const&, panda::EventTP&) = 0;
 
   TPEventType eventType_;
@@ -142,7 +146,7 @@ class TPLeptonVeto : public TPCut {
 
 class TagAndProbePairZ : public TPCut {
  public:
-  TagAndProbePairZ(char const* name = "TagAndProbePairZ");
+ TagAndProbePairZ(TPEventType t, char const* name = "TagAndProbePairZ") : TPCut(t, name) {}
   ~TagAndProbePairZ();
   void addBranches(TTree& skimTree) override;
   void setTagSpecies(Collection species) { tagSpecies_ = species; }
@@ -159,10 +163,26 @@ class TagAndProbePairZ : public TPCut {
 
   panda::ParticleCollection* tags_{0};
   panda::ParticleCollection* probes_{0};
-  panda::ParticleMCollection tp_;
+  panda::ParticleMCollection tp_{"tp"};
   bool zOppSign_{0};
 
   unsigned nUniqueZ_{0};
+};
+
+class ZJetBackToBack: public TPCut {
+ public:
+ ZJetBackToBack(TPEventType t, char const* name = "ZJetBackToBack") : TPCut(t, name) {}
+  
+  void setTagAndProbePairZ(TagAndProbePairZ* tnp) { tnp_ = tnp; }
+  void setMinDeltaPhi(float dPhiMin) { dPhiMin_ = dPhiMin; }
+  void setMinJetPt(float minJetPt) { minJetPt_ = minJetPt; }
+
+ private:
+  bool pass(panda::EventMonophoton const&, panda::EventTP&) override;
+
+  float minJetPt_{30.};
+  float dPhiMin_{2.5};
+  TagAndProbePairZ* tnp_{0};
 };
 
 //--------------------------------------------------------------------
@@ -194,13 +214,13 @@ class TPTriggerMatch : public TPModifier {
  TPTriggerMatch(TPEventType t, Candidate c, char const* name) : TPModifier(t, name), candidate_(c) {}
   ~TPTriggerMatch() {}
 
-  void initialize(panda::EventMonophoton&) override;
   void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
 
   void addTriggerFilter(char const* filterName) { filterNames_.emplace_back(filterName); }
 
  protected:
+  void tpinitialize(panda::EventMonophoton&) override;
   void apply(panda::EventMonophoton const& event, panda::EventTP& outEvent) override;
 
   Candidate candidate_;

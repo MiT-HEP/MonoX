@@ -1,5 +1,8 @@
 #include "TagAndProbeSelectors.h"
 
+#include "TagAndProbeOperators.h"
+#include "CommonOperators.h"
+
 //--------------------------------------------------------------------
 // TagAndProbeSelector
 //--------------------------------------------------------------------
@@ -16,7 +19,7 @@
 void
 TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
-  if (!dynamic_cast<TPOperator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+  if (!dynamic_cast<TPOperator*>(_op) && !dynamic_cast<CommonOperator*>(_op))
     throw std::runtime_error(TString::Format("Cannot add operator %s to TagAndProbeSelector", _op->name()).Data());
 
   if (_idx >= operators_.size())
@@ -26,7 +29,7 @@ TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 }
 
 void
-TagAndProbeSelector::setupSkim_(panda::EventTP& _inEvent, bool _isMC)
+TagAndProbeSelector::setupSkim_(bool _isMC)
 {
   switch (outType_) {
   case kTPEG:
@@ -63,7 +66,7 @@ TagAndProbeSelector::setupSkim_(panda::EventTP& _inEvent, bool _isMC)
   if (_isMC)
     blist += {"npvTrue"};
 
-  _inEvent.book(*skimOut_, blist);
+  inEvent_->book(*skimOut_, blist);
 
   // looseTags will be added by the TPMuonPhoton operator
   blist = {"weight", "sample", "tp", "tags", "probes", "jets"};
@@ -74,19 +77,19 @@ TagAndProbeSelector::setupSkim_(panda::EventTP& _inEvent, bool _isMC)
 }
 
 void
-TagAndProbeSelector::selectEvent(panda::EventTP& _event)
+TagAndProbeSelector::selectEvent()
 {
   outEvent_->init();
 
   // copy EventBase members
-  static_cast<panda::EventBase&>(*outEvent_) = _event;
+  static_cast<panda::EventBase&>(*outEvent_) = *inEvent_;
 
-  outEvent_->npv = _event.npv;
-  outEvent_->npvTrue = _event.npvTrue;
-  outEvent_->rho = _event.rho;
-  outEvent_->t1Met = _event.t1Met;
+  outEvent_->npv = inEvent_->npv;
+  outEvent_->npvTrue = inEvent_->npvTrue;
+  outEvent_->rho = inEvent_->rho;
+  outEvent_->t1Met = inEvent_->t1Met;
 
-  inWeight_ = _event.weight;
+  inWeight_ = inEvent_->weight;
 
   outEvent_->sample = sampleId_;
 
@@ -99,7 +102,7 @@ TagAndProbeSelector::selectEvent(panda::EventTP& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, *outEvent_))
+    if (!op.exec(*inEvent_, *outEvent_))
       pass = false;
 
     if (useTimers_)

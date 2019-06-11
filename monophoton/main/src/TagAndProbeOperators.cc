@@ -1,4 +1,4 @@
-#include "TPOperators.h"
+#include "TagAndProbeOperators.h"
 
 #include "PandaTree/Objects/interface/EventTPEG.h"
 #include "PandaTree/Objects/interface/EventTPEEG.h"
@@ -519,12 +519,6 @@ TPLeptonVeto::pass(panda::EventMonophoton const& _inEvent, panda::EventTP& _outE
 // TagAndProbePairZ
 //--------------------------------------------------------------------
 
-TagAndProbePairZ::TagAndProbePairZ(char const* name) :
-  Cut(name),
-  tp_("tp")
-{
-}
-
 TagAndProbePairZ::~TagAndProbePairZ()
 {
   delete tags_;
@@ -681,6 +675,28 @@ TagAndProbePairZ::pass(panda::EventMonophoton const& _event, panda::EventTP&)
 }
 
 //--------------------------------------------------------------------
+// ZJetBackToBack
+//--------------------------------------------------------------------
+
+bool
+ZJetBackToBack::pass(panda::EventMonophoton const& _event, panda::EventTP& _outEvent)
+{
+  if (tnp_->getNUniqueZ() != 1)
+    return false;
+
+  for (unsigned iJ(0); iJ != _outEvent.jets.size(); ++iJ) {
+    auto& jet( _outEvent.jets[iJ]);
+
+    if ( jet.pt() < minJetPt_)
+      continue;
+
+    if ( std::abs(TVector2::Phi_mpi_pi(jet.phi() - tnp_->getPhiZ(0))) > dPhiMin_ )
+      return true;
+  }
+  return false;
+}
+
+//--------------------------------------------------------------------
 // TPJetCleaning
 //--------------------------------------------------------------------
 
@@ -736,7 +752,7 @@ TPJetCleaning::apply(panda::EventMonophoton const& _event, panda::EventTP& _outE
 //--------------------------------------------------------------------
 
 void
-TPTriggerMatch::initialize(panda::EventMonophoton& _event)
+TPTriggerMatch::tpinitialize(panda::EventMonophoton& _event)
 {
   _event.run.setLoadTrigger(true);
   for (auto& name : filterNames_)

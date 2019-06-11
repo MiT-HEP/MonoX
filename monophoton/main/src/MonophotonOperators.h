@@ -35,11 +35,15 @@ class MonophotonOperator : public Operator {
  public:
   MonophotonOperator(char const* name) : Operator(name) {}
 
+  void initialize(panda::EventBase& event) final {
+    monophinitialize(static_cast<panda::EventMonophoton&>(event));
+  }
   bool exec(panda::EventBase const& inEvent, panda::EventBase& outEvent) final {
     return monophexec(static_cast<panda::EventMonophoton const&>(inEvent), static_cast<panda::EventMonophoton&>(outEvent));
   }
 
  protected:
+  virtual void monophinitialize(panda::EventMonophoton&) {}
   virtual bool monophexec(panda::EventMonophoton const&, panda::EventMonophoton&) = 0;
 };
 
@@ -114,7 +118,6 @@ class PhotonSelection : public MonophotonCut {
 
   PhotonSelection(char const* name = "PhotonSelection") : MonophotonCut(name) {}
 
-  void initialize(panda::EventMonophoton&) override;
   void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
   void registerCut(TTree& cutsTree) override;
@@ -143,6 +146,7 @@ class PhotonSelection : public MonophotonCut {
   double ptVariation(panda::XPhoton const&, double shift);
 
  protected:
+  void monophinitialize(panda::EventMonophoton&) override;
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   int selectPhoton(panda::XPhoton const&, unsigned idx);
 
@@ -180,7 +184,7 @@ class TauVeto : public MonophotonCut {
 
 class EcalCrackVeto : public MonophotonCut {
  public:
-  EcalCrackVeto(char const* name = "EcalCrackVeto") : Cut(name) {}
+  EcalCrackVeto(char const* name = "EcalCrackVeto") : MonophotonCut(name) {}
   void addBranches(TTree& skimTree) override;
   void setMinPt(double minPt) { minPt_ = minPt; }
 
@@ -514,29 +518,13 @@ class DijetSelection : public MonophotonCut {
   double detajjReweight_;
 };
 
-class ZJetBackToBack: public MonophotonCut {
+class MetFilters : public MonophotonCut {
  public:
-  ZJetBackToBack(char const* name = "ZJetBackToBack") : MonophotonCut(name) {}
-  
-  void setTagAndProbePairZ(TagAndProbePairZ* tnp) {tnp_ = tnp; }
-  void setMinDeltaPhi(float dPhiMin) { dPhiMin_ = dPhiMin; }
-  void setMinJetPt(float minJetPt) { minJetPt_ = minJetPt; }
-
- private:
-  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
-
-  float minJetPt_{30.};
-  float dPhiMin_{2.5};
-  TagAndProbePairZ* tnp_{0};
-};
-
-class MetFilters : public Cut {
- public:
-  MetFilters(char const* name = "MetFilters") : Cut(name) {}
+  MetFilters(char const* name = "MetFilters") : MonophotonCut(name) {}
 
   void allowHalo() { halo_ = true; }
  protected:
-  bool pass(panda::EventMonophoton const&, panda::EventBase&) override;
+  bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 
   bool halo_{false};
 };
@@ -551,13 +539,13 @@ class TriggerMatch : public MonophotonModifier {
   TriggerMatch(char const* name, Collection col) : MonophotonModifier(name), collection_(col) {}
   ~TriggerMatch() {}
 
-  void initialize(panda::EventMonophoton&) override;
   void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
 
   void addTriggerFilter(char const* filterName) { filterNames_.emplace_back(filterName); }
 
  protected:
+  void monophinitialize(panda::EventMonophoton&) override;
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 
   Collection collection_{nCollections};
@@ -625,7 +613,6 @@ class JetCleaning : public MonophotonModifier {
   JetCleaning(char const* name = "JetCleaning");
   ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
-  void initialize(panda::EventMonophoton&) override;
 
   void useTightWP(bool b) { useTightWP_ = b; }
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
@@ -641,6 +628,7 @@ class JetCleaning : public MonophotonModifier {
   static bool passPUID(int wp, panda::Jet const& jet);
 
  protected:
+  void monophinitialize(panda::EventMonophoton&) override;
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
   std::bitset<nCollections> cleanAgainst_{};

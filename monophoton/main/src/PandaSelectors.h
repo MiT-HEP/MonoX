@@ -6,31 +6,31 @@
 #include "SelectorBase.h"
 
 class PandaEventSelectorBase : public EventSelectorBase {
-public:
+ public:
   PandaEventSelectorBase(char const* name) : EventSelectorBase(name) {}
   ~PandaEventSelectorBase() {}
 
-  void selectEvent(panda::EventBase& event) final { selectEvent(static_cast<panda::Event&>(event)); }
-  virtual void selectEvent(panda::Event&) = 0;
+  InputEventType inputEventType() const override { return kEvent; }
 
-protected:
-  void setupSkim_(panda::EventBase& inEvent, bool isMC) final { setupSkim_(static_cast<panda::Event&>(inEvent), isMC); }
-  virtual void setupSkim_(panda::Event& inEvent, bool isMC) {}
+ protected:
+  void setInEvent_(panda::EventBase& inEvent) override { inEvent_ = static_cast<panda::Event*>(&inEvent); }
+
+  panda::Event* inEvent_{nullptr};
 };
 
 class PandaEventSelector : public PandaEventSelectorBase {
-public:
+ public:
   PandaEventSelector(char const* name) : PandaEventSelectorBase(name) {}
   ~PandaEventSelector() {}
 
   void addOperator(Operator*, unsigned idx = -1) override;
-  void selectEvent(panda::Event&) override;
+  void selectEvent() override;
 
   char const* className() const override { return "PandaEventSelector"; }
 
  protected:
-  void setupSkim_(panda::Event& event, bool isMC) override;
-  void prepareFill_(panda::Event&);
+  void setupSkim_(bool isMC) override;
+  void prepareFill_();
 
   panda::Event outEvent_;
 };

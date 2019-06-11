@@ -1,9 +1,10 @@
 #include "PandaSelectors.h"
+#include "CommonOperators.h"
 
 void
 PandaEventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
-  if (!dynamic_cast<Operator*>(_op) && !dynamic_cast<BaseOperator*>(_op))
+  if (!dynamic_cast<CommonOperator*>(_op))
     throw std::runtime_error(TString::Format("Cannot add operator %s to PandaEventSelector", _op->name()).Data());
 
   if (_idx >= operators_.size())
@@ -13,7 +14,7 @@ PandaEventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 }
 
 void
-PandaEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
+PandaEventSelector::setupSkim_(bool _isMC)
 {
   // Branches to be directly copied from the input tree
   // Add a prepareFill line below any time a collection branch is added
@@ -23,7 +24,7 @@ PandaEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
   else
     blist += {"metFilters"};
 
-  _inEvent.book(*skimOut_, blist);
+  inEvent_->book(*skimOut_, blist);
 
   blist = {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"};
   if (_isMC)
@@ -33,23 +34,20 @@ PandaEventSelector::setupSkim_(panda::EventMonophoton& _inEvent, bool _isMC)
 }
 
 void
-PandaEventSelector::prepareFill_(panda::EventMonophoton& _inEvent)
+PandaEventSelector::prepareFill_()
 {
-  _inEvent.vertices.prepareFill(*skimOut_);
-  // _inEvent.pfCandidates.prepareFill(*skimOut_);
-  _inEvent.partons.prepareFill(*skimOut_);
-  _inEvent.genParticles.prepareFill(*skimOut_);
+  inEvent_->vertices.prepareFill(*skimOut_);
+  // inEvent_->pfCandidates.prepareFill(*skimOut_);
+  inEvent_->partons.prepareFill(*skimOut_);
+  inEvent_->genParticles.prepareFill(*skimOut_);
 }
 
 void
-PandaEventSelector::selectEvent(panda::EventMonophoton& _event)
+PandaEventSelector::selectEvent()
 {
-  if (blindPrescale_ > 1 && _event.runNumber >= blindMinRun_ && _event.eventNumber % blindPrescale_ != 0)
-    return;
-
   outEvent_.init();
-  inWeight_ = _event.weight;
-  outEvent_.weight = _event.weight;
+  inWeight_ = inEvent_->weight;
+  outEvent_.weight = inEvent_->weight;
 
   Clock::time_point start;
 
@@ -60,7 +58,7 @@ PandaEventSelector::selectEvent(panda::EventMonophoton& _event)
     if (useTimers_)
       start = Clock::now();
 
-    if (!op.exec(_event, outEvent_))
+    if (!op.exec(*inEvent_, outEvent_))
       pass = false;
 
     if (useTimers_)
@@ -80,7 +78,7 @@ PandaEventSelector::selectEvent(panda::EventMonophoton& _event)
 
     std::lock_guard<std::mutex> lock(PandaEventSelectorBase::mutex);
 
-    prepareFill_(_event);
+    prepareFill_();
 
     outEvent_.fill(*skimOut_);
   }
