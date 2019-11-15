@@ -178,6 +178,7 @@ class PhotonSelection : public MonophotonCut {
 class TauVeto : public MonophotonCut {
  public:
   TauVeto(char const* name = "TauVeto") : MonophotonCut(name) {}
+  void addInputBranch(panda::utils::BranchList&) override;
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
@@ -186,8 +187,9 @@ class EcalCrackVeto : public MonophotonCut {
  public:
   EcalCrackVeto(char const* name = "EcalCrackVeto") : MonophotonCut(name) {}
   void addBranches(TTree& skimTree) override;
-  void setMinPt(double minPt) { minPt_ = minPt; }
+  void addInputBranch(panda::utils::BranchList&) override;
 
+  void setMinPt(double minPt) { minPt_ = minPt; }
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
   
@@ -204,6 +206,7 @@ class LeptonMt : public MonophotonCut {
   void setMax(double max) { max_ = max; }
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setOnlyLeading(bool b) { onlyLeading_ = b; }
 
@@ -281,6 +284,7 @@ class PhotonMetDPhi : public MonophotonCut {
  public:
   PhotonMetDPhi(char const* name = "PhotonMetDPhi") : MonophotonCut(name) {}
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setCutValue(double v) { cutValue_ = v; }
@@ -315,6 +319,7 @@ class JetMetDPhi : public MonophotonCut {
  public:
   JetMetDPhi(char const* name = "JetMetDPhi") : MonophotonCut(name) {}
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
   void registerCut(TTree& cutsTree) override { cutsTree.Branch(name_, &nominalResult_, name_ + "/O"); }
 
   void setMetSource(MetSource s) { metSource_ = s; }
@@ -349,6 +354,7 @@ class LeptonSelection : public MonophotonCut {
   LeptonSelection(char const* name = "LeptonSelection");
   ~LeptonSelection();
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   enum OutMuonType {
     kMuJustLoose,
@@ -400,6 +406,7 @@ class FakeElectron : public MonophotonCut {
  public:
   FakeElectron(char const* name = "FakeElectron") : MonophotonCut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
  protected:
   bool pass(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
@@ -407,6 +414,8 @@ class FakeElectron : public MonophotonCut {
 class Met : public MonophotonCut {
  public:
   Met(char const* name = "Met") : MonophotonCut(name) {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
@@ -422,6 +431,8 @@ class Met : public MonophotonCut {
 class PhotonPtOverMet : public MonophotonCut {
  public:
   PhotonPtOverMet(char const* name = "PhotonPtOverMet") : MonophotonCut(name) {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setMetSource(MetSource s) { metSource_ = s; }
   void setThreshold(double min) { min_ = min; }
@@ -439,7 +450,7 @@ class PhotonMt;
 class MtRange : public MonophotonCut {
  public:
   MtRange(char const* name = "MtRange") : MonophotonCut(name) {}
-  
+
   void setRange(double min, double max) { min_ = min; max_ = max; }
   void setCalculator(PhotonMt const* calc) { calc_ = calc; }
  protected:
@@ -470,6 +481,8 @@ class DijetSelection : public MonophotonCut {
  public:
   DijetSelection(char const* name = "DijetSelection") : MonophotonCut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
+
   enum JetType {
     jReco,
     jGen,
@@ -486,7 +499,6 @@ class DijetSelection : public MonophotonCut {
   void setDEtajjReweight(TFile* _plotsFile);
 
   void addBranches(TTree& skimTree) override;
-  void addInputBranch(panda::utils::BranchList&) override;
 
   unsigned getNDijet() const { return nDijet_; }
   unsigned getNDijetPassing() const { return nDijetPassing_; }
@@ -521,6 +533,8 @@ class DijetSelection : public MonophotonCut {
 class MetFilters : public MonophotonCut {
  public:
   MetFilters(char const* name = "MetFilters") : MonophotonCut(name) {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void allowHalo() { halo_ = true; }
  protected:
@@ -579,6 +593,7 @@ class TriggerEfficiency : public MonophotonModifier {
   TriggerEfficiency(char const* name = "TriggerEfficiency") : MonophotonModifier(name) {}
   ~TriggerEfficiency() { delete formula_; }
   void addBranches(TTree& skimTree) override;
+  
   void setMinPt(double minPt) { minPt_ = minPt; }
   void setFormula(char const* formula);
   void setUpFormula(char const* formula);
@@ -599,6 +614,7 @@ class TriggerEfficiency : public MonophotonModifier {
 class ExtraPhotons : public MonophotonModifier {
  public:
   ExtraPhotons(char const* name = "ExtraPhotons") : MonophotonModifier(name) {}
+
   void setMinPt(double minPt) { minPt_ = minPt; }
 
  protected:
@@ -613,6 +629,7 @@ class JetCleaning : public MonophotonModifier {
   JetCleaning(char const* name = "JetCleaning");
   ~JetCleaning() { /*delete jer_; delete rndm_;*/ }
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void useTightWP(bool b) { useTightWP_ = b; }
   void setCleanAgainst(Collection col, bool c) { cleanAgainst_.set(col, c); }
@@ -665,6 +682,8 @@ class CopyMet : public MonophotonModifier {
  public:
   CopyMet(char const* name = "CopyMet") : MonophotonModifier(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
+
   void setUseGSFix(bool b) { useGSFix_ = b; }
  protected:
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
@@ -675,6 +694,7 @@ class CopyMet : public MonophotonModifier {
 class CopySuperClusters : public MonophotonModifier {
  public:
   CopySuperClusters(char const* name = "CopySuperClusters") : MonophotonModifier(name) {}
+  
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton&) override;
 };
@@ -683,8 +703,8 @@ class AddTrailingPhotons : public MonophotonModifier {
   // Keep photons[0] and add all other loose photons to output
  public:
   AddTrailingPhotons(char const* name = "AddTrailingPhotons") : MonophotonModifier(name) {}
-  
- protected:
+
+protected:
   void apply(panda::EventMonophoton const& event, panda::EventMonophoton& outEvent) override;
 };
 
@@ -703,6 +723,7 @@ class PhotonMt : public MonophotonModifier {
 class AddGenJets : public MonophotonModifier {
  public:
   AddGenJets(char const* name = "AddGenJets") : MonophotonModifier(name) {}
+
   void addInputBranch(panda::utils::BranchList&) override;
 
   void setMinPt(double minPt) { minPt_ = minPt; }
@@ -778,6 +799,7 @@ class MetVariations : public MonophotonModifier {
  public:
   MetVariations(char const* name = "MetVariations") : MonophotonModifier(name) {}
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setMetSource(MetSource s) { metSource_ = s; }
   void setPhotonSelection(PhotonSelection* sel) { photonSel_ = sel; }
@@ -820,6 +842,7 @@ class PhotonPtWeight : public MonophotonModifier {
   ~PhotonPtWeight();
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void setPhotonType(unsigned t) { photonType_ = t; }
   void addVariation(char const* tag, TObject* corr);
@@ -849,7 +872,7 @@ class PhotonPtWeightSigned : public MonophotonModifier {
  public:
 
   PhotonPtWeightSigned(TObject* pfactors, TObject* nfactors, char const* name = "PhotonPtWeightSigned");
-  ~PhotonPtWeightSigned();
+  ~PhotonPtWeightSigned() {}
 
   enum Sign {
     kPositive,
@@ -858,6 +881,7 @@ class PhotonPtWeightSigned : public MonophotonModifier {
   };
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   void addVariation(char const* tag, TObject* pcorr, TObject* ncorr);
   void setPhotonType(unsigned t);
@@ -865,9 +889,9 @@ class PhotonPtWeightSigned : public MonophotonModifier {
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
   
-  PhotonPtWeight* operators_[nSigns];
+  std::unique_ptr<PhotonPtWeight> operators_[nSigns];
   double weight_;
-  std::map<TString, double*> varWeights_;
+  std::map<TString, std::unique_ptr<double>> varWeights_;
 };
 
 class IDSFWeight : public MonophotonModifier {
@@ -883,6 +907,7 @@ class IDSFWeight : public MonophotonModifier {
   IDSFWeight(Collection obj, char const* name = "IDSFWeight") : MonophotonModifier(name), object_(obj) {}
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
   void setVariable(Variable, Variable = nVariables);
   void setNParticles(unsigned _nP) { nParticles_ = _nP; }
   void addFactor(TH1* factor) { factors_.emplace_back(factor); }
@@ -909,6 +934,7 @@ class VtxAdjustedJetProxyWeight : public PhotonPtWeight {
   void setRCProb(TH2* distribution, double chIsoCut);
 
   void addBranches(TTree& skimTree) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
@@ -981,6 +1007,7 @@ class WHadronizer : public MonophotonModifier {
   void addBranches(TTree& skimTree) override;
  protected:
   void apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent) override;
+  void addInputBranch(panda::utils::BranchList&) override;
 
   double weight_;
 };

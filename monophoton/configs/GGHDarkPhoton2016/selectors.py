@@ -18,9 +18,6 @@ import ROOT
 
 logger.info('Applying ggh setting.')
 
-ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
-
 selconf = {
     'photonFullSelection': [
         'HOverE',
@@ -32,7 +29,7 @@ selconf = {
         'ChargedPFVeto',
         'NoisyRegion'
     ],
-    'photonIDTune': ROOT.idtune,
+    'photonIDTune': ROOT.panda.XPhoton.kSpring16,
     'photonWP': 1,
     'ecalNoiseMap': [],
     'photonSF': (0.995, 0.008, ['kPt'], (0.993, .006)),

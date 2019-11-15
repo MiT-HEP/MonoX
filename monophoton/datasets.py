@@ -354,10 +354,9 @@ class SampleDef(object):
                     print 'Files partially available on T3 (%d/%d). Requesting missing or corrupted blocks.' % (len(filesT3), nTotal)
 
                 proc = subprocess.Popen(
-                    ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset],
-                    stdout = subprocess.PIPE, stderr = subprocess.PIPE
-                    )
-                print proc.communicate()[0].strip()
+                    ['python2.6', '/usr/bin/dynamo-request', '--panda', self.book[self.book.find('/') + 1:], '--sample', dataset]
+                )
+                proc.communicate()
 
             else:
                 print self.book + '/' + dataset + ' is already on disk at T3.'

@@ -42,15 +42,20 @@ class HLTFilter : public Cut {
   HLTFilter(char const* name = "PATHNAME");
   ~HLTFilter();
 
+  void addInputBranch(panda::utils::BranchList&) override;
   void initialize(panda::EventBase& _event) override;
   void addBranches(TTree& skimTree) override;
+
+  void setPathNames(std::vector<TString> const& names) { pathNames_ = names; }
+  void setVeto(bool v) { veto_ = v; }
 
  protected:
   bool pass(panda::EventBase const&, panda::EventBase&) override;
 
-  TString pathNames_{""};
+  std::vector<TString> pathNames_{};
   std::vector<UInt_t> tokens_;
   bool pass_{false};
+  bool veto_{false};
 };
 
 class EventVeto : public Cut {
@@ -70,13 +75,13 @@ class EventVeto : public Cut {
   RunContainer list_{};
 };
 
-// TODO HERE - SHOULD MOVE ALL GEN OPERATORS TO MONOPHOTON?
-
 class GenPhotonVeto : public Cut {
   /* Veto event if it contains a prompt gen photon */
  public:
   GenPhotonVeto(char const* name = "GenPhotonVeto") : Cut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
+  
   void setMinPt(double m) { minPt_ = m; }
   void setMinPartonDR(double m) { minPartonDR2_ = m * m; }
 
@@ -91,6 +96,8 @@ class PartonFlavor : public Cut {
   /* Select events with specified parton ids */
  public:
   PartonFlavor(char const* name = "PartonFlavor") : Cut(name) {}
+
+    void addInputBranch(panda::utils::BranchList&) override;
 
   void setRejectedPdgId(unsigned id) { rejectedId_ = id; }
   void setRequiredPdgId(unsigned id) { requiredId_ = id; }
@@ -109,6 +116,8 @@ class GenPhotonPtTruncator : public Cut {
  public:
   GenPhotonPtTruncator(char const* name = "GenPhotonPtTruncator") : Cut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
+
   void setPtMin(double min) { min_ = min; }
   void setPtMax(double max) { max_ = max; }
  protected:
@@ -122,6 +131,7 @@ class GenHtTruncator : public Cut {
  public:
   GenHtTruncator(char const* name = "GenHtTruncator") : Cut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
 
   void setHtMin(double min) { min_ = min; }
@@ -138,6 +148,7 @@ class GenBosonPtTruncator : public Cut {
  public:
   GenBosonPtTruncator(char const* name = "GenBosonPtTruncator") : Cut(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
 
   void setPtMin(double min) { min_ = min; }
@@ -153,6 +164,8 @@ class GenBosonPtTruncator : public Cut {
 class GenParticleSelection : public Cut {
  public:
   GenParticleSelection(char const* name = "GenParticleSelection") : Cut(name) {}
+
+  void addInputBranch(panda::utils::BranchList&) override;
   
   void setPdgId(int pdgId) { pdgId_ = pdgId; }
   void setMinPt(double minPt) { minPt_ = minPt; }
@@ -178,8 +191,10 @@ class PartonKinematics : public Modifier {
   /* Save parton level photon and met kinematics. */
  public:
   PartonKinematics(char const* name = "PartonKinematics") : Modifier(name) {}
-  
+
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
+  
  protected:
   void apply(panda::EventBase const&, panda::EventBase&) override;
   
@@ -194,6 +209,7 @@ class PartonKinematics : public Modifier {
 class ConstantWeight : public Modifier {
  public:
   ConstantWeight(double weight, char const* name = "ConstantWeight") : Modifier(name), weight_(weight) {}
+
   void addBranches(TTree& skimTree) override;
 
   void setUncertaintyUp(double delta) { weightUp_ = 1. + delta; }
@@ -211,11 +227,14 @@ class NNPDFVariation : public Modifier {
  public:
   NNPDFVariation(char const* name = "NNPDFVariation") : Modifier(name) {}
 
-  void setRescale(double scale) { rescale_ = scale; }
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
+
+  void setRescale(double scale) { rescale_ = scale; }
+  
  protected:
   void apply(panda::EventBase const&, panda::EventBase&) override;
-
+ 
   double rescale_{1.};
   double weightUp_;
   double weightDown_;
@@ -225,7 +244,9 @@ class GJetsDR : public Modifier {
  public:
   GJetsDR(char const* name = "GJetsDR") : Modifier(name) {}
 
+  void addInputBranch(panda::utils::BranchList&) override;
   void addBranches(TTree& skimTree) override;
+  
  protected:
   void apply(panda::EventBase const&, panda::EventBase&) override;
 

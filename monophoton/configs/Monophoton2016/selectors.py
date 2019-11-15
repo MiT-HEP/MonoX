@@ -16,9 +16,6 @@ import ROOT
 
 logger.info('Applying monophoton setting.')
 
-ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kGJetsCWIso;")
-
 selconf = {
     'photonFullSelection': [
         'HOverE',
@@ -34,7 +31,7 @@ selconf = {
         'NoisyRegion',
         'R9Unity'
     ],
-    'photonIDTune': ROOT.idtune,
+    'photonIDTune': ROOT.panda.XPhoton.kGJetsCWIso,
     'photonWP': 1,
     'photonSF': (1.002, 0.007, ['kPt'], (0.984, .009)),
     'hadronTFactorSource': (datadir + '/hadronTFactor_GJetsCWIso.root', '_GJetsCWIso'),

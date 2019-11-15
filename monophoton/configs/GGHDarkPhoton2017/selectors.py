@@ -17,9 +17,6 @@ from configs.common.selconf import selconf
 
 logger.info('Applying ggh setting.')
 
-ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kFall17;")
-
 selconf['photonFullSelection'] = [
     'HOverE',
     'Sieie',
@@ -30,7 +27,7 @@ selconf['photonFullSelection'] = [
     'ChargedPFVeto',
     'NoisyRegion'
 ]
-selconf['photonIDTune'] = ROOT.idtune
+selconf['photonIDTune'] = ROOT.panda.XPhoton.kFall17,
 selconf['photonWP'] = 1
 selconf['photonSF'] = (0.995, 0.008, ['kPt'], (0.993, .006))
 selconf['hadronTFactorSource'] = (datadir + '/hadronTFactor_Spring16.root', '_Spring16')

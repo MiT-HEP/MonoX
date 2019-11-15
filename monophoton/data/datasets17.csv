@@ -7,6 +7,11 @@ sph-17c          "SinglePhoton (2017C)"              9631.7           42182948  
 sph-17d          "SinglePhoton (2017D)"              4247.7           9753462    -                    lhc       cmsprod  pandaf/012   SinglePhoton+Run2017D-31Mar2018-v1+MINIAOD
 sph-17e          "SinglePhoton (2017E)"              9313.7           18893957   -                    lhc       cmsprod  pandaf/012   SinglePhoton+Run2017E-31Mar2018-v1+MINIAOD
 sph-17f          "SinglePhoton (2017F)"              13539.4          29783015   -                    lhc       cmsprod  pandaf/012   SinglePhoton+Run2017F-31Mar2018-v1+MINIAOD
+met-17b          "MET (2017B)"                       4794.0           51623474   -                    lhc       cmsprod  pandaf/012   MET+Run2017B-31Mar2018-v1+MINIAOD
+met-17c          "MET (2017C)"                       9631.7           115906496  -                    lhc       cmsprod  pandaf/012   MET+Run2017C-31Mar2018-v1+MINIAOD
+met-17d          "MET (2017D)"                       4247.7           20075033   -                    lhc       cmsprod  pandaf/012   MET+Run2017D-31Mar2018-v1+MINIAOD
+met-17e          "MET (2017E)"                       9313.7           71417109   -                    lhc       cmsprod  pandaf/012   MET+Run2017E-31Mar2018-v1+MINIAOD
+met-17f          "MET (2017F)"                       13539.4          177509826  -                    lhc       cmsprod  pandaf/012   MET+Run2017F-31Mar2018-v1+MINIAOD
 sel-17b          "SingleElectron (2017B)"            4794.0           60537490   -                    lhc       cmsprod  pandaf/012   SingleElectron+Run2017B-31Mar2018-v1+MINIAOD
 sel-17c          "SingleElectron (2017C)"            9631.4           136637888  -                    lhc       cmsprod  pandaf/012   SingleElectron+Run2017C-31Mar2018-v1+MINIAOD
 sel-17d          "SingleElectron (2017D)"            4247.7           51526710   -                    lhc       cmsprod  pandaf/012   SingleElectron+Run2017D-31Mar2018-v1+MINIAOD
@@ -17,6 +22,11 @@ smu-17c          "SingleMuon (2017C)"                9625.5           165551950 
 smu-17d          "SingleMuon (2017D)"                4247.7           70361660   -                    lhc       cmsprod  pandaf/012   SingleMuon+Run2017D-31Mar2018-v1+MINIAOD
 smu-17e          "SingleMuon (2017E)"                9313.7           154630534  -                    lhc       cmsprod  pandaf/012   SingleMuon+Run2017E-31Mar2018-v1+MINIAOD
 smu-17f          "SingleMuon (2017F)"                13538.7          242135500  -                    lhc       cmsprod  pandaf/012   SingleMuon+Run2017F-31Mar2018-v1+MINIAOD
+dmu-17b          "DoubleMuon (2017B)"                4794.0           0          -                    lhc       cmsprod  pandaf/012   DoubleMuon+Run2017B-31Mar2018-v1+MINIAOD
+dmu-17c          "DoubleMuon (2017C)"                9625.5           49636525   -                    lhc       cmsprod  pandaf/012   DoubleMuon+Run2017C-31Mar2018-v1+MINIAOD
+dmu-17d          "DoubleMuon (2017D)"                4247.7           0          -                    lhc       cmsprod  pandaf/012   DoubleMuon+Run2017D-31Mar2018-v1+MINIAOD
+dmu-17e          "DoubleMuon (2017E)"                9313.7           0          -                    lhc       cmsprod  pandaf/012   DoubleMuon+Run2017E-31Mar2018-v1+MINIAOD
+dmu-17f          "DoubleMuon (2017F)"                13538.7          0          -                    lhc       cmsprod  pandaf/012   DoubleMuon+Run2017F-31Mar2018-v1+MINIAOD
 ### MC
 gj-40            "#gamma+jet"                        18740            4801969    4801969.0            mg5       cmsprod  pandaf/012   GJets_HT-40To100_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_1core_94X_mc2017_realistic_v14_ext1-v1+MINIAODSIM
 gj-100           "#gamma+jet"                        9229             9959190    9959190.0            mg5       cmsprod  pandaf/012   GJets_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1+MINIAODSIM

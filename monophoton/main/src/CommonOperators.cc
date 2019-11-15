@@ -30,39 +30,50 @@ Modifier::exec(panda::EventBase const& _event, panda::EventBase& _outEvent)
 // HLTFilter
 //--------------------------------------------------------------------
 
-HLTFilter::HLTFilter(char const* name) :
-  Cut(name)
+HLTFilter::HLTFilter(char const* _name) :
+  Cut(_name)
 {
-  pathNames_ = name;
+  TString name(_name);
+  if (name.Index("HLT_") == 0) {
+    Ssiz_t pos(0);
+    TString path;
+
+    while (name.Tokenize(path, pos, "_OR_"))
+      pathNames_.push_back(path);
+  }
 }
 
 HLTFilter::~HLTFilter()
 {
+  pathNames_.clear();
   tokens_.clear();
+}
+
+void
+HLTFilter::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"triggers"};
 }
 
 void
 HLTFilter::initialize(panda::EventBase& _event)
 {
-  Ssiz_t pos(0);
-  TString path;
-  UInt_t token(0);
-
-  if (printLevel_ > 0)
-    *stream_ << "Triggers to add: " << pathNames_ << std::endl;
-
-  while (pathNames_.Tokenize(path, pos, "_OR_")) {
-    token = _event.registerTrigger(path.Data());
+  for (auto& path : pathNames_) {
+    UInt_t token(_event.registerTrigger(path.Data()));
     tokens_.push_back(token);
-    if (printLevel_ > 0)
-      *stream_ << "Added trigger path " << path << " with token " << token << " to tokens vector." << std::endl;
+    if (printLevel_ > 0) {
+      *stream_ << "Added ";
+      if (veto_)
+        *stream_ << "veto ";
+      *stream_ << "trigger path " << path << " with token " << token << " to tokens vector." << std::endl;
+    }
   }
 }
 
 void
 HLTFilter::addBranches(TTree& _skimTree)
 {
-  _skimTree.Branch(pathNames_, &pass_, pathNames_ + "/O");
+  _skimTree.Branch(name_, &pass_, name_ + "/O");
 }
 
 bool
@@ -79,6 +90,9 @@ HLTFilter::pass(panda::EventBase const& _event, panda::EventBase&)
       break;
     }
   }
+
+  if (veto_)
+    pass_ = !pass_;
   
   return pass_;
 }
@@ -131,6 +145,12 @@ EventVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 // GenPhotonVeto
 //--------------------------------------------------------------------
 
+void
+GenPhotonVeto::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"genParticles", "partons"};
+}
+
 bool
 GenPhotonVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 {
@@ -166,6 +186,12 @@ GenPhotonVeto::pass(panda::EventBase const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 // PartonKinematics
 //--------------------------------------------------------------------
+
+void
+PartonKinematics::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
 
 void
 PartonKinematics::addBranches(TTree& _skimTree)
@@ -215,6 +241,12 @@ PartonKinematics::apply(panda::EventBase const& _event, panda::EventBase&)
 // PartonFlavor
 //--------------------------------------------------------------------
 
+void
+PartonFlavor::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
+
 bool
 PartonFlavor::pass(panda::EventBase const& _event, panda::EventBase&)
 {
@@ -238,6 +270,12 @@ PartonFlavor::pass(panda::EventBase const& _event, panda::EventBase&)
 // GenPhotonPtTruncator
 //--------------------------------------------------------------------
 
+void
+GenPhotonPtTruncator::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
+
 bool
 GenPhotonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 {
@@ -254,6 +292,12 @@ GenPhotonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 // GenHtTruncator
 //--------------------------------------------------------------------
+
+void
+GenHtTruncator::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
 
 void
 GenHtTruncator::addBranches(TTree& _skimTree)
@@ -283,6 +327,12 @@ GenHtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 // GenBosonPtTruncator
 //--------------------------------------------------------------------
+
+void
+GenBosonPtTruncator::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
 
 void
 GenBosonPtTruncator::addBranches(TTree& _skimTree)
@@ -323,6 +373,12 @@ GenBosonPtTruncator::pass(panda::EventBase const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 // GenParticleSelection
 //--------------------------------------------------------------------
+
+void
+GenParticleSelection::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"genParticles"};
+}
 
 bool
 GenParticleSelection::pass(panda::EventBase const& _event, panda::EventBase&)
@@ -366,6 +422,12 @@ ConstantWeight::addBranches(TTree& _skimTree)
 //--------------------------------------------------------------------
 
 void
+NNPDFVariation::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"genReweight"};
+}
+
+void
 NNPDFVariation::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("reweight_pdfUp", &weightUp_, "reweight_pdfUp/D");
@@ -383,6 +445,12 @@ NNPDFVariation::apply(panda::EventBase const& _event, panda::EventBase&)
 //--------------------------------------------------------------------
 // GJetsDR
 //--------------------------------------------------------------------
+
+void
+GJetsDR::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+}
 
 void
 GJetsDR::addBranches(TTree& _skimTree)

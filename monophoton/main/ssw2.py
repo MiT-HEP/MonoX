@@ -273,14 +273,18 @@ class SkimSlimWeight(object):
         inDir = SkimSlimWeight.config['skimDir'] + '/' + self.sample.name
 
         for rname in self.selectors:
+            missingFiles = []
             for fileset in list(self.filesets):
                 fname = inDir + '/' + self.sample.name + '_' + fileset + '_' + rname + '.root'
-	        if ( (not os.path.exists(fname)) or (os.stat(fname).st_size == 0) ):
+                if not os.path.exists(fname) or os.stat(fname).st_size == 0:
                     if SkimSlimWeight.config['skipMissing']:
                         print 'Skipping fileset ' + fileset + ' in order to complete merge.'
-			self.filesets.remove(fileset)
-		    else:
-                    	raise RuntimeError('Missing input file', fname)
+                        self.filesets.remove(fileset)
+                    else:
+                        missingFiles.append(fname)
+
+            if len(missingFiles) != 0:
+                raise RuntimeError('Missing input files', missingFiles)
         
             outNameBase = self.sample.name + '_' + rname
             outName = outNameBase + '.root'
@@ -329,7 +333,7 @@ class SSWBatchManager(BatchManager):
                 except:
                     pass
     
-        argTemplate = '-M %s -s %s'
+        argTemplate = '-D -M %s -s %s'
 
         submitter.job_args = [argTemplate % arg for arg in arguments]
         submitter.job_names = ['%s_%s' % arg for arg in arguments]
@@ -341,7 +345,7 @@ class SSWBatchManager(BatchManager):
         submitter.requirements = 'UidDomain == "mit.edu"'
         submitter.required_os = 'rhel6'
 
-        argTemplate = '%s -f %s'
+        argTemplate = '%s -D -f %s'
     
         if args.skipMissing:
             argTemplate += ' -K'
@@ -385,29 +389,31 @@ if __name__ == '__main__':
     import logging
     from argparse import ArgumentParser
     
-    argParser = ArgumentParser(description = 'Plot and count')
-    argParser.add_argument('snames', metavar = 'SAMPLE', nargs = '*', help = 'Sample names to skim.')
-    argParser.add_argument('--list', '-L', action = 'store_true', dest = 'list', help = 'List of samples.')
-    argParser.add_argument('--nentries', '-N', metavar = 'N', dest = 'nentries', type = int, default = -1, help = 'Maximum number of entries.')
-    argParser.add_argument('--timer', '-T', action = 'store_true', dest = 'timer', help = 'Turn on timers on Selectors.')
-    argParser.add_argument('--compile-only', '-C', action = 'store_true', dest = 'compileOnly', help = 'Compile and exit.')
-    argParser.add_argument('--filesets', '-f', metavar = 'ID', dest = 'filesets', nargs = '+', default = [], help = 'Fileset id to run on.')
-    argParser.add_argument('--files', '-i', metavar = 'PATH', dest = 'files', nargs = '+', default = [], help = 'Directly run on files.')
-    argParser.add_argument('--first-entry', '-t', metavar = 'ENTRY', dest = 'firstEntry', type = int, default = 0, help = 'First entry number to process.')
-    argParser.add_argument('--suffix', '-x', metavar = 'SUFFIX', dest = 'outSuffix', default = '', help = 'Output file suffix.')
-    argParser.add_argument('--batch', '-B', action = 'store_true', dest = 'batch', help = 'Use condor-run to run.')
-    argParser.add_argument('--skip-existing', '-X', action = 'store_true', dest = 'skipExisting', help = 'Do not run skims on files that already exist.')
-    argParser.add_argument('--merge', '-M', action = 'store_true', dest = 'merge', help = 'Merge the fragments without running any skim jobs.')
-    argParser.add_argument('--selectors', '-s', metavar = 'SELNAME', dest = 'selnames', nargs = '*', default = [], help = 'Selectors to process. With --list, print the selectors configured with the samples.')
-    argParser.add_argument('--printlevel', '-p', metavar = 'LEVEL', dest = 'printLevel', default = 'WARNING', help = 'Override config.printLevel.')
-    argParser.add_argument('--print-every', '-e', metavar = 'NEVENTS', dest = 'printEvery', type = int, default = 10000, help = 'Print frequency.')
-    argParser.add_argument('--no-wait', '-W', action = 'store_true', dest = 'noWait', help = '(With batch option) Don\'t wait for job completion.')
-    argParser.add_argument('--read-remote', '-R', action = 'store_true', dest = 'readRemote', help = 'Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
-    argParser.add_argument('--resubmit', '-S', action = 'store_true', dest = 'autoResubmit', help = '(Without no-wait option) Automatically release held jobs.')
-    argParser.add_argument('--skip-missing', '-K', action = 'store_true', dest = 'skipMissing', help = 'Skip missing files in skim.')
-    argParser.add_argument('--num-threads', '-j', metavar = 'N', dest = 'nThreads', type = int, default = 1, help = 'Number of threads to use. Each selector is run in a separate thread.')
-    argParser.add_argument('--open-timeout', '-m', metavar = 'SECONDS', dest = 'openTimeout', type = int, help = 'Timeout for opening input files. Open is attempted every 30 seconds.')
-    argParser.add_argument('--test-run', '-E', action = 'store_true', dest = 'testRun', help = 'Don\'t copy the output files to the production area. Sets --filesets to 0000 by default.')
+    argParser = ArgumentParser(description='Plot and count')
+    argParser.add_argument('snames', metavar='SAMPLE', nargs='*', help='Sample names to skim.')
+    argParser.add_argument('--list', '-L', action='store_true', dest='list', help='List of samples.')
+    argParser.add_argument('--nentries', '-N', metavar='N', dest='nentries', type=int, default=-1, help='Maximum number of entries.')
+    argParser.add_argument('--timer', '-T', action='store_true', dest='timer', help='Turn on timers on Selectors.')
+    argParser.add_argument('--compile-only', '-C', action='store_true', dest='compileOnly', help='Compile and exit.')
+    argParser.add_argument('--no-compile', '-D', action='store_true', dest='noCompile', help='Do not compile the source code and load libmonophoton_cc.so directly.')
+    argParser.add_argument('--filesets', '-f', metavar='ID', dest='filesets', nargs='+', default=[], help='Fileset id to run on.')
+    argParser.add_argument('--files', '-i', metavar='PATH', dest='files', nargs='+', default=[], help='Directly run on files.')
+    argParser.add_argument('--first-entry', '-t', metavar='ENTRY', dest='firstEntry', type=int, default=0, help='First entry number to process.')
+    argParser.add_argument('--suffix', '-x', metavar='SUFFIX', dest='outSuffix', default='', help='Output file suffix.')
+    argParser.add_argument('--batch', '-B', action='store_true', dest='batch', help='Use condor-run to run.')
+    argParser.add_argument('--skip-existing', '-X', action='store_true', dest='skipExisting', help='Do not run skims on files that already exist.')
+    argParser.add_argument('--merge', '-M', action='store_true', dest='merge', help='Merge the fragments without running any skim jobs.')
+    argParser.add_argument('--check-merge-ready', '-Y', action='store_true', dest='checkMergeable', help='Check skim files without merging.')
+    argParser.add_argument('--selectors', '-s', metavar='SELNAME', dest='selnames', nargs='*', default=[], help='Selectors to process. With --list, print the selectors configured with the samples.')
+    argParser.add_argument('--printlevel', '-p', metavar='LEVEL', dest='printLevel', default='WARNING', help='Override config.printLevel.')
+    argParser.add_argument('--print-every', '-e', metavar='NEVENTS', dest='printEvery', type=int, default=10000, help='Print frequency.')
+    argParser.add_argument('--no-wait', '-W', action='store_true', dest='noWait', help='(With batch option) Don\'t wait for job completion.')
+    argParser.add_argument('--read-remote', '-R', action='store_true', dest='readRemote', help='Read from root://xrootd.cmsaf.mit.edu if a local copy of the file does not exist.')
+    argParser.add_argument('--resubmit', '-S', action='store_true', dest='autoResubmit', help='(Without no-wait option) Automatically release held jobs.')
+    argParser.add_argument('--skip-missing', '-K', action='store_true', dest='skipMissing', help='Skip missing files in skim.')
+    argParser.add_argument('--num-threads', '-j', metavar='N', dest='nThreads', type=int, default=1, help='Number of threads to use. Each selector is run in a separate thread.')
+    argParser.add_argument('--open-timeout', '-m', metavar='SECONDS', dest='openTimeout', type=int, help='Timeout for opening input files. Open is attempted every 30 seconds.')
+    argParser.add_argument('--test-run', '-E', action='store_true', dest='testRun', help='Don\'t copy the output files to the production area. Sets --filesets to 0000 by default.')
     
     args = argParser.parse_args()
     sys.argv = []
@@ -548,20 +554,25 @@ if __name__ == '__main__':
     ## compile and load the Skimmer
     ROOT.gSystem.Load('libfastjet.so')
 
-    ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
+    ## load good lumi filter
+    sys.path.append(monoxdir + '/common')
+    from goodlumi import makeGoodLumiFilter
 
-    try:
-        mtime = os.stat(config.baseDir + '/main/src/libmonophoton.cc').st_mtime
-    except:
-        mtime = -1
-
-    for fname in os.listdir(config.baseDir + '/main/src'):
-        if fname == 'libmonophoton.cc' or (not fname.endswith('.cc') and not fname.endswith('.h')):
-            continue
-        if os.stat(config.baseDir + '/main/src/' + fname).st_mtime > mtime:
+    if args.noCompile:
+        mtime = 0
+    else:
+        try:
+            mtime = os.stat(config.baseDir + '/main/src/libmonophoton.cc').st_mtime
+        except:
             mtime = -1
-            break
-
+    
+        for fname in os.listdir(config.baseDir + '/main/src'):
+            if fname == 'libmonophoton.cc' or (not fname.endswith('.cc') and not fname.endswith('.h')):
+                continue
+            if os.stat(config.baseDir + '/main/src/' + fname).st_mtime > mtime:
+                mtime = -1
+                break
+    
     if mtime < 0:
         with open(config.baseDir + '/main/src/libmonophoton.cc', 'w') as allsrc:
             for fname in os.listdir(config.baseDir + '/main/src'):
@@ -570,6 +581,7 @@ if __name__ == '__main__':
                 with open(config.baseDir + '/main/src/' + fname) as src:
                     allsrc.write(src.read())
 
+        ROOT.gSystem.AddIncludePath('-I' + monoxdir + '/common')
         if ROOT.gROOT.LoadMacro(config.baseDir + '/main/src/libmonophoton.cc+') != 0:
             logger.error("Couldn't compile source. Quitting.")
             sys.exit(1)
@@ -578,11 +590,8 @@ if __name__ == '__main__':
             logger.error("Couldn't load libmonophoton. Quitting.")
             sys.exit(1)
 
-    ## load good lumi filter
-    sys.path.append(monoxdir + '/common')
-    from goodlumi import makeGoodLumiFilter
-
     if args.compileOnly:
+        print 'All inputs are ready to be merged.'
         sys.exit(0)
 
     ## construct and run SkimSlimWeight objects
@@ -603,7 +612,7 @@ if __name__ == '__main__':
 
         ssw = SkimSlimWeight(sample, selectors, flist, files)
 
-        if args.merge:
+        if args.merge or args.checkMergeable:
             if not ssw.setupMerge():
                 logger.warning('Failed to set up merge job for %s', sample.name)
                 continue
@@ -613,6 +622,9 @@ if __name__ == '__main__':
                 continue
 
         ssws.append(ssw)
+
+    if args.checkMergeable:
+        sys.exit(0)
 
     if args.batch:
         ## job submission only

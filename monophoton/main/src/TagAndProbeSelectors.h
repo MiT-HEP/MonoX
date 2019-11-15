@@ -5,39 +5,29 @@
 
 #include "SelectorBase.h"
 
-class TagAndProbeEventSelectorBase : public EventSelectorBase {
+class TagAndProbeSelector : public EventSelectorBase {
 public:
-  TagAndProbeEventSelectorBase(char const* name) : EventSelectorBase(name) {}
-  ~TagAndProbeEventSelectorBase() {}
-
-  InputEventType inputEventType() const override { return kEventMonophoton; }
-
-protected:
-  void setInEvent_(panda::EventBase& inEvent) override { inEvent_ = static_cast<panda::EventMonophoton*>(&inEvent); }
-
-  panda::EventMonophoton* inEvent_{nullptr};
-};
-
-class TagAndProbeSelector : public TagAndProbeEventSelectorBase {
-public:
-  TagAndProbeSelector(char const* name) : TagAndProbeEventSelectorBase(name) {}
+  TagAndProbeSelector(char const* name, TPEventType t);
   ~TagAndProbeSelector() {}
 
-  void addOperator(Operator*, unsigned idx = -1) override;
-
-  void setOutEventType(TPEventType t) { outType_ = t; }
+  void addOperator(Operator*, unsigned idx = -1) final;
   void selectEvent() override;
-
   char const* className() const override { return "TagAndProbeSelector"; }
 
   void setSampleId(unsigned id) { sampleId_ = id; }
 
- protected:
-  void setupSkim_(bool isMC) override;
+protected:
+  void castInEvent_() override { inEvent_ = static_cast<panda::EventMonophoton*>(inEventBase_); }
+  panda::utils::BranchList directCopyBranches_(bool isMC) override;
+  panda::utils::BranchList processedBranches_(bool isMC) const override;
+
+  static panda::EventTP* makeOutEvent(TPEventType);
+
+  panda::EventMonophoton* inEvent_{nullptr};
+  panda::EventTP& outEvent_;
 
   TPEventType outType_{nOutTypes};
-  panda::EventTP* outEvent_{0};
-  unsigned sampleId_; // outEvent_.sample gets reset at the beginning of each event
+  unsigned sampleId_{0}; // outEvent_.sample gets reset at the beginning of each event
 };
 
 #endif

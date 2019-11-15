@@ -438,13 +438,9 @@ class SimpleCanvas(object):
         self._modified()
 
     def Update(self, hList = None, logx = None, logy = None, drawLegend = True):
-        if logx is not None:
-            self.canvas.SetLogx(logx)
-            self.canvas.Update()
-
-        if logy is not None:
-            self.canvas.SetLogy(logy)
-            self.canvas.Update()
+        if (logx is not None and bool(self.canvas.GetLogx()) != logx) or \
+                (logy is not None and bool(self.canvas.GetLogy()) != logy):
+            self._modified()
 
         if not self._needUpdate:
             return
@@ -707,17 +703,10 @@ class TwoDimCanvas(SimpleCanvas):
         self._modified()
 
     def Update(self, hList = None, logx = None, logy = None, logz = None, drawLegend = True):
-        if logx is not None:
-            self.canvas.SetLogx(logx)
-            self.canvas.Update()
-
-        if logy is not None:
-            self.canvas.SetLogy(logy)
-            self.canvas.Update()
-
-        if logz is not None:
-            self.canvas.SetLogz(logz)
-            self.canvas.Update()
+        if (logx is not None and bool(self.canvas.GetLogx()) != logx) or \
+                (logy is not None and bool(self.canvas.GetLogy()) != logy) or \
+                (logz is not None and bool(self.canvas.GetLogz()) != logz):
+            self._modified()
 
         if not self._needUpdate:
             return
@@ -1125,12 +1114,11 @@ class RatioCanvas(SimpleCanvas):
             axis.SetWmax(self.rlimits[1])
 
     def Update(self, hList = None, rList = None, logx = None, logy = None, drawLegend = True):
-        if not self._needUpdate:
-            if logx is not None:
-                self._updateAxis('x', logx)
-            if logy is not None:
-                self._updateAxis('y', logy)
+        if (logx is not None and bool(self.canvas.GetLogx()) != logx) or \
+                (logy is not None and bool(self.canvas.GetLogy()) != logy):
+            self._modified()
 
+        if not self._needUpdate:
             return
 
         if logx is None:
@@ -1514,11 +1502,11 @@ class DataMCCanvas(RatioCanvas):
         return idx
 
     def Update(self, logx = None, logy = None, drawLegend = True):
+        if (logx is not None and bool(self.canvas.GetLogx()) != logx) or \
+                (logy is not None and bool(self.canvas.GetLogy()) != logy):
+            self._modified()
+
         if not self._needUpdate:
-            if logx is not None:
-                self._updateAxis('x', logx)
-            if logy is not None:
-                self._updateAxis('y', logy)
             return
 
         gDirectory = ROOT.gDirectory

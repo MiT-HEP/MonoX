@@ -5,34 +5,21 @@
 
 #include "SelectorBase.h"
 
-class PandaEventSelectorBase : public EventSelectorBase {
+class PandaEventSelector : public EventSelectorBase {
  public:
-  PandaEventSelectorBase(char const* name) : EventSelectorBase(name) {}
-  ~PandaEventSelectorBase() {}
-
-  InputEventType inputEventType() const override { return kEvent; }
-
- protected:
-  void setInEvent_(panda::EventBase& inEvent) override { inEvent_ = static_cast<panda::Event*>(&inEvent); }
-
-  panda::Event* inEvent_{nullptr};
-};
-
-class PandaEventSelector : public PandaEventSelectorBase {
- public:
-  PandaEventSelector(char const* name) : PandaEventSelectorBase(name) {}
+  PandaEventSelector(char const* name);
   ~PandaEventSelector() {}
 
-  void addOperator(Operator*, unsigned idx = -1) override;
-  void selectEvent() override;
+  void addOperator(Operator*, unsigned idx = -1) final;
 
   char const* className() const override { return "PandaEventSelector"; }
 
  protected:
-  void setupSkim_(bool isMC) override;
-  void prepareFill_();
+  void castInEvent_() override { inEvent_ = static_cast<panda::Event*>(inEventBase_); }
+  panda::utils::BranchList directCopyBranches_(bool isMC) override;
 
-  panda::Event outEvent_;
+  panda::Event* inEvent_{nullptr};
+  panda::Event& outEvent_;
 };
 
 #endif

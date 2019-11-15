@@ -125,12 +125,12 @@ def TagAndProbeBase(sample, rname):
 
     return selector
 
-def tagprobeBase(sample, rname):
+def tagprobeBase(sample, rname, evtType):
     """
     Base for selectors skimming tag & probe input trees.
     """
 
-    selector = ROOT.TagAndProbeSelector(rname)
+    selector = ROOT.TagAndProbeSelector(rname, evtType)
 
     setSampleId(sample, selector)
 
@@ -193,8 +193,7 @@ def tpeg(sample, rname):
 
     evtType = ROOT.kTPEG
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
@@ -224,8 +223,7 @@ def tpmg(sample, rname):
 
     evtType = ROOT.kTPMG
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['sphTrigger']))
@@ -255,8 +253,7 @@ def tpegLowPt(sample, rname):
 
     evtType = ROOT.kTPEG
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
@@ -317,8 +314,7 @@ def tpmgLowPt(sample, rname):
 
     evtType = ROOT.kTPMG
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
@@ -371,8 +367,7 @@ def tpmmg(sample, rname):
 
     evtType = ROOT.kTPMMG
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
@@ -409,8 +404,7 @@ def tp2e(sample, rname):
 
     evtType = ROOT.kTP2E
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
@@ -468,8 +462,7 @@ def tp2m(sample, rname):
 
     evtType = ROOT.kTP2M
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))
@@ -511,8 +504,7 @@ def tpem(sample, rname):
 
     evtType = ROOT.kTPEM
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['selTrigger']))
@@ -596,8 +588,7 @@ def tpme(sample, rname):
 
     evtType = ROOT.kTPME
 
-    selector = tagprobeBase(sample, rname)
-    selector.setOutEventType(evtType)
+    selector = tagprobeBase(sample, rname, evtType)
 
     if sample.data:
         selector.addOperator(ROOT.HLTFilter(selconf['smuTrigger']))

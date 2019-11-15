@@ -11,15 +11,11 @@ import ROOT
 ROOT.gSystem.Load(config.libobjs)
 e = ROOT.panda.Event
 
-
 ## Selector-dependent configurations
 
 from configs.common.selconf import selconf
 
 logger.info('Applying vbfg setting.')
-
-ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kFall17;")
 
 selconf['photonFullSelection'] = [
     'HOverE',
@@ -28,9 +24,10 @@ selconf['photonFullSelection'] = [
     'PhIso',
     'CHIso',
     'EVeto',
+    'CSafeVeto'
     #'ChargedPFVeto'
 ]
-selconf['photonIDTune'] =  ROOT.idtune
+selconf['photonIDTune'] =  ROOT.panda.XPhoton.kFall17
 selconf['photonWP'] =  1
 selconf['photonSF'] =  (0.995, 0.008, ['kPt'], (0.993, .006))
 selconf['hadronTFactorSource'] =  (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16') # file name, suffix
@@ -39,7 +36,18 @@ selconf['electronTFactorUnc'] =  'frate_fit'
 selconf['hadronProxyDef'] =  ['!CHIso', '+CHIso11']
 selconf['ewkCorrSource'] =  'ewk_corr.root'
 
-selconf['vbfTrigger'] = 'HLT_Photon50_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3_PFMET50_OR_HLT_Photon75_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3'
+#selconf['vbfTrigger'] = 'HLT_Photon50_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3_PFMET50_OR_HLT_Photon75_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3'
+selconf['vbfTrigger'] = {
+    'met': [
+        'HLT_DiJet110_35_Mjj650_PFMET110',
+        'HLT_DiJet110_35_Mjj650_PFMET120',
+        'HLT_DiJet110_35_Mjj650_PFMET130',
+        'HLT_PFMET120_PFMHT120_IDTight',
+        'HLT_PFMETNoMu120_PFMHTNoMu120_IDTight'
+    ],
+    'sph': ['HLT_Photon200']
+}
+
 selconf['vbfCtrlTrigger'] = 'HLT_Photon75_R9Id90_HE10_IsoM'
 selconf['selTrigger'] = 'HLT_Ele27_WPTight_Gsf'
 selconf['smuTrigger'] = 'HLT_IsoMu24_OR_HLT_IsoTkMu24'
@@ -60,9 +68,39 @@ def vbfgBase(sample, rname):
 
     selector = ROOT.EventSelector(rname)
 
-    #selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
+    selector.setPreskim('superClusters.rawPt > 80. && Sum$(chsAK4Jets.pt_ > 50.) > 2') # 1 for the photon
 
-    #selector.addOperator(ROOT.HLTFilter(selconf['vbfTrigger']))
+    if sample.data:
+        trigger = ROOT.HLTFilter('VBFTrigger')
+        paths = ROOT.vector('TString')()
+        for pd, triggers in selconf['vbfTrigger'].iteritems():
+            if pd in sample.name:
+                for path in triggers:
+                    paths.push_back(path)
+        trigger.setPathNames(paths)
+    
+        selector.addOperator(trigger)
+
+        veto = ROOT.HLTFilter('VBFVetoTrigger')
+        paths = ROOT.vector('TString')()
+        for pd, triggers in selconf['vbfTrigger'].iteritems():
+            if pd not in sample.name:
+                for path in triggers:
+                    paths.push_back(path)
+        veto.setPathNames(paths)
+        veto.setVeto(True)
+
+        selector.addOperator(veto)
+
+    else:
+        trigger = ROOT.HLTFilter('VBFTrigger')
+        paths = ROOT.vector('TString')()
+        for triggers in selconf['vbfTrigger'].itervalues():
+            for path in triggers:
+                paths.push_back(path)
+        trigger.setPathNames(paths)
+    
+        selector.addOperator(trigger)
 
     operators = [
         'MetFilters',
@@ -88,7 +126,7 @@ def vbfgBase(sample, rname):
         selector.addOperator(getattr(ROOT, op)())
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setIDTune(1)
+    photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setMinPt(80.)
 
     leptonSel = selector.findOperator('LeptonSelection')
@@ -115,20 +153,20 @@ def vbfgBase(sample, rname):
 
         selector.addOperator(ROOT.ConstantWeight(sample.crosssection / sample.sumw, 'crosssection'))
 
-        # nominal 9.76182e-01 + 1.03735e-04 * x  -> has 43499 entries in efficiency.root ptwide_pass histogram
-        # alt 9.82825e-01 + 1.37474e-05 * x  -> 29315 entries
-        # taking the sqrt(N)-weighted average for nominal
-        triggersf_photon = ROOT.PhotonPtWeight(ROOT.TF1('trigsf_ph_nominal', '0.9792 + 6.317e-05 * x', 80., 1000.), 'trigeff_ph')
-        # single photon measurement
-        triggersf_photon.addVariation("trigsf_photonUp", ROOT.TF1('trigeff_ph_up', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.))
-        # symmetric reflection of Down about nominal
-        triggersf_photon.addVariation("trigsf_photonDown", ROOT.TF1('trigeff_ph_down', '0.9822 + 2.260e-05 * x', 80., 1000.))
-
-        selector.addOperator(triggersf_photon)
-
-        triggersf_vbf = ROOT.DEtajjWeight(ROOT.TF1('trigsf_vbf_nominal', '1.00989e+00 - 1.04419e-02 * x', 3., 10.), 'trigeff_vbf')
-        triggersf_vbf.setDijetSelection(dijetSel)
-        selector.addOperator(triggersf_vbf)
+        ## nominal 9.76182e-01 + 1.03735e-04 * x  -> has 43499 entries in efficiency.root ptwide_pass histogram
+        ## alt 9.82825e-01 + 1.37474e-05 * x  -> 29315 entries
+        ## taking the sqrt(N)-weighted average for nominal
+        #triggersf_photon = ROOT.PhotonPtWeight(ROOT.TF1('trigsf_ph_nominal', '0.9792 + 6.317e-05 * x', 80., 1000.), 'trigeff_ph')
+        ## single photon measurement
+        #triggersf_photon.addVariation("trigsf_photonUp", ROOT.TF1('trigeff_ph_up', '9.76182e-01 + 1.03735e-04 * x', 80., 1000.))
+        ## symmetric reflection of Down about nominal
+        #triggersf_photon.addVariation("trigsf_photonDown", ROOT.TF1('trigeff_ph_down', '0.9822 + 2.260e-05 * x', 80., 1000.))
+        #
+        #selector.addOperator(triggersf_photon)
+        #
+        #triggersf_vbf = ROOT.DEtajjWeight(ROOT.TF1('trigsf_vbf_nominal', '1.00989e+00 - 1.04419e-02 * x', 3., 10.), 'trigeff_vbf')
+        #triggersf_vbf.setDijetSelection(dijetSel)
+        #selector.addOperator(triggersf_vbf)
 
         sg.addPUWeight(sample, selector)
         sg.addPDFVariation(sample, selector)
@@ -348,10 +386,18 @@ def vbfem(sample, rname):
 
     selector = vbfgBase(sample, rname)
 
+    selector.removeOperator('VBFTrigger')
+    if sample.data:
+        selector.removeOperator('VBFVetoTrigger')
+
+    selector.addOperator(ROOT.HLTFilter('HLT_Photon75'))
+
     sp.setupPhotonSelection(selector.findOperator('PhotonSelection'), changes = ['-Sieie', '+Sieie15', '-CHIso', '-NHIso', '+NHIsoLoose', '-PhIso', '+PhIsoLoose', '-EVeto'])
 
-    if not sample.data:
-        sp.addIDSFWeight(sample, selector)
+    selector.findOperator('DijetSelection').setIgnoreDecision(True)
+
+    #if not sample.data:
+    #    sp.addIDSFWeight(sample, selector)
 
     return selector
 

@@ -16,9 +16,6 @@ import ROOT
 
 logger.info('Applying vbfg setting.')
 
-ROOT.gROOT.ProcessLine("int idtune;")
-ROOT.gROOT.ProcessLine("idtune = panda::XPhoton::kSpring16;")
-
 selconf = {
     'photonFullSelection': [
         'HOverE',
@@ -29,7 +26,7 @@ selconf = {
         'EVeto',
         'ChargedPFVeto'
     ],
-    'photonIDTune': ROOT.idtune,
+    'photonIDTune': ROOT.panda.XPhoton.kSpring16,
     'photonWP': 1,
     'photonSF': (0.995, 0.008, ['kPt'], (0.993, .006)),
     'hadronTFactorSource': (datadir + '/hadronTFactor_Spring16_lowpt.root', '_spring16'), # file name, suffix
@@ -87,7 +84,7 @@ def vbfgBase(sample, rname):
         selector.addOperator(getattr(ROOT, op)())
 
     photonSel = selector.findOperator('PhotonSelection')
-    photonSel.setIDTune(1)
+    photonSel.setIDTune(selconf['photonIDTune'])
     photonSel.setMinPt(80.)
 
     leptonSel = selector.findOperator('LeptonSelection')

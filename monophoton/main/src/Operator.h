@@ -15,7 +15,7 @@ enum Collection {
   nCollections
 };
 
-const UInt_t NMAX_PARTICLES = 128;
+constexpr UInt_t NMAX_PARTICLES{128};
 
 //--------------------------------------------------------------------
 // Base classes

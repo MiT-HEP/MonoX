@@ -5,9 +5,11 @@
 
 #include "TSystem.h"
 
-//--------------------------------------------------------------------
-// EventSelector
-//--------------------------------------------------------------------
+EventSelector::EventSelector(char const* _name) :
+  EventSelectorBase(_name, kEventMonophoton, new panda::EventMonophoton()),
+  outEvent_(*static_cast<panda::EventMonophoton*>(outEventBase_))
+{
+}
 
 void
 EventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
@@ -21,78 +23,32 @@ EventSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
     operators_.insert(operators_.begin() + _idx, _op);
 }
 
-void
-EventSelector::setupSkim_(bool _isMC)
+panda::utils::BranchList
+EventSelector::directCopyBranches_(bool _isMC)
 {
-  // Branches to be directly copied from the input tree
-  // Add a prepareFill line below any time a collection branch is added
-  panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "npv", "rho", "vertices"}};
-  if (_isMC)
-    blist += {"npvTrue", "partons", "genParticles", "genVertex"}; // , "genMet"};
+  auto blist{EventSelectorBase::directCopyBranches_(_isMC)};
+  
+  blist += {"rho", "vertices"};
+  needPrepareFill_(inEvent_->vertices);
+
+  if (_isMC) {
+    blist += {"genParticles"};
+    needPrepareFill_(inEvent_->genParticles);
+  }
   else
     blist += {"metFilters"};
 
-  inEvent_->book(*skimOut_, blist);
+  return blist;
+}
 
-  blist = {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"};
+panda::utils::BranchList
+EventSelector::processedBranches_(bool _isMC) const
+{
+  panda::utils::BranchList blist = {"weight", "jets", "photons", "electrons", "muons", "taus", "superClusters", "t1Met"};
   if (_isMC)
     blist += {"genJets"}; // filled only if AddGenJets operator is run
 
-  outEvent_.book(*skimOut_, blist);
-}
-
-void
-EventSelector::prepareFill_()
-{
-  inEvent_->vertices.prepareFill(*skimOut_);
-  // inEvent_->pfCandidates.prepareFill(*skimOut_);
-  inEvent_->partons.prepareFill(*skimOut_);
-  inEvent_->genParticles.prepareFill(*skimOut_);
-}
-
-void
-EventSelector::selectEvent()
-{
-  if (blindPrescale_ > 1 && inEvent_->runNumber >= blindMinRun_ && inEvent_->eventNumber % blindPrescale_ != 0)
-    return;
-
-  outEvent_.init();
-  inWeight_ = inEvent_->weight;
-  outEvent_.weight = inEvent_->weight;
-
-  Clock::time_point start;
-
-  bool pass(true);
-  for (unsigned iO(0); iO != operators_.size(); ++iO) {
-    auto& op(*operators_[iO]);
-    
-    if (useTimers_)
-      start = Clock::now();
-
-    if (!op.exec(*inEvent_, outEvent_))
-      pass = false;
-
-    if (useTimers_)
-      timers_[iO] += Clock::now() - start;
-  }
-
-  cutsOut_->Fill();
-
-  if (pass) {
-    // IMPORTATNT
-    // We link these skimOut branches to the input event. Need to refresh the addresses in case
-    // collections are resized.
-
-    // It would be clearer / more elegant to factor this operation out to a serial part, have
-    // selectEvent take an EventMonophoton const& as an argument, and return pass, but cases
-    // like ZeeEventSelector doesn't allow an easy factorization.
-
-    std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
-
-    prepareFill_();
-
-    outEvent_.fill(*skimOut_);
-  }
+  return blist;
 }
 
 //--------------------------------------------------------------------
@@ -117,24 +73,8 @@ ZeeEventSelector::selectEvent()
   inWeight_ = inEvent_->weight;
   outEvent_.weight = inEvent_->weight;
 
-  Clock::time_point start;
-
-  bool passUpToLS(true);
-  unsigned iO(0);
-  for (auto itr(operators_.begin()); itr != leptonSelection_; ++itr) {
-    auto& op(**itr);
-    
-    if (useTimers_)
-      start = Clock::now();
-
-    if (!op.exec(*inEvent_, outEvent_))
-      passUpToLS = false;
-
-    if (useTimers_)
-      timers_[iO] += Clock::now() - start;
-
-    ++iO;
-  }
+  auto oItr(operators_.begin());
+  bool passUpToLS(runOperators_(oItr, leptonSelection_));
 
   if (passUpToLS && outEvent_.photons.size() > 1) {
     // Assumption: Photon selector is run
@@ -145,64 +85,17 @@ ZeeEventSelector::selectEvent()
       outEvent_.photons.clear();
       outEvent_.photons.push_back(photon);
 
-      bool pass(true);
+      bool pass(runOperators_(oItr, operators_.end()));
 
-      unsigned iOPair(iO);
-      for (auto itr(leptonSelection_); itr != operators_.end(); ++itr) {
-        auto& op(**itr);
-
-        if (useTimers_)
-          start = Clock::now();
-
-        if (!op.exec(*inEvent_, outEvent_))
-          pass = false;
-
-        if (useTimers_)
-          timers_[iOPair] += Clock::now() - start;
-
-        ++iOPair;
-      }
-
-      cutsOut_->Fill();
-
-      if (pass) {
-        std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
-
-        prepareFill_();
-          
-        outEvent_.fill(*skimOut_);
-      }
+      fillEvent_(pass);
     }
   }
   else {
     // just run the remaining operators
 
-    bool pass(passUpToLS);
+    bool pass(runOperators_(oItr, operators_.end()));
 
-    for (auto itr(leptonSelection_); itr != operators_.end(); ++itr) {
-      auto& op(**itr);
-
-      if (useTimers_)
-        start = Clock::now();
-
-      if (!op.exec(*inEvent_, outEvent_))
-        pass = false;
-
-      if (useTimers_)
-        timers_[iO] += Clock::now() - start;
-
-      ++iO;
-    }
-
-    cutsOut_->Fill();
-
-    if (pass) {
-      std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
-
-      prepareFill_();
-          
-      outEvent_.fill(*skimOut_);
-    }
+    fillEvent_(passUpToLS && pass);
   }
 }
 

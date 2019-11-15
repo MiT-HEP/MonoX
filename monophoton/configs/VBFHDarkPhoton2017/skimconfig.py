@@ -10,6 +10,11 @@ data_sph = [
     'vbfzee', 'vbfzeeEfake'
 ]
 
+data_met = [
+    'vbfg', 'vbfem', 'vbfgEfake', 'vbfgHfake', 'vbfgCtrl', 'vbfgHfakeCtrl', 'ph75', 'vbfgLJCtrl',
+    'vbfzee', 'vbfzeeEfake'
+]
+
 data_smu = [
     'vbfm', 'vbfmm'
 ]
@@ -26,6 +31,7 @@ mc_dilep = ['vbfee', 'vbfmm']
 skimconfig = {
 #    # Data
     'sph-17*': makeSel(data_sph),
+    'met-17*': makeSel(data_met),
 #    'smu-16*': makeSel(data_smu),
 #    'sel-16*': makeSel(data_sel),
 #    # MC

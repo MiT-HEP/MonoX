@@ -511,6 +511,12 @@ PhotonSelection::selectPhoton(panda::XPhoton const& _photon, unsigned _idx)
 // TauVeto
 //--------------------------------------------------------------------
 
+void
+TauVeto::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"taus"};
+}
+
 bool
 TauVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
@@ -558,6 +564,12 @@ void
 EcalCrackVeto::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("ecalCrackVeto", &ecalCrackVeto_, "ecalCrackVeto/O");
+}
+
+void
+EcalCrackVeto::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"chsAK4Jets"};
 }
 
 bool
@@ -613,6 +625,12 @@ LeptonMt::addBranches(TTree& _skimTree)
   _skimTree.Branch(prefix + ".mt", mt_, "mt[" + prefix + ".size]/F");
 }
 
+void
+LeptonMt::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfMet"};
+}
+
 bool
 LeptonMt::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
@@ -651,7 +669,7 @@ Mass::addBranches(TTree& _skimTree)
 }
 
 bool
-Mass::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+Mass::pass(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   mass_ = -1.;
   pt_ = -1.;
@@ -739,7 +757,7 @@ OppositeSign::addBranches(TTree& _skimTree)
 }
 
 bool
-OppositeSign::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+OppositeSign::pass(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   oppSign_ = 0;
 
@@ -799,7 +817,7 @@ BjetVeto::addBranches(TTree& _skimTree)
 }
 
 bool
-BjetVeto::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+BjetVeto::pass(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   // veto condition: loose, pt > 10 GeV, no matching candidate photon / lepton
 
@@ -868,6 +886,13 @@ PhotonMetDPhi::addBranches(TTree& _skimTree)
   // _skimTree.Branch("t1Met.photonDPhiJER", &dPhiJER_, "photonDPhiJER/F");
   // _skimTree.Branch("t1Met.photonDPhiJERUp", &dPhiJERUp_, "photonDPhiJERUp/F");
   // _skimTree.Branch("t1Met.photonDPhiJERDown", &dPhiJERDown_, "photonDPhiJERDown/F");
+}
+
+void
+PhotonMetDPhi::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (metSource_ == kInMet)
+    _blist += {"pfMet"};
 }
 
 bool
@@ -951,6 +976,13 @@ JetMetDPhi::addBranches(TTree& _skimTree)
   // _skimTree.Branch("t1Met.minJetDPhiJER", &dPhiJER_, "minJetDPhiJER/F");
   // _skimTree.Branch("t1Met.minJetDPhiJERUp", &dPhiJERUp_, "minJetDPhiJERUp/F");
   // _skimTree.Branch("t1Met.minJetDPhiJERDown", &dPhiJERDown_, "minJetDPhiJERDown/F");
+}
+
+void
+JetMetDPhi::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (metSource_ == kInMet)
+    _blist += {"pfMet"};
 }
 
 bool
@@ -1099,6 +1131,12 @@ LeptonSelection::addBranches(TTree& _skimTree)
 {
   failingMuons_->book(_skimTree);
   failingElectrons_->book(_skimTree);
+}
+
+void
+LeptonSelection::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"muons", "electrons"};
 }
 
 bool
@@ -1261,6 +1299,12 @@ LeptonSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 // FakeElectron
 //--------------------------------------------------------------------
 
+void
+FakeElectron::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"electrons"};
+}
+
 bool
 FakeElectron::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
@@ -1290,6 +1334,13 @@ FakeElectron::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&
 // Met
 //--------------------------------------------------------------------
 
+void
+Met::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (metSource_ == kInMet)
+    _blist += {"pfMet"};
+}
+
 bool
 Met::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
@@ -1302,6 +1353,13 @@ Met::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEven
 //--------------------------------------------------------------------
 // PhotonPtOverMet
 //--------------------------------------------------------------------
+
+void
+PhotonPtOverMet::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (metSource_ == kInMet)
+    _blist += {"pfMet"};
+}
 
 bool
 PhotonPtOverMet::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
@@ -1317,7 +1375,7 @@ PhotonPtOverMet::pass(panda::EventMonophoton const& _event, panda::EventMonophot
 //--------------------------------------------------------------------
 
 bool
-MtRange::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+MtRange::pass(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   if (!calc_ || _outEvent.photons.size() == 0)
     return false;
@@ -1332,7 +1390,7 @@ MtRange::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _out
 //--------------------------------------------------------------------
 
 bool
-HighPtJetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+HighPtJetSelection::pass(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   unsigned nJets(0);
 
@@ -1481,6 +1539,12 @@ DijetSelection::pass(panda::EventMonophoton const& _event, panda::EventMonophoto
 // MetFilters
 //--------------------------------------------------------------------
 
+void
+MetFilters::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"metFilters"};
+}
+
 bool
 MetFilters::pass(panda::EventMonophoton const& _event, panda::EventMonophoton&)
 {
@@ -1581,7 +1645,7 @@ TriggerEfficiency::addBranches(TTree& _skimTree)
 }
 
 void
-TriggerEfficiency::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+TriggerEfficiency::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   if (!formula_ || _outEvent.photons.size() == 0)
     return;
@@ -1739,6 +1803,12 @@ JetCleaning::addBranches(TTree& _skimTree)
   // _skimTree.Branch("jets.ptResScaledDown", ptScaledDown_, "ptResScaledDown[jets.size]/F");
 }
 
+void
+JetCleaning::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"chsAK4Jets"};
+}
+
 // void
 // JetCleaning::setJetResolution(char const* _jerSource)
 // {
@@ -1873,7 +1943,7 @@ PhotonJetDPhi::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonJetDPhi::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+PhotonJetDPhi::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   unsigned nJ(0);
   unsigned nJCorrUp(0);
@@ -1924,6 +1994,12 @@ PhotonJetDPhi::apply(panda::EventMonophoton const& _event, panda::EventMonophoto
 //--------------------------------------------------------------------
 // CopyMet
 //--------------------------------------------------------------------
+
+void
+CopyMet::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfMet"};
+}
 
 void
 CopyMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
@@ -2045,7 +2121,7 @@ LeptonRecoil::addBranches(TTree& _skimTree)
 }
 
 void
-LeptonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+LeptonRecoil::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   panda::LeptonCollection* col(0);
 
@@ -2180,7 +2256,7 @@ PhotonFakeMet::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonFakeMet::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+PhotonFakeMet::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   float inMets[] = {
     _outEvent.t1Met.pt,
@@ -2331,6 +2407,12 @@ MetVariations::addBranches(TTree& _skimTree)
 }
 
 void
+MetVariations::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"pfMet"};
+}
+
+void
 MetVariations::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   metGECUp_ = 0.;
@@ -2441,6 +2523,15 @@ PhotonPtWeight::addBranches(TTree& _skimTree)
   _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   for (auto& var : varWeights_)
     _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
+}
+
+void
+PhotonPtWeight::addInputBranch(panda::utils::BranchList& _blist)
+{
+  if (photonType_ == kParton)
+    _blist += {"partons"};
+  else if (photonType_ == kPostShower)
+    _blist += {"genParticles"};
 }
 
 void
@@ -2594,17 +2685,8 @@ PhotonPtWeight::calcWeight_(TObject* source, double pt, int var/* = 0*/)
 PhotonPtWeightSigned::PhotonPtWeightSigned(TObject* _pfactors, TObject* _nfactors, char const* name/* = "PhotonPtWeightSigned"*/) :
   MonophotonModifier(name)
 {
-  operators_[kPositive] = new PhotonPtWeight(_pfactors, name_ + "_positive");
-  operators_[kNegative] = new PhotonPtWeight(_nfactors, name_ + "_negative");
-}
-
-PhotonPtWeightSigned::~PhotonPtWeightSigned()
-{
-  for (auto& v : varWeights_)
-    delete v.second;
-
-  delete operators_[kPositive];
-  delete operators_[kNegative];
+  operators_[kPositive] = std::make_unique<PhotonPtWeight>(_pfactors, name_ + "_positive");
+  operators_[kNegative] = std::make_unique<PhotonPtWeight>(_nfactors, name_ + "_negative");
 }
 
 void
@@ -2612,25 +2694,32 @@ PhotonPtWeightSigned::addBranches(TTree& _skimTree)
 {
   _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   for (auto& var : varWeights_)
-    _skimTree.Branch("reweight_" + var.first, var.second, "reweight_" + var.first + "/D");
+    _skimTree.Branch("reweight_" + var.first, var.second.get(), "reweight_" + var.first + "/D");
+}
+
+void
+PhotonPtWeightSigned::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"partons"};
+  operators_[kPositive]->addInputBranch(_blist);
 }
 
 void
 PhotonPtWeightSigned::addVariation(char const* _tag, TObject* _pcorr, TObject* _ncorr)
 {
   if (varWeights_.count(_tag) != 0)
-    delete varWeights_[_tag];
+    varWeights_.erase(_tag);
 
   operators_[kPositive]->addVariation(_tag, _pcorr);
   operators_[kNegative]->addVariation(_tag, _ncorr);
   if (varWeights_.count(_tag) == 0)
-    varWeights_[_tag] = new double;
+    varWeights_[_tag] = std::make_unique<double>();
 }
 
 void
 PhotonPtWeightSigned::setPhotonType(unsigned _t)
 {
-  for (auto* op : operators_)
+  for (auto& op : operators_)
     op->setPhotonType(_t);
 }
 
@@ -2638,22 +2727,19 @@ void
 PhotonPtWeightSigned::useErrors(bool _b)
 {
   TString tag(name_ + "Up");
-  if (varWeights_.count(tag) != 0) {
-    delete varWeights_[tag];
+  if (varWeights_.count(tag) != 0)
     varWeights_.erase(tag);
-  }
+
   tag = name_ + "Down";
-  if (varWeights_.count(tag) != 0) {
-    delete varWeights_[tag];
+  if (varWeights_.count(tag) != 0)
     varWeights_.erase(tag);
-  }
 
   if (_b) {
-    varWeights_[name_ + "Up"] = new double;
-    varWeights_[name_ + "Down"] = new double;
+    varWeights_[name_ + "Up"] = std::make_unique<double>();
+    varWeights_[name_ + "Down"] = std::make_unique<double>();
   }
 
-  for (auto* op : operators_)
+  for (auto& op : operators_)
     op->useErrors(_b);
 }
 
@@ -2667,9 +2753,9 @@ PhotonPtWeightSigned::apply(panda::EventMonophoton const& _event, panda::EventMo
   PhotonPtWeight* op(0);
   for (auto& part : _event.partons) {
     if (part.pdgid == 11 || part.pdgid == 13 || part.pdgid == 15)
-      op = operators_[kNegative];
+      op = operators_[kNegative].get();
     else if (part.pdgid == -11 || part.pdgid == -13 || part.pdgid == -15)
-      op = operators_[kPositive];
+      op = operators_[kPositive].get();
   }
   if (!op)
     return;
@@ -2693,6 +2779,12 @@ IDSFWeight::addBranches(TTree& _skimTree)
   _skimTree.Branch("weight_" + name_, &weight_, "weight_" + name_ + "/D");
   _skimTree.Branch("reweight_" + name_ + "Up", &weightUp_, "reweight_" + name_ + "Up/D");
   _skimTree.Branch("reweight_" + name_ + "Down", &weightDown_, "reweight_" + name_ + "Down/D");
+}
+
+void
+IDSFWeight::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"npvTrue"};
 }
 
 void
@@ -2866,6 +2958,12 @@ VtxAdjustedJetProxyWeight::addBranches(TTree& _skimTree)
 }
 
 void
+VtxAdjustedJetProxyWeight::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"vertices"};
+}
+
+void
 VtxAdjustedJetProxyWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   if (_outEvent.photons.empty())
@@ -3022,7 +3120,7 @@ JetScore::addBranches(TTree& _skimTree)
 }
 
 void
-JetScore::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+JetScore::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   if (_outEvent.jets.size() == 0)
     return;
@@ -3041,7 +3139,7 @@ JetScore::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _o
 void
 LeptonVertex::addInputBranch(panda::utils::BranchList& _blist)
 {
-  _blist += {"pfCandidates"};
+  _blist += {"pfCandidates", "vertices"};
 }
 
 void
@@ -3151,6 +3249,12 @@ WHadronizer::addBranches(TTree& _skimTree)
 }
 
 void
+WHadronizer::addInputBranch(panda::utils::BranchList& _blist)
+{
+  _blist += {"genParticles"};
+}
+
+void
 WHadronizer::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
 {
   weight_ = 67.41 / (10.86 * 3.);
@@ -3189,7 +3293,7 @@ PhotonRecoil::addBranches(TTree& _skimTree)
 }
 
 void
-PhotonRecoil::apply(panda::EventMonophoton const& _event, panda::EventMonophoton& _outEvent)
+PhotonRecoil::apply(panda::EventMonophoton const&, panda::EventMonophoton& _outEvent)
 {
   float inMets[] = {
     _outEvent.t1Met.pt,
@@ -3278,7 +3382,7 @@ DEtajjWeight::addBranches(TTree& _skimTree)
 }
 
 void
-DEtajjWeight::apply(panda::EventMonophoton const& _event, panda::EventMonophoton&)
+DEtajjWeight::apply(panda::EventMonophoton const&, panda::EventMonophoton&)
 {
   if (dijet_->getNDijetPassing() == 0) {
     weight_ = 1.;

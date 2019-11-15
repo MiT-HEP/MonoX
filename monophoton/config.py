@@ -1,7 +1,9 @@
 import os
 
-config = 'GGHDarkPhoton2017'
+#config = 'GGHDarkPhoton2017'
 #config = 'TagAndProbe2017'
+config = 'VBFHDarkPhoton2017'
+#config = 'WJD2017'
 
 # this installation
 baseDir = os.path.dirname(os.path.realpath(__file__))

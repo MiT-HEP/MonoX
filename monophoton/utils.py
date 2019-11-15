@@ -1,7 +1,7 @@
 import os
 import config
 
-def getSkimPath(sample, skim, primary = config.skimDir, alternative = config.localSkimDir):
+def getSkimPath(sample, skim, primary=config.skimDir, alternative=config.localSkimDir):
     # Return merged skim file name
     sourceName = os.path.join(primary, sample + '_' + skim + '.root')
     if alternative:
@@ -9,9 +9,12 @@ def getSkimPath(sample, skim, primary = config.skimDir, alternative = config.loc
         if os.path.exists(altName) and os.stat(altName).st_mtime > os.stat(sourceName).st_mtime:
             sourceName = altName
 
-    return sourceName
+    if os.path.exists(sourceName):
+        return sourceName
+    else:
+        return ''
 
-def getSkimPaths(sample, skim, primary = config.skimDir, alternative = config.localSkimDir):
+def getSkimPaths(sample, skim, primary=config.skimDir, alternative=config.localSkimDir):
     # Return pre-merge skim file names
     paths = {}
 
@@ -35,3 +38,16 @@ def getSkimPaths(sample, skim, primary = config.skimDir, alternative = config.lo
                 paths[fname] = (primName, mtime)
 
     return [p[0] for p in paths.itervalues()]
+
+def addSkimPaths(multidraw, sample, skim, primary=config.skimDir, alternative=config.localSkimDir):
+    merged = getSkimPath(sample, skim, primary=primary, alternative=alternative)
+    if merged:
+        multidraw.addInputPath(merged)
+        return
+
+    paths = getSkimPaths(sample, skim, primary=primary, alternative=alternative)
+    if len(paths) == 0:
+        raise RuntimeError('No files for %s:%s' % (sample, skim))
+
+    for path in paths:
+        multidraw.addInputPath(path)

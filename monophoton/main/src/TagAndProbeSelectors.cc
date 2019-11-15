@@ -16,6 +16,47 @@
 #include "PandaTree/Objects/interface/EventTPEM.h"
 #include "PandaTree/Objects/interface/EventTPME.h"
 
+/*static*/
+panda::EventTP*
+TagAndProbeSelector::makeOutEvent(TPEventType _type)
+{
+  switch (_type) {
+  case kTPEG:
+    return new panda::EventTPEG;
+    break;
+  case kTPEEG:
+    return new panda::EventTPEEG;
+    break;
+  case kTPMG:
+    return new panda::EventTPMG;
+    break;
+  case kTPMMG:
+    return new panda::EventTPMMG;
+    break;
+  case kTP2E:
+    return new panda::EventTP2E;
+    break;
+  case kTP2M:
+    return new panda::EventTP2M;
+    break;
+  case kTPEM:
+    return new panda::EventTPEM;
+    break;
+  case kTPME:
+    return new panda::EventTPME;
+    break;
+  default:
+    throw std::runtime_error("Out event type not set");
+  }
+}
+
+TagAndProbeSelector::TagAndProbeSelector(char const* _name, TPEventType _type) :
+  EventSelectorBase(_name, kEventMonophoton, makeOutEvent(_type)),
+  outEvent_(*static_cast<panda::EventTP*>(outEventBase_)),
+  outType_(_type)
+{
+}
+
 void
 TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
 {
@@ -28,91 +69,44 @@ TagAndProbeSelector::addOperator(Operator* _op, unsigned _idx/* = -1*/)
     operators_.insert(operators_.begin() + _idx, _op);
 }
 
-void
-TagAndProbeSelector::setupSkim_(bool _isMC)
+panda::utils::BranchList
+TagAndProbeSelector::directCopyBranches_(bool _isMC)
 {
-  switch (outType_) {
-  case kTPEG:
-    outEvent_ = new panda::EventTPEG;
-    break;
-  case kTPEEG:
-    outEvent_ = new panda::EventTPEEG;
-    break;
-  case kTPMG:
-    outEvent_ = new panda::EventTPMG;
-    break;
-  case kTPMMG:
-    outEvent_ = new panda::EventTPMMG;
-    break;
-  case kTP2E:
-    outEvent_ = new panda::EventTP2E;
-    break;
-  case kTP2M:
-    outEvent_ = new panda::EventTP2M;
-    break;
-  case kTPEM:
-    outEvent_ = new panda::EventTPEM;
-    break;
-  case kTPME:
-    outEvent_ = new panda::EventTPME;
-    break;
-  default:
-    throw std::runtime_error("Out event type not set");
-  }
-
-  // Branches to be directly copied from the input tree
-  // Add a prepareFill function when a collection branch is added
-  panda::utils::BranchList blist{{"runNumber", "lumiNumber", "eventNumber", "isData", "npv", "rho", "t1Met"}};
+  panda::utils::BranchList blist = {"runNumber", "lumiNumber", "eventNumber", "isData", "npv", "rho", "t1Met"};
   if (_isMC)
     blist += {"npvTrue"};
 
-  inEvent_->book(*skimOut_, blist);
+  return blist;
+}
 
-  // looseTags will be added by the TPMuonPhoton operator
-  blist = {"weight", "sample", "tp", "tags", "probes", "jets"};
-  if (outType_ == kTPEEG || outType_ == kTPMMG)
+panda::utils::BranchList
+TagAndProbeSelector::processedBranches_(bool _isMC) const
+{
+  panda::utils::BranchList blist = {"weight", "sample", "tp", "tags", "probes", "jets"};
+  if (outType_ == kTPEEG || outType_ == kTPMMG) // looseTags will be added by the TPMuonPhoton operator
     blist += {"looseTags"};
 
-  outEvent_->book(*skimOut_, blist);
+  return blist;
 }
 
 void
 TagAndProbeSelector::selectEvent()
 {
-  outEvent_->init();
+  outEvent_.init();
 
   // copy EventBase members
-  static_cast<panda::EventBase&>(*outEvent_) = *inEvent_;
+  static_cast<panda::EventBase&>(outEvent_) = *inEvent_;
 
-  outEvent_->npv = inEvent_->npv;
-  outEvent_->npvTrue = inEvent_->npvTrue;
-  outEvent_->rho = inEvent_->rho;
-  outEvent_->t1Met = inEvent_->t1Met;
+  outEvent_.npv = inEvent_->npv;
+  outEvent_.npvTrue = inEvent_->npvTrue;
+  outEvent_.rho = inEvent_->rho;
+  outEvent_.t1Met = inEvent_->t1Met;
 
   inWeight_ = inEvent_->weight;
 
-  outEvent_->sample = sampleId_;
+  outEvent_.sample = sampleId_;
 
-  Clock::time_point start;
+  bool pass(runOperators_());
 
-  bool pass(true);
-  for (unsigned iO(0); iO != operators_.size(); ++iO) {
-    auto& op(*operators_[iO]);
-
-    if (useTimers_)
-      start = Clock::now();
-
-    if (!op.exec(*inEvent_, *outEvent_))
-      pass = false;
-
-    if (useTimers_)
-      timers_[iO] += Clock::now() - start;
-  }
-
-  cutsOut_->Fill();
-
-  if (pass) {
-    std::lock_guard<std::mutex> lock(EventSelectorBase::mutex);
-    outEvent_->fill(*skimOut_);
-  }
+  fillEvent_(pass);
 }

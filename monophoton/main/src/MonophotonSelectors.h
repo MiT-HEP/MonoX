@@ -7,39 +7,21 @@
 
 #include "TF1.h"
 
-class MonophotonEventSelectorBase : public EventSelectorBase {
+class EventSelector : public EventSelectorBase {
 public:
-  MonophotonEventSelectorBase(char const* name) : EventSelectorBase(name) {}
-  ~MonophotonEventSelectorBase() {}
-
-  InputEventType inputEventType() const override { return kEventMonophoton; }
-
- protected:
-  void setInEvent_(panda::EventBase& inEvent) override { inEvent_ = static_cast<panda::EventMonophoton*>(&inEvent); }
-
-  panda::EventMonophoton* inEvent_{nullptr};
-};
-
-class EventSelector : public MonophotonEventSelectorBase {
-public:
-  EventSelector(char const* name) : MonophotonEventSelectorBase(name) {}
+  EventSelector(char const* name);
   ~EventSelector() {}
 
-  void addOperator(Operator*, unsigned idx = -1) override;
-  void selectEvent() override;
-
+  void addOperator(Operator*, unsigned idx = -1) final;
   char const* className() const override { return "EventSelector"; }
 
-  void setPartialBlinding(unsigned prescale, unsigned minRun = 0) { blindPrescale_ = prescale; blindMinRun_ = minRun; }
-
  protected:
-  void setupSkim_(bool isMC) override;
-  void prepareFill_();
+  void castInEvent_() override { inEvent_ = static_cast<panda::EventMonophoton*>(inEventBase_); }
+  panda::utils::BranchList directCopyBranches_(bool isMC) override;
+  panda::utils::BranchList processedBranches_(bool isMC) const override;
 
-  panda::EventMonophoton outEvent_;
-
-  unsigned blindPrescale_{1};
-  unsigned blindMinRun_{0};
+  panda::EventMonophoton* inEvent_{nullptr};
+  panda::EventMonophoton& outEvent_;
 };
 
 class ZeeEventSelector : public EventSelector {

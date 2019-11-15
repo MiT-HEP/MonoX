@@ -61,7 +61,6 @@ public:
   TH1* getSignalCR() { return signalCRTemplate_; }
   TH1* getBackground() { return bkgTemplate_; }
   TH1* getSubtractedBackground() { return subtractedBkg_; }
-  
 
   static SSFitter* singleton();
 
