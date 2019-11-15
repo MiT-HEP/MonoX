@@ -1,0 +1,8 @@
+### Catalogs
+%catalog cmsprod /home/cmsprod/catalog/t2mit
+%catalog monox catalog
+### Data 2018 - need to recompute lumis (16.06.2019)
+dmu-18a          "DoubleMuon (2018A)"                13980.0          75499908   -                    lhc       cmsprod  pandaf/014   DoubleMuon+Run2018A-17Sep2018-v2+MINIAOD
+dmu-18b          "DoubleMuon (2018B)"                7064.0           35057758   -                    lhc       cmsprod  pandaf/014   DoubleMuon+Run2018B-17Sep2018-v1+MINIAOD
+dmu-18c          "DoubleMuon (2018C)"                6899.0           34565869   -                    lhc       cmsprod  pandaf/014   DoubleMuon+Run2018C-17Sep2018-v1+MINIAOD
+dmu-18d          "DoubleMuon (2018D)"                31750.0          169225355  -                    lhc       cmsprod  pandaf/014   DoubleMuon+Run2018D-PromptReco-v2+MINIAOD
